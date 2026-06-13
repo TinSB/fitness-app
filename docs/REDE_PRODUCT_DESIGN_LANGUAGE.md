@@ -570,9 +570,9 @@ App 主模式深色（见 §3.3 更新）。浅色为受支持的次级 theme，
 | 角色 | locked |
 |---|---|
 | Base / Surface / Hairline | `#15130F` / `#1F1C17` / `#2A261F` |
-| Text 主 / 次 / 三（chalk·steel） | `#ECE6D8` / `#C9C2B4` / `#6B6457` |
+| Text 主 / 次 / 三（chalk·steel） | `#ECE6D8` / `#C9C2B4` / `#9C9484` |
 | Ember 500 / 300 | `#E1652B` / `#F0875A` |
-| Recovery / Caution / Risk / Trust（仅判断时） | `#2F7D5B` / `#B7791F` / `#C2413A` / `#3267B7` |
+| Recovery / Caution / Risk / Trust（仅判断时） | `#2F7D5B` / `#C79A3A` / `#C2413A` / `#3267B7` |
 
 比例不变：中性 70–85% / 文字·线 10–20% / Ember 3–8% / 语义仅判断时。§3.1 的 Graphite / Steel / Chalk 仍是参考族与浅色 theme 取值。
 

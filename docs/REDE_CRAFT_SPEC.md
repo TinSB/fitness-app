@@ -1,9 +1,9 @@
 # Rede 品质层 + 工艺规格 + 文件级路线 (Craft Layer & Build Spec)
 
-> **状态:** 提案 / 待批准 · **日期:** 2026-06-08 · **聚焦:** Rede（方法跑通后套用 Larder）
+> **状态:** Canonical（2026-06-11 自 .ai-tmp 工作稿转正，登记于 DOCS_MANIFEST）· **日期:** 2026-06-08（首版） · **聚焦:** Rede（方法跑通后套用 Larder）
 > **为什么有这份:** 上一版设计路线稿（早期 `DESIGN_SYSTEM_ROADMAP` 工作稿，未进仓库、已并入本文 Part C）只给了 token 与流程。但 **token 只保证「一致」，不保证「不通用」**。AI 做设计必然回归训练均值＝组件堆叠。这份补上 token **之上**的一层——把「锻铁/Emberline」这种词，变成可机器复刻、可被 CI 强制的规格。
 > **配套:** 本会话已渲染 `Rede Today` 的 generic→crafted 对比图，本文 Part B 是其像素级落地。
-> **边界:** 仍是规格与流程，不含可运行代码；实现交 Claude Code。
+> **实现状态（2026-06-13）:** 本工艺层已在 `ios/Rede` 原生落地并随 App shipping——`RedeTheme`（locked tokens：base `#15130F` / ember `#E1652B` 等）、`RedeComponents`（`ForgedCard` / `ForgedGrain` / `EngraveDivider` 等签名组件）、`quality-gate.cmd` 的每视图 ForgedCard 预算门禁。以下 Part B–K 的 Phase / brief 为规格与历史规划，落地实现以代码为准。
 > **⚠ 2026-06-08 修正（先读 Part J）:** 通读全部设计文档后发现 A–I 里有我自造、与 canonical 冲突的参数。视觉真源 ＝ `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md`。凡冲突**以 Part J 为准**：导航是 **4 tab（Today / Train / Progress / Plan）**，Settings 非 tab；并有 Recovery / Caution / Risk / Trust 语义色。**⚠ 视觉最终 locked 以 §11 / Part J·J8 / Part K 为准（owner 定的暖底 `#15130F` / Ember `#E1652B` / 卡片 12px / 仪表标签 letterspacing / SF Pro tabular）——本行早期写的 `#111312` / `#E85D2A` / 8pt / ls0 已被 J8 反转，勿用。**
 
 ---
@@ -383,7 +383,7 @@ public enum IPSpace { public static let md: CGFloat = 16 }
 | caption | 12 | 元信息、子标签 | 400 | |
 | overline | 11 | 字段 / 区块标签 | 400 | （仅此档可 letterspacing） |
 
-规则：相邻档对比 ≥ ~1.3×；每屏用 3–4 档 + **一个 display / title 时刻**；数字档 tabular mono；只两种字重（400 / 500）；**禁止全屏统一字号**。各档映射 iOS Text Style 以继承 Dynamic Type（至 AX5）。
+规则：相邻档对比 ≥ ~1.3×；每屏用 3–4 档 + **一个 display / title 时刻**；数字档 tabular mono；正文档位以 400 / 500 为主，hero / 铭牌 / 仪表数字按 Part J·K 升至 **600 / 700**（与 `ios/Rede/RedeTheme` 实现一致：regular/medium/semibold/bold）；**禁止全屏统一字号**。各档映射 iOS Text Style 以继承 Dynamic Type（至 AX5）。
 
 → 这套进 `foundation/type.json`（决策 C1 的共享 foundation；Larder 已有同构 8 级字阶，Rede 对齐——**比例共享、字族各自**）。
 

@@ -43,6 +43,12 @@ assets/clay.zip
 assets/clay/_*
 assets/clay/__pycache__/
 assets/clay/.~lock*
+# Render-workspace scratch (build scripts, masters, blueprint, handoff brief) —
+# local-only Larder/Blender pipeline, must never be committed into the repo tree.
+assets/clay/*.py
+assets/clay/*.xlsx
+assets/clay/CLAY_*.md
+assets/clay/masters/
 
 # Local tool launchers
 .claude/launch.json

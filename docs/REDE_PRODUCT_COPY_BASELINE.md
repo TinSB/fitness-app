@@ -370,7 +370,9 @@ Plan 禁止:
 
 Settings 里不要营销。只说事实。
 
-示例:
+> **实现状态（2026-06-13）:** 下面的 Apple Health / HealthKit 文案是 **FF 目标表面，当前未实现**——代码里没有 HealthKit。已 ship 的 Settings 隐私串遵循「未上线不提」（HealthKit 实装时再加这段）。本段保留为 HealthKit slice 落地时的文案基线。已 ship 的设置文案以 `RedeL10n` 实际串为准。
+
+示例（FF·HealthKit slice 落地时启用）:
 
 中文:
 

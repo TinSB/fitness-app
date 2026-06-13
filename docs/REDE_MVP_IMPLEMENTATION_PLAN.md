@@ -33,7 +33,7 @@
 7. App 里有一个「反馈」入口，我能一键把意见发给团队。
 8. 我能在「设置」里切换中文 / 英文，两种语言下界面文案都完整、自然，没有漏翻或机翻腔。
 
-> 验证方式：§8 提供 TestFlight 装机后的傻瓜手动验收清单（对应上面 8 条）。能自动测的（引擎/持久化）走 `swift test`，App 行为走 Xcode 模拟器 + TestFlight 真机。
+> 验证方式：上面这 8 条**本身就是** TestFlight 装机后的傻瓜手动验收清单（§7 上线就绪清单逐项对应）。能自动测的（引擎/持久化）走 `swift test`，App 行为走 Xcode 模拟器 + TestFlight 真机。（§8 是获客与验证编排，不是验收清单。）
 
 ---
 
@@ -179,13 +179,13 @@
 | **M6-1** App 元信息 | App 图标、启动屏、`Info.plist`（无网络用途声明）、显示名/版本号 | Xcode 构建产物图标/名称正确 | 改 `project.pbxproj`/manifest 需在 PR 说明理由 |
 | **M6-2** 本地优先隐私 + 免责 | 隐私说明（本地存储、无第三方数据、无网络）、训练健康免责文案落地 | 文案与 Master/README 免责一致（fitness 非 medical） | 守 fitness 定位，不触发 Apple 1.4.1 |
 | **M6-3** 反馈入口 | App 内反馈（邮件/表单链接，外部，不算 app runtime 网络真相） | 能一键发反馈 | 不引入 runtime analytics（见 §8） |
-| **M6-4** TestFlight 构建分发 | Archive→上传 App Store Connect→TestFlight 内测组→分发链接 | 真机从 TestFlight 装上、跑通 §1 全部 7 条 | 不公开上架；公开上架后置 |
+| **M6-4** TestFlight 构建分发 | Archive→上传 App Store Connect→TestFlight 内测组→分发链接 | 真机从 TestFlight 装上、跑通 §1 全部 8 条 | 不公开上架；公开上架后置 |
 
 > **里程碑顺序铁律**：M0→M1→M2→M3→M4 必须按序（后者依赖前者数据地基）；M5 可与 M2–M4 部分并行；M6 在 M2–M4 闭环可演示后启动。
 
 ---
 
-## 6. 验证与验证（怎么证明每一步真的可用）
+## 6. 验证与验收（怎么证明每一步真的可用）
 
 | 改动类型 | 命令 / 方式 |
 |---|---|
@@ -193,7 +193,7 @@
 | 单包逻辑（Domain/DataHealth/TrainingDecision/Persistence/LocalSnapshot） | `cd ios/packages/<PackageName> && swift test` |
 | 全包回归 | `for package in ios/packages/*; do [ -f "$package/Package.swift" ] && (cd "$package" && swift test) \|\| exit 1; done` |
 | App 行为（UI/导航/写入/HealthKit/通知/widget wiring） | `xcodebuild -project ios/Rede.xcodeproj -scheme Rede -destination 'generic/platform=iOS Simulator' build` + 模拟器手测 |
-| 上线真机 | TestFlight 真机跑 §8 验收清单 |
+| 上线真机 | TestFlight 真机跑 §1 全部 8 条验收 |
 
 规则：
 - **每个 slice 完成必须贴真实测试输出**（不是「应该能过」）。

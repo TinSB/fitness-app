@@ -30,7 +30,7 @@
 | `nameZh` / `nameEn` | ✓ | 本地化展示名是**动作事实**（规格原文），不再住 L10n 字典 |
 | `movementPattern` | ✓ | 必须 ∈ pattern 注册表 |
 | `primaryMuscle` / `secondaryMuscles` | ✓ / 可空 | 必须 ∈ 肌群注册表 |
-| `equipment` | ✓ | 必须 ∈ 器械注册表（9 类：barbell · dumbbell · cable · plate-loaded · selectorized · bodyweight · assisted · band · kettlebell）。**machine 合并档已拆分（2026-06-11，原 id 原地改值）**：plate-loaded=挂片式、selectorized=插销配重栈（步长见 §8 LoadGrid 真实档位）；后四类待对应 loadType 闸放行 |
+| `equipment` | ✓ | 必须 ∈ 器械注册表 `EquipmentRegistry.allClasses`（**当前 7 类**：barbell · dumbbell · cable · plate-loaded · selectorized · bodyweight · smith）。**machine 合并档已拆分（2026-06-11，原 id 原地改值）**：plate-loaded=挂片式、selectorized=插销配重栈、smith=史密斯导轨架（wave-8 新增）（步长见 §8 LoadGrid 真实档位）；`assisted · band · kettlebell` 仍待对应 loadType 闸放行（尚未进注册表） |
 | `kind` | ✓ | 训练学角色：compound（主项）/ accessory（辅助容量）/ isolation（孤立）——原 `machine` 档改名（schema PR 2026-06-11），器械语义剥离给 `isGuided` |
 | `substitutionGroups` | ✓ | 替代族数组（§6.2 落地 2026-06-11）：**首元素=主族**，引擎现仅消费主族（与单值时代行为等价）；副族留给替换候选扩展，填数据须 owner 审定 |
 | `startWeightKg` | ✓ | 目录起步值；口径=系统逻辑 §153（哑铃单只/杠铃总重/配重片读数）；新批次默认带「待真机校准」标签 |
