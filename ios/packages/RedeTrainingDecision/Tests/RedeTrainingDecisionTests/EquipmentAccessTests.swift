@@ -72,6 +72,9 @@ final class EquipmentAccessTests: XCTestCase {
         XCTAssertTrue(ids.contains("db-calf-raise"))
         XCTAssertTrue(ids.contains("db-leg-curl")) // wave-1：knee-flexion 缺口已清
         XCTAssertFalse(prescription.dayReasons.contains(.slotUnfilled(pattern: "knee-flexion")))
+        // wave-5（审查 M-1）：腿屈伸仅选重机，家用预期缺口（正面锁定，与覆盖矩阵双保险）
+        XCTAssertTrue(prescription.dayReasons.contains(.slotUnfilled(pattern: "knee-extension")))
+        XCTAssertTrue(ids.contains("db-crunch")) // 腹肌槽有哑铃版（db-crunch），家用可填
     }
 
     // 家用哑铃 · 拉力日：垂直拉由 db-pullover 补位，rear-delt 由 rear-delt-fly 补位
@@ -93,7 +96,7 @@ final class EquipmentAccessTests: XCTestCase {
     func testHomeDumbbellUpperDayAllSlotsFilled() throws {
         let prescription = try XCTUnwrap(try plan(scenario: "home-dumbbell", today: "2026-06-11", split: "upper-lower"))
         XCTAssertEqual(prescription.dayCode, "upper")
-        XCTAssertEqual(prescription.exercises.count, 7) // 7 槽全填
+        XCTAssertEqual(prescription.exercises.count, 8) // wave-5：+shrug（db-shrug 家用可填）
         XCTAssertEqual(equipments(prescription), ["dumbbell"])
         XCTAssertTrue(prescription.exercises.map(\.exerciseId).contains("db-pullover"))
         XCTAssertFalse(prescription.dayReasons.contains { if case .slotUnfilled = $0 { return true }; return false })
@@ -110,6 +113,9 @@ final class EquipmentAccessTests: XCTestCase {
         XCTAssertTrue(ids.contains("db-lunge")) // usedIds 防重：两个深蹲槽各取其一
         XCTAssertTrue(ids.contains("db-leg-curl")) // wave-1：knee-flexion 缺口已清
         XCTAssertFalse(prescription.dayReasons.contains(.slotUnfilled(pattern: "knee-flexion")))
+        // wave-5（审查 M-1）：腿屈伸仅选重机，家用预期缺口（正面锁定，与覆盖矩阵双保险）
+        XCTAssertTrue(prescription.dayReasons.contains(.slotUnfilled(pattern: "knee-extension")))
+        XCTAssertTrue(ids.contains("db-crunch")) // 腹肌槽有哑铃版（db-crunch），家用可填
     }
 
     // 审查 M-3：minimal 场景端到端（与 home-dumbbell 同白名单，仍单独锁一条）

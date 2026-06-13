@@ -16,7 +16,7 @@ final class SessionSetPlanTests: XCTestCase {
     func testStraightSetExpansionForFirstExposureUpperDay() throws {
         let plan = try makePlan()
         XCTAssertEqual(plan.dayCode, "upper")
-        XCTAssertEqual(plan.exercises.count, 7)
+        XCTAssertEqual(plan.exercises.count, 8) // upper +shrug（wave-5）
 
         let first = try XCTUnwrap(plan.exercises.first)
         XCTAssertEqual(first.exerciseId, "db-bench-press")
@@ -45,21 +45,21 @@ final class SessionSetPlanTests: XCTestCase {
 
     func testSetCountsFollowPrescription() throws {
         let plan = try makePlan()
-        XCTAssertEqual(plan.exercises.map { $0.sets.count }, [3, 3, 3, 3, 3, 2, 2])
+        XCTAssertEqual(plan.exercises.map { $0.sets.count }, [3, 3, 3, 3, 3, 2, 2, 3]) // +shrug
     }
 
     // 休息建议是验收的一部分：五个训练日的 rest 序列逐一精确锁定（slot 合同）
     func testRestSecondsLockedForAllFiveTrainingDays() throws {
-        XCTAssertEqual(try makePlan().exercises.map(\.restSeconds), [150, 120, 120, 90, 60, 60, 60]) // upper
+        XCTAssertEqual(try makePlan().exercises.map(\.restSeconds), [150, 120, 120, 90, 60, 60, 60, 60]) // upper +shrug
         XCTAssertEqual(
             try makePlan(appDataJSON: TestSupport.appDataJSON(historyDates: ["2026-06-07"])).exercises.map(\.restSeconds),
-            [150, 120, 120, 75, 60] // lower
+            [150, 120, 120, 75, 75, 60, 60] // lower +knee-extension +core
         )
         let ppl = #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}}"#
         XCTAssertEqual(try makePlan(appDataJSON: ppl).exercises.map(\.restSeconds), [180, 120, 120, 75, 60, 75]) // push-a
         let pplOne = #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}, "history": \#(TestSupport.historyJSON(dates: ["2026-06-07"]))}"#
-        XCTAssertEqual(try makePlan(appDataJSON: pplOne).exercises.map(\.restSeconds), [120, 120, 150, 60, 75, 75]) // pull-a
+        XCTAssertEqual(try makePlan(appDataJSON: pplOne).exercises.map(\.restSeconds), [120, 120, 150, 60, 75, 75, 60]) // pull-a +shrug
         let pplTwo = #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}, "history": \#(TestSupport.historyJSON(dates: ["2026-06-05", "2026-06-07"]))}"#
-        XCTAssertEqual(try makePlan(appDataJSON: pplTwo).exercises.map(\.restSeconds), [210, 180, 120, 75, 60]) // legs-a
+        XCTAssertEqual(try makePlan(appDataJSON: pplTwo).exercises.map(\.restSeconds), [210, 180, 120, 75, 75, 60, 60]) // legs-a +knee-extension +core
     }
 }

@@ -52,12 +52,11 @@
 1. **golden 锁**：目录任何改动跑全量 golden；处方变化必须显式改 golden 留痕。
 2. **rank 改动 = 行为改动**：调 rank 等同调产品行为，PR 必须说明理由。
 3. **覆盖矩阵 golden**：每个槽位 pattern × 每种器械场景 → 必须有候选；缺口进「已知缺口清单」（golden 锁定）。新增缺口 = 门禁红。
-   **当前已知缺口：无**——P0 首跑抓到的 4 条（home-dumbbell 的 knee-flexion×2 /
-   push-a 第二平推 / pull-a 第二划船）已由 **wave-1（2026-06-11）** 三条新动作全部清空：
-   `db-leg-curl`（哑铃腿弯举）、`db-floor-press`（哑铃地板卧推）、
-   `chest-supported-db-row`（上斜凳哑铃划船）——**owner 逐条审定通过
-   （2026-06-11，流水线 §4.2 首次执行）**。俯卧撑系 bodyweight，留给
-   bodyweight wave（loadType 闸内）。
+   P0 首跑抓到的 4 条已由 wave-1 清空（db-leg-curl/db-floor-press/chest-supported-db-row，
+   owner 审定通过）。**wave-5（2026-06-13）新增「伸膝」动作类后产生 4 条新缺口
+   （如实，非 bug）**：`home-dumbbell|legs-a|knee-extension`、`home-dumbbell|lower|knee-extension`、
+   `minimal|legs-a|knee-extension`、`minimal|lower|knee-extension`——腿屈伸 leg-extension
+   仅选重机器械，家用哑铃/极简场景配不出，无哑铃版可填（区别于耸肩/腹肌有哑铃版无缺口）。
 4. **名字全覆盖**：每条目双语名非空、不回退裸 id（测试锁）。
 5. **id 唯一 + 永生**：重复 id / 删除已发布 id = 测试红。
 
@@ -73,7 +72,7 @@
 ## 5. 路线
 
 - **P0（本文档落地时）**：JSON 化现有 31 条（1:1 迁移，golden 证明零行为变化）+ rank 匹配 + 名字迁入目录 + 注册表/覆盖矩阵/解码完整性测试套
-- **P1（TestFlight 期）**：~~先过 §6.1 Blocker schema PR~~（**已落地**）→ ~~wave-1 清缺口批~~（3 条）→ ~~§6.2 Should 第二批~~（loadFactor/多隶属数组等八项）→ ~~wave-2 四器械类核心补全~~（**已入库 + owner 审定通过 2026-06-11，15 条 → 49 条**：rank 全尾部追加=处方零变化；随批定案：db-pullover 留垂直拉族、hip-thrust 归铰链族、直臂下压独立孤立族不当复合替补）→ ~~wave-3 五器械类补全~~（**已入库 + owner 审定通过 2026-06-13，12 条 → 61 条**：各族薄弱处补真实动作，rank 全尾部追加=处方零变化；审定随批定：肩推统一 shoulder 口径、T 杠划船不固定轨道、cable-pull-through 改 accessory）→ ~~wave-4 五器械类补全~~（**已入库 + owner 审定通过 2026-06-13，12 条 → 73 条**：常见变体补族厚度，rank 全尾部追加=处方零变化；审定随批定：下斜卧推归水平推变体、地雷推举照 T 杠先例归 plate-loaded、相扑硬拉主肌群 glutes）→ 后续 wave 往 ~100 推；~~machine 拆分~~（**已落地 + owner 审定通过 2026-06-11**：9 条原 id 原地改值——plate-loaded 3 条/selectorized 6 条；槽位器械偏好升类集合匹配；行为零变化 golden 实证）；bodyweight/band/kettlebell 类各有前置闸
+- **P1（TestFlight 期）**：~~先过 §6.1 Blocker schema PR~~（**已落地**）→ ~~wave-1 清缺口批~~（3 条）→ ~~§6.2 Should 第二批~~（loadFactor/多隶属数组等八项）→ ~~wave-2 四器械类核心补全~~（**已入库 + owner 审定通过 2026-06-11，15 条 → 49 条**：rank 全尾部追加=处方零变化；随批定案：db-pullover 留垂直拉族、hip-thrust 归铰链族、直臂下压独立孤立族不当复合替补）→ ~~wave-3 五器械类补全~~（**已入库 + owner 审定通过 2026-06-13，12 条 → 61 条**：各族薄弱处补真实动作，rank 全尾部追加=处方零变化；审定随批定：肩推统一 shoulder 口径、T 杠划船不固定轨道、cable-pull-through 改 accessory）→ ~~wave-4 五器械类补全~~（**已入库 + owner 审定通过 2026-06-13，12 条 → 73 条**：常见变体补族厚度，rank 全尾部追加=处方零变化；审定随批定：下斜卧推归水平推变体、地雷推举照 T 杠先例归 plate-loaded、相扑硬拉主肌群 glutes）→ ~~wave-5 新动作类~~（**已入库 + owner 审定通过 2026-06-13，6 条 → 79 条 · 行为变化**：腿屈伸/耸肩/腹肌三个新 pattern + 新槽位——腿日加腿屈伸+卷腹、拉/上肢日加耸肩，goldens 已改留痕；审定随批定：腹肌放腿日末尾 1-2×/周、耸肩在拉日+上肢日）→ 后续 wave 往 ~100 推；~~machine 拆分~~（**已落地 + owner 审定通过 2026-06-11**：9 条原 id 原地改值——plate-loaded 3 条/selectorized 6 条；槽位器械偏好升类集合匹配；行为零变化 golden 实证）；bodyweight/band/kettlebell 类各有前置闸
 - **P2（FF）**：几百动作 + 肌群贡献权重（contributionModelVersion）+ TemplateGenerator 按规格消费 `ExerciseCatalogSnapshot`
 
 ## 6. P1 schema 修订案（2026-06-11 二审定案——wave 填充的前置闸）

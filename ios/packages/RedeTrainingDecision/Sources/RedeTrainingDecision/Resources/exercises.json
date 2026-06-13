@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "wave-4",
+  "catalogVersion": "wave-5",
   "exercises": [
     {
       "id": "bench-press",
@@ -1436,6 +1436,118 @@
       "loadFactor": 1.0,
       "isGuided": true,
       "rank": 720
+    },
+    {
+      "id": "leg-extension",
+      "movementPattern": "knee-extension",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [],
+      "equipment": "selectorized",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "knee-extension"
+      ],
+      "startWeightKg": 30.0,
+      "nameZh": "腿屈伸",
+      "nameEn": "Leg extension",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 730
+    },
+    {
+      "id": "barbell-shrug",
+      "movementPattern": "shrug",
+      "primaryMuscle": "traps",
+      "secondaryMuscles": [
+        "upper-back"
+      ],
+      "equipment": "barbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "shrug"
+      ],
+      "startWeightKg": 60.0,
+      "nameZh": "杠铃耸肩",
+      "nameEn": "Barbell shrug",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 740
+    },
+    {
+      "id": "db-shrug",
+      "movementPattern": "shrug",
+      "primaryMuscle": "traps",
+      "secondaryMuscles": [
+        "upper-back"
+      ],
+      "equipment": "dumbbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "shrug"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "哑铃耸肩",
+      "nameEn": "DB shrug",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 750
+    },
+    {
+      "id": "cable-crunch",
+      "movementPattern": "core",
+      "primaryMuscle": "core",
+      "secondaryMuscles": [],
+      "equipment": "cable",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "core"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "绳索卷腹",
+      "nameEn": "Cable crunch",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 760
+    },
+    {
+      "id": "ab-crunch-machine",
+      "movementPattern": "core",
+      "primaryMuscle": "core",
+      "secondaryMuscles": [],
+      "equipment": "selectorized",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "core"
+      ],
+      "startWeightKg": 30.0,
+      "nameZh": "卷腹机",
+      "nameEn": "Ab crunch machine",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 770
+    },
+    {
+      "id": "db-crunch",
+      "movementPattern": "core",
+      "primaryMuscle": "core",
+      "secondaryMuscles": [],
+      "equipment": "dumbbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "core"
+      ],
+      "startWeightKg": 10.0,
+      "nameZh": "负重卷腹",
+      "nameEn": "Weighted crunch",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 780
     }
   ]
 }

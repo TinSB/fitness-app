@@ -70,22 +70,27 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "rear-delt", sets: 3, repMin: 12, repMax: 20, rest: 60),
                 Slot(pattern: "curl", sets: 3, repMin: 8, repMax: 12, rest: 75),
                 Slot(pattern: "curl", sets: 2, repMin: 10, repMax: 15, rest: 75),
+                Slot(pattern: "shrug", sets: 3, repMin: 10, repMax: 15, rest: 60),
             ]
         case "legs-a":
             return [
                 Slot(pattern: "squat-pattern", kind: "compound", equipment: ["barbell"], sets: 4, repMin: 5, repMax: 8, rest: 210),
                 Slot(pattern: "hinge", equipment: ["barbell"], sets: 3, repMin: 6, repMax: 10, rest: 180),
                 Slot(pattern: "squat-pattern", kind: "accessory", sets: 3, repMin: 10, repMax: 15, rest: 120),
+                Slot(pattern: "knee-extension", sets: 3, repMin: 12, repMax: 15, rest: 75),
                 Slot(pattern: "knee-flexion", sets: 3, repMin: 10, repMax: 15, rest: 75),
                 Slot(pattern: "calf-raise", sets: 4, repMin: 10, repMax: 20, rest: 60),
+                Slot(pattern: "core", sets: 3, repMin: 12, repMax: 20, rest: 60),
             ]
         case "lower":
             return [
                 Slot(pattern: "squat-pattern", kind: "compound", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 6, repMax: 10, rest: 150),
                 Slot(pattern: "hinge", equipment: ["dumbbell"], sets: 3, repMin: 8, repMax: 12, rest: 120),
                 Slot(pattern: "squat-pattern", kind: "accessory", sets: 3, repMin: 10, repMax: 15, rest: 120),
+                Slot(pattern: "knee-extension", sets: 3, repMin: 12, repMax: 15, rest: 75),
                 Slot(pattern: "knee-flexion", sets: 3, repMin: 10, repMax: 15, rest: 75),
                 Slot(pattern: "calf-raise", sets: 4, repMin: 12, repMax: 20, rest: 60),
+                Slot(pattern: "core", sets: 3, repMin: 12, repMax: 20, rest: 60),
             ]
         default: // "upper"
             return [
@@ -96,6 +101,7 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "lateral-raise", sets: 3, repMin: 12, repMax: 20, rest: 60),
                 Slot(pattern: "triceps-extension", sets: 2, repMin: 10, repMax: 15, rest: 60),
                 Slot(pattern: "curl", equipment: ["dumbbell"], sets: 2, repMin: 10, repMax: 15, rest: 60),
+                Slot(pattern: "shrug", sets: 3, repMin: 10, repMax: 15, rest: 60),
             ]
         }
     }

@@ -16,6 +16,7 @@ final class CatalogContractTests: XCTestCase {
         "horizontal-press", "incline-press", "fly", "vertical-pull", "horizontal-pull",
         "rear-delt", "vertical-press", "lateral-raise", "curl", "triceps-extension",
         "squat-pattern", "hinge", "knee-flexion", "calf-raise",
+        "knee-extension", "shrug", "core",   // wave-5：新增动作类（新槽位，行为变化）
     ]
     /// 器械类注册表已升运行时单一真源（EquipmentRegistry，§6.1）——测试直接引用，
     /// 不再各抄一份字面量。
@@ -25,17 +26,17 @@ final class CatalogContractTests: XCTestCase {
     private let knownMuscles: Set<String> = [
         "chest", "back", "shoulder", "front-delt", "side-delt", "rear-delt", "upper-back",
         "biceps", "triceps", "forearm", "quads", "hamstrings", "glutes", "calves",
-        "core", "lower-back",
+        "core", "lower-back", "traps",   // wave-5：耸肩主肌群
     ]
 
     // MARK: - 解码完整性
 
     func testBundledCatalogIntegrity() {
-        XCTAssertEqual(catalog.catalogVersion, "wave-4")
-        XCTAssertEqual(catalog.entries.count, 73)
+        XCTAssertEqual(catalog.catalogVersion, "wave-5")
+        XCTAssertEqual(catalog.entries.count, 79)
         // id 唯一 + 永生合同的前半（唯一）；rank 唯一保证匹配全序确定
-        XCTAssertEqual(Set(catalog.entries.map(\.id)).count, 73, "id 重复")
-        XCTAssertEqual(Set(catalog.entries.map(\.rank)).count, 73, "rank 重复——匹配次序歧义")
+        XCTAssertEqual(Set(catalog.entries.map(\.id)).count, 79, "id 重复")
+        XCTAssertEqual(Set(catalog.entries.map(\.rank)).count, 79, "rank 重复——匹配次序歧义")
         // 锚点：迁移自原数组的首尾条目
         XCTAssertEqual(catalog.entry(id: "bench-press")?.rank, 0)
         XCTAssertEqual(catalog.entry(id: "bench-press")?.startWeightKg, 60)
@@ -233,7 +234,12 @@ final class CatalogContractTests: XCTestCase {
         // （home-dumbbell 的 knee-flexion×2 / push-a 第二平推 / pull-a 第二划船），
         // wave-1（2026-06-11）以 db-leg-curl / db-floor-press /
         // chest-supported-db-row 三条全部清空。新增缺口 = 红。
-        let knownGaps: Set<String> = []
+        // wave-5（2026-06-13）：腿屈伸 leg-extension 仅选重机，家用/极简（哑铃 only）
+        // 配不出 → 如实留缺口（与内容系统文档 §3 同步）。
+        let knownGaps: Set<String> = [
+            "home-dumbbell|legs-a|knee-extension", "home-dumbbell|lower|knee-extension",
+            "minimal|legs-a|knee-extension", "minimal|lower|knee-extension",
+        ]
         var found: Set<String> = []
         let scenarios: [(String?, String)] = [
             (nil, "commercial"), ("home-dumbbell", "home-dumbbell"),
