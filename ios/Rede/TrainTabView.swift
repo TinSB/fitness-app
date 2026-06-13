@@ -626,8 +626,11 @@ struct TrainTabView: View {
         return VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Overline(text: s.trainColSet).frame(width: 44, alignment: .leading)
-                Overline(text: s.trainColWeight).frame(maxWidth: .infinity, alignment: .leading)
-                Overline(text: s.trainColReps).frame(width: 60, alignment: .leading)
+                if !currentIsBodyweight {
+                    Overline(text: s.trainColWeight).frame(maxWidth: .infinity, alignment: .leading)
+                }
+                // 自重无重量列：次数接管弹性空间（整列移除而非留空，2026-06-13 owner 反馈）
+                Overline(text: s.trainColReps).frame(maxWidth: currentIsBodyweight ? .infinity : 60, alignment: .leading)
                 Overline(text: s.trainColRir).frame(width: 44, alignment: .leading)
                 Spacer().frame(width: 22)
             }
@@ -639,18 +642,20 @@ struct TrainTabView: View {
                 case .done(let obs):
                     setRow(
                         number: plannedSet.index,
-                        weight: currentIsBodyweight ? "—" : s.formatKg(obs.weightKg),
+                        weight: s.formatKg(obs.weightKg),
                         reps: "\(obs.reps)",
                         rir: obs.rir.map { s.formatRir($0) } ?? "—",
-                        marker: .done
+                        marker: .done,
+                        hideWeight: currentIsBodyweight
                     )
                 case .skipped:
                     setRow(
                         number: plannedSet.index,
-                        weight: currentIsBodyweight ? "—" : s.formatKg(plannedSet.targetWeightKg),
+                        weight: s.formatKg(plannedSet.targetWeightKg),
                         reps: "\(plannedSet.targetReps)",
                         rir: "—",
-                        marker: .skipped
+                        marker: .skipped,
+                        hideWeight: currentIsBodyweight
                     )
                 case .active:
                     // 活动行与 hero 卡同源（用户真机反馈 2026-06-10：不能卡片跟随了表里还是计划值）：
@@ -659,20 +664,22 @@ struct TrainTabView: View {
                     let rec = flow.currentRecommendation
                     setRow(
                         number: plannedSet.index,
-                        weight: currentIsBodyweight ? "—" : s.formatKg(staging ? adjustWeight : (rec?.targetWeightKg ?? plannedSet.targetWeightKg)),
+                        weight: s.formatKg(staging ? adjustWeight : (rec?.targetWeightKg ?? plannedSet.targetWeightKg)),
                         reps: "\(staging ? adjustReps : (rec?.targetReps ?? plannedSet.targetReps))",
                         rir: "—",
-                        marker: .active
+                        marker: .active,
+                        hideWeight: currentIsBodyweight
                     )
                 case .pending:
                     // 未来行 = 引擎默认轨迹（执行事实是基线：按当前目标延续；不含未打勾的暂存——
                     // 暂存只在打勾后才会改变轨迹，回流合同口径）
                     setRow(
                         number: plannedSet.index,
-                        weight: currentIsBodyweight ? "—" : s.formatKg(flow.currentTargetWeightKg ?? plannedSet.targetWeightKg),
+                        weight: s.formatKg(flow.currentTargetWeightKg ?? plannedSet.targetWeightKg),
                         reps: "\(plannedSet.targetReps)",
                         rir: "—",
-                        marker: .pending
+                        marker: .pending,
+                        hideWeight: currentIsBodyweight
                     )
                 }
             }
@@ -681,7 +688,7 @@ struct TrainTabView: View {
 
     private enum RowMarker { case done, skipped, active, pending }
 
-    private func setRow(number: Int, weight: String, reps: String, rir: String, marker: RowMarker) -> some View {
+    private func setRow(number: Int, weight: String, reps: String, rir: String, marker: RowMarker, hideWeight: Bool = false) -> some View {
         let textColor: Color = switch marker {
         case .done: .redeT2
         case .active: .redeT1
@@ -690,8 +697,10 @@ struct TrainTabView: View {
         let isActive = marker == .active
         return HStack {
             Text("\(number)").frame(width: 44, alignment: .leading)
-            Text("\(weight) \(s.unitLabel)").frame(maxWidth: .infinity, alignment: .leading)
-            Text(reps).frame(width: 60, alignment: .leading)
+            if !hideWeight {
+                Text("\(weight) \(s.unitLabel)").frame(maxWidth: .infinity, alignment: .leading)
+            }
+            Text(reps).frame(maxWidth: hideWeight ? .infinity : 60, alignment: .leading)
             Text(rir).frame(width: 44, alignment: .leading)
             Group {
                 switch marker {
