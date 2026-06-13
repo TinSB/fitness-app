@@ -110,36 +110,31 @@ final class TrainFlowReducerTests: XCTestCase {
         XCTAssertEqual(state.replacements.first?.actualExerciseId, "db-bench-press")
     }
 
-    // §6.1 审查 M1：换动作后步长必须切到新动作的目录步长，
-    // 且组内疼痛回退立即按新步长走（P0 全 2.5 时 golden 看不住这条路径）
-    func testReplaceExerciseSwitchesStepToNewEntry() throws {
-        let amendedEntries = ExerciseCatalog.minimal.entries.map { entry -> ExerciseCatalogEntry in
-            guard entry.id == "db-bench-press" else { return entry }
-            return ExerciseCatalogEntry(
-                id: entry.id, nameZh: entry.nameZh, nameEn: entry.nameEn,
-                movementPattern: entry.movementPattern, primaryMuscle: entry.primaryMuscle,
-                secondaryMuscles: entry.secondaryMuscles, equipment: entry.equipment,
-                kind: entry.kind, substitutionGroups: entry.substitutionGroups,
-                startWeightKg: entry.startWeightKg, loadType: entry.loadType,
-                progressionStepKg: 1.25, isGuided: entry.isGuided,
-                rank: entry.rank, deprecated: entry.deprecated
-            )
-        }
-        let amended = ExerciseCatalog(catalogVersion: "test", entries: amendedEntries)
-        let input = try TestSupport.makeInput(
-            appDataJSON: #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}}"#,
-            todayISO: "2026-06-09"
-        )
-        let verdict = TodayVerdictEngine.evaluate(input)
-        let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict, catalog: amended))
-        var state = TrainFlowState(prescription: prescription, catalog: amended)
-        XCTAssertEqual(state.currentExercise?.stepKg, 2.5) // bench-press 原步长
+    // 档位系统（2026-06-13）：换动作后步长按「换入动作器械 × 用户单位」重算
+    // （哑铃 2.5kg → 选重机 5kg），组内疼痛回退立即按新档走。
+    func testReplaceSwitchesStepPerEquipmentGrid() {
+        let cat = ExerciseCatalog(catalogVersion: "test", entries: [
+            ExerciseCatalogEntry(id: "db-x", movementPattern: "curl", primaryMuscle: "biceps",
+                equipment: "dumbbell", kind: "isolation", substitutionGroups: ["g"], startWeightKg: 10, rank: 0),
+            ExerciseCatalogEntry(id: "sel-x", movementPattern: "curl", primaryMuscle: "biceps",
+                equipment: "selectorized", kind: "isolation", substitutionGroups: ["g"], startWeightKg: 20, rank: 10),
+        ])
+        let presc = TodayPrescription(dayCode: "push-a", exercises: [
+            ExercisePrescriptionPlan(
+                exerciseId: "db-x", sets: 3, restSeconds: 60, repLowerBound: 8, repUpperBound: 12,
+                targetReps: 10, targetWeightKg: 30, targetRir: 2, previousWeightKg: nil,
+                previousTopReps: nil, nextProjectedWeightKg: 32.5, progressionStepKg: 2.5,
+                change: .start, reason: .firstExposure
+            ),
+        ], dayReasons: [])
+        var state = TrainFlowState(prescription: presc, catalog: cat) // 默认 kg
+        XCTAssertEqual(state.currentExercise?.stepKg, 2.5) // 哑铃 kg 档
 
-        state.replaceCurrentExercise(with: "db-bench-press")
-        XCTAssertEqual(state.currentExercise?.stepKg, 1.25, "步长必须跟换入动作走")
+        state.replaceCurrentExercise(with: "sel-x")
+        XCTAssertEqual(state.currentExercise?.stepKg, 5, "选重机 kg 档 = 5（宁大勿小），步长跟器械走")
         state.logSet(obs(30, 6, rir: 2, pain: true))
         state.restFinished()
-        XCTAssertEqual(state.currentRecommendation?.targetWeightKg, 28.75, "疼痛回退一档 = 新动作步长 1.25")
+        XCTAssertEqual(state.currentRecommendation?.targetWeightKg, 25, "疼痛回退一档 = 选重机 5kg")
     }
 
     // 疼痛登记：当前组事实留痕 + 下一组建议自动保守（引擎安全瀑布）

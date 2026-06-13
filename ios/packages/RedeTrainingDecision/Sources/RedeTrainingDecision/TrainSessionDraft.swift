@@ -32,7 +32,9 @@ public struct TrainSessionDraft: Equatable, Sendable, Codable {
     }
 
     /// nil = 重放失败（如 catalog 漂移）——调用方应放弃恢复而非展示错误状态。
-    public func restoreFlow(allowedEquipment: Set<String>? = nil) -> TrainFlowState? {
-        TrainFlowState.restore(prescription: prescription, events: events, allowedEquipment: allowedEquipment)
+    /// loadUnit 生产路径必须显式传当前档案单位（SessionStore 已传）；default .kg
+    /// 仅为测试便利，不得在生产依赖（否则磅用户当日恢复后步长回退 kg）。
+    public func restoreFlow(allowedEquipment: Set<String>? = nil, loadUnit: LoadUnit = .kg) -> TrainFlowState? {
+        TrainFlowState.restore(prescription: prescription, events: events, allowedEquipment: allowedEquipment, loadUnit: loadUnit)
     }
 }

@@ -54,6 +54,9 @@ public struct CleanProfile: Equatable, Sendable {
     public let weeklyTrainingDays: Int?
     /// FR-EQ1（2026-06-11）：器械场景，只认已知档位（builder 校验），引擎据此过滤目录。
     public let equipmentScenario: String?
+    /// 重量单位（kg/lb，builder 校验未知→nil）：引擎按单位选真实档位（LoadGrid，
+    /// 2026-06-13）——磅用户处方落 5lb 真实格子，不再报配不出的 49.5lb。
+    public let unitSystem: String?
 
     public init(
         trainingLevel: String? = nil,
@@ -62,7 +65,8 @@ public struct CleanProfile: Equatable, Sendable {
         heightCm: Double? = nil,
         weightKg: Double? = nil,
         weeklyTrainingDays: Int? = nil,
-        equipmentScenario: String? = nil
+        equipmentScenario: String? = nil,
+        unitSystem: String? = nil
     ) {
         self.trainingLevel = trainingLevel
         self.sex = sex
@@ -71,6 +75,7 @@ public struct CleanProfile: Equatable, Sendable {
         self.weightKg = weightKg
         self.weeklyTrainingDays = weeklyTrainingDays
         self.equipmentScenario = equipmentScenario
+        self.unitSystem = unitSystem
     }
 }
 

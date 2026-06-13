@@ -31,7 +31,7 @@ final class CatalogContractTests: XCTestCase {
     // MARK: - 解码完整性
 
     func testBundledCatalogIntegrity() {
-        XCTAssertEqual(catalog.catalogVersion, "wave-2.1")
+        XCTAssertEqual(catalog.catalogVersion, "grid-1")
         XCTAssertEqual(catalog.entries.count, 49)
         // id 唯一 + 永生合同的前半（唯一）；rank 唯一保证匹配全序确定
         XCTAssertEqual(Set(catalog.entries.map(\.id)).count, 49, "id 重复")
@@ -61,7 +61,11 @@ final class CatalogContractTests: XCTestCase {
             XCTAssertFalse(entry.substitutionGroup.isEmpty, "替代族缺失: \(entry.id)")
             // §6.1 Blocker 字段合同
             XCTAssertTrue(EquipmentRegistry.loadTypes.contains(entry.loadType), "未知负重语义: \(entry.id) → \(entry.loadType)")
-            XCTAssertGreaterThan(entry.progressionStepKg, 0, "渐进步长非法: \(entry.id)")
+            // 档位系统（2026-06-13）：每条动作的器械都能解析出真实档位步长（>0），
+            // 且磅档位步长 ≥ 公斤档位步长（宁大勿小：5lb=2.27kg > 2.5kg? 否——但
+            // 同器械 lb 数值步长 5/10 折成 kg 后与 kg 档位 2.5/5 同量级，均 >0）
+            XCTAssertGreaterThan(LoadGrid.stepKg(equipment: entry.equipment, unit: .kg), 0, "kg 档位非法: \(entry.id)")
+            XCTAssertGreaterThan(LoadGrid.stepKg(equipment: entry.equipment, unit: .lb), 0, "lb 档位非法: \(entry.id)")
             // §6.2：替代族数组首元素=主族；吨位系数 ∈ [1,2]（双哑铃=2，其余=1）
             XCTAssertFalse(entry.substitutionGroups.isEmpty, "替代族数组空: \(entry.id)")
             XCTAssertFalse(entry.substitutionGroups[0].isEmpty, "主族空串: \(entry.id)")
@@ -101,41 +105,52 @@ final class CatalogContractTests: XCTestCase {
         XCTAssertNil(EquipmentAccess.allowed(for: nil))
     }
 
-    // MARK: - §6.1 行为合同：步长真被消费、loadType 真挡门
+    // MARK: - 档位系统行为合同（2026-06-13「宁大勿小」）：单位原生真实格子、loadType 真挡门
 
-    /// 把 lateral-raise 步长改 1.25：渐进 +一档必须是 +1.25 而不是全局 2.5。
-    func testPerEntryStepDrivesProgression() throws {
-        let entries = catalog.entries.map { entry -> ExerciseCatalogEntry in
-            guard entry.id == "lateral-raise" else { return entry }
-            return amendedCopy(entry, progressionStepKg: 1.25)
+    /// 磅用户：哑铃处方落 5lb 真实格子（不再报配不出的 49.5lb）。
+    /// db-bench-press 起步 30kg ×中级先验 0.75 = 22.5kg → 折磅 49.6lb → 吸附 50lb。
+    func testLbUserPrescriptionSnapsToRealizable5lbGrid() throws {
+        let appDataJSON = #"{"schemaVersion": 8, "userProfile": {"unitSystem": "lb", "trainingLevel": "intermediate"}, "programTemplate": {"splitType": "upper-lower", "daysPerWeek": 4}}"#
+        let input = try TestSupport.makeInput(appDataJSON: appDataJSON, todayISO: "2026-06-13")
+        let plan = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input))
+        // upper 日首槽 = 哑铃卧推；目标重量折成磅必须是 5 的整数倍
+        for ex in plan?.exercises ?? [] {
+            let lb = (ex.targetWeightKg * 2.204_622_621_8 * 2).rounded() / 2
+            XCTAssertEqual(lb.truncatingRemainder(dividingBy: 5), 0, accuracy: 0.01,
+                           "磅用户 \(ex.exerciseId) 处方 \(lb)lb 不在 5lb 真实格子上")
         }
-        let amended = ExerciseCatalog(catalogVersion: "test", entries: entries)
-        // 3 场历史（隔天，DataHealth 要求 id + completed）→ 今天轮回 push-a
-        // （含 lateral-raise）；上次 7.5kg 全组打满 repMax(20)、RIR 充足 → +一档
-        let sessions = ["2026-06-04", "2026-06-06", "2026-06-08"].enumerated().map { index, date in
-            #"{"id": "s\#(index)", "date": "\#(date)", "completed": true, "exercises": [{"exerciseId": "lateral-raise", "sets": [{"weight": 7.5, "reps": 20, "rir": 2}, {"weight": 7.5, "reps": 20, "rir": 2}]}]}"#
-        }
-        let appDataJSON = #"{"schemaVersion": 8, "history": [\#(sessions.joined(separator: ","))], "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 5}}"#
-        let input = try TestSupport.makeInput(appDataJSON: appDataJSON, todayISO: "2026-06-11")
-        let plan = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input), catalog: amended)
-        let lateral = plan?.exercises.first { $0.exerciseId == "lateral-raise" }
-        XCTAssertEqual(lateral?.targetWeightKg, 8.75, "步长 1.25 的加重必须是 7.5+1.25")
-        XCTAssertEqual(lateral?.progressionStepKg, 1.25, "步长必须随处方透传")
-        // 对照：步长 2.5 的原目录加到 10
-        let baseline = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input), catalog: catalog)
-        XCTAssertEqual(baseline?.exercises.first { $0.exerciseId == "lateral-raise" }?.targetWeightKg, 10)
     }
 
-    /// 组内安全瀑布的回退一档同样吃计划步长（疼痛上报 → −1.25 不是 −2.5）。
-    func testNextSetEaseUsesPlanStep() {
-        let plan = ExerciseSetPlan(
-            exerciseId: "lateral-raise", restSeconds: 60, repLowerBound: 12, repUpperBound: 20,
-            stepKg: 1.25,
-            sets: (1...3).map { PlannedSet(index: $0, targetWeightKg: 7.5, targetReps: 15, targetRir: 2) }
-        )
-        let done = [CompletedSetObservation(weightKg: 7.5, reps: 15, rir: 2, painReported: true)]
-        let rec = NextSetEngine.recommend(plan: plan, completed: done)
-        XCTAssertEqual(rec?.targetWeightKg, 6.25, "疼痛回退一档 = 计划步长 1.25")
+    /// 磅用户 · 选重机更粗（宁大勿小，裸配重栈整片）：push-a 含 machine-chest-press
+    /// （selectorized accessory 槽），其磅值必须落 10 的整数倍（不只是 5）。
+    func testLbSelectorizedSnapsToRealizable10lbGrid() throws {
+        let appDataJSON = #"{"schemaVersion": 8, "userProfile": {"unitSystem": "lb"}, "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 5}}"#
+        let input = try TestSupport.makeInput(appDataJSON: appDataJSON, todayISO: "2026-06-13")
+        let plan = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input))
+        let machine = try XCTUnwrap(plan?.exercises.first { $0.exerciseId == "machine-chest-press" })
+        let lb = (machine.targetWeightKg * 2.204_622_621_8 * 2).rounded() / 2
+        XCTAssertEqual(lb.truncatingRemainder(dividingBy: 10), 0, accuracy: 0.01,
+                       "选重机磅用户处方 \(lb)lb 不在 10lb 真实格子上")
+        // 起步 55kg×先验1.0=55kg → 121.3lb → 吸附 120lb（10 倍数）
+        XCTAssertEqual(lb, 120, accuracy: 0.01)
+    }
+
+    /// 公斤用户自由重量：档位 2.5kg，与旧 per-entry 步长口径等价（golden 零变化的来源）。
+    func testKgUserFreeWeightStepIsUnchanged25() throws {
+        let appDataJSON = #"{"schemaVersion": 8, "userProfile": {"unitSystem": "kg", "trainingLevel": "intermediate"}, "history": [{"id": "s0", "date": "2026-06-04", "completed": true, "exercises": [{"exerciseId": "lateral-raise", "sets": [{"weight": 7.5, "reps": 20, "rir": 2}]}]}, {"id": "s1", "date": "2026-06-06", "completed": true, "exercises": [{"exerciseId": "lateral-raise", "sets": [{"weight": 7.5, "reps": 20, "rir": 2}]}]}, {"id": "s2", "date": "2026-06-08", "completed": true, "exercises": [{"exerciseId": "lateral-raise", "sets": [{"weight": 7.5, "reps": 20, "rir": 2}]}]}], "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 5}}"#
+        let input = try TestSupport.makeInput(appDataJSON: appDataJSON, todayISO: "2026-06-11")
+        let plan = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input))
+        // 侧平举（哑铃）满次 → +2.5kg = 10（宁大勿小：哑铃没有 1.25kg 微调档）
+        XCTAssertEqual(plan?.exercises.first { $0.exerciseId == "lateral-raise" }?.targetWeightKg, 10)
+        XCTAssertEqual(plan?.exercises.first { $0.exerciseId == "lateral-raise" }?.progressionStepKg, 2.5)
+    }
+
+    /// 选重机比自由重量粗一档（宁大勿小：裸配重栈整片）。
+    func testSelectorizedStepIsCoarserThanFreeWeight() {
+        XCTAssertEqual(LoadGrid.stepKg(equipment: "selectorized", unit: .kg), 5)
+        XCTAssertEqual(LoadGrid.stepKg(equipment: "dumbbell", unit: .kg), 2.5)
+        XCTAssertEqual(LoadGrid.stepKg(equipment: "selectorized", unit: .lb), 10 / 2.204_622_621_8, accuracy: 0.001)
+        XCTAssertEqual(LoadGrid.stepKg(equipment: "barbell", unit: .lb), 5 / 2.204_622_621_8, accuracy: 0.001)
     }
 
     /// 非 external 负重语义（自重/辅助/弹力带）在引擎支持落地前禁入处方与替换：
@@ -158,19 +173,6 @@ final class CatalogContractTests: XCTestCase {
                        "bodyweight 条目不得进替换候选")
     }
 
-    private func amendedCopy(_ entry: ExerciseCatalogEntry, progressionStepKg: Double) -> ExerciseCatalogEntry {
-        ExerciseCatalogEntry(
-            id: entry.id, nameZh: entry.nameZh, nameEn: entry.nameEn,
-            movementPattern: entry.movementPattern, primaryMuscle: entry.primaryMuscle,
-            secondaryMuscles: entry.secondaryMuscles, equipment: entry.equipment,
-            kind: entry.kind, substitutionGroups: entry.substitutionGroups,
-            startWeightKg: entry.startWeightKg, loadType: entry.loadType,
-            progressionStepKg: progressionStepKg,
-            loadFactor: entry.loadFactor, progressionKey: entry.progressionKey,   // 审查 N1：复制语义完整
-            isGuided: entry.isGuided,
-            rank: entry.rank, deprecated: entry.deprecated
-        )
-    }
 
     func testEveryEntryHasBothNames() {
         for entry in catalog.entries {

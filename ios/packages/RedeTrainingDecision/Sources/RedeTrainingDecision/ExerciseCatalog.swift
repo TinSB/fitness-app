@@ -43,9 +43,6 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
     /// （匹配与候选层硬过滤）——assisted 数字=辅助量、越大越轻，直接走现有
     /// 渐进/疼痛瀑布会方向反转（安全红线）。
     public let loadType: String
-    /// 渐进步长（kg，per-entry）：渐进三分支/疼痛回退/快改档位/取整量子的
-    /// 唯一来源——2.5 全局常量退役（侧平举 +2.5=+33% vs 深蹲 +3% 的修正挂点）。
-    public let progressionStepKg: Double
     /// 吨位换算系数（owner 拍板 B 案 2026-06-11）：吨位 = 重量×次数×loadFactor。
     /// 双哑铃动作（口径记单只）= 2；杠铃/绳索/器械（记总阻力）与单哑铃双手持 = 1。
     /// 仅作用于统计展示（小结/进展吨位）——处方/渐进重量永不乘它。
@@ -69,7 +66,7 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
         movementPattern: String, primaryMuscle: String,
         secondaryMuscles: [String] = [], equipment: String, kind: String,
         substitutionGroups: [String], startWeightKg: Double,
-        loadType: String = "external", progressionStepKg: Double = 2.5,
+        loadType: String = "external",
         loadFactor: Double = 1.0, progressionKey: String? = nil,
         isGuided: Bool = false,
         rank: Int, deprecated: Bool = false,   // rank 无默认值：忘传=编译错（审查 M2）
@@ -87,7 +84,6 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
         self.substitutionGroups = substitutionGroups
         self.startWeightKg = startWeightKg
         self.loadType = loadType
-        self.progressionStepKg = progressionStepKg
         self.loadFactor = loadFactor
         self.progressionKey = progressionKey
         self.isGuided = isGuided
@@ -101,7 +97,7 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
     enum CodingKeys: String, CodingKey {
         case id, nameZh, nameEn, movementPattern, primaryMuscle, secondaryMuscles
         case equipment, kind, substitutionGroups, startWeightKg, rank, deprecated
-        case loadType, progressionStepKg, loadFactor, progressionKey, isGuided, replacedBy
+        case loadType, loadFactor, progressionKey, isGuided, replacedBy
         case contraindicationHint, evidenceTag
     }
 
@@ -117,12 +113,11 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
         kind = try c.decode(String.self, forKey: .kind)
         substitutionGroups = try c.decode([String].self, forKey: .substitutionGroups)
         startWeightKg = try c.decode(Double.self, forKey: .startWeightKg)
-        // loadType / progressionStepKg / loadFactor 强制显式（内容事实不许靠默认值
-        // 溜进目录，同 rank 无默认值的 M2 教训）；其余可缺省。严格 decode 只作用于
+        // loadType / loadFactor 强制显式（内容事实不许靠默认值溜进目录，同 rank
+        // 无默认值的 M2 教训）；步长已移交 LoadGrid（器械×单位）；其余可缺省。严格 decode 只作用于
         // 包内 exercises.json（唯一被解码的目录文件，与 bundle 同 PR 演进，无历史
         // 遗留文件需迁移）——缺字段=构建错误，fatal 于开发期（审查 M1 边界澄清）。
         loadType = try c.decode(String.self, forKey: .loadType)
-        progressionStepKg = try c.decode(Double.self, forKey: .progressionStepKg)
         loadFactor = try c.decode(Double.self, forKey: .loadFactor)
         progressionKey = try c.decodeIfPresent(String.self, forKey: .progressionKey)
         isGuided = try c.decodeIfPresent(Bool.self, forKey: .isGuided) ?? false

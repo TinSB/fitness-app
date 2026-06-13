@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "wave-2.1",
+  "catalogVersion": "grid-1",
   "exercises": [
     {
       "id": "bench-press",
@@ -18,7 +18,6 @@
       "nameZh": "平板卧推",
       "nameEn": "Bench press",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 0
@@ -40,7 +39,6 @@
       "nameZh": "上斜哑铃卧推",
       "nameEn": "Incline DB press",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 2.0,
       "isGuided": false,
       "rank": 10
@@ -62,7 +60,6 @@
       "nameZh": "哑铃卧推",
       "nameEn": "DB bench press",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 2.0,
       "isGuided": false,
       "rank": 20
@@ -83,7 +80,6 @@
       "nameZh": "器械推胸",
       "nameEn": "Machine chest press",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": true,
       "rank": 30
@@ -102,7 +98,6 @@
       "nameZh": "绳索夹胸",
       "nameEn": "Cable fly",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 40
@@ -123,7 +118,6 @@
       "nameZh": "高位下拉",
       "nameEn": "Lat pulldown",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 50
@@ -145,7 +139,6 @@
       "nameZh": "坐姿划船",
       "nameEn": "Seated row",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 60
@@ -167,7 +160,6 @@
       "nameZh": "杠铃划船",
       "nameEn": "Barbell row",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 70
@@ -188,7 +180,6 @@
       "nameZh": "单臂哑铃划船",
       "nameEn": "One-arm DB row",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 80
@@ -209,7 +200,6 @@
       "nameZh": "面拉",
       "nameEn": "Face pull",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 90
@@ -230,7 +220,6 @@
       "nameZh": "哑铃肩推",
       "nameEn": "Shoulder press",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 2.0,
       "isGuided": false,
       "rank": 100
@@ -249,7 +238,6 @@
       "nameZh": "哑铃侧平举",
       "nameEn": "Lateral raise",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 2.0,
       "isGuided": false,
       "rank": 110
@@ -268,7 +256,6 @@
       "nameZh": "哑铃弯举",
       "nameEn": "DB curl",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 2.0,
       "isGuided": false,
       "rank": 120
@@ -289,7 +276,6 @@
       "nameZh": "锤式弯举",
       "nameEn": "Hammer curl",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 2.0,
       "isGuided": false,
       "rank": 130
@@ -308,7 +294,6 @@
       "nameZh": "牧师凳弯举",
       "nameEn": "Preacher curl",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 140
@@ -327,7 +312,6 @@
       "nameZh": "绳索下压",
       "nameEn": "Triceps pushdown",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 150
@@ -348,7 +332,6 @@
       "nameZh": "窄握卧推",
       "nameEn": "Close-grip bench",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 160
@@ -370,7 +353,6 @@
       "nameZh": "深蹲",
       "nameEn": "Squat",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 170
@@ -391,7 +373,6 @@
       "nameZh": "哈克深蹲",
       "nameEn": "Hack squat",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": true,
       "rank": 180
@@ -412,7 +393,6 @@
       "nameZh": "腿举",
       "nameEn": "Leg press",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": true,
       "rank": 190
@@ -434,7 +414,6 @@
       "nameZh": "罗马尼亚硬拉",
       "nameEn": "Romanian deadlift",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 200
@@ -455,7 +434,6 @@
       "nameZh": "哑铃罗马尼亚硬拉",
       "nameEn": "DB RDL",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 2.0,
       "isGuided": false,
       "rank": 210
@@ -474,7 +452,6 @@
       "nameZh": "腿弯举",
       "nameEn": "Leg curl",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": true,
       "rank": 220
@@ -493,7 +470,6 @@
       "nameZh": "提踵",
       "nameEn": "Calf raise",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": true,
       "rank": 230
@@ -515,7 +491,6 @@
       "nameZh": "高脚杯深蹲",
       "nameEn": "Goblet squat",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 240
@@ -536,7 +511,6 @@
       "nameZh": "哑铃箭步蹲",
       "nameEn": "DB lunge",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 2.0,
       "isGuided": false,
       "rank": 250
@@ -555,7 +529,6 @@
       "nameZh": "哑铃飞鸟",
       "nameEn": "DB fly",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 2.0,
       "isGuided": false,
       "rank": 260
@@ -576,7 +549,6 @@
       "nameZh": "哑铃仰卧上拉",
       "nameEn": "DB pullover",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 270
@@ -597,7 +569,6 @@
       "nameZh": "俯身反向飞鸟",
       "nameEn": "Rear-delt fly",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 2.0,
       "isGuided": false,
       "rank": 280
@@ -616,7 +587,6 @@
       "nameZh": "哑铃颈后臂屈伸",
       "nameEn": "Overhead triceps extension",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 290
@@ -635,7 +605,6 @@
       "nameZh": "哑铃提踵",
       "nameEn": "DB calf raise",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 300
@@ -657,7 +626,6 @@
       "nameZh": "哑铃地板卧推",
       "nameEn": "DB floor press",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 2.0,
       "isGuided": false,
       "rank": 310
@@ -679,7 +647,6 @@
       "nameZh": "上斜凳哑铃划船",
       "nameEn": "Chest-supported DB row",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 2.0,
       "isGuided": false,
       "rank": 320
@@ -698,7 +665,6 @@
       "nameZh": "哑铃腿弯举",
       "nameEn": "DB leg curl",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 330
@@ -720,7 +686,6 @@
       "nameZh": "杠铃推举",
       "nameEn": "Overhead press",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 340
@@ -743,7 +708,6 @@
       "nameZh": "硬拉",
       "nameEn": "Deadlift",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 350
@@ -765,7 +729,6 @@
       "nameZh": "颈前深蹲",
       "nameEn": "Front squat",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 360
@@ -787,7 +750,6 @@
       "nameZh": "上斜杠铃卧推",
       "nameEn": "Incline barbell press",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 370
@@ -808,7 +770,6 @@
       "nameZh": "杠铃弯举",
       "nameEn": "Barbell curl",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 380
@@ -829,7 +790,6 @@
       "nameZh": "杠铃臀推",
       "nameEn": "Hip thrust",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 390
@@ -850,7 +810,6 @@
       "nameZh": "保加利亚分腿蹲",
       "nameEn": "Bulgarian split squat",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 2.0,
       "isGuided": false,
       "rank": 400
@@ -869,7 +828,6 @@
       "nameZh": "绳索侧平举",
       "nameEn": "Cable lateral raise",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 410
@@ -888,7 +846,6 @@
       "nameZh": "绳索弯举",
       "nameEn": "Cable curl",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 420
@@ -907,7 +864,6 @@
       "nameZh": "绳索过顶臂屈伸",
       "nameEn": "Overhead cable triceps extension",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 430
@@ -926,7 +882,6 @@
       "nameZh": "直臂下压",
       "nameEn": "Straight-arm pulldown",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 440
@@ -945,7 +900,6 @@
       "nameZh": "蝴蝶机夹胸",
       "nameEn": "Pec deck",
       "loadType": "external",
-      "progressionStepKg": 5.0,
       "loadFactor": 1.0,
       "isGuided": true,
       "rank": 450
@@ -966,7 +920,6 @@
       "nameZh": "器械肩推",
       "nameEn": "Machine shoulder press",
       "loadType": "external",
-      "progressionStepKg": 5.0,
       "loadFactor": 1.0,
       "isGuided": true,
       "rank": 460
@@ -988,7 +941,6 @@
       "nameZh": "器械划船",
       "nameEn": "Machine row",
       "loadType": "external",
-      "progressionStepKg": 5.0,
       "loadFactor": 1.0,
       "isGuided": true,
       "rank": 470
@@ -1007,7 +959,6 @@
       "nameZh": "坐姿提踵",
       "nameEn": "Seated calf raise",
       "loadType": "external",
-      "progressionStepKg": 2.5,
       "loadFactor": 1.0,
       "isGuided": true,
       "rank": 480

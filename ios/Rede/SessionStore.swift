@@ -216,7 +216,7 @@ final class SessionStore {
     func restorePendingDraft() {
         guard let draft = pendingDraft else { return }
         pendingDraft = nil
-        guard let restored = draft.restoreFlow(allowedEquipment: allowedEquipment) else {
+        guard let restored = draft.restoreFlow(allowedEquipment: allowedEquipment, loadUnit: loadUnit) else {
             // 重放失败（如 catalog 漂移）：宁可不恢复，清掉过期 draft
             DraftFile.clear()
             return
@@ -269,12 +269,17 @@ final class SessionStore {
         EquipmentAccess.allowed(for: todayModel?.cleanView.profile.equipmentScenario)
     }
 
+    /// 档位系统（2026-06-13）：当前档案的重量单位 → 引擎真实档位。
+    private var loadUnit: LoadUnit {
+        LoadUnit(unitSystem: todayModel?.cleanView.profile.unitSystem)
+    }
+
     /// 从今日处方开启训练（无处方/休息日则不开）。
     func startSession(now: Date = Date()) {
         guard flow == nil, let prescription = todayModel?.prescription else { return }
         pendingDraft = nil // 显式清提示（不依赖 alert binding 的隐式 dismiss）
         // FR-EQ1：换动作候选同守器械白名单
-        flow = TrainFlowState(prescription: prescription, allowedEquipment: allowedEquipment)
+        flow = TrainFlowState(prescription: prescription, allowedEquipment: allowedEquipment, loadUnit: loadUnit)
         sessionStartedAt = now
         persistDraft()
     }

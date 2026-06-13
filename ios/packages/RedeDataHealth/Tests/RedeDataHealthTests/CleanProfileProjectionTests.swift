@@ -78,6 +78,19 @@ final class CleanProfileProjectionTests: XCTestCase {
         XCTAssertEqual(view.issues, [.profileFieldIgnored(field: "equipmentScenario")])
     }
 
+    // 档位系统（2026-06-13）：单位只认 kg/lb，引擎据此选真实档位
+    func testValidUnitSystemPassesThrough() throws {
+        let view = try makeView(profileJSON: #"{"unitSystem": "lb"}"#)
+        XCTAssertEqual(view.profile.unitSystem, "lb")
+        XCTAssertTrue(view.issues.isEmpty)
+    }
+
+    func testUnknownUnitSystemProjectsAsNilWithIssue() throws {
+        let view = try makeView(profileJSON: #"{"unitSystem": "stones"}"#)
+        XCTAssertNil(view.profile.unitSystem)
+        XCTAssertEqual(view.issues, [.profileFieldIgnored(field: "unitSystem")])
+    }
+
     func testMissingProfileYieldsEmptyCleanProfileWithoutIssues() throws {
         let appData = try JSONDecoder().decode(AppData.self, from: Data(#"{"schemaVersion": 8}"#.utf8))
         let view = CleanAppDataViewBuilder.build(from: appData)

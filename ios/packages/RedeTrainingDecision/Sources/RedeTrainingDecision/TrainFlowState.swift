@@ -75,12 +75,15 @@ public struct TrainFlowState: Equatable, Sendable {
     private let catalog: ExerciseCatalog
     /// FR-EQ1（2026-06-11）：器械白名单（nil=不过滤），换动作候选据此过滤。
     private let allowedEquipment: Set<String>?
+    /// 档位系统（2026-06-13）：换动作时按用户单位重算新动作的真实档位步长。
+    private let loadUnit: LoadUnit
 
-    public init(prescription: TodayPrescription, catalog: ExerciseCatalog = .minimal, allowedEquipment: Set<String>? = nil) {
+    public init(prescription: TodayPrescription, catalog: ExerciseCatalog = .minimal, allowedEquipment: Set<String>? = nil, loadUnit: LoadUnit = .kg) {
         self.prescription = prescription
         self.plan = SessionSetPlanner.expand(prescription)
         self.catalog = catalog
         self.allowedEquipment = allowedEquipment
+        self.loadUnit = loadUnit
     }
 
     // MARK: - 派生
@@ -218,8 +221,11 @@ public struct TrainFlowState: Equatable, Sendable {
             restSeconds: exercise.restSeconds,
             repLowerBound: exercise.repLowerBound,
             repUpperBound: exercise.repUpperBound,
-            // 步长跟动作走：换入动作用它自己的目录步长（查不到=保守沿用原值）
-            stepKg: catalog.entry(id: newExerciseId)?.progressionStepKg ?? exercise.stepKg,
+            // 步长跟动作走：换入动作按其器械×用户单位的真实档位（LoadGrid，
+            // 2026-06-13）；查不到器械=保守沿用原值
+            stepKg: catalog.entry(id: newExerciseId).map {
+                LoadGrid.stepKg(equipment: $0.equipment, unit: loadUnit)
+            } ?? exercise.stepKg,
             sets: exercise.sets
         )
         plan = SessionSetPlan(dayCode: plan.dayCode, exercises: exercises)
@@ -263,9 +269,10 @@ public struct TrainFlowState: Equatable, Sendable {
         prescription: TodayPrescription,
         events: [TrainFlowEvent],
         catalog: ExerciseCatalog = .minimal,
-        allowedEquipment: Set<String>? = nil
+        allowedEquipment: Set<String>? = nil,
+        loadUnit: LoadUnit = .kg
     ) -> TrainFlowState? {
-        var state = TrainFlowState(prescription: prescription, catalog: catalog, allowedEquipment: allowedEquipment)
+        var state = TrainFlowState(prescription: prescription, catalog: catalog, allowedEquipment: allowedEquipment, loadUnit: loadUnit)
         for event in events {
             switch event {
             case .logSet(let observation): state.logSet(observation)

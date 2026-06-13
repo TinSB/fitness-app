@@ -1,0 +1,129 @@
+---
+name: "source-command-global-scan"
+description: "任何重要改动之前，先做一次完整的全仓影响扫描。"
+---
+
+# source-command-global-scan
+
+Use this skill when the user asks to run the migrated source command `global-scan`.
+
+## Command Template
+
+# /global-scan — 全仓影响扫描
+
+目的：在动任何重要代码之前，强制做一次**全仓搜索 + 清单化**，避免“以为只动一处其实牵动十处”。**本命令禁止编辑代码**，只产出 inventory。
+
+## 共享 Rede 规则（每个命令都遵守）
+
+- 仓库路径：`~/Developer/ironpath`
+- 默认从最新 `main` 开始，除非用户明确指示其他分支。
+- 如果 worktree 有未提交改动，**先停止并报告**，不要把本次任务和无关清理混在一起（除非任务本身就是清理）。
+- 假设环境：MacBook / macOS。
+- 不要使用 `--admin`，不要绕过分支保护。
+- 不允许重新引入 `package.json`、Node/npm/Vite 配置或任何 Web lockfile；如果扫描到，先停下说明原因。
+- `package-lock.json`、`yarn.lock`、`pnpm-lock.yaml` 必须保持不存在。
+- 永远不要泄露 token、env 值、service-role key、API key、cookie、原始 AppData 或任何用户隐私数据。
+- 永远不要删除本机 JSON/AppData、训练历史、HealthKit 派生数据或未来云端数据，除非用户明确批准。
+- 永远不要静默覆盖本机 canonical AppData 或未来云端数据。
+- 不要在没有明确批准的情况下修改 AppData 或 TrainingSession schema。
+- Clean rewrite 阶段：living docs 是目标真源；旧 `ios/` 实现是 legacy/reference inventory。旧实现任务默认只读审计，除非有明确 rewrite slice 批准复用。
+- 外部官网 / 付费意向验证在仓库 runtime 之外；不得恢复 PWA/Web runtime。
+- 验证流程按变更类型选择：
+  ```bash
+  git diff --check
+  ```
+  runtime slice 代码改动后再跑：
+  ```bash
+  for package in ios/packages/*; do
+    if [ -f "$package/Package.swift" ]; then
+      (cd "$package" && swift test) || exit 1
+    fi
+  done
+  xcodebuild -project ios/Rede.xcodeproj -scheme Rede -destination 'generic/platform=iOS Simulator' build
+  git diff --check
+  ```
+- 合并后若影响发布行为：走 TestFlight/App Store 发布清单；禁止从此仓触发 Vercel 发布。
+- 涉及 iOS UI/运行时：必要时做 iPhone 模拟器或真机冒烟。
+- 训练逻辑、推荐逻辑、未来云同步、存储、AppData、Settings、Focus Mode、iOS UI 改动 → 必须做全仓搜索；高风险时再做多 Agent 复审。
+- 不要用单文件窄补丁解决复杂 bug。
+
+## 何时必须使用本命令
+
+只要任务命中以下任一类型，**强制要求**先跑 `/global-scan` 再做任何决策：
+
+- 推荐系统（recommendation）
+- 训练逻辑（training cycles / progression / fineTune / conservative prescription）
+- 云同步（cloud sync / sync-on / receipts / conflicts）
+- 存储（local JSON store / AppData / App Group widget snapshot）
+- AppData / TrainingSession schema
+- Settings 页
+- Focus Mode
+- iOS App shell / Widget / local persistence
+
+## 必须执行的步骤
+
+1. **扫描范围**
+   - `ios/` 全部
+   - `ios/packages/` 全部
+   - `ios/ParityFixtures/` 中相关 fixture
+   - `docs/` 全部
+   - 必要时扫 `.github/`、`.Codex/`
+
+2. **搜索策略（不能只搜函数名）**
+   - **语义关键词**：用功能描述词搜，例如 “consolidate prescription”、“sync receipt”、“training cycle gap”。
+   - **中英文 UI 文案双搜**：UI 文案常常只在中文里出现，用 `rg -uu` 同时扫源码 + JSON + i18n。
+   - **相似组件而非完全匹配**：搜命名相近的组件 / hook / store，找出可能是“另一个 source-of-truth”的兄弟实现。
+   - **schema 字段名 + 类型名 + storage key**：找出所有 producer / consumer。
+
+3. **产出 Inventory 表（必输）**
+   每一行：
+   | file | symbol/component | responsibility | input | output | consumer | source-of-truth status | 处置（keep / replace / delete / convert-to-signal） |
+
+   - **source-of-truth status**：是 / 否 / 冲突（与谁冲突）
+   - **处置**：建议是保留、替换、删除，还是改成只发信号不存数据。
+
+4. **识别冲突**
+   - 多个组件都写同一份数据 → 标记 source-of-truth 冲突。
+   - 多个 surface 显示同一数据但来源不一致 → 标记 presentation 冲突。
+   - 旧实现尚未删除但已有新实现接管 → 标记 dead code 待清理。
+
+5. **风险标注**
+   - 数据风险：是否会覆盖用户历史、训练记录、云端数据。
+   - UI 风险：哪些 surface 会被联动改动。
+   - 发布风险：是否需要 TestFlight/App Store 发布、是否需要真机 iPhone 冒烟。
+
+## 硬约束
+
+- **本命令不允许编辑代码**。
+- 不允许只搜函数名就结束——必须做语义 + 中文文案搜索。
+- 不允许把扫描结果浓缩成“看了一下，没问题”——必须给 inventory 表。
+- 如果扫到 source-of-truth 冲突，**直接升级到 `/multi-agent-audit`**，不要在本命令里继续。
+
+## 输出结构
+
+```
+扫描范围: ios/ ios/packages/ ios/ParityFixtures/ docs/ .github/ .Codex/ + …
+
+搜索关键词:
+- 语义：…
+- 函数 / 组件 / hook：…
+- 中文 UI 文案：…
+- schema / storage key：…
+
+Inventory:
+| file | symbol | responsibility | input | output | consumer | SoT | 处置 |
+|------|--------|----------------|-------|--------|----------|-----|------|
+| …    | …      | …              | …     | …      | …        | …   | …    |
+
+冲突:
+- source-of-truth 冲突: …
+- presentation 冲突: …
+- dead code 待清理: …
+
+风险:
+- 数据风险: …
+- UI 风险: …
+- 部署风险: …
+
+下一步: /diagnose / /zoom-out / /multi-agent-audit / /to-issues
+```

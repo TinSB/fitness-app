@@ -12,8 +12,8 @@
 //   上次力竭(min RIR ≤ 0.5) 或 最高组未到 repMin → −一档；
 //   否则持平，次数目标 repMax（区间内推进）。
 // 加重无上限（精英重量合法递增，有意为之）。
-// 「一档」= 该动作目录 progressionStepKg（§6.1 Blocker：2.5 全局常量退役，
-// 取整量子/下限同步 per-entry；P0 目录全 2.5 → goldens 零变化是迁移铁证）。
+// 「一档」= 该动作器械×用户单位的真实档位步长（LoadGrid，2026-06-13「宁大勿小」）：
+// kg+自由重量=2.5（与旧口径等价，goldens 零变化）；lb=5lb 真实格子；选重机更粗。
 // 裁决调制在渐进之后：light ×0.9；deload ×0.8 且组数 −1(下限 2)；rest → 无处方。
 // 重量一律按步长取整、下限一档；调制后若取整弹回原重量且原重量 > 一档，
 // 强制下调一格——轻练/减载必须真减，小重量动作不得被取整吃掉。
@@ -175,7 +175,13 @@ public enum TodayPrescriptionEngine {
         verdict: TodayVerdict
     ) -> ExercisePrescriptionPlan {
         let last = lastPerformance(exerciseId: entry.id, sessions: input.sessions)
-        let step = entry.progressionStepKg   // §6.1：渐进一档 = 目录 per-entry 步长
+        // 档位系统（2026-06-13）：渐进一档 = 器械×用户单位的真实档位步长（LoadGrid，
+        // 宁大勿小）。roundToIncrement 到它即把重量吸附到真实格子——磅用户落 5lb
+        // 倍数、公斤用户落 2.5kg 倍数。kg + 自由重量 = 2.5，与旧 per-entry 步长等价。
+        let step = LoadGrid.stepKg(
+            equipment: entry.equipment,
+            unit: LoadUnit(unitSystem: input.profile.unitSystem)
+        )
 
         let baseWeight: Double
         let targetReps: Int

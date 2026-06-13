@@ -64,8 +64,8 @@ public struct ExercisePrescriptionPlan: Equatable, Sendable, Codable {
     public let previousTopReps: Int?
     /// 下次投影（target + 一档取整）——Rail「下次」节点素材。
     public let nextProjectedWeightKg: Double
-    /// 渐进一档（kg）= 该动作目录 progressionStepKg；快改档位/刻度轨/组内
-    /// 安全瀑布同源消费（§6.1：2.5 全局常量退役）。
+    /// 渐进一档（kg）= 该动作器械×用户单位的真实档位步长（LoadGrid 解析值）；
+    /// 快改档位/刻度轨/组内安全瀑布同源消费。
     public let progressionStepKg: Double
     public let change: ChangeDirection
     public let reason: PrescriptionReason

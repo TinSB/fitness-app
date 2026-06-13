@@ -26,7 +26,9 @@ final class OnboardingColdStartTests: XCTestCase {
         let beginner = try firstPrescription(profileJSON: #", "userProfile": {"trainingLevel": "beginner"}"#)
         XCTAssertEqual(baseline.exercises.map(\.exerciseId), beginner.exercises.map(\.exerciseId))
         for (base, scaled) in zip(baseline.exercises, beginner.exercises) {
-            let expected = max(2.5, ((base.targetWeightKg * 0.5) / 2.5).rounded() * 2.5)
+            // 取整量子 = 该动作器械真实档位（档位系统 2026-06-13）：选重机=5、自由重量=2.5
+            let step = LoadGrid.stepKg(equipment: ExerciseCatalog.minimal.entry(id: base.exerciseId)?.equipment ?? "", unit: .kg)
+            let expected = max(step, ((base.targetWeightKg * 0.5) / step).rounded() * step)
             XCTAssertEqual(scaled.targetWeightKg, expected, "\(base.exerciseId)")
         }
     }
@@ -35,7 +37,8 @@ final class OnboardingColdStartTests: XCTestCase {
         let baseline = try firstPrescription(profileJSON: "")
         let intermediate = try firstPrescription(profileJSON: #", "userProfile": {"trainingLevel": "intermediate"}"#)
         for (base, scaled) in zip(baseline.exercises, intermediate.exercises) {
-            let expected = max(2.5, ((base.targetWeightKg * 0.75) / 2.5).rounded() * 2.5)
+            let step = LoadGrid.stepKg(equipment: ExerciseCatalog.minimal.entry(id: base.exerciseId)?.equipment ?? "", unit: .kg)
+            let expected = max(step, ((base.targetWeightKg * 0.75) / step).rounded() * step)
             XCTAssertEqual(scaled.targetWeightKg, expected, "\(base.exerciseId)")
         }
     }
@@ -99,7 +102,9 @@ final class OnboardingColdStartTests: XCTestCase {
         // 不变量：叠乘真的发生——萌新值 ≤ 基线值（同日同裁决）、且全部 ≥ 2.5 下限
         for (base, scaled) in zip(baseline.exercises, beginner.exercises) {
             XCTAssertLessThanOrEqual(scaled.targetWeightKg, base.targetWeightKg, base.exerciseId)
-            XCTAssertGreaterThanOrEqual(scaled.targetWeightKg, 2.5)
+            // 下限 = 该动作器械真实档位（选重机 5、自由重量 2.5）——非全局 2.5（审查 MINOR-2）
+            let floor = LoadGrid.stepKg(equipment: ExerciseCatalog.minimal.entry(id: base.exerciseId)?.equipment ?? "", unit: .kg)
+            XCTAssertGreaterThanOrEqual(scaled.targetWeightKg, floor, base.exerciseId)
         }
         // 至少一个动作真被缩小（防止两边相等导致不变量空转）
         XCTAssertTrue(zip(baseline.exercises, beginner.exercises).contains { $0.targetWeightKg > $1.targetWeightKg })
