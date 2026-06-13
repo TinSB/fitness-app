@@ -191,6 +191,10 @@ extension RedeStrings {
     public func summaryTopSet(name: String, kg: String, reps: Int) -> String {
         locale == .zh ? "顶组 · \(name) \(kg) \(unitLabel) × \(reps)" : "Top set · \(name) \(kg) \(unitLabel) × \(reps)"
     }
+    /// 自重顶组（wave-6）：无重量轴——只显次数。
+    public func summaryTopSetBodyweight(name: String, reps: Int) -> String {
+        locale == .zh ? "顶组 · \(name) × \(reps)" : "Top set · \(name) × \(reps)"
+    }
     public var summaryDone: String { locale == .zh ? "完成" : "Done" }
     public var summarySaveAndFinish: String { locale == .zh ? "保存并完成" : "Save & finish" }
     public var summaryRetrySave: String { locale == .zh ? "重试保存" : "Retry save" }

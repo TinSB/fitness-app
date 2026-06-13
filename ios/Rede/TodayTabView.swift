@@ -134,6 +134,14 @@ struct TodayTabView: View {
 
     private var changeLineText: String {
         guard let first = firstExercise else { return s.changeLineNone }
+        if first.loadType == "bodyweight" {
+            return s.changeLineBodyweight(
+                exerciseName: localeStore.exerciseName(first.exerciseId),
+                change: first.change.rawValue,
+                reps: first.targetReps,
+                atCeiling: first.reason == .bodyweightCeilingReached
+            )
+        }
         return s.changeLine(
             exerciseName: localeStore.exerciseName(first.exerciseId),
             change: first.change.rawValue,
@@ -175,11 +183,11 @@ struct TodayTabView: View {
                                 .foregroundStyle(Color.redeT1)
                                 .padding(.top, 7)
                             HStack(alignment: .bottom, spacing: 6) {
-                                Text(s.formatKg(first.targetWeightKg))
+                                Text(s.heroNumber(loadType: first.loadType, weightKg: first.targetWeightKg, reps: first.targetReps))
                                     .font(.system(size: 20, weight: .semibold))
                                     .monospacedDigit()
                                     .foregroundStyle(Color.redeT1)
-                                Text(s.loadDetail(targetReps: first.targetReps, targetRir: Int(first.targetRir)))
+                                Text(s.heroDetail(loadType: first.loadType, reps: first.targetReps, rir: Int(first.targetRir)))
                                     .font(.redeCallout)
                                     .monospacedDigit()
                                     .foregroundStyle(Color.redeT3)
@@ -310,19 +318,19 @@ struct TodayTabView: View {
 
                 HStack(alignment: .top, spacing: 0) {
                     railNode(dot: AnyView(Circle().fill(Color.redeT4).frame(width: 14, height: 14)),
-                             value: s.railValue(weightKg: model?.railLast?.weightKg, reps: model?.railLast?.reps),
+                             value: s.railValue(loadType: firstExercise?.loadType ?? "external", weightKg: model?.railLast?.weightKg, reps: model?.railLast?.reps),
                              valueColor: .redeT3,
                              label: model?.railLast.map { s.shortDate(fromISO: $0.dateISO) } ?? "—",
                              labelColor: .redeT4)
                     railNode(dot: AnyView(RingDot()),
-                             value: s.railValue(weightKg: firstExercise?.targetWeightKg, reps: firstExercise?.targetReps),
+                             value: s.railValue(loadType: firstExercise?.loadType ?? "external", weightKg: firstExercise?.targetWeightKg, reps: firstExercise?.targetReps),
                              valueColor: .redeT1,
                              label: s.railToday, labelColor: .redeEmber2)
                     railNode(dot: AnyView(
                         Circle().fill(Color.redeSurface)
                             .frame(width: 14, height: 14)
                             .overlay(Circle().stroke(Color.redeNextDot, lineWidth: 2))),
-                             value: s.railValue(weightKg: firstExercise?.nextProjectedWeightKg, reps: firstExercise.map { $0.repLowerBound }),
+                             value: s.railValue(loadType: firstExercise?.loadType ?? "external", weightKg: firstExercise?.nextProjectedWeightKg, reps: firstExercise.map { $0.repLowerBound }),
                              valueColor: .redeT3,
                              label: s.railNext, labelColor: .redeT4)
                 }

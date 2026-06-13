@@ -88,9 +88,11 @@ public enum NextSetEngine {
 
         // 执行事实是基线：用户实际重量延续到下一组。
         // 回退一档 = 该动作步长（随计划自目录透传，§6.1）：侧平举不再被
-        // 全局 2.5 一刀切成 −33%。
+        // 全局 2.5 一刀切成 −33%。自重动作无重量轴：重量恒 0、不走减重瀑布，
+        // 但疼痛/力竭信号仍如实标记（reason/safetyFlags 不变，2026-06-13）。
+        let isBodyweight = plan.loadType == "bodyweight"
         let base = last.weightKg
-        let eased = max(plan.stepKg, base - plan.stepKg)
+        let eased = isBodyweight ? base : max(plan.stepKg, base - plan.stepKg)
 
         let weight: Double
         let reason: NextSetReason

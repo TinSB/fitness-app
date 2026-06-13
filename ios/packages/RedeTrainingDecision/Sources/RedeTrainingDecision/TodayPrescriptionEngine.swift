@@ -25,6 +25,11 @@ import RedeDataHealth
 public enum TodayPrescriptionEngine {
     private static let nearFailureMeanRir = 0.5
     private static let progressMinMeanRir = 1.0
+    // 自重次数进阶（owner 拍板 2026-06-13）：起步 12、上限 25 提示换难度、下限 8。
+    private static let bodyweightStartReps = 12
+    private static let bodyweightRepCeiling = 25
+    private static let bodyweightRepFloor = 8
+    private static let bodyweightRepStep = 2
     private static let lightMultiplier = 0.9
     private static let deloadMultiplier = 0.8
     private static let targetRir = 2.0
@@ -181,6 +186,13 @@ public enum TodayPrescriptionEngine {
         verdict: TodayVerdict
     ) -> ExercisePrescriptionPlan {
         let last = lastPerformance(exerciseId: entry.id, sessions: input.sessions)
+
+        // 自重分支（2026-06-13，owner 拍板）：无外部负重，按次数进阶；到顶提示换难度。
+        // 重量轴的渐进/取整/调制全部不适用——单独一条路径。
+        if entry.loadType == "bodyweight" {
+            return prescribeBodyweight(entry: entry, slot: slot, last: last, verdict: verdict)
+        }
+
         // 档位系统（2026-06-13）：渐进一档 = 器械×用户单位的真实档位步长（LoadGrid，
         // 宁大勿小）。roundToIncrement 到它即把重量吸附到真实格子——磅用户落 5lb
         // 倍数、公斤用户落 2.5kg 倍数。kg + 自由重量 = 2.5，与旧 per-entry 步长等价。
@@ -255,7 +267,8 @@ public enum TodayPrescriptionEngine {
             nextProjectedWeightKg: roundToIncrement(weight + step, step: step),
             progressionStepKg: step,
             change: change,
-            reason: reason
+            reason: reason,
+            loadType: entry.loadType
         )
     }
 
@@ -271,6 +284,68 @@ public enum TodayPrescriptionEngine {
     /// 只和它自己的历史比，§6.2 修复 2026-06-11）；无历史 → nil。
     public static func lastTopWeightKg(exerciseId: String, sessions: [CleanTrainingSession]) -> Double? {
         lastPerformance(exerciseId: exerciseId, sessions: sessions)?.topWeightKg
+    }
+
+    /// 自重处方（owner 拍板 2026-06-13）：重量固定 0，按次数进阶到顶提示换难度。
+    /// 上次力竭则保持、有余力则 +2 次、到 25 次封顶并提示加配重/换更难变体。
+    private static func prescribeBodyweight(
+        entry: ExerciseCatalogEntry,
+        slot: Slot,
+        last: LastPerformance?,
+        verdict: TodayVerdict
+    ) -> ExercisePrescriptionPlan {
+        var targetReps: Int
+        let change: ChangeDirection
+        let reason: PrescriptionReason
+        if let last {
+            let lastReps = last.repsAtTop
+            if lastReps >= bodyweightRepCeiling {
+                targetReps = bodyweightRepCeiling
+                change = .hold
+                reason = .bodyweightCeilingReached
+            } else if let minRir = last.minRir, minRir <= nearFailureMeanRir {
+                targetReps = max(bodyweightRepFloor, lastReps)
+                change = .hold
+                reason = .nearFailureLastTime   // 力竭保持（审查 MINOR-4：区分于进阶）
+            } else {
+                targetReps = min(bodyweightRepCeiling, lastReps + bodyweightRepStep)
+                change = .increase
+                reason = .holdProgressing
+            }
+        } else {
+            targetReps = bodyweightStartReps
+            change = .start
+            reason = .firstExposure
+        }
+
+        var sets = slot.sets
+        switch verdict.call {
+        case .light:
+            targetReps = max(bodyweightRepFloor, targetReps - bodyweightRepStep)
+        case .deload:
+            sets = max(2, sets - 1)
+            targetReps = max(bodyweightRepFloor, targetReps - bodyweightRepStep)
+        case .train, .rest:
+            break
+        }
+
+        return ExercisePrescriptionPlan(
+            exerciseId: entry.id,
+            sets: sets,
+            restSeconds: slot.rest,
+            repLowerBound: bodyweightRepFloor,
+            repUpperBound: bodyweightRepCeiling,
+            targetReps: targetReps,
+            targetWeightKg: 0,
+            targetRir: targetRir,
+            previousWeightKg: nil,
+            previousTopReps: last?.repsAtTop,
+            nextProjectedWeightKg: 0,
+            progressionStepKg: 0,
+            change: change,
+            reason: reason,
+            loadType: "bodyweight"
+        )
     }
 
     private struct LastPerformance {

@@ -72,7 +72,7 @@
 ## 5. 路线
 
 - **P0（本文档落地时）**：JSON 化现有 31 条（1:1 迁移，golden 证明零行为变化）+ rank 匹配 + 名字迁入目录 + 注册表/覆盖矩阵/解码完整性测试套
-- **P1（TestFlight 期）**：~~先过 §6.1 Blocker schema PR~~（**已落地**）→ ~~wave-1 清缺口批~~（3 条）→ ~~§6.2 Should 第二批~~（loadFactor/多隶属数组等八项）→ ~~wave-2 四器械类核心补全~~（**已入库 + owner 审定通过 2026-06-11，15 条 → 49 条**：rank 全尾部追加=处方零变化；随批定案：db-pullover 留垂直拉族、hip-thrust 归铰链族、直臂下压独立孤立族不当复合替补）→ ~~wave-3 五器械类补全~~（**已入库 + owner 审定通过 2026-06-13，12 条 → 61 条**：各族薄弱处补真实动作，rank 全尾部追加=处方零变化；审定随批定：肩推统一 shoulder 口径、T 杠划船不固定轨道、cable-pull-through 改 accessory）→ ~~wave-4 五器械类补全~~（**已入库 + owner 审定通过 2026-06-13，12 条 → 73 条**：常见变体补族厚度，rank 全尾部追加=处方零变化；审定随批定：下斜卧推归水平推变体、地雷推举照 T 杠先例归 plate-loaded、相扑硬拉主肌群 glutes）→ ~~wave-5 新动作类~~（**已入库 + owner 审定通过 2026-06-13，6 条 → 79 条 · 行为变化**：腿屈伸/耸肩/腹肌三个新 pattern + 新槽位——腿日加腿屈伸+卷腹、拉/上肢日加耸肩，goldens 已改留痕；审定随批定：腹肌放腿日末尾 1-2×/周、耸肩在拉日+上肢日）→ 后续 wave 往 ~100 推；~~machine 拆分~~（**已落地 + owner 审定通过 2026-06-11**：9 条原 id 原地改值——plate-loaded 3 条/selectorized 6 条；槽位器械偏好升类集合匹配；行为零变化 golden 实证）；bodyweight/band/kettlebell 类各有前置闸
+- **P1（TestFlight 期）**：~~先过 §6.1 Blocker schema PR~~（**已落地**）→ ~~wave-1 清缺口批~~（3 条）→ ~~§6.2 Should 第二批~~（loadFactor/多隶属数组等八项）→ ~~wave-2 四器械类核心补全~~（**已入库 + owner 审定通过 2026-06-11，15 条 → 49 条**：rank 全尾部追加=处方零变化；随批定案：db-pullover 留垂直拉族、hip-thrust 归铰链族、直臂下压独立孤立族不当复合替补）→ ~~wave-3 五器械类补全~~（**已入库 + owner 审定通过 2026-06-13，12 条 → 61 条**：各族薄弱处补真实动作，rank 全尾部追加=处方零变化；审定随批定：肩推统一 shoulder 口径、T 杠划船不固定轨道、cable-pull-through 改 accessory）→ ~~wave-4 五器械类补全~~（**已入库 + owner 审定通过 2026-06-13，12 条 → 73 条**：常见变体补族厚度，rank 全尾部追加=处方零变化；审定随批定：下斜卧推归水平推变体、地雷推举照 T 杠先例归 plate-loaded、相扑硬拉主肌群 glutes）→ ~~wave-5 新动作类~~（**已入库 + owner 审定通过 2026-06-13，6 条 → 79 条 · 行为变化**：腿屈伸/耸肩/腹肌三个新 pattern + 新槽位——腿日加腿屈伸+卷腹、拉/上肢日加耸肩，goldens 已改留痕；审定随批定：腹肌放腿日末尾 1-2×/周、耸肩在拉日+上肢日）→ ~~wave-6 自重引擎开闸~~（**已入库 + owner 审定通过 2026-06-13 · 行为/引擎**：loadType=bodyweight 开闸——按次数进阶、到 25 次提示换难度、重量恒 0；+6 徒手动作；家用/极简场景加 bodyweight；今日页展示改次数。**遗留**：完整「按次数调整」train 交互留作后续 UI 片；bodyweight-plus/assisted/band 仍闸内）→ 后续 wave 往 ~100 推；~~machine 拆分~~（**已落地 + owner 审定通过 2026-06-11**：9 条原 id 原地改值——plate-loaded 3 条/selectorized 6 条；槽位器械偏好升类集合匹配；行为零变化 golden 实证）；bodyweight/band/kettlebell 类各有前置闸
 - **P2（FF）**：几百动作 + 肌群贡献权重（contributionModelVersion）+ TemplateGenerator 按规格消费 `ExerciseCatalogSnapshot`
 
 ## 6. P1 schema 修订案（2026-06-11 二审定案——wave 填充的前置闸）
@@ -91,7 +91,7 @@
 
 | 修订 | 为什么是 Blocker |
 |---|---|
-| **+`loadType`**（external / bodyweight / bodyweight-plus / assisted / band） | startWeightKg 单 Double 三类破产：bodyweight 会被下限顶成「俯卧撑 2.5kg」伪处方；**assisted 数值=辅助量、越大越轻——疼痛瀑布 −2.5 实为加难度，安全方向反转**；band 无线性 kg。loadType 进引擎前，这三类条目禁止进处方/替换（如实输出 limitation） |
+| **+`loadType`**（external / bodyweight / bodyweight-plus / assisted / band） | startWeightKg 单 Double 三类破产：bodyweight 会被下限顶成「俯卧撑 2.5kg」伪处方；**assisted 数值=辅助量、越大越轻——疼痛瀑布 −2.5 实为加难度，安全方向反转**；band 无线性 kg。**进展：external（P0）+ bodyweight（wave-6，按次数进阶）已开闸；bodyweight-plus/assisted/band 仍闸内** |
 | ~~+`progressionStepKg`（per-entry）~~ → **2026-06-13 升级为 `LoadGrid`（器械×单位真实档位）** | 初版 per-entry 步长解决了「全局 2.5 一刀切」，但仍是单位无关纯 kg 步长。owner「宁大勿小」拍板后升级单位原生真实档位（§8）：磅落 5lb、公斤 2.5kg；字段删除，步长由器械类决定 |
 | **kind 拆轴**：kind 收敛 {compound, isolation} + 新增 `isGuided`（轨道稳定性） | "machine" 既是训练学角色又是器械名；FR-EQ1 软化逻辑 key 在字符串 "machine" 上——machine 拆 plate-loaded/selectorized 后软化失明、槽位字面量悬空；100 条按旧 kind 填完即返工 |
 | **场景 × 器械类可用性矩阵升单一真源**（器械注册表进引擎运行时，EquipmentAccess 从它派生） | 注册表现仅住测试；白名单/槽位/软化三处散落字面量。**致命咬合：§3 缺口药方「俯卧撑清 home 缺口」会被 dumbbell-only 白名单直接滤掉——不改矩阵，缺口清单一条都清不掉** |

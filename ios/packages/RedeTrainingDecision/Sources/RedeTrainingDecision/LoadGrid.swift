@@ -43,6 +43,7 @@ public enum LoadGrid {
         "plate-loaded": (kg: 2.5, lb: 5),
         "cable":        (kg: 2.5, lb: 5),
         "selectorized": (kg: 5,   lb: 10),
+        "bodyweight":   (kg: 0,   lb: 0),   // 无重量轴：引擎早分支保证不用此值（wave-6）
     ]
     /// 未注册器械防御兜底（自由重量档）；实际不可达——进处方的器械都在表内，
     /// 未注册器械在 prescribableLoadTypes 闸前已被拦。

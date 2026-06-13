@@ -165,7 +165,9 @@ struct TrainTabView: View {
             Button(action: { startAdjust(targetKg: targetKg, recommendation: recommendation) }) {
                 let staging = showAdjust || hasAdjustment
                 HStack(alignment: .bottom, spacing: 8) {
-                    Text(s.formatKg(staging ? adjustWeight : targetKg))
+                    Text(currentIsBodyweight
+                         ? "×\(flow.currentRecommendation?.targetReps ?? exercise?.sets.first?.targetReps ?? 0)"
+                         : s.formatKg(staging ? adjustWeight : targetKg))
                         .font(.redeDisplay)
                         .monospacedDigit()
                         .foregroundStyle(Color.redeT1)
@@ -317,6 +319,10 @@ struct TrainTabView: View {
     private var currentStepKg: Double {
         flow?.currentExercise?.stepKg ?? AdjustOptionsBuilder.stepKg
     }
+
+    /// 自重动作（wave-6）：无重量轴——big hero 显次数、组行重量列显「—」。
+    /// 注：完整的「按次数调整」train 交互留作后续 UI 片（当前重量调整对自重无害但无意义）。
+    private var currentIsBodyweight: Bool { flow?.currentExercise?.loadType == "bodyweight" }
 
     private func adjustOptions(_ flow: TrainFlowState) -> [AdjustOption] {
         AdjustOptionsBuilder.options(
@@ -618,7 +624,7 @@ struct TrainTabView: View {
                 case .done(let obs):
                     setRow(
                         number: plannedSet.index,
-                        weight: s.formatKg(obs.weightKg),
+                        weight: currentIsBodyweight ? "—" : s.formatKg(obs.weightKg),
                         reps: "\(obs.reps)",
                         rir: obs.rir.map { s.formatRir($0) } ?? "—",
                         marker: .done
@@ -626,7 +632,7 @@ struct TrainTabView: View {
                 case .skipped:
                     setRow(
                         number: plannedSet.index,
-                        weight: s.formatKg(plannedSet.targetWeightKg),
+                        weight: currentIsBodyweight ? "—" : s.formatKg(plannedSet.targetWeightKg),
                         reps: "\(plannedSet.targetReps)",
                         rir: "—",
                         marker: .skipped
@@ -638,7 +644,7 @@ struct TrainTabView: View {
                     let rec = flow.currentRecommendation
                     setRow(
                         number: plannedSet.index,
-                        weight: s.formatKg(staging ? adjustWeight : (rec?.targetWeightKg ?? plannedSet.targetWeightKg)),
+                        weight: currentIsBodyweight ? "—" : s.formatKg(staging ? adjustWeight : (rec?.targetWeightKg ?? plannedSet.targetWeightKg)),
                         reps: "\(staging ? adjustReps : (rec?.targetReps ?? plannedSet.targetReps))",
                         rir: "—",
                         marker: .active
@@ -648,7 +654,7 @@ struct TrainTabView: View {
                     // 暂存只在打勾后才会改变轨迹，回流合同口径）
                     setRow(
                         number: plannedSet.index,
-                        weight: s.formatKg(flow.currentTargetWeightKg ?? plannedSet.targetWeightKg),
+                        weight: currentIsBodyweight ? "—" : s.formatKg(flow.currentTargetWeightKg ?? plannedSet.targetWeightKg),
                         reps: "\(plannedSet.targetReps)",
                         rir: "—",
                         marker: .pending
@@ -883,7 +889,9 @@ struct TrainTabView: View {
                             .foregroundStyle(Color.redeEmber)
                         VStack(alignment: .leading, spacing: 2) {
                             Overline(text: s.summaryPr, color: .redeEmber2)
-                            Text(s.summaryTopSet(name: localeStore.exerciseName(top.exerciseId), kg: s.formatKg(top.weightKg), reps: top.reps))
+                            Text(ExerciseCatalog.minimal.entry(id: top.exerciseId)?.loadType == "bodyweight"
+                                 ? s.summaryTopSetBodyweight(name: localeStore.exerciseName(top.exerciseId), reps: top.reps)
+                                 : s.summaryTopSet(name: localeStore.exerciseName(top.exerciseId), kg: s.formatKg(top.weightKg), reps: top.reps))
                                 .font(.redeBody)
                                 .foregroundStyle(Color.redeT1)
                         }
@@ -891,7 +899,9 @@ struct TrainTabView: View {
                     .padding(14)
                 }
             } else if let top = summary?.topSet {
-                Text(s.summaryTopSet(name: localeStore.exerciseName(top.exerciseId), kg: s.formatKg(top.weightKg), reps: top.reps))
+                Text(ExerciseCatalog.minimal.entry(id: top.exerciseId)?.loadType == "bodyweight"
+                     ? s.summaryTopSetBodyweight(name: localeStore.exerciseName(top.exerciseId), reps: top.reps)
+                     : s.summaryTopSet(name: localeStore.exerciseName(top.exerciseId), kg: s.formatKg(top.weightKg), reps: top.reps))
                     .font(.redeCallout)
                     .foregroundStyle(Color.redeT2)
             }

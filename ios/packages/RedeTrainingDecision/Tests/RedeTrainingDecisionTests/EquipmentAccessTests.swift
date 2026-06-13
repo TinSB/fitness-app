@@ -36,8 +36,8 @@ final class EquipmentAccessTests: XCTestCase {
 
     func testAllowedMapping() {
         XCTAssertNil(EquipmentAccess.allowed(for: "commercial-gym"))
-        XCTAssertEqual(EquipmentAccess.allowed(for: "home-dumbbell"), ["dumbbell"])
-        XCTAssertEqual(EquipmentAccess.allowed(for: "minimal"), ["dumbbell"])
+        XCTAssertEqual(EquipmentAccess.allowed(for: "home-dumbbell"), ["dumbbell", "bodyweight"]) // wave-6：自重隐含可用
+        XCTAssertEqual(EquipmentAccess.allowed(for: "minimal"), ["dumbbell", "bodyweight"]) // wave-6
         XCTAssertNil(EquipmentAccess.allowed(for: nil))
         XCTAssertNil(EquipmentAccess.allowed(for: "spaceship")) // 未知不瞎过滤
     }

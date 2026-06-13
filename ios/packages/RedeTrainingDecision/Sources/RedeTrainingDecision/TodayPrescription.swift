@@ -19,6 +19,8 @@ public enum PrescriptionReason: Equatable, Sendable, Codable {
     case nearFailureLastTime
     case belowRepFloor
     case holdProgressing
+    /// 自重动作加次数到顶——提示加配重或换更难变体（owner 拍板 2026-06-13）。
+    case bodyweightCeilingReached
 
     public var code: String {
         switch self {
@@ -27,6 +29,7 @@ public enum PrescriptionReason: Equatable, Sendable, Codable {
         case .nearFailureLastTime: return "nearFailureLastTime"
         case .belowRepFloor: return "belowRepFloor"
         case .holdProgressing: return "holdProgressing"
+        case .bodyweightCeilingReached: return "bodyweightCeilingReached"
         }
     }
 }
@@ -69,13 +72,16 @@ public struct ExercisePrescriptionPlan: Equatable, Sendable, Codable {
     public let progressionStepKg: Double
     public let change: ChangeDirection
     public let reason: PrescriptionReason
+    /// 负重语义（external / bodyweight / …）：渲染层据此判定「显示重量」还是
+    /// 「仅次数」（自重动作无外部负重，targetWeightKg=0）。默认 external 兼容旧 draft。
+    public let loadType: String
 
     public init(
         exerciseId: String, sets: Int, restSeconds: Int, repLowerBound: Int, repUpperBound: Int,
         targetReps: Int, targetWeightKg: Double, targetRir: Double,
         previousWeightKg: Double?, previousTopReps: Int?, nextProjectedWeightKg: Double,
         progressionStepKg: Double,   // 无默认值：忘传=编译错（同 rank 的 M2 教训）；decode 缺省仅为旧 draft 兼容
-        change: ChangeDirection, reason: PrescriptionReason
+        change: ChangeDirection, reason: PrescriptionReason, loadType: String = "external"
     ) {
         self.exerciseId = exerciseId
         self.sets = sets
@@ -91,12 +97,13 @@ public struct ExercisePrescriptionPlan: Equatable, Sendable, Codable {
         self.progressionStepKg = progressionStepKg
         self.change = change
         self.reason = reason
+        self.loadType = loadType
     }
 
     enum CodingKeys: String, CodingKey {
         case exerciseId, sets, restSeconds, repLowerBound, repUpperBound
         case targetReps, targetWeightKg, targetRir, previousWeightKg, previousTopReps
-        case nextProjectedWeightKg, progressionStepKg, change, reason
+        case nextProjectedWeightKg, progressionStepKg, change, reason, loadType
     }
 
     /// 自定义解码仅为 progressionStepKg 缺省 2.5：当日旧 draft（升级前落盘）
@@ -117,6 +124,7 @@ public struct ExercisePrescriptionPlan: Equatable, Sendable, Codable {
         progressionStepKg = try c.decodeIfPresent(Double.self, forKey: .progressionStepKg) ?? 2.5
         change = try c.decode(ChangeDirection.self, forKey: .change)
         reason = try c.decode(PrescriptionReason.self, forKey: .reason)
+        loadType = try c.decodeIfPresent(String.self, forKey: .loadType) ?? "external"
     }
 }
 

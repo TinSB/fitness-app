@@ -14,6 +14,7 @@ public enum EquipmentRegistry {
     /// selectorized 插销配重栈——原 id 原地改值，§6.1 铁律）。
     public static let allClasses: Set<String> = [
         "barbell", "dumbbell", "cable", "plate-loaded", "selectorized",
+        "bodyweight",   // wave-6（2026-06-13）：自重——loadType 闸开启
     ]
 
     /// 「固定器械」类成员（FR-EQ1 accessory 槽软化键 + 器械槽位匹配键）：
@@ -28,9 +29,10 @@ public enum EquipmentRegistry {
     /// 现状边界（如实）：目录暂无自重/弹力带条目，home-dumbbell 与 minimal
     /// 都收敛为 dumbbell-only——minimal 的「自重」覆盖等 P1 bodyweight wave
     /// 落地时与本矩阵同 PR 放开。
+    /// bodyweight 对所有有限场景隐含可用（徒手不需器械）：家用/极简都加 bodyweight。
     public static let scenarioAccess: [String: Set<String>] = [
-        "home-dumbbell": ["dumbbell"],
-        "minimal": ["dumbbell"],
+        "home-dumbbell": ["dumbbell", "bodyweight"],
+        "minimal": ["dumbbell", "bodyweight"],
     ]
 
     /// 负重语义封闭集合（§6.1）：external 之外的类型在对应引擎支持落地前
@@ -39,6 +41,7 @@ public enum EquipmentRegistry {
         "external", "bodyweight", "bodyweight-plus", "assisted", "band",
     ]
 
-    /// 当前引擎已支持的负重语义（渐进/疼痛瀑布/PR/吨位全链路）。
-    public static let prescribableLoadTypes: Set<String> = ["external"]
+    /// 当前引擎已支持的负重语义。bodyweight（自重）于 wave-6 加入——按次数进阶、
+    /// 重量轴不参与（owner 拍板 2026-06-13）；bodyweight-plus/assisted/band 仍闸内。
+    public static let prescribableLoadTypes: Set<String> = ["external", "bodyweight"]
 }

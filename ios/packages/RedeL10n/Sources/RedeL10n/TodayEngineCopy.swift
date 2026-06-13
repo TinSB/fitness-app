@@ -183,6 +183,42 @@ extension RedeStrings {
         }
     }
 
+    // MARK: - 自重展示（wave-6）：大数字=次数、无「0kg」
+
+    /// 主数字：自重 = 次数；其余 = 重量。
+    public func heroNumber(loadType: String, weightKg: Double, reps: Int) -> String {
+        loadType == "bodyweight" ? String(reps) : formatKg(weightKg)
+    }
+
+    /// 副标：自重 = 「次 · RIR」（次数已在主数字）；其余 = 「单位 · ×次 · RIR」。
+    public func heroDetail(loadType: String, reps: Int, rir: Int) -> String {
+        loadType == "bodyweight"
+            ? t2("次 · RIR \(rir)", "reps · RIR \(rir)")
+            : loadDetail(targetReps: reps, targetRir: rir)
+    }
+
+    /// Rail 节点值：自重 = 「×次」；其余 = 「重×次」。
+    public func railValue(loadType: String, weightKg: Double?, reps: Int?) -> String {
+        if loadType == "bodyweight" {
+            guard let reps else { return "—" }
+            return "×\(reps)"
+        }
+        return railValue(weightKg: weightKg, reps: reps)
+    }
+
+    /// Change 行（自重）：按次数叙述，重量轴不出现。
+    public func changeLineBodyweight(exerciseName: String, change: String, reps: Int, atCeiling: Bool) -> String {
+        if atCeiling {
+            return t2("\(exerciseName) ×\(reps) · 可加配重或换更难变体了",
+                      "\(exerciseName) ×\(reps) · ready to add load or progress")
+        }
+        switch change {
+        case "start": return t2("\(exerciseName) 首次 ×\(reps)", "\(exerciseName) starts at ×\(reps)")
+        case "increase": return t2("\(exerciseName) 加到 ×\(reps) · 进阶", "\(exerciseName) up to ×\(reps)")
+        default: return t2("\(exerciseName) 保持 ×\(reps)", "\(exerciseName) holds ×\(reps)")
+        }
+    }
+
     private func t2(_ zh: String, _ en: String) -> String {
         locale == .zh ? zh : en
     }

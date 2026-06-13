@@ -78,4 +78,15 @@ final class TodayEngineCopyTests: XCTestCase {
         XCTAssertEqual(zh.signalLine(gapDays: nil, sessionsLast7: 0, planned: 6), "暂无训练记录")
         XCTAssertEqual(en.changeLine(exerciseName: "Bench press", change: "increase", fromKg: "60", toKg: "62.5"), "Bench press 60→62.5 kg · moving up")
     }
+
+    // 自重展示（wave-6）：大数字=次数、无「0kg」
+    func testBodyweightDisplayShowsRepsNotZeroWeight() {
+        XCTAssertEqual(zh.heroNumber(loadType: "bodyweight", weightKg: 0, reps: 12), "12")
+        XCTAssertEqual(zh.heroNumber(loadType: "external", weightKg: 50, reps: 6), "50")
+        XCTAssertEqual(zh.heroDetail(loadType: "bodyweight", reps: 12, rir: 2), "次 · RIR 2")
+        XCTAssertEqual(zh.railValue(loadType: "bodyweight", weightKg: 0, reps: 12), "×12")
+        XCTAssertEqual(zh.changeLineBodyweight(exerciseName: "俯卧撑", change: "start", reps: 12, atCeiling: false), "俯卧撑 首次 ×12")
+        XCTAssertEqual(zh.changeLineBodyweight(exerciseName: "俯卧撑", change: "increase", reps: 14, atCeiling: false), "俯卧撑 加到 ×14 · 进阶")
+        XCTAssertEqual(zh.changeLineBodyweight(exerciseName: "引体向上", change: "hold", reps: 25, atCeiling: true), "引体向上 ×25 · 可加配重或换更难变体了")
+    }
 }

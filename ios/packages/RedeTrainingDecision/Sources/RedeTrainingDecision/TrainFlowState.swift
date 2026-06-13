@@ -107,6 +107,7 @@ public struct TrainFlowState: Equatable, Sendable {
             repLowerBound: exercise.repLowerBound,
             repUpperBound: exercise.repUpperBound,
             stepKg: exercise.stepKg,
+            loadType: exercise.loadType,
             sets: Array(exercise.sets.dropFirst(skippedInCurrentExercise))
         )
     }
@@ -226,6 +227,7 @@ public struct TrainFlowState: Equatable, Sendable {
             stepKg: catalog.entry(id: newExerciseId).map {
                 LoadGrid.stepKg(equipment: $0.equipment, unit: loadUnit)
             } ?? exercise.stepKg,
+            loadType: catalog.entry(id: newExerciseId)?.loadType ?? exercise.loadType,
             sets: exercise.sets
         )
         plan = SessionSetPlan(dayCode: plan.dayCode, exercises: exercises)
