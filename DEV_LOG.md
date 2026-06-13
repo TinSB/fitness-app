@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-06-13 · 结构：Larder 饮食 App 从 Rede 分家为独立仓 `~/Developer/Larder`
+
+**用户目标**：先报一次 Larder（与 Rede 联动的饮食 App，暂定名）进度；并把它从 Rede 仓里抽出来，作为一个**独立 App** 放到 `~/Developer/Larder`（与 Rede 平级），不再混在健身仓里。
+
+**做了什么（用户视角）**：① 全仓并行精读 Larder 全部材料，产出逐块成熟度的进度报告（产品规格/视觉/文案/调研/clay 资产/原型）。② 把 Larder 的 9 份设计/调研/Blender 简报、16 个 HTML 原型、146 个 clay 图标 + 本地渲染流水线，整体搬到 `~/Developer/Larder`，**git init 成独立仓并首次提交**；同时**从 Rede 移除这 171 个已跟踪文件**（git rm，Rede 历史仍保留旧提交、不丢失），清掉 Rede 的 clay `.gitignore` 段，把根 `DOCS_MANIFEST` 那条改成「已分家为独立仓」。
+
+**用户可见影响**：`~/Developer/` 下多出一个独立的 `Larder/` App 仓（`docs/` 规格、`docs/prototypes/` 原型、`assets/clay/` 146 图标、`ios/` 预留）。Rede 仓里不再有任何饮食材料，`assets/` 只剩 app-icon；Rede 主 App 文档与代码零改动。
+
+**进度结论（诚实版）**：Larder = 设计 + 资产阶段，**零代码、零付费验证**。最强：产品引擎规格 + 视觉系统 + 146 个 clay 图标（已落地）；最缺：P0 商业验证（落地页/waitlist/paywall/访谈）+ 实际 iOS 实现 + 图标尚未进 App。按宪法商业门禁，过 P0 前不进入正式 iOS 开发。
+
+**证据**：Rede 端 `git status` = 171 个删除(D) + 3 个文档修改（`.gitignore`/`DOCS_MANIFEST`/`DEV_LOG`），0 改名残留、无误删主文档；新仓首次提交含 146 图标（git 跟踪）+ 73 个本地渲染工件（gitignored）。
+
+**剩余风险/下一步**：① **Rede 端的移除尚未提交**（等 owner 确认；新仓首次提交已落）。② 全程检测到并行进程在改 Rede 主文档（docs 真相校准 batch），已严格只动 Larder 自己的 171 个文件 + 3 处登记，未碰其工作。③ clay 脚本内输出路径仍指向旧 `ironpath/`，跑前需改。
+
 ## 2026-06-13 · 文档：全仓文档审查 + 三批真相校准（你让我重审 Codex 写的技术文档）
 
 **你的目标**：你说之前技术文档是 Codex 写的、不放心，让我以专业团队标准把所有文档逐字重审一遍，核对文档与真实进度是否对得上、找出问题。
