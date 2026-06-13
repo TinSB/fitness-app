@@ -17,14 +17,14 @@ final class SessionIntentModelTests: XCTestCase {
 
     func testReplacementCandidatesComeFromSameSubstitutionGroup() {
         let candidates = ExerciseReplacementEngine.candidates(for: "bench-press")
-        XCTAssertEqual(candidates, ["incline-db-press", "db-bench-press", "machine-chest-press", "db-floor-press", "incline-barbell-press", "decline-barbell-press", "push-up", "hammer-chest-press", "incline-hammer-press"]) // wave-1/2/4/6 入族
+        XCTAssertEqual(candidates, ["incline-db-press", "db-bench-press", "machine-chest-press", "db-floor-press", "incline-barbell-press", "decline-barbell-press", "push-up", "hammer-chest-press", "incline-hammer-press", "smith-bench-press", "smith-incline-press"]) // wave-1/2/4/6/8 入族
     }
 
     func testReplacementExcludesSelfAndKeepsCatalogOrder() {
         let candidates = ExerciseReplacementEngine.candidates(for: "hack-squat")
         XCTAssertFalse(candidates.contains("hack-squat"))
         // FR-EQ1/wave-2 目录扩充：squat 族尾部追加，rank 序保持
-        XCTAssertEqual(candidates, ["squat", "leg-press", "goblet-squat", "db-lunge", "front-squat", "bulgarian-split-squat", "bodyweight-squat", "bodyweight-lunge", "pendulum-squat"])
+        XCTAssertEqual(candidates, ["squat", "leg-press", "goblet-squat", "db-lunge", "front-squat", "bulgarian-split-squat", "bodyweight-squat", "bodyweight-lunge", "pendulum-squat", "smith-squat"]) // wave-8 入族
     }
 
     func testUnknownExerciseYieldsNoCandidates() {
@@ -56,6 +56,6 @@ final class SessionIntentModelTests: XCTestCase {
             for: "bench-press",
             excluding: ["machine-chest-press"]
         )
-        XCTAssertEqual(candidates, ["incline-db-press", "db-bench-press", "db-floor-press", "incline-barbell-press", "decline-barbell-press", "push-up", "hammer-chest-press", "incline-hammer-press"]) // wave-1/2/4/6 入族
+        XCTAssertEqual(candidates, ["incline-db-press", "db-bench-press", "db-floor-press", "incline-barbell-press", "decline-barbell-press", "push-up", "hammer-chest-press", "incline-hammer-press", "smith-bench-press", "smith-incline-press"]) // wave-1/2/4/6/8 入族
     }
 }

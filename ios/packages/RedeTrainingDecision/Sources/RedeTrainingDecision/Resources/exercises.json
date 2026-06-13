@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "wave-7",
+  "catalogVersion": "wave-8",
   "exercises": [
     {
       "id": "bench-press",
@@ -1791,6 +1791,128 @@
       "loadFactor": 1.0,
       "isGuided": true,
       "rank": 910
+    },
+    {
+      "id": "smith-squat",
+      "movementPattern": "squat-pattern",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [
+        "glutes",
+        "core"
+      ],
+      "equipment": "smith",
+      "kind": "compound",
+      "substitutionGroups": [
+        "squat"
+      ],
+      "startWeightKg": 60.0,
+      "nameZh": "史密斯深蹲",
+      "nameEn": "Smith machine squat",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 920
+    },
+    {
+      "id": "smith-bench-press",
+      "movementPattern": "horizontal-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "triceps",
+        "front-delt"
+      ],
+      "equipment": "smith",
+      "kind": "compound",
+      "substitutionGroups": [
+        "chest-press"
+      ],
+      "startWeightKg": 50.0,
+      "nameZh": "史密斯平板卧推",
+      "nameEn": "Smith machine bench press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 930
+    },
+    {
+      "id": "smith-incline-press",
+      "movementPattern": "incline-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "front-delt",
+        "triceps"
+      ],
+      "equipment": "smith",
+      "kind": "compound",
+      "substitutionGroups": [
+        "chest-press"
+      ],
+      "startWeightKg": 40.0,
+      "nameZh": "史密斯上斜卧推",
+      "nameEn": "Smith machine incline press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 940
+    },
+    {
+      "id": "smith-overhead-press",
+      "movementPattern": "vertical-press",
+      "primaryMuscle": "shoulder",
+      "secondaryMuscles": [
+        "triceps",
+        "core"
+      ],
+      "equipment": "smith",
+      "kind": "compound",
+      "substitutionGroups": [
+        "shoulder-press"
+      ],
+      "startWeightKg": 35.0,
+      "nameZh": "史密斯肩推",
+      "nameEn": "Smith machine overhead press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 950
+    },
+    {
+      "id": "smith-calf-raise",
+      "movementPattern": "calf-raise",
+      "primaryMuscle": "calves",
+      "secondaryMuscles": [],
+      "equipment": "smith",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "calves"
+      ],
+      "startWeightKg": 50.0,
+      "nameZh": "史密斯站姿提踵",
+      "nameEn": "Smith machine calf raise",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 960
+    },
+    {
+      "id": "smith-shrug",
+      "movementPattern": "shrug",
+      "primaryMuscle": "traps",
+      "secondaryMuscles": [
+        "upper-back"
+      ],
+      "equipment": "smith",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "shrug"
+      ],
+      "startWeightKg": 60.0,
+      "nameZh": "史密斯耸肩",
+      "nameEn": "Smith machine shrug",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 970
     }
   ]
 }

@@ -42,6 +42,7 @@ public enum LoadGrid {
         "dumbbell":     (kg: 2.5, lb: 5),
         "plate-loaded": (kg: 2.5, lb: 5),
         "cable":        (kg: 2.5, lb: 5),
+        "smith":        (kg: 2.5, lb: 5),   // wave-8：导轨上挂奥片，与杠铃同档
         "selectorized": (kg: 5,   lb: 10),
         "bodyweight":   (kg: 0,   lb: 0),   // 无重量轴：引擎早分支保证不用此值（wave-6）
     ]

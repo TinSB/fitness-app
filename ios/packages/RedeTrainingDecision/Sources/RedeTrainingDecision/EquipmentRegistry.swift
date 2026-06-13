@@ -15,6 +15,7 @@ public enum EquipmentRegistry {
     public static let allClasses: Set<String> = [
         "barbell", "dumbbell", "cable", "plate-loaded", "selectorized",
         "bodyweight",   // wave-6（2026-06-13）：自重——loadType 闸开启
+        "smith",        // wave-8（2026-06-13）：史密斯导轨架——挂奥片、external 负重、商业房通用
     ]
 
     /// 「固定器械」类成员（FR-EQ1 accessory 槽软化键 + 器械槽位匹配键）：
@@ -22,7 +23,12 @@ public enum EquipmentRegistry {
     /// 内容前置条件（审查 M2 留痕）：目录暂无 selectorized 复合深蹲条目——
     /// 未来新增 selectorized-only 场景前必须先补该类条目，否则 lower 日主槽
     /// 将如实 slotUnfilled（覆盖矩阵 golden 会红，按 §3 流程登记或补内容）。
-    public static let machineClasses: Set<String> = ["plate-loaded", "selectorized"]
+    public static let machineClasses: Set<String> = ["plate-loaded", "selectorized", "smith"]
+    // wave-8（2026-06-13）：史密斯导轨架是固定路径站 → isGuided=true，按合同
+    // 「guided ⟹ 固定器械类」纳入本集合。语义自洽：squat-pattern 固定器械槽
+    // （§slots line 92）从此把史密斯深蹲也算合法候选。零行为变化：smith rank 全
+    // 920+ 尾部，槽位挑最低 rank，默认仍选既有固定器械（主槽 hack-squat rank 180 /
+    // 辅槽 leg-press rank 190 在前）；家用/极简白名单不含 smith，accessory 软化判定不变。
 
     /// 场景 → 可用器械类。commercial-gym **故意不入表** = nil（全器械可用）；
     /// 缺失/未知场景同样退化 nil（DataHealth 投影层已把未知值滤成 nil）。

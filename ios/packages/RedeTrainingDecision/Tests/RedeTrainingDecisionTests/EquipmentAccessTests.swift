@@ -137,9 +137,11 @@ final class EquipmentAccessTests: XCTestCase {
     func testReplacementCandidatesRespectAllowedEquipment() {
         let all = ExerciseReplacementEngine.candidates(for: "db-bench-press")
         XCTAssertTrue(all.contains("machine-chest-press")) // 不过滤时含器械
+        XCTAssertTrue(all.contains("smith-bench-press")) // wave-8：商业房替换列表含史密斯
         let home = ExerciseReplacementEngine.candidates(for: "db-bench-press", allowedEquipment: ["dumbbell"])
         XCTAssertFalse(home.contains("machine-chest-press"))
         XCTAssertFalse(home.contains("bench-press")) // barbell
+        XCTAssertFalse(home.contains("smith-bench-press")) // wave-8：家用场景挡掉史密斯（验收标准 2 直接证据）
         XCTAssertTrue(home.contains("incline-db-press"))
     }
 
