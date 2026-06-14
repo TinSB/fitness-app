@@ -14,7 +14,7 @@
 	     source of truth, on-device only (no iCloud/CloudKit/network/remote push). -->
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.com.rede.app.ios</string>
+		<string>group.com.tinsab.rede</string>
 	</array>
 </dict>
 </plist>
