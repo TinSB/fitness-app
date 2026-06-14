@@ -42,7 +42,7 @@ final class SessionIntentModelTests: XCTestCase {
         ])
         XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "solo-move", catalog: solo), [])
         // 配对族：wave-1/2 入族后的真实目录
-        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "leg-curl"), ["db-leg-curl", "seated-leg-curl", "hammer-leg-curl"]) // wave-3/10 入族
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "leg-curl"), ["db-leg-curl", "seated-leg-curl", "hammer-leg-curl", "nordic-curl"]) // wave-3/10/14 入族
         // wave-10：双杠（自重 dip + 辅助 assisted-dip）入 triceps 族尾部——锁定换动作候选（审查 MAJOR）
         XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "triceps-pushdown"), ["close-grip-bench", "db-overhead-triceps-extension", "cable-overhead-triceps", "skullcrusher", "overhead-barbell-triceps", "cable-kickback", "assisted-dip", "dip", "weighted-dip", "band-triceps-pushdown"]) // wave-10/11/12 入族
         XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "lateral-raise"), ["cable-lateral-raise", "machine-lateral-raise", "band-lateral-raise"]) // wave-2/3/12 入族
@@ -52,8 +52,10 @@ final class SessionIntentModelTests: XCTestCase {
         XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "db-curl"), ["hammer-curl", "preacher-curl", "barbell-curl", "cable-curl", "incline-db-curl", "concentration-curl", "machine-preacher-curl", "band-curl"]) // wave-12 入族
         // wave-13：弹力带居家复合补全——划船/过头推/早安入 row/shoulder-press/hinge 族，同口径锁定候选
         XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "seated-row"), ["barbell-row", "one-arm-db-row", "chest-supported-db-row", "machine-row", "pendlay-row", "t-bar-row", "single-arm-cable-row", "meadows-row", "inverted-row", "hammer-row", "band-row"]) // wave-13 入族
-        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "shoulder-press"), ["overhead-press", "machine-shoulder-press", "arnold-press", "landmine-press", "push-press", "hammer-shoulder-press", "smith-overhead-press", "band-overhead-press"]) // wave-13 入族
-        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "romanian-deadlift"), ["db-rdl", "deadlift", "hip-thrust", "good-morning", "cable-pull-through", "sumo-deadlift", "band-good-morning"]) // wave-13 入族
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "shoulder-press"), ["overhead-press", "machine-shoulder-press", "arnold-press", "landmine-press", "push-press", "hammer-shoulder-press", "smith-overhead-press", "band-overhead-press", "pike-push-up"]) // wave-13/14 入族
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "romanian-deadlift"), ["db-rdl", "deadlift", "hip-thrust", "good-morning", "cable-pull-through", "sumo-deadlift", "band-good-morning", "glute-bridge"]) // wave-13/14 入族
+        // wave-14：自重居家补全——派克俯卧撑/北欧腿弯举/臀桥/自重提踵入 shoulder-press/hamstring-curl/hinge/calves 族（均尾挂，已被哑铃填满的 pattern 加无器械选项，零覆盖漂移）
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "calf-raise"), ["db-calf-raise", "seated-calf-raise", "smith-calf-raise", "bodyweight-calf-raise"]) // wave-14 入族
         // 审查 M-1/Mi-2（wave-2）：直臂下压系孤立动作，不得混入复合垂直拉族——
         // 独立 lat-isolation 族（单成员）；vertical-pull 族列表显式锁定
         XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "lat-pulldown"), ["db-pullover", "close-grip-pulldown", "wide-grip-pulldown", "pull-up", "hammer-pulldown", "assisted-pull-up", "chin-up", "weighted-pull-up", "band-lat-pulldown"]) // wave-3/4/6/9/10/11/13 入族

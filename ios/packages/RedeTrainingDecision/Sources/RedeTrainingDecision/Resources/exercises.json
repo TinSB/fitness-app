@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "wave-13",
+  "catalogVersion": "wave-14",
   "exercises": [
     {
       "id": "bench-press",
@@ -2306,6 +2306,82 @@
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 1170
+    },
+    {
+      "id": "pike-push-up",
+      "movementPattern": "vertical-press",
+      "primaryMuscle": "shoulder",
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "equipment": "bodyweight",
+      "kind": "compound",
+      "substitutionGroups": [
+        "shoulder-press"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "派克俯卧撑",
+      "nameEn": "Pike push-up",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1180
+    },
+    {
+      "id": "nordic-curl",
+      "movementPattern": "knee-flexion",
+      "primaryMuscle": "hamstrings",
+      "secondaryMuscles": [],
+      "equipment": "bodyweight",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "hamstring-curl"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "北欧腿弯举",
+      "nameEn": "Nordic curl",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1190
+    },
+    {
+      "id": "glute-bridge",
+      "movementPattern": "hinge",
+      "primaryMuscle": "glutes",
+      "secondaryMuscles": [
+        "hamstrings"
+      ],
+      "equipment": "bodyweight",
+      "kind": "compound",
+      "substitutionGroups": [
+        "hinge"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "臀桥",
+      "nameEn": "Glute bridge",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1200
+    },
+    {
+      "id": "bodyweight-calf-raise",
+      "movementPattern": "calf-raise",
+      "primaryMuscle": "calves",
+      "secondaryMuscles": [],
+      "equipment": "bodyweight",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "calves"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "自重提踵",
+      "nameEn": "Bodyweight calf raise",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1210
     }
   ]
 }
