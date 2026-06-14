@@ -165,7 +165,7 @@ public enum TodayPrescriptionEngine {
                 continue
             }
             usedIds.insert(entry.id)
-            exercises.append(prescribe(entry: entry, slot: slot, input: input, verdict: verdict))
+            exercises.append(prescribe(entry: entry, slot: slot, input: input, verdict: verdict, catalog: catalog))
         }
 
         switch verdict.call {
@@ -183,7 +183,8 @@ public enum TodayPrescriptionEngine {
         entry: ExerciseCatalogEntry,
         slot: Slot,
         input: CleanTrainingDecisionInput,
-        verdict: TodayVerdict
+        verdict: TodayVerdict,
+        catalog: ExerciseCatalog
     ) -> ExercisePrescriptionPlan {
         let last = lastPerformance(exerciseId: entry.id, sessions: input.sessions)
 
@@ -191,6 +192,13 @@ public enum TodayPrescriptionEngine {
         // 重量轴的渐进/取整/调制全部不适用——单独一条路径。
         if entry.loadType == "bodyweight" {
             return prescribeBodyweight(entry: entry, slot: slot, last: last, verdict: verdict)
+        }
+
+        // 辅助器械分支（wave-9，owner 拍板）：辅助量轴方向反转——进阶=减辅助、
+        // 挣扎/力竭=加辅助、轻练/减载=加辅助、新手冷启动=更多辅助、降到最小一片
+        // 还有余力=毕业换自重孪生。绝不把 external 减重瀑布套上去（安全方向反转红线）。
+        if entry.loadType == "assisted" {
+            return prescribeAssisted(entry: entry, slot: slot, last: last, input: input, verdict: verdict, catalog: catalog)
         }
 
         // 档位系统（2026-06-13）：渐进一档 = 器械×用户单位的真实档位步长（LoadGrid，
@@ -292,7 +300,8 @@ public enum TodayPrescriptionEngine {
         entry: ExerciseCatalogEntry,
         slot: Slot,
         last: LastPerformance?,
-        verdict: TodayVerdict
+        verdict: TodayVerdict,
+        forcedReason: PrescriptionReason? = nil   // wave-9：assisted 毕业换自重时标 .assistedGraduated
     ) -> ExercisePrescriptionPlan {
         var targetReps: Int
         let change: ChangeDirection
@@ -343,9 +352,121 @@ public enum TodayPrescriptionEngine {
             nextProjectedWeightKg: 0,
             progressionStepKg: 0,
             change: change,
-            reason: reason,
+            reason: forcedReason ?? reason,
             loadType: "bodyweight"
         )
+    }
+
+    /// 辅助器械处方（wave-9，owner 拍板）：辅助量 = 越多越轻松，方向相对 external 全反转。
+    /// 变强→减辅助一档；力竭/挣扎→加辅助一档（安全方向）；轻练/减载→加辅助；
+    /// 新手冷启动→更多辅助；减到最小一片以下→毕业换同族自重孪生（数轴不跨零）。
+    private static func prescribeAssisted(
+        entry: ExerciseCatalogEntry,
+        slot: Slot,
+        last: LastPerformance?,
+        input: CleanTrainingDecisionInput,
+        verdict: TodayVerdict,
+        catalog: ExerciseCatalog
+    ) -> ExercisePrescriptionPlan {
+        let step = LoadGrid.stepKg(
+            equipment: entry.equipment,
+            unit: LoadUnit(unitSystem: input.profile.unitSystem)
+        )
+
+        let baseAssist: Double
+        let targetReps: Int
+        let change: ChangeDirection
+        let reason: PrescriptionReason
+        if let last {
+            if let minRir = last.minRir, minRir <= nearFailureMeanRir {
+                baseAssist = last.topWeightKg + step       // 力竭 → 加辅助（更轻=安全）
+                targetReps = slot.repMin
+                change = .ease
+                reason = .nearFailureLastTime
+            } else if last.maxReps < slot.repMin {
+                baseAssist = last.topWeightKg + step        // 没到下限 → 加辅助
+                targetReps = slot.repMin
+                change = .ease
+                reason = .belowRepFloor
+            } else if last.minReps >= slot.repMax, last.minRir.map({ $0 >= progressMinMeanRir }) ?? true {
+                let nextAssist = last.topWeightKg - step     // 变强 → 减辅助一档
+                if nextAssist < step {
+                    // 减到最小一片以下 = 不再需要辅助 → 自动毕业换自重孪生
+                    if let twin = graduationTwin(for: entry, catalog: catalog) {
+                        let twinLast = lastPerformance(exerciseId: twin.id, sessions: input.sessions)
+                        // 「毕业」提示只在首次切换出现（无自重历史）；已练过自重版则走
+                        // 正常次数进阶（审查 MINOR：避免 reason=毕业 / change=进阶 矛盾）。
+                        return prescribeBodyweight(
+                            entry: twin, slot: slot, last: twinLast, verdict: verdict,
+                            forcedReason: twinLast == nil ? .assistedGraduated : nil
+                        )
+                    }
+                    baseAssist = step                        // 无孪生兜底：保持最小辅助，不跨零
+                    targetReps = slot.repMax
+                    change = .hold
+                    reason = .holdProgressing
+                } else {
+                    baseAssist = nextAssist
+                    targetReps = slot.repMin
+                    change = .increase
+                    reason = .repCeilingReached
+                }
+            } else {
+                baseAssist = last.topWeightKg                // 区间内 → 保持
+                targetReps = slot.repMax
+                change = .hold
+                reason = .holdProgressing
+            }
+        } else {
+            baseAssist = ColdStartPrior.scaledAssistKg(
+                entry.startWeightKg, trainingLevel: input.profile.trainingLevel, stepKg: step
+            )
+            targetReps = slot.repMin
+            change = .start
+            reason = .firstExposure
+        }
+
+        // 调制反转：轻练/减载 = 加辅助（更轻），不是 ×0.9/0.8 减重。
+        var assist = roundToIncrement(baseAssist, step: step)
+        var sets = slot.sets
+        switch verdict.call {
+        case .light:
+            assist = roundToIncrement(assist + step, step: step)
+        case .deload:
+            assist = roundToIncrement(assist + step * 2, step: step)
+            sets = max(2, sets - 1)
+        case .train, .rest:
+            break
+        }
+
+        return ExercisePrescriptionPlan(
+            exerciseId: entry.id,
+            sets: sets,
+            restSeconds: slot.rest,
+            repLowerBound: slot.repMin,
+            repUpperBound: slot.repMax,
+            targetReps: targetReps,
+            targetWeightKg: assist,
+            targetRir: targetRir,
+            previousWeightKg: last?.topWeightKg,
+            previousTopReps: last?.repsAtTop,
+            // 下一步指向「少帮一档」（进阶方向）；最小一片兜底不跨零。
+            nextProjectedWeightKg: max(step, roundToIncrement(assist - step, step: step)),
+            progressionStepKg: step,
+            change: change,
+            reason: reason,
+            loadType: entry.loadType
+        )
+    }
+
+    /// 毕业孪生：同主族的 bodyweight 成员（辅助引体 → 自重引体）；无则 nil（兜底保持最小辅助）。
+    private static func graduationTwin(for entry: ExerciseCatalogEntry, catalog: ExerciseCatalog) -> ExerciseCatalogEntry? {
+        guard let primary = entry.substitutionGroups.first else { return nil }
+        // 去顺序化（审查 MINOR）：同主族多个 bodyweight 成员时取 rank 最小（最基础）那个，
+        // 不依赖 JSON 顺序——与处方主匹配同口径。
+        return catalog.entries
+            .filter { !$0.deprecated && $0.loadType == "bodyweight" && $0.substitutionGroups.first == primary }
+            .min(by: { ($0.rank, $0.id) < ($1.rank, $1.id) })
     }
 
     private struct LastPerformance {

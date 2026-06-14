@@ -54,7 +54,8 @@ struct ProgressModel {
         var ceilings: [String: Double] = [:]
         for entry in catalog.entries {
             facts[entry.id] = ExerciseStatsFacts(
-                loadFactor: entry.loadFactor, isCompound: entry.kind == "compound"
+                loadFactor: entry.loadFactor, isCompound: entry.kind == "compound",
+                isAssisted: entry.loadType == "assisted"
             )
             ceilings[entry.id] = max(60, entry.startWeightKg * 6)
         }

@@ -48,6 +48,21 @@ final class ProgressSnapshotBuilderTests: XCTestCase {
         XCTAssertEqual(snapshot.history[0].totalVolumeKg, 400)
     }
 
+    /// wave-9：辅助器械不进跨会话吨位/e1RM/趋势（辅助量裸加=方向反）；组数仍如实计。
+    func testAssistedExcludedFromVolumeAndE1RM() {
+        let facts: [String: ExerciseStatsFacts] = [
+            "assisted-pull-up": ExerciseStatsFacts(loadFactor: 1.0, isCompound: true, isAssisted: true),
+            "bench-press": ExerciseStatsFacts(loadFactor: 1.0, isCompound: true),
+        ]
+        let snapshot = ProgressSnapshotBuilder.build(sessions: [
+            session("s1", "2026-06-01", [("assisted-pull-up", [set(30, 8)]), ("bench-press", [set(60, 6)])]),
+        ], facts: facts)
+        XCTAssertEqual(snapshot.history[0].totalVolumeKg, 360, "吨位仅 bench 60×6=360；辅助 30×8 不计")
+        XCTAssertEqual(snapshot.history[0].setCount, 2, "辅助组仍如实计数")
+        XCTAssertFalse(snapshot.exerciseTrends.contains { $0.exerciseId == "assisted-pull-up" },
+                       "辅助器械不产 e1RM 趋势点（重量轴是辅助量）")
+    }
+
     func testSameDateKeepsInputOrderNewestFirst() {
         // 同日两场：历史 newest-first 下，输入靠后的视为更晚。
         let snapshot = ProgressSnapshotBuilder.build(sessions: [

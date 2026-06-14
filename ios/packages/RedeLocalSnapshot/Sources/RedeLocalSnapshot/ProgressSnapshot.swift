@@ -64,10 +64,14 @@ public struct ExerciseStatsFacts: Equatable, Sendable {
     public let loadFactor: Double
     /// 训练学主项复合（关键动作挑选优先级）。
     public let isCompound: Bool
+    /// 辅助器械（wave-9）：重量轴是辅助量（越多越轻），不进吨位/顶组/PR/e1RM——
+    /// 裸加会把帮助当负重、辅助越多"PR"越高，方向反转。默认 false=零回归。
+    public let isAssisted: Bool
 
-    public init(loadFactor: Double = 1.0, isCompound: Bool = false) {
+    public init(loadFactor: Double = 1.0, isCompound: Bool = false, isAssisted: Bool = false) {
         self.loadFactor = loadFactor
         self.isCompound = isCompound
+        self.isAssisted = isAssisted
     }
 }
 
@@ -104,14 +108,18 @@ public enum ProgressSnapshotBuilder {
             for exercise in record.exercises {
                 if setsByExercise[exercise.exerciseId] == nil { orderedIds.append(exercise.exerciseId) }
                 setsByExercise[exercise.exerciseId, default: []].append(contentsOf: exercise.sets)
+                // 辅助器械不进吨位（wave-9）：辅助量裸加=方向反。组数仍如实计。
+                let isAssisted = facts[exercise.exerciseId]?.isAssisted ?? false
                 let factor = facts[exercise.exerciseId]?.loadFactor ?? 1.0
                 for set in exercise.sets {
-                    volume += set.weightKg * Double(set.reps) * factor
+                    if !isAssisted { volume += set.weightKg * Double(set.reps) * factor }
                     setCount += 1
                 }
             }
 
             for exerciseId in orderedIds {
+                // 辅助器械不进顶组/PR/e1RM（wave-9）：辅助量越多"PR"越高=反，e1RM 无意义。
+                if facts[exerciseId]?.isAssisted ?? false { continue }
                 guard let exerciseTop = topSet(of: setsByExercise[exerciseId] ?? []) else { continue }
                 if top == nil || exerciseTop.weightKg > top!.weightKg
                     || (exerciseTop.weightKg == top!.weightKg && exerciseTop.reps > top!.reps) {

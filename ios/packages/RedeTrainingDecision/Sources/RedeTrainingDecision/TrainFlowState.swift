@@ -216,19 +216,33 @@ public struct TrainFlowState: Equatable, Sendable {
               replacementCandidates.contains(newExerciseId) else { return }
         events.append(.replaceExercise(newExerciseId))
         replacements.append(Replacement(originalExerciseId: exercise.exerciseId, actualExerciseId: newExerciseId))
+        let newEntry = catalog.entry(id: newExerciseId)
+        // 步长跟动作走：换入动作按其器械×用户单位的真实档位（LoadGrid，2026-06-13）；
+        // 查不到器械=保守沿用原值
+        let newStep = newEntry.map { LoadGrid.stepKg(equipment: $0.equipment, unit: loadUnit) } ?? exercise.stepKg
+        let newLoadType = newEntry?.loadType ?? exercise.loadType
+        // 换动作重算（wave-9，owner 拍板）：换到辅助器械时，原动作负重当辅助量
+        // 无意义（方向反转——高位下拉 50kg 不是「辅助 50kg」），用目录默认辅助量
+        // 重置。仅 assisted 重置；external→external 沿用原负重不变（零回归面）。
+        let newSets: [PlannedSet]
+        if newLoadType == "assisted", let newEntry {
+            // 下限守护（审查 MAJOR）：与 scaledAssistKg 一致，辅助量不得被取整归零。
+            let defaultAssist = max(newStep, (newEntry.startWeightKg / newStep).rounded() * newStep)
+            newSets = exercise.sets.map {
+                PlannedSet(index: $0.index, targetWeightKg: defaultAssist, targetReps: $0.targetReps, targetRir: $0.targetRir)
+            }
+        } else {
+            newSets = exercise.sets
+        }
         var exercises = plan.exercises
         exercises[exerciseIndex] = ExerciseSetPlan(
             exerciseId: newExerciseId,
             restSeconds: exercise.restSeconds,
             repLowerBound: exercise.repLowerBound,
             repUpperBound: exercise.repUpperBound,
-            // 步长跟动作走：换入动作按其器械×用户单位的真实档位（LoadGrid，
-            // 2026-06-13）；查不到器械=保守沿用原值
-            stepKg: catalog.entry(id: newExerciseId).map {
-                LoadGrid.stepKg(equipment: $0.equipment, unit: loadUnit)
-            } ?? exercise.stepKg,
-            loadType: catalog.entry(id: newExerciseId)?.loadType ?? exercise.loadType,
-            sets: exercise.sets
+            stepKg: newStep,
+            loadType: newLoadType,
+            sets: newSets
         )
         plan = SessionSetPlan(dayCode: plan.dayCode, exercises: exercises)
     }

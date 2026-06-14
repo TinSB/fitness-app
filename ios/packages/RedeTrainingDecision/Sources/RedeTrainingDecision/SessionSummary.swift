@@ -39,10 +39,15 @@ public enum SessionSummaryBuilder {
         var count = 0
         var top: SessionSummary.TopSet?
         for (exerciseId, sets) in observations {
-            let factor = catalog.entry(id: exerciseId)?.loadFactor ?? 1.0
+            let entry = catalog.entry(id: exerciseId)
+            let factor = entry?.loadFactor ?? 1.0
+            // 辅助器械不进吨位/顶组/PR（wave-9）：重量轴是辅助量（越多越轻），裸加进
+            // 吨位 = 把帮助当成举起的负重，且辅助越多吨位越高 = 方向反。组数仍如实计。
+            let countsTowardLoad = entry?.loadType != "assisted"
             for set in sets {
-                volume += set.weightKg * Double(set.reps) * factor
                 count += 1
+                guard countsTowardLoad else { continue }
+                volume += set.weightKg * Double(set.reps) * factor
                 if top == nil || set.weightKg > top!.weightKg
                     || (set.weightKg == top!.weightKg && set.reps > top!.reps) {
                     top = SessionSummary.TopSet(exerciseId: exerciseId, weightKg: set.weightKg, reps: set.reps)

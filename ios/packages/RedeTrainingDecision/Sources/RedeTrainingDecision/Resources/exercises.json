@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "wave-8",
+  "catalogVersion": "wave-9",
   "exercises": [
     {
       "id": "bench-press",
@@ -1913,6 +1913,26 @@
       "loadFactor": 1.0,
       "isGuided": true,
       "rank": 970
+    },
+    {
+      "id": "assisted-pull-up",
+      "movementPattern": "vertical-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "selectorized",
+      "kind": "compound",
+      "substitutionGroups": [
+        "vertical-pull"
+      ],
+      "startWeightKg": 30.0,
+      "nameZh": "辅助引体向上",
+      "nameEn": "Assisted pull-up",
+      "loadType": "assisted",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 980
     }
   ]
 }

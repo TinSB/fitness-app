@@ -32,11 +32,11 @@ final class CatalogContractTests: XCTestCase {
     // MARK: - 解码完整性
 
     func testBundledCatalogIntegrity() {
-        XCTAssertEqual(catalog.catalogVersion, "wave-8")
-        XCTAssertEqual(catalog.entries.count, 97)
+        XCTAssertEqual(catalog.catalogVersion, "wave-9")
+        XCTAssertEqual(catalog.entries.count, 98)
         // id 唯一 + 永生合同的前半（唯一）；rank 唯一保证匹配全序确定
-        XCTAssertEqual(Set(catalog.entries.map(\.id)).count, 97, "id 重复")
-        XCTAssertEqual(Set(catalog.entries.map(\.rank)).count, 97, "rank 重复——匹配次序歧义")
+        XCTAssertEqual(Set(catalog.entries.map(\.id)).count, 98, "id 重复")
+        XCTAssertEqual(Set(catalog.entries.map(\.rank)).count, 98, "rank 重复——匹配次序歧义")
         // 锚点：迁移自原数组的首尾条目
         XCTAssertEqual(catalog.entry(id: "bench-press")?.rank, 0)
         XCTAssertEqual(catalog.entry(id: "bench-press")?.startWeightKg, 60)
@@ -167,22 +167,22 @@ final class CatalogContractTests: XCTestCase {
     /// 非 external 负重语义（自重/辅助/弹力带）在引擎支持落地前禁入处方与替换：
     /// 注入一个 rank 必胜的 bodyweight 条目，它必须被挡在门外。
     func testNonExternalLoadTypeBlockedFromPrescriptionAndCandidates() throws {
-        // wave-6：bodyweight 已开闸——改用仍闸内的 assisted 验证 loadType 硬过滤
+        // wave-6/9：bodyweight、assisted 已开闸——改用仍闸内的 band 验证 loadType 硬过滤
         let pushUp = ExerciseCatalogEntry(
-            id: "assisted-x", nameZh: "辅助动作", nameEn: "Assisted",
+            id: "band-x", nameZh: "弹力带动作", nameEn: "Band",
             movementPattern: "horizontal-press", primaryMuscle: "chest",
             equipment: "dumbbell",   // 故意给白名单内器械：必须死在 loadType 闸而非器械闸
             kind: "compound", substitutionGroups: ["chest-press"], startWeightKg: 2.5,
-            loadType: "assisted", rank: -10
+            loadType: "band", rank: -10
         )
         let amended = ExerciseCatalog(catalogVersion: "test", entries: [pushUp] + catalog.entries)
         let appDataJSON = #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 5}}"#
         let input = try TestSupport.makeInput(appDataJSON: appDataJSON, todayISO: "2026-06-11")
         let plan = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input), catalog: amended)
-        XCTAssertFalse(plan?.exercises.map(\.exerciseId).contains("assisted-x") ?? true,
-                       "assisted 条目在 loadType 支持前不得进处方（rank -10 本应必胜）")
-        XCTAssertFalse(ExerciseReplacementEngine.candidates(for: "bench-press", catalog: amended).contains("assisted-x"),
-                       "assisted 条目不得进替换候选")
+        XCTAssertFalse(plan?.exercises.map(\.exerciseId).contains("band-x") ?? true,
+                       "band 条目在 loadType 支持前不得进处方（rank -10 本应必胜）")
+        XCTAssertFalse(ExerciseReplacementEngine.candidates(for: "bench-press", catalog: amended).contains("band-x"),
+                       "band 条目不得进替换候选")
     }
 
     /// 自重引擎（wave-6，owner 拍板）：按次数进阶、到顶提示换难度、重量恒 0。

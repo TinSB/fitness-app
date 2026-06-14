@@ -21,6 +21,8 @@ public enum PrescriptionReason: Equatable, Sendable, Codable {
     case holdProgressing
     /// 自重动作加次数到顶——提示加配重或换更难变体（owner 拍板 2026-06-13）。
     case bodyweightCeilingReached
+    /// 辅助器械辅助降到最小一片还有余力——自动换自重版毕业（owner 拍板 2026-06-13，wave-9）。
+    case assistedGraduated
 
     public var code: String {
         switch self {
@@ -30,6 +32,7 @@ public enum PrescriptionReason: Equatable, Sendable, Codable {
         case .belowRepFloor: return "belowRepFloor"
         case .holdProgressing: return "holdProgressing"
         case .bodyweightCeilingReached: return "bodyweightCeilingReached"
+        case .assistedGraduated: return "assistedGraduated"
         }
     }
 }

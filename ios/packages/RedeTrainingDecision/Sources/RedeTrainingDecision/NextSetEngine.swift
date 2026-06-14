@@ -90,9 +90,16 @@ public enum NextSetEngine {
         // 回退一档 = 该动作步长（随计划自目录透传，§6.1）：侧平举不再被
         // 全局 2.5 一刀切成 −33%。自重动作无重量轴：重量恒 0、不走减重瀑布，
         // 但疼痛/力竭信号仍如实标记（reason/safetyFlags 不变，2026-06-13）。
-        let isBodyweight = plan.loadType == "bodyweight"
+        // 负重语义决定缓降方向（wave-9）：external 减重、自重不动、辅助器械加辅助。
+        // 辅助方向反转是安全红线——疼痛/力竭加辅助 = 更轻 = 安全；若套 external 减重
+        // 瀑布则辅助变少 = 更难 = 受伤。
         let base = last.weightKg
-        let eased = isBodyweight ? base : max(plan.stepKg, base - plan.stepKg)
+        let eased: Double
+        switch plan.loadType {
+        case "bodyweight": eased = base                          // 无重量轴
+        case "assisted":   eased = base + plan.stepKg            // 加辅助 = 更轻 = 安全方向
+        default:           eased = max(plan.stepKg, base - plan.stepKg)   // external 减重
+        }
 
         let weight: Double
         let reason: NextSetReason

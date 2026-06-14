@@ -61,4 +61,22 @@ public enum ColdStartPrior {
         let scaled = startWeightKg * multiplier(trainingLevel: trainingLevel)
         return max(stepKg, (scaled / stepKg).rounded() * stepKg)
     }
+
+    /// 辅助器械首练「辅助保守度」——方向反转（wave-9，owner 拍板）：辅助越多=越轻松，
+    /// 故新手要**更多**辅助、高级要更少（external 先验的镜像）。新手 ×1.5 / 中 ×1.0 / 高 ×0.5。
+    /// （external 是 0.5/0.75/1.0——给新手更少负重；assisted 必须倒过来，否则做不动引体
+    /// 的新手得到更少帮助 = 更难 = 危险。）
+    public static func assistMultiplier(trainingLevel: String?) -> Double {
+        switch trainingLevel {
+        case "beginner": return 1.5
+        case "intermediate": return 1.0
+        default: return 0.5   // advanced / 未自报 / 未知值（接近能自重，少帮）
+        }
+    }
+
+    /// 辅助器械首练辅助量：×反转先验 → 按器械步长取整 → 下限一档。
+    public static func scaledAssistKg(_ startAssistKg: Double, trainingLevel: String?, stepKg: Double) -> Double {
+        let scaled = startAssistKg * assistMultiplier(trainingLevel: trainingLevel)
+        return max(stepKg, (scaled / stepKg).rounded() * stepKg)
+    }
 }
