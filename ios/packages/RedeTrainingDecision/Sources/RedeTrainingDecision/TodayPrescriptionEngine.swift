@@ -212,6 +212,12 @@ public enum TodayPrescriptionEngine {
             return prescribeAssisted(entry: entry, slot: slot, last: last, input: input, verdict: verdict, catalog: catalog)
         }
 
+        // 负重自重分支（wave-11，owner 拍板）：重量轴=外挂负重(≥0)，方向同 external
+        //（加负重=更难），但档位取挂片档、减到最小一片还吃力则自动回退换自重孪生。
+        if entry.loadType == "bodyweight-plus" {
+            return prescribeBodyweightPlus(entry: entry, slot: slot, last: last, input: input, verdict: verdict, catalog: catalog)
+        }
+
         // 档位系统（2026-06-13）：渐进一档 = 器械×用户单位的真实档位步长（LoadGrid，
         // 宁大勿小）。roundToIncrement 到它即把重量吸附到真实格子——磅用户落 5lb
         // 倍数、公斤用户落 2.5kg 倍数。kg + 自由重量 = 2.5，与旧 per-entry 步长等价。
@@ -463,6 +469,106 @@ public enum TodayPrescriptionEngine {
             previousTopReps: last?.repsAtTop,
             // 下一步指向「少帮一档」（进阶方向）；最小一片兜底不跨零。
             nextProjectedWeightKg: max(step, roundToIncrement(assist - step, step: step)),
+            progressionStepKg: step,
+            change: change,
+            reason: reason,
+            loadType: entry.loadType
+        )
+    }
+
+    /// 负重自重处方（wave-11，owner 拍板）：外挂负重轴方向同 external（加负重=更难），
+    /// 档位取挂片档（addedLoadStepKg）；挣扎减负重，减到最小一片以下=太重→自动回退换
+    /// 同族自重孪生（负重引体→自重引体）。冷启动复用 external 先验（新手加得少，方向就对）。
+    private static func prescribeBodyweightPlus(
+        entry: ExerciseCatalogEntry,
+        slot: Slot,
+        last: LastPerformance?,
+        input: CleanTrainingDecisionInput,
+        verdict: TodayVerdict,
+        catalog: ExerciseCatalog
+    ) -> ExercisePrescriptionPlan {
+        let step = LoadGrid.addedLoadStepKg(unit: LoadUnit(unitSystem: input.profile.unitSystem))
+
+        let baseLoad: Double
+        let targetReps: Int
+        let change: ChangeDirection
+        let reason: PrescriptionReason
+        if let last {
+            // 挣扎口径：近力竭优先于掉出次数下限（同 external 分支次序）。
+            let easeReason: PrescriptionReason? =
+                (last.minRir.map { $0 <= nearFailureMeanRir } ?? false) ? .nearFailureLastTime
+                : (last.maxReps < slot.repMin ? .belowRepFloor : nil)
+            if let easeReason {
+                let nextLoad = last.topWeightKg - step
+                if nextLoad < step {
+                    // 减到最小一片以下 = 连最轻外加负重都吃力 → 回退换自重孪生（数轴不跨零）。
+                    // reason **无条件**标 degraded（审查 MAJOR）：正常阶梯是 自重→负重，回退时
+                    // 已有自重历史，若学 assisted 用 twinLast==nil 条件则提示永不出现。回退是事件
+                    // 不是里程碑，每次都该标；change 仍由自重历史决定（reason=为何切、change=次数向）。
+                    if let twin = graduationTwin(for: entry, catalog: catalog) {
+                        let twinLast = lastPerformance(exerciseId: twin.id, sessions: input.sessions)
+                        return prescribeBodyweight(
+                            entry: twin, slot: slot, last: twinLast, verdict: verdict,
+                            forcedReason: .bodyweightPlusDegraded
+                        )
+                    }
+                    // UNREACHABLE：现目录所有 bodyweight-plus 条目均有同族自重孪生；此兜底仅防御
+                    // 未来孤立条目（不跨零，保持最小外加负重）。
+                    baseLoad = step
+                    targetReps = slot.repMax
+                    change = .hold
+                    reason = .holdProgressing
+                } else {
+                    baseLoad = nextLoad         // 减外挂负重一档
+                    targetReps = slot.repMin
+                    change = .ease
+                    reason = easeReason
+                }
+            } else if last.minReps >= slot.repMax, last.minRir.map({ $0 >= progressMinMeanRir }) ?? true {
+                baseLoad = last.topWeightKg + step   // 变强 → 加负重一档（无上限）
+                targetReps = slot.repMin
+                change = .increase
+                reason = .repCeilingReached
+            } else {
+                baseLoad = last.topWeightKg          // 区间内 → 保持
+                targetReps = slot.repMax
+                change = .hold
+                reason = .holdProgressing
+            }
+        } else {
+            baseLoad = ColdStartPrior.scaledStartKg(
+                entry.startWeightKg, trainingLevel: input.profile.trainingLevel, stepKg: step
+            )
+            targetReps = slot.repMin
+            change = .start
+            reason = .firstExposure
+        }
+
+        // 调制同 external：轻练/减载 ×乘数减外加负重（小负重不被取整吃掉）。
+        var weight = roundToIncrement(baseLoad, step: step)
+        var sets = slot.sets
+        switch verdict.call {
+        case .light:
+            weight = modulated(base: weight, multiplier: lightMultiplier, step: step)
+        case .deload:
+            weight = modulated(base: weight, multiplier: deloadMultiplier, step: step)
+            sets = max(2, sets - 1)
+        case .train, .rest:
+            break
+        }
+
+        return ExercisePrescriptionPlan(
+            exerciseId: entry.id,
+            sets: sets,
+            restSeconds: slot.rest,
+            repLowerBound: slot.repMin,
+            repUpperBound: slot.repMax,
+            targetReps: targetReps,
+            targetWeightKg: weight,
+            targetRir: targetRir,
+            previousWeightKg: last?.topWeightKg,
+            previousTopReps: last?.repsAtTop,
+            nextProjectedWeightKg: roundToIncrement(weight + step, step: step),
             progressionStepKg: step,
             change: change,
             reason: reason,

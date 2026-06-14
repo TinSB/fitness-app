@@ -50,6 +50,8 @@ public enum EquipmentRegistry {
     /// 当前引擎已支持的负重语义。bodyweight（自重）于 wave-6 加入——按次数进阶、
     /// 重量轴不参与（owner 拍板 2026-06-13）；assisted（反向器械）于 wave-9 加入——
     /// 辅助量轴方向反转（越多辅助=越轻=安全方向），进阶=减辅助、安全缓降=加辅助、
-    /// 不进吨位/e1RM、到底毕业换自重版（owner 拍板 2026-06-13）；bodyweight-plus/band 仍闸内。
-    public static let prescribableLoadTypes: Set<String> = ["external", "bodyweight", "assisted"]
+    /// 不进吨位/e1RM、到底毕业换自重版（owner 拍板 2026-06-13）；bodyweight-plus（负重
+    /// 自重）于 wave-11 加入——重量轴=外挂负重，方向同 external（加负重=更难）、外加负重
+    /// 计入吨位、减到最小一片还吃力则自动回退换自重孪生（owner 拍板 2026-06-14）；band 仍闸内。
+    public static let prescribableLoadTypes: Set<String> = ["external", "bodyweight", "assisted", "bodyweight-plus"]
 }

@@ -60,4 +60,10 @@ public enum LoadGrid {
         case .lb: return step.lb / lbPerKg
         }
     }
+
+    /// 负重自重（bodyweight-plus，wave-11）的外挂负重档位：腰带挂奥片 / 脚夹哑铃 =
+    /// 自由重量档 2.5kg / 5lb。动作 equipment=bodyweight（step 0），故外加负重轴单独取此。
+    public static func addedLoadStepKg(unit: LoadUnit) -> Double {
+        stepKg(equipment: "barbell", unit: unit)   // 2.5kg / 5lb
+    }
 }

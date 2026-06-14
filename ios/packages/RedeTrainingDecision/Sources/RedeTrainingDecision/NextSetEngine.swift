@@ -96,9 +96,10 @@ public enum NextSetEngine {
         let base = last.weightKg
         let eased: Double
         switch plan.loadType {
-        case "bodyweight": eased = base                          // 无重量轴
-        case "assisted":   eased = base + plan.stepKg            // 加辅助 = 更轻 = 安全方向
-        default:           eased = max(plan.stepKg, base - plan.stepKg)   // external 减重
+        case "bodyweight":      eased = base                          // 无重量轴
+        case "assisted":        eased = base + plan.stepKg            // 加辅助 = 更轻 = 安全方向
+        case "bodyweight-plus": eased = max(plan.stepKg, base - plan.stepKg)   // 减外挂负重（方向同 external，显式声明 wave-11）
+        default:                eased = max(plan.stepKg, base - plan.stepKg)   // external 减重
         }
 
         let weight: Double

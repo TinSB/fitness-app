@@ -32,11 +32,11 @@ final class CatalogContractTests: XCTestCase {
     // MARK: - 解码完整性
 
     func testBundledCatalogIntegrity() {
-        XCTAssertEqual(catalog.catalogVersion, "wave-10")
-        XCTAssertEqual(catalog.entries.count, 105)
+        XCTAssertEqual(catalog.catalogVersion, "wave-11")
+        XCTAssertEqual(catalog.entries.count, 107)
         // id 唯一 + 永生合同的前半（唯一）；rank 唯一保证匹配全序确定
-        XCTAssertEqual(Set(catalog.entries.map(\.id)).count, 105, "id 重复")
-        XCTAssertEqual(Set(catalog.entries.map(\.rank)).count, 105, "rank 重复——匹配次序歧义")
+        XCTAssertEqual(Set(catalog.entries.map(\.id)).count, 107, "id 重复")
+        XCTAssertEqual(Set(catalog.entries.map(\.rank)).count, 107, "rank 重复——匹配次序歧义")
         // 锚点：迁移自原数组的首尾条目
         XCTAssertEqual(catalog.entry(id: "bench-press")?.rank, 0)
         XCTAssertEqual(catalog.entry(id: "bench-press")?.startWeightKg, 60)
@@ -70,9 +70,14 @@ final class CatalogContractTests: XCTestCase {
             // 档位系统（2026-06-13）：每条动作的器械都能解析出真实档位步长（>0），
             // 且磅档位步长 ≥ 公斤档位步长（宁大勿小：5lb=2.27kg > 2.5kg? 否——但
             // 同器械 lb 数值步长 5/10 折成 kg 后与 kg 档位 2.5/5 同量级，均 >0）
-            // 自重无重量轴 → 档位 0 合法；其余 >0
-            if entry.loadType == "bodyweight" {
+            // 自重无重量轴 → 档位 0 合法；负重自重(wave-11) equipment=bodyweight 故器械档也 0，
+            // 但负重轴取挂片档(addedLoadStepKg>0)；其余 >0
+            if entry.loadType == "bodyweight" || entry.loadType == "bodyweight-plus" {
                 XCTAssertEqual(LoadGrid.stepKg(equipment: entry.equipment, unit: .kg), 0)
+                if entry.loadType == "bodyweight-plus" {
+                    XCTAssertGreaterThan(LoadGrid.addedLoadStepKg(unit: .kg), 0, "负重自重外加负重档位非法: \(entry.id)")
+                    XCTAssertGreaterThan(LoadGrid.addedLoadStepKg(unit: .lb), 0, "负重自重外加负重档位非法: \(entry.id)")
+                }
             } else {
                 XCTAssertGreaterThan(LoadGrid.stepKg(equipment: entry.equipment, unit: .kg), 0, "kg 档位非法: \(entry.id)")
                 XCTAssertGreaterThan(LoadGrid.stepKg(equipment: entry.equipment, unit: .lb), 0, "lb 档位非法: \(entry.id)")

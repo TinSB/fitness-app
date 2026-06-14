@@ -217,19 +217,22 @@ public struct TrainFlowState: Equatable, Sendable {
         events.append(.replaceExercise(newExerciseId))
         replacements.append(Replacement(originalExerciseId: exercise.exerciseId, actualExerciseId: newExerciseId))
         let newEntry = catalog.entry(id: newExerciseId)
-        // 步长跟动作走：换入动作按其器械×用户单位的真实档位（LoadGrid，2026-06-13）；
-        // 查不到器械=保守沿用原值
-        let newStep = newEntry.map { LoadGrid.stepKg(equipment: $0.equipment, unit: loadUnit) } ?? exercise.stepKg
         let newLoadType = newEntry?.loadType ?? exercise.loadType
-        // 换动作重算（wave-9，owner 拍板）：换到辅助器械时，原动作负重当辅助量
-        // 无意义（方向反转——高位下拉 50kg 不是「辅助 50kg」），用目录默认辅助量
-        // 重置。仅 assisted 重置；external→external 沿用原负重不变（零回归面）。
+        // 步长跟动作走（LoadGrid，2026-06-13）；负重自重(equipment=bodyweight step 为 0)
+        // 取挂片档；查不到器械=保守沿用原值。
+        let newStep: Double = {
+            guard let newEntry else { return exercise.stepKg }
+            if newLoadType == "bodyweight-plus" { return LoadGrid.addedLoadStepKg(unit: loadUnit) }
+            return LoadGrid.stepKg(equipment: newEntry.equipment, unit: loadUnit)
+        }()
+        // 换动作重算（wave-9/11，owner 拍板）：换到辅助器械(辅助量)或负重自重(外挂负重)时，
+        // 原动作负重无意义（辅助方向反转、自重无重量轴），用目录默认值重置（下限守护防归零）。
+        // external→external 沿用原负重不变（零回归面）。
         let newSets: [PlannedSet]
-        if newLoadType == "assisted", let newEntry {
-            // 下限守护（审查 MAJOR）：与 scaledAssistKg 一致，辅助量不得被取整归零。
-            let defaultAssist = max(newStep, (newEntry.startWeightKg / newStep).rounded() * newStep)
+        if (newLoadType == "assisted" || newLoadType == "bodyweight-plus"), let newEntry {
+            let defaultLoad = max(newStep, (newEntry.startWeightKg / newStep).rounded() * newStep)
             newSets = exercise.sets.map {
-                PlannedSet(index: $0.index, targetWeightKg: defaultAssist, targetReps: $0.targetReps, targetRir: $0.targetRir)
+                PlannedSet(index: $0.index, targetWeightKg: defaultLoad, targetReps: $0.targetReps, targetRir: $0.targetRir)
             }
         } else {
             newSets = exercise.sets

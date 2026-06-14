@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "wave-10",
+  "catalogVersion": "wave-11",
   "exercises": [
     {
       "id": "bench-press",
@@ -2069,6 +2069,47 @@
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 1050
+    },
+    {
+      "id": "weighted-pull-up",
+      "movementPattern": "vertical-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "bodyweight",
+      "kind": "compound",
+      "substitutionGroups": [
+        "vertical-pull"
+      ],
+      "startWeightKg": 5.0,
+      "nameZh": "负重引体向上",
+      "nameEn": "Weighted pull-up",
+      "loadType": "bodyweight-plus",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1060
+    },
+    {
+      "id": "weighted-dip",
+      "movementPattern": "triceps-extension",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [
+        "chest",
+        "front-delt"
+      ],
+      "equipment": "bodyweight",
+      "kind": "compound",
+      "substitutionGroups": [
+        "triceps"
+      ],
+      "startWeightKg": 5.0,
+      "nameZh": "负重双杠臂屈伸",
+      "nameEn": "Weighted dip",
+      "loadType": "bodyweight-plus",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1070
     }
   ]
 }
