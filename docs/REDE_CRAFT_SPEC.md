@@ -131,13 +131,12 @@ packages/tokens/
         color.primitive.json   # graphite + ember 色板
         typeface.json
         signature.json         # S1–S5 参数（emberline 宽/色/唯一性、刻线间距…）
-      larder/ …
+      # Larder 已独立为 ~/Developer/Larder 自有仓，其 brand/ 不在 Rede token 树管理
     semantic/
       color.role.json          # surface/onSurface/accent/positive/warning…（角色名共享）
       elevation.role.json
     theme/
       ironpath-dark.json  ironpath-light.json
-      larder-dark.json    larder-light.json
   config/style-dictionary.config.mjs
   build/                       # 生成物（gitignored，CI 产出）
     css/    swift/
@@ -224,7 +223,7 @@ public enum IPSpace { public static let md: CGFloat = 16 }
 - 命中 `linear-gradient` / `radial-gradient`（禁渐变，A3）。
 - `box-shadow` 超出白名单（禁堆阴影，A3）。
 - 单屏 Emberline 实例数 > `signature.emberline.maxPerScreen`（扫描组件树 / 快照，S1）。
-- semantic 层存在裸值；theme 缺角色；**Larder theme 出现失败红**（红线）。
+- semantic 层存在裸值；theme 缺角色（红线）。
 - **截图回归:** 对关键页跑 desktop/mobile 渲染（沿用今天 `.ai-tmp` 的 render 做法）与基线比对。
 
 > 把 A2/A3 的硬规则**编译进 CI**，AI 实现就回不到「组件堆叠」——这是「让 AI 不出 AI 味」唯一可靠的办法：不靠它自觉，靠机器拦。
@@ -250,7 +249,7 @@ public enum IPSpace { public static let md: CGFloat = 16 }
          + 生成 css/swift(C4) + signature.json + verify-craft.mjs(先做前 3 条规则)。
 输入   : 本文 Part A/C；两份设计语言散文文档。
 约束   : DTCG $value 格式；引用只能 foundation→brand→semantic→theme，禁反向(lint)；
-         semantic 无裸值；Larder 分支不含失败红。
+         semantic 无裸值。
 产出   : npm run build 出 ironpath dark/light 两套 css+swift；
          npm run verify 能拦裸 hex / 渐变 / 反向引用。
 验收   : 改一个 ember 值 → 4 处产物联动更新；
