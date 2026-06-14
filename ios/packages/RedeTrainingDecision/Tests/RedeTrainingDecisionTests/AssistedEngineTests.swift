@@ -27,8 +27,10 @@ final class AssistedEngineTests: XCTestCase {
         if let lastAssist {
             session = #"{"id":"s0","date":"2026-06-10","completed":true,"exercises":[{"exerciseId":"t-assisted","sets":[{"weight":\#(lastAssist),"reps":\#(lastReps),"rir":\#(lastRir)}]}]}"#
         } else {
-            // 首练：用别的动作把日推进到 pull-a，t-assisted 自身无历史
-            session = #"{"id":"s0","date":"2026-06-10","completed":true,"exercises":[{"exerciseId":"lat-pulldown","sets":[{"weight":50,"reps":10,"rir":2}]}]}"#
+            // 首练：用「推」动作把日推进到 pull-a，t-assisted 自身无历史。
+            // 注意（wave-9 sticky）：必须避开 vertical-pull——否则 sticky 会粘住那个
+            // 垂直拉动作、t-assisted 上不了场。bench-press 是 horizontal-press，pull-a 无此槽。
+            session = #"{"id":"s0","date":"2026-06-10","completed":true,"exercises":[{"exerciseId":"bench-press","sets":[{"weight":60,"reps":10,"rir":2}]}]}"#
         }
         let json = #"{"schemaVersion":8,"userProfile":{"trainingLevel":"\#(level)"},"history":[\#(session)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":5}}"#
         let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-13")

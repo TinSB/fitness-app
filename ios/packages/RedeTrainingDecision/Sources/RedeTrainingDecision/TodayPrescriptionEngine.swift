@@ -129,7 +129,15 @@ public enum TodayPrescriptionEngine {
         var usedIds: Set<String> = []
         var exercises: [ExercisePrescriptionPlan] = []
 
-        for slot in slots(dayCode: dayCode) {
+        // sticky swaps（wave-9，owner 拍板）：pattern 在当日**唯一出现**的槽，优先
+        //「上次该 pattern 实际做的动作」（含换动作换入的）；同 pattern 多槽不 sticky
+        //（歧义，回退 rank 默认）。让换动作选择跨天粘住，并使 prescribeAssisted 的
+        // 进阶/冷启动/毕业经今日页可达（辅助引体不再每次靠手动换）。
+        let daySlots = slots(dayCode: dayCode)
+        let patternCounts = daySlots.reduce(into: [String: Int]()) { $0[$1.pattern, default: 0] += 1 }
+        let lastActual = lastActualByPattern(sessions: input.sessions, catalog: catalog)
+
+        for slot in daySlots {
             // 槽位器械偏好按类集合匹配；与白名单求交，交集空 = 偏好软化
             //（单元素集行为与旧单值严格等价）
             let slotEquipment: Set<String>? = slot.equipment.flatMap { pref in
@@ -147,19 +155,22 @@ public enum TodayPrescriptionEngine {
             }
             // 内容系统 P0（2026-06-11）：匹配去顺序化——(rank, id) 升序取首，
             // 文件顺序不再是合同；deprecated 条目不参与匹配（id 永生只为历史解析）
-            guard let entry = catalog.entries
-                .filter({ entry in
-                    !entry.deprecated
-                        // §6.1：非 external 负重语义未获引擎支持，禁入处方
-                        //（assisted 直接走现瀑布会方向反转——安全红线）
-                        && EquipmentRegistry.prescribableLoadTypes.contains(entry.loadType)
-                        && entry.movementPattern == slot.pattern
-                        && (slotKind == nil || entry.kind == slotKind)
-                        && (slotEquipment == nil || slotEquipment!.contains(entry.equipment))
-                        && (allowed == nil || allowed!.contains(entry.equipment))
-                        && !usedIds.contains(entry.id)
-                })
-                .min(by: { ($0.rank, $0.id) < ($1.rank, $1.id) })
+            let candidates = catalog.entries.filter { entry in
+                !entry.deprecated
+                    // §6.1：非 external 负重语义未获引擎支持，禁入处方
+                    //（assisted 直接走现瀑布会方向反转——安全红线）
+                    && EquipmentRegistry.prescribableLoadTypes.contains(entry.loadType)
+                    && entry.movementPattern == slot.pattern
+                    && (slotKind == nil || entry.kind == slotKind)
+                    && (slotEquipment == nil || slotEquipment!.contains(entry.equipment))
+                    && (allowed == nil || allowed!.contains(entry.equipment))
+                    && !usedIds.contains(entry.id)
+            }
+            // sticky：唯一 pattern 槽优先「上次实际做的」（须仍是合法候选）；否则 rank 最小。
+            let stickyPick = patternCounts[slot.pattern] == 1
+                ? lastActual[slot.pattern].flatMap { pref in candidates.first { $0.id == pref } }
+                : nil
+            guard let entry = stickyPick ?? candidates.min(by: { ($0.rank, $0.id) < ($1.rank, $1.id) })
             else {
                 dayReasons.append(.slotUnfilled(pattern: slot.pattern))
                 continue
@@ -480,6 +491,26 @@ public enum TodayPrescriptionEngine {
     }
 
     /// 最近一次包含该动作的 session（按天序号最大者）的工作组摘要。
+    /// sticky swaps（wave-9，owner 拍板）：每个 movementPattern → 最近一场含该 pattern
+    /// 的 session 里实际做的 exerciseId（含换动作换入的实际动作）。读「实际做了什么」
+    /// 故自然 un-stick——换回默认即恢复默认。供 plan() 唯一出现的 pattern 槽位消费。
+    private static func lastActualByPattern(
+        sessions: [CleanTrainingSession],
+        catalog: ExerciseCatalog
+    ) -> [String: String] {
+        let ordered = sessions.compactMap { session -> (day: Int, session: CleanTrainingSession)? in
+            TrainingDay.dayNumber(fromISO: session.date).map { ($0, session) }
+        }.sorted { $0.day > $1.day }   // 最新在前
+        var result: [String: String] = [:]
+        for (_, session) in ordered {
+            for ex in session.exercises {
+                guard let pattern = catalog.entry(id: ex.exerciseId)?.movementPattern else { continue }
+                if result[pattern] == nil { result[pattern] = ex.exerciseId }
+            }
+        }
+        return result
+    }
+
     private static func lastPerformance(
         exerciseId: String,
         sessions: [CleanTrainingSession]
