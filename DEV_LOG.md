@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-06-14 · 修缮：真机签名打通 — App Group + bundle id 迁出被污染的命名空间（首次可装真机）
+
+**用户目标**：把 App 装到真机上（之前一直 Build Failed 卡在签名）。
+
+**做了什么（用户视角）**：诊断出根因不是代码——是 **App Group 名 `group.com.rede.app.ios` 和 bundle id `com.rede.app.ios` 整条命名空间，被 owner 自己另一个免费 Apple 账号在 Apple 全网占用了**，付费开发者号（Developer Team 47K95GV3X5）连子串都注册不下来（免费档没门户、删不掉）。解法：整体迁到干净的 `com.tinsab.rede` 命名空间。
+
+**用户可见影响**：真机签名四个红叉全清，**App 第一次能装到手机上**（之前只能跑模拟器）。
+
+**关键过程**：① 先排除——账号是付费 Admin、无待签协议、Team 之前误落在免费 Personal Team（已切付费）；② App Group 改 `group.com.tinsab.rede`（代码三处 lockstep + 我经浏览器在开发者门户 Identifiers→App Groups 注册，owner 已登录授权）；③ 暴露出 bundle id 同样被污染，owner 在 Xcode UI 改 app=`com.tinsab.rede` / widget=`com.tinsab.rede.RedeWidget`（落 pbxproj），Xcode 自动签名当场注册成功。
+
+**证据**：开发者门户 App Groups 列表实拍显示 `group.com.tinsab.rede` 已注册；owner 报真机构建成功（红叉清零）。代码侧 App Group 三处一致、RedeWidgetShared 包编译通过。
+
+**边界/留痕**：App Group 代码改提交 `47ab812`（仅 entitlements×2 + Swift 常量）；**bundle id 在 `project.pbxproj`——我的禁改文件 + owner 并行 Codex 会话改动区，由 owner 在 Xcode UI 改、owner/Codex 提交**。App Group 容器换路径，旧 widget 快照数据作废自动重建（派生数据，无真相损失）。详见项目记忆「Rede 真机签名设置」。
+
 ## 2026-06-14 · 引擎+显示：wave-12 band 弹力带引擎（A 案按次数进阶）+ 今日页里程摘要 — 五大 loadType 闭环，107 → 111
 
 **用户目标**：开「弹力带」——第 5 个也是最后一个 loadType 引擎。
