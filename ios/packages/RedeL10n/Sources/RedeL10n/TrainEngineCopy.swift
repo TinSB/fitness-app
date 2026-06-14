@@ -99,6 +99,8 @@ extension RedeStrings {
     public var adjustWeight: String { locale == .zh ? "重量" : "Weight" }
     /// 辅助器械（wave-9）：重量轴标签读「辅助」（快改刻度轨表头 + 组表列头）。
     public var adjustAssist: String { locale == .zh ? "辅助" : "Assist" }
+    /// 负重自重（wave-11）：重量轴标签读「负重」（快改刻度轨表头）。
+    public var adjustWeighted: String { locale == .zh ? "负重" : "Load" }
     public var adjustReps: String { locale == .zh ? "次数" : "Reps" }
     public var adjustRir: String { "RIR" }
 
@@ -212,6 +214,53 @@ extension RedeStrings {
         }
     }
 
+    // MARK: - 负重自重 train 文案（wave-11：重量轴=外挂负重；方向同 external，文案不反读、加「负重 +」）
+    // 注：档位「轻/重一档」对负重自重方向正常（轻=少负重=更易），故直接复用 adjustOptionLabel，无变体。
+
+    /// 下一组 why（负重自重）：力竭/挣扎 = 减外挂负重（方向同 external）。
+    public func nextSetWhyBodyweightPlus(reasonCode: String, fromKg: String?) -> String {
+        switch reasonCode {
+        case "lastSetNearFailure":
+            let from = fromKg ?? "—"
+            return locale == .zh ? "上组接近力竭，从 负重 +\(from) 回调" : "Eased from weighted +\(from) — last set hit failure"
+        case "belowRepFloor":
+            let from = fromKg ?? "—"
+            return locale == .zh ? "上组次数掉出区间，从 负重 +\(from) 回调" : "Eased from weighted +\(from) — reps fell short"
+        case "painReported":
+            return locale == .zh ? "已登记不适，本组减负重一档" : "Discomfort noted — easing this set"
+        default:
+            return locale == .zh ? "按上组表现延续" : "Carrying your last set forward"
+        }
+    }
+
+    /// Hold 按钮（负重自重）：保持当前外挂负重。
+    public func holdLabelBodyweightPlus(kg: String, holding: Bool) -> String {
+        if locale == .zh { return holding ? "保持中 负重 +\(kg)" : "保持 负重 +\(kg)" }
+        return holding ? "Holding weighted +\(kg)" : "Hold weighted +\(kg)"
+    }
+
+    /// 休息预告（负重自重）：第 N 组 · 负重 +重 × 次。
+    public func restNextPreviewBodyweightPlus(setNumber: Int, kg: String, reps: Int) -> String {
+        locale == .zh
+            ? "下一组 · 第 \(setNumber) 组 · 负重 +\(kg) \(unitLabel) × \(reps)"
+            : "Next · Set \(setNumber) · weighted +\(kg) \(unitLabel) × \(reps)"
+    }
+
+    /// 后果预演（负重自重）：下一组 负重 +重。
+    public func adjustPreviewNextBodyweightPlus(kg: String) -> String {
+        locale == .zh ? "打勾后 · 下一组 负重 +\(kg) \(unitLabel)" : "After log · next weighted +\(kg) \(unitLabel)"
+    }
+
+    /// 快改入口提示（负重自重）：点负重可调整。
+    public var adjustDiscoverHintBodyweightPlus: String {
+        locale == .zh ? "点负重可调整——之后的建议会跟着你" : "Tap the load to adjust — suggestions follow your change"
+    }
+
+    /// 外挂负重数值前缀（wave-11）：VoiceOver 用——孤立朗读「负重 +20 kg」比裸值清楚。
+    public func weightedValue(_ kg: String) -> String {
+        locale == .zh ? "负重 +\(kg)" : "weighted +\(kg)"
+    }
+
     /// 预演短注（NextSetReason code → 短语；onPlan 不加注）。
     public func adjustPreviewNote(reasonCode: String) -> String? {
         switch reasonCode {
@@ -289,6 +338,10 @@ extension RedeStrings {
     /// 自重顶组（wave-6）：无重量轴——只显次数。
     public func summaryTopSetBodyweight(name: String, reps: Int) -> String {
         locale == .zh ? "顶组 · \(name) × \(reps)" : "Top set · \(name) × \(reps)"
+    }
+    /// 负重自重顶组（wave-11）：外挂负重计入顶组/PR，冠「负重 +」前缀。
+    public func summaryTopSetBodyweightPlus(name: String, kg: String, reps: Int) -> String {
+        locale == .zh ? "顶组 · \(name) 负重 +\(kg) \(unitLabel) × \(reps)" : "Top set · \(name) weighted +\(kg) \(unitLabel) × \(reps)"
     }
     public var summaryDone: String { locale == .zh ? "完成" : "Done" }
     public var summarySaveAndFinish: String { locale == .zh ? "保存并完成" : "Save & finish" }

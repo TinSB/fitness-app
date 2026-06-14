@@ -185,10 +185,11 @@ extension RedeStrings {
 
     // MARK: - 自重展示（wave-6）：大数字=次数、无「0kg」
 
-    /// 主数字：自重 = 次数；辅助 = 「辅助 N」；其余 = 重量。
+    /// 主数字：自重 = 次数；辅助 = 「辅助 N」；负重自重 = 「负重 +N」；其余 = 重量。
     public func heroNumber(loadType: String, weightKg: Double, reps: Int) -> String {
         if loadType == "bodyweight" { return String(reps) }
         if loadType == "assisted" { return assistPrefixed(formatKg(weightKg)) }
+        if loadType == "bodyweight-plus" { return weightedPrefixed(formatKg(weightKg)) }
         return formatKg(weightKg)
     }
 
@@ -196,6 +197,13 @@ extension RedeStrings {
     /// 用户看到「辅助 30」才不会误以为举起了 30kg。前缀只加在数字，单位/后缀各自照常。
     private func assistPrefixed(_ value: String) -> String {
         t2("辅助 \(value)", "assist \(value)")
+    }
+
+    /// 负重自重前缀（wave-11）：大数字/Rail 用「+N」——「+」已明示自重之上**外加**的负荷，
+    /// 动作名「负重引体向上」+ 组表「负重」表头已给足语境，巨字号下不冗余不换行
+    /// （区别于 prose change 行仍写全「负重 +」）。
+    private func weightedPrefixed(_ value: String) -> String {
+        "+\(value)"
     }
 
     /// 副标：自重 = 「次 · RIR」（次数已在主数字）；其余 = 「单位 · ×次 · RIR」。
@@ -213,6 +221,9 @@ extension RedeStrings {
         }
         if loadType == "assisted" {
             return assistPrefixed(railValue(weightKg: weightKg, reps: reps))
+        }
+        if loadType == "bodyweight-plus" {
+            return weightedPrefixed(railValue(weightKg: weightKg, reps: reps))
         }
         return railValue(weightKg: weightKg, reps: reps)
     }
@@ -245,6 +256,29 @@ extension RedeStrings {
         default:
             return t2("\(exerciseName) 保持 辅助 \(toKg) \(unitLabel)", "\(exerciseName) holds assist \(toKg) \(unitLabel)")
         }
+    }
+
+    /// Change 行（负重自重，wave-11）：方向同 external（加负重=进阶、减负重=回调），
+    /// 只加「负重 +」前缀。
+    public func changeLineBodyweightPlus(exerciseName: String, change: String, fromKg: String?, toKg: String) -> String {
+        switch change {
+        case "start":
+            return t2("\(exerciseName) 首次定档 负重 +\(toKg) \(unitLabel)", "\(exerciseName) starts at weighted +\(toKg) \(unitLabel)")
+        case "increase":
+            let from = fromKg ?? "—"
+            return t2("\(exerciseName) 负重 +\(from)→+\(toKg) \(unitLabel) · 进阶", "\(exerciseName) weighted +\(from)→+\(toKg) \(unitLabel) · moving up")
+        case "ease":
+            let from = fromKg ?? "—"
+            return t2("\(exerciseName) 负重 +\(from)→+\(toKg) \(unitLabel) · 回调", "\(exerciseName) weighted +\(from)→+\(toKg) \(unitLabel) · easing")
+        default:
+            return t2("\(exerciseName) 保持 负重 +\(toKg) \(unitLabel)", "\(exerciseName) holds weighted +\(toKg) \(unitLabel)")
+        }
+    }
+
+    /// Change 行（负重回退，wave-11）：外挂负重减到最小还吃力、引擎已切自重孪生——回退提示。
+    /// 调用方须在 bodyweight 分支**之前**按 reason==.bodyweightPlusDegraded 命中（此时 loadType 已是自重）。
+    public func changeLineBodyweightPlusDegraded(exerciseName: String, reps: Int) -> String {
+        t2("\(exerciseName) · 负重太重，回到自重 ×\(reps)", "\(exerciseName) · too heavy — back to bodyweight ×\(reps)")
     }
 
     /// Change 行（辅助毕业，wave-9）：辅助减到最小、引擎已切自重孪生——一次性祝贺。
