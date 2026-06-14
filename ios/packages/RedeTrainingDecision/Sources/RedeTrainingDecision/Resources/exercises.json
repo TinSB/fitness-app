@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "wave-11",
+  "catalogVersion": "wave-12",
   "exercises": [
     {
       "id": "bench-press",
@@ -2110,6 +2110,80 @@
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 1070
+    },
+    {
+      "id": "band-pull-apart",
+      "movementPattern": "rear-delt",
+      "primaryMuscle": "rear-delt",
+      "secondaryMuscles": [
+        "upper-back"
+      ],
+      "equipment": "band",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "rear-delt"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带分肩",
+      "nameEn": "Band pull-apart",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1080
+    },
+    {
+      "id": "band-lateral-raise",
+      "movementPattern": "lateral-raise",
+      "primaryMuscle": "side-delt",
+      "secondaryMuscles": [],
+      "equipment": "band",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "side-delt"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带侧平举",
+      "nameEn": "Band lateral raise",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1090
+    },
+    {
+      "id": "band-triceps-pushdown",
+      "movementPattern": "triceps-extension",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [],
+      "equipment": "band",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "triceps"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带臂屈伸下压",
+      "nameEn": "Band triceps pushdown",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1100
+    },
+    {
+      "id": "band-curl",
+      "movementPattern": "curl",
+      "primaryMuscle": "biceps",
+      "secondaryMuscles": [],
+      "equipment": "band",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "biceps-curl"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带弯举",
+      "nameEn": "Band curl",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1110
     }
   ]
 }

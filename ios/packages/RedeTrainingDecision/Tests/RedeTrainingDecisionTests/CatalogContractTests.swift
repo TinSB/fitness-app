@@ -32,11 +32,11 @@ final class CatalogContractTests: XCTestCase {
     // MARK: - 解码完整性
 
     func testBundledCatalogIntegrity() {
-        XCTAssertEqual(catalog.catalogVersion, "wave-11")
-        XCTAssertEqual(catalog.entries.count, 107)
+        XCTAssertEqual(catalog.catalogVersion, "wave-12")
+        XCTAssertEqual(catalog.entries.count, 111)
         // id 唯一 + 永生合同的前半（唯一）；rank 唯一保证匹配全序确定
-        XCTAssertEqual(Set(catalog.entries.map(\.id)).count, 107, "id 重复")
-        XCTAssertEqual(Set(catalog.entries.map(\.rank)).count, 107, "rank 重复——匹配次序歧义")
+        XCTAssertEqual(Set(catalog.entries.map(\.id)).count, 111, "id 重复")
+        XCTAssertEqual(Set(catalog.entries.map(\.rank)).count, 111, "rank 重复——匹配次序歧义")
         // 锚点：迁移自原数组的首尾条目
         XCTAssertEqual(catalog.entry(id: "bench-press")?.rank, 0)
         XCTAssertEqual(catalog.entry(id: "bench-press")?.startWeightKg, 60)
@@ -58,9 +58,9 @@ final class CatalogContractTests: XCTestCase {
             for muscle in entry.secondaryMuscles {
                 XCTAssertTrue(knownMuscles.contains(muscle), "未知次肌群: \(entry.id) → \(muscle)")
             }
-            // 自重无外部负重轴 → startWeightKg=0 合法（wave-6）；其余必须 >0
-            if entry.loadType == "bodyweight" {
-                XCTAssertEqual(entry.startWeightKg, 0, "自重起步重量应为 0: \(entry.id)")
+            // 自重/弹力带无外部负重轴 → startWeightKg=0 合法（wave-6/12）；其余必须 >0
+            if entry.loadType == "bodyweight" || entry.loadType == "band" {
+                XCTAssertEqual(entry.startWeightKg, 0, "自重/弹力带起步重量应为 0: \(entry.id)")
             } else {
                 XCTAssertGreaterThan(entry.startWeightKg, 0, "起步重量非法: \(entry.id)")
             }
@@ -70,9 +70,9 @@ final class CatalogContractTests: XCTestCase {
             // 档位系统（2026-06-13）：每条动作的器械都能解析出真实档位步长（>0），
             // 且磅档位步长 ≥ 公斤档位步长（宁大勿小：5lb=2.27kg > 2.5kg? 否——但
             // 同器械 lb 数值步长 5/10 折成 kg 后与 kg 档位 2.5/5 同量级，均 >0）
-            // 自重无重量轴 → 档位 0 合法；负重自重(wave-11) equipment=bodyweight 故器械档也 0，
-            // 但负重轴取挂片档(addedLoadStepKg>0)；其余 >0
-            if entry.loadType == "bodyweight" || entry.loadType == "bodyweight-plus" {
+            // 自重无重量轴 → 档位 0 合法；弹力带(wave-12)同理无 kg 轴 → 器械档 0；
+            // 负重自重(wave-11) equipment=bodyweight 故器械档也 0，但负重轴取挂片档(addedLoadStepKg>0)；其余 >0
+            if entry.loadType == "bodyweight" || entry.loadType == "band" || entry.loadType == "bodyweight-plus" {
                 XCTAssertEqual(LoadGrid.stepKg(equipment: entry.equipment, unit: .kg), 0)
                 if entry.loadType == "bodyweight-plus" {
                     XCTAssertGreaterThan(LoadGrid.addedLoadStepKg(unit: .kg), 0, "负重自重外加负重档位非法: \(entry.id)")
@@ -169,25 +169,30 @@ final class CatalogContractTests: XCTestCase {
         XCTAssertEqual(LoadGrid.stepKg(equipment: "barbell", unit: .lb), 5 / 2.204_622_621_8, accuracy: 0.001)
     }
 
-    /// 非 external 负重语义（自重/辅助/弹力带）在引擎支持落地前禁入处方与替换：
-    /// 注入一个 rank 必胜的 bodyweight 条目，它必须被挡在门外。
-    func testNonExternalLoadTypeBlockedFromPrescriptionAndCandidates() throws {
-        // wave-6/9：bodyweight、assisted 已开闸——改用仍闸内的 band 验证 loadType 硬过滤
-        let pushUp = ExerciseCatalogEntry(
-            id: "band-x", nameZh: "弹力带动作", nameEn: "Band",
+    /// 未开闸的负重语义在引擎支持落地前禁入处方与替换：注入一个 rank 必胜的条目，必须被挡门外。
+    func testNonPrescribableLoadTypeBlockedFromPrescriptionAndCandidates() throws {
+        // wave-6/9/11/12：bodyweight/assisted/bodyweight-plus/band 已全部开闸
+        //（prescribableLoadTypes == loadTypes）。闸机制本身仍须看守未来 loadType——
+        // 用占位 loadType "kettlebell"（壶铃，引擎尚未支持）验证 loadType 硬过滤仍生效。
+        // 维护提示（审查 MINOR-2）：下一个真要开闸的 loadType 若恰是 kettlebell，须把本处
+        // 占位符换成另一个仍未支持的字符串（否则下方前置断言会先红，提示你换）。
+        let future = ExerciseCatalogEntry(
+            id: "future-x", nameZh: "占位未支持动作", nameEn: "Future",
             movementPattern: "horizontal-press", primaryMuscle: "chest",
             equipment: "dumbbell",   // 故意给白名单内器械：必须死在 loadType 闸而非器械闸
             kind: "compound", substitutionGroups: ["chest-press"], startWeightKg: 2.5,
-            loadType: "band", rank: -10
+            loadType: "kettlebell", rank: -10
         )
-        let amended = ExerciseCatalog(catalogVersion: "test", entries: [pushUp] + catalog.entries)
+        XCTAssertFalse(EquipmentRegistry.prescribableLoadTypes.contains("kettlebell"),
+                       "占位 loadType 必须不在已开闸集合内，否则本测试失效")
+        let amended = ExerciseCatalog(catalogVersion: "test", entries: [future] + catalog.entries)
         let appDataJSON = #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 5}}"#
         let input = try TestSupport.makeInput(appDataJSON: appDataJSON, todayISO: "2026-06-11")
         let plan = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input), catalog: amended)
-        XCTAssertFalse(plan?.exercises.map(\.exerciseId).contains("band-x") ?? true,
-                       "band 条目在 loadType 支持前不得进处方（rank -10 本应必胜）")
-        XCTAssertFalse(ExerciseReplacementEngine.candidates(for: "bench-press", catalog: amended).contains("band-x"),
-                       "band 条目不得进替换候选")
+        XCTAssertFalse(plan?.exercises.map(\.exerciseId).contains("future-x") ?? true,
+                       "未开闸 loadType 条目不得进处方（rank -10 本应必胜）")
+        XCTAssertFalse(ExerciseReplacementEngine.candidates(for: "bench-press", catalog: amended).contains("future-x"),
+                       "未开闸 loadType 条目不得进替换候选")
     }
 
     /// 自重引擎（wave-6，owner 拍板）：按次数进阶、到顶提示换难度、重量恒 0。

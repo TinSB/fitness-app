@@ -6,6 +6,22 @@
 
 ---
 
+## 2026-06-14 · 引擎+显示：wave-12 band 弹力带引擎（A 案按次数进阶）+ 今日页里程摘要 — 五大 loadType 闭环，107 → 111
+
+**用户目标**：开「弹力带」——第 5 个也是最后一个 loadType 引擎。
+
+**做了什么（用户视角）**：弹力带动作按**次数**进步（无 kg）——次数到顶（25 次）提示「该换重一档的带子了」（区别于自重的「加配重」）。**不计入吨位**（弹力带是轻量配件，weight 恒 0 自然为 0）。新增 4 条：弹力带分肩(rear-delt)/侧平举(side-delt)/臂屈伸下压(triceps)/弯举(biceps)，家用/居家/旅行可见，可在对应肩臂动作上换入。显示完全镜像已验证的自重路径（大数字=次数、不显 0kg）。
+
+**新 UI 片：今日页里程摘要（owner 拍板 B，2026-06-14）**——做引擎时发现一个真问题：今日页「变化行」历来只显示**当日第一个动作（头牌）**，而弹力带这类配件永远排不到首位，「换带」提示会被吞掉。owner 选 B（不接受现状）：扫全表把**非头牌**动作的里程事件单列在今日页头牌行下方。**额外收益**：这同时让自重「加配重」、辅助「毕业」、负重自重「回退」的配件里程提示也都能显示了（不只弹力带受益）。只列那 4 个转折性 reason（到顶/毕业/回退），普通进阶不列——高信号、不刷屏；纯文本行不占卡预算（TodayTabView ForgedCard 仍 1/1）。
+
+**关键设计**：band 复用 bodyweight 引擎，只加 `loadType`/`ceilingReason` 两个**默认参数**——既有自重/辅助毕业/负重回退调用走默认值、**行为零变化**（两轮审查均确认）；唯一新 reason `.bandCeilingReached`。显示层 `currentIsBodyweight` 诚实重命名为 `currentIsRepBased`（纳入 band）。里程摘要把原内联在 `changeLineText` 的头牌逻辑提炼成 `changeLine(for:)` 供按动作复用。
+
+**留痕（审查 MAJOR 边界澄清）**：「头牌动作若为 band 则走 band 文案而非 external」是**引擎片**就落地的修正（第一轮审查已逐行确认 changeLineText 补了 band），里程摘要的提炼相对该基线是纯提炼。头牌 band 现**不可达**（4 条 band 均配件、排不到首位），但其文案与里程摘要走**同一个 `changeLine(for:)` 路径**——已被模拟器实拍间接证明，故不单独截图。
+
+**证据（模拟器 iPhone 17 Pro 中英双语实拍）**：注入弹力带侧平举 25 次历史→sticky 换入 push-a 侧平举槽（slot 5，非头牌）→今日页里程摘要显示「弹力带侧平举 ×25 · 该换重一档的带子了 / Band lateral raise ×25 · time for a heavier band」，头牌仍是正常平板卧推。决策包 **156 测试全绿**（BandEngineTests 6 + 候选锁 face-pull/db-curl 补齐审查 MINOR-1）+ L10n **60 全绿**（band 文案）+ 完整质量门禁 PASS（7 包 + 卡预算 1/1 + BUILD SUCCEEDED）+ **两轮独立 code-reviewer**（引擎 0 BLOCKER/0 MAJOR；里程摘要 0 BLOCKER，MINOR 的 `ForEach id:\.self` 已改 offset）。
+
+**至此**：五大 loadType（external/bodyweight/assisted/bodyweight-plus/band）全部开闸，`prescribableLoadTypes == loadTypes`，无闸内类型。**仍 latent**：起步参数待真机校准（TestFlight）；髋外展/内收/罗马椅需加日程槽（独立立项）。
+
 ## 2026-06-14 · 显示：wave-11 负重自重「+N / 负重 +N」显示层 — 今日页 + 训练流全面板（模拟器实拍）
 
 **用户目标**：负重自重引擎通了，补显示层——让负重动作显示「+N」/「负重 +N」，不裸显数字（否则用户以为是总负荷）。

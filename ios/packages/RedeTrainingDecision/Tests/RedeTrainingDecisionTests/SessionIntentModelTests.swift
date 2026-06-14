@@ -44,8 +44,12 @@ final class SessionIntentModelTests: XCTestCase {
         // 配对族：wave-1/2 入族后的真实目录
         XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "leg-curl"), ["db-leg-curl", "seated-leg-curl", "hammer-leg-curl"]) // wave-3/10 入族
         // wave-10：双杠（自重 dip + 辅助 assisted-dip）入 triceps 族尾部——锁定换动作候选（审查 MAJOR）
-        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "triceps-pushdown"), ["close-grip-bench", "db-overhead-triceps-extension", "cable-overhead-triceps", "skullcrusher", "overhead-barbell-triceps", "cable-kickback", "assisted-dip", "dip", "weighted-dip"]) // wave-10/11 入族
-        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "lateral-raise"), ["cable-lateral-raise", "machine-lateral-raise"]) // wave-2/3 入族
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "triceps-pushdown"), ["close-grip-bench", "db-overhead-triceps-extension", "cable-overhead-triceps", "skullcrusher", "overhead-barbell-triceps", "cable-kickback", "assisted-dip", "dip", "weighted-dip", "band-triceps-pushdown"]) // wave-10/11/12 入族
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "lateral-raise"), ["cable-lateral-raise", "machine-lateral-raise", "band-lateral-raise"]) // wave-2/3/12 入族
+        // wave-12（审查 MINOR-1）：弹力带分肩入 rear-delt 族、弹力带弯举入 biceps-curl 族——
+        // 与 triceps/lateral 同口径锁定候选，防止后续往这两族追加条目时静默漂移
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "face-pull"), ["rear-delt-fly", "reverse-pec-deck", "band-pull-apart"]) // wave-12 入族
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "db-curl"), ["hammer-curl", "preacher-curl", "barbell-curl", "cable-curl", "incline-db-curl", "concentration-curl", "machine-preacher-curl", "band-curl"]) // wave-12 入族
         // 审查 M-1/Mi-2（wave-2）：直臂下压系孤立动作，不得混入复合垂直拉族——
         // 独立 lat-isolation 族（单成员）；vertical-pull 族列表显式锁定
         XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "lat-pulldown"), ["db-pullover", "close-grip-pulldown", "wide-grip-pulldown", "pull-up", "hammer-pulldown", "assisted-pull-up", "chin-up", "weighted-pull-up"]) // wave-3/4/6/9/10/11 入族

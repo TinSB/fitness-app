@@ -89,4 +89,18 @@ final class TodayEngineCopyTests: XCTestCase {
         XCTAssertEqual(zh.changeLineBodyweight(exerciseName: "俯卧撑", change: "increase", reps: 14, atCeiling: false), "俯卧撑 加到 ×14 · 进阶")
         XCTAssertEqual(zh.changeLineBodyweight(exerciseName: "引体向上", change: "hold", reps: 25, atCeiling: true), "引体向上 ×25 · 可加配重或换更难变体了")
     }
+
+    // 弹力带展示（wave-12，A 案按次数进阶）：渲染完全镜像自重（次数当大数字、不显重量），
+    // 唯一分叉=到顶 change 行换带提示（isBand）。
+    func testBandDisplayMirrorsBodyweightExceptCeiling() {
+        // hero/rail/detail 与自重一致（band 走 isRepBased 同一分支）
+        XCTAssertEqual(zh.heroNumber(loadType: "band", weightKg: 0, reps: 18), "18")
+        XCTAssertEqual(zh.heroDetail(loadType: "band", reps: 18, rir: 2), "次 · RIR 2")
+        XCTAssertEqual(zh.railValue(loadType: "band", weightKg: 0, reps: 18), "×18")
+        // 非到顶三态（首次/加到/保持）与自重共用文案
+        XCTAssertEqual(zh.changeLineBodyweight(exerciseName: "弹力带侧平举", change: "increase", reps: 16, atCeiling: false, isBand: true), "弹力带侧平举 加到 ×16 · 进阶")
+        // 到顶分叉：弹力带换重带（区别于自重的加配重）
+        XCTAssertEqual(zh.changeLineBodyweight(exerciseName: "弹力带侧平举", change: "hold", reps: 25, atCeiling: true, isBand: true), "弹力带侧平举 ×25 · 该换重一档的带子了")
+        XCTAssertEqual(en.changeLineBodyweight(exerciseName: "Band lateral raise", change: "hold", reps: 25, atCeiling: true, isBand: true), "Band lateral raise ×25 · time for a heavier band")
+    }
 }

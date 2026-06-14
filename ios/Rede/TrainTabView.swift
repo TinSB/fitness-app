@@ -175,10 +175,10 @@ struct TrainTabView: View {
                         .font(.redeDisplay)
                         .monospacedDigit()
                         .foregroundStyle(Color.redeT1)
-                        .contentTransition(.numericText(value: currentIsBodyweight ? Double(heroReps) : (staging ? adjustWeight : targetKg)))
+                        .contentTransition(.numericText(value: currentIsRepBased ? Double(heroReps) : (staging ? adjustWeight : targetKg)))
                         .animation(reduceMotion ? nil : .easeOut(duration: 0.2),
-                                   value: currentIsBodyweight ? Double(heroReps) : (staging ? adjustWeight : targetKg))
-                    Text(currentIsBodyweight
+                                   value: currentIsRepBased ? Double(heroReps) : (staging ? adjustWeight : targetKg))
+                    Text(currentIsRepBased
                          ? s.trainLoadSuffixBodyweight(targetRir: staging ? adjustRir.map(Double.init) : (recommendation?.targetRir ?? 2))
                          : s.trainLoadSuffix(
                             targetReps: staging ? adjustReps : (recommendation?.targetReps ?? 0),
@@ -199,7 +199,7 @@ struct TrainTabView: View {
             .buttonStyle(.plain)
 
             if !hasUsedQuickAdjust && !showAdjust {
-                Text(currentIsAssisted ? s.adjustDiscoverHintAssisted : (currentIsBodyweightPlus ? s.adjustDiscoverHintBodyweightPlus : (currentIsBodyweight ? s.adjustDiscoverHintBodyweight : s.adjustDiscoverHint)))
+                Text(currentIsAssisted ? s.adjustDiscoverHintAssisted : (currentIsBodyweightPlus ? s.adjustDiscoverHintBodyweightPlus : (currentIsRepBased ? s.adjustDiscoverHintBodyweight : s.adjustDiscoverHint)))
                     .font(.redeCaption)
                     .foregroundStyle(Color.redeT4)
                     .padding(.top, 2)
@@ -219,7 +219,7 @@ struct TrainTabView: View {
                        ? s.nextSetWhyAssisted(reasonCode: recommendation?.reason.code ?? "onPlan")
                        : (currentIsBodyweightPlus
                           ? s.nextSetWhyBodyweightPlus(reasonCode: recommendation?.reason.code ?? "onPlan", fromKg: flow.completedInCurrentExercise.last.map { s.formatKg($0.weightKg) })
-                          : (currentIsBodyweight
+                          : (currentIsRepBased
                              ? s.nextSetWhyBodyweight(reasonCode: recommendation?.reason.code ?? "onPlan")
                              : s.nextSetWhy(
                                   reasonCode: recommendation?.reason.code ?? "onPlan",
@@ -235,7 +235,7 @@ struct TrainTabView: View {
                         ? s.holdLabelAssisted(kg: s.formatKg(plannedWeight(flow)), holding: flow.isHolding)
                         : (currentIsBodyweightPlus
                             ? s.holdLabelBodyweightPlus(kg: s.formatKg(plannedWeight(flow)), holding: flow.isHolding)
-                            : (currentIsBodyweight
+                            : (currentIsRepBased
                                 ? s.holdLabelBodyweight(reps: flow.currentRecommendation?.targetReps ?? plannedSetReps(flow), holding: flow.isHolding)
                                 : s.holdLabel(kg: s.formatKg(plannedWeight(flow)), holding: flow.isHolding))),
                     isOn: flow.isHolding,
@@ -293,7 +293,7 @@ struct TrainTabView: View {
             return next.map { s.restNextExercise(localeStore.exerciseName($0.exerciseId)) } ?? ""
         }
         guard let rec = flow.currentRecommendation else { return "" }
-        if flow.currentExercise?.loadType == "bodyweight" {
+        if flow.currentExercise?.loadType == "bodyweight" || flow.currentExercise?.loadType == "band" {
             return s.restNextPreviewBodyweight(setNumber: rec.setIndex, reps: rec.targetReps)
         }
         if flow.currentExercise?.loadType == "assisted" {
@@ -312,7 +312,7 @@ struct TrainTabView: View {
     private func adjustPanel(_ flow: TrainFlowState) -> some View {
         let options = adjustOptions(flow)
         return VStack(alignment: .leading, spacing: 0) {
-            if !currentIsBodyweight {
+            if !currentIsRepBased {
                 // 自重无重量轴：隐藏重量刻度轨/±/精确，次数带成为主控（wave-6 UI 片）
                 railHeader
                     .modifier(CascadeIn(index: 0, enabled: !reduceMotion))
@@ -326,7 +326,7 @@ struct TrainTabView: View {
                 }
             }
             Overline(text: s.adjustReps)
-                .padding(.top, currentIsBodyweight ? 0 : 14)
+                .padding(.top, currentIsRepBased ? 0 : 14)
                 .modifier(CascadeIn(index: 2, enabled: !reduceMotion))
             repsStrip(flow)
                 .padding(.top, 2)
@@ -350,9 +350,13 @@ struct TrainTabView: View {
         flow?.currentExercise?.stepKg ?? AdjustOptionsBuilder.stepKg
     }
 
-    /// 自重动作（wave-6）：无重量轴——big hero 显次数、组行重量列显「—」。
-    /// 注：完整的「按次数调整」train 交互留作后续 UI 片（当前重量调整对自重无害但无意义）。
-    private var currentIsBodyweight: Bool { flow?.currentExercise?.loadType == "bodyweight" }
+    /// 纯次数动作（无重量轴）：自重（wave-6）+ 弹力带（wave-12，A 案按次数进阶）——
+    /// big hero 显次数、组行重量列显「—」。两者 train 显示完全一致（NextSetEngine 无到顶
+    /// reason，故 train 侧零分叉；到顶换带提示只在今日页 change 行）。
+    private var currentIsRepBased: Bool {
+        let lt = flow?.currentExercise?.loadType
+        return lt == "bodyweight" || lt == "band"
+    }
     /// 辅助器械（wave-9）：有重量轴（=辅助量），显示带「辅助」前缀，不像自重隐藏重量列。
     private var currentIsAssisted: Bool { flow?.currentExercise?.loadType == "assisted" }
     /// 负重自重（wave-11）：有重量轴（=外挂负重），显示带「负重 +」前缀，方向同 external。
@@ -368,7 +372,7 @@ struct TrainTabView: View {
     private func summaryTopSetText(_ top: SessionSummary.TopSet) -> String {
         let name = localeStore.exerciseName(top.exerciseId)
         switch ExerciseCatalog.minimal.entry(id: top.exerciseId)?.loadType {
-        case "bodyweight": return s.summaryTopSetBodyweight(name: name, reps: top.reps)
+        case "bodyweight", "band": return s.summaryTopSetBodyweight(name: name, reps: top.reps)   // wave-12：弹力带同自重只显次数
         case "bodyweight-plus": return s.summaryTopSetBodyweightPlus(name: name, kg: s.formatKg(top.weightKg), reps: top.reps)
         default: return s.summaryTopSet(name: name, kg: s.formatKg(top.weightKg), reps: top.reps)
         }
@@ -618,7 +622,7 @@ struct TrainTabView: View {
                     ? s.adjustPreviewNextAssisted(kg: s.formatKg(projection.targetWeightKg))
                     : (currentIsBodyweightPlus
                        ? s.adjustPreviewNextBodyweightPlus(kg: s.formatKg(projection.targetWeightKg))
-                       : (currentIsBodyweight
+                       : (currentIsRepBased
                           ? s.adjustPreviewNextBodyweight(reps: projection.targetReps)
                           : s.adjustPreviewNext(kg: s.formatKg(projection.targetWeightKg)))))
                 + (note.map { " — \($0)" } ?? "")
@@ -669,11 +673,11 @@ struct TrainTabView: View {
         return VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Overline(text: s.trainColSet).frame(width: 44, alignment: .leading)
-                if !currentIsBodyweight {
+                if !currentIsRepBased {
                     Overline(text: currentIsAssisted ? s.trainColAssist : (currentIsBodyweightPlus ? s.trainColWeighted : s.trainColWeight)).frame(maxWidth: .infinity, alignment: .leading)
                 }
                 // 自重无重量列：次数接管弹性空间（整列移除而非留空，2026-06-13 owner 反馈）
-                Overline(text: s.trainColReps).frame(maxWidth: currentIsBodyweight ? .infinity : 60, alignment: .leading)
+                Overline(text: s.trainColReps).frame(maxWidth: currentIsRepBased ? .infinity : 60, alignment: .leading)
                 Overline(text: s.trainColRir).frame(width: 44, alignment: .leading)
                 Spacer().frame(width: 22)
             }
@@ -689,7 +693,7 @@ struct TrainTabView: View {
                         reps: "\(obs.reps)",
                         rir: obs.rir.map { s.formatRir($0) } ?? "—",
                         marker: .done,
-                        hideWeight: currentIsBodyweight
+                        hideWeight: currentIsRepBased
                     )
                 case .skipped:
                     setRow(
@@ -698,7 +702,7 @@ struct TrainTabView: View {
                         reps: "\(plannedSet.targetReps)",
                         rir: "—",
                         marker: .skipped,
-                        hideWeight: currentIsBodyweight
+                        hideWeight: currentIsRepBased
                     )
                 case .active:
                     // 活动行与 hero 卡同源（用户真机反馈 2026-06-10：不能卡片跟随了表里还是计划值）：
@@ -711,7 +715,7 @@ struct TrainTabView: View {
                         reps: "\(staging ? adjustReps : (rec?.targetReps ?? plannedSet.targetReps))",
                         rir: "—",
                         marker: .active,
-                        hideWeight: currentIsBodyweight
+                        hideWeight: currentIsRepBased
                     )
                 case .pending:
                     // 未来行 = 引擎默认轨迹（执行事实是基线：按当前目标延续；不含未打勾的暂存——
@@ -722,7 +726,7 @@ struct TrainTabView: View {
                         reps: "\(plannedSet.targetReps)",
                         rir: "—",
                         marker: .pending,
-                        hideWeight: currentIsBodyweight
+                        hideWeight: currentIsRepBased
                     )
                 }
             }

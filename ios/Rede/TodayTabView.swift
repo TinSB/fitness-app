@@ -134,44 +134,71 @@ struct TodayTabView: View {
 
     private var changeLineText: String {
         guard let first = firstExercise else { return s.changeLineNone }
+        return changeLine(for: first)
+    }
+
+    /// 单动作变化行（任意动作复用，wave-12 提炼）：原仅头牌动作内联，现抽出供里程摘要按动作调用。
+    private func changeLine(for ex: ExercisePrescriptionPlan) -> String {
         // 辅助毕业 / 负重回退（wave-9/11）：必须**前置**——切换那刻引擎已切自重孪生
         //（loadType=bodyweight），靠 reason 区分，否则被下面 bodyweight 分支吞掉、丢文案。
-        if first.reason == .assistedGraduated {
-            return s.changeLineAssistedGraduated(exerciseName: localeStore.exerciseName(first.exerciseId))
+        if ex.reason == .assistedGraduated {
+            return s.changeLineAssistedGraduated(exerciseName: localeStore.exerciseName(ex.exerciseId))
         }
-        if first.reason == .bodyweightPlusDegraded {
-            return s.changeLineBodyweightPlusDegraded(exerciseName: localeStore.exerciseName(first.exerciseId), reps: first.targetReps)
+        if ex.reason == .bodyweightPlusDegraded {
+            return s.changeLineBodyweightPlusDegraded(exerciseName: localeStore.exerciseName(ex.exerciseId), reps: ex.targetReps)
         }
-        if first.loadType == "bodyweight" {
+        if ex.loadType == "bodyweight" || ex.loadType == "band" {
+            // 自重/弹力带共用按次数 change 行；弹力带（wave-12）到顶分叉换带提示。
+            let isBand = ex.loadType == "band"
             return s.changeLineBodyweight(
-                exerciseName: localeStore.exerciseName(first.exerciseId),
-                change: first.change.rawValue,
-                reps: first.targetReps,
-                atCeiling: first.reason == .bodyweightCeilingReached
+                exerciseName: localeStore.exerciseName(ex.exerciseId),
+                change: ex.change.rawValue,
+                reps: ex.targetReps,
+                atCeiling: ex.reason == (isBand ? .bandCeilingReached : .bodyweightCeilingReached),
+                isBand: isBand
             )
         }
-        if first.loadType == "assisted" {
+        if ex.loadType == "assisted" {
             return s.changeLineAssisted(
-                exerciseName: localeStore.exerciseName(first.exerciseId),
-                change: first.change.rawValue,
-                fromKg: first.previousWeightKg.map(s.formatKg),
-                toKg: s.formatKg(first.targetWeightKg)
+                exerciseName: localeStore.exerciseName(ex.exerciseId),
+                change: ex.change.rawValue,
+                fromKg: ex.previousWeightKg.map(s.formatKg),
+                toKg: s.formatKg(ex.targetWeightKg)
             )
         }
-        if first.loadType == "bodyweight-plus" {
+        if ex.loadType == "bodyweight-plus" {
             return s.changeLineBodyweightPlus(
-                exerciseName: localeStore.exerciseName(first.exerciseId),
-                change: first.change.rawValue,
-                fromKg: first.previousWeightKg.map(s.formatKg),
-                toKg: s.formatKg(first.targetWeightKg)
+                exerciseName: localeStore.exerciseName(ex.exerciseId),
+                change: ex.change.rawValue,
+                fromKg: ex.previousWeightKg.map(s.formatKg),
+                toKg: s.formatKg(ex.targetWeightKg)
             )
         }
         return s.changeLine(
-            exerciseName: localeStore.exerciseName(first.exerciseId),
-            change: first.change.rawValue,
-            fromKg: first.previousWeightKg.map(s.formatKg),
-            toKg: s.formatKg(first.targetWeightKg)
+            exerciseName: localeStore.exerciseName(ex.exerciseId),
+            change: ex.change.rawValue,
+            fromKg: ex.previousWeightKg.map(s.formatKg),
+            toKg: s.formatKg(ex.targetWeightKg)
         )
+    }
+
+    /// 里程摘要（wave-12，owner 拍板 B）：头牌变化行只覆盖当日第一个动作，配件类（弹力带/自重/
+    /// 辅助/负重自重）排不到首位，其里程事件（换带/加配重/毕业/回退）会被吞掉。这里扫全表把
+    /// **非头牌**且命中里程的动作单列，复用同一变化行文案。只列里程事件、不列普通进阶——避免每个
+    /// 配件每场都刷屏（高信号优先）。
+    private var milestoneNotes: [String] {
+        guard let exercises = model?.prescription?.exercises, exercises.count > 1 else { return [] }
+        return exercises.dropFirst().filter { isMilestone($0.reason) }.map { changeLine(for: $0) }
+    }
+
+    /// 里程事件 = 引擎里那几个一次性/转折性的 reason（到顶/毕业/回退）；普通进阶不算。
+    private func isMilestone(_ reason: PrescriptionReason) -> Bool {
+        switch reason {
+        case .bandCeilingReached, .bodyweightCeilingReached, .assistedGraduated, .bodyweightPlusDegraded:
+            return true
+        default:
+            return false
+        }
     }
 
     // HERO = 判断块(判断句唯一最大元素 + ember 左缘唯一口音)
@@ -196,6 +223,26 @@ struct TodayTabView: View {
                 .foregroundStyle(Color.redeT1)
                 .lineLimit(3)
                 .padding(.top, 11)
+
+                // 里程摘要（wave-12，owner 拍板 B）：非头牌动作的换带/加配重/毕业/回退提示——
+                // 头牌变化行只盖第一个动作，配件类（弹力带等）排不到首位，故单列于此。纯文本行，不占卡预算。
+                if !milestoneNotes.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        // 以位置为 id（审查 MINOR）：里程文案虽含动作名极难撞，但 id:\.self 对非保证唯一的
+                        // 字符串列表是 SwiftUI 已知坑（撞 id 会丢行）；按 offset 走彻底消除。
+                        ForEach(Array(milestoneNotes.enumerated()), id: \.offset) { _, note in
+                            HStack(alignment: .top, spacing: 6) {
+                                Rectangle().fill(Color.redeEmber2).frame(width: 3, height: 3)
+                                    .padding(.top, 7)
+                                Text(note)
+                                    .font(.redeCaption)
+                                    .foregroundStyle(Color.redeT3)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                    .padding(.top, 10)
+                }
 
                 // Load Plate(20px 次级读数)——rest 日无处方时整块隐藏
                 if let first = firstExercise {

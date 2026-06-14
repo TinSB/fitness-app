@@ -25,6 +25,9 @@ public enum PrescriptionReason: Equatable, Sendable, Codable {
     case assistedGraduated
     /// 负重自重外挂负重减到最小一片还吃力——自动回退换自重孪生（owner 拍板 2026-06-14，wave-11）。
     case bodyweightPlusDegraded
+    /// 弹力带加次数到顶——提示换重一档的带子（owner 拍板 2026-06-14，wave-12）。
+    /// 区别于自重到顶（.bodyweightCeilingReached「加配重/换更难变体」）：弹力带换更重的带子才是真实进阶路径。
+    case bandCeilingReached
 
     public var code: String {
         switch self {
@@ -36,6 +39,7 @@ public enum PrescriptionReason: Equatable, Sendable, Codable {
         case .bodyweightCeilingReached: return "bodyweightCeilingReached"
         case .assistedGraduated: return "assistedGraduated"
         case .bodyweightPlusDegraded: return "bodyweightPlusDegraded"
+        case .bandCeilingReached: return "bandCeilingReached"
         }
     }
 }

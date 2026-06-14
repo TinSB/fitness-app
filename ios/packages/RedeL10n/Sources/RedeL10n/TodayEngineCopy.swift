@@ -185,9 +185,15 @@ extension RedeStrings {
 
     // MARK: - 自重展示（wave-6）：大数字=次数、无「0kg」
 
-    /// 主数字：自重 = 次数；辅助 = 「辅助 N」；负重自重 = 「负重 +N」；其余 = 重量。
+    /// 纯次数渲染的负重语义（无 kg 轴）：自重（wave-6）+ 弹力带（wave-12，A 案按次数进阶）。
+    /// 两者显示完全一致（次数当大数字、不显重量），唯一分叉在到顶 change 行的文案。
+    private func isRepBased(_ loadType: String) -> Bool {
+        loadType == "bodyweight" || loadType == "band"
+    }
+
+    /// 主数字：自重/弹力带 = 次数；辅助 = 「辅助 N」；负重自重 = 「负重 +N」；其余 = 重量。
     public func heroNumber(loadType: String, weightKg: Double, reps: Int) -> String {
-        if loadType == "bodyweight" { return String(reps) }
+        if isRepBased(loadType) { return String(reps) }
         if loadType == "assisted" { return assistPrefixed(formatKg(weightKg)) }
         if loadType == "bodyweight-plus" { return weightedPrefixed(formatKg(weightKg)) }
         return formatKg(weightKg)
@@ -206,16 +212,16 @@ extension RedeStrings {
         "+\(value)"
     }
 
-    /// 副标：自重 = 「次 · RIR」（次数已在主数字）；其余 = 「单位 · ×次 · RIR」。
+    /// 副标：自重/弹力带 = 「次 · RIR」（次数已在主数字）；其余 = 「单位 · ×次 · RIR」。
     public func heroDetail(loadType: String, reps: Int, rir: Int) -> String {
-        loadType == "bodyweight"
+        isRepBased(loadType)
             ? t2("次 · RIR \(rir)", "reps · RIR \(rir)")
             : loadDetail(targetReps: reps, targetRir: rir)
     }
 
-    /// Rail 节点值：自重 = 「×次」；辅助 = 「辅助 重×次」；其余 = 「重×次」。
+    /// Rail 节点值：自重/弹力带 = 「×次」；辅助 = 「辅助 重×次」；其余 = 「重×次」。
     public func railValue(loadType: String, weightKg: Double?, reps: Int?) -> String {
-        if loadType == "bodyweight" {
+        if isRepBased(loadType) {
             guard let reps else { return "—" }
             return "×\(reps)"
         }
@@ -228,11 +234,16 @@ extension RedeStrings {
         return railValue(weightKg: weightKg, reps: reps)
     }
 
-    /// Change 行（自重）：按次数叙述，重量轴不出现。
-    public func changeLineBodyweight(exerciseName: String, change: String, reps: Int, atCeiling: Bool) -> String {
+    /// Change 行（自重/弹力带）：按次数叙述，重量轴不出现。
+    /// 唯一分叉在到顶（isBand，wave-12）：弹力带换更重的带子，自重加配重/换更难变体；
+    /// start/increase/hold 三态完全共用（都是「首次/加到/保持 ×次」）。
+    public func changeLineBodyweight(exerciseName: String, change: String, reps: Int, atCeiling: Bool, isBand: Bool = false) -> String {
         if atCeiling {
-            return t2("\(exerciseName) ×\(reps) · 可加配重或换更难变体了",
-                      "\(exerciseName) ×\(reps) · ready to add load or progress")
+            return isBand
+                ? t2("\(exerciseName) ×\(reps) · 该换重一档的带子了",
+                     "\(exerciseName) ×\(reps) · time for a heavier band")
+                : t2("\(exerciseName) ×\(reps) · 可加配重或换更难变体了",
+                     "\(exerciseName) ×\(reps) · ready to add load or progress")
         }
         switch change {
         case "start": return t2("\(exerciseName) 首次 ×\(reps)", "\(exerciseName) starts at ×\(reps)")

@@ -16,6 +16,7 @@ public enum EquipmentRegistry {
         "barbell", "dumbbell", "cable", "plate-loaded", "selectorized",
         "bodyweight",   // wave-6（2026-06-13）：自重——loadType 闸开启
         "smith",        // wave-8（2026-06-13）：史密斯导轨架——挂奥片、external 负重、商业房通用
+        "band",         // wave-12（2026-06-14）：弹力带——无 kg 轴、按次数进阶，家用/居家/旅行通用
     ]
 
     /// 「固定器械」类成员（FR-EQ1 accessory 槽软化键 + 器械槽位匹配键）：
@@ -36,9 +37,10 @@ public enum EquipmentRegistry {
     /// 都收敛为 dumbbell-only——minimal 的「自重」覆盖等 P1 bodyweight wave
     /// 落地时与本矩阵同 PR 放开。
     /// bodyweight 对所有有限场景隐含可用（徒手不需器械）：家用/极简都加 bodyweight。
+    /// band（弹力带，wave-12）同理是家用/居家/旅行轻量器械——家用/极简都加 band。
     public static let scenarioAccess: [String: Set<String>] = [
-        "home-dumbbell": ["dumbbell", "bodyweight"],
-        "minimal": ["dumbbell", "bodyweight"],
+        "home-dumbbell": ["dumbbell", "bodyweight", "band"],
+        "minimal": ["dumbbell", "bodyweight", "band"],
     ]
 
     /// 负重语义封闭集合（§6.1）：external 之外的类型在对应引擎支持落地前
@@ -52,6 +54,9 @@ public enum EquipmentRegistry {
     /// 辅助量轴方向反转（越多辅助=越轻=安全方向），进阶=减辅助、安全缓降=加辅助、
     /// 不进吨位/e1RM、到底毕业换自重版（owner 拍板 2026-06-13）；bodyweight-plus（负重
     /// 自重）于 wave-11 加入——重量轴=外挂负重，方向同 external（加负重=更难）、外加负重
-    /// 计入吨位、减到最小一片还吃力则自动回退换自重孪生（owner 拍板 2026-06-14）；band 仍闸内。
-    public static let prescribableLoadTypes: Set<String> = ["external", "bodyweight", "assisted", "bodyweight-plus"]
+    /// 计入吨位、减到最小一片还吃力则自动回退换自重孪生（owner 拍板 2026-06-14）；band（弹力带）
+    /// 于 wave-12 加入——A 案「按次数进阶」（owner 拍板 2026-06-14）：复用自重引擎、无 kg 轴、
+    /// 不计入吨位（weight 恒 0），唯一分叉=次数到顶提示换重一档的带子（.bandCeilingReached）。
+    /// 至此 prescribableLoadTypes == loadTypes（全部负重语义已开闸，无闸内类型）。
+    public static let prescribableLoadTypes: Set<String> = ["external", "bodyweight", "assisted", "bodyweight-plus", "band"]
 }

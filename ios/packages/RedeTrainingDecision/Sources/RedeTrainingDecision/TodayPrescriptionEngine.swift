@@ -205,6 +205,16 @@ public enum TodayPrescriptionEngine {
             return prescribeBodyweight(entry: entry, slot: slot, last: last, verdict: verdict)
         }
 
+        // 弹力带分支（wave-12，owner 拍板 A 案「按次数进阶」）：复用自重引擎（无 kg 轴、按次数），
+        // 唯一分叉是到顶 reason——弹力带换更重的带子（.bandCeilingReached）才是真实进阶路径，
+        // 不是自重的「加配重/换更难变体」。loadType 透传 band 供显示层判定（同自重渲染：仅次数）。
+        if entry.loadType == "band" {
+            return prescribeBodyweight(
+                entry: entry, slot: slot, last: last, verdict: verdict,
+                loadType: "band", ceilingReason: .bandCeilingReached
+            )
+        }
+
         // 辅助器械分支（wave-9，owner 拍板）：辅助量轴方向反转——进阶=减辅助、
         // 挣扎/力竭=加辅助、轻练/减载=加辅助、新手冷启动=更多辅助、降到最小一片
         // 还有余力=毕业换自重孪生。绝不把 external 减重瀑布套上去（安全方向反转红线）。
@@ -313,12 +323,17 @@ public enum TodayPrescriptionEngine {
 
     /// 自重处方（owner 拍板 2026-06-13）：重量固定 0，按次数进阶到顶提示换难度。
     /// 上次力竭则保持、有余力则 +2 次、到 25 次封顶并提示加配重/换更难变体。
+    /// wave-12：弹力带（band）复用本路径——只换两个参数：loadType（透传给显示层判渲染）
+    /// 与 ceilingReason（到顶提示分叉：自重=加配重、弹力带=换重带）。毕业/回退孪生调用
+    /// （assisted/bodyweight-plus → 自重）走默认值，行为零变化。
     private static func prescribeBodyweight(
         entry: ExerciseCatalogEntry,
         slot: Slot,
         last: LastPerformance?,
         verdict: TodayVerdict,
-        forcedReason: PrescriptionReason? = nil   // wave-9：assisted 毕业换自重时标 .assistedGraduated
+        forcedReason: PrescriptionReason? = nil,   // wave-9：assisted 毕业换自重时标 .assistedGraduated
+        loadType: String = "bodyweight",
+        ceilingReason: PrescriptionReason = .bodyweightCeilingReached
     ) -> ExercisePrescriptionPlan {
         var targetReps: Int
         let change: ChangeDirection
@@ -328,7 +343,7 @@ public enum TodayPrescriptionEngine {
             if lastReps >= bodyweightRepCeiling {
                 targetReps = bodyweightRepCeiling
                 change = .hold
-                reason = .bodyweightCeilingReached
+                reason = ceilingReason
             } else if let minRir = last.minRir, minRir <= nearFailureMeanRir {
                 targetReps = max(bodyweightRepFloor, lastReps)
                 change = .hold
@@ -370,7 +385,7 @@ public enum TodayPrescriptionEngine {
             progressionStepKg: 0,
             change: change,
             reason: forcedReason ?? reason,
-            loadType: "bodyweight"
+            loadType: loadType
         )
     }
 
