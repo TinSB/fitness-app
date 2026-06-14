@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "wave-9",
+  "catalogVersion": "wave-10",
   "exercises": [
     {
       "id": "bench-press",
@@ -1933,6 +1933,142 @@
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 980
+    },
+    {
+      "id": "assisted-dip",
+      "movementPattern": "triceps-extension",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [
+        "chest",
+        "front-delt"
+      ],
+      "equipment": "selectorized",
+      "kind": "compound",
+      "substitutionGroups": [
+        "triceps"
+      ],
+      "startWeightKg": 30.0,
+      "nameZh": "辅助双杠臂屈伸",
+      "nameEn": "Assisted dip",
+      "loadType": "assisted",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 990
+    },
+    {
+      "id": "dip",
+      "movementPattern": "triceps-extension",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [
+        "chest",
+        "front-delt"
+      ],
+      "equipment": "bodyweight",
+      "kind": "compound",
+      "substitutionGroups": [
+        "triceps"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "双杠臂屈伸",
+      "nameEn": "Dip",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1000
+    },
+    {
+      "id": "single-leg-extension",
+      "movementPattern": "knee-extension",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [],
+      "equipment": "selectorized",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "knee-extension"
+      ],
+      "startWeightKg": 20.0,
+      "nameZh": "单腿腿屈伸",
+      "nameEn": "Single-leg extension",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 1010
+    },
+    {
+      "id": "hammer-leg-extension",
+      "movementPattern": "knee-extension",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [],
+      "equipment": "plate-loaded",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "knee-extension"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "悍马腿屈伸",
+      "nameEn": "Hammer leg extension",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 1020
+    },
+    {
+      "id": "hammer-leg-curl",
+      "movementPattern": "knee-flexion",
+      "primaryMuscle": "hamstrings",
+      "secondaryMuscles": [],
+      "equipment": "plate-loaded",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "hamstring-curl"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "悍马腿弯举",
+      "nameEn": "Hammer leg curl",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 1030
+    },
+    {
+      "id": "cable-shrug",
+      "movementPattern": "shrug",
+      "primaryMuscle": "traps",
+      "secondaryMuscles": [
+        "upper-back"
+      ],
+      "equipment": "cable",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "shrug"
+      ],
+      "startWeightKg": 40.0,
+      "nameZh": "绳索耸肩",
+      "nameEn": "Cable shrug",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1040
+    },
+    {
+      "id": "chin-up",
+      "movementPattern": "vertical-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "bodyweight",
+      "kind": "compound",
+      "substitutionGroups": [
+        "vertical-pull"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "反握引体向上",
+      "nameEn": "Chin-up",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1050
     }
   ]
 }
