@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "wave-12",
+  "catalogVersion": "wave-13",
   "exercises": [
     {
       "id": "bench-press",
@@ -2184,6 +2184,128 @@
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 1110
+    },
+    {
+      "id": "band-chest-press",
+      "movementPattern": "horizontal-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "front-delt",
+        "triceps"
+      ],
+      "equipment": "band",
+      "kind": "compound",
+      "substitutionGroups": [
+        "chest-press"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带胸推",
+      "nameEn": "Band chest press",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1120
+    },
+    {
+      "id": "band-row",
+      "movementPattern": "horizontal-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "band",
+      "kind": "compound",
+      "substitutionGroups": [
+        "row"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带划船",
+      "nameEn": "Band row",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1130
+    },
+    {
+      "id": "band-lat-pulldown",
+      "movementPattern": "vertical-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "band",
+      "kind": "compound",
+      "substitutionGroups": [
+        "vertical-pull"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带高位下拉",
+      "nameEn": "Band lat pulldown",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1140
+    },
+    {
+      "id": "band-overhead-press",
+      "movementPattern": "vertical-press",
+      "primaryMuscle": "shoulder",
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "equipment": "band",
+      "kind": "compound",
+      "substitutionGroups": [
+        "shoulder-press"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带过头推",
+      "nameEn": "Band overhead press",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1150
+    },
+    {
+      "id": "band-good-morning",
+      "movementPattern": "hinge",
+      "primaryMuscle": "hamstrings",
+      "secondaryMuscles": [
+        "glutes",
+        "lower-back"
+      ],
+      "equipment": "band",
+      "kind": "compound",
+      "substitutionGroups": [
+        "hinge"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带早安",
+      "nameEn": "Band good morning",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1160
+    },
+    {
+      "id": "band-squat",
+      "movementPattern": "squat-pattern",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "equipment": "band",
+      "kind": "compound",
+      "substitutionGroups": [
+        "squat"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带深蹲",
+      "nameEn": "Band squat",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1170
     }
   ]
 }

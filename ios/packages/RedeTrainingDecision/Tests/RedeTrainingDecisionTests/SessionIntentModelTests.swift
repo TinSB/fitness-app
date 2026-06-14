@@ -17,14 +17,14 @@ final class SessionIntentModelTests: XCTestCase {
 
     func testReplacementCandidatesComeFromSameSubstitutionGroup() {
         let candidates = ExerciseReplacementEngine.candidates(for: "bench-press")
-        XCTAssertEqual(candidates, ["incline-db-press", "db-bench-press", "machine-chest-press", "db-floor-press", "incline-barbell-press", "decline-barbell-press", "push-up", "hammer-chest-press", "incline-hammer-press", "smith-bench-press", "smith-incline-press"]) // wave-1/2/4/6/8 入族
+        XCTAssertEqual(candidates, ["incline-db-press", "db-bench-press", "machine-chest-press", "db-floor-press", "incline-barbell-press", "decline-barbell-press", "push-up", "hammer-chest-press", "incline-hammer-press", "smith-bench-press", "smith-incline-press", "band-chest-press"]) // wave-1/2/4/6/8/13 入族
     }
 
     func testReplacementExcludesSelfAndKeepsCatalogOrder() {
         let candidates = ExerciseReplacementEngine.candidates(for: "hack-squat")
         XCTAssertFalse(candidates.contains("hack-squat"))
         // FR-EQ1/wave-2 目录扩充：squat 族尾部追加，rank 序保持
-        XCTAssertEqual(candidates, ["squat", "leg-press", "goblet-squat", "db-lunge", "front-squat", "bulgarian-split-squat", "bodyweight-squat", "bodyweight-lunge", "pendulum-squat", "smith-squat"]) // wave-8 入族
+        XCTAssertEqual(candidates, ["squat", "leg-press", "goblet-squat", "db-lunge", "front-squat", "bulgarian-split-squat", "bodyweight-squat", "bodyweight-lunge", "pendulum-squat", "smith-squat", "band-squat"]) // wave-8/13 入族
     }
 
     func testUnknownExerciseYieldsNoCandidates() {
@@ -50,9 +50,13 @@ final class SessionIntentModelTests: XCTestCase {
         // 与 triceps/lateral 同口径锁定候选，防止后续往这两族追加条目时静默漂移
         XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "face-pull"), ["rear-delt-fly", "reverse-pec-deck", "band-pull-apart"]) // wave-12 入族
         XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "db-curl"), ["hammer-curl", "preacher-curl", "barbell-curl", "cable-curl", "incline-db-curl", "concentration-curl", "machine-preacher-curl", "band-curl"]) // wave-12 入族
+        // wave-13：弹力带居家复合补全——划船/过头推/早安入 row/shoulder-press/hinge 族，同口径锁定候选
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "seated-row"), ["barbell-row", "one-arm-db-row", "chest-supported-db-row", "machine-row", "pendlay-row", "t-bar-row", "single-arm-cable-row", "meadows-row", "inverted-row", "hammer-row", "band-row"]) // wave-13 入族
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "shoulder-press"), ["overhead-press", "machine-shoulder-press", "arnold-press", "landmine-press", "push-press", "hammer-shoulder-press", "smith-overhead-press", "band-overhead-press"]) // wave-13 入族
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "romanian-deadlift"), ["db-rdl", "deadlift", "hip-thrust", "good-morning", "cable-pull-through", "sumo-deadlift", "band-good-morning"]) // wave-13 入族
         // 审查 M-1/Mi-2（wave-2）：直臂下压系孤立动作，不得混入复合垂直拉族——
         // 独立 lat-isolation 族（单成员）；vertical-pull 族列表显式锁定
-        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "lat-pulldown"), ["db-pullover", "close-grip-pulldown", "wide-grip-pulldown", "pull-up", "hammer-pulldown", "assisted-pull-up", "chin-up", "weighted-pull-up"]) // wave-3/4/6/9/10/11 入族
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "lat-pulldown"), ["db-pullover", "close-grip-pulldown", "wide-grip-pulldown", "pull-up", "hammer-pulldown", "assisted-pull-up", "chin-up", "weighted-pull-up", "band-lat-pulldown"]) // wave-3/4/6/9/10/11/13 入族
         XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "straight-arm-pulldown"), [])
     }
 
@@ -62,6 +66,6 @@ final class SessionIntentModelTests: XCTestCase {
             for: "bench-press",
             excluding: ["machine-chest-press"]
         )
-        XCTAssertEqual(candidates, ["incline-db-press", "db-bench-press", "db-floor-press", "incline-barbell-press", "decline-barbell-press", "push-up", "hammer-chest-press", "incline-hammer-press", "smith-bench-press", "smith-incline-press"]) // wave-1/2/4/6/8 入族
+        XCTAssertEqual(candidates, ["incline-db-press", "db-bench-press", "db-floor-press", "incline-barbell-press", "decline-barbell-press", "push-up", "hammer-chest-press", "incline-hammer-press", "smith-bench-press", "smith-incline-press", "band-chest-press"]) // wave-1/2/4/6/8/13 入族
     }
 }

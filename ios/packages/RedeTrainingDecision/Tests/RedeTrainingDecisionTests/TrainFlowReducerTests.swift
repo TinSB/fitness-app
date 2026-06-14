@@ -102,7 +102,7 @@ final class TrainFlowReducerTests: XCTestCase {
         let candidates = state.replacementCandidates
         // push-a 当日已排 incline-db-press 与 machine-chest-press；wave-1/2/4 后
         // 同族还有 db-floor-press / incline-barbell-press / decline-barbell-press（rank 靠后追加）
-        XCTAssertEqual(candidates, ["db-bench-press", "db-floor-press", "incline-barbell-press", "decline-barbell-press", "push-up", "hammer-chest-press", "incline-hammer-press", "smith-bench-press", "smith-incline-press"]) // wave-6/8
+        XCTAssertEqual(candidates, ["db-bench-press", "db-floor-press", "incline-barbell-press", "decline-barbell-press", "push-up", "hammer-chest-press", "incline-hammer-press", "smith-bench-press", "smith-incline-press", "band-chest-press"]) // wave-6/8/13
 
         state.replaceCurrentExercise(with: "db-bench-press")
         XCTAssertEqual(state.currentExercise?.exerciseId, "db-bench-press")
