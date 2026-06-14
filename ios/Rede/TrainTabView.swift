@@ -166,9 +166,12 @@ struct TrainTabView: View {
                 let staging = showAdjust || hasAdjustment
                 let heroReps = staging ? adjustReps : (recommendation?.targetReps ?? exercise?.sets.first?.targetReps ?? 0)
                 HStack(alignment: .bottom, spacing: 8) {
-                    Text(currentIsBodyweight
-                         ? "\(heroReps)"
-                         : s.formatKg(staging ? adjustWeight : targetKg))
+                    // 三态大数字（wave-9）：自重=次数、辅助=「辅助 N」、其余=重量。
+                    Text(s.heroNumber(
+                        loadType: flow.currentExercise?.loadType ?? "external",
+                        weightKg: staging ? adjustWeight : targetKg,
+                        reps: heroReps
+                    ))
                         .font(.redeDisplay)
                         .monospacedDigit()
                         .foregroundStyle(Color.redeT1)
@@ -196,7 +199,7 @@ struct TrainTabView: View {
             .buttonStyle(.plain)
 
             if !hasUsedQuickAdjust && !showAdjust {
-                Text(currentIsBodyweight ? s.adjustDiscoverHintBodyweight : s.adjustDiscoverHint)
+                Text(currentIsAssisted ? s.adjustDiscoverHintAssisted : (currentIsBodyweight ? s.adjustDiscoverHintBodyweight : s.adjustDiscoverHint))
                     .font(.redeCaption)
                     .foregroundStyle(Color.redeT4)
                     .padding(.top, 2)
@@ -212,21 +215,25 @@ struct TrainTabView: View {
                  ? s.holdWhyLine
                  : (flow.completedInCurrentExercise.isEmpty
                     ? s.firstSetWhy
-                    : (currentIsBodyweight
-                       ? s.nextSetWhyBodyweight(reasonCode: recommendation?.reason.code ?? "onPlan")
-                       : s.nextSetWhy(
-                            reasonCode: recommendation?.reason.code ?? "onPlan",
-                            fromKg: flow.completedInCurrentExercise.last.map { s.formatKg($0.weightKg) }
-                        ))))
+                    : (currentIsAssisted
+                       ? s.nextSetWhyAssisted(reasonCode: recommendation?.reason.code ?? "onPlan")
+                       : (currentIsBodyweight
+                          ? s.nextSetWhyBodyweight(reasonCode: recommendation?.reason.code ?? "onPlan")
+                          : s.nextSetWhy(
+                               reasonCode: recommendation?.reason.code ?? "onPlan",
+                               fromKg: flow.completedInCurrentExercise.last.map { s.formatKg($0.weightKg) }
+                           )))))
                 .font(.redeCallout)
                 .foregroundStyle(Color.redeT3)
                 .padding(.top, 10)
 
             HStack(spacing: 8) {
                 SteelButton(
-                    title: currentIsBodyweight
-                        ? s.holdLabelBodyweight(reps: flow.currentRecommendation?.targetReps ?? plannedSetReps(flow), holding: flow.isHolding)
-                        : s.holdLabel(kg: s.formatKg(plannedWeight(flow)), holding: flow.isHolding),
+                    title: currentIsAssisted
+                        ? s.holdLabelAssisted(kg: s.formatKg(plannedWeight(flow)), holding: flow.isHolding)
+                        : (currentIsBodyweight
+                            ? s.holdLabelBodyweight(reps: flow.currentRecommendation?.targetReps ?? plannedSetReps(flow), holding: flow.isHolding)
+                            : s.holdLabel(kg: s.formatKg(plannedWeight(flow)), holding: flow.isHolding)),
                     isOn: flow.isHolding,
                     action: { sessionStore.apply(.toggleHold) }
                 )
@@ -285,6 +292,9 @@ struct TrainTabView: View {
         if flow.currentExercise?.loadType == "bodyweight" {
             return s.restNextPreviewBodyweight(setNumber: rec.setIndex, reps: rec.targetReps)
         }
+        if flow.currentExercise?.loadType == "assisted" {
+            return s.restNextPreviewAssisted(setNumber: rec.setIndex, kg: s.formatKg(rec.targetWeightKg), reps: rec.targetReps)
+        }
         return s.restNextPreview(setNumber: rec.setIndex, kg: s.formatKg(rec.targetWeightKg), reps: rec.targetReps)
     }
 
@@ -336,6 +346,14 @@ struct TrainTabView: View {
     /// 自重动作（wave-6）：无重量轴——big hero 显次数、组行重量列显「—」。
     /// 注：完整的「按次数调整」train 交互留作后续 UI 片（当前重量调整对自重无害但无意义）。
     private var currentIsBodyweight: Bool { flow?.currentExercise?.loadType == "bodyweight" }
+    /// 辅助器械（wave-9）：有重量轴（=辅助量），显示带「辅助」前缀，不像自重隐藏重量列。
+    private var currentIsAssisted: Bool { flow?.currentExercise?.loadType == "assisted" }
+    /// 负荷单元格文案（wave-9）：辅助器械冠「辅助」前缀。视觉档位/组表行已靠表头
+    /// 「辅助」标列显裸值（避免窄格截断），故本助手现仅 VoiceOver 用——孤立朗读
+    /// 「辅助 50 lb」比裸「50 lb」清楚。
+    private func loadCellText(_ kg: Double) -> String {
+        currentIsAssisted ? s.assistValue(s.formatKg(kg)) : s.formatKg(kg)
+    }
 
     private func adjustOptions(_ flow: TrainFlowState) -> [AdjustOption] {
         AdjustOptionsBuilder.options(
@@ -349,7 +367,7 @@ struct TrainTabView: View {
     /// 头行：重量标签 + 弱化文字级微调（−/＋ 一档、精确输入），不与档位竞争视觉。
     private var railHeader: some View {
         HStack(spacing: 0) {
-            Overline(text: s.adjustWeight)
+            Overline(text: currentIsAssisted ? s.adjustAssist : s.adjustWeight)
             Spacer()
             railOp("−") { stepAdjustWeight(-currentStepKg) }
             railDivider
@@ -426,10 +444,12 @@ struct TrainTabView: View {
                     let selected = adjustWeight == option.weightKg
                     Button(action: { selectStation(option) }) {
                         VStack(spacing: 2) {
-                            Overline(text: s.adjustOptionLabel(option.role.rawValue),
+                            Overline(text: currentIsAssisted ? s.adjustOptionLabelAssisted(option.role.rawValue) : s.adjustOptionLabel(option.role.rawValue),
                                      color: selected ? .redeT3 : .redeT4)
                                 .lineLimit(1)
                                 .fixedSize()   // 标签不截断（可视超出命中框，命中区不变）
+                            // 刻度轨表头已标「辅助」→ 档位显裸值（与 external 在「重量」表头下一致；
+                            // 56pt 窄格放不下「辅助 60」会截断）。VoiceOver 仍带前缀见下。
                             Text(s.formatKg(option.weightKg))
                                 .font(.system(size: 17, weight: .semibold))
                                 .monospacedDigit()
@@ -440,7 +460,7 @@ struct TrainTabView: View {
                     }
                     .buttonStyle(.plain)
                     .position(x: layout.stationX[index], y: 22)
-                    .accessibilityLabel("\(s.adjustOptionLabel(option.role.rawValue)) \(s.formatKg(option.weightKg)) \(s.unitLabel)")
+                    .accessibilityLabel("\(currentIsAssisted ? s.adjustOptionLabelAssisted(option.role.rawValue) : s.adjustOptionLabel(option.role.rawValue)) \(loadCellText(option.weightKg)) \(s.unitLabel)")
                 }
 
                 // ember 指针（面板唯一口音）
@@ -575,9 +595,11 @@ struct TrainTabView: View {
         let text: String
         if let projection {
             let note = s.adjustPreviewNote(reasonCode: projection.reason.code)
-            text = (currentIsBodyweight
-                    ? s.adjustPreviewNextBodyweight(reps: projection.targetReps)
-                    : s.adjustPreviewNext(kg: s.formatKg(projection.targetWeightKg)))
+            text = (currentIsAssisted
+                    ? s.adjustPreviewNextAssisted(kg: s.formatKg(projection.targetWeightKg))
+                    : (currentIsBodyweight
+                       ? s.adjustPreviewNextBodyweight(reps: projection.targetReps)
+                       : s.adjustPreviewNext(kg: s.formatKg(projection.targetWeightKg))))
                 + (note.map { " — \($0)" } ?? "")
         } else {
             text = s.adjustPreviewComplete
@@ -627,7 +649,7 @@ struct TrainTabView: View {
             HStack {
                 Overline(text: s.trainColSet).frame(width: 44, alignment: .leading)
                 if !currentIsBodyweight {
-                    Overline(text: s.trainColWeight).frame(maxWidth: .infinity, alignment: .leading)
+                    Overline(text: currentIsAssisted ? s.trainColAssist : s.trainColWeight).frame(maxWidth: .infinity, alignment: .leading)
                 }
                 // 自重无重量列：次数接管弹性空间（整列移除而非留空，2026-06-13 owner 反馈）
                 Overline(text: s.trainColReps).frame(maxWidth: currentIsBodyweight ? .infinity : 60, alignment: .leading)

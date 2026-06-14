@@ -134,12 +134,25 @@ struct TodayTabView: View {
 
     private var changeLineText: String {
         guard let first = firstExercise else { return s.changeLineNone }
+        // 辅助毕业（wave-9）：必须**前置**——毕业那刻引擎已切自重孪生（loadType=bodyweight），
+        // 靠 reason 区分，否则被下面 bodyweight 分支吞掉、丢毕业文案。
+        if first.reason == .assistedGraduated {
+            return s.changeLineAssistedGraduated(exerciseName: localeStore.exerciseName(first.exerciseId))
+        }
         if first.loadType == "bodyweight" {
             return s.changeLineBodyweight(
                 exerciseName: localeStore.exerciseName(first.exerciseId),
                 change: first.change.rawValue,
                 reps: first.targetReps,
                 atCeiling: first.reason == .bodyweightCeilingReached
+            )
+        }
+        if first.loadType == "assisted" {
+            return s.changeLineAssisted(
+                exerciseName: localeStore.exerciseName(first.exerciseId),
+                change: first.change.rawValue,
+                fromKg: first.previousWeightKg.map(s.formatKg),
+                toKg: s.formatKg(first.targetWeightKg)
             )
         }
         return s.changeLine(

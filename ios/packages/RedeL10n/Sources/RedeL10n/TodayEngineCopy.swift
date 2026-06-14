@@ -185,9 +185,17 @@ extension RedeStrings {
 
     // MARK: - 自重展示（wave-6）：大数字=次数、无「0kg」
 
-    /// 主数字：自重 = 次数；其余 = 重量。
+    /// 主数字：自重 = 次数；辅助 = 「辅助 N」；其余 = 重量。
     public func heroNumber(loadType: String, weightKg: Double, reps: Int) -> String {
-        loadType == "bodyweight" ? String(reps) : formatKg(weightKg)
+        if loadType == "bodyweight" { return String(reps) }
+        if loadType == "assisted" { return assistPrefixed(formatKg(weightKg)) }
+        return formatKg(weightKg)
+    }
+
+    /// 辅助器械前缀（wave-9）：辅助配重量冠「辅助」二字，区别于举起的负重——
+    /// 用户看到「辅助 30」才不会误以为举起了 30kg。前缀只加在数字，单位/后缀各自照常。
+    private func assistPrefixed(_ value: String) -> String {
+        t2("辅助 \(value)", "assist \(value)")
     }
 
     /// 副标：自重 = 「次 · RIR」（次数已在主数字）；其余 = 「单位 · ×次 · RIR」。
@@ -197,11 +205,14 @@ extension RedeStrings {
             : loadDetail(targetReps: reps, targetRir: rir)
     }
 
-    /// Rail 节点值：自重 = 「×次」；其余 = 「重×次」。
+    /// Rail 节点值：自重 = 「×次」；辅助 = 「辅助 重×次」；其余 = 「重×次」。
     public func railValue(loadType: String, weightKg: Double?, reps: Int?) -> String {
         if loadType == "bodyweight" {
             guard let reps else { return "—" }
             return "×\(reps)"
+        }
+        if loadType == "assisted" {
+            return assistPrefixed(railValue(weightKg: weightKg, reps: reps))
         }
         return railValue(weightKg: weightKg, reps: reps)
     }
@@ -217,6 +228,29 @@ extension RedeStrings {
         case "increase": return t2("\(exerciseName) 加到 ×\(reps) · 进阶", "\(exerciseName) up to ×\(reps)")
         default: return t2("\(exerciseName) 保持 ×\(reps)", "\(exerciseName) holds ×\(reps)")
         }
+    }
+
+    /// Change 行（辅助器械，wave-9）：方向已由引擎翻好（进阶=辅助↓、回调=辅助↑），
+    /// 这里**不再反读**，只加「辅助」前缀消歧——靠「辅助」二字让「数字下降=进阶」读通。
+    public func changeLineAssisted(exerciseName: String, change: String, fromKg: String?, toKg: String) -> String {
+        switch change {
+        case "start":
+            return t2("\(exerciseName) 首次定档 辅助 \(toKg) \(unitLabel)", "\(exerciseName) starts at assist \(toKg) \(unitLabel)")
+        case "increase":
+            let from = fromKg ?? "—"
+            return t2("\(exerciseName) 辅助 \(from)→\(toKg) \(unitLabel) · 进阶", "\(exerciseName) assist \(from)→\(toKg) \(unitLabel) · moving up")
+        case "ease":
+            let from = fromKg ?? "—"
+            return t2("\(exerciseName) 辅助 \(from)→\(toKg) \(unitLabel) · 回调", "\(exerciseName) assist \(from)→\(toKg) \(unitLabel) · easing")
+        default:
+            return t2("\(exerciseName) 保持 辅助 \(toKg) \(unitLabel)", "\(exerciseName) holds assist \(toKg) \(unitLabel)")
+        }
+    }
+
+    /// Change 行（辅助毕业，wave-9）：辅助减到最小、引擎已切自重孪生——一次性祝贺。
+    /// 调用方须在 bodyweight 分支**之前**按 reason==.assistedGraduated 命中（此时 loadType 已是自重）。
+    public func changeLineAssistedGraduated(exerciseName: String) -> String {
+        t2("\(exerciseName) · 辅助毕业，开始自重 🎉", "\(exerciseName) · graduated to unassisted 🎉")
     }
 
     private func t2(_ zh: String, _ en: String) -> String {

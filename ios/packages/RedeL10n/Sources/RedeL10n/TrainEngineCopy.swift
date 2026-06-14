@@ -97,6 +97,8 @@ extension RedeStrings {
 
     public var adjustTitle: String { locale == .zh ? "调整本组" : "Adjust this set" }
     public var adjustWeight: String { locale == .zh ? "重量" : "Weight" }
+    /// 辅助器械（wave-9）：重量轴标签读「辅助」（快改刻度轨表头 + 组表列头）。
+    public var adjustAssist: String { locale == .zh ? "辅助" : "Assist" }
     public var adjustReps: String { locale == .zh ? "次数" : "Reps" }
     public var adjustRir: String { "RIR" }
 
@@ -158,6 +160,56 @@ extension RedeStrings {
     /// 快改入口提示（自重）：点次数可调整。
     public var adjustDiscoverHintBodyweight: String {
         locale == .zh ? "点次数可调整——之后的建议会跟着你" : "Tap the reps to adjust — suggestions follow your change"
+    }
+
+    // MARK: - 辅助器械 train 文案（wave-9：有重量轴=辅助量；引擎已翻方向，文案不反读、只加「辅助」）
+
+    /// 下一组 why（辅助）：力竭/挣扎 = 加辅助（更轻=安全）；引擎已把方向翻好，这里如实叙述「加辅助」。
+    public func nextSetWhyAssisted(reasonCode: String) -> String {
+        switch reasonCode {
+        case "lastSetNearFailure": return locale == .zh ? "上组接近力竭，本组加辅助一档" : "Near failure — adding assist this set"
+        case "belowRepFloor": return locale == .zh ? "上组次数掉出区间，本组加辅助一档" : "Reps fell short — adding assist this set"
+        case "painReported": return locale == .zh ? "已登记不适，本组加辅助一档" : "Discomfort noted — adding assist this set"
+        default: return locale == .zh ? "按上组表现延续" : "Carrying your last set forward"
+        }
+    }
+
+    /// Hold 按钮（辅助）：保持当前辅助量。
+    public func holdLabelAssisted(kg: String, holding: Bool) -> String {
+        if locale == .zh { return holding ? "保持中 辅助 \(kg)" : "保持 辅助 \(kg)" }
+        return holding ? "Holding assist \(kg)" : "Hold assist \(kg)"
+    }
+
+    /// 休息预告（辅助）：第 N 组 · 辅助 重 × 次。
+    public func restNextPreviewAssisted(setNumber: Int, kg: String, reps: Int) -> String {
+        locale == .zh
+            ? "下一组 · 第 \(setNumber) 组 · 辅助 \(kg) \(unitLabel) × \(reps)"
+            : "Next · Set \(setNumber) · assist \(kg) \(unitLabel) × \(reps)"
+    }
+
+    /// 后果预演（辅助）：下一组 辅助 重（引擎已算好下一档辅助量，直接显示，不反读）。
+    public func adjustPreviewNextAssisted(kg: String) -> String {
+        locale == .zh ? "打勾后 · 下一组 辅助 \(kg) \(unitLabel)" : "After log · next assist \(kg) \(unitLabel)"
+    }
+
+    /// 快改入口提示（辅助）：点辅助可调整。
+    public var adjustDiscoverHintAssisted: String {
+        locale == .zh ? "点辅助可调整——之后的建议会跟着你" : "Tap the assist to adjust — suggestions follow your change"
+    }
+
+    /// 辅助量数值前缀（wave-9）：刻度轨档位/组表行裸数值冠「辅助」二字，区别于举起的负重。
+    public func assistValue(_ kg: String) -> String {
+        locale == .zh ? "辅助 \(kg)" : "assist \(kg)"
+    }
+
+    /// 档位角色标签（辅助器械，wave-9）：轻/重一档改「少帮/多帮」——明示辅助方向。
+    /// 防误导：辅助「轻一档」是更少辅助=更难，但「轻」听着像更易；用「少帮/多帮」消歧。
+    public func adjustOptionLabelAssisted(_ roleCode: String) -> String {
+        switch roleCode {
+        case "lighter": return locale == .zh ? "少帮" : "Less"
+        case "heavier": return locale == .zh ? "多帮" : "More"
+        default: return adjustOptionLabel(roleCode)
+        }
     }
 
     /// 预演短注（NextSetReason code → 短语；onPlan 不加注）。

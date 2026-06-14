@@ -96,6 +96,8 @@ public struct RedeStrings: Sendable {
     public var trainLogSet: String { t("完成本组", "Log set") }
     public var trainColSet: String { t("组", "Set") }
     public var trainColWeight: String { t("重量", "Weight") }
+    /// 辅助器械（wave-9）：组表「重量」列对辅助动作读「辅助」。
+    public var trainColAssist: String { t("辅助", "Assist") }
     public var trainColReps: String { t("次数", "Reps") }
     public var trainColRir: String { t("RIR", "RIR") }
     public var trainNextUp: String { t("下一个 · 上斜哑铃推 · 3 × 8", "Next · Incline DB press · 3 × 8") }
