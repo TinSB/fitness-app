@@ -285,9 +285,6 @@ struct ProgressTabView: View {
             )
         }
         let name = localeStore.exerciseName(key.exerciseId)
-        let points = Array(key.points.suffix(6))
-        let values = points.map { CGFloat($0.e1RmKg) }
-        let emberIndex = values.indices.max(by: { values[$0] < values[$1] }) ?? 0
         let call: String
         switch assessment.call {
         case .up: call = "up"
@@ -295,6 +292,8 @@ struct ProgressTabView: View {
         case .flat: call = "flat"
         case .calibrating: call = "calibrating"
         }
+        // 周期改多主项清单后，单主项 trend 字段不再渲染（审查 [1]）：只产 verdict/sub，
+        // 不再构造 points[emberIndex]（去死计算 + 潜在越界前体）。
         return ScaleView(
             verdict: s.trendVerdict(call: call, liftName: name),
             sub: s.trendSub(
@@ -304,7 +303,7 @@ struct ProgressTabView: View {
             ),
             chartTitle: s.cycleChartTitleFor(name),
             bars: nil,
-            trend: (values, emberIndex, s.formatE1Rm(points[emberIndex].e1RmKg)),
+            trend: nil,
             caption: s.cycleCaptionPeak
         )
     }
@@ -340,7 +339,8 @@ struct ProgressTabView: View {
                 .prefix(6)
         )
         return VStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(trends.enumerated()), id: \.offset) { _, trend in
+            // id 用 exerciseId（审查 [2]）：bestWeightKg 并列时 offset 会致行错位/闪烁
+            ForEach(trends, id: \.exerciseId) { trend in
                 trendRow(trend)
             }
         }
@@ -529,40 +529,6 @@ struct ProgressTabView: View {
 
 // SnapshotSessionRecord 作 sheet(item:) 标识（id 即 session id）
 extension SnapshotSessionRecord: @retroactive Identifiable {}
-
-// Cycle 折线（原型 SVG 形态）：单色 polyline，唯一 ember 实心点标最高值 + 数值标签
-private struct TrendChart: View {
-    let points: [CGFloat]
-    let emberIndex: Int
-    let emberLabel: String
-
-    var body: some View {
-        Canvas { context, size in
-            guard points.count >= 2 else { return }
-            let W = size.width
-            let H = size.height
-            let maxV = max(points.max() ?? 1, 1)
-            let minV = points.min() ?? 0
-            let span = max(maxV - minV, 1)
-            func xs(_ i: Int) -> CGFloat { 12 + CGFloat(i) * (W - 24) / CGFloat(points.count - 1) }
-            func ys(_ v: CGFloat) -> CGFloat { H - 24 - (v - minV) / span * (H - 48) }
-
-            var line = Path()
-            for (i, p) in points.enumerated() {
-                let point = CGPoint(x: xs(i), y: ys(p))
-                if i == 0 { line.move(to: point) } else { line.addLine(to: point) }
-            }
-            context.stroke(line, with: .color(.redeNeu), style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
-
-            let dx = xs(emberIndex), dy = ys(points[emberIndex])
-            context.fill(Path(ellipseIn: CGRect(x: dx - 4.5, y: dy - 4.5, width: 9, height: 9)), with: .color(.redeEmber))
-            context.draw(
-                Text(emberLabel).font(.system(size: 11)).foregroundColor(.redeEmber2),
-                at: CGPoint(x: min(max(dx, 18), W - 18), y: dy - 16)
-            )
-        }
-    }
-}
 
 // 行内小折线（周期趋势清单）：单色线 + 余烬橙末点；单点退化为一个点。
 private struct MiniSparkline: View {
