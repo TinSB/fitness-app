@@ -130,25 +130,29 @@ struct ProgressTabView: View {
             .padding(.horizontal, RedeSpace.page)
             .padding(.top, RedeSpace.section)
 
-            VStack(alignment: .leading, spacing: 14) {
-                Overline(text: view.chartTitle)
-                if let bars = view.bars {
-                    barChart(bars)
-                } else if let trend = view.trend {
-                    TrendChart(points: trend.values, emberIndex: trend.emberIndex, emberLabel: trend.emberLabel)
-                        .frame(height: 120)
-                        .frame(maxWidth: .infinity)
+            // 周期尺度（2026-06-15 重做）：多主项 e1RM 趋势清单（小折线 + 升降），
+            // 替代原单主项大折线；单次/本周仍走柱图。
+            if scale == .cycle {
+                cycleTrendList(model)
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.top, RedeSpace.section)
+            } else {
+                VStack(alignment: .leading, spacing: 14) {
+                    Overline(text: view.chartTitle)
+                    if let bars = view.bars {
+                        barChart(bars)
+                    }
+                    HStack(spacing: 6) {
+                        Rectangle().fill(Color.redeEmber).frame(width: 11, height: 2)
+                        Text(view.caption)
+                            .font(.redeCaption)
+                            .foregroundStyle(Color.redeT3)
+                    }
+                    .padding(.top, -2)
                 }
-                HStack(spacing: 6) {
-                    Rectangle().fill(Color.redeEmber).frame(width: 11, height: 2)
-                    Text(view.caption)
-                        .font(.redeCaption)
-                        .foregroundStyle(Color.redeT3)
-                }
-                .padding(.top, -2)
+                .padding(.horizontal, RedeSpace.page)
+                .padding(.top, RedeSpace.section)
             }
-            .padding(.horizontal, RedeSpace.page)
-            .padding(.top, RedeSpace.section)
 
             RuleDivider()
 
@@ -324,6 +328,56 @@ struct ProgressTabView: View {
                 else { scale = .cycle }
             }
         )
+    }
+
+    // MARK: - 周期：多主项趋势清单（密而干净，2026-06-15）
+
+    private func cycleTrendList(_ model: ProgressModel) -> some View {
+        // 重的主项排前；取 ≤6 条，避免长尾配件刷屏
+        let trends = Array(
+            model.snapshot.exerciseTrends
+                .sorted { $0.bestWeightKg > $1.bestWeightKg }
+                .prefix(6)
+        )
+        return VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(trends.enumerated()), id: \.offset) { _, trend in
+                trendRow(trend)
+            }
+        }
+    }
+
+    private func trendRow(_ trend: ProgressSnapshot.ExerciseTrend) -> some View {
+        let values = trend.points.map { CGFloat($0.e1RmKg) }
+        let delta = trend.latestE1RmKg - (trend.points.first?.e1RmKg ?? trend.latestE1RmKg)
+        return VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(localeStore.exerciseName(trend.exerciseId))
+                        .font(.redeSubhead).foregroundStyle(Color.redeT1)
+                    Text("估算 1RM").font(.redeCaption).foregroundStyle(Color.redeT4)
+                }
+                Spacer()
+                MiniSparkline(values: values).frame(width: 80, height: 26)
+                VStack(alignment: .trailing, spacing: 3) {
+                    Text("\(s.formatE1Rm(trend.latestE1RmKg)) \(s.unitLabel)")
+                        .font(.redeCallout).monospacedDigit().foregroundStyle(Color.redeT2)
+                    deltaLabel(delta)
+                }
+            }
+            .padding(.vertical, 11)
+            Rectangle().fill(Color.redeHair2).frame(height: 1)
+        }
+    }
+
+    @ViewBuilder
+    private func deltaLabel(_ delta: Double) -> some View {
+        if delta > 0.5 {
+            Text("↑ \(s.formatE1Rm(delta))").font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeEmber)
+        } else if delta < -0.5 {
+            Text("↓ \(s.formatE1Rm(abs(delta)))").font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeEmber2)
+        } else {
+            Text("保持").font(.redeCaption).foregroundStyle(Color.redeT4)
+        }
     }
 
     // MARK: - 柱图（原型形态：120pt 区、唯一 ember、标签浮顶）
@@ -506,6 +560,37 @@ private struct TrendChart: View {
                 Text(emberLabel).font(.system(size: 11)).foregroundColor(.redeEmber2),
                 at: CGPoint(x: min(max(dx, 18), W - 18), y: dy - 16)
             )
+        }
+    }
+}
+
+// 行内小折线（周期趋势清单）：单色线 + 余烬橙末点；单点退化为一个点。
+private struct MiniSparkline: View {
+    let values: [CGFloat]
+
+    var body: some View {
+        Canvas { context, size in
+            guard values.count >= 2 else {
+                let y = size.height / 2
+                context.fill(
+                    Path(ellipseIn: CGRect(x: size.width - 5, y: y - 2.5, width: 5, height: 5)),
+                    with: .color(.redeEmber)
+                )
+                return
+            }
+            let W = size.width, H = size.height
+            let maxV = values.max() ?? 1, minV = values.min() ?? 0
+            let span = max(maxV - minV, 1)
+            func xs(_ i: Int) -> CGFloat { 2 + CGFloat(i) * (W - 4) / CGFloat(values.count - 1) }
+            func ys(_ v: CGFloat) -> CGFloat { H - 3 - (v - minV) / span * (H - 6) }
+            var line = Path()
+            for (i, v) in values.enumerated() {
+                let p = CGPoint(x: xs(i), y: ys(v))
+                if i == 0 { line.move(to: p) } else { line.addLine(to: p) }
+            }
+            context.stroke(line, with: .color(.redeNeu), style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
+            let lx = xs(values.count - 1), ly = ys(values[values.count - 1])
+            context.fill(Path(ellipseIn: CGRect(x: lx - 2.5, y: ly - 2.5, width: 5, height: 5)), with: .color(.redeEmber))
         }
     }
 }
