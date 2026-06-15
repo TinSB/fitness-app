@@ -54,7 +54,7 @@ final class TrainEngineCopyTests: XCTestCase {
 
     func testPainAdvisoryUsesApprovedShape() {
         // §7.1：不承诺安全/预防，用「暂停、调整、咨询专业人士」
-        XCTAssertEqual(zh.painAdvisory, "出现疼痛时暂停、调整动作，或咨询专业人士。")
+        XCTAssertEqual(zh.painAdvisory, "出现疼痛时暂停、调整动作，或咨询专业人士")
         XCTAssertTrue(en.painAdvisory.contains("professional"))
         for banned in ["预防", "安全", "治疗", "prevent", "injury-proof", "pain-free", "safe"] {
             XCTAssertFalse(zh.painAdvisory.contains(banned) || en.painAdvisory.contains(banned), banned)
@@ -62,7 +62,7 @@ final class TrainEngineCopyTests: XCTestCase {
     }
 
     func testSummaryAnchors() {
-        XCTAssertEqual(zh.summaryMeta(minutes: 47), "47 分钟 · 干得漂亮")
+        XCTAssertEqual(zh.summaryMeta(minutes: 47), "47 分钟 · 收工")
         XCTAssertEqual(en.summaryTopSet(name: "Bench press", kg: "62.5", reps: 6), "Top set · Bench press 62.5 kg × 6")
         XCTAssertEqual(zh.endWorkoutRemaining(exercisesLeft: 5), "还剩 5 个动作")
     }

@@ -17,9 +17,9 @@ final class TodayEngineCopyTests: XCTestCase {
 
     func testHeadlineUsesSignalImpactDecisionShape() {
         let line = zh.verdictHeadline(call: "light", reasonCode: "longGapReentry", dayName: "上肢 A", gapDays: 16, consecutiveDays: nil)
-        XCTAssertEqual(line, "今天轻练。停练 16 天，先回归再加量。")
+        XCTAssertEqual(line, "今天轻练　停训 16 天，先回到状态")
         let enLine = en.verdictHeadline(call: "rest", reasonCode: "consecutiveDaysNeedRest", dayName: "Upper", gapDays: 1, consecutiveDays: 3)
-        XCTAssertEqual(enLine, "Rest today. 3 days straight — recovery first.")
+        XCTAssertEqual(enLine, "Rest today. 3 days straight")
     }
 
     func testForbiddenWordsNeverAppear() {
@@ -87,7 +87,7 @@ final class TodayEngineCopyTests: XCTestCase {
         XCTAssertEqual(zh.railValue(loadType: "bodyweight", weightKg: 0, reps: 12), "×12")
         XCTAssertEqual(zh.changeLineBodyweight(exerciseName: "俯卧撑", change: "start", reps: 12, atCeiling: false), "俯卧撑 首次 ×12")
         XCTAssertEqual(zh.changeLineBodyweight(exerciseName: "俯卧撑", change: "increase", reps: 14, atCeiling: false), "俯卧撑 加到 ×14 · 进阶")
-        XCTAssertEqual(zh.changeLineBodyweight(exerciseName: "引体向上", change: "hold", reps: 25, atCeiling: true), "引体向上 ×25 · 可加配重或换更难变体了")
+        XCTAssertEqual(zh.changeLineBodyweight(exerciseName: "引体向上", change: "hold", reps: 25, atCeiling: true), "引体向上 ×25 · 到顶　可加配重或进阶")
     }
 
     // 弹力带展示（wave-12，A 案按次数进阶）：渲染完全镜像自重（次数当大数字、不显重量），
@@ -100,7 +100,7 @@ final class TodayEngineCopyTests: XCTestCase {
         // 非到顶三态（首次/加到/保持）与自重共用文案
         XCTAssertEqual(zh.changeLineBodyweight(exerciseName: "弹力带侧平举", change: "increase", reps: 16, atCeiling: false, isBand: true), "弹力带侧平举 加到 ×16 · 进阶")
         // 到顶分叉：弹力带换重带（区别于自重的加配重）
-        XCTAssertEqual(zh.changeLineBodyweight(exerciseName: "弹力带侧平举", change: "hold", reps: 25, atCeiling: true, isBand: true), "弹力带侧平举 ×25 · 该换重一档的带子了")
-        XCTAssertEqual(en.changeLineBodyweight(exerciseName: "Band lateral raise", change: "hold", reps: 25, atCeiling: true, isBand: true), "Band lateral raise ×25 · time for a heavier band")
+        XCTAssertEqual(zh.changeLineBodyweight(exerciseName: "弹力带侧平举", change: "hold", reps: 25, atCeiling: true, isBand: true), "弹力带侧平举 ×25 · 到顶　换更重的带子")
+        XCTAssertEqual(en.changeLineBodyweight(exerciseName: "Band lateral raise", change: "hold", reps: 25, atCeiling: true, isBand: true), "Band lateral raise ×25 · at ceiling, size up the band")
     }
 }

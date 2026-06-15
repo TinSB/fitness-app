@@ -87,11 +87,11 @@ extension RedeStrings {
 
     public var dataUnreadableStatus: String { t2("数据暂不可读", "Data unavailable") }
     public var dataUnreadableHeadline: String {
-        t2("数据暂时读不出来。你的记录仍在，不会被覆盖。",
-           "Your data can't be read right now. Nothing has been lost or overwritten.")
+        t2("数据暂时读不出来　你的记录仍在，没有被覆盖",
+           "Your data can't be read right now. Nothing was lost or overwritten")
     }
     public var dataUnreadableReceipt: String {
-        t2("今天不开训练单——先保护已有数据。", "No prescription today — protecting your existing data first.")
+        t2("今天不开训练单　先保护已有数据", "No prescription today. Protecting your existing data first")
     }
 
     /// rest 日 / 无处方时 Change 行的专属文案（语义对齐：无负重调整）。
@@ -112,29 +112,29 @@ extension RedeStrings {
     public func verdictHeadline(call: String, reasonCode: String, dayName: String, gapDays: Int?, consecutiveDays: Int?) -> String {
         switch (call, reasonCode) {
         case ("train", "noHistoryCalibration"):
-            return t2("今天可以练。首练定档，重量保守起步。", "Train today. First session sets your baseline — starting easy.")
+            return t2("今天可以练　首次训练，重量从轻", "Train today. First session, starting light")
         case ("train", _):
-            return t2("今天可以练。\(dayName)，按计划推进。", "Train today. \(dayName) as planned.")
+            return t2("今天可以练　\(dayName)，按计划", "Train today. \(dayName) as planned")
         case ("light", "longGapReentry"):
             let days = gapDays.map(String.init) ?? "—"
-            return t2("今天轻练。停练 \(days) 天，先回归再加量。", "Go light today. \(days) days off — ease back in first.")
+            return t2("今天轻练　停训 \(days) 天，先回到状态", "Go light today. \(days) days off, ease back in first")
         case ("light", "weeklyPlanReached"):
-            return t2("今天轻练。本周量已练够，留点余力。", "Go light today. Weekly volume is in — keep some in reserve.")
+            return t2("今天轻练　本周量已够，留有余力", "Go light today. Weekly volume is in, keep some in reserve")
         case ("light", "lastSessionNearFailure"):
-            return t2("今天轻练。上次练到力竭，给恢复留空间。", "Go light today. Last session hit failure — give recovery room.")
+            return t2("今天轻练　上次练到力竭，留出恢复", "Go light today. Last session hit failure, leave room to recover")
         case ("light", _):
-            return t2("今天轻练。\(dayName)，降一档推进。", "Go light today. \(dayName), one notch down.")
+            return t2("今天轻练　\(dayName)，降一档", "Go light today. \(dayName), one notch down")
         case ("rest", "alreadyTrainedToday"):
-            return t2("今天已练完。休息，明天继续。", "Already trained today. Rest — back tomorrow.")
+            return t2("今天已练完　明天继续", "Already trained today. Back tomorrow")
         case ("rest", "consecutiveDaysNeedRest"):
             let days = consecutiveDays.map(String.init) ?? "—"
-            return t2("今天休息。已连练 \(days) 天，恢复优先。", "Rest today. \(days) days straight — recovery first.")
+            return t2("今天休息　已连练 \(days) 天", "Rest today. \(days) days straight")
         case ("rest", _):
-            return t2("今天休息。恢复也是训练的一部分。", "Rest today. Recovery is part of the plan.")
+            return t2("今天休息", "Rest today")
         case ("deload", _):
-            return t2("本周减载。持续高量数周，主动降档。", "Deload this week. Weeks of sustained load — backing off on purpose.")
+            return t2("本周减载　连续数周高量，主动降一档", "Deload this week. Weeks of heavy load, backing off on purpose")
         default:
-            return t2("今天可以练。", "Train today.")
+            return t2("今天可以练", "Train today")
         }
     }
 
@@ -142,17 +142,17 @@ extension RedeStrings {
     public func receiptConclusion(call: String, reasonCode: String) -> String {
         switch (call, reasonCode) {
         case ("train", "noHistoryCalibration"):
-            return t2("首练定档，全部动作保守起步。", "First session — every lift starts conservative.")
+            return t2("首次训练，全部动作从轻起步", "First session, every lift starts light")
         case ("train", _):
-            return t2("按计划推进，按上次表现微调。", "On plan — tuned to your last session.")
+            return t2("按计划推进，照上次表现微调", "On plan, tuned to your last session")
         case ("light", _):
-            return t2("今天整体降一档。", "Everything one notch lighter today.")
+            return t2("今天整体降一档", "Everything one notch lighter today")
         case ("rest", _):
-            return t2("今天不开训练单。", "No prescription today.")
+            return t2("今天不开训练单", "No prescription today")
         case ("deload", _):
-            return t2("本周减载：重量与组数同时回收。", "Deload week: weight and sets both pulled back.")
+            return t2("本周减载　重量与组数同时回收", "Deload week: weight and sets both pulled back")
         default:
-            return t2("按计划推进。", "On plan.")
+            return t2("按计划推进", "On plan")
         }
     }
 
@@ -240,13 +240,13 @@ extension RedeStrings {
     public func changeLineBodyweight(exerciseName: String, change: String, reps: Int, atCeiling: Bool, isBand: Bool = false) -> String {
         if atCeiling {
             return isBand
-                ? t2("\(exerciseName) ×\(reps) · 该换重一档的带子了",
-                     "\(exerciseName) ×\(reps) · time for a heavier band")
-                : t2("\(exerciseName) ×\(reps) · 可加配重或换更难变体了",
-                     "\(exerciseName) ×\(reps) · ready to add load or progress")
+                ? t2("\(exerciseName) ×\(reps) · 到顶　换更重的带子",
+                     "\(exerciseName) ×\(reps) · at ceiling, size up the band")
+                : t2("\(exerciseName) ×\(reps) · 到顶　可加配重或进阶",
+                     "\(exerciseName) ×\(reps) · at ceiling, add load or progress")
         }
         switch change {
-        case "start": return t2("\(exerciseName) 首次 ×\(reps)", "\(exerciseName) starts at ×\(reps)")
+        case "start": return t2("\(exerciseName) 首次 ×\(reps)", "\(exerciseName) first set ×\(reps)")
         case "increase": return t2("\(exerciseName) 加到 ×\(reps) · 进阶", "\(exerciseName) up to ×\(reps)")
         default: return t2("\(exerciseName) 保持 ×\(reps)", "\(exerciseName) holds ×\(reps)")
         }
@@ -289,13 +289,13 @@ extension RedeStrings {
     /// Change 行（负重回退，wave-11）：外挂负重减到最小还吃力、引擎已切自重孪生——回退提示。
     /// 调用方须在 bodyweight 分支**之前**按 reason==.bodyweightPlusDegraded 命中（此时 loadType 已是自重）。
     public func changeLineBodyweightPlusDegraded(exerciseName: String, reps: Int) -> String {
-        t2("\(exerciseName) · 负重太重，回到自重 ×\(reps)", "\(exerciseName) · too heavy — back to bodyweight ×\(reps)")
+        t2("\(exerciseName) · 负重到底　回到自重 ×\(reps)", "\(exerciseName) · back to bodyweight ×\(reps)")
     }
 
     /// Change 行（辅助毕业，wave-9）：辅助减到最小、引擎已切自重孪生——一次性祝贺。
     /// 调用方须在 bodyweight 分支**之前**按 reason==.assistedGraduated 命中（此时 loadType 已是自重）。
     public func changeLineAssistedGraduated(exerciseName: String) -> String {
-        t2("\(exerciseName) · 辅助毕业，开始自重 🎉", "\(exerciseName) · graduated to unassisted 🎉")
+        t2("\(exerciseName) · 辅助毕业，开始自重", "\(exerciseName) · graduated to unassisted")
     }
 
     private func t2(_ zh: String, _ en: String) -> String {

@@ -10,7 +10,7 @@ extension RedeStrings {
     public var onbHeaderTag: String { locale == .zh ? "首份计划" : "First plan" }
     /// 信任铺垫三件套：问几个 / 多久 / 数据去哪（2026-06-10 打磨调研补「本机」句）。
     public var onbFooterNote: String {
-        locale == .zh ? "四个回答——一分钟左右 · 记录只存在本机" : "Four answers — about a minute · stays on this device"
+        locale == .zh ? "四个回答 · 约一分钟 · 记录只存在本机" : "Four answers · about a minute · stays on this device"
     }
 
     // MARK: - 问题 1 · 目标
@@ -42,8 +42,8 @@ extension RedeStrings {
     /// 防高估副注（打磨调研 2026-06-10：2-6 直选带无文字对冲高频自选偏差）。
     public var onbDaysNote: String {
         locale == .zh
-            ? "按能稳住的选，不选理想周——之后可在设置里改"
-            : "Pick the week you can hold, not the ideal one — you can change it later"
+            ? "按能稳住的天数选，而非理想周　之后可在设置里改"
+            : "Pick the days you can hold, not the ideal week. You can change it later"
     }
 
     // MARK: - 问题 3 · 器械
@@ -75,8 +75,8 @@ extension RedeStrings {
     public var onbLevelQuestion: String { locale == .zh ? "你从哪起步？" : "Where are you starting from?" }
     public var onbLevelNote: String {
         locale == .zh
-            ? "只决定起始重量——之后跟着你的真实记录走"
-            : "Sets your starting loads only — your logs take over from there"
+            ? "只决定起始重量　之后跟着你的记录走"
+            : "Sets your starting loads only. Your logs take over from there"
     }
 
     public func onbLevelOption(_ code: String) -> (title: String, caption: String) {
@@ -109,7 +109,7 @@ extension RedeStrings {
         }
     }
 
-    /// 结果判断句："上下分化，每周 4 天——为增肌而排。"
+    /// 结果判断句："上下分化，每周 4 天　为增肌而排"（去句号 + 留白接拍，voice 铁律 2026-06-15）。
     public func onbVerdict(splitCode: String, days: Int, goalCode: String) -> String {
         let split = onbSplitName(splitCode)
         let goal: String
@@ -119,8 +119,8 @@ extension RedeStrings {
         default: goal = locale == .zh ? "均衡推进" : "built for balance"
         }
         return locale == .zh
-            ? "\(split)，每周 \(days) 天——\(goal)。"
-            : "\(split), \(days) days a week — \(goal)."
+            ? "\(split)，每周 \(days) 天　\(goal)"
+            : "\(split), \(days) days a week — \(goal)"
     }
 
     public var onbFirstSession: String { locale == .zh ? "首次训练" : "First session" }
@@ -135,7 +135,7 @@ extension RedeStrings {
         default:
             // FR-EQ1（2026-06-11）：目录暂无自重条目，回声只承诺引擎兑现的事——
             // 「一对哑铃就够」；自重覆盖归目录扩充（§6.3）
-            return locale == .zh ? "围绕少量负重排——一对哑铃就够" : "Built around a small kit — a pair of dumbbells is enough"
+            return locale == .zh ? "按少量负重编排　一对哑铃即可" : "Built around a pair of dumbbells"
         }
     }
 
@@ -144,23 +144,23 @@ extension RedeStrings {
         switch levelCode {
         case "beginner":
             return locale == .zh
-                ? "学动作阶段从轻起步——之后计划跟着你的记录走"
-                : "Light start while you learn the lifts — from here the plan follows what you log"
+                ? "新手期从轻起步　之后跟着你的记录走"
+                : "Light start while you learn the lifts. From there it follows what you log"
         case "intermediate":
             // 打磨 2026-06-10：中文梯度恢复单调（从轻→适中→目录基线；原「保守」比「从轻」更怯）
             return locale == .zh
-                ? "按你的背景适中起步——之后计划跟着你的记录走"
-                : "Moderate start for your background — from here the plan follows what you log"
+                ? "按你的背景适中起步　之后跟着你的记录走"
+                : "Moderate start for your background. From there it follows what you log"
         default:
             return locale == .zh
-                ? "按目录基线起步——首练就开始校准"
-                : "Catalog baseline start — calibration begins with your first session"
+                ? "按目录基线起步　首练即开始校准"
+                : "Catalog baseline start. Calibration begins with your first session"
         }
     }
 
     public var onbOpenToday: String { locale == .zh ? "进入今日" : "Open Today" }
     public var onbWriteFailed: String {
-        locale == .zh ? "保存失败——你的回答还在，可重试。" : "Save failed — your answers are still here. Try again."
+        locale == .zh ? "保存失败　你的回答还在，可重试" : "Save failed. Your answers are still here. Try again"
     }
     public var onbRetry: String { locale == .zh ? "重试" : "Try again" }
 
