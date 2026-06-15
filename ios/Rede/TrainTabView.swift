@@ -271,6 +271,8 @@ struct TrainTabView: View {
 
     /// 「上次」参照按 loadType 格式化；首练无上次 → nil。
     private func lastRefText(_ p: ExercisePrescriptionPlan) -> String? {
+        // 首练（change=start）显式切断，不依赖引擎恰好 nil 化 previous（审查 M1）
+        guard p.change.rawValue != "start" else { return nil }
         if p.loadType == "bodyweight" || p.loadType == "band" {
             return p.previousTopReps.map { "上次 ×\($0)" }
         }
