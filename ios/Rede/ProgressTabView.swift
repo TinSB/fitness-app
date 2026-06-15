@@ -354,7 +354,7 @@ struct ProgressTabView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(localeStore.exerciseName(trend.exerciseId))
                         .font(.redeSubhead).foregroundStyle(Color.redeT1)
-                    Text("估算 1RM").font(.redeCaption).foregroundStyle(Color.redeT4)
+                    Text(s.estimated1RM).font(.redeCaption).foregroundStyle(Color.redeT4)
                 }
                 Spacer()
                 MiniSparkline(values: values).frame(width: 80, height: 26)
@@ -376,7 +376,7 @@ struct ProgressTabView: View {
         } else if delta < -0.5 {
             Text("↓ \(s.formatE1Rm(abs(delta)))").font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeEmber2)
         } else {
-            Text("保持").font(.redeCaption).foregroundStyle(Color.redeT4)
+            Text(s.holdShort).font(.redeCaption).foregroundStyle(Color.redeT4)
         }
     }
 

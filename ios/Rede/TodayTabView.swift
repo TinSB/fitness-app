@@ -269,7 +269,7 @@ struct TodayTabView: View {
     private func verdictLine(count: Int) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             (Text(dayName).foregroundStyle(Color.redeT1)
-             + Text("　\(count) 个动作").foregroundStyle(Color.redeT3))
+             + Text(s.verdictExerciseCount(count)).foregroundStyle(Color.redeT3))
                 .font(.redeSubhead)
                 .monospacedDigit()
             Text(s.receiptConclusion(call: callCode, reasonCode: reasonCode))
@@ -289,7 +289,7 @@ struct TodayTabView: View {
                     Text(localeStore.exerciseName(ex.exerciseId))
                         .font(.redeSubhead)
                         .foregroundStyle(Color.redeT1)
-                    Text("\(ex.sets) 组 · 休 \(ex.restSeconds)s · RIR \(s.formatRir(ex.targetRir))")
+                    Text(s.exerciseMetaLine(sets: ex.sets, restSeconds: ex.restSeconds, rir: ex.targetRir))
                         .font(.redeCaption).monospacedDigit()
                         .foregroundStyle(Color.redeT4)
                 }
@@ -307,22 +307,14 @@ struct TodayTabView: View {
     }
 
     private func targetSummary(_ ex: ExercisePrescriptionPlan) -> String {
-        let w = s.formatKg(ex.targetWeightKg)
-        switch ex.loadType {
-        case "bodyweight", "band": return "× \(ex.targetReps)"
-        case "assisted": return "辅助 \(w) × \(ex.targetReps)"
-        case "bodyweight-plus": return "负重 +\(w) × \(ex.targetReps)"
-        default: return "\(w) \(s.unitLabel) × \(ex.targetReps)"
-        }
+        s.targetLine(loadType: ex.loadType, weightKg: ex.targetWeightKg, reps: ex.targetReps)
     }
 
     @ViewBuilder
     private func lastChangeView(_ ex: ExercisePrescriptionPlan) -> some View {
         let isRep = ex.loadType == "bodyweight" || ex.loadType == "band"
-        // 上次值两者同有同无（审查 [4]）：用 flatMap，缺任一则整行不显示，绝不出「×0」
-        let prevText: String? = isRep
-            ? ex.previousTopReps.map { "上次 ×\($0)" }
-            : ex.previousWeightKg.flatMap { kg in ex.previousTopReps.map { "上次 \(s.formatKg(kg))×\($0)" } }
+        // 上次值同有同无（审查 [4]）由 lastRefLine 内部 guard 保证，缺任一→nil 不显示
+        let prevText = s.lastRefLine(loadType: ex.loadType, prevWeightKg: ex.previousWeightKg, prevReps: ex.previousTopReps)
         HStack(spacing: 6) {
             if let prevText {
                 Text(prevText).font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeT4)
@@ -338,16 +330,16 @@ struct TodayTabView: View {
             case "ease":
                 Text("↓").font(.redeCaption).foregroundStyle(Color.redeEmber2)
             case "hold":
-                Text("保持").font(.redeCaption).foregroundStyle(Color.redeT4)
+                Text(s.holdShort).font(.redeCaption).foregroundStyle(Color.redeT4)
             default:
-                Text("首练").font(.redeCaption).foregroundStyle(Color.redeT4)
+                Text(s.firstTimeShort).font(.redeCaption).foregroundStyle(Color.redeT4)
             }
         }
     }
 
     private func summaryLine(exercises: [ExercisePrescriptionPlan]) -> some View {
         let totalSets = exercises.reduce(0) { $0 + $1.sets }
-        return Text("合计 \(totalSets) 组 · \(exercises.count) 个动作")
+        return Text(s.dailySummaryLine(totalSets: totalSets, exerciseCount: exercises.count))
             .font(.redeCaption).monospacedDigit()
             .foregroundStyle(Color.redeT4)
     }

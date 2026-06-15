@@ -198,8 +198,10 @@ struct TrainTabView: View {
             }
             .buttonStyle(.plain)
 
-            // 跟上次比（基调微调 2026-06-15）：卡片内多一行「上次 W×N + 升降」，基调不动
-            if let p = currentPrescription(flow), let prev = lastRefText(p) {
+            // 跟上次比（基调微调 2026-06-15）：卡片内多一行「上次 W×N + 升降」，基调不动。
+            // 首练 change=start 显式切断（审查 M1）；其余按 loadType 取 L10n 上次行。
+            if let p = currentPrescription(flow), p.change.rawValue != "start",
+               let prev = s.lastRefLine(loadType: p.loadType, prevWeightKg: p.previousWeightKg, prevReps: p.previousTopReps) {
                 HStack(spacing: 6) {
                     Text(prev)
                         .font(.redeCaption).monospacedDigit()
@@ -269,29 +271,11 @@ struct TrainTabView: View {
         flow.prescription.exercises.first { $0.exerciseId == flow.currentExercise?.exerciseId }
     }
 
-    /// 「上次」参照按 loadType 格式化；首练无上次 → nil。
-    private func lastRefText(_ p: ExercisePrescriptionPlan) -> String? {
-        // 首练（change=start）显式切断，不依赖引擎恰好 nil 化 previous（审查 M1）
-        guard p.change.rawValue != "start" else { return nil }
-        if p.loadType == "bodyweight" || p.loadType == "band" {
-            return p.previousTopReps.map { "上次 ×\($0)" }
-        }
-        guard let w = p.previousWeightKg, let r = p.previousTopReps else { return nil }
-        let ws = s.formatKg(w)
-        switch p.loadType {
-        case "assisted": return "上次 辅助 \(ws)×\(r)"
-        case "bodyweight-plus": return "上次 负重 +\(ws)×\(r)"
-        default: return "上次 \(ws)×\(r)"
-        }
-    }
-
     @ViewBuilder
     private func changeTag(_ change: String) -> some View {
-        switch change {
-        case "increase": Text("↑ 进阶").font(.redeCaption).foregroundStyle(Color.redeEmber)
-        case "ease": Text("↓ 回调").font(.redeCaption).foregroundStyle(Color.redeEmber2)
-        case "hold": Text("保持").font(.redeCaption).foregroundStyle(Color.redeT4)
-        default: EmptyView()
+        if let tag = s.trainChangeTag(change) {
+            let color: Color = change == "ease" ? .redeEmber2 : (change == "hold" ? .redeT4 : .redeEmber)
+            Text(tag).font(.redeCaption).foregroundStyle(color)
         }
     }
 
