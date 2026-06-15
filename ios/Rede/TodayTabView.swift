@@ -268,8 +268,8 @@ struct TodayTabView: View {
     // 训练日判断行：「推力 A · N 个动作」+ 依据句（顶部，不再用大字号 hero）
     private func verdictLine(count: Int) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            (Text(dayName).foregroundStyle(Color.redeT1)
-             + Text(s.verdictExerciseCount(count)).foregroundStyle(Color.redeT3))
+            // iOS 26：Text `+` 拼接已弃用，改字符串插值嵌两段各自带色的 Text（两色一行不变）。
+            Text("\(Text(dayName).foregroundStyle(Color.redeT1))\(Text(s.verdictExerciseCount(count)).foregroundStyle(Color.redeT3))")
                 .font(.redeSubhead)
                 .monospacedDigit()
             Text(s.receiptConclusion(call: callCode, reasonCode: reasonCode))
