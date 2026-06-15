@@ -906,6 +906,31 @@ swift test
 
 LLM 可用于解释、总结和生成自然语言提醒;不得由 LLM 单独判定肌群等级。等级估计必须能由本地可审计模型复算。
 
+## 6.5 周期化引擎（Mesocycle · FR-PL2）
+
+> **实现状态（2026-06-15）:** owner 拍板做此功能（4 周块 + 主动过载）。分 5 步 slice 实现——**S1 纯相位计算已实现**（`MesocyclePhase.swift` + golden）；S2 接处方调制 / S3 与反应式减载合并 / S4 schema 8→9 落库 / S5 计划页周期条 待做。本节是**目标契约**；进度看 DEV_LOG。
+
+**模型（owner 选「最权威/最专业/最符合人体生理」拍板）。** 一个 mesocycle = **4 个 ISO 周累积块（3:1 load:deload）**，4 个周角色 校准 / 构建 / **过载（主动）** / 减载。选 4 周而非 6 周：4 周（3:1）是 Helms/RP/NSCA meta 证据最强的默认中周期，且计划减载落第 4 周正好领先反应式规则 4 的 21 天（=3 周）窗口约一周——计划在前主动减、反应在后兜底减，节律天然对齐（6 周块会让安全网频繁抢跑）。块长 `blockLengthWeeks` 存进数据（=4），未来改 6 周只改数据 + 加一张角色表，不改引擎契约。
+
+**相位调制（与 light×0.9 / deload×0.8 同款，正交叠乘）。** 每周角色产一个 `PhaseModulation{weightMultiplier, setDelta, rirTarget}`，叠在 verdict 调制**之前**（同 2026-06-10 拍板的「冷启动先验×裁决正交叠乘」模式）：
+
+| 周 | 角色 | weightMul | setDelta | rirTarget |
+|---|---|---|---|---|
+| 1 | 校准 calibrate | 1.00 | 0 | 2.5 |
+| 2 | 构建 build | 1.00 | 0 | 2.0 |
+| 3 | **过载 overreach** | 1.00 | **+1** | **1.0** |
+| 4 | 减载 deload | **0.85** | **−1**（下限 2） | 3.5 |
+
+过载主动（+1 组、RIR 压到 1 = 功能性过载），重量仍交给现有双重渐进自然涨（phase 不主动加重，把"假过载"风险压最低）；减载主动卸量。四类 loadType（external / bodyweight / band / assisted / bodyweight-plus）沿各自已有的 light/deload 反转分支，phase 减载只是多触发一次现有 deload 形态，零新方向逻辑。
+
+**相位推进（按 ISO 周，纯函数）。** `phase(blockStartISO, todayISO, blockLengthWeeks)`：weeksElapsed = (今日日号 − 块起日号) / 7；weekInBlock = weeksElapsed % 4 → 查角色。日期非法 / today<blockStart → 安全降级校准（不抛错、不画假进度）。**相位永远从真数据现算，零写死计数器**（FR-PL1）。
+
+**块锚点（可从真历史重算，防腐烂）。** `blockStartISO` = 「最近一段连续训练序列」起点（从最新场往回，相邻 ≤ `restartGapDays`=10 即同块）；**停训 ≥10 天 → 软重置**锚到今日（疲劳已清，再算"过载周"是假的，诚实优先于连续性；与 verdict 的 longGapReentry≥14天→light 协同）。空历史 → nil（计划页退诚实占位）。
+
+**与反应式减载共存（安全优先）。** 反应式规则 4（21 天高量 → deload 裁决）**一字不动、保留为安全网、永远优先**。计划式减载**不抢 TodayCall 四态、不产 deload 裁决**，只作 phase 调制层塑形重量/组数/RIR（call 仍如实反映恢复状态）。管线：先跑 verdict（不改）→ 再跑带 phase 的 prescribe。冲突取**更狠者**：最终 weightMul = min(phaseMul, verdictMul)（防 0.85×0.80 双重折扣砍过头）；setDelta 求和下限 2；rirTarget 取更大；verdict=deload 时 phase 让位但块照常推进；verdict=rest 无处方。
+
+**数据模型。** AppData 加顶层 `mesocycle{enabled, blockStartISO, blockLengthWeeks}`；**不存"当前第几周"**（永远现算）。schema 8→9 走 `schema-migration-guard`（迁移钩子**必须先于 validate**、纯加性、可逆 down-migrate、备份、dry-run、单独 PR 禁 auto-merge——这是唯一会静默毁数据的环节）。
+
 ## 7. Train 页面规则
 
 Train 只有专注训练态。必须服务于：
