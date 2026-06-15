@@ -19,6 +19,8 @@ struct SettingsSheet: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var profile: SessionStore.ProfileSnapshot?
+    /// 周期化开关持久态（FR-PL2 enablement；默认关 = opt-in）。
+    @State private var mesocycleOn = false
     /// 行内单题编辑（方向 A 拍板 2026-06-10：改哪题进哪题，退役整流重跑）。
     @State private var editing: PlateQuestion?
     /// 最近一次保存的变更收据（铭牌下方替换提示行）。
@@ -68,6 +70,8 @@ struct SettingsSheet: View {
                 VStack(alignment: .leading, spacing: 0) {
                     preferenceRows
                     EngraveDivider().padding(.top, RedeSpace.section)
+                    periodizationSection
+                    EngraveDivider().padding(.top, RedeSpace.section)
                     backgroundPlate
                     EngraveDivider().padding(.top, RedeSpace.section)
                     backplateInfo
@@ -86,6 +90,7 @@ struct SettingsSheet: View {
             // 审查 MAJOR-2（M5-2）：清掉历史保存错误——本页只显示「设置期间」的写入错误。
             sessionStore.saveErrorText = nil
             profile = await Task.detached { SessionStore.loadProfileSnapshot() }.value
+            mesocycleOn = await Task.detached { SessionStore.loadMesocycleEnabled() }.value
         }
     }
 
@@ -148,6 +153,42 @@ struct SettingsSheet: View {
             SegControl(options: options, selection: selection, machined: true)
                 .frame(width: 168)
         }
+    }
+
+    // MARK: - 训练周期开关（FR-PL2 enablement）：label + 钢开关 + 诚实说明。默认关 = opt-in。
+
+    private var periodizationSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Overline(text: s.settingsPeriodizationOverline)
+                .padding(.top, 18)
+            HStack {
+                Text(s.settingsPeriodizationLabel)
+                    .font(.redeBody)
+                    .foregroundStyle(Color.redeT2)
+                Spacer()
+                SteelToggle(isOn: Binding(
+                    get: { mesocycleOn },
+                    set: { newValue in
+                        guard newValue != mesocycleOn else { return }
+                        mesocycleOn = newValue
+                        // 落库后即时重载今日（处方吃相位）；计划页周期条随 tab 切换自刷新。
+                        // 写失败回滚开关位（审查 M-1）：UI 与磁盘一致，saveErrorText 已在页头如实提示。
+                        Task {
+                            if await sessionStore.saveMesocycleEnabled(newValue) {
+                                await sessionStore.loadToday()
+                            } else {
+                                mesocycleOn = !newValue
+                            }
+                        }
+                    }
+                ))
+            }
+            Text(s.settingsPeriodizationNote)
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT3)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .sensoryFeedback(.selection, trigger: mesocycleOn)
     }
 
     // MARK: - 设备铭牌（唯一 hero）：训练背景 spec plate + 修改回答（FR-SE2）

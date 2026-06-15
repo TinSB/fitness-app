@@ -139,6 +139,21 @@ public struct CanonicalSessionWriter {
         }
     }
 
+    /// 已批准写入类别：周期化开关 scalar edit（FR-PL2 enablement，2026-06-15）。
+    /// open-bag 合并 `mesocycle`：只写 enabled，blockLengthWeeks 缺则补默认 4、有则不覆盖；
+    /// 其余顶层键原样保留。开启后今日页处方与计划页周期条按落库配置生效（默认 off = opt-in）。
+    @discardableResult
+    public func applyMesocyclePreference(enabled: Bool) throws -> AppData {
+        return try performGatedMutation { current in
+            var storage = current.storage
+            var meso = storage["mesocycle"]?.asObject ?? [:]
+            meso["enabled"] = .bool(enabled)
+            if meso["blockLengthWeeks"] == nil { meso["blockLengthWeeks"] = .int(4) }
+            storage["mesocycle"] = .object(meso)
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
     /// 唯一的 gated 编排。current 为 nil（首写）时引导最小 canonical 文档。
     private func performGatedMutation(
         _ mutate: (_ current: AppData) throws -> AppData

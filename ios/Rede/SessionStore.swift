@@ -138,6 +138,13 @@ final class SessionStore {
         )
     }
 
+    /// 周期化开关当前持久态（设置页开关初值）；unreadable/缺失 → false（默认关）。
+    static func loadMesocycleEnabled() -> Bool {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load() else { return false }
+        return appData.mesocycle.enabled
+    }
+
     /// 偏好写入（FR-SE1/SE3 持久化）：经写闸 scalar edit；失败如实置 saveErrorText。
     /// isSaving 互斥沿写闸单调用方合同（审查 MAJOR-1：防快速连点并发 load-modify-write 丢更新）。
     @discardableResult
@@ -156,6 +163,38 @@ final class SessionStore {
                     gate: DataHealthGate()
                 )
                 try writer.applyPreferences(unitSystem: unitSystem, locale: locale)
+                return .success(())
+            } catch {
+                return .failure(error)
+            }
+        }.value
+        switch result {
+        case .success:
+            return true
+        case .failure(let error):
+            saveErrorText = String(describing: error)
+            return false
+        }
+    }
+
+    /// 周期化开关写入（FR-PL2 enablement）：经写闸 scalar edit；失败如实置 saveErrorText。
+    /// isSaving 互斥沿写闸单调用方合同（防快速连点并发 load-modify-write 丢更新，同 savePreferences）。
+    @discardableResult
+    func saveMesocycleEnabled(_ enabled: Bool) async -> Bool {
+        guard !isSaving else { return false }
+        isSaving = true
+        defer { isSaving = false }
+        let fileURL = TodayModel.canonicalFileURL()
+        let result: Result<Void, Error> = await Task.detached(priority: .userInitiated) {
+            do {
+                try FileManager.default.createDirectory(
+                    at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true
+                )
+                let writer = CanonicalSessionWriter(
+                    store: JSONFileAppDataStore(fileURL: fileURL),
+                    gate: DataHealthGate()
+                )
+                try writer.applyMesocyclePreference(enabled: enabled)
                 return .success(())
             } catch {
                 return .failure(error)

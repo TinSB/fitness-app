@@ -163,6 +163,13 @@ public struct RedeStrings: Sendable {
     public func settingsDaysValue(_ days: Int) -> String {
         t("每周 \(days) 天", "\(days) days a week")
     }
+    // 训练周期开关（FR-PL2 enablement）：诚实说明开/关各自行为，默认关 = opt-in。
+    public var settingsPeriodizationOverline: String { t("训练周期", "Training cycle") }
+    public var settingsPeriodizationLabel: String { t("计划周期化", "Planned periodization") }
+    public var settingsPeriodizationNote: String {
+        t("开启后按 4 周块自动安排过载与减载，计划页显示当前周期；关闭则只按你的身体反应逐次调整。安全规则（高量自动减载）始终生效。",
+          "When on, training runs a 4-week block with built-in overload and deload weeks, and Plan shows your current cycle. When off, each session is tuned only to how you've been responding. The safety rule (auto-deload after heavy load) is always on.")
+    }
     public var settingsData: String { t("数据", "Data") }
     /// FR-SE6 导出占位：数据在本机的事实陈述，不许诺时间表措辞外的能力。
     public var settingsExportNote: String {
