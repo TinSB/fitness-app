@@ -67,4 +67,57 @@ public enum LoadGrid {
     public static func addedLoadStepKg(unit: LoadUnit) -> Double {
         stepKg(equipment: "barbell", unit: unit)   // 2.5kg / 5lb
     }
+
+    // MARK: - 真实梯子（2026-06-15 单位原生重构）
+
+    // 磅哑铃分段梯子（owner 拍板 2026-06-15「轻段细档启用」）：
+    // 轻段 2.5lb（5–25）· 中段 5lb（25 以上）。重段 10lb 转跳待真机校准，暂不启用（维持 5lb）。
+    // 其余器械×单位均等距，无需显式梯子——snap/next 直接走 stepKg 算术，与旧 roundToIncrement 逐位等价。
+    private static let lbDumbbellLadder: [Double] = {
+        var rungs: [Double] = []
+        var v = 5.0
+        while v <= 25.0 { rungs.append(v); v += 2.5 }     // 5, 7.5, …, 25
+        v = 30.0
+        while v <= 250.0 { rungs.append(v); v += 5.0 }    // 30, 35, …, 250
+        return rungs
+    }()
+
+    /// 该器械×单位是否走分段梯子（仅磅哑铃）；其余等距。
+    private static func isSegmented(equipment: String, unit: LoadUnit) -> Bool {
+        unit == .lb && equipment == "dumbbell"
+    }
+
+    private static func nearest(_ value: Double, in ladder: [Double]) -> Double {
+        ladder.min(by: { abs($0 - value) < abs($1 - value) }) ?? value
+    }
+
+    /// 把任意 kg 重量吸附到「器械×单位」真实梯子的**最近**一格（round-to-nearest），返回 kg。
+    /// 等距器械（全公斤 + 磅非哑铃）≡ 旧 `roundToIncrement(w, step)`（含 max(step,…) 下限）——公斤零回归。
+    /// 磅哑铃走分段梯子。无重量轴（step≤0，如自重/弹力带）→ 原样返回（早分支保证不会进这里）。
+    public static func snapKg(_ weightKg: Double, equipment: String, unit: LoadUnit) -> Double {
+        if isSegmented(equipment: equipment, unit: unit) {
+            let snappedLb = nearest(weightKg * lbPerKg, in: lbDumbbellLadder)
+            return snappedLb / lbPerKg
+        }
+        let step = stepKg(equipment: equipment, unit: unit)
+        guard step > 0 else { return weightKg }
+        return max(step, (weightKg / step).rounded() * step)
+    }
+
+    /// 进阶/回退一档：从当前 kg 重量取梯子上相邻的下一格（up=更重）。返回 kg。
+    /// 等距 ≡ snap(w) ± step（与旧引擎 `roundToIncrement(w±step, step)` 行为一致）。
+    /// 磅哑铃取分段梯子相邻格（轻段一档=2.5lb、中段=5lb）。下限永远 ≥ 最小一格（不为 0/负）。
+    public static func nextRungKg(_ weightKg: Double, equipment: String, unit: LoadUnit, up: Bool) -> Double {
+        if isSegmented(equipment: equipment, unit: unit) {
+            let lb = weightKg * lbPerKg
+            let snapped = nearest(lb, in: lbDumbbellLadder)
+            guard let idx = lbDumbbellLadder.firstIndex(of: snapped) else { return snapped / lbPerKg }
+            let nextIdx = up ? min(idx + 1, lbDumbbellLadder.count - 1) : max(idx - 1, 0)
+            return lbDumbbellLadder[nextIdx] / lbPerKg
+        }
+        let step = stepKg(equipment: equipment, unit: unit)
+        guard step > 0 else { return weightKg }
+        let snapped = max(step, (weightKg / step).rounded() * step)
+        return up ? snapped + step : max(step, snapped - step)
+    }
 }

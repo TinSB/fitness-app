@@ -242,10 +242,11 @@ public enum TodayPrescriptionEngine {
         // 档位系统（2026-06-13）：渐进一档 = 器械×用户单位的真实档位步长（LoadGrid，
         // 宁大勿小）。roundToIncrement 到它即把重量吸附到真实格子——磅用户落 5lb
         // 倍数、公斤用户落 2.5kg 倍数。kg + 自由重量 = 2.5，与旧 per-entry 步长等价。
-        let step = LoadGrid.stepKg(
-            equipment: entry.equipment,
-            unit: LoadUnit(unitSystem: input.profile.unitSystem)
-        )
+        // 真实梯子（2026-06-15）：进阶/回退取相邻格、取整吸附最近格——等距器械 ≡ 旧 step 行为
+        //（公斤零回归），磅哑铃走分段梯子（轻段 2.5lb / 中段 5lb）。
+        let unit = LoadUnit(unitSystem: input.profile.unitSystem)
+        let equip = entry.equipment
+        let step = LoadGrid.stepKg(equipment: equip, unit: unit)
 
         let baseWeight: Double
         let targetReps: Int
@@ -253,18 +254,18 @@ public enum TodayPrescriptionEngine {
         let reason: PrescriptionReason
         if let last {
             if let minRir = last.minRir, minRir <= nearFailureMeanRir {
-                baseWeight = max(step, last.topWeightKg - step)
+                baseWeight = LoadGrid.nextRungKg(last.topWeightKg, equipment: equip, unit: unit, up: false)
                 targetReps = slot.repMin
                 change = .ease
                 reason = .nearFailureLastTime
             } else if last.maxReps < slot.repMin {
-                baseWeight = max(step, last.topWeightKg - step)
+                baseWeight = LoadGrid.nextRungKg(last.topWeightKg, equipment: equip, unit: unit, up: false)
                 targetReps = slot.repMin
                 change = .ease
                 reason = .belowRepFloor
             } else if last.minReps >= slot.repMax, last.minRir.map({ $0 >= progressMinMeanRir }) ?? true {
                 // 无上限：精英重量的 +一档 是合法递增，有意不设 cap。
-                baseWeight = last.topWeightKg + step
+                baseWeight = LoadGrid.nextRungKg(last.topWeightKg, equipment: equip, unit: unit, up: true)
                 targetReps = slot.repMin
                 change = .increase
                 reason = .repCeilingReached
@@ -287,7 +288,7 @@ public enum TodayPrescriptionEngine {
             reason = .firstExposure
         }
 
-        var weight = roundToIncrement(baseWeight, step: step)
+        var weight = LoadGrid.snapKg(baseWeight, equipment: equip, unit: unit)
         var sets = slot.sets
         var rir = targetRir
         // 计划周期相位（S2）：仅 train 态生效——light/deload/rest 让位给安全网（反应式优先；
@@ -295,16 +296,16 @@ public enum TodayPrescriptionEngine {
         // 只减载周(0.85)真减重；setDelta/rirTarget 照表。
         if let phase, verdict.call == .train {
             if phase.weightMultiplier < 1.0 {
-                weight = modulated(base: weight, multiplier: phase.weightMultiplier, step: step)
+                weight = modulated(base: weight, multiplier: phase.weightMultiplier, equipment: equip, unit: unit)
             }
             sets = max(2, sets + phase.setDelta)
             rir = phase.rirTarget
         }
         switch verdict.call {
         case .light:
-            weight = modulated(base: weight, multiplier: lightMultiplier, step: step)
+            weight = modulated(base: weight, multiplier: lightMultiplier, equipment: equip, unit: unit)
         case .deload:
-            weight = modulated(base: weight, multiplier: deloadMultiplier, step: step)
+            weight = modulated(base: weight, multiplier: deloadMultiplier, equipment: equip, unit: unit)
             sets = max(2, sets - 1)
         case .train, .rest:
             break
@@ -321,7 +322,7 @@ public enum TodayPrescriptionEngine {
             targetRir: rir,
             previousWeightKg: last?.topWeightKg,
             previousTopReps: last?.repsAtTop,
-            nextProjectedWeightKg: roundToIncrement(weight + step, step: step),
+            nextProjectedWeightKg: LoadGrid.nextRungKg(weight, equipment: equip, unit: unit, up: true),
             progressionStepKg: step,
             change: change,
             reason: reason,
@@ -329,12 +330,13 @@ public enum TodayPrescriptionEngine {
         )
     }
 
-    /// 轻练/减载的实际负重：×乘数后按步长取整；若弹回原值且仍有下调空间，
-    /// 强制下调一格（调制必须真减，小重量不得被取整吃掉）。
-    private static func modulated(base: Double, multiplier: Double, step: Double) -> Double {
-        let rounded = roundToIncrement(base * multiplier, step: step)
-        guard rounded >= base, base > step else { return rounded }
-        return max(step, base - step)
+    /// 轻练/减载的实际负重：×乘数后吸附到器械×单位真实梯子；若弹回原值且仍有下调空间，
+    /// 强制下调一格（调制必须真减，小重量不得被取整吃掉）。等距器械 ≡ 旧 step 行为（公斤零回归）。
+    private static func modulated(base: Double, multiplier: Double, equipment: String, unit: LoadUnit) -> Double {
+        let snapped = LoadGrid.snapKg(base * multiplier, equipment: equipment, unit: unit)
+        guard snapped >= base else { return snapped }
+        let down = LoadGrid.nextRungKg(base, equipment: equipment, unit: unit, up: false)
+        return down < base ? down : snapped
     }
 
     /// 相位组数/RIR 调制（仅 train 态；各 loadType 路径共用）。weightMultiplier 由各路径按其
@@ -540,7 +542,8 @@ public enum TodayPrescriptionEngine {
         phase: PhaseModulation?,
         catalog: ExerciseCatalog
     ) -> ExercisePrescriptionPlan {
-        let step = LoadGrid.addedLoadStepKg(unit: LoadUnit(unitSystem: input.profile.unitSystem))
+        let unit = LoadUnit(unitSystem: input.profile.unitSystem)
+        let step = LoadGrid.addedLoadStepKg(unit: unit)   // 外加负重档 = 挂片 barbell 格（等距）
 
         let baseLoad: Double
         let targetReps: Int
@@ -604,13 +607,13 @@ public enum TodayPrescriptionEngine {
         applyPhaseSetsRir(phase, verdict: verdict, sets: &sets, rir: &rir)
         // 重量轴同 external：减载周(0.85)真减外加负重（1.0 不调，modulated 在 1.0 会误减）
         if let phase, verdict.call == .train, phase.weightMultiplier < 1.0 {
-            weight = modulated(base: weight, multiplier: phase.weightMultiplier, step: step)
+            weight = modulated(base: weight, multiplier: phase.weightMultiplier, equipment: "barbell", unit: unit)
         }
         switch verdict.call {
         case .light:
-            weight = modulated(base: weight, multiplier: lightMultiplier, step: step)
+            weight = modulated(base: weight, multiplier: lightMultiplier, equipment: "barbell", unit: unit)
         case .deload:
-            weight = modulated(base: weight, multiplier: deloadMultiplier, step: step)
+            weight = modulated(base: weight, multiplier: deloadMultiplier, equipment: "barbell", unit: unit)
             sets = max(2, sets - 1)
         case .train, .rest:
             break
