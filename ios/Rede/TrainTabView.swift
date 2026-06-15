@@ -871,23 +871,28 @@ struct TrainTabView: View {
             Overline(text: s.swapExerciseAction)
                 .padding(.top, 18)
             if let candidates = flow?.replacementCandidates, !candidates.isEmpty {
-                VStack(spacing: 0) {
-                    ForEach(Array(candidates.enumerated()), id: \.element) { idx, id in
-                        sheetActionRow(localeStore.exerciseName(id), divider: idx < candidates.count - 1) {
-                            clearAdjustment() // 换动作 = 新目标，旧暂存作废
-                            sessionStore.apply(.replaceExercise(id))
-                            showSwapSheet = false
+                // bug 修复（2026-06-14，真机抓到）：候选随内容扩充可多达 12 项（卧推/划船/深蹲族），
+                // 原「普通 VStack + 固定 280pt sheet」放不下又无滚动容器 → 底部动作划不动够不着。
+                // 套 ScrollView 让列表可滚（标题固定只滚列表），detents 改可变半屏/全屏。
+                ScrollView {
+                    VStack(spacing: 0) {
+                        ForEach(Array(candidates.enumerated()), id: \.element) { idx, id in
+                            sheetActionRow(localeStore.exerciseName(id), divider: idx < candidates.count - 1) {
+                                clearAdjustment() // 换动作 = 新目标，旧暂存作废
+                                sessionStore.apply(.replaceExercise(id))
+                                showSwapSheet = false
+                            }
                         }
                     }
+                    .padding(.top, 4)
                 }
-                .padding(.top, 4)
             } else {
                 Text("—").foregroundStyle(Color.redeT3).padding(.top, 12)
+                Spacer()
             }
-            Spacer()
         }
         .padding(.horizontal, 20)
-        .presentationDetents([.height(280)])
+        .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .presentationBackground(Color.redeBase)
     }
