@@ -319,16 +319,21 @@ struct TodayTabView: View {
     @ViewBuilder
     private func lastChangeView(_ ex: ExercisePrescriptionPlan) -> some View {
         let isRep = ex.loadType == "bodyweight" || ex.loadType == "band"
+        // 上次值两者同有同无（审查 [4]）：用 flatMap，缺任一则整行不显示，绝不出「×0」
         let prevText: String? = isRep
             ? ex.previousTopReps.map { "上次 ×\($0)" }
-            : ex.previousWeightKg.map { "上次 \(s.formatKg($0))×\(ex.previousTopReps ?? 0)" }
+            : ex.previousWeightKg.flatMap { kg in ex.previousTopReps.map { "上次 \(s.formatKg(kg))×\($0)" } }
         HStack(spacing: 6) {
             if let prevText {
                 Text(prevText).font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeT4)
             }
             switch ex.change.rawValue {
             case "increase":
-                let delta = isRep ? "↑" : "↑ \(s.formatKg(ex.targetWeightKg - (ex.previousWeightKg ?? ex.targetWeightKg)))"
+                // 幅度取绝对值（审查 [5]）：assisted 进阶=辅助↓（target<prev），直减会出负号；
+                // 无重量轴或缺上次值则只给箭头。
+                let delta: String = (isRep || ex.previousWeightKg == nil)
+                    ? "↑"
+                    : "↑ \(s.formatKg(abs(ex.targetWeightKg - (ex.previousWeightKg ?? 0))))"
                 Text(delta).font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeEmber)
             case "ease":
                 Text("↓").font(.redeCaption).foregroundStyle(Color.redeEmber2)
@@ -347,8 +352,9 @@ struct TodayTabView: View {
             .foregroundStyle(Color.redeT4)
     }
 
+    // 仅 rest/light/deload 等无动作清单态调用（isUnreadable 已被 unreadableBlock 独占，审查 [2]）
     private var restBlock: some View {
-        Text(isUnreadable ? s.dataUnreadableHeadline : s.verdictHeadline(
+        Text(s.verdictHeadline(
             call: callCode, reasonCode: reasonCode,
             dayName: dayName, gapDays: gapDays, consecutiveDays: consecutiveDays))
             .font(.redeHeadline)
