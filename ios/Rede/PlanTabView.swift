@@ -21,11 +21,11 @@ struct PlanTabView: View {
             VStack(alignment: .leading, spacing: 0) {
                 ScreenHeader(title: s.planTitle)
 
-                if let facts = template, let split = facts.splitType,
-                   let days = facts.daysPerWeek, let goal = facts.goal {
-                    // 真计划摘要（分化 · 天数 · 目标 + 背景 · 器械）——重做 2026-06-15「密而干净」
+                if let facts = template, let split = facts.splitType, let days = facts.daysPerWeek {
+                    // 真计划摘要（分化 · 天数 · 目标 + 背景 · 器械）——重做 2026-06-15「密而干净」。
+                    // goal 缺失不丢整块摘要（审查 P1）：onbVerdict 内部 fallback general，同 OnboardingView。
                     VStack(alignment: .leading, spacing: 10) {
-                        Text(s.onbVerdict(splitCode: split, days: days, goalCode: goal))
+                        Text(s.onbVerdict(splitCode: split, days: days, goalCode: facts.goal ?? "general"))
                             .font(.redeHeadline)
                             .tracking(RedeTracking.headline)
                             .foregroundStyle(Color.redeT1)

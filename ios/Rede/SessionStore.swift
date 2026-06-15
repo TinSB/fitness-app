@@ -107,11 +107,12 @@ final class SessionStore {
         guard let appData = try? store.load() else { return nil }
         let template = appData.programTemplate
         let profile = appData.userProfile
-        // 真数据：分化/天数/目标来自模板，背景/器械来自档案（FR-PL1：只展示真值，不编排期/周期）。
+        // 真数据：分化/天数来自模板；目标/背景/器械统一从档案取（审查 P2：与设置页 ProfileSnapshot
+        // 同源 profile.primaryGoal，避免日后改目标时模板/档案两份漂移）。FR-PL1：只展示真值，不编排期/周期。
         return TemplateFacts(
             splitType: template.splitType,
             daysPerWeek: template.daysPerWeek,
-            goal: template.primaryGoal,
+            goal: profile.primaryGoal,
             level: profile.trainingLevel,
             equipment: profile.equipmentScenario
         )
