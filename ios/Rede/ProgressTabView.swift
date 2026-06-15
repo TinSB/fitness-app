@@ -219,7 +219,7 @@ struct ProgressTabView: View {
             // e1RM 点缺失（理论不可达）→ 保持不含 e1RM 的兜底句，绝不显示「0 kg」
             sub = s.sessionSubTopSet(
                 lift: localeStore.exerciseName(top.exerciseId),
-                kg: s.formatKg(top.weightKg),
+                kg: LoadDisplay.weight(top.weightKg, exerciseId: top.exerciseId, s),
                 reps: top.reps,
                 e1rmKg: s.formatE1Rm(e1rm)
             )
@@ -472,7 +472,7 @@ struct ProgressTabView: View {
                                     .monospacedDigit()
                                     .foregroundStyle(Color.redeT4)
                                     .frame(width: 18, alignment: .leading)
-                                Text(s.historySetLine(kg: s.formatKg(set.weightKg), reps: set.reps))
+                                Text(s.historySetLine(kg: LoadDisplay.weight(set.weightKg, exerciseId: exercise.exerciseId, s), reps: set.reps))
                                     .font(.redeBody)
                                     .monospacedDigit()
                                     .foregroundStyle(Color.redeT2)

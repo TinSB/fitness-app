@@ -29,11 +29,12 @@ enum LoadDisplay {
         s.formatKg(snap(weightKg, loadType: loadType, equipment: equipment, s))
     }
 
-    /// 历史/进展：按 exerciseId 回目录查器械再吸附（缺→dumbbell 兜底）。
+    /// 历史/进展/训练流：按 exerciseId 回目录查 loadType+器械再吸附（缺→external/dumbbell 兜底）。
+    /// 经 loadType 故 bodyweight-plus 也正确落 barbell 外加负重格。
     static func snap(_ weightKg: Double, exerciseId: String, _ s: RedeStrings,
                      catalog: ExerciseCatalog = .minimal) -> Double {
-        let equip = catalog.entry(id: exerciseId)?.equipment ?? "dumbbell"
-        return LoadGrid.snapKg(weightKg, equipment: equip, unit: loadUnit(s))
+        let entry = catalog.entry(id: exerciseId)
+        return snap(weightKg, loadType: entry?.loadType ?? "external", equipment: entry?.equipment ?? "dumbbell", s)
     }
 
     /// 便捷（历史）：按 exerciseId 吸附 + formatKg。
