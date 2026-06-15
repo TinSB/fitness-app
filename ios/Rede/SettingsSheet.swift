@@ -128,7 +128,11 @@ struct SettingsSheet: View {
                     guard let unit = RedeUnit.allCases.first(where: { $0.displayName == picked }),
                           unit != store.unit else { return }
                     store.unit = unit
-                    Task { await sessionStore.savePreferences(unitSystem: unit.rawValue, locale: nil) }
+                    // 切单位后重算今日（§8）：处方目标落新单位真实梯子，不再是旧单位格子裸换算。
+                    Task {
+                        await sessionStore.savePreferences(unitSystem: unit.rawValue, locale: nil)
+                        await sessionStore.loadToday()
+                    }
                 }
             ))
             preferenceRow(s.settingsLanguage, options: RedeLocale.allCases.map(\.displayName), selection: Binding(

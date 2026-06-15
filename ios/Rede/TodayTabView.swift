@@ -151,16 +151,16 @@ struct TodayTabView: View {
             return s.changeLineAssisted(
                 exerciseName: localeStore.exerciseName(ex.exerciseId),
                 change: ex.change.rawValue,
-                fromKg: ex.previousWeightKg.map(s.formatKg),
-                toKg: s.formatKg(ex.targetWeightKg)
+                fromKg: ex.previousWeightKg.map { LoadDisplay.weight($0, loadType: ex.loadType, equipment: ex.equipment, s) },
+                toKg: LoadDisplay.weight(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s)
             )
         }
         if ex.loadType == "bodyweight-plus" {
             return s.changeLineBodyweightPlus(
                 exerciseName: localeStore.exerciseName(ex.exerciseId),
                 change: ex.change.rawValue,
-                fromKg: ex.previousWeightKg.map(s.formatKg),
-                toKg: s.formatKg(ex.targetWeightKg)
+                fromKg: ex.previousWeightKg.map { LoadDisplay.weight($0, loadType: ex.loadType, equipment: ex.equipment, s) },
+                toKg: LoadDisplay.weight(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s)
             )
         }
         return s.changeLine(
@@ -307,14 +307,20 @@ struct TodayTabView: View {
     }
 
     private func targetSummary(_ ex: ExercisePrescriptionPlan) -> String {
-        s.targetLine(loadType: ex.loadType, weightKg: ex.targetWeightKg, reps: ex.targetReps)
+        // §8 显示吸附：目标重量先落「器械×显示单位」真实梯子，再格式化（禁裸换算）。
+        s.targetLine(loadType: ex.loadType,
+                     weightKg: LoadDisplay.snap(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s),
+                     reps: ex.targetReps)
     }
 
     @ViewBuilder
     private func lastChangeView(_ ex: ExercisePrescriptionPlan) -> some View {
         let isRep = ex.loadType == "bodyweight" || ex.loadType == "band"
         // 上次值同有同无（审查 [4]）由 lastRefLine 内部 guard 保证，缺任一→nil 不显示
-        let prevText = s.lastRefLine(loadType: ex.loadType, prevWeightKg: ex.previousWeightKg, prevReps: ex.previousTopReps)
+        let prevText = s.lastRefLine(
+            loadType: ex.loadType,
+            prevWeightKg: ex.previousWeightKg.map { LoadDisplay.snap($0, loadType: ex.loadType, equipment: ex.equipment, s) },
+            prevReps: ex.previousTopReps)
         HStack(spacing: 6) {
             if let prevText {
                 Text(prevText).font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeT4)
@@ -325,7 +331,8 @@ struct TodayTabView: View {
                 // 无重量轴或缺上次值则只给箭头。
                 let delta: String = (isRep || ex.previousWeightKg == nil)
                     ? "↑"
-                    : "↑ \(s.formatKg(abs(ex.targetWeightKg - (ex.previousWeightKg ?? 0))))"
+                    // 增量 = 吸附后目标 − 吸附后上次（两端同梯子，差才是真实可配增量）
+                    : "↑ \(s.formatKg(abs(LoadDisplay.snap(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s) - LoadDisplay.snap(ex.previousWeightKg ?? 0, loadType: ex.loadType, equipment: ex.equipment, s))))"
                 Text(delta).font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeEmber)
             case "ease":
                 Text("↓").font(.redeCaption).foregroundStyle(Color.redeEmber2)

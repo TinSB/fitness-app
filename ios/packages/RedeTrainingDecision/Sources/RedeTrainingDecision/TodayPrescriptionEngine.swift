@@ -326,7 +326,8 @@ public enum TodayPrescriptionEngine {
             progressionStepKg: step,
             change: change,
             reason: reason,
-            loadType: entry.loadType
+            loadType: entry.loadType,
+            equipment: entry.equipment
         )
     }
 
@@ -421,7 +422,8 @@ public enum TodayPrescriptionEngine {
             progressionStepKg: 0,
             change: change,
             reason: forcedReason ?? reason,
-            loadType: loadType
+            loadType: loadType,
+            equipment: entry.equipment
         )
     }
 
@@ -526,7 +528,8 @@ public enum TodayPrescriptionEngine {
             progressionStepKg: step,
             change: change,
             reason: reason,
-            loadType: entry.loadType
+            loadType: entry.loadType,
+            equipment: entry.equipment
         )
     }
 
@@ -634,7 +637,8 @@ public enum TodayPrescriptionEngine {
             progressionStepKg: step,
             change: change,
             reason: reason,
-            loadType: entry.loadType
+            loadType: entry.loadType,
+            equipment: entry.equipment
         )
     }
 

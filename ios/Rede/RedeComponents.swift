@@ -1,6 +1,47 @@
 import SwiftUI
+import RedeL10n
+import RedeTrainingDecision
 
 // 签名组件 — 按 docs/rede-prototypes/rede-app.html 的 .ov/.forged/.embar/.reg/.emb/.btn2/.ring/.rule/.tb/.seg/.tg 复原。
+
+// MARK: - 显示层重量吸附（系统逻辑 §6.0.1 + 内容系统 §8「显示吸附契约」）
+//
+// 复发根因：旧代码显示层裸换算（formatKg ×2.2046、kg 裸显 double）→ kg 格子 30kg 在 lb 显
+// 66lb（配不出）、lb 输入存奇数 kg 切回显长小数。契约：**任何「可配重量」显示都必须先吸附到
+// 「器械×当前显示单位」真实梯子最近格**，再交 RedeL10n 格式化。禁止裸换算。
+// 只吸附「用户实际要配上器械的重量」（目标/上次/刻度轨/组重）；e1RM、总吨位等估算值不吸附。
+enum LoadDisplay {
+    private static func loadUnit(_ s: RedeStrings) -> LoadUnit { LoadUnit(unitSystem: s.unit.rawValue) }
+
+    /// 显示重量所落的格子器械：bodyweight-plus 的显示值是外加负重（挂片 barbell 格），
+    /// 不是动作本身的 bodyweight；其余按动作器械。
+    private static func gridEquipment(loadType: String, equipment: String) -> String {
+        loadType == "bodyweight-plus" ? "barbell" : equipment
+    }
+
+    /// 吸附到「器械×显示单位」真实梯子的 kg 值——交给 formatKg/heroNumber/railValue 等的 weightKg 实参。
+    static func snap(_ weightKg: Double, loadType: String, equipment: String, _ s: RedeStrings) -> Double {
+        LoadGrid.snapKg(weightKg, equipment: gridEquipment(loadType: loadType, equipment: equipment), unit: loadUnit(s))
+    }
+
+    /// 便捷：按 loadType+器械吸附 + formatKg = 直接出显示字符串（处方显示最常用）。
+    static func weight(_ weightKg: Double, loadType: String, equipment: String, _ s: RedeStrings) -> String {
+        s.formatKg(snap(weightKg, loadType: loadType, equipment: equipment, s))
+    }
+
+    /// 历史/进展：按 exerciseId 回目录查器械再吸附（缺→dumbbell 兜底）。
+    static func snap(_ weightKg: Double, exerciseId: String, _ s: RedeStrings,
+                     catalog: ExerciseCatalog = .minimal) -> Double {
+        let equip = catalog.entry(id: exerciseId)?.equipment ?? "dumbbell"
+        return LoadGrid.snapKg(weightKg, equipment: equip, unit: loadUnit(s))
+    }
+
+    /// 便捷（历史）：按 exerciseId 吸附 + formatKg。
+    static func weight(_ weightKg: Double, exerciseId: String, _ s: RedeStrings,
+                       catalog: ExerciseCatalog = .minimal) -> String {
+        s.formatKg(snap(weightKg, exerciseId: exerciseId, s, catalog: catalog))
+    }
+}
 
 // MARK: - Overline(.ov: 11/500/+0.18em/uppercase)
 
