@@ -198,6 +198,17 @@ struct TrainTabView: View {
             }
             .buttonStyle(.plain)
 
+            // 跟上次比（基调微调 2026-06-15）：卡片内多一行「上次 W×N + 升降」，基调不动
+            if let p = currentPrescription(flow), let prev = lastRefText(p) {
+                HStack(spacing: 6) {
+                    Text(prev)
+                        .font(.redeCaption).monospacedDigit()
+                        .foregroundStyle(Color.redeT4)
+                    changeTag(p.change.rawValue)
+                }
+                .padding(.top, 6)
+            }
+
             if !hasUsedQuickAdjust && !showAdjust {
                 Text(currentIsAssisted ? s.adjustDiscoverHintAssisted : (currentIsBodyweightPlus ? s.adjustDiscoverHintBodyweightPlus : (currentIsRepBased ? s.adjustDiscoverHintBodyweight : s.adjustDiscoverHint)))
                     .font(.redeCaption)
@@ -248,6 +259,37 @@ struct TrainTabView: View {
 
             EmbButton(icon: "checkmark", title: s.trainLogSet, action: logCurrentSet)
                 .padding(.top, 12)
+        }
+    }
+
+    // MARK: - 跟上次比（基调微调 2026-06-15；L10n 债同今日/进展：中文串暂在视图层）
+
+    /// 当前动作的处方条目（含「上次」素材）；换动作后原 id 不匹配 → nil（不显示上次行）。
+    private func currentPrescription(_ flow: TrainFlowState) -> ExercisePrescriptionPlan? {
+        flow.prescription.exercises.first { $0.exerciseId == flow.currentExercise?.exerciseId }
+    }
+
+    /// 「上次」参照按 loadType 格式化；首练无上次 → nil。
+    private func lastRefText(_ p: ExercisePrescriptionPlan) -> String? {
+        if p.loadType == "bodyweight" || p.loadType == "band" {
+            return p.previousTopReps.map { "上次 ×\($0)" }
+        }
+        guard let w = p.previousWeightKg, let r = p.previousTopReps else { return nil }
+        let ws = s.formatKg(w)
+        switch p.loadType {
+        case "assisted": return "上次 辅助 \(ws)×\(r)"
+        case "bodyweight-plus": return "上次 负重 +\(ws)×\(r)"
+        default: return "上次 \(ws)×\(r)"
+        }
+    }
+
+    @ViewBuilder
+    private func changeTag(_ change: String) -> some View {
+        switch change {
+        case "increase": Text("↑ 进阶").font(.redeCaption).foregroundStyle(Color.redeEmber)
+        case "ease": Text("↓ 回调").font(.redeCaption).foregroundStyle(Color.redeEmber2)
+        case "hold": Text("保持").font(.redeCaption).foregroundStyle(Color.redeT4)
+        default: EmptyView()
         }
     }
 
