@@ -74,7 +74,7 @@ final class CanonicalSessionWriterTests: XCTestCase {
 
     func testAppendToEmptyStoreBootstrapsCanonicalDocument() throws {
         let result = try makeWriter().appendCompletedSession(makeSession())
-        XCTAssertEqual(result.schemaVersion, 8)
+        XCTAssertEqual(result.schemaVersion, 9)  // 首写引导用 SchemaVersion.current（= 9）
         XCTAssertEqual(result.history.count, 1)
         XCTAssertEqual(result.history.first?.id, "session-1")
 

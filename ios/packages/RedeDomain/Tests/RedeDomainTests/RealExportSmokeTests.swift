@@ -1,6 +1,6 @@
-// 开门设计冒烟测试：真实 legacy 导出（schemaVersion=8）必须能被新模型无损往返。
+// 开门设计冒烟测试：真实 legacy 导出（磁盘 schemaVersion=8）经迁移升 9 后必须无损往返。
 // ios/ParityFixtures 在此只是参考输入（系统逻辑 §3），不是 golden——只断言语义等值，
-// 不做字节/哈希 parity。它证明「未来若做老数据迁移，模型层的门是开着的」。
+// 不做字节/哈希 parity。它现在直接验证「老数据迁移」这条路真的开着：v8 → v9 落地不丢字段。
 
 import Foundation
 import XCTest
@@ -17,8 +17,9 @@ final class RealExportSmokeTests: XCTestCase {
         let data = try loadRealExport()
         let original = try JSONDecoder().decode(AppData.self, from: data)
 
-        XCTAssertEqual(original.schemaVersion, 8)
-        XCTAssertFalse(original.history.isEmpty)
+        XCTAssertEqual(original.schemaVersion, 9, "磁盘 v8 经 decode 边界迁移升 9")
+        XCTAssertEqual(original.mesocycle.enabled, false, "迁移播种默认关闭 = 零回归")
+        XCTAssertFalse(original.history.isEmpty, "既有训练历史无损保留")
         XCTAssertNotNil(original.userProfile.trainingLevel)
 
         let reborn = try JSONDecoder().decode(AppData.self, from: JSONEncoder().encode(original))

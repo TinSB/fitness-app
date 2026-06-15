@@ -115,15 +115,17 @@ public enum TodayPrescriptionEngine {
         input: CleanTrainingDecisionInput,
         verdict: TodayVerdict,
         catalog: ExerciseCatalog = .minimal,
-        mesocycleEnabled: Bool = false
+        mesocycleEnabled: Bool = false,
+        blockLengthWeeks: Int = Mesocycle.defaultBlockLengthWeeks
     ) -> TodayPrescription? {
         guard verdict.call != .rest else { return nil }
 
         // 计划周期相位（S2，2026-06-15）：默认关闭 = 零行为变化；开启时从真历史锚点纯算今日相位。
-        // 不落库（schema 归 S4），锚点临时从 sessions 重算。
+        // blockLengthWeeks 由调用方从落库配置（appData.mesocycle.blockLengthWeeks）透传——与计划页
+        // 周期条读同一值，保证两页相位永不分叉（审查 MAJOR-1：结构保证，非「都恰好是 4」的巧合）。
         let phase: PhaseModulation? = mesocycleEnabled
             ? Mesocycle.blockStartISO(sessionDatesISO: input.sessions.map(\.date), todayISO: input.todayISO)
-                .map { Mesocycle.phase(blockStartISO: $0, todayISO: input.todayISO).modulation }
+                .map { Mesocycle.phase(blockStartISO: $0, todayISO: input.todayISO, blockLengthWeeks: blockLengthWeeks).modulation }
             : nil
 
         let sequence = daySequence(splitType: input.program.splitType)

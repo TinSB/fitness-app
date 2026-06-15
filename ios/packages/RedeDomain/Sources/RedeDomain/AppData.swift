@@ -18,8 +18,11 @@ public struct AppData: Equatable, Sendable {
 
     public init(decoding value: JSONValue) throws {
         guard let object = value.asObject else { throw DecodingFailure.rootNotAnObject }
-        self.schemaVersion = try SchemaVersion.validate(root: object)
-        self.storage = object
+        // 迁移**先于** validate（系统逻辑 §3/§6.5）：decode 是唯一反序列化边界，旧版 root 在此
+        // 升级到 current 再校验。纯内存、纯加性、不碰磁盘——磁盘只由已备份的写闸改写（schema-migration-guard）。
+        let migrated = SchemaMigrator.migrate(root: object)
+        self.schemaVersion = try SchemaVersion.validate(root: migrated)
+        self.storage = migrated
     }
 
     // MARK: MVP 类型化只读视图
@@ -38,6 +41,34 @@ public struct AppData: Equatable, Sendable {
 
     public var programTemplate: ProgramTemplate {
         ProgramTemplate(storage: storage["programTemplate"]?.asObject ?? [:])
+    }
+
+    /// 周期化引擎配置（系统逻辑 §6.5，schema 9 落库）。字段缺失 → 安全默认（关闭、4 周块、无锚点）。
+    public var mesocycle: MesocycleConfig {
+        let obj = storage["mesocycle"]?.asObject ?? [:]
+        return MesocycleConfig(
+            enabled: obj["enabled"]?.asBool ?? false,
+            // 默认 4 周（语义同 RedeTrainingDecision.Mesocycle.defaultBlockLengthWeeks；
+            // 跨包不引入耦合，故在域层内联此常量）。
+            blockLengthWeeks: obj["blockLengthWeeks"]?.asInt ?? 4,
+            blockStartISO: obj["blockStartISO"]?.asString
+        )
+    }
+}
+
+/// 顶层 `mesocycle` 的类型化只读视图（不存"当前第几周"——相位永远从 blockStartISO + 今日现算）。
+public struct MesocycleConfig: Equatable, Sendable {
+    /// 计划周期化是否生效（默认 false = 零行为回归）。
+    public let enabled: Bool
+    /// 累积块长（周）。存库便于未来改 6 周，不改引擎契约。
+    public let blockLengthWeeks: Int
+    /// 可选块锚点（防腐烂：消费侧默认从真历史重算，此处为未来手动覆盖 / 显示预留；nil = 从历史算）。
+    public let blockStartISO: String?
+
+    public init(enabled: Bool, blockLengthWeeks: Int, blockStartISO: String?) {
+        self.enabled = enabled
+        self.blockLengthWeeks = blockLengthWeeks
+        self.blockStartISO = blockStartISO
     }
 }
 
