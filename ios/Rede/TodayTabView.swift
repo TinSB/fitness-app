@@ -33,18 +33,7 @@ struct TodayTabView: View {
                     onTrailingTap: { showSettings = true }
                 )
 
-                heroCard
-                    .padding(.horizontal, RedeSpace.page)
-                    .padding(.top, 20)
-
-                receiptSection
-                    .padding(.horizontal, RedeSpace.page)
-                    .padding(.top, RedeSpace.section)
-
-                RuleDivider()
-
-                progressRail
-                    .padding(.horizontal, RedeSpace.page)
+                todayContent
             }
             .padding(.bottom, 78)
         }
@@ -201,121 +190,188 @@ struct TodayTabView: View {
         }
     }
 
-    // HERO = 判断块(判断句唯一最大元素 + ember 左缘唯一口音)
-    private var heroCard: some View {
-        ForgedCard(emberBarInset: 18, showReg: true) {
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 7) {
-                    Circle().fill(pillFill).frame(width: 7, height: 7)
-                    Overline(text: isUnreadable ? s.dataUnreadableStatus : s.verdictStatus(call: callCode), color: pillText)
-                }
+    private var dayName: String {
+        model?.prescription.map { s.trainingDayName($0.dayCode) } ?? ""
+    }
 
-                Text(isUnreadable ? s.dataUnreadableHeadline : s.verdictHeadline(
-                    call: callCode,
-                    reasonCode: reasonCode,
-                    dayName: model?.prescription.map { s.trainingDayName($0.dayCode) } ?? "",
-                    gapDays: gapDays,
-                    consecutiveDays: consecutiveDays
-                ))
-                .font(.redeHeadline)
-                .tracking(RedeTracking.headline)
-                .lineSpacing(22 * 0.3)
-                .foregroundStyle(Color.redeT1)
-                .lineLimit(3)
-                .padding(.top, 11)
+    // MARK: - 今日页（密而干净，2026-06-15 owner 拍板）：状态 + 全天清单 + 依据
 
-                // 里程摘要（wave-12，owner 拍板 B）：非头牌动作的换带/加配重/毕业/回退提示——
-                // 头牌变化行只盖第一个动作，配件类（弹力带等）排不到首位，故单列于此。纯文本行，不占卡预算。
+    private var todayContent: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            contextLine
+                .padding(.horizontal, RedeSpace.page)
+                .padding(.top, 4)
+
+            if isUnreadable {
+                unreadableBlock
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.top, 18)
+            } else if let exercises = model?.prescription?.exercises, !exercises.isEmpty {
+                verdictLine(count: exercises.count)
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.top, 14)
+
                 if !milestoneNotes.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
-                        // 以位置为 id（审查 MINOR）：里程文案虽含动作名极难撞，但 id:\.self 对非保证唯一的
-                        // 字符串列表是 SwiftUI 已知坑（撞 id 会丢行）；按 offset 走彻底消除。
                         ForEach(Array(milestoneNotes.enumerated()), id: \.offset) { _, note in
                             HStack(alignment: .top, spacing: 6) {
                                 Rectangle().fill(Color.redeEmber2).frame(width: 3, height: 3)
                                     .padding(.top, 7)
-                                Text(note)
-                                    .font(.redeCaption)
-                                    .foregroundStyle(Color.redeT3)
+                                Text(note).font(.redeCaption).foregroundStyle(Color.redeT3)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                         }
                     }
-                    .padding(.top, 10)
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.top, 8)
                 }
 
-                // Load Plate(20px 次级读数)——rest 日无处方时整块隐藏
-                if let first = firstExercise {
-                    HStack(alignment: .bottom) {
-                        VStack(alignment: .leading, spacing: 0) {
-                            Overline(text: s.todayStartHere, color: .redeEmber2)
-                            Text(localeStore.exerciseName(first.exerciseId))
-                                .font(.redeSubhead)
-                                .foregroundStyle(Color.redeT1)
-                                .padding(.top, 7)
-                            HStack(alignment: .bottom, spacing: 6) {
-                                Text(s.heroNumber(loadType: first.loadType, weightKg: first.targetWeightKg, reps: first.targetReps))
-                                    .font(.system(size: 20, weight: .semibold))
-                                    .monospacedDigit()
-                                    .foregroundStyle(Color.redeT1)
-                                Text(s.heroDetail(loadType: first.loadType, reps: first.targetReps, rir: Int(first.targetRir)))
-                                    .font(.redeCallout)
-                                    .monospacedDigit()
-                                    .foregroundStyle(Color.redeT3)
-                                    .padding(.bottom, 3)
-                            }
-                            .padding(.top, 5)
-                        }
-                        Spacer()
-                        VStack(alignment: .trailing, spacing: 8) {
-                            if let second = model?.prescription?.exercises.dropFirst().first {
-                                Text(s.thenLine(localeStore.exerciseName(second.exerciseId)))
-                                    .font(.redeCaption)
-                                    .monospacedDigit()
-                                    .foregroundStyle(Color.redeT3)
-                            }
-                            if let third = model?.prescription?.exercises.dropFirst(2).first {
-                                HStack(spacing: 5) {
-                                    Rectangle().fill(Color.redeNeu).frame(width: 16, height: 2)
-                                    Text(s.thenLine(localeStore.exerciseName(third.exerciseId)))
-                                        .font(.redeCaption)
-                                        .monospacedDigit()
-                                        .foregroundStyle(Color.redeT3)
-                                }
-                            }
-                        }
-                    }
-                    .padding(.top, RedeSpace.section)
-                    .overlay(alignment: .top) {
-                        Rectangle().fill(Color.redeHair).frame(height: 1)
-                            .padding(.top, 10)
-                    }
+                RuleDivider()
 
-                    EmbButton(icon: "play.fill", title: s.startTraining, action: onStartTraining)
-                        .padding(.top, 16)
+                ForEach(Array(exercises.enumerated()), id: \.offset) { idx, ex in
+                    exerciseRow(ex, isFirst: idx == 0)
+                        .padding(.horizontal, RedeSpace.page)
+                }
+
+                summaryLine(exercises: exercises)
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.top, 14)
+
+                EmbButton(icon: "play.fill", title: s.startTraining, action: onStartTraining)
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.top, 16)
+
+                RuleDivider()
+
+                receiptSection
+                    .padding(.horizontal, RedeSpace.page)
+            } else {
+                restBlock
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.top, 18)
+            }
+        }
+    }
+
+    // 状态行：可以训练 + 本周训练次数（去大写微标签前的唯一头部口音 = 状态点）
+    private var contextLine: some View {
+        HStack(spacing: 7) {
+            Circle().fill(pillFill).frame(width: 7, height: 7)
+            Overline(text: isUnreadable ? s.dataUnreadableStatus : s.verdictStatus(call: callCode), color: pillText)
+            Spacer()
+            Text(signalLineText)
+                .font(.redeCaption).monospacedDigit()
+                .foregroundStyle(Color.redeT4)
+        }
+    }
+
+    // 训练日判断行：「推力 A · N 个动作」+ 依据句（顶部，不再用大字号 hero）
+    private func verdictLine(count: Int) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            (Text(dayName).foregroundStyle(Color.redeT1)
+             + Text("　\(count) 个动作").foregroundStyle(Color.redeT3))
+                .font(.redeSubhead)
+                .monospacedDigit()
+            Text(s.receiptConclusion(call: callCode, reasonCode: reasonCode))
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT3)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    // 单动作行：名称 / 组数·休息·RIR / 目标 / 跟上次比
+    private func exerciseRow(_ ex: ExercisePrescriptionPlan, isFirst: Bool) -> some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .top, spacing: 10) {
+                Rectangle().fill(isFirst ? Color.redeEmber : Color.clear)
+                    .frame(width: 3, height: 18)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(localeStore.exerciseName(ex.exerciseId))
+                        .font(.redeSubhead)
+                        .foregroundStyle(Color.redeT1)
+                    Text("\(ex.sets) 组 · 休 \(ex.restSeconds)s · RIR \(s.formatRir(ex.targetRir))")
+                        .font(.redeCaption).monospacedDigit()
+                        .foregroundStyle(Color.redeT4)
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 3) {
+                    Text(targetSummary(ex))
+                        .font(.redeCallout).monospacedDigit()
+                        .foregroundStyle(Color.redeT2)
+                    lastChangeView(ex)
                 }
             }
-            .padding(.leading, 13)
-            .padding(.vertical, 18)
-            .padding(.horizontal, RedeSpace.card)
+            .padding(.vertical, 11)
+            Rectangle().fill(Color.redeHair2).frame(height: 1)
+        }
+    }
+
+    private func targetSummary(_ ex: ExercisePrescriptionPlan) -> String {
+        let w = s.formatKg(ex.targetWeightKg)
+        switch ex.loadType {
+        case "bodyweight", "band": return "× \(ex.targetReps)"
+        case "assisted": return "辅助 \(w) × \(ex.targetReps)"
+        case "bodyweight-plus": return "负重 +\(w) × \(ex.targetReps)"
+        default: return "\(w) \(s.unitLabel) × \(ex.targetReps)"
+        }
+    }
+
+    @ViewBuilder
+    private func lastChangeView(_ ex: ExercisePrescriptionPlan) -> some View {
+        let isRep = ex.loadType == "bodyweight" || ex.loadType == "band"
+        let prevText: String? = isRep
+            ? ex.previousTopReps.map { "上次 ×\($0)" }
+            : ex.previousWeightKg.map { "上次 \(s.formatKg($0))×\(ex.previousTopReps ?? 0)" }
+        HStack(spacing: 6) {
+            if let prevText {
+                Text(prevText).font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeT4)
+            }
+            switch ex.change.rawValue {
+            case "increase":
+                let delta = isRep ? "↑" : "↑ \(s.formatKg(ex.targetWeightKg - (ex.previousWeightKg ?? ex.targetWeightKg)))"
+                Text(delta).font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeEmber)
+            case "ease":
+                Text("↓").font(.redeCaption).foregroundStyle(Color.redeEmber2)
+            case "hold":
+                Text("保持").font(.redeCaption).foregroundStyle(Color.redeT4)
+            default:
+                Text("首练").font(.redeCaption).foregroundStyle(Color.redeT4)
+            }
+        }
+    }
+
+    private func summaryLine(exercises: [ExercisePrescriptionPlan]) -> some View {
+        let totalSets = exercises.reduce(0) { $0 + $1.sets }
+        return Text("合计 \(totalSets) 组 · \(exercises.count) 个动作")
+            .font(.redeCaption).monospacedDigit()
+            .foregroundStyle(Color.redeT4)
+    }
+
+    private var restBlock: some View {
+        Text(isUnreadable ? s.dataUnreadableHeadline : s.verdictHeadline(
+            call: callCode, reasonCode: reasonCode,
+            dayName: dayName, gapDays: gapDays, consecutiveDays: consecutiveDays))
+            .font(.redeHeadline)
+            .tracking(RedeTracking.headline)
+            .lineSpacing(22 * 0.3)
+            .foregroundStyle(Color.redeT1)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var unreadableBlock: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(s.dataUnreadableHeadline)
+                .font(.redeHeadline).tracking(RedeTracking.headline)
+                .foregroundStyle(Color.redeT1)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(s.dataUnreadableReceipt)
+                .font(.redeBody).foregroundStyle(Color.redeT3)
         }
     }
 
     // Receipt 渐进披露
     private var receiptSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Overline(text: s.todayReceiptTitle)
-                Spacer()
-                Overline(text: s.todayReceiptTag).monospacedDigit()
-            }
-
-            Text(isUnreadable ? s.dataUnreadableReceipt : s.receiptConclusion(call: callCode, reasonCode: reasonCode))
-                .font(.redeBody)
-                .lineSpacing(14 * 0.45)
-                .foregroundStyle(Color.redeT1)
-                .padding(.top, 8)
-
             Button {
                 withAnimation(.easeInOut(duration: 0.25)) { reasonExpanded.toggle() }
             } label: {
@@ -374,52 +430,6 @@ struct TodayTabView: View {
         Rectangle().fill(Color.redeEtch).frame(width: 1, height: 8)
     }
 
-    // Progress Rail: last → today → next
-    private var progressRail: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Overline(text: firstExercise.map { s.railTitle(localeStore.exerciseName($0.exerciseId)) } ?? s.todayRailTitle)
-            ZStack(alignment: .top) {
-                GeometryReader { geo in
-                    Rectangle()
-                        .fill(Color.redeHair)
-                        .frame(width: geo.size.width * 0.84, height: 2)
-                        .offset(x: geo.size.width * 0.08, y: 7)
-                }
-                .frame(height: 16)
-
-                HStack(alignment: .top, spacing: 0) {
-                    railNode(dot: AnyView(Circle().fill(Color.redeT4).frame(width: 14, height: 14)),
-                             value: s.railValue(loadType: firstExercise?.loadType ?? "external", weightKg: model?.railLast?.weightKg, reps: model?.railLast?.reps),
-                             valueColor: .redeT3,
-                             label: model?.railLast.map { s.shortDate(fromISO: $0.dateISO) } ?? "—",
-                             labelColor: .redeT4)
-                    railNode(dot: AnyView(RingDot()),
-                             value: s.railValue(loadType: firstExercise?.loadType ?? "external", weightKg: firstExercise?.targetWeightKg, reps: firstExercise?.targetReps),
-                             valueColor: .redeT1,
-                             label: s.railToday, labelColor: .redeEmber2)
-                    railNode(dot: AnyView(
-                        Circle().fill(Color.redeSurface)
-                            .frame(width: 14, height: 14)
-                            .overlay(Circle().stroke(Color.redeNextDot, lineWidth: 2))),
-                             value: s.railValue(loadType: firstExercise?.loadType ?? "external", weightKg: firstExercise?.nextProjectedWeightKg, reps: firstExercise.map { $0.repLowerBound }),
-                             valueColor: .redeT3,
-                             label: s.railNext, labelColor: .redeT4)
-                }
-            }
-        }
-    }
-
-    private func railNode(dot: AnyView, value: String, valueColor: Color, label: String, labelColor: Color) -> some View {
-        VStack(spacing: 8) {
-            dot.frame(height: 14)
-            Text(value)
-                .font(.redeCallout)
-                .monospacedDigit()
-                .foregroundStyle(valueColor)
-            Overline(text: label, color: labelColor)
-        }
-        .frame(maxWidth: .infinity)
-    }
 }
 
 #Preview {
