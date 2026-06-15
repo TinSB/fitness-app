@@ -68,6 +68,12 @@ public enum LoadGrid {
         stepKg(equipment: "barbell", unit: unit)   // 2.5kg / 5lb
     }
 
+    /// 显示/可调档位所落的格子器械：bodyweight-plus 的可调轴是外加负重（挂片 barbell 格），
+    /// 不是动作本身的 bodyweight；其余按动作器械。显示层与快改档位共用，口径一致。
+    public static func gridEquipment(loadType: String, equipment: String) -> String {
+        loadType == "bodyweight-plus" ? "barbell" : equipment
+    }
+
     // MARK: - 真实梯子（2026-06-15 单位原生重构）
 
     // 磅哑铃分段梯子（owner 拍板 2026-06-15「轻段细档启用」）：

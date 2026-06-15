@@ -13,15 +13,10 @@ import RedeTrainingDecision
 enum LoadDisplay {
     private static func loadUnit(_ s: RedeStrings) -> LoadUnit { LoadUnit(unitSystem: s.unit.rawValue) }
 
-    /// 显示重量所落的格子器械：bodyweight-plus 的显示值是外加负重（挂片 barbell 格），
-    /// 不是动作本身的 bodyweight；其余按动作器械。
-    private static func gridEquipment(loadType: String, equipment: String) -> String {
-        loadType == "bodyweight-plus" ? "barbell" : equipment
-    }
-
     /// 吸附到「器械×显示单位」真实梯子的 kg 值——交给 formatKg/heroNumber/railValue 等的 weightKg 实参。
+    /// 格子器械经 LoadGrid.gridEquipment 映射（bodyweight-plus→barbell），与快改档位口径一致。
     static func snap(_ weightKg: Double, loadType: String, equipment: String, _ s: RedeStrings) -> Double {
-        LoadGrid.snapKg(weightKg, equipment: gridEquipment(loadType: loadType, equipment: equipment), unit: loadUnit(s))
+        LoadGrid.snapKg(weightKg, equipment: LoadGrid.gridEquipment(loadType: loadType, equipment: equipment), unit: loadUnit(s))
     }
 
     /// 便捷：按 loadType+器械吸附 + formatKg = 直接出显示字符串（处方显示最常用）。

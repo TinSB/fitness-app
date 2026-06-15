@@ -411,11 +411,18 @@ struct TrainTabView: View {
     }
 
     private func adjustOptions(_ flow: TrainFlowState) -> [AdjustOption] {
-        AdjustOptionsBuilder.options(
+        // 单位原生（2026-06-15）：档位取真实梯子相邻格，按当前动作器械×显示单位。
+        let exerciseId = flow.currentExercise?.exerciseId ?? ""
+        let equip = LoadGrid.gridEquipment(
+            loadType: flow.currentExercise?.loadType ?? "external",
+            equipment: ExerciseCatalog.minimal.entry(id: exerciseId)?.equipment ?? "dumbbell"
+        )
+        return AdjustOptionsBuilder.options(
             followKg: flow.currentTargetWeightKg ?? 0,
             lastActualKg: flow.completedInCurrentExercise.last?.weightKg,
             plannedKg: plannedWeight(flow),
-            stepKg: flow.currentExercise?.stepKg ?? AdjustOptionsBuilder.stepKg
+            equipment: equip,
+            unit: LoadUnit(unitSystem: s.unit.rawValue)
         )
     }
 
