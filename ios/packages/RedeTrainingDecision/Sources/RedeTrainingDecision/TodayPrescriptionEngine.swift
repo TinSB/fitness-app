@@ -211,7 +211,7 @@ public enum TodayPrescriptionEngine {
         // 自重分支（2026-06-13，owner 拍板）：无外部负重，按次数进阶；到顶提示换难度。
         // 重量轴的渐进/取整/调制全部不适用——单独一条路径。
         if entry.loadType == "bodyweight" {
-            return prescribeBodyweight(entry: entry, slot: slot, last: last, verdict: verdict)
+            return prescribeBodyweight(entry: entry, slot: slot, last: last, verdict: verdict, phase: phase)
         }
 
         // 弹力带分支（wave-12，owner 拍板 A 案「按次数进阶」）：复用自重引擎（无 kg 轴、按次数），
@@ -220,7 +220,7 @@ public enum TodayPrescriptionEngine {
         if entry.loadType == "band" {
             return prescribeBodyweight(
                 entry: entry, slot: slot, last: last, verdict: verdict,
-                loadType: "band", ceilingReason: .bandCeilingReached
+                phase: phase, loadType: "band", ceilingReason: .bandCeilingReached
             )
         }
 
@@ -228,13 +228,13 @@ public enum TodayPrescriptionEngine {
         // 挣扎/力竭=加辅助、轻练/减载=加辅助、新手冷启动=更多辅助、降到最小一片
         // 还有余力=毕业换自重孪生。绝不把 external 减重瀑布套上去（安全方向反转红线）。
         if entry.loadType == "assisted" {
-            return prescribeAssisted(entry: entry, slot: slot, last: last, input: input, verdict: verdict, catalog: catalog)
+            return prescribeAssisted(entry: entry, slot: slot, last: last, input: input, verdict: verdict, phase: phase, catalog: catalog)
         }
 
         // 负重自重分支（wave-11，owner 拍板）：重量轴=外挂负重(≥0)，方向同 external
         //（加负重=更难），但档位取挂片档、减到最小一片还吃力则自动回退换自重孪生。
         if entry.loadType == "bodyweight-plus" {
-            return prescribeBodyweightPlus(entry: entry, slot: slot, last: last, input: input, verdict: verdict, catalog: catalog)
+            return prescribeBodyweightPlus(entry: entry, slot: slot, last: last, input: input, verdict: verdict, phase: phase, catalog: catalog)
         }
 
         // 档位系统（2026-06-13）：渐进一档 = 器械×用户单位的真实档位步长（LoadGrid，
@@ -335,6 +335,15 @@ public enum TodayPrescriptionEngine {
         return max(step, base - step)
     }
 
+    /// 相位组数/RIR 调制（仅 train 态；各 loadType 路径共用）。weightMultiplier 由各路径按其
+    /// 负重轴方向单独处理（external / bodyweight-plus 减外加负重；assisted 反转、自重无重量，均不套）。
+    private static func applyPhaseSetsRir(_ phase: PhaseModulation?, verdict: TodayVerdict,
+                                         sets: inout Int, rir: inout Double) {
+        guard let phase, verdict.call == .train else { return }
+        sets = max(2, sets + phase.setDelta)
+        rir = phase.rirTarget
+    }
+
     /// 该动作最近一次工作顶组重量（供换动作后的小结 PR 口径：换入动作
     /// 只和它自己的历史比，§6.2 修复 2026-06-11）；无历史 → nil。
     public static func lastTopWeightKg(exerciseId: String, sessions: [CleanTrainingSession]) -> Double? {
@@ -351,6 +360,7 @@ public enum TodayPrescriptionEngine {
         slot: Slot,
         last: LastPerformance?,
         verdict: TodayVerdict,
+        phase: PhaseModulation? = nil,
         forcedReason: PrescriptionReason? = nil,   // wave-9：assisted 毕业换自重时标 .assistedGraduated
         loadType: String = "bodyweight",
         ceilingReason: PrescriptionReason = .bodyweightCeilingReached
@@ -380,6 +390,8 @@ public enum TodayPrescriptionEngine {
         }
 
         var sets = slot.sets
+        var rir = targetRir
+        applyPhaseSetsRir(phase, verdict: verdict, sets: &sets, rir: &rir)
         switch verdict.call {
         case .light:
             targetReps = max(bodyweightRepFloor, targetReps - bodyweightRepStep)
@@ -398,7 +410,7 @@ public enum TodayPrescriptionEngine {
             repUpperBound: bodyweightRepCeiling,
             targetReps: targetReps,
             targetWeightKg: 0,
-            targetRir: targetRir,
+            targetRir: rir,
             previousWeightKg: nil,
             previousTopReps: last?.repsAtTop,
             nextProjectedWeightKg: 0,
@@ -418,6 +430,7 @@ public enum TodayPrescriptionEngine {
         last: LastPerformance?,
         input: CleanTrainingDecisionInput,
         verdict: TodayVerdict,
+        phase: PhaseModulation?,
         catalog: ExerciseCatalog
     ) -> ExercisePrescriptionPlan {
         let step = LoadGrid.stepKg(
@@ -450,7 +463,7 @@ public enum TodayPrescriptionEngine {
                         // 正常次数进阶（审查 MINOR：避免 reason=毕业 / change=进阶 矛盾）。
                         return prescribeBodyweight(
                             entry: twin, slot: slot, last: twinLast, verdict: verdict,
-                            forcedReason: twinLast == nil ? .assistedGraduated : nil
+                            phase: phase, forcedReason: twinLast == nil ? .assistedGraduated : nil
                         )
                     }
                     baseAssist = step                        // 无孪生兜底：保持最小辅助，不跨零
@@ -481,6 +494,8 @@ public enum TodayPrescriptionEngine {
         // 调制反转：轻练/减载 = 加辅助（更轻），不是 ×0.9/0.8 减重。
         var assist = roundToIncrement(baseAssist, step: step)
         var sets = slot.sets
+        var rir = targetRir
+        applyPhaseSetsRir(phase, verdict: verdict, sets: &sets, rir: &rir)
         switch verdict.call {
         case .light:
             assist = roundToIncrement(assist + step, step: step)
@@ -499,7 +514,7 @@ public enum TodayPrescriptionEngine {
             repUpperBound: slot.repMax,
             targetReps: targetReps,
             targetWeightKg: assist,
-            targetRir: targetRir,
+            targetRir: rir,
             previousWeightKg: last?.topWeightKg,
             previousTopReps: last?.repsAtTop,
             // 下一步指向「少帮一档」（进阶方向）；最小一片兜底不跨零。
@@ -520,6 +535,7 @@ public enum TodayPrescriptionEngine {
         last: LastPerformance?,
         input: CleanTrainingDecisionInput,
         verdict: TodayVerdict,
+        phase: PhaseModulation?,
         catalog: ExerciseCatalog
     ) -> ExercisePrescriptionPlan {
         let step = LoadGrid.addedLoadStepKg(unit: LoadUnit(unitSystem: input.profile.unitSystem))
@@ -544,7 +560,7 @@ public enum TodayPrescriptionEngine {
                         let twinLast = lastPerformance(exerciseId: twin.id, sessions: input.sessions)
                         return prescribeBodyweight(
                             entry: twin, slot: slot, last: twinLast, verdict: verdict,
-                            forcedReason: .bodyweightPlusDegraded
+                            phase: phase, forcedReason: .bodyweightPlusDegraded
                         )
                     }
                     // UNREACHABLE：现目录所有 bodyweight-plus 条目均有同族自重孪生；此兜底仅防御
@@ -582,6 +598,12 @@ public enum TodayPrescriptionEngine {
         // 调制同 external：轻练/减载 ×乘数减外加负重（小负重不被取整吃掉）。
         var weight = roundToIncrement(baseLoad, step: step)
         var sets = slot.sets
+        var rir = targetRir
+        applyPhaseSetsRir(phase, verdict: verdict, sets: &sets, rir: &rir)
+        // 重量轴同 external：减载周(0.85)真减外加负重（1.0 不调，modulated 在 1.0 会误减）
+        if let phase, verdict.call == .train, phase.weightMultiplier < 1.0 {
+            weight = modulated(base: weight, multiplier: phase.weightMultiplier, step: step)
+        }
         switch verdict.call {
         case .light:
             weight = modulated(base: weight, multiplier: lightMultiplier, step: step)
@@ -600,7 +622,7 @@ public enum TodayPrescriptionEngine {
             repUpperBound: slot.repMax,
             targetReps: targetReps,
             targetWeightKg: weight,
-            targetRir: targetRir,
+            targetRir: rir,
             previousWeightKg: last?.topWeightKg,
             previousTopReps: last?.repsAtTop,
             nextProjectedWeightKg: roundToIncrement(weight + step, step: step),

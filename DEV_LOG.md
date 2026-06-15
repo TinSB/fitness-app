@@ -20,7 +20,9 @@
 
 **S2（接处方调制，code-regression-guard）已做**：`TodayPrescriptionEngine.plan` 加 `mesocycleEnabled` 参数（**默认关闭 = 零行为变化**）；开启时从真历史锚点纯算今日相位、把 phase 调制（重量乘数 / 组数 / RIR）接进 external 处方路径，**仅 train 态生效**（light/deload/rest 让位给反应式安全网——S3 再细化合并）。验证：**165 测试全绿**（162 零回归 + 3 新开启态 golden：过载周 +1组·RIR1·重量不动、减载周 −1组·RIR3.5·×0.85；默认参数=关闭）。production 零影响（mesocycle 要 S4 才启用）。
 
-**待办**：S2b 其余 loadType 路径（自重/弹力带按次数、辅助方向反转）→ S3 与反应式减载合并矩阵（取更狠、防双重砍）→ S4 schema 8→9 迁移（schema-migration-guard，单独 PR 禁 auto-merge，**唯一会静默毁数据的环节**）→ S5 计划页周期条（真机验收）。
+**S2b + S3 已做**：相位接进**全部 loadType 路径**（共用 `applyPhaseSetsRir` 调组数/RIR；weightMultiplier 只在重量轴 external/bodyweight-plus 套，assisted 反转/自重无重量均不套，方向安全）；S3 合并规则**收口为 phase 仅 train 态生效、非 train（light/deload/rest）整体让位给反应式安全网**——比 synthesis 的 min/sum 更简更安全，从根杜绝双重调制（0.85×0.80 砍过头）。验证：**166 测试全绿**（+1 让位 golden：长间隔 light 日开/关处方逐字段一致 + 过载日全动作吃到相位 RIR）。规格写回 §6.5 合并规则段。
+
+**剩**：S4 schema 8→9 迁移（schema-migration-guard，单独 PR 禁 auto-merge，**唯一会静默毁数据的环节**）+ S5 计划页周期条（真机验收）。引擎 S1-S3 已闭环（处方相位生效，待 S4 启用 + S5 可见）。
 
 ## 2026-06-15 · 计划页：诚实真参数摘要（新视觉），不编排期/周期
 
