@@ -166,8 +166,8 @@ struct TodayTabView: View {
         return s.changeLine(
             exerciseName: localeStore.exerciseName(ex.exerciseId),
             change: ex.change.rawValue,
-            fromKg: ex.previousWeightKg.map(s.formatKg),
-            toKg: s.formatKg(ex.targetWeightKg)
+            fromKg: ex.previousWeightKg.map { LoadDisplay.weight($0, loadType: ex.loadType, equipment: ex.equipment, s) },
+            toKg: LoadDisplay.weight(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s)
         )
     }
 
