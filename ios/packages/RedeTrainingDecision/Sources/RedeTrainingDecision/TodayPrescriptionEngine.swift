@@ -114,9 +114,17 @@ public enum TodayPrescriptionEngine {
     public static func plan(
         input: CleanTrainingDecisionInput,
         verdict: TodayVerdict,
-        catalog: ExerciseCatalog = .minimal
+        catalog: ExerciseCatalog = .minimal,
+        mesocycleEnabled: Bool = false
     ) -> TodayPrescription? {
         guard verdict.call != .rest else { return nil }
+
+        // 计划周期相位（S2，2026-06-15）：默认关闭 = 零行为变化；开启时从真历史锚点纯算今日相位。
+        // 不落库（schema 归 S4），锚点临时从 sessions 重算。
+        let phase: PhaseModulation? = mesocycleEnabled
+            ? Mesocycle.blockStartISO(sessionDatesISO: input.sessions.map(\.date), todayISO: input.todayISO)
+                .map { Mesocycle.phase(blockStartISO: $0, todayISO: input.todayISO).modulation }
+            : nil
 
         let sequence = daySequence(splitType: input.program.splitType)
         let dayCode = sequence[input.sessions.count % sequence.count]
@@ -176,7 +184,7 @@ public enum TodayPrescriptionEngine {
                 continue
             }
             usedIds.insert(entry.id)
-            exercises.append(prescribe(entry: entry, slot: slot, input: input, verdict: verdict, catalog: catalog))
+            exercises.append(prescribe(entry: entry, slot: slot, input: input, verdict: verdict, catalog: catalog, phase: phase))
         }
 
         switch verdict.call {
@@ -195,7 +203,8 @@ public enum TodayPrescriptionEngine {
         slot: Slot,
         input: CleanTrainingDecisionInput,
         verdict: TodayVerdict,
-        catalog: ExerciseCatalog
+        catalog: ExerciseCatalog,
+        phase: PhaseModulation?
     ) -> ExercisePrescriptionPlan {
         let last = lastPerformance(exerciseId: entry.id, sessions: input.sessions)
 
@@ -278,6 +287,17 @@ public enum TodayPrescriptionEngine {
 
         var weight = roundToIncrement(baseWeight, step: step)
         var sets = slot.sets
+        var rir = targetRir
+        // 计划周期相位（S2）：仅 train 态生效——light/deload/rest 让位给安全网（反应式优先；
+        // light×phase 的更细合并归 S3）。weightMultiplier=1.0 不调（modulated 在 1.0 会误减一格），
+        // 只减载周(0.85)真减重；setDelta/rirTarget 照表。
+        if let phase, verdict.call == .train {
+            if phase.weightMultiplier < 1.0 {
+                weight = modulated(base: weight, multiplier: phase.weightMultiplier, step: step)
+            }
+            sets = max(2, sets + phase.setDelta)
+            rir = phase.rirTarget
+        }
         switch verdict.call {
         case .light:
             weight = modulated(base: weight, multiplier: lightMultiplier, step: step)
@@ -296,7 +316,7 @@ public enum TodayPrescriptionEngine {
             repUpperBound: slot.repMax,
             targetReps: targetReps,
             targetWeightKg: weight,
-            targetRir: targetRir,
+            targetRir: rir,
             previousWeightKg: last?.topWeightKg,
             previousTopReps: last?.repsAtTop,
             nextProjectedWeightKg: roundToIncrement(weight + step, step: step),

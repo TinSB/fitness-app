@@ -18,7 +18,9 @@
 
 **证据**：决策包 build 通过 + **162 测试全绿**（新增 6 个 golden：相位映射/周边界/取模回绕/锚点/软重置/安全降级；其余 156 零回归）。
 
-**待办（S2-S5，按 spec-to-vertical-slices，每步单独验证+提交）**：S2 接处方调制（code-regression-guard）→ S3 与反应式减载合并矩阵 → S4 schema 8→9 迁移（schema-migration-guard，单独 PR 禁 auto-merge，**唯一会静默毁数据的环节**）→ S5 计划页周期条（真机验收）。引擎 S1-S3 可先于 schema/UI 闭环。
+**S2（接处方调制，code-regression-guard）已做**：`TodayPrescriptionEngine.plan` 加 `mesocycleEnabled` 参数（**默认关闭 = 零行为变化**）；开启时从真历史锚点纯算今日相位、把 phase 调制（重量乘数 / 组数 / RIR）接进 external 处方路径，**仅 train 态生效**（light/deload/rest 让位给反应式安全网——S3 再细化合并）。验证：**165 测试全绿**（162 零回归 + 3 新开启态 golden：过载周 +1组·RIR1·重量不动、减载周 −1组·RIR3.5·×0.85；默认参数=关闭）。production 零影响（mesocycle 要 S4 才启用）。
+
+**待办**：S2b 其余 loadType 路径（自重/弹力带按次数、辅助方向反转）→ S3 与反应式减载合并矩阵（取更狠、防双重砍）→ S4 schema 8→9 迁移（schema-migration-guard，单独 PR 禁 auto-merge，**唯一会静默毁数据的环节**）→ S5 计划页周期条（真机验收）。
 
 ## 2026-06-15 · 计划页：诚实真参数摘要（新视觉），不编排期/周期
 
