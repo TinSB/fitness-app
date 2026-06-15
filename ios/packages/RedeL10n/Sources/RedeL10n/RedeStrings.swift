@@ -130,6 +130,28 @@ public struct RedeStrings: Sendable {
           "Cycle structure, adjustment previews, and rollback arrive in a later version. For now, Today carries each day's call")
     }
 
+    // MARK: - Plan 周期条（FR-PL2 S5：仅周期化开启且有真历史时显示；按引擎相位 rawValue 取标签）
+    public var planCycleOverline: String { t("当前周期", "Current cycle") }
+    /// 周序 caption（week 取 1-based）："第 3 / 4 周 · 过载"。
+    public func planCycleWeekOf(week: Int, total: Int, phaseLabel: String) -> String {
+        t("第 \(week) / \(total) 周 · \(phaseLabel)", "Week \(week) of \(total) · \(phaseLabel)")
+    }
+    /// 周期条显示时的尾注（已不再是「周期还没来」，但调整/回滚仍在后续）。
+    public var planCycleNote: String {
+        t("调整建议与回滚仍在后续版本　每天的安排看今日页",
+          "Adjustment previews and rollback arrive later. For now, Today carries each day's call")
+    }
+    /// 周期相位短标签（节点下方；按 MesocyclePhase.rawValue 映射）。未知 → 原值兜底。
+    public func mesoPhaseShort(_ raw: String) -> String {
+        switch raw {
+        case "calibrate": return t("校准", "Calibrate")
+        case "build":     return t("构建", "Build")
+        case "overreach": return t("过载", "Overload")
+        case "deload":    return t("减载", "Deload")
+        default:          return raw
+        }
+    }
+
     // MARK: - Settings(M5-2 完整接管：单位/语言/背景/数据/免责/反馈)
 
     public var settingsTitle: String { t("设置", "Settings") }

@@ -118,6 +118,26 @@ final class SessionStore {
         )
     }
 
+    /// 计划页周期条状态（FR-PL2 S5）：仅周期化开启且有真历史锚点时返回，否则 nil（退诚实占位）。
+    /// 走与今日页处方同一 clean pipeline + 同一锚点 → 周期条与处方相位永远一致。
+    static func loadCycleState(now: Date = Date()) -> MesocycleCycleState? {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load(), appData.mesocycle.enabled else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        let todayISO = formatter.string(from: now)
+        let cleanView = CleanAppDataViewBuilder.build(from: appData)
+        guard let input = try? CleanTrainingDecisionInput.make(from: cleanView, todayISO: todayISO) else { return nil }
+        return Mesocycle.cycleState(
+            sessionDatesISO: input.sessions.map(\.date),
+            todayISO: todayISO,
+            enabled: true,
+            blockLengthWeeks: appData.mesocycle.blockLengthWeeks
+        )
+    }
+
     /// 偏好写入（FR-SE1/SE3 持久化）：经写闸 scalar edit；失败如实置 saveErrorText。
     /// isSaving 互斥沿写闸单调用方合同（审查 MAJOR-1：防快速连点并发 load-modify-write 丢更新）。
     @discardableResult

@@ -49,6 +49,27 @@ public enum MesocyclePhase: String, Equatable, Sendable, CaseIterable {
     }
 }
 
+/// 计划页周期条的渲染状态（纯数据）：当前周序高亮 + 全块角色序列。
+public struct MesocycleCycleState: Equatable, Sendable {
+    /// 块长（周）= 节点数。
+    public let blockLengthWeeks: Int
+    /// 当前所处周序（0-based）。
+    public let currentWeekInBlock: Int
+    /// 每周角色（长度 = blockLengthWeeks），按周序排列。
+    public let phases: [MesocyclePhase]
+
+    public init(blockLengthWeeks: Int, currentWeekInBlock: Int, phases: [MesocyclePhase]) {
+        self.blockLengthWeeks = blockLengthWeeks
+        self.currentWeekInBlock = currentWeekInBlock
+        self.phases = phases
+    }
+
+    /// 当前周角色（越界安全降级第 1 周）。
+    public var currentPhase: MesocyclePhase {
+        phases.indices.contains(currentWeekInBlock) ? phases[currentWeekInBlock] : .calibrate
+    }
+}
+
 public enum Mesocycle {
     /// 默认块长（周）。存进数据便于未来改，不硬编码进契约；当前模型按 4 周映射 4 角色。
     public static let defaultBlockLengthWeeks = 4
@@ -65,19 +86,40 @@ public enum Mesocycle {
         }
     }
 
-    /// 今日所处周角色：从 block 起始日 + 今日纯算（ISO 周差取模）。
-    /// 日期非法或 today < blockStart → 安全降级第 1 周校准（绝不抛错、不画假进度）。
-    public static func phase(blockStartISO: String, todayISO: String,
-                             blockLengthWeeks: Int = defaultBlockLengthWeeks) -> MesocyclePhase {
+    /// 今日所处块内周序（0-based）：从 block 起始日 + 今日纯算（ISO 周差取模）。
+    /// 日期非法或 today < blockStart → 安全降级 0（第 1 周）。计划页周期条按此定位当前节点。
+    public static func weekInBlock(blockStartISO: String, todayISO: String,
+                                   blockLengthWeeks: Int = defaultBlockLengthWeeks) -> Int {
         guard blockLengthWeeks > 0,
               let start = TrainingDay.dayNumber(fromISO: blockStartISO),
               let today = TrainingDay.dayNumber(fromISO: todayISO),
               today >= start else {
-            return .calibrate
+            return 0
         }
-        let weeksElapsed = (today - start) / 7   // 满 7 天进下一周
-        let weekInBlock = weeksElapsed % blockLengthWeeks
-        return role(weekInBlock: weekInBlock)
+        return ((today - start) / 7) % blockLengthWeeks   // 满 7 天进下一周
+    }
+
+    /// 今日所处周角色：从 block 起始日 + 今日纯算（ISO 周差取模）。
+    /// 日期非法或 today < blockStart → 安全降级第 1 周校准（绝不抛错、不画假进度）。
+    public static func phase(blockStartISO: String, todayISO: String,
+                             blockLengthWeeks: Int = defaultBlockLengthWeeks) -> MesocyclePhase {
+        role(weekInBlock: weekInBlock(blockStartISO: blockStartISO, todayISO: todayISO,
+                                      blockLengthWeeks: blockLengthWeeks))
+    }
+
+    /// 计划页周期条状态（纯数据，UI 只渲染）：块长 + 当前周序 + 每周角色。
+    /// 诚实红线（FR-PL1）：仅 enabled 且有真历史锚点时返回；关闭或空历史 → nil（计划页退诚实占位）。
+    /// 锚点从真历史现算（停训 ≥restartGapDays 软重置），与今日页处方走同一锚，相位永远一致。
+    public static func cycleState(sessionDatesISO: [String], todayISO: String, enabled: Bool,
+                                  blockLengthWeeks: Int = defaultBlockLengthWeeks) -> MesocycleCycleState? {
+        guard enabled, blockLengthWeeks > 0,
+              let start = blockStartISO(sessionDatesISO: sessionDatesISO, todayISO: todayISO) else {
+            return nil
+        }
+        let week = weekInBlock(blockStartISO: start, todayISO: todayISO, blockLengthWeeks: blockLengthWeeks)
+        // 当前角色表只覆盖 4 周块（role 把 weekInBlock≥3 映射到 deload）；未来 6 周需另表（见上文契约）。
+        let phases = (0..<blockLengthWeeks).map { role(weekInBlock: $0) }
+        return MesocycleCycleState(blockLengthWeeks: blockLengthWeeks, currentWeekInBlock: week, phases: phases)
     }
 
     /// 块起始锚点（从真历史可算，非凭空计数器）：

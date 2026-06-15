@@ -55,4 +55,47 @@ final class MesocyclePhaseTests: XCTestCase {
         let anchor = Mesocycle.blockStartISO(sessionDatesISO: ["2026-05-04"], todayISO: "2026-05-20")!
         XCTAssertEqual(Mesocycle.phase(blockStartISO: anchor, todayISO: "2026-05-20"), .calibrate)
     }
+
+    // MARK: S5 周期条状态（计划页渲染）
+
+    func testWeekInBlockTracksPhase() {
+        XCTAssertEqual(Mesocycle.weekInBlock(blockStartISO: start, todayISO: "2026-05-04"), 0)
+        XCTAssertEqual(Mesocycle.weekInBlock(blockStartISO: start, todayISO: "2026-05-11"), 1)
+        XCTAssertEqual(Mesocycle.weekInBlock(blockStartISO: start, todayISO: "2026-05-18"), 2)
+        XCTAssertEqual(Mesocycle.weekInBlock(blockStartISO: start, todayISO: "2026-05-25"), 3)
+        XCTAssertEqual(Mesocycle.weekInBlock(blockStartISO: start, todayISO: "2026-06-01"), 0, "+28 天回绕")
+    }
+
+    func testCycleStateDisabledOrEmptyReturnsNil() {
+        // 关闭 → nil（计划页退诚实占位）
+        XCTAssertNil(Mesocycle.cycleState(sessionDatesISO: ["2026-05-04"], todayISO: "2026-05-11", enabled: false))
+        // 空历史 → nil（无锚点，不画假进度）
+        XCTAssertNil(Mesocycle.cycleState(sessionDatesISO: [], todayISO: "2026-05-11", enabled: true))
+    }
+
+    func testCycleStateHappyPath() {
+        // 连续序列锚到 05-04；今日 05-18 = 第 2 周过载
+        let streak = ["2026-05-04", "2026-05-07", "2026-05-11", "2026-05-14"]
+        let state = Mesocycle.cycleState(sessionDatesISO: streak, todayISO: "2026-05-18", enabled: true)
+        XCTAssertEqual(state?.blockLengthWeeks, 4)
+        XCTAssertEqual(state?.currentWeekInBlock, 2)
+        XCTAssertEqual(state?.phases, [.calibrate, .build, .overreach, .deload])
+        XCTAssertEqual(state?.currentPhase, .overreach)
+    }
+
+    func testCycleStateAgreesWithPrescriptionPhase() {
+        // 计划页周期条相位必须与今日页处方走同一锚——同数据下 currentPhase == phase()
+        let streak = ["2026-05-04", "2026-05-07", "2026-05-11"]
+        let today = "2026-05-18"
+        let state = Mesocycle.cycleState(sessionDatesISO: streak, todayISO: today, enabled: true)
+        let anchor = Mesocycle.blockStartISO(sessionDatesISO: streak, todayISO: today)!
+        XCTAssertEqual(state?.currentPhase, Mesocycle.phase(blockStartISO: anchor, todayISO: today))
+    }
+
+    func testCycleStateSoftResetShowsWeekOne() {
+        // 停训 ≥10 天 → 锚到今日 → 周期条停在第 1 周校准（不画假过载进度）
+        let state = Mesocycle.cycleState(sessionDatesISO: ["2026-05-04"], todayISO: "2026-05-20", enabled: true)
+        XCTAssertEqual(state?.currentWeekInBlock, 0)
+        XCTAssertEqual(state?.currentPhase, .calibrate)
+    }
 }
