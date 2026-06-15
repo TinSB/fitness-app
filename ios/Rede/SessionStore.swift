@@ -97,13 +97,24 @@ final class SessionStore {
     struct TemplateFacts {
         let splitType: String?
         let daysPerWeek: Int?
+        let goal: String?
+        let level: String?
+        let equipment: String?
     }
 
     static func loadTemplateFacts() -> TemplateFacts? {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         guard let appData = try? store.load() else { return nil }
         let template = appData.programTemplate
-        return TemplateFacts(splitType: template.splitType, daysPerWeek: template.daysPerWeek)
+        let profile = appData.userProfile
+        // 真数据：分化/天数/目标来自模板，背景/器械来自档案（FR-PL1：只展示真值，不编排期/周期）。
+        return TemplateFacts(
+            splitType: template.splitType,
+            daysPerWeek: template.daysPerWeek,
+            goal: template.primaryGoal,
+            level: profile.trainingLevel,
+            equipment: profile.equipmentScenario
+        )
     }
 
     /// 偏好写入（FR-SE1/SE3 持久化）：经写闸 scalar edit；失败如实置 saveErrorText。
