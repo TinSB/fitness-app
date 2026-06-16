@@ -11,6 +11,7 @@ struct TodayTabView: View {
 
     @Environment(LocaleStore.self) private var localeStore
     @Environment(SessionStore.self) private var sessionStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var reasonExpanded = false
     @State private var showSettings = false
 
@@ -387,7 +388,8 @@ struct TodayTabView: View {
     private var receiptSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button {
-                withAnimation(.easeInOut(duration: 0.25)) { reasonExpanded.toggle() }
+                // reduce-motion 守卫，与训练页/设置页折叠动画口径一致（无障碍）
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { reasonExpanded.toggle() }
             } label: {
                 HStack(spacing: 6) {
                     Text(reasonExpanded ? s.todayHideReason : s.todayWhyThisCall)
