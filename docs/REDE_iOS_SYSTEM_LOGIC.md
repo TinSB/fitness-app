@@ -161,7 +161,8 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 | 5 | `ppl-ul` | push-a / pull-a / legs-a / upper / lower（**复用现有槽位**，腿 2×） | 上肢 2×、腿 2× |
 | 6 | `push-pull-legs` | push-a / pull-a / legs-a / **push-b / pull-b / legs-b** | 全肌群 2× |
 
-- **A/B 区分（6 天）**：A 日 = 强度/自由重量主项；B 日 = 容量/变式（换器械·角度·握法）。B 日靠槽位 `equipment`/`kind` 约束在全器械下选到与 A 不同的动作（推B 补垂直推、拉B 补 lat 孤立、腿B 膝主导哈克蹲）；器械受限时优雅软化（可能与 A 重叠，可接受）。**已知限制**：槽位按 (pattern,kind,equipment,rank) 选，无法「点名」具体动作（如硬拉 vs RDL），主项点名需后续给槽位加「指定/排除 id」字段。
+- **A/B 区分（6 天）**：A 日 = 强度/自由重量主项；B 日 = 容量/变式（换器械·角度·握法）。B 日靠槽位 `equipment`/`kind` 约束 + **`preferredId` 点名**选到与 A 不同的动作（推B 补垂直推；拉B 点名宽握下拉 + 俯身支撑划船 + lat 孤立；腿B 哈克蹲 + 点名硬拉 + 保加利亚）；器械受限时优雅软化。
+- **点名主项（`Slot.preferredId`，2026-06-16）**：模板可指定具体动作 id（突破「同 pattern 取 rank 最小」限制，如硬拉 vs RDL、宽握 vs 高位下拉）。选材优先级：**sticky（用户上次换的）> preferredId（模板点名）> rank 最小默认**；点名须通过候选过滤（器械白名单/未弃用/可处方），否则优雅回退 rank（器械受限不会卡空）。
 - **全身 A/B/C（2-3 天）**：每变式 6 槽覆盖 股四/后链/胸/背/肩/臂 全身一遍，三变式靠 pattern 顺序+equipment 换不同主项（A 深蹲+平板+下拉 / B 哈克蹲+上斜+杠铃划船 / C 腿举+哑铃平板+坐姿划船）。频率靠「每次都练全身」达成。
 - **力量/增肌两套（primaryGoal）**：默认增肌（§6.0.1 渐进口径不变）；`primaryGoal=strength` 时 `strengthShaped` 只重塑**显式复合主项**（kind=="compound"）→ 3-6 次 / RIR 1 / 休息 ≥180s（孤立与二级保持增肌区间——「重主项+增肌辅助」结构，循证可接受）。
 - **sticky（粘住上次换的动作）当前为 pattern 全局**：同 pattern 跨 A/B 且换入动作满足两天约束时会跨日粘住；新用户无换动作时 A/B 由槽位约束天然区分。dayCode 级精确化需会话存 dayCode 真值（templateId），留作后续。

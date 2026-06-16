@@ -48,6 +48,9 @@ public enum TodayPrescriptionEngine {
         var rest: Int
         /// 目标 RIR（增肌默认 2；力量塑形把复合主项降到 1，见 strengthShaped）。
         var targetRir: Double = 2.0
+        /// 点名主项（模板指定具体动作 id，如 legs-B 硬拉、pull-B 宽握下拉）：通过候选过滤则优先选它，
+        /// 否则优雅回退 rank 最小（器械受限时不会卡空）。sticky（用户换动作）仍高于点名。
+        var preferredId: String? = nil
     }
 
     /// 力量目标塑形（owner 拍板：增肌默认 + 力量两套）：只重塑**显式复合主项**——降到 3-6 次、
@@ -125,8 +128,8 @@ public enum TodayPrescriptionEngine {
             ]
         case "pull-b":
             return [
-                Slot(pattern: "horizontal-pull", kind: "compound", equipment: ["dumbbell"], sets: 4, repMin: 8, repMax: 12, rest: 150), // 哑铃划船（主项；A 用杠铃/绳索划船）
-                Slot(pattern: "vertical-pull", kind: "compound", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 8, repMax: 12, rest: 120), // 锤式下拉（A 用高位下拉）
+                Slot(pattern: "horizontal-pull", kind: "compound", equipment: ["dumbbell"], sets: 4, repMin: 8, repMax: 12, rest: 150, preferredId: "chest-supported-db-row"), // 俯身支撑哑铃划船（主项点名；A 用杠铃/绳索划船）
+                Slot(pattern: "vertical-pull", kind: "compound", sets: 3, repMin: 8, repMax: 12, rest: 120, preferredId: "wide-grip-pulldown"), // 宽握下拉（点名；A 用高位下拉）
                 Slot(pattern: "vertical-pull", kind: "isolation", sets: 3, repMin: 12, repMax: 15, rest: 75), // 直臂下拉（lat 孤立，A 日缺）
                 Slot(pattern: "rear-delt", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 12, repMax: 20, rest: 60), // 反向蝴蝶机（A 用面拉）
                 Slot(pattern: "curl", equipment: ["cable"], sets: 3, repMin: 10, repMax: 15, rest: 75), // 绳索弯举（A 用哑铃弯举）
@@ -135,8 +138,8 @@ public enum TodayPrescriptionEngine {
         case "legs-b":
             return [
                 Slot(pattern: "squat-pattern", kind: "compound", equipment: EquipmentRegistry.machineClasses, sets: 4, repMin: 8, repMax: 12, rest: 180), // 哈克深蹲（膝主导主项；A 用杠铃深蹲）
-                Slot(pattern: "hinge", equipment: ["barbell"], sets: 3, repMin: 6, repMax: 10, rest: 180), // RDL（后链主项，与 A 共享：有意，后链频率）
-                Slot(pattern: "squat-pattern", kind: "compound", equipment: ["dumbbell"], sets: 3, repMin: 10, repMax: 15, rest: 90), // 高脚杯/保加利亚（单侧）
+                Slot(pattern: "hinge", equipment: ["barbell"], sets: 3, repMin: 5, repMax: 8, rest: 210, preferredId: "deadlift"), // 硬拉（后链主项点名；A 用 RDL）
+                Slot(pattern: "squat-pattern", kind: "compound", equipment: ["dumbbell"], sets: 3, repMin: 10, repMax: 15, rest: 90, preferredId: "bulgarian-split-squat"), // 保加利亚分腿蹲（单侧点名）
                 Slot(pattern: "knee-flexion", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 10, repMax: 15, rest: 75),
                 Slot(pattern: "knee-extension", sets: 3, repMin: 12, repMax: 20, rest: 75),
                 Slot(pattern: "calf-raise", equipment: ["dumbbell"], sets: 4, repMin: 10, repMax: 20, rest: 60), // 哑铃提踵（A 用器械提踵）
@@ -262,11 +265,14 @@ public enum TodayPrescriptionEngine {
                     && (allowed == nil || allowed!.contains(entry.equipment))
                     && !usedIds.contains(entry.id)
             }
-            // sticky：唯一 pattern 槽优先「上次实际做的」（须仍是合法候选）；否则 rank 最小。
+            // 选材优先级：① sticky（用户上次实际做的，须仍合法）→ ② 槽位点名 preferredId
+            //（模板指定主项，如 legs-B 硬拉、pull-B 宽握下拉；须通过器械白名单等候选过滤，
+            // 否则优雅回退）→ ③ rank 最小默认。点名让 B 日主项精确，不再受「同 pattern 取 rank 最小」限制。
             let stickyPick = patternCounts[slot.pattern] == 1
                 ? lastActual[slot.pattern].flatMap { pref in candidates.first { $0.id == pref } }
                 : nil
-            guard let entry = stickyPick ?? candidates.min(by: { ($0.rank, $0.id) < ($1.rank, $1.id) })
+            let pinnedPick = slot.preferredId.flatMap { id in candidates.first { $0.id == id } }
+            guard let entry = stickyPick ?? pinnedPick ?? candidates.min(by: { ($0.rank, $0.id) < ($1.rank, $1.id) })
             else {
                 dayReasons.append(.slotUnfilled(pattern: slot.pattern))
                 continue
