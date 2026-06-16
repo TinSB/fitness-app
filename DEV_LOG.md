@@ -42,11 +42,14 @@
 
 **经审计但本次未改（如实留痕，等 owner 拍板——多为设计敏感或主观，不静默改 crafted 设计）**：
 - 一条 P5「计划页占位与数据矛盾」**经核验是误报**（cycle 分支用的是已改的诚实文案 planCycleNote，非 planEmptyHeadline），已剔除。
-- 二级灰字 12pt 对比度疑似不达 WCAG AA（改色影响全局设计语言 §12，需 owner 定）。
-- 档位/次数横向触达宽度 < 44pt（需布局重构）。
-- ↑↓ 改 SF Symbol（与等宽数字对齐有回归风险）、里程 dot ember2（语义色）、档位 selected/unselected 对比与字重、依据 chevron 字号、各处微调 padding(13/9/11/78)、hero 壳与大数字时长微差、快改面入退场对称、图表逐柱 VoiceOver drill-down。
+- ↑↓ 改 SF Symbol（与等宽数字对齐有回归风险）、里程 dot ember2（语义色）、档位 selected/unselected 对比与字重、依据 chevron 字号、各处微调 padding(13/9/11/78)、hero 壳与大数字时长微差、快改面入退场对称。
 
-**下一步**：owner 从上面「未改」清单挑要不要继续（对比度/触达宽度/图表无障碍是较有价值的下一档）。
+**追加（owner「继续」做第二档，2026-06-15 晚）**：
+- **对比度——核验为误报**：精确算 WCAG 对比度，T3=5.3–6.2:1、T4=4.6–5.4:1（全部背景），**均 ≥ AA 4.5:1**（最低 T4 on raised=4.61）。审计的「3.9–4.2」算错了，无需改色。
+- **触达宽度——核验为非问题**：reps/RIR 直选带 maxWidth:.infinity 均分 ~316pt 面板 → 每格 ~45pt(RIR 7 格)–63pt(次数 5 格)，配 minHeight:44，命中区 ≥44pt。审计的「16pt」不实。
+- **图表无障碍——已做**：进展页柱图标 .accessibilityHidden（其文字替代=同块标题 Overline +「本周 N 组」caption，已可读）；周期趋势行 .accessibilityElement(children:.combine)，把动作名·估算1RM·最新值·升降合成一条、迷你折线静默。模拟器实拍确认柱图视觉无回归。逐柱精确读数需上游补原始值（柱仅归一化 fraction），留作后续。
+
+**下一步**：无遗留必做项。剩 ↑↓→SFSymbol、各处微 padding、hero 时长微差等纯主观锦上添花，owner 想动哪个再点。
 
 ## 2026-06-15 · 打磨：休息进度条与倒计时严格同步（修 +30 卡满）
 

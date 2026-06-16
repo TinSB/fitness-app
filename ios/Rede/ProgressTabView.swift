@@ -365,6 +365,8 @@ struct ProgressTabView: View {
                 }
             }
             .padding(.vertical, 11)
+            // 折线图无语义；把整行合成一条可读元素（动作名·估算1RM·最新值·升降），折线静默
+            .accessibilityElement(children: .combine)
             Rectangle().fill(Color.redeHair2).frame(height: 1)
         }
     }
@@ -409,6 +411,9 @@ struct ProgressTabView: View {
         }
         .frame(height: 120 + 27, alignment: .bottom)
         .frame(maxWidth: .infinity)
+        // 柱图为视觉表示，其文字替代 = 同块的标题 Overline + caption（已可读）；
+        // 柱子归一化 fraction 不含原始值，逐柱读数需上游补数据（留作后续）。标装饰避免乱序噪声。
+        .accessibilityHidden(true)
     }
 
     // MARK: - 历史（FR-PR1；原型未画——保守样式：ov 标题 + 行 + 细分隔线）
