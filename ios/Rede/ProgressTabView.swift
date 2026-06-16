@@ -51,7 +51,7 @@ struct ProgressTabView: View {
                     }
                 }
             }
-            .padding(.bottom, 78)
+            .padding(.bottom, RedeSpace.bottomBar)
         }
         .background(Color.redeBase)
         .onAppear { reload() }
@@ -379,9 +379,9 @@ struct ProgressTabView: View {
     @ViewBuilder
     private func deltaLabel(_ delta: Double) -> some View {
         if delta > 0.5 {
-            Text("↑ \(s.formatE1Rm(delta))").font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeEmber)
+            Text("\(Image(systemName: "arrow.up")) \(s.formatE1Rm(delta))").font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeEmber)
         } else if delta < -0.5 {
-            Text("↓ \(s.formatE1Rm(abs(delta)))").font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeEmber2)
+            Text("\(Image(systemName: "arrow.down")) \(s.formatE1Rm(abs(delta)))").font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeEmber2)
         } else {
             Text(s.holdShort).font(.redeCaption).foregroundStyle(Color.redeT4)
         }

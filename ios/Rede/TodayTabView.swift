@@ -37,7 +37,7 @@ struct TodayTabView: View {
 
                 todayContent
             }
-            .padding(.bottom, 78)
+            .padding(.bottom, RedeSpace.bottomBar)
         }
         .background(Color.redeBase)
         .task { if sessionStore.todayOutcome == nil { await sessionStore.loadToday() } }
@@ -339,13 +339,13 @@ struct TodayTabView: View {
             case "increase":
                 // 幅度取绝对值（审查 [5]）：assisted 进阶=辅助↓（target<prev），直减会出负号；
                 // 无重量轴或缺上次值则只给箭头。
-                let delta: String = (isRep || ex.previousWeightKg == nil)
-                    ? "↑"
-                    // 增量 = 吸附后目标 − 吸附后上次（两端同梯子，差才是真实可配增量）
-                    : "↑ \(s.formatKg(abs(LoadDisplay.snap(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s) - LoadDisplay.snap(ex.previousWeightKg ?? 0, loadType: ex.loadType, equipment: ex.equipment, s))))"
-                Text(delta).font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeEmber)
+                // 增量 = 吸附后目标 − 吸附后上次（两端同梯子，差才是真实可配增量）；箭头用 SFSymbol
+                let amount: String = (isRep || ex.previousWeightKg == nil)
+                    ? ""
+                    : " \(s.formatKg(abs(LoadDisplay.snap(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s) - LoadDisplay.snap(ex.previousWeightKg ?? 0, loadType: ex.loadType, equipment: ex.equipment, s))))"
+                Text("\(Image(systemName: "arrow.up"))\(amount)").font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeEmber)
             case "ease":
-                Text("↓").font(.redeCaption).foregroundStyle(Color.redeEmber2)
+                Text(Image(systemName: "arrow.down")).font(.redeCaption).foregroundStyle(Color.redeEmber2)
             case "hold":
                 Text(s.holdShort).font(.redeCaption).foregroundStyle(Color.redeT4)
             default:

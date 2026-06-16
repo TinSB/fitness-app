@@ -86,7 +86,7 @@ struct PlanTabView: View {
                     .padding(.top, 24)
                 }
             }
-            .padding(.bottom, 78)
+            .padding(.bottom, RedeSpace.bottomBar)
         }
         .background(Color.redeBase)
         .task {

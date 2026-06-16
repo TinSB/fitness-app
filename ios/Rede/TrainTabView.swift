@@ -81,7 +81,7 @@ struct TrainTabView: View {
                         .padding(.top, 24)
                 }
             }
-            .padding(.bottom, 78)
+            .padding(.bottom, RedeSpace.bottomBar)
         }
         .background(Color.redeBase)
         .sensoryFeedback(.success, trigger: logPulse)
@@ -1123,7 +1123,8 @@ struct TrainTabView: View {
 
     /// 暂存生命周期终点：打勾 / 跳过 / 换动作——指针换组后旧暂存绝不能滞留。
     private func clearAdjustment() {
-        showAdjust = false
+        // 关面板与开面板（startAdjust）同款 0.22 easeInOut，使收起也淡出、入退场对称
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) { showAdjust = false }
         hasAdjustment = false
         showExactField = false
     }

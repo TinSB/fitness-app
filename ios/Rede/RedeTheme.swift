@@ -64,6 +64,7 @@ enum RedeSpace {
     static let section: CGFloat = 24   // 区块间
     static let card: CGFloat = 16      // 卡内
     static let group: CGFloat = 8      // 组内
+    static let bottomBar: CGFloat = 78 // 底栏避让（ScrollView 内容底部留白，避开 tab 栏）
 }
 
 enum RedeShape {

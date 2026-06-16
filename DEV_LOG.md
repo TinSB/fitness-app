@@ -51,7 +51,15 @@
 
 **再续（owner「继续」做逐柱读数）**：柱图从「整图标隐藏」升级为**逐柱可读**——给 bars 元组加 a11y 字段，由 sessionScale/weekScale 用原始值构造（动作名·训练量 或 周·组数·吨位，PR 柱带 PR），每根柱 .accessibilityElement(.ignore)+.accessibilityLabel 合成一条；新增 L10n `a11yChartBar`（中「，」英「: 」双语安全）。VoiceOver 现在能逐柱念出确切数值（如「6月15日：17 组 · 2715 kg」），不再只有汇总 caption。模拟器实拍柱图视觉零回归。
 
-**下一步**：无遗留必做项。剩 ↑↓→SFSymbol、各处微 padding、hero 时长微差等纯主观锦上添花，owner 想动哪个再点。
+**主观批（owner「继续」清锦上添花，2026-06-15 晚）**：
+- **↑↓ 升级 SF Symbol**：今日页变化行、进展页趋势 deltaLabel 的 unicode ↑/↓ 改为 `Image(systemName:"arrow.up/down")` 内联（`Text("\(Image)…")` 惯用法，自动基线对齐、字重随系统字体更统一）。
+- **底栏避让 token 化**：四个 tab 的 `.padding(.bottom, 78)` → `RedeSpace.bottomBar`（纯重构、零视觉变化）。
+- **快改面入退场对称**：`clearAdjustment` 的关面板加 `withAnimation(0.22 easeInOut)`（与开面板 startAdjust 同款），收起也淡出、不再瞬消。
+- 验证：质量门禁 PASS（7 包 424 测试 0 失败、预算合规、xcodebuild 成功）。**如实**：当前 sim 状态今日为「已练完休息」、无变化行/趋势行可展示箭头，故 SF Symbol 箭头的视觉与快改面收起过渡需真机/真数据最终确认（同触感/VoiceOver 口径）；token 化为纯重构无需视觉确认。
+
+**仍按兵不动（刻意，需 owner 明确才动）**：hero 壳(0.22)与大数字(0.2)时长微差（与快改改值动画纠缠，改了影响调值手感）、hero 左缘 13pt / 行 9·11pt 微 padding（手调过的版式，标准化有回归风险）、对比度与触达宽度（已证伪）。
+
+**下一步**：审计清单实质项已清完。剩的都是「需真机确认手感」或「刻意保留的调好版式」，owner 真机走一遍触感/箭头后再定要不要微调。
 
 ## 2026-06-15 · 打磨：休息进度条与倒计时严格同步（修 +30 卡满）
 
