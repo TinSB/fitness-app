@@ -16,6 +16,9 @@ public struct RestCountdown: Equatable, Sendable {
     public private(set) var endDate: Date?
     /// 暂停中：冻结的剩余秒数。运行中为 nil。
     public private(set) var pausedRemaining: Int?
+    /// 本段休息的总时长（秒），= 进度条分母。+30 会同步增长它，使进度条始终
+    /// 「remaining/total」、不会因 remaining 超过初始计划而卡满（owner 2026-06-15 反馈）。
+    public private(set) var totalSeconds: Int = 0
 
     public init() {}
 
@@ -33,14 +36,24 @@ public struct RestCountdown: Equatable, Sendable {
         return max(0, Int(end.timeIntervalSince(now).rounded(.up)))
     }
 
+    /// 进度条比例 = 剩余/总时长（0…1）。与倒计时数字同源、同步：满格起步、
+    /// 在 0:00 精确归零；+30 后 total 同步增长故不卡满、继续平滑下降。
+    public func fraction(now: Date = Date()) -> Double {
+        guard totalSeconds > 0 else { return 0 }
+        return min(1, max(0, Double(remaining(now: now)) / Double(totalSeconds)))
+    }
+
     /// 开始一段休息（重置任何暂停态）。
     public mutating func begin(seconds: Int, now: Date = Date()) {
         pausedRemaining = nil
+        totalSeconds = max(0, seconds)
         endDate = now.addingTimeInterval(TimeInterval(max(0, seconds)))
     }
 
-    /// 加时（+30）：运行中推后结束点；暂停中加到冻结剩余。未激活则无操作。
+    /// 加时（+30）：运行中推后结束点；暂停中加到冻结剩余；total 同步增长（进度条不卡满）。
     public mutating func add(seconds: Int) {
+        guard isActive else { return }
+        totalSeconds = max(0, totalSeconds + seconds)
         if let paused = pausedRemaining {
             pausedRemaining = max(0, paused + seconds)
         } else if let end = endDate {
@@ -65,5 +78,6 @@ public struct RestCountdown: Equatable, Sendable {
     public mutating func clear() {
         endDate = nil
         pausedRemaining = nil
+        totalSeconds = 0
     }
 }

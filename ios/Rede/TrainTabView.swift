@@ -301,7 +301,7 @@ struct TrainTabView: View {
                 ZStack(alignment: .leading) {
                     Rectangle().fill(Color(redeHex: 0x231F19)).frame(height: 3)
                     Rectangle().fill(Color.redeNeu)
-                        .frame(width: geo.size.width * restFraction(remaining, planned: flow.restSecondsPlanned), height: 3)
+                        .frame(width: geo.size.width * sessionStore.restFraction, height: 3)
                         .animation(.linear(duration: 1), value: remaining)
                 }
             }
@@ -1165,9 +1165,6 @@ struct TrainTabView: View {
         "\(remaining / 60):" + String(format: "%02d", remaining % 60)
     }
 
-    private func restFraction(_ remaining: Int, planned: Int) -> Double {
-        min(1, Double(remaining) / Double(max(1, planned)))
-    }
 
     // 含 scenePhase：回前台时 key 变 → task 重启（同切 tab 重建视图），保证追平剩余并续走逐秒刷新。
     private var restTaskKey: String {

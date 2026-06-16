@@ -95,6 +95,44 @@ final class RestCountdownTests: XCTestCase {
         XCTAssertFalse(c.isPaused)
     }
 
+    // MARK: - 进度条比例（与倒计时同步）
+
+    func testFractionTracksRemaining() {
+        var c = RestCountdown()
+        c.begin(seconds: 120, now: t0)
+        XCTAssertEqual(c.fraction(now: t0), 1.0, accuracy: 0.001)            // 满格起步
+        XCTAssertEqual(c.fraction(now: t0.addingTimeInterval(60)), 0.5, accuracy: 0.001) // 半程
+        XCTAssertEqual(c.fraction(now: t0.addingTimeInterval(120)), 0.0, accuracy: 0.001) // 0:00 归零
+    }
+
+    func testFractionInactiveIsZero() {
+        let c = RestCountdown()
+        XCTAssertEqual(c.fraction(now: t0), 0.0, accuracy: 0.001)
+    }
+
+    /// 核心回归（owner 2026-06-15「进度条与休息时间同步」）：+30 后 total 同步增长，
+    /// 进度条不卡满、继续平滑下降，并在新的 0:00 精确归零。
+    func testFractionStaysSyncedAfterAddWhileRunning() {
+        var c = RestCountdown()
+        c.begin(seconds: 120, now: t0)
+        // 走到剩 3 秒（旧实现此时 +30 会让 remaining=33 > planned=120? 否；构造接近满的反例）
+        c.add(seconds: 30) // total 120→150，remaining 120→150
+        XCTAssertEqual(c.totalSeconds, 150)
+        // 旧实现 remaining(150)/planned(120) 会 clamp 到 1（卡满）；新实现 150/150=1 起步后正常下降
+        XCTAssertEqual(c.fraction(now: t0), 1.0, accuracy: 0.001)
+        XCTAssertEqual(c.fraction(now: t0.addingTimeInterval(30)), 120.0 / 150.0, accuracy: 0.001) // 0.8，不卡满
+        XCTAssertEqual(c.fraction(now: t0.addingTimeInterval(150)), 0.0, accuracy: 0.001)           // 新 0:00 归零
+    }
+
+    func testFractionAfterAddWhilePaused() {
+        var c = RestCountdown()
+        c.begin(seconds: 120, now: t0)
+        c.togglePause(now: t0.addingTimeInterval(60)) // 冻结剩 60，total 仍 120
+        c.add(seconds: 30) // total 150，paused 90
+        XCTAssertEqual(c.totalSeconds, 150)
+        XCTAssertEqual(c.fraction(now: t0.addingTimeInterval(60)), 90.0 / 150.0, accuracy: 0.001) // 0.6 冻结
+    }
+
     func testClearResets() {
         var c = RestCountdown()
         c.begin(seconds: 90, now: t0)

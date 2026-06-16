@@ -333,8 +333,10 @@ final class SessionStore {
 
     // MARK: - 休息倒计时（会话层接管，详见 SessionStore.restCountdown / RestCountdown）
 
-    /// 当前剩余秒数（按墙钟实时求出；视图每秒用 TimelineView 重读）。
+    /// 当前剩余秒数（按墙钟实时求出；视图每秒重读）。
     var restRemainingSeconds: Int { restCountdown.remaining() }
+    /// 进度条比例（剩余/总时长，与倒计时数字同源同步；+30 后仍平滑、0:00 精确归零）。
+    var restFraction: Double { restCountdown.fraction() }
     /// 是否暂停（绑定暂停/继续按钮文案与态）。
     var restIsPaused: Bool { restCountdown.isPaused }
 
