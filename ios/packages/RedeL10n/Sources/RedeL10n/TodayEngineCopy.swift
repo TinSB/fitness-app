@@ -15,14 +15,17 @@ extension RedeStrings {
 
     /// 训练日双语名（zh 复用 legacy TEMPLATE_NAME_MAP 词汇）。
     public func trainingDayName(_ code: String) -> String {
-        // B 日（6 天 PPL×2 容量日）名：legacy parity map（formatters.ts 端）无此键，就近处理，
-        // 不污染 parity-locked 的 Formatters.templateNameMap。
-        let bNames: [String: (zh: String, en: String)] = [
+        // 新日型（6 天 PPL×2 的 B 日 + 2-3 天全身 A/B/C）名：legacy parity map（formatters.ts 端）
+        // 无此键，就近处理，不污染 parity-locked 的 Formatters.templateNameMap。
+        let extraNames: [String: (zh: String, en: String)] = [
             "push-b": ("推 B", "Push B"),
             "pull-b": ("拉 B", "Pull B"),
             "legs-b": ("腿 B", "Legs B"),
+            "full-a": ("全身 A", "Full Body A"),
+            "full-b": ("全身 B", "Full Body B"),
+            "full-c": ("全身 C", "Full Body C"),
         ]
-        if let b = bNames[code] { return locale == .zh ? b.zh : b.en }
+        if let b = extraNames[code] { return locale == .zh ? b.zh : b.en }
         if locale == .zh {
             return Formatters.templateNameMap[code] ?? code
         }

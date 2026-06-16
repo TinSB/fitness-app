@@ -35,7 +35,7 @@ public struct ProgramTemplateInit: Equatable, Sendable {
 
 public enum OnboardingPlanInit {
     /// 天数 → 分化（循证频率映射，方案 2026-06-16）：每肌群尽量 2×/周。
-    /// 6→PPL×2(A/B 全 2×)｜5→PPL+UL(腿 2×)｜4→上下肢(2×)｜2-3→上下肢(暂；全身待 Slice 2)。
+    /// 6→PPL×2(A/B 全 2×)｜5→PPL+UL(腿 2×)｜4→上下肢(2×)｜2-3→全身(每肌群 2-3×)。
     /// 天数钳制 2...6。
     public static func template(for answers: OnboardingAnswers) -> ProgramTemplateInit {
         let days = min(6, max(2, answers.weeklyDays))
@@ -43,7 +43,8 @@ public enum OnboardingPlanInit {
         switch days {
         case 6: split = "push-pull-legs"   // 推A拉A腿A推B拉B腿B
         case 5: split = "ppl-ul"           // 推A拉A腿A·上·下（腿 2×）
-        default: split = "upper-lower"     // 4 天上下肢；2-3 天暂上下肢（全身 Slice 2 接）
+        case 4: split = "upper-lower"      // 上·下 ×2
+        default: split = "full-body"       // 2-3 天全身 A/B/C 轮换
         }
         return ProgramTemplateInit(splitType: split, daysPerWeek: days, primaryGoal: answers.primaryGoal)
     }

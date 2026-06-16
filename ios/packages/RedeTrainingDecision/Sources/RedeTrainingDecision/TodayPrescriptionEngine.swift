@@ -51,6 +51,10 @@ public enum TodayPrescriptionEngine {
     static func daySequence(splitType: String?) -> [String] {
         let s = (splitType ?? "").lowercased()
         // 顺序要紧：ppl-ul / full 含 "ppl"/"full" 子串，必须先于通配 push/ppl 判断。
+        if s == "full-body" || s.contains("full") {
+            // 2-3 天全身：3 个均衡变式轮换（每日覆盖全身，A/B/C 换动作避免重复），每肌群 2-3×/周。
+            return ["full-a", "full-b", "full-c"]
+        }
         if s == "ppl-ul" {
             // 5 天混合（腿 2×）：复用现有 push-a/pull-a/legs-a/upper/lower 槽位，零新增。
             return ["push-a", "pull-a", "legs-a", "upper", "lower"]
@@ -122,6 +126,35 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "knee-extension", sets: 3, repMin: 12, repMax: 20, rest: 75),
                 Slot(pattern: "calf-raise", equipment: ["dumbbell"], sets: 4, repMin: 10, repMax: 20, rest: 60), // 哑铃提踵（A 用器械提踵）
                 Slot(pattern: "core", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 12, repMax: 20, rest: 60), // 器械卷腹（A 用绳索卷腹）
+            ]
+        // 全身 A/B/C（2-3 天全身）：每日覆盖 股四/后链/胸/背/肩/臂 全身一遍，三变式靠
+        // pattern 顺序 + equipment 约束换不同动作。频率靠「每次都练全身」达成（2-3 天 = 每肌群 2-3×）。
+        case "full-a": // 深蹲 + 平板卧推 + 高位下拉（自由重量力量倾向）
+            return [
+                Slot(pattern: "squat-pattern", kind: "compound", equipment: ["barbell"], sets: 3, repMin: 5, repMax: 8, rest: 180),
+                Slot(pattern: "horizontal-press", kind: "compound", sets: 3, repMin: 6, repMax: 10, rest: 150),
+                Slot(pattern: "vertical-pull", sets: 3, repMin: 8, repMax: 12, rest: 120),
+                Slot(pattern: "hinge", equipment: ["barbell"], sets: 3, repMin: 8, repMax: 12, rest: 120),
+                Slot(pattern: "vertical-press", sets: 3, repMin: 8, repMax: 12, rest: 90),
+                Slot(pattern: "curl", sets: 2, repMin: 10, repMax: 15, rest: 60),
+            ]
+        case "full-b": // 哈克蹲 + 上斜 + 杠铃划船（器械/角度变式）
+            return [
+                Slot(pattern: "squat-pattern", kind: "compound", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 8, repMax: 12, rest: 150),
+                Slot(pattern: "incline-press", sets: 3, repMin: 8, repMax: 12, rest: 120),
+                Slot(pattern: "horizontal-pull", equipment: ["barbell"], sets: 3, repMin: 6, repMax: 10, rest: 150),
+                Slot(pattern: "knee-flexion", sets: 3, repMin: 10, repMax: 15, rest: 75),
+                Slot(pattern: "lateral-raise", sets: 3, repMin: 12, repMax: 20, rest: 60),
+                Slot(pattern: "triceps-extension", sets: 2, repMin: 10, repMax: 15, rest: 60),
+            ]
+        case "full-c": // 腿举 + 哑铃平板 + 坐姿划船（容量/泵感）
+            return [
+                Slot(pattern: "squat-pattern", kind: "accessory", sets: 3, repMin: 10, repMax: 15, rest: 120),
+                Slot(pattern: "hinge", equipment: ["dumbbell"], sets: 3, repMin: 8, repMax: 12, rest: 120),
+                Slot(pattern: "horizontal-press", kind: "compound", equipment: ["dumbbell"], sets: 3, repMin: 8, repMax: 12, rest: 120),
+                Slot(pattern: "horizontal-pull", equipment: ["cable"], sets: 3, repMin: 10, repMax: 15, rest: 90),
+                Slot(pattern: "rear-delt", sets: 3, repMin: 12, repMax: 20, rest: 60),
+                Slot(pattern: "core", sets: 3, repMin: 12, repMax: 20, rest: 60),
             ]
         case "lower":
             return [

@@ -123,12 +123,15 @@ final class OnboardingColdStartTests: XCTestCase {
         XCTAssertEqual(pplul.daysPerWeek, 5)
         XCTAssertEqual(pplul.primaryGoal, "hypertrophy")
 
-        let ul = OnboardingPlanInit.template(for: .init(
+        // 3 天 → 全身（循证 2026-06-16）
+        let fb = OnboardingPlanInit.template(for: .init(
             primaryGoal: "strength", weeklyDays: 3, equipmentScenario: "home-dumbbell", trainingLevel: "beginner"))
-        XCTAssertEqual(ul.splitType, "upper-lower")
-        XCTAssertEqual(ul.daysPerWeek, 3)
+        XCTAssertEqual(fb.splitType, "full-body")
+        XCTAssertEqual(fb.daysPerWeek, 3)
 
-        // 边界：4 天上下肢；6 天完整 PPL×2
+        // 边界：2 天全身；4 天上下肢；6 天完整 PPL×2
+        XCTAssertEqual(OnboardingPlanInit.template(for: .init(
+            primaryGoal: "general", weeklyDays: 2, equipmentScenario: "minimal", trainingLevel: "beginner")).splitType, "full-body")
         XCTAssertEqual(OnboardingPlanInit.template(for: .init(
             primaryGoal: "general", weeklyDays: 4, equipmentScenario: "minimal", trainingLevel: "advanced")).splitType, "upper-lower")
         XCTAssertEqual(OnboardingPlanInit.template(for: .init(
