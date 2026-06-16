@@ -27,7 +27,7 @@ final class FullBodyEngineTests: XCTestCase {
         XCTAssertEqual(b.dayCode, "full-b")
         XCTAssertEqual(c.dayCode, "full-c")
         for p in [a, b, c] {
-            XCTAssertEqual(p.exercises.count, 6, "\(p.dayCode) 应 6 个动作（全身一遍）")
+            XCTAssertGreaterThanOrEqual(p.exercises.count, 6, "\(p.dayCode) 应 ≥6 个动作（全身一遍；full-c 含小腿为 7）")
             XCTAssertFalse(
                 p.dayReasons.contains { if case .slotUnfilled = $0 { return true }; return false },
                 "\(p.dayCode) 不应有空槽"

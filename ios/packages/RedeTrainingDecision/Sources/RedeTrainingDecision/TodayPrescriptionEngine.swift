@@ -32,7 +32,6 @@ public enum TodayPrescriptionEngine {
     private static let bodyweightRepStep = 2
     private static let lightMultiplier = 0.9
     private static let deloadMultiplier = 0.8
-    private static let targetRir = 2.0
 
     /// 槽位 = 生成规则：按 pattern（可选 kind/equipment 收窄）在 catalog
     /// 声明顺序里取第一个未用条目。
@@ -97,9 +96,9 @@ public enum TodayPrescriptionEngine {
             ]
         case "pull-a":
             return [
-                Slot(pattern: "vertical-pull", sets: 3, repMin: 8, repMax: 10, rest: 120),
+                Slot(pattern: "vertical-pull", kind: "compound", sets: 3, repMin: 8, repMax: 10, rest: 120), // kind:compound → 力量目标也塑形主拉
                 Slot(pattern: "horizontal-pull", equipment: ["cable"], sets: 3, repMin: 8, repMax: 12, rest: 120),
-                Slot(pattern: "horizontal-pull", equipment: ["barbell"], sets: 3, repMin: 6, repMax: 10, rest: 150),
+                Slot(pattern: "horizontal-pull", kind: "compound", equipment: ["barbell"], sets: 3, repMin: 6, repMax: 10, rest: 150), // kind:compound → 杠铃划船力量塑形
                 Slot(pattern: "rear-delt", sets: 3, repMin: 12, repMax: 20, rest: 60),
                 Slot(pattern: "curl", sets: 3, repMin: 8, repMax: 12, rest: 75),
                 Slot(pattern: "curl", sets: 2, repMin: 10, repMax: 15, rest: 75),
@@ -108,7 +107,7 @@ public enum TodayPrescriptionEngine {
         case "legs-a":
             return [
                 Slot(pattern: "squat-pattern", kind: "compound", equipment: ["barbell"], sets: 4, repMin: 5, repMax: 8, rest: 210),
-                Slot(pattern: "hinge", equipment: ["barbell"], sets: 3, repMin: 6, repMax: 10, rest: 180),
+                Slot(pattern: "hinge", kind: "compound", equipment: ["barbell"], sets: 3, repMin: 6, repMax: 10, rest: 180), // kind:compound → 力量目标塑形 RDL
                 Slot(pattern: "squat-pattern", kind: "accessory", sets: 3, repMin: 10, repMax: 15, rest: 120),
                 Slot(pattern: "knee-extension", sets: 3, repMin: 12, repMax: 15, rest: 75),
                 Slot(pattern: "knee-flexion", sets: 3, repMin: 10, repMax: 15, rest: 75),
@@ -138,7 +137,7 @@ public enum TodayPrescriptionEngine {
         case "legs-b":
             return [
                 Slot(pattern: "squat-pattern", kind: "compound", equipment: EquipmentRegistry.machineClasses, sets: 4, repMin: 8, repMax: 12, rest: 180), // 哈克深蹲（膝主导主项；A 用杠铃深蹲）
-                Slot(pattern: "hinge", equipment: ["barbell"], sets: 3, repMin: 5, repMax: 8, rest: 210, preferredId: "deadlift"), // 硬拉（后链主项点名；A 用 RDL）
+                Slot(pattern: "hinge", kind: "compound", equipment: ["barbell"], sets: 3, repMin: 5, repMax: 8, rest: 210, preferredId: "deadlift"), // 硬拉（后链主项点名 + kind:compound 力量塑形；A 用 RDL）
                 Slot(pattern: "squat-pattern", kind: "compound", equipment: ["dumbbell"], sets: 3, repMin: 10, repMax: 15, rest: 90, preferredId: "bulgarian-split-squat"), // 保加利亚分腿蹲（单侧点名）
                 Slot(pattern: "knee-flexion", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 10, repMax: 15, rest: 75),
                 Slot(pattern: "knee-extension", sets: 3, repMin: 12, repMax: 20, rest: 75),
@@ -172,6 +171,7 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "horizontal-press", kind: "compound", equipment: ["dumbbell"], sets: 3, repMin: 8, repMax: 12, rest: 120),
                 Slot(pattern: "horizontal-pull", equipment: ["cable"], sets: 3, repMin: 10, repMax: 15, rest: 90),
                 Slot(pattern: "rear-delt", sets: 3, repMin: 12, repMax: 20, rest: 60),
+                Slot(pattern: "calf-raise", sets: 3, repMin: 10, repMax: 20, rest: 60), // 小腿（全身唯一直接小腿日，审查 M-1）
                 Slot(pattern: "core", sets: 3, repMin: 12, repMax: 20, rest: 60),
             ]
         case "lower":

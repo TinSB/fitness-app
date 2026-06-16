@@ -31,7 +31,21 @@ final class StrengthGoalTests: XCTestCase {
 
     func testStrengthLeavesIsolationAtHypertrophyRange() throws {
         let s = try firstDay(goal: "strength", exerciseId: "lateral-raise") // 孤立槽
+        XCTAssertEqual(s.repLowerBound, 12, "孤立下限不变")
         XCTAssertEqual(s.repUpperBound, 20, "孤立（侧平举）在力量目标下仍保持高次增肌区间")
         XCTAssertEqual(s.targetRir, 2.0)
+    }
+
+    /// 审查 m-2 修复：pull-a 主拉(垂直拉/杠铃划船)标 kind:compound 后，力量目标也塑形（原本全 nil-kind 漏掉）。
+    func testStrengthShapesPullMainAfterKindFix() throws {
+        // count 1 → pull-a；今天主拉 = lat-pulldown（kind compound）。
+        let sessions = (0..<1).map { _ in #"{"id":"h0","date":"2026-05-10","completed":true,"exercises":[]}"# }.joined()
+        let json = #"{"schemaVersion":8,"history":[\#(sessions)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":6,"primaryGoal":"strength"}}"#
+        let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-16")
+        let p = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input)))
+        XCTAssertEqual(p.dayCode, "pull-a")
+        let pulldown = try XCTUnwrap(p.exercises.first { $0.exerciseId == "lat-pulldown" })
+        XCTAssertEqual(pulldown.repUpperBound, 6, "力量目标下主拉降到 3-6 次")
+        XCTAssertEqual(pulldown.targetRir, 1.0)
     }
 }
