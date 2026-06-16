@@ -6,6 +6,22 @@
 
 ---
 
+## 2026-06-16 · 里程碑：R0 上 TestFlight（内部测试）+ 状态写回
+
+**用户目标**：MVP 主线终点——把 app 真正送到能装的地方。
+
+**发生了什么**：owner 已把 app **上传到 TestFlight 并开内部测试**。这是 R0 的目标动作。配套的两个长期阻塞本会话已全部解除：①真机签名（付费 team 47K95GV3X5 + bundle id `com.tinsab.rede`，PR #546）②widget bundle id 修正（`com.tinsab.rede.RedeWidget`，#546）③GitHub 解禁（2026-06-16）。
+
+**我做了什么**：纯**规格写回**——把 canonical 文档从过时现状校正到真相（此前还写着「M6-4 ⬜ 未开始 / 阻塞=Apple 账号 / widget id 待修 / GitHub 封禁」，一次多 agent 调研就被这些旧信息误导）：
+- `REDE_MVP_IMPLEMENTATION_PLAN.md`：§9 M6-4 行 ⬜→🟡（已上传内测、阻塞全解除）；§7/§现状头同步。
+- `COMMERCIALIZATION_ROADMAP.md`：iOS 状态行 + P1 行 + 现状头 → 「R0 已上 TestFlight」。
+
+**诚实边界**：M6-4 标 🟡 不是 ✅——「✅ 收官」按 MVP 计划 §1 要 owner **逐条确认 8 条真机验收**（装得上 / 5 秒内看到今日裁决 / 跑完整训练 / 存得住 / 看得到进展 / 零网络报错 / 有反馈入口 / 中英切换）。确认后才触发 §11（CHANGELOG 留痕 + 回收 docs）。
+
+**用户可见影响**：无代码改动；文档现在如实反映「已上 TestFlight」。
+
+**下一步**：owner 跑 §1 八条真机验收 → 确认即 R0 收官。之后按 verify-first：收 beta 反馈 + P0 需求验证（落地页 / 定位 / 招英文 lifter）→ 再开 R1 功能。隐私政策待转外部测试 / 上架前补（内测不需要）。
+
 ## 2026-06-16 · 修 bug：今日页 RIR 显示 2.5/3.5 → 周期化相位取整
 
 **用户目标**：owner 走查发现今日页每个动作的 RIR 显示成 **2.5**，质疑「RIR 应该是整数吧」。
