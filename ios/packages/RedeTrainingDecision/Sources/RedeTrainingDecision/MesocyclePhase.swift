@@ -22,7 +22,7 @@ public struct PhaseModulation: Equatable, Sendable {
     /// 组数增减（过载 +1；减载 −1；下限钳到 2 在消费侧做）。
     public let setDelta: Int
     /// 目标 RIR（覆盖现有硬编码 2.0：校准 3 / 构建 2 / 过载 1 / 减载 4）。
-    /// 全整数（owner 拍板 2026-06-16）：RIR 按整组「保留次数」记录（训练页选择器 0/1/2/3），
+    /// 全整数（owner 拍板 2026-06-16）：RIR 记录用整数档选择器（训练页 —/0/1/2/3/4/5，无半档），
     /// 半档（旧 2.5/3.5）不可执行也不可记录——目标=显示=记录端到端取整。
     public let rirTarget: Double
 
