@@ -135,8 +135,8 @@ struct TrainTabView: View {
     private func progressBar(_ flow: TrainFlowState) -> some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 2).fill(Color(redeHex: 0x1B1813)).frame(height: 3)
-                RoundedRectangle(cornerRadius: 2).fill(Color.redeNeu)
+                Capsule().fill(Color.redeGroove).frame(height: 3)
+                Capsule().fill(Color.redeNeu)
                     .frame(width: geo.size.width * overallFraction, height: 3)
             }
         }
@@ -307,7 +307,7 @@ struct TrainTabView: View {
                 .accessibilityLabel("\(s.restLabel)，\(formattedRest(remaining))")
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Color(redeHex: 0x231F19)).frame(height: 4)
+                    Capsule().fill(Color.redeGroove).frame(height: 4)
                     // 进度填充用主题琥珀橙（同今日页当前动作条/hero 口音），略加粗到 4pt
                     Capsule().fill(Color.redeEmber)
                         .frame(width: geo.size.width * sessionStore.restFraction, height: 4)

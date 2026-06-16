@@ -42,6 +42,7 @@ extension Color {
     // 控件
     static let redeSteel = Color(redeHex: 0x8C8A86)     // --steel 次级控件
     static let redeNeu = Color(redeHex: 0x4A453B)       // --neu 中性数据条
+    static let redeGroove = Color(redeHex: 0x231F19)    // 进度/休息条凹槽底（替代裸 hex，统一轨道色）
     static let redeRegMark = Color(redeHex: 0x5F594C)   // 角标 registration
     static let redeNextDot = Color(redeHex: 0x3A352B)   // next 节点描边
 }
