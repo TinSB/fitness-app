@@ -173,7 +173,7 @@ struct ProgressTabView: View {
         let verdict: String
         let sub: String
         let chartTitle: String
-        let bars: [(label: String, fraction: CGFloat, tag: String?, ember: Bool)]?
+        let bars: [(label: String, fraction: CGFloat, tag: String?, ember: Bool, a11y: String)]?
         let trend: (values: [CGFloat], emberIndex: Int, emberLabel: String)?
         let caption: String
     }
@@ -195,11 +195,14 @@ struct ProgressTabView: View {
         let shown = Array(volumes.prefix(5))
         let maxVolume = max(shown.map(\.volume).max() ?? 1, 1)
         let prSet = Set(latest.prExerciseIds)
-        let bars = shown.map { item in
-            (label: localeStore.exerciseName(item.id),
+        let bars = shown.map { item -> (label: String, fraction: CGFloat, tag: String?, ember: Bool, a11y: String) in
+            let name = localeStore.exerciseName(item.id)
+            let isPR = prSet.contains(item.id)
+            return (label: name,
              fraction: CGFloat(item.volume / maxVolume),
-             tag: prSet.contains(item.id) ? s.historyPRBadge : nil,
-             ember: prSet.contains(item.id))
+             tag: isPR ? s.historyPRBadge : nil,
+             ember: isPR,
+             a11y: s.a11yChartBar(name, "\(s.formatKg(item.volume)) \(s.unitLabel)", pr: isPR))
         }
 
         let verdict: String
@@ -240,15 +243,17 @@ struct ProgressTabView: View {
         var deltaPercent: Int?
         if case .vsPreviousWeek(let delta)? = model.weeklyComparison { deltaPercent = delta }
 
-        let bars = shown.map { week in
+        let bars = shown.map { week -> (label: String, fraction: CGFloat, tag: String?, ember: Bool, a11y: String) in
             let isCurrent = week.weekStartISO == latest.weekStartISO
             let tag: String? = isCurrent
                 ? deltaPercent.map { "\($0 >= 0 ? "+" : "−")\(abs($0))%" }
                 : nil
-            return (label: s.weekBarLabel(fromISO: week.weekStartISO),
+            let label = s.weekBarLabel(fromISO: week.weekStartISO)
+            return (label: label,
                     fraction: CGFloat(week.totalVolumeKg / maxVolume),
                     tag: tag,
-                    ember: isCurrent)
+                    ember: isCurrent,
+                    a11y: s.a11yChartBar(label, s.historyRowMeta(sets: week.setCount, volumeKg: s.formatKg(week.totalVolumeKg))))
         }
 
         let verdictCode: String
@@ -384,7 +389,7 @@ struct ProgressTabView: View {
 
     // MARK: - 柱图（原型形态：120pt 区、唯一 ember、标签浮顶）
 
-    private func barChart(_ bars: [(label: String, fraction: CGFloat, tag: String?, ember: Bool)]) -> some View {
+    private func barChart(_ bars: [(label: String, fraction: CGFloat, tag: String?, ember: Bool, a11y: String)]) -> some View {
         HStack(alignment: .bottom, spacing: 11) {
             ForEach(Array(bars.enumerated()), id: \.offset) { _, bar in
                 VStack(spacing: 8) {
@@ -407,13 +412,13 @@ struct ProgressTabView: View {
                         .minimumScaleFactor(0.7)
                 }
                 .frame(maxWidth: .infinity, alignment: .bottom)
+                // 每根柱合成一条读数（标签·原始值[·PR]），替代不可读的归一化柱形
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(bar.a11y)
             }
         }
         .frame(height: 120 + 27, alignment: .bottom)
         .frame(maxWidth: .infinity)
-        // 柱图为视觉表示，其文字替代 = 同块的标题 Overline + caption（已可读）；
-        // 柱子归一化 fraction 不含原始值，逐柱读数需上游补数据（留作后续）。标装饰避免乱序噪声。
-        .accessibilityHidden(true)
     }
 
     // MARK: - 历史（FR-PR1；原型未画——保守样式：ov 标题 + 行 + 细分隔线）

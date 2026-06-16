@@ -135,6 +135,12 @@ extension RedeStrings {
         locale == .zh ? "\(sets) 组 · \(volumeKg) \(unitLabel)" : "\(sets) sets · \(volumeKg) \(unitLabel)"
     }
     public var historyPRBadge: String { "PR" }
+    /// 图表柱 VoiceOver 读数："标签，明细[，PR]" / "label: detail[, PR]"。
+    public func a11yChartBar(_ label: String, _ detail: String, pr: Bool = false) -> String {
+        let base = locale == .zh ? "\(label)，\(detail)" : "\(label): \(detail)"
+        guard pr else { return base }
+        return locale == .zh ? "\(base)，\(historyPRBadge)" : "\(base), \(historyPRBadge)"
+    }
     public var historyDetailSets: String { locale == .zh ? "逐组明细" : "Set by set" }
     /// 明细行 "60 kg × 6"
     public func historySetLine(kg: String, reps: Int) -> String { "\(kg) \(unitLabel) × \(reps)" }

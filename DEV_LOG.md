@@ -47,7 +47,9 @@
 **追加（owner「继续」做第二档，2026-06-15 晚）**：
 - **对比度——核验为误报**：精确算 WCAG 对比度，T3=5.3–6.2:1、T4=4.6–5.4:1（全部背景），**均 ≥ AA 4.5:1**（最低 T4 on raised=4.61）。审计的「3.9–4.2」算错了，无需改色。
 - **触达宽度——核验为非问题**：reps/RIR 直选带 maxWidth:.infinity 均分 ~316pt 面板 → 每格 ~45pt(RIR 7 格)–63pt(次数 5 格)，配 minHeight:44，命中区 ≥44pt。审计的「16pt」不实。
-- **图表无障碍——已做**：进展页柱图标 .accessibilityHidden（其文字替代=同块标题 Overline +「本周 N 组」caption，已可读）；周期趋势行 .accessibilityElement(children:.combine)，把动作名·估算1RM·最新值·升降合成一条、迷你折线静默。模拟器实拍确认柱图视觉无回归。逐柱精确读数需上游补原始值（柱仅归一化 fraction），留作后续。
+- **图表无障碍——已做**：周期趋势行 .accessibilityElement(children:.combine)，把动作名·估算1RM·最新值·升降合成一条、迷你折线静默。模拟器实拍确认柱图视觉无回归。
+
+**再续（owner「继续」做逐柱读数）**：柱图从「整图标隐藏」升级为**逐柱可读**——给 bars 元组加 a11y 字段，由 sessionScale/weekScale 用原始值构造（动作名·训练量 或 周·组数·吨位，PR 柱带 PR），每根柱 .accessibilityElement(.ignore)+.accessibilityLabel 合成一条；新增 L10n `a11yChartBar`（中「，」英「: 」双语安全）。VoiceOver 现在能逐柱念出确切数值（如「6月15日：17 组 · 2715 kg」），不再只有汇总 caption。模拟器实拍柱图视觉零回归。
 
 **下一步**：无遗留必做项。剩 ↑↓→SFSymbol、各处微 padding、hero 时长微差等纯主观锦上添花，owner 想动哪个再点。
 
