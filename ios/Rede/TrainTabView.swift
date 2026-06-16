@@ -15,8 +15,12 @@ struct TrainTabView: View {
     @Environment(LocaleStore.self) private var localeStore
     @Environment(SessionStore.self) private var sessionStore
 
-    // 休息倒计时不再放视图 @State（切 tab 销毁视图树会归 0，owner 2026-06-15 bug）；
-    // 单一真相在 SessionStore.restCountdown（墙钟锚点，跨切页存活）。本层只渲染。
+    // 休息倒计时单一真相在 SessionStore.restCountdown（墙钟锚点，跨切页/切应用存活）；
+    // 本层只渲染。restTick 每秒由计时 task 递增，驱动按墙钟重算剩余并重绘——
+    // 不用 TimelineView，因其在「切出应用再回」时不保证恢复逐秒刷新（owner 2026-06-15 反馈）；
+    // scenePhase 让计时 task 在回前台时重启（同切 tab 重建视图的效果），既追平剩余又续走。
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var restTick = 0
     @State private var showAdjust = false
     /// 用户在本组是否做过有效调整（用户真机反馈修复 2026-06-10）：
     /// 关面板 = 收起控件，不丢弃决定——暂存值随本组保留直到打勾/跳过/换动作。
@@ -283,28 +287,25 @@ struct TrainTabView: View {
     }
 
     private func restState(_ flow: TrainFlowState) -> some View {
-        VStack(spacing: 10) {
+        // 倒计时与进度条按墙钟逐秒重算：剩余值算自 SessionStore 的绝对结束时刻；
+        // 读 restTick（每秒由 runRestTimer 递增）建立每秒重绘依赖（墙钟剩余非 @Observable）。
+        _ = restTick
+        let remaining = sessionStore.restRemainingSeconds
+        return VStack(spacing: 10) {
             Overline(text: s.restLabel, color: .redeRec2)
-            // 倒计时与进度条按墙钟逐秒重绘：剩余值算自 SessionStore 的绝对结束时刻，
-            // 该锚点不逐秒写入故不触发 @Observable 重绘——用 TimelineView 驱动每秒刷新。
-            TimelineView(.periodic(from: .now, by: 1)) { _ in
-                let remaining = sessionStore.restRemainingSeconds
-                VStack(spacing: 10) {
-                    Text(formattedRest(remaining))
-                        .font(.redeDisplay)
-                        .monospacedDigit()
-                        .foregroundStyle(Color.redeT1)
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Rectangle().fill(Color(redeHex: 0x231F19)).frame(height: 3)
-                            Rectangle().fill(Color.redeNeu)
-                                .frame(width: geo.size.width * restFraction(remaining, planned: flow.restSecondsPlanned), height: 3)
-                                .animation(.linear(duration: 1), value: remaining)
-                        }
-                    }
-                    .frame(width: 180, height: 3)
+            Text(formattedRest(remaining))
+                .font(.redeDisplay)
+                .monospacedDigit()
+                .foregroundStyle(Color.redeT1)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Rectangle().fill(Color(redeHex: 0x231F19)).frame(height: 3)
+                    Rectangle().fill(Color.redeNeu)
+                        .frame(width: geo.size.width * restFraction(remaining, planned: flow.restSecondsPlanned), height: 3)
+                        .animation(.linear(duration: 1), value: remaining)
                 }
             }
+            .frame(width: 180, height: 3)
 
             Text(restPreviewText(flow))
                 .font(.redeCallout)
@@ -1168,20 +1169,23 @@ struct TrainTabView: View {
         min(1, Double(remaining) / Double(max(1, planned)))
     }
 
+    // 含 scenePhase：回前台时 key 变 → task 重启（同切 tab 重建视图），保证追平剩余并续走逐秒刷新。
     private var restTaskKey: String {
-        "\(flow?.phase == .resting ? "rest" : "idle")-\(flow?.exerciseIndex ?? 0)-\(flow?.completedInCurrentExercise.count ?? 0)"
+        "\(flow?.phase == .resting ? "rest" : "idle")-\(flow?.exerciseIndex ?? 0)-\(flow?.completedInCurrentExercise.count ?? 0)-\(scenePhase == .active ? "fg" : "bg")"
     }
 
-    // 倒计时显示由 TimelineView 按墙钟刷新；本 task 只负责「到点自动进下一组」的副作用。
-    // 切到别的 tab 时本视图被销毁、task 取消——剩余在 SessionStore 墙钟锚点里继续走；
-    // 回到训练页若已到点，task 重启后立即收尾推进。
+    // 计时 task：每秒递增 restTick 驱动显示按墙钟重算，并在到点时自动进下一组。
+    // 切 tab（视图重建）/ 切应用回前台（scenePhase 变 → restTaskKey 变）都会重启本 task；
+    // 离屏期间剩余在 SessionStore 墙钟锚点里照常流逝，回来即追平、若已到点立即收尾。
     private func runRestTimer() async {
+        guard scenePhase == .active else { return } // 后台不空转
         while !Task.isCancelled, sessionStore.flow?.phase == .resting {
-            // 先判断再睡：回到训练页时若休息已在离屏期间到点，立即收尾推进（不空等 1 秒、不闪 0:00）。
+            // 先判后睡：回来若已到点立即收尾推进（不空等 1 秒、不闪 0:00）。
             if !sessionStore.restIsPaused, sessionStore.restRemainingSeconds <= 0 {
                 finishRest()
                 break
             }
+            restTick &+= 1 // 触发墙钟剩余重算重绘
             try? await Task.sleep(nanoseconds: 1_000_000_000)
         }
     }
