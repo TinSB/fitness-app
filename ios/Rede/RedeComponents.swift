@@ -366,6 +366,7 @@ struct RedeTabBar: View {
         .overlay(alignment: .top) {
             Rectangle().fill(Color.redeHair2).frame(height: 1)
         }
+        .sensoryFeedback(.selection, trigger: selection) // tab 切换触觉确认
     }
 }
 

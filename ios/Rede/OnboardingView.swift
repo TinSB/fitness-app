@@ -30,6 +30,8 @@ struct OnboardingView: View {
     @State private var selectionPulse = 0
     /// 只在写盘真正成功后递增（打磨 2026-06-10：原在 await 前发——失败也先震「成功」）。
     @State private var successPulse = 0
+    /// 写盘失败触感（.error）；只在真失败时递增，对齐成功路径的 success。
+    @State private var errorPulse = 0
     /// 上次成功落盘的四答快照：回看结果卡不改答案时跳过冗余覆盖写。
     @State private var savedAnswers: [String]?
 
@@ -68,6 +70,7 @@ struct OnboardingView: View {
         .background(Color.redeBase)
         .sensoryFeedback(.selection, trigger: selectionPulse)
         .sensoryFeedback(.success, trigger: successPulse)
+        .sensoryFeedback(.error, trigger: errorPulse)
     }
 
     private var cardTransition: AnyTransition {
@@ -250,6 +253,8 @@ struct OnboardingView: View {
                 savedAnswers = key
                 // 成功触觉只在写盘真正成功后发（打磨：原失败也先震「成功」）
                 successPulse += 1
+            } else {
+                errorPulse += 1 // 写盘失败 = error 触感（原本静默）
             }
         }
     }

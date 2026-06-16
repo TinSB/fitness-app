@@ -38,6 +38,10 @@ struct TrainTabView: View {
     @State private var selectionPulse = 0
     @State private var clampPulse = 0
     @State private var logPulse = 0
+    /// 通用动作点击触感（.selection）：Hold/More/休息 +30/暂停-继续/下一组。
+    @State private var actionPulse = 0
+    /// 登记不适触感（.warning）。
+    @State private var painPulse = 0
     @FocusState private var weightFieldFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// 快改入口一次性提示（用过即永久消失）。
@@ -81,6 +85,8 @@ struct TrainTabView: View {
         }
         .background(Color.redeBase)
         .sensoryFeedback(.success, trigger: logPulse)
+        .sensoryFeedback(.selection, trigger: actionPulse) // Hold/More/休息控件等动作确认
+        .sensoryFeedback(.warning, trigger: painPulse)      // 登记不适 = caution 口音
         // 会话边界：换场（结束/新开训练）后旧暂存绝不滞留到新会话首组
         .onChange(of: sessionStore.sessionStartedAt) { _, _ in clearAdjustment() }
         .task(id: restTaskKey) { await runRestTimer() }
@@ -259,10 +265,10 @@ struct TrainTabView: View {
                                 ? s.holdLabelBodyweight(reps: flow.currentRecommendation?.targetReps ?? plannedSetReps(flow), holding: flow.isHolding)
                                 : s.holdLabel(kg: LoadDisplay.weight(plannedWeight(flow), exerciseId: flow.currentExercise?.exerciseId ?? "", s), holding: flow.isHolding))),
                     isOn: flow.isHolding,
-                    action: { sessionStore.apply(.toggleHold) }
+                    action: { sessionStore.apply(.toggleHold); actionPulse += 1 }
                 )
                 SteelButton(title: s.painAction, action: registerPain)
-                SteelButton(title: s.moreActions, action: { showMoreSheet = true })
+                SteelButton(title: s.moreActions, action: { showMoreSheet = true; actionPulse += 1 })
             }
             .padding(.top, 14)
 
@@ -317,10 +323,10 @@ struct TrainTabView: View {
                 .foregroundStyle(Color.redeT3)
 
             HStack(spacing: 8) {
-                SteelButton(title: s.restAdd30, action: { sessionStore.addRestTime(30) })
+                SteelButton(title: s.restAdd30, action: { sessionStore.addRestTime(30); actionPulse += 1 })
                 SteelButton(title: sessionStore.restIsPaused ? s.restResume : s.restPause,
                             isOn: sessionStore.restIsPaused,
-                            action: { sessionStore.toggleRestPause() })
+                            action: { sessionStore.toggleRestPause(); actionPulse += 1 })
                 EmbButton(icon: "forward.fill", title: s.restNextSet, iconSize: 13, fontSize: 14,
                           action: finishRest)
             }
@@ -598,6 +604,7 @@ struct TrainTabView: View {
         if let parsed = Double(adjustWeightText.replacingOccurrences(of: ",", with: ".")), parsed >= 0 {
             adjustWeight = s.unit == .lb ? parsed / 2.204_622_621_8 : parsed
             hasAdjustment = true
+            selectionPulse += 1 // 精确输入提交确认
         }
         adjustWeightText = s.formatKg(adjustWeight)
     }
@@ -1149,6 +1156,7 @@ struct TrainTabView: View {
     private func registerPain() {
         sessionStore.apply(.reportPain)
         painToastVisible = true
+        painPulse += 1
     }
 
     private func skipSet(_ code: String) {
@@ -1168,6 +1176,7 @@ struct TrainTabView: View {
 
     private func finishRest() {
         sessionStore.apply(.restFinished) // 清空倒计时锚点在 syncRestCountdown 内
+        actionPulse += 1
     }
 
     private func formattedRest(_ remaining: Int) -> String {
