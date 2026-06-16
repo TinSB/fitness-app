@@ -43,9 +43,24 @@ public enum TodayPrescriptionEngine {
         /// EquipmentRegistry.machineClasses（machine 拆分后不再有 "machine" 字面量）。
         var equipment: Set<String>?
         let sets: Int
-        let repMin: Int
-        let repMax: Int
-        let rest: Int
+        var repMin: Int
+        var repMax: Int
+        var rest: Int
+        /// 目标 RIR（增肌默认 2；力量塑形把复合主项降到 1，见 strengthShaped）。
+        var targetRir: Double = 2.0
+    }
+
+    /// 力量目标塑形（owner 拍板：增肌默认 + 力量两套）：只重塑**显式复合主项**——降到 3-6 次、
+    /// RIR 1、休息 ≥180s（§4 力量列）；孤立/二级/辅助槽保持增肌区间（孤立不为力量服务）。
+    /// 非 strength 目标不调用 → 增肌 golden 零变化。
+    private static func strengthShaped(_ slot: Slot) -> Slot {
+        guard slot.kind == "compound" else { return slot }
+        var s = slot
+        s.repMin = 3
+        s.repMax = 6
+        s.targetRir = 1.0
+        s.rest = max(slot.rest, 180)
+        return s
     }
 
     static func daySequence(splitType: String?) -> [String] {
@@ -212,7 +227,9 @@ public enum TodayPrescriptionEngine {
         //「上次该 pattern 实际做的动作」（含换动作换入的）；同 pattern 多槽不 sticky
         //（歧义，回退 rank 默认）。让换动作选择跨天粘住，并使 prescribeAssisted 的
         // 进阶/冷启动/毕业经今日页可达（辅助引体不再每次靠手动换）。
-        let daySlots = slots(dayCode: dayCode)
+        // 力量目标：复合主项走 3-6 次 / RIR1 / 长休息；增肌（默认/general）不变。
+        let isStrength = (input.program.primaryGoal ?? "").lowercased() == "strength"
+        let daySlots = isStrength ? slots(dayCode: dayCode).map(strengthShaped) : slots(dayCode: dayCode)
         let patternCounts = daySlots.reduce(into: [String: Int]()) { $0[$1.pattern, default: 0] += 1 }
         let lastActual = lastActualByPattern(sessions: input.sessions, catalog: catalog)
 
@@ -359,7 +376,7 @@ public enum TodayPrescriptionEngine {
 
         var weight = LoadGrid.snapKg(baseWeight, equipment: equip, unit: unit)
         var sets = slot.sets
-        var rir = targetRir
+        var rir = slot.targetRir
         // 计划周期相位（S2）：仅 train 态生效——light/deload/rest 让位给安全网（反应式优先；
         // light×phase 的更细合并归 S3）。weightMultiplier=1.0 不调（modulated 在 1.0 会误减一格），
         // 只减载周(0.85)真减重；setDelta/rirTarget 照表。
@@ -464,7 +481,7 @@ public enum TodayPrescriptionEngine {
         }
 
         var sets = slot.sets
-        var rir = targetRir
+        var rir = slot.targetRir
         applyPhaseSetsRir(phase, verdict: verdict, sets: &sets, rir: &rir)
         switch verdict.call {
         case .light:
@@ -569,7 +586,7 @@ public enum TodayPrescriptionEngine {
         // 调制反转：轻练/减载 = 加辅助（更轻），不是 ×0.9/0.8 减重。
         var assist = roundToIncrement(baseAssist, step: step)
         var sets = slot.sets
-        var rir = targetRir
+        var rir = slot.targetRir
         applyPhaseSetsRir(phase, verdict: verdict, sets: &sets, rir: &rir)
         switch verdict.call {
         case .light:
@@ -675,7 +692,7 @@ public enum TodayPrescriptionEngine {
         // 调制同 external：轻练/减载 ×乘数减外加负重（小负重不被取整吃掉）。
         var weight = roundToIncrement(baseLoad, step: step)
         var sets = slot.sets
-        var rir = targetRir
+        var rir = slot.targetRir
         applyPhaseSetsRir(phase, verdict: verdict, sets: &sets, rir: &rir)
         // 重量轴同 external：减载周(0.85)真减外加负重（1.0 不调，modulated 在 1.0 会误减）
         if let phase, verdict.call == .train, phase.weightMultiplier < 1.0 {
