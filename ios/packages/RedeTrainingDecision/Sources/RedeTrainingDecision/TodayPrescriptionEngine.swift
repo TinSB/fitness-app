@@ -49,9 +49,15 @@ public enum TodayPrescriptionEngine {
     }
 
     static func daySequence(splitType: String?) -> [String] {
-        let normalized = (splitType ?? "").lowercased()
-        if normalized.contains("push") || normalized.contains("ppl") {
-            return ["push-a", "pull-a", "legs-a"]
+        let s = (splitType ?? "").lowercased()
+        // 顺序要紧：ppl-ul / full 含 "ppl"/"full" 子串，必须先于通配 push/ppl 判断。
+        if s == "ppl-ul" {
+            // 5 天混合（腿 2×）：复用现有 push-a/pull-a/legs-a/upper/lower 槽位，零新增。
+            return ["push-a", "pull-a", "legs-a", "upper", "lower"]
+        }
+        if s.contains("push") || s.contains("ppl") {
+            // 6 天完整 PPL×2：A 日(强度/自由重量) + B 日(容量/变式)，全肌群 2×。
+            return ["push-a", "pull-a", "legs-a", "push-b", "pull-b", "legs-b"]
         }
         return ["upper", "lower"]
     }
@@ -86,6 +92,36 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "knee-flexion", sets: 3, repMin: 10, repMax: 15, rest: 75),
                 Slot(pattern: "calf-raise", sets: 4, repMin: 10, repMax: 20, rest: 60),
                 Slot(pattern: "core", sets: 3, repMin: 12, repMax: 20, rest: 60),
+            ]
+        // B 日（6 天 PPL×2 的容量/变式日）：靠 equipment/kind 约束选到与 A 日不同的动作，
+        // 全器械下完全区分；器械受限时优雅软化（可能与 A 重叠，可接受）。详见方案 §3。
+        case "push-b":
+            return [
+                Slot(pattern: "incline-press", equipment: ["barbell"], sets: 4, repMin: 6, repMax: 10, rest: 180), // 上斜杠铃推（主项前置；A 日用上斜哑铃）
+                Slot(pattern: "horizontal-press", kind: "compound", equipment: ["dumbbell"], sets: 3, repMin: 8, repMax: 12, rest: 120), // 哑铃平板（A 用杠铃平板）
+                Slot(pattern: "vertical-press", sets: 3, repMin: 8, repMax: 12, rest: 120), // 坐姿肩推（补垂直推，A 日缺）
+                Slot(pattern: "fly", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 12, repMax: 15, rest: 75), // 器械夹胸（A 用绳索飞鸟）
+                Slot(pattern: "lateral-raise", equipment: ["cable"], sets: 4, repMin: 12, repMax: 20, rest: 60), // 绳索侧平（A 用哑铃侧平）
+                Slot(pattern: "triceps-extension", equipment: ["barbell"], sets: 3, repMin: 8, repMax: 12, rest: 75), // 窄距/杠铃臂屈伸（A 用绳索下压）
+            ]
+        case "pull-b":
+            return [
+                Slot(pattern: "horizontal-pull", kind: "compound", equipment: ["dumbbell"], sets: 4, repMin: 8, repMax: 12, rest: 150), // 哑铃划船（主项；A 用杠铃/绳索划船）
+                Slot(pattern: "vertical-pull", kind: "compound", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 8, repMax: 12, rest: 120), // 锤式下拉（A 用高位下拉）
+                Slot(pattern: "vertical-pull", kind: "isolation", sets: 3, repMin: 12, repMax: 15, rest: 75), // 直臂下拉（lat 孤立，A 日缺）
+                Slot(pattern: "rear-delt", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 12, repMax: 20, rest: 60), // 反向蝴蝶机（A 用面拉）
+                Slot(pattern: "curl", equipment: ["cable"], sets: 3, repMin: 10, repMax: 15, rest: 75), // 绳索弯举（A 用哑铃弯举）
+                Slot(pattern: "shrug", equipment: ["dumbbell"], sets: 3, repMin: 10, repMax: 15, rest: 60), // 哑铃耸肩（A 用杠铃耸肩）
+            ]
+        case "legs-b":
+            return [
+                Slot(pattern: "squat-pattern", kind: "compound", equipment: EquipmentRegistry.machineClasses, sets: 4, repMin: 8, repMax: 12, rest: 180), // 哈克深蹲（膝主导主项；A 用杠铃深蹲）
+                Slot(pattern: "hinge", equipment: ["barbell"], sets: 3, repMin: 6, repMax: 10, rest: 180), // RDL（后链主项，与 A 共享：有意，后链频率）
+                Slot(pattern: "squat-pattern", kind: "compound", equipment: ["dumbbell"], sets: 3, repMin: 10, repMax: 15, rest: 90), // 高脚杯/保加利亚（单侧）
+                Slot(pattern: "knee-flexion", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 10, repMax: 15, rest: 75),
+                Slot(pattern: "knee-extension", sets: 3, repMin: 12, repMax: 20, rest: 75),
+                Slot(pattern: "calf-raise", equipment: ["dumbbell"], sets: 4, repMin: 10, repMax: 20, rest: 60), // 哑铃提踵（A 用器械提踵）
+                Slot(pattern: "core", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 12, repMax: 20, rest: 60), // 器械卷腹（A 用绳索卷腹）
             ]
         case "lower":
             return [
@@ -670,6 +706,10 @@ public enum TodayPrescriptionEngine {
         sessions: [CleanTrainingSession],
         catalog: ExerciseCatalog
     ) -> [String: String] {
+        // sticky 仍按 pattern 全局取「上次实际做的」。已知边界（6 天 PPL A/B，Slice 1）：
+        // 同 pattern 若同时出现在 A 与 B 日，且用户手动换的动作能同时满足两天的 equipment 约束，
+        // 该换会跨 A/B 粘住；新用户无换动作时 A/B 由槽位 equipment/kind 约束天然区分，不受影响。
+        // dayCode 级 sticky 需会话存 dayCode 真值（templateId），留作后续增强。
         let ordered = sessions.compactMap { session -> (day: Int, session: CleanTrainingSession)? in
             TrainingDay.dayNumber(fromISO: session.date).map { ($0, session) }
         }.sorted { $0.day > $1.day }   // 最新在前

@@ -34,11 +34,17 @@ public struct ProgramTemplateInit: Equatable, Sendable {
 }
 
 public enum OnboardingPlanInit {
-    /// 天数 → 分化（FR-ON3 最小映射，§6.1：分化是生成策略不是唯一真相）：
-    /// ≥5 天 push/pull/legs，否则 upper/lower。天数钳制 2...6。
+    /// 天数 → 分化（循证频率映射，方案 2026-06-16）：每肌群尽量 2×/周。
+    /// 6→PPL×2(A/B 全 2×)｜5→PPL+UL(腿 2×)｜4→上下肢(2×)｜2-3→上下肢(暂；全身待 Slice 2)。
+    /// 天数钳制 2...6。
     public static func template(for answers: OnboardingAnswers) -> ProgramTemplateInit {
         let days = min(6, max(2, answers.weeklyDays))
-        let split = days >= 5 ? "push-pull-legs" : "upper-lower"
+        let split: String
+        switch days {
+        case 6: split = "push-pull-legs"   // 推A拉A腿A推B拉B腿B
+        case 5: split = "ppl-ul"           // 推A拉A腿A·上·下（腿 2×）
+        default: split = "upper-lower"     // 4 天上下肢；2-3 天暂上下肢（全身 Slice 2 接）
+        }
         return ProgramTemplateInit(splitType: split, daysPerWeek: days, primaryGoal: answers.primaryGoal)
     }
 }

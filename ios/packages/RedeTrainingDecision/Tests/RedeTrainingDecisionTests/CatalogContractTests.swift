@@ -153,7 +153,11 @@ final class CatalogContractTests: XCTestCase {
 
     /// 公斤用户自由重量：档位 2.5kg，与旧 per-entry 步长口径等价（golden 零变化的来源）。
     func testKgUserFreeWeightStepIsUnchanged25() throws {
-        let appDataJSON = #"{"schemaVersion": 8, "userProfile": {"unitSystem": "kg", "trainingLevel": "intermediate"}, "history": [{"id": "s0", "date": "2026-06-04", "completed": true, "exercises": [{"exerciseId": "lateral-raise", "sets": [{"weight": 7.5, "reps": 20, "rir": 2}]}]}, {"id": "s1", "date": "2026-06-06", "completed": true, "exercises": [{"exerciseId": "lateral-raise", "sets": [{"weight": 7.5, "reps": 20, "rir": 2}]}]}, {"id": "s2", "date": "2026-06-08", "completed": true, "exercises": [{"exerciseId": "lateral-raise", "sets": [{"weight": 7.5, "reps": 20, "rir": 2}]}]}], "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 5}}"#
+        // 一整轮 6 天（PPL×2）→ 今天轮回 push-a（含无约束侧平举槽）；6 场侧平举 7.5kg×20 满次
+        let lat = (0..<6).map { i in
+            #"{"id": "s\#(i)", "date": "2026-06-0\#(i + 1)", "completed": true, "exercises": [{"exerciseId": "lateral-raise", "sets": [{"weight": 7.5, "reps": 20, "rir": 2}]}]}"#
+        }.joined(separator: ", ")
+        let appDataJSON = #"{"schemaVersion": 8, "userProfile": {"unitSystem": "kg", "trainingLevel": "intermediate"}, "history": [\#(lat)], "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 5}}"#
         let input = try TestSupport.makeInput(appDataJSON: appDataJSON, todayISO: "2026-06-11")
         let plan = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input))
         // 侧平举（哑铃）满次 → +2.5kg = 10（宁大勿小：哑铃没有 1.25kg 微调档）
@@ -211,9 +215,9 @@ final class CatalogContractTests: XCTestCase {
             let p = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input), catalog: amended)
             return try XCTUnwrap(p?.exercises.first { $0.exerciseId == "t-pushup" })
         }
-        // 3 场历史 → 今天轮回 push-a（含俯卧撑）；最新一场决定 lastPerformance
+        // 一整轮 6 天（PPL×2）→ 今天轮回 push-a（含俯卧撑抢下的水平推主槽）；最新一场决定 lastPerformance
         func threeSessions(_ reps: Int) -> String {
-            ["2026-06-05", "2026-06-07", "2026-06-09"].enumerated().map { i, d in
+            ["2026-06-04", "2026-06-05", "2026-06-06", "2026-06-07", "2026-06-08", "2026-06-09"].enumerated().map { i, d in
                 #"{"id":"s\#(i)","date":"\#(d)","completed":true,"exercises":[{"exerciseId":"t-pushup","sets":[{"weight":0,"reps":\#(reps),"rir":2}]}]}"#
             }.joined(separator: ",")
         }

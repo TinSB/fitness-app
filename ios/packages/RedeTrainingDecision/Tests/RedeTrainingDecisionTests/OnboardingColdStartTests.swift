@@ -52,17 +52,20 @@ final class OnboardingColdStartTests: XCTestCase {
 
     func testRealHistoryOverridesPrior() throws {
         // 有真实记录的动作：上次实际是基线，先验不得再缩放。
-        // 补满一轮（推/拉/腿）让今天轮转回推日（沿 AdjustmentFlowBackTests fixture 模式）。
+        // 补满一整轮 6 天（PPL×2）让今天轮转回推日（沿 AdjustmentFlowBackTests fixture 模式）。
         let history = #"""
         , "userProfile": {"trainingLevel": "beginner"},
           "history": [
-            {"id": "s1", "date": "2026-06-06", "completed": true, "templateId": "push-a",
+            {"id": "s1", "date": "2026-05-25", "completed": true, "templateId": "push-a",
              "exercises": [{"exerciseId": "bench-press", "sets": [
                {"weight": 50, "reps": 8, "rir": 2}, {"weight": 50, "reps": 8, "rir": 2}, {"weight": 50, "reps": 8, "rir": 2}]}]},
-            {"id": "s2", "date": "2026-06-07", "completed": true, "templateId": "pull-a",
+            {"id": "s2", "date": "2026-05-26", "completed": true, "templateId": "pull-a",
              "exercises": [{"exerciseId": "lat-pulldown", "sets": [{"weight": 55, "reps": 8, "rir": 2}]}]},
-            {"id": "s3", "date": "2026-06-08", "completed": true, "templateId": "legs-a",
-             "exercises": [{"exerciseId": "squat", "sets": [{"weight": 80, "reps": 5, "rir": 2}]}]}
+            {"id": "s3", "date": "2026-05-27", "completed": true, "templateId": "legs-a",
+             "exercises": [{"exerciseId": "squat", "sets": [{"weight": 80, "reps": 5, "rir": 2}]}]},
+            {"id": "s4", "date": "2026-05-28", "completed": true, "templateId": "push-b", "exercises": []},
+            {"id": "s5", "date": "2026-05-29", "completed": true, "templateId": "pull-b", "exercises": []},
+            {"id": "s6", "date": "2026-05-30", "completed": true, "templateId": "legs-b", "exercises": []}
           ]
         """#
         let plan = try firstPrescription(profileJSON: history)
@@ -113,18 +116,19 @@ final class OnboardingColdStartTests: XCTestCase {
     // MARK: - 首版计划初始化（FR-ON3 最小实现）
 
     func testTemplateInitMapsDaysToSplit() {
-        let ppl = OnboardingPlanInit.template(for: .init(
+        // 5 天 → PPL+UL（腿 2×；循证频率映射 2026-06-16）
+        let pplul = OnboardingPlanInit.template(for: .init(
             primaryGoal: "hypertrophy", weeklyDays: 5, equipmentScenario: "commercial-gym", trainingLevel: "intermediate"))
-        XCTAssertEqual(ppl.splitType, "push-pull-legs")
-        XCTAssertEqual(ppl.daysPerWeek, 5)
-        XCTAssertEqual(ppl.primaryGoal, "hypertrophy")
+        XCTAssertEqual(pplul.splitType, "ppl-ul")
+        XCTAssertEqual(pplul.daysPerWeek, 5)
+        XCTAssertEqual(pplul.primaryGoal, "hypertrophy")
 
         let ul = OnboardingPlanInit.template(for: .init(
             primaryGoal: "strength", weeklyDays: 3, equipmentScenario: "home-dumbbell", trainingLevel: "beginner"))
         XCTAssertEqual(ul.splitType, "upper-lower")
         XCTAssertEqual(ul.daysPerWeek, 3)
 
-        // 边界：4 天仍 upper-lower；6 天 ppl
+        // 边界：4 天上下肢；6 天完整 PPL×2
         XCTAssertEqual(OnboardingPlanInit.template(for: .init(
             primaryGoal: "general", weeklyDays: 4, equipmentScenario: "minimal", trainingLevel: "advanced")).splitType, "upper-lower")
         XCTAssertEqual(OnboardingPlanInit.template(for: .init(

@@ -45,19 +45,22 @@ final class AdjustmentFlowBackTests: XCTestCase {
         XCTAssertEqual(session.exercises.first?.sets.map(\.weight), [50, 50, 50])
 
         // ③ 下一场处方以 50 为基线（双重渐进：满上限有余力 → +2.5）
-        // 补满一轮（推/拉/腿），第 4 场轮转回推日——卧推重新上单
+        // 补满一整轮 6 天（PPL×2），第 7 场轮转回推日——卧推重新上单
         let historyInput = try TestSupport.makeInput(
             appDataJSON: #"""
             {"schemaVersion": 8,
              "programTemplate": {"splitType": "push-pull-legs"},
              "history": [
-               {"id": "s-adjust", "date": "2026-06-09", "completed": true, "templateId": "push-a",
+               {"id": "s-adjust", "date": "2026-06-06", "completed": true, "templateId": "push-a",
                 "exercises": [{"exerciseId": "bench-press", "sets": [
                   {"weight": 50, "reps": 8, "rir": 2}, {"weight": 50, "reps": 8, "rir": 2}, {"weight": 50, "reps": 8, "rir": 2}]}]},
-               {"id": "s-pull", "date": "2026-06-10", "completed": true, "templateId": "pull-a",
+               {"id": "s-pull", "date": "2026-06-07", "completed": true, "templateId": "pull-a",
                 "exercises": [{"exerciseId": "lat-pulldown", "sets": [{"weight": 55, "reps": 8, "rir": 2}]}]},
-               {"id": "s-legs", "date": "2026-06-11", "completed": true, "templateId": "legs-a",
-                "exercises": [{"exerciseId": "squat", "sets": [{"weight": 80, "reps": 5, "rir": 2}]}]}
+               {"id": "s-legs", "date": "2026-06-08", "completed": true, "templateId": "legs-a",
+                "exercises": [{"exerciseId": "squat", "sets": [{"weight": 80, "reps": 5, "rir": 2}]}]},
+               {"id": "s-pushb", "date": "2026-06-09", "completed": true, "templateId": "push-b", "exercises": []},
+               {"id": "s-pullb", "date": "2026-06-10", "completed": true, "templateId": "pull-b", "exercises": []},
+               {"id": "s-legsb", "date": "2026-06-11", "completed": true, "templateId": "legs-b", "exercises": []}
              ]}
             """#,
             todayISO: "2026-06-13"

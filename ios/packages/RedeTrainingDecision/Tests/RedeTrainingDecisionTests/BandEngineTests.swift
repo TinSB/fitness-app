@@ -27,9 +27,9 @@ final class BandEngineTests: XCTestCase {
         return try XCTUnwrap(p?.exercises.first { $0.exerciseId == "t-band-lateral" })
     }
 
-    /// 3 场历史 → 今天轮回 push-a（含侧平举）；最新一场决定 lastPerformance。
-    private func threeSessions(_ reps: Int) -> String {
-        ["2026-06-06", "2026-06-08", "2026-06-10"].enumerated().map { i, d in
+    /// 一整轮 6 天（PPL×2）→ 今天轮回 push-a（含无约束侧平举槽）；最新一场决定 lastPerformance。
+    private func roundToPushA(_ reps: Int) -> String {
+        ["2026-06-04", "2026-06-05", "2026-06-06", "2026-06-07", "2026-06-08", "2026-06-09"].enumerated().map { i, d in
             #"{"id":"s\#(i)","date":"\#(d)","completed":true,"exercises":[{"exerciseId":"t-band-lateral","sets":[{"weight":0,"reps":\#(reps),"rir":2}]}]}"#
         }.joined(separator: ",")
     }
@@ -46,7 +46,7 @@ final class BandEngineTests: XCTestCase {
 
     /// 有余力（上次 12 次 RIR2）→ +2 次进阶（镜像自重）。
     func testProgressAddsReps() throws {
-        let up = try plan(history: threeSessions(12))
+        let up = try plan(history: roundToPushA(12))
         XCTAssertEqual(up.targetReps, 14)
         XCTAssertEqual(up.change, .increase)
         XCTAssertEqual(up.reason, .holdProgressing)
@@ -56,7 +56,7 @@ final class BandEngineTests: XCTestCase {
 
     /// 到顶 25 次 → 提示换重带（reason .bandCeilingReached，**区别于**自重的 .bodyweightCeilingReached）。
     func testCeilingPromptsHeavierBand() throws {
-        let ceiling = try plan(history: threeSessions(25))
+        let ceiling = try plan(history: roundToPushA(25))
         XCTAssertEqual(ceiling.targetReps, 25)
         XCTAssertEqual(ceiling.reason, .bandCeilingReached, "弹力带到顶提示换带，不是自重的加配重")
         XCTAssertNotEqual(ceiling.reason, .bodyweightCeilingReached)
