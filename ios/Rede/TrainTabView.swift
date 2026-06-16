@@ -15,8 +15,8 @@ struct TrainTabView: View {
     @Environment(LocaleStore.self) private var localeStore
     @Environment(SessionStore.self) private var sessionStore
 
-    @State private var restRemaining = 0
-    @State private var restPaused = false
+    // 休息倒计时不再放视图 @State（切 tab 销毁视图树会归 0，owner 2026-06-15 bug）；
+    // 单一真相在 SessionStore.restCountdown（墙钟锚点，跨切页存活）。本层只渲染。
     @State private var showAdjust = false
     /// 用户在本组是否做过有效调整（用户真机反馈修复 2026-06-10）：
     /// 关面板 = 收起控件，不丢弃决定——暂存值随本组保留直到打勾/跳过/换动作。
@@ -285,19 +285,26 @@ struct TrainTabView: View {
     private func restState(_ flow: TrainFlowState) -> some View {
         VStack(spacing: 10) {
             Overline(text: s.restLabel, color: .redeRec2)
-            Text(formattedRest)
-                .font(.redeDisplay)
-                .monospacedDigit()
-                .foregroundStyle(Color.redeT1)
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Rectangle().fill(Color(redeHex: 0x231F19)).frame(height: 3)
-                    Rectangle().fill(Color.redeNeu)
-                        .frame(width: geo.size.width * restFraction, height: 3)
-                        .animation(.linear(duration: 1), value: restRemaining)
+            // 倒计时与进度条按墙钟逐秒重绘：剩余值算自 SessionStore 的绝对结束时刻，
+            // 该锚点不逐秒写入故不触发 @Observable 重绘——用 TimelineView 驱动每秒刷新。
+            TimelineView(.periodic(from: .now, by: 1)) { _ in
+                let remaining = sessionStore.restRemainingSeconds
+                VStack(spacing: 10) {
+                    Text(formattedRest(remaining))
+                        .font(.redeDisplay)
+                        .monospacedDigit()
+                        .foregroundStyle(Color.redeT1)
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Rectangle().fill(Color(redeHex: 0x231F19)).frame(height: 3)
+                            Rectangle().fill(Color.redeNeu)
+                                .frame(width: geo.size.width * restFraction(remaining, planned: flow.restSecondsPlanned), height: 3)
+                                .animation(.linear(duration: 1), value: remaining)
+                        }
+                    }
+                    .frame(width: 180, height: 3)
                 }
             }
-            .frame(width: 180, height: 3)
 
             Text(restPreviewText(flow))
                 .font(.redeCallout)
@@ -305,9 +312,10 @@ struct TrainTabView: View {
                 .foregroundStyle(Color.redeT3)
 
             HStack(spacing: 8) {
-                SteelButton(title: s.restAdd30, action: { restRemaining += 30 })
-                SteelButton(title: restPaused ? s.restResume : s.restPause, isOn: restPaused,
-                            action: { restPaused.toggle() })
+                SteelButton(title: s.restAdd30, action: { sessionStore.addRestTime(30) })
+                SteelButton(title: sessionStore.restIsPaused ? s.restResume : s.restPause,
+                            isOn: sessionStore.restIsPaused,
+                            action: { sessionStore.toggleRestPause() })
                 EmbButton(icon: "forward.fill", title: s.restNextSet, iconSize: 13, fontSize: 14,
                           action: finishRest)
             }
@@ -1125,10 +1133,7 @@ struct TrainTabView: View {
         logPulse += 1
         clearAdjustment()
         painToastVisible = false
-        if sessionStore.flow?.phase == .resting {
-            restRemaining = sessionStore.flow?.restSecondsPlanned ?? 0
-            restPaused = false
-        }
+        // 进入休息时倒计时由 SessionStore.apply 起锚（见 syncRestCountdown），此处不再手动置位。
     }
 
     private func registerPain() {
@@ -1152,34 +1157,32 @@ struct TrainTabView: View {
     }
 
     private func finishRest() {
-        restRemaining = 0
-        sessionStore.apply(.restFinished)
+        sessionStore.apply(.restFinished) // 清空倒计时锚点在 syncRestCountdown 内
     }
 
-    private var formattedRest: String {
-        "\(restRemaining / 60):" + String(format: "%02d", restRemaining % 60)
+    private func formattedRest(_ remaining: Int) -> String {
+        "\(remaining / 60):" + String(format: "%02d", remaining % 60)
     }
 
-    private var restFraction: Double {
-        let planned = max(1, flow?.restSecondsPlanned ?? 1)
-        return min(1, Double(restRemaining) / Double(planned))
+    private func restFraction(_ remaining: Int, planned: Int) -> Double {
+        min(1, Double(remaining) / Double(max(1, planned)))
     }
 
     private var restTaskKey: String {
         "\(flow?.phase == .resting ? "rest" : "idle")-\(flow?.exerciseIndex ?? 0)-\(flow?.completedInCurrentExercise.count ?? 0)"
     }
 
+    // 倒计时显示由 TimelineView 按墙钟刷新；本 task 只负责「到点自动进下一组」的副作用。
+    // 切到别的 tab 时本视图被销毁、task 取消——剩余在 SessionStore 墙钟锚点里继续走；
+    // 回到训练页若已到点，task 重启后立即收尾推进。
     private func runRestTimer() async {
-        guard flow?.phase == .resting else { return }
         while !Task.isCancelled, sessionStore.flow?.phase == .resting {
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            guard !restPaused else { continue }
-            if restRemaining > 1 {
-                restRemaining -= 1
-            } else {
+            // 先判断再睡：回到训练页时若休息已在离屏期间到点，立即收尾推进（不空等 1 秒、不闪 0:00）。
+            if !sessionStore.restIsPaused, sessionStore.restRemainingSeconds <= 0 {
                 finishRest()
                 break
             }
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
         }
     }
 }

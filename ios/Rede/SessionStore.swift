@@ -47,6 +47,10 @@ final class SessionStore {
     var todayOutcome: TodayModel.LoadOutcome?
     var flow: TrainFlowState?
     var sessionStartedAt: Date?
+    /// 休息倒计时的墙钟锚点（owner 反馈 2026-06-15 修复）：剩余秒数曾放在 TrainTabView
+    /// 的 @State，切 tab 时 RootTabView 用 switch 销毁视图树即归 0。移到会话层后跨切页
+    /// 存活，且按绝对结束时刻求剩余 → 离屏期间真实时间照常流逝。详见 RestCountdown。
+    private(set) var restCountdown = RestCountdown()
     /// 启动时发现的可恢复 draft（FR-TR9 提示「继续进行中的训练」）。
     var pendingDraft: TrainSessionDraft?
     /// 写入失败的如实呈现（FR-TR8：绝不假装成功）；nil = 无错误。
@@ -294,6 +298,13 @@ final class SessionStore {
         }
         flow = restored
         sessionStartedAt = draft.startedAt
+        // 跨进程恢复不留旧 deadline（FR-TR9 最小恢复）：若恢复到休息态，按计划秒数
+        // 重新计时；否则清空。
+        if restored.phase == .resting {
+            restCountdown.begin(seconds: restored.restSecondsPlanned)
+        } else {
+            restCountdown.clear()
+        }
     }
 
     func discardPendingDraft() {
@@ -316,7 +327,35 @@ final class SessionStore {
         case .keepTraining: flow?.keepTraining()
         case .confirmEnd(let reason): flow?.confirmEnd(reason: reason)
         }
+        syncRestCountdown(after: event)
         persistDraft()
+    }
+
+    // MARK: - 休息倒计时（会话层接管，详见 SessionStore.restCountdown / RestCountdown）
+
+    /// 当前剩余秒数（按墙钟实时求出；视图每秒用 TimelineView 重读）。
+    var restRemainingSeconds: Int { restCountdown.remaining() }
+    /// 是否暂停（绑定暂停/继续按钮文案与态）。
+    var restIsPaused: Bool { restCountdown.isPaused }
+
+    /// +30 加时。
+    func addRestTime(_ seconds: Int) { restCountdown.add(seconds: seconds) }
+    /// 暂停 / 继续切换。
+    func toggleRestPause() { restCountdown.togglePause() }
+
+    /// 事件落定后同步倒计时锚点。进入 resting（仅 logSet 一条路）= 开新休息；
+    /// restFinished 或落到 summary = 结束清空；confirmEnd↔resting 折返（结束确认弹层
+    /// 取消后继续训练）期间不动锚点，故剩余随墙钟延续、不会重置。
+    private func syncRestCountdown(after event: TrainFlowEvent) {
+        guard let flow else { restCountdown.clear(); return }
+        switch event {
+        case .logSet where flow.phase == .resting:
+            restCountdown.begin(seconds: flow.restSecondsPlanned)
+        case .restFinished:
+            restCountdown.clear()
+        default:
+            if flow.phase == .summary { restCountdown.clear() }
+        }
     }
 
     private func persistDraft() {
@@ -352,6 +391,7 @@ final class SessionStore {
         // FR-EQ1：换动作候选同守器械白名单
         flow = TrainFlowState(prescription: prescription, allowedEquipment: allowedEquipment, loadUnit: loadUnit)
         sessionStartedAt = now
+        restCountdown.clear() // 新会话从 activeSet 起步，旧倒计时不得滞留
         persistDraft()
     }
 
@@ -365,6 +405,7 @@ final class SessionStore {
         flow = nil
         sessionStartedAt = nil
         saveErrorText = nil
+        restCountdown.clear()
         DraftFile.clear()
     }
 
