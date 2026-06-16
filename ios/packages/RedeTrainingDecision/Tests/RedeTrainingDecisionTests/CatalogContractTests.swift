@@ -32,11 +32,11 @@ final class CatalogContractTests: XCTestCase {
     // MARK: - 解码完整性
 
     func testBundledCatalogIntegrity() {
-        XCTAssertEqual(catalog.catalogVersion, "wave-14")
-        XCTAssertEqual(catalog.entries.count, 121)
+        XCTAssertEqual(catalog.catalogVersion, "wave-15")
+        XCTAssertEqual(catalog.entries.count, 123)
         // id 唯一 + 永生合同的前半（唯一）；rank 唯一保证匹配全序确定
-        XCTAssertEqual(Set(catalog.entries.map(\.id)).count, 121, "id 重复")
-        XCTAssertEqual(Set(catalog.entries.map(\.rank)).count, 121, "rank 重复——匹配次序歧义")
+        XCTAssertEqual(Set(catalog.entries.map(\.id)).count, 123, "id 重复")
+        XCTAssertEqual(Set(catalog.entries.map(\.rank)).count, 123, "rank 重复——匹配次序歧义")
         // 锚点：迁移自原数组的首尾条目
         XCTAssertEqual(catalog.entry(id: "bench-press")?.rank, 0)
         XCTAssertEqual(catalog.entry(id: "bench-press")?.startWeightKg, 60)
@@ -312,12 +312,11 @@ final class CatalogContractTests: XCTestCase {
         // （home-dumbbell 的 knee-flexion×2 / push-a 第二平推 / pull-a 第二划船），
         // wave-1（2026-06-11）以 db-leg-curl / db-floor-press /
         // chest-supported-db-row 三条全部清空。新增缺口 = 红。
-        // wave-5（2026-06-13）：腿屈伸 leg-extension 仅选重机，家用/极简（哑铃 only）
-        // 配不出 → 如实留缺口（与内容系统文档 §3 同步）。
-        let knownGaps: Set<String> = [
-            "home-dumbbell|legs-a|knee-extension", "home-dumbbell|lower|knee-extension",
-            "minimal|legs-a|knee-extension", "minimal|lower|knee-extension",
-        ]
+        // wave-5（2026-06-13）：腿屈伸 leg-extension 仅选重机，家用/极简（哑铃 only）配不出 → 留缺口。
+        // wave-15（2026-06-16）：补 sissy-squat（自重腿屈伸）+ band-straight-arm-pulldown（弹力带
+        // 直臂下拉），家用/极简 knee-extension 全部清空；矩阵同时扩到 B 日（push-b/pull-b/legs-b），
+        // 三场景 × 全 8 日零缺口 → knownGaps 空。
+        let knownGaps: Set<String> = []
         var found: Set<String> = []
         let scenarios: [(String?, String)] = [
             (nil, "commercial"), ("home-dumbbell", "home-dumbbell"),
@@ -325,6 +324,8 @@ final class CatalogContractTests: XCTestCase {
         ]
         let days: [(String, String, Int)] = [ // (split, 期望 dayCode, 所需历史场数)
             ("push-pull-legs", "push-a", 0), ("push-pull-legs", "pull-a", 1), ("push-pull-legs", "legs-a", 2),
+            // B 日（wave-15 institutionalize）：6 天 PPL 序列 count%6 → 3/4/5 落 push-b/pull-b/legs-b。
+            ("push-pull-legs", "push-b", 3), ("push-pull-legs", "pull-b", 4), ("push-pull-legs", "legs-b", 5),
             ("upper-lower", "upper", 0), ("upper-lower", "lower", 1),
         ]
         for (scenario, label) in scenarios {

@@ -59,7 +59,8 @@ final class SessionIntentModelTests: XCTestCase {
         // 审查 M-1/Mi-2（wave-2）：直臂下压系孤立动作，不得混入复合垂直拉族——
         // 独立 lat-isolation 族（单成员）；vertical-pull 族列表显式锁定
         XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "lat-pulldown"), ["db-pullover", "close-grip-pulldown", "wide-grip-pulldown", "pull-up", "hammer-pulldown", "assisted-pull-up", "chin-up", "weighted-pull-up", "band-lat-pulldown"]) // wave-3/4/6/9/10/11/13 入族
-        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "straight-arm-pulldown"), [])
+        // wave-15：弹力带直臂下压入 lat-isolation 族（家用直臂下压替补；绳索直臂下压的居家孪生）
+        XCTAssertEqual(ExerciseReplacementEngine.candidates(for: "straight-arm-pulldown"), ["band-straight-arm-pulldown"])
     }
 
     // 排除当日已排动作（M3-3 接线合同：push-a 已含 machine-chest-press）

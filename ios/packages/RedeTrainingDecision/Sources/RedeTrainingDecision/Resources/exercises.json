@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "wave-14",
+  "catalogVersion": "wave-15",
   "exercises": [
     {
       "id": "bench-press",
@@ -2382,6 +2382,42 @@
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 1210
+    },
+    {
+      "id": "sissy-squat",
+      "movementPattern": "knee-extension",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [],
+      "equipment": "bodyweight",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "knee-extension"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "西西里深蹲",
+      "nameEn": "Sissy squat",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1220
+    },
+    {
+      "id": "band-straight-arm-pulldown",
+      "movementPattern": "vertical-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [],
+      "equipment": "band",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "lat-isolation"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带直臂下压",
+      "nameEn": "Band straight-arm pulldown",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1230
     }
   ]
 }

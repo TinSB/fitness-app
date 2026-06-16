@@ -64,7 +64,7 @@ final class EquipmentAccessTests: XCTestCase {
             today: "2026-06-11"
         ))
         XCTAssertEqual(prescription.dayCode, "legs-a")
-        XCTAssertEqual(equipments(prescription), ["dumbbell"])
+        XCTAssertEqual(equipments(prescription), ["dumbbell", "bodyweight"]) // wave-15：腿屈伸由自重 sissy-squat 补位
         let ids = prescription.exercises.map(\.exerciseId)
         XCTAssertTrue(ids.contains("goblet-squat"))
         XCTAssertTrue(ids.contains("db-rdl"))
@@ -72,8 +72,9 @@ final class EquipmentAccessTests: XCTestCase {
         XCTAssertTrue(ids.contains("db-calf-raise"))
         XCTAssertTrue(ids.contains("db-leg-curl")) // wave-1：knee-flexion 缺口已清
         XCTAssertFalse(prescription.dayReasons.contains(.slotUnfilled(pattern: "knee-flexion")))
-        // wave-5（审查 M-1）：腿屈伸仅选重机，家用预期缺口（正面锁定，与覆盖矩阵双保险）
-        XCTAssertTrue(prescription.dayReasons.contains(.slotUnfilled(pattern: "knee-extension")))
+        // wave-15（2026-06-16）：自重 sissy-squat 入目录 → 腿屈伸缺口清空（家用/极简可填）
+        XCTAssertTrue(ids.contains("sissy-squat"))
+        XCTAssertFalse(prescription.dayReasons.contains(.slotUnfilled(pattern: "knee-extension")))
         XCTAssertTrue(ids.contains("db-crunch")) // 腹肌槽有哑铃版（db-crunch），家用可填
     }
 
@@ -107,14 +108,15 @@ final class EquipmentAccessTests: XCTestCase {
             scenario: "home-dumbbell", historyDates: ["2026-06-09"], today: "2026-06-11", split: "upper-lower"
         ))
         XCTAssertEqual(prescription.dayCode, "lower")
-        XCTAssertEqual(equipments(prescription), ["dumbbell"])
+        XCTAssertEqual(equipments(prescription), ["dumbbell", "bodyweight"]) // wave-15：腿屈伸由自重 sissy-squat 补位
         let ids = prescription.exercises.map(\.exerciseId)
         XCTAssertTrue(ids.contains("goblet-squat"))
         XCTAssertTrue(ids.contains("db-lunge")) // usedIds 防重：两个深蹲槽各取其一
         XCTAssertTrue(ids.contains("db-leg-curl")) // wave-1：knee-flexion 缺口已清
         XCTAssertFalse(prescription.dayReasons.contains(.slotUnfilled(pattern: "knee-flexion")))
-        // wave-5（审查 M-1）：腿屈伸仅选重机，家用预期缺口（正面锁定，与覆盖矩阵双保险）
-        XCTAssertTrue(prescription.dayReasons.contains(.slotUnfilled(pattern: "knee-extension")))
+        // wave-15（2026-06-16）：自重 sissy-squat 入目录 → 腿屈伸缺口清空（家用/极简可填）
+        XCTAssertTrue(ids.contains("sissy-squat"))
+        XCTAssertFalse(prescription.dayReasons.contains(.slotUnfilled(pattern: "knee-extension")))
         XCTAssertTrue(ids.contains("db-crunch")) // 腹肌槽有哑铃版（db-crunch），家用可填
     }
 

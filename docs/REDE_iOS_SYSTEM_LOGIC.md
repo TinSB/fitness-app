@@ -148,7 +148,7 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 **输出合同**：`TodayPrescription{dayCode, exercises[], dayReasons[]}`；每动作 `{exerciseId, sets, restSeconds, rep 区间, targetReps, targetWeightKg(kg 口径), targetRir(增肌默认 2；力量目标复合主项 1，见 §6.0.1a), previousWeightKg, previousTopReps, nextProjectedWeightKg, change(start/increase/hold/ease), reason}`。全 typed 零文案：dayCode/reason code 是 RedeL10n 模板挂点；**lb 换算归渲染层（FR-SE1），但渲染层不是裸换算——必须把每个可配重量吸附到「器械×当前单位」真实梯子的最近格再显示（见 `REDE_EXERCISE_CONTENT_SYSTEM` §8 LoadGrid 显示吸附契约）；禁止 ×2.2046 直转。**previous→target→change 三元组同时喂 Receipt Change 行、训练页 why 行与 Rail。**里程摘要（wave-12，owner 拍板 B）**：今日页 Receipt Change 行只渲染**头牌动作**（exercises.first）；非头牌动作的**转折性 `reason`**（bandCeilingReached 换带 / bodyweightCeilingReached 加配重 / assistedGraduated 毕业 / bodyweightPlusDegraded 回退）另由今日页**里程摘要**扫全表单列于头牌行下方（配件类如弹力带永远排不到首位，否则其里程提示被吞）；只列转折性 reason、不列普通进阶（高信号），复用同一 `changeLine(for:)` 文案，纯文本不占卡预算。
 
-**生成规则（FR-ON3：不锁死硬编码模板，可重算）**：日计划 = 槽位规则 × catalog（`ExerciseCatalog.minimal` 现已解码整本 `exercises.json` 目录，当前 121 条（wave-14，catalogVersion wave-14）、随内容 wave 增长；开放决策 #1 已拍板）按 (rank,id) 升序取第一个未用且匹配（pattern + 可选 kind/equipment）；槽位无法匹配时记 `slotUnfilled` 留痕，不静默。轮转 = 完成 session 数对 split 日序列取模（见 §6.0.1a）。
+**生成规则（FR-ON3：不锁死硬编码模板，可重算）**：日计划 = 槽位规则 × catalog（`ExerciseCatalog.minimal` 现已解码整本 `exercises.json` 目录，当前 123 条（wave-15，catalogVersion wave-15）、随内容 wave 增长；开放决策 #1 已拍板）按 (rank,id) 升序取第一个未用且匹配（pattern + 可选 kind/equipment）；槽位无法匹配时记 `slotUnfilled` 留痕，不静默。轮转 = 完成 session 数对 split 日序列取模（见 §6.0.1a）。
 
 ### 6.0.1a 分化模板系统（天数→模式→日序列 · 循证频率映射，2026-06-16 owner 拍板）
 
