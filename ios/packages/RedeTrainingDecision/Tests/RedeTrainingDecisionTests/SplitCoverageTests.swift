@@ -34,10 +34,12 @@ final class SplitCoverageTests: XCTestCase {
         let p = try dayCode(splitType: "push-pull-legs", count: 3, scenario: "home-dumbbell")
         XCTAssertEqual(p.dayCode, "push-b")
         XCTAssertFalse(p.exercises.isEmpty, "家用哑铃 push-b 仍应出动作（不空不崩）")
-        // 全部产出动作必须是家用哑铃可做的负重类型（不混入 cable/选重机专属）——优雅软化的证据。
+        // 全部产出动作必须落在 home-dumbbell 白名单内（= EquipmentRegistry.scenarioAccess，
+        // 审查 MINOR-1：断言收紧到真实白名单，barbell 不在内——防未来软化漏 barbell 静默放行）。
+        let homeWhitelist = EquipmentRegistry.scenarioAccess["home-dumbbell"] ?? []
         for ex in p.exercises {
             let equip = ExerciseCatalog.minimal.entry(id: ex.exerciseId)?.equipment ?? ""
-            XCTAssertTrue(["dumbbell", "barbell", "bodyweight", "band"].contains(equip) || equip.isEmpty,
+            XCTAssertTrue(homeWhitelist.contains(equip) || equip.isEmpty,
                           "\(ex.exerciseId) 器械 \(equip) 不应超出家用白名单（软化失败）")
         }
     }

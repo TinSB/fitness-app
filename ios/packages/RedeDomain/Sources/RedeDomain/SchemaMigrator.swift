@@ -30,6 +30,9 @@ public enum SchemaMigrator {
     }
 
     /// dry-run：不应用、只报告从 root 当前版本迁移到 current 会做什么。
+    /// 当前仅报告 from/to/needsMigration/addsMesocycle；**不报告 9→10 的 splitType 重映**
+    /// （5 天 push-pull-legs → ppl-ul）——本结构是测试用 dry-run，无生产消费者（审查 MINOR-2）；
+    /// 未来若有 UI 要预告「分化将被改写」，在此加一字段并补对应测试。
     public static func plan(root: [String: JSONValue]) -> Plan {
         let to = SchemaVersion.current
         guard let from = root["schemaVersion"]?.asInt else {

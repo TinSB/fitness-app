@@ -13,7 +13,7 @@ import XCTest
 @testable import RedeTrainingDecision
 
 final class StickySwapTests: XCTestCase {
-    /// 1 场历史 → 今天 pull-a（count%3==1）。历史做过的「该模式动作」今天被粘住。
+    /// 1 场历史 → 今天 pull-a（6 天 PPL 序列 count%6==1）。历史做过的「该模式动作」今天被粘住。
     private func pullDayPlan(historyExercise: String, weight: Double, reps: Int, rir: Int, level: String = "intermediate") throws -> TodayPrescription {
         let session = #"{"id":"s0","date":"2026-06-10","completed":true,"exercises":[{"exerciseId":"\#(historyExercise)","sets":[{"weight":\#(weight),"reps":\#(reps),"rir":\#(rir)}]}]}"#
         let json = #"{"schemaVersion":8,"userProfile":{"trainingLevel":"\#(level)"},"history":[\#(session)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":6}}"#

@@ -86,6 +86,20 @@ final class SchemaMigratorTests: XCTestCase {
         ]
         XCTAssertEqual(SchemaMigrator.migrate(root: upperLower)["programTemplate"]?.asObject?["splitType"]?.asString,
                        "upper-lower", "非 PPL 不动")
+        // 审查 MINOR-3：daysPerWeek 缺失（nil）时不得误触发重映（仅 ==5 才命中）。
+        let missingDays: [String: JSONValue] = [
+            "schemaVersion": .int(9),
+            "programTemplate": .object(["splitType": .string("push-pull-legs")]),
+        ]
+        XCTAssertEqual(SchemaMigrator.migrate(root: missingDays)["programTemplate"]?.asObject?["splitType"]?.asString,
+                       "push-pull-legs", "daysPerWeek 缺失 → 不重映")
+        // daysPerWeek 为浮点（非 .int(5)）同样不命中——只认整数 5。
+        let floatDays: [String: JSONValue] = [
+            "schemaVersion": .int(9),
+            "programTemplate": .object(["splitType": .string("push-pull-legs"), "daysPerWeek": .double(5.0)]),
+        ]
+        XCTAssertEqual(SchemaMigrator.migrate(root: floatDays)["programTemplate"]?.asObject?["splitType"]?.asString,
+                       "push-pull-legs", "daysPerWeek 浮点 → 不重映（asInt 仅认整数）")
     }
 
     func testDownMigrateReversesPplUlRemap() {
