@@ -146,9 +146,26 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 **入口合同**：吃 `CleanTrainingDecisionInput` + M2-1 的 `TodayVerdict`（处方不重复判断练不练）；rest 裁决 → 无处方。纯函数、无 clock/IO、输出永不写回 AppData。
 
-**输出合同**：`TodayPrescription{dayCode, exercises[], dayReasons[]}`；每动作 `{exerciseId, sets, restSeconds, rep 区间, targetReps, targetWeightKg(kg 口径), targetRir(=2 MVP 常量), previousWeightKg, previousTopReps, nextProjectedWeightKg, change(start/increase/hold/ease), reason}`。全 typed 零文案：dayCode/reason code 是 RedeL10n 模板挂点；**lb 换算归渲染层（FR-SE1），但渲染层不是裸换算——必须把每个可配重量吸附到「器械×当前单位」真实梯子的最近格再显示（见 `REDE_EXERCISE_CONTENT_SYSTEM` §8 LoadGrid 显示吸附契约）；禁止 ×2.2046 直转。**previous→target→change 三元组同时喂 Receipt Change 行、训练页 why 行与 Rail。**里程摘要（wave-12，owner 拍板 B）**：今日页 Receipt Change 行只渲染**头牌动作**（exercises.first）；非头牌动作的**转折性 `reason`**（bandCeilingReached 换带 / bodyweightCeilingReached 加配重 / assistedGraduated 毕业 / bodyweightPlusDegraded 回退）另由今日页**里程摘要**扫全表单列于头牌行下方（配件类如弹力带永远排不到首位，否则其里程提示被吞）；只列转折性 reason、不列普通进阶（高信号），复用同一 `changeLine(for:)` 文案，纯文本不占卡预算。
+**输出合同**：`TodayPrescription{dayCode, exercises[], dayReasons[]}`；每动作 `{exerciseId, sets, restSeconds, rep 区间, targetReps, targetWeightKg(kg 口径), targetRir(增肌默认 2；力量目标复合主项 1，见 §6.0.1a), previousWeightKg, previousTopReps, nextProjectedWeightKg, change(start/increase/hold/ease), reason}`。全 typed 零文案：dayCode/reason code 是 RedeL10n 模板挂点；**lb 换算归渲染层（FR-SE1），但渲染层不是裸换算——必须把每个可配重量吸附到「器械×当前单位」真实梯子的最近格再显示（见 `REDE_EXERCISE_CONTENT_SYSTEM` §8 LoadGrid 显示吸附契约）；禁止 ×2.2046 直转。**previous→target→change 三元组同时喂 Receipt Change 行、训练页 why 行与 Rail。**里程摘要（wave-12，owner 拍板 B）**：今日页 Receipt Change 行只渲染**头牌动作**（exercises.first）；非头牌动作的**转折性 `reason`**（bandCeilingReached 换带 / bodyweightCeilingReached 加配重 / assistedGraduated 毕业 / bodyweightPlusDegraded 回退）另由今日页**里程摘要**扫全表单列于头牌行下方（配件类如弹力带永远排不到首位，否则其里程提示被吞）；只列转折性 reason、不列普通进阶（高信号），复用同一 `changeLine(for:)` 文案，纯文本不占卡预算。
 
-**生成规则（FR-ON3：不锁死硬编码模板，可重算）**：日计划 = 槽位规则 × catalog（`ExerciseCatalog.minimal` 现已解码整本 `exercises.json` 目录，当前 121 条（wave-14，catalogVersion wave-14）、随内容 wave 增长；开放决策 #1 已拍板）按 (rank,id) 升序取第一个未用且匹配（pattern + 可选 kind/equipment）；槽位的组数/次数区间沿 legacy 模板口径。轮转 = 完成 session 数对 split 序列取模（ppl→push-a/pull-a/legs-a；其余→upper/lower）——MVP 简化，program 日结构促升后改为真轮转。槽位无法匹配时记 `slotUnfilled` 留痕，不静默。
+**生成规则（FR-ON3：不锁死硬编码模板，可重算）**：日计划 = 槽位规则 × catalog（`ExerciseCatalog.minimal` 现已解码整本 `exercises.json` 目录，当前 121 条（wave-14，catalogVersion wave-14）、随内容 wave 增长；开放决策 #1 已拍板）按 (rank,id) 升序取第一个未用且匹配（pattern + 可选 kind/equipment）；槽位无法匹配时记 `slotUnfilled` 留痕，不静默。轮转 = 完成 session 数对 split 日序列取模（见 §6.0.1a）。
+
+### 6.0.1a 分化模板系统（天数→模式→日序列 · 循证频率映射，2026-06-16 owner 拍板）
+
+> 目标契约：每肌群尽量 **2×/周**（Schoenfeld 频率 meta：容量等值下 2× 优于 1×；RP 容量地标 10-20 组/肌群·周）。`OnboardingPlanInit.template(for:)` 按天数选 `splitType`，`TodayPrescriptionEngine.daySequence(splitType:)` 把 splitType 映成**日序列**（轮转长度=序列长，`dayCode = 序列[已练场数 % 序列长]`）。
+
+| 天数 | splitType | 日序列 | 每肌群频率 |
+|---|---|---|---|
+| 2-3 | `full-body` | full-a / full-b / full-c（三均衡变式轮换，每日覆盖全身） | 2-3× |
+| 4 | `upper-lower` | upper / lower | 2× |
+| 5 | `ppl-ul` | push-a / pull-a / legs-a / upper / lower（**复用现有槽位**，腿 2×） | 上肢 2×、腿 2× |
+| 6 | `push-pull-legs` | push-a / pull-a / legs-a / **push-b / pull-b / legs-b** | 全肌群 2× |
+
+- **A/B 区分（6 天）**：A 日 = 强度/自由重量主项；B 日 = 容量/变式（换器械·角度·握法）。B 日靠槽位 `equipment`/`kind` 约束在全器械下选到与 A 不同的动作（推B 补垂直推、拉B 补 lat 孤立、腿B 膝主导哈克蹲）；器械受限时优雅软化（可能与 A 重叠，可接受）。**已知限制**：槽位按 (pattern,kind,equipment,rank) 选，无法「点名」具体动作（如硬拉 vs RDL），主项点名需后续给槽位加「指定/排除 id」字段。
+- **全身 A/B/C（2-3 天）**：每变式 6 槽覆盖 股四/后链/胸/背/肩/臂 全身一遍，三变式靠 pattern 顺序+equipment 换不同主项（A 深蹲+平板+下拉 / B 哈克蹲+上斜+杠铃划船 / C 腿举+哑铃平板+坐姿划船）。频率靠「每次都练全身」达成。
+- **力量/增肌两套（primaryGoal）**：默认增肌（§6.0.1 渐进口径不变）；`primaryGoal=strength` 时 `strengthShaped` 只重塑**显式复合主项**（kind=="compound"）→ 3-6 次 / RIR 1 / 休息 ≥180s（孤立与二级保持增肌区间——「重主项+增肌辅助」结构，循证可接受）。
+- **sticky（粘住上次换的动作）当前为 pattern 全局**：同 pattern 跨 A/B 且换入动作满足两天约束时会跨日粘住；新用户无换动作时 A/B 由槽位约束天然区分。dayCode 级精确化需会话存 dayCode 真值（templateId），留作后续。
+- 日名（dayCode→双语）：`RedeL10n.trainingDayName`（A 日/upper/lower 复用 legacy parity map；新 push-b/pull-b/legs-b/full-a/b/c 就近映射，不污染 parity-locked `Formatters.templateNameMap`）。
 
 **最小渐进（goldens 锁定）**：双重渐进三分支，RIR 一律取 **min 口径**（最差一组；任何一组打到力竭就不加重——安全优先于抗噪，2026-06-09 审查后显式拍板）——全组打满 repMax 且 min RIR ≥1.0(含 1.0；无 RIR 数据视为有余力) → +2.5kg、次数重置 repMin；上次力竭(min RIR≤0.5) 或最高组未到 repMin → −2.5kg；否则持平冲 repMax。加重无上限（有意为之）。裁决调制在渐进后：light ×0.9；deload ×0.8 且组数 −1(下限 2)。**重量按「器械×用户单位」真实梯子取整**（§8 LoadGrid：公斤自由重量 2.5kg 等距、磅哑铃分段 2.5/5/10lb 梯子等），下限一档；**调制后若取整弹回原重量且原重量 > 一档，强制下调一格**（轻练/减载必须真减，小重量动作不得被取整吃掉）。**重量口径**：哑铃/单边动作 = 单只哑铃重量；杠铃 = 总杠重（含杆）；plate-loaded = 配重片读数；cable = 配重栈读数（美国习惯，引擎内部按手上有效推进）——**渲染层据此口径吸附梯子最近格显示，非裸换算**（§8 显示吸附契约）。
 
