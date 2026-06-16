@@ -354,6 +354,10 @@ struct RedeTabBar: View {
                     .frame(maxWidth: .infinity, minHeight: RedeShape.controlHeight)
                 }
                 .buttonStyle(.plain)
+                // VoiceOver：图标+文字合成一条原子标签，并报当前选中态（图标本身不单独念）
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(item.label)
+                .accessibilityAddTraits(selection == item.tab ? [.isButton, .isSelected] : .isButton)
             }
         }
         .frame(height: 64)
@@ -371,6 +375,8 @@ struct ScreenHeader: View {
     let title: String
     var subtitle: String? = nil
     var trailingIcon: String? = nil
+    /// VoiceOver 标签（尾部图标按钮）——图标无文字，缺它只念「按钮」。
+    var trailingAccessibilityLabel: String? = nil
     var onTrailingTap: (() -> Void)? = nil
 
     var body: some View {
@@ -397,6 +403,7 @@ struct ScreenHeader: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(onTrailingTap == nil)
+                .accessibilityLabel(trailingAccessibilityLabel ?? "")
             }
         }
         .padding(.horizontal, RedeSpace.page)

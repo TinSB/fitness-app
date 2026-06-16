@@ -152,6 +152,10 @@ public struct RedeStrings: Sendable {
         }
     }
 
+    // MARK: - 无障碍（VoiceOver hint/label）
+    public var a11yExpand: String { t("展开", "Expand") }
+    public var a11yCollapse: String { t("收起", "Collapse") }
+
     // MARK: - Settings(M5-2 完整接管：单位/语言/背景/数据/免责/反馈)
 
     public var settingsTitle: String { t("设置", "Settings") }

@@ -297,6 +297,8 @@ struct TrainTabView: View {
                 .font(.redeDisplay)
                 .monospacedDigit()
                 .foregroundStyle(Color.redeT1)
+                // VoiceOver 念「休息，剩 1:57」整条，数字随墙钟更新；下方进度条是同信息的视觉冗余
+                .accessibilityLabel("\(s.restLabel)，\(formattedRest(remaining))")
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color(redeHex: 0x231F19)).frame(height: 4)
@@ -307,6 +309,7 @@ struct TrainTabView: View {
                 }
             }
             .frame(width: 180, height: 4)
+            .accessibilityHidden(true) // 进度条是倒计时数字的视觉冗余，避免 VoiceOver 重复噪声
 
             Text(restPreviewText(flow))
                 .font(.redeCallout)
@@ -620,6 +623,8 @@ struct TrainTabView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("\(n)")
+                .accessibilityAddTraits(n == adjustReps ? .isSelected : [])
             }
         }
     }
@@ -645,6 +650,7 @@ struct TrainTabView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(value.map { "RIR \($0)" } ?? "RIR —")
+                .accessibilityAddTraits(value == adjustRir ? .isSelected : [])
             }
         }
     }
@@ -880,6 +886,7 @@ struct TrainTabView: View {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(Color.redeT4)
+                        .accessibilityHidden(true) // 装饰性 affordance；行 Button 已承载动作
                 }
                 .frame(minHeight: 44)
                 if divider {
@@ -1029,6 +1036,7 @@ struct TrainTabView: View {
                         Image(systemName: "trophy")
                             .font(.system(size: 20))
                             .foregroundStyle(Color.redeEmber)
+                            .accessibilityHidden(true) // 装饰图标；PR 文本已表语义
                         VStack(alignment: .leading, spacing: 2) {
                             Overline(text: s.summaryPr, color: .redeEmber2)
                             Text(summaryTopSetText(top))

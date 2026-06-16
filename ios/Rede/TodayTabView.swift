@@ -30,6 +30,7 @@ struct TodayTabView: View {
                     title: s.todayTitle,
                     subtitle: model.map { s.dateLine($0.now) } ?? "",
                     trailingIcon: "gearshape",
+                    trailingAccessibilityLabel: s.settingsTitle,
                     onTrailingTap: { showSettings = true }
                 )
 
@@ -399,6 +400,7 @@ struct TodayTabView: View {
                 .frame(minHeight: RedeShape.controlHeight)
             }
             .buttonStyle(.plain)
+            .accessibilityHint(reasonExpanded ? s.a11yCollapse : s.a11yExpand)
 
             if reasonExpanded {
                 Grid(alignment: .topLeading, horizontalSpacing: 14, verticalSpacing: 8) {
