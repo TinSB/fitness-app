@@ -62,18 +62,18 @@ final class MesocyclePrescriptionTests: XCTestCase {
         let off = try first(today: "2026-05-27", meso: false)
         let on = try first(today: "2026-05-27", meso: true)
         XCTAssertEqual(on.sets, max(2, off.sets - 1), "减载周 −1 组（下限 2）")
-        XCTAssertEqual(on.targetRir, 3.5, "减载周 RIR 3.5")
+        XCTAssertEqual(on.targetRir, 4.0, "减载周 RIR 4（整数化 2026-06-16，旧 3.5）")
         XCTAssertLessThan(on.targetWeightKg, off.targetWeightKg, "减载周重量真减（×0.85）")
     }
 
     func testPlanHonorsBlockLengthWeeks() throws {
         // 审查 MAJOR-1：plan() 必须真用传入的 blockLengthWeeks（与计划页周期条读同一配置），
         // 不能内部写死 4。今日 05-20 = 块+16 天：4 周块 → 第 2 周过载（RIR 1.0）；
-        // 2 周块 → 16/7=2 周 % 2 = 第 0 周校准（RIR 2.5）。同日不同块长 → 不同相位，证明值真透传。
+        // 2 周块 → 16/7=2 周 % 2 = 第 0 周校准（RIR 3）。同日不同块长 → 不同相位，证明值真透传。
         let four = try XCTUnwrap(try prescription(sessionDates: block, today: "2026-05-20", meso: true, blockLengthWeeks: 4).exercises.first)
         let two  = try XCTUnwrap(try prescription(sessionDates: block, today: "2026-05-20", meso: true, blockLengthWeeks: 2).exercises.first)
         XCTAssertEqual(four.targetRir, 1.0, "4 周块第 2 周 = 过载")
-        XCTAssertEqual(two.targetRir, 2.5, "2 周块同日回绕到第 0 周 = 校准（证明 blockLengthWeeks 真透传）")
+        XCTAssertEqual(two.targetRir, 3.0, "2 周块同日回绕到第 0 周 = 校准（整数化 2026-06-16，旧 2.5）")
     }
 
     func testPhaseYieldsToSafetyNetWhenNotTrain() throws {
