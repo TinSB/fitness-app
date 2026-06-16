@@ -99,7 +99,7 @@
 
 > **现状（2026-06-16）**：P1 关键路径走完，**R0 已上 TestFlight（内部测试）**——MVP 闭环 M0~M5 全 ✅ 验收（版本 0.1.0，7 个干净包带测试，动作库已扩至 123 条 wave-15）；M6-4 🟡 已上传内测、阻塞全部解除（签名通 + widget bundle id 修 #546 + GitHub 解禁），距 R0 收官仅剩 §1 八条真机验收 owner 确认。下方周数 W4–W14 已成历史，本节作战略节奏回顾保留。
 >
-> **P1 的 slice 级实现执行清单见 [`docs/REDE_MVP_IMPLEMENTATION_PLAN.md`](docs/REDE_MVP_IMPLEMENTATION_PLAN.md)**（已锁定决策基线:TestFlight 免费先行 + 纯核心训练闭环 + 中英双语）。本节是战略节奏,具体实现、slice 顺序、验收与上线 gate 以该文档为准并双向同步。该文档为**有界活文档**:MVP 经用户确认达成后留痕进 CHANGELOG、回收进 canonical docs、解除登记并删除;后续由 [`docs/REDE_PRD.md`](docs/REDE_PRD.md)(产品需求真源,已建,FR 优先级与发布映射见其 §5/§8) + 基于 PRD 与 MVP 完成度的开发规划接棒。
+> **P1 已完成、R0 已上 TestFlight（2026-06-16，内部测试）。** 原 P1 的 slice 级执行清单（MVP 实现计划）为有界活文档，已按其 §11 收官删除（留痕进 `CHANGELOG.md` 2026-06-16 MVP 达成记录、长期结论回收进本路线图 + 系统逻辑 §10 + PRD、git 历史可恢复）。后续由 [`docs/REDE_PRD.md`](docs/REDE_PRD.md)（产品需求真源，FR 优先级与发布映射见其 §5/§8，R0 = 已交付范围）+ 基于 PRD 的开发规划接棒。
 
 - 把 `docs/REDE_iOS_SYSTEM_LOGIC.md` 拆成 rewrite parity slices:四 tab、专注训练、DataHealth、TrainingDecision、write path、fixtures、UI验收。
 - 只实现最小可卖/可验证闭环:Today 决策入口、专注训练记录、下一组建议、训练完成写入、Progress 可信反馈、Plan 只读未来安排。

@@ -6,6 +6,22 @@
 
 ---
 
+## 2026-06-16 · MVP 收官：R0 达成，按 §11 回收并删除 MVP 实现计划
+
+**用户目标**：owner 确认「早就做完了，mvp 可以结束了」——§1 八条真机验收已通过，正式给 MVP 画句号。
+
+**做了什么**：MVP 实现计划是「有界活文档」，其 §11 规定达成后按序自清洁。四步全做：
+1. **留痕**：`CHANGELOG.md` 加「🎉 MVP achieved — R0 shipped to TestFlight」记录（版本 0.1.0、内部测试、2026-06-16、八条验收 owner 确认）。
+2. **回收**：长期结论收回 canonical 文档——系统逻辑 §10 图例真相源改指 CHANGELOG + 加「R0 已上线」说明、catalog 计数订正（97→123）；Roadmap P1/R0 标完成。
+3. **解除登记**：从 `docs/DOCS_MANIFEST.md`（删行）、`README.md`（叙述 + 文档清单 + 表格三处）、`AGENTS.md`（MVP 执行入口段改写）、`COMMERCIALIZATION_ROADMAP.md`（P1 指针段）、`docs/REDE_PRD.md`（权威边界 + MVP 定义 + §8 发布映射 R0 行 + 范围说明 + 文档关系图，5 处）移除登记与链接。
+4. **删除**：`git rm docs/REDE_MVP_IMPLEMENTATION_PLAN.md`（git 历史可恢复）。
+
+**诚实边界**：仅 CHANGELOG/DEV_LOG 两条历史日志条目仍提及该文件名（append-only 记录，正确保留，非 live 链接）。
+
+**用户可见影响**：无运行时改动；文档体系从「MVP 进行中」切换到「MVP 已达成、PRD + 路线图接棒」。MVP 计划文档被删 = MVP 100% 达成的标志（以 CHANGELOG 留痕为证）。
+
+**下一步**：按 verify-first——收 beta 反馈 + P0 需求验证 → R1 fast-follow。接棒真源 = `docs/REDE_PRD.md`（R0 = 已交付范围）。
+
 ## 2026-06-16 · 里程碑：R0 上 TestFlight（内部测试）+ 状态写回
 
 **用户目标**：MVP 主线终点——把 app 真正送到能装的地方。
