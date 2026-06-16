@@ -23,7 +23,7 @@ The commercial target is defined in `docs/REDE_iOS_SYSTEM_LOGIC.md` and `AGENTS.
 ## Repository Status
 
 - Living docs are the product and engineering source of truth; the clean iOS runtime realizes them.
-- The clean iOS rewrite is the active implementation. `ios/Rede` has been a clean app shell since milestone M0-1, and the MVP training loop (today decision, focus training, progress, onboarding, settings) has shipped through milestones M0–M6. Current version is `0.1.0`; only M6-4 (TestFlight upload) remains, blocked on the owner's Apple Developer account, not on code. See `DEV_LOG.md` and `docs/REDE_MVP_IMPLEMENTATION_PLAN.md` §9 for the authoritative progress read-out.
+- The clean iOS rewrite is the active implementation. `ios/Rede` has been a clean app shell since milestone M0-1, and the MVP training loop (today decision, focus training, progress, onboarding, settings) has shipped through milestones M0–M6. **MVP achieved — R0 shipped to TestFlight (internal testing), version `0.1.0`, 2026-06-16** (see `CHANGELOG.md`). The bounded-lifecycle MVP implementation plan has been retired per its §11 flow; successor planning lives in `docs/REDE_PRD.md` + the roadmap. See `DEV_LOG.md` and `CHANGELOG.md` for the authoritative progress read-out.
 - The original IronPath/PWA-era Swift packages were retired during M1-0 (reference preserved at git tag `legacy-parity-final`). Do not treat that retired code as a contract, and do not present it as current implementation.
 - External website / landing-page paid-intent validation runs separately from this repository's runtime and must not restore a PWA/web app here.
 
@@ -72,7 +72,6 @@ Start by reading:
 - `docs/DOCS_MANIFEST.md`
 - `COMMERCIALIZATION_ROADMAP.md`
 - `docs/REDE_PRD.md`
-- `docs/REDE_MVP_IMPLEMENTATION_PLAN.md`
 
 The existing Xcode project may be inspected or built only as a legacy reference. It is not the product validation baseline. Do not start new feature work by patching legacy runtime code unless a rewrite slice explicitly approves reuse.
 
@@ -137,7 +136,6 @@ Read these before changing behavior:
 | `docs/DOCS_MANIFEST.md` | Living-doc rules and canonical document registry. |
 | `COMMERCIALIZATION_ROADMAP.md` | Commercialization roadmap and gated business infrastructure decisions. |
 | `docs/REDE_PRD.md` | Product requirements: target users, numbered functional requirements with acceptance criteria, priorities (MVP/FF/LATER+GATE), NFRs, success metrics, and release mapping. |
-| `docs/REDE_MVP_IMPLEMENTATION_PLAN.md` | MVP minimal training-loop implementation plan: scope, slice queue, acceptance, TestFlight launch gate, and progress tracking. Execution layer for roadmap P1. |
 | `DEV_LOG.md` | Developer log for the non-coding product owner: per-slice plain-language (Chinese) record of goals, user-visible impact, evidence, risks, and next steps. `CHANGELOG.md` remains the engineering change record. |
 | `AGENTS.md` | Practical instructions for coding agents and future contributors. |
 
