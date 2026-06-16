@@ -167,6 +167,24 @@ extension RedeStrings {
         }
     }
 
+    // MARK: - Widget 快照文案（FR-WD1）：与今日页同源——纯组装现有裁决文案，不另起口径。
+    // app 层把裁决投影成 primitives（call/reason/dayName/hasPlan/信号）后调这里，再写 App Group
+    // 快照；widget 进程只渲染这里产出的字符串，故文案永远 == 今日页（同 verdictStatus /
+    // receiptConclusion / verdictHeadline / trainingDayName 真源）。host 可单测。
+
+    /// Widget 标题：先回答「今天该不该练」（裁决状态），有处方时接训练日名。
+    public func widgetHeadline(call: String, dayName: String, hasPlan: Bool) -> String {
+        let status = verdictStatus(call: call)
+        return (hasPlan && !dayName.isEmpty) ? "\(status) · \(dayName)" : status
+    }
+
+    /// Widget 短理由：有处方走收据结论句（与今日页判断行同句）；无处方（休息等）走判断句。
+    public func widgetAdvice(call: String, reasonCode: String, dayName: String, gapDays: Int?, consecutiveDays: Int?, hasPlan: Bool) -> String {
+        hasPlan
+            ? receiptConclusion(call: call, reasonCode: reasonCode)
+            : verdictHeadline(call: call, reasonCode: reasonCode, dayName: dayName, gapDays: gapDays, consecutiveDays: consecutiveDays)
+    }
+
     /// Signal 行：可观察事实。
     public func signalLine(gapDays: Int?, sessionsLast7: Int, planned: Int) -> String {
         guard let gapDays else {

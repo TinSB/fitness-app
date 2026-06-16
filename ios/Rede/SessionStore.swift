@@ -1,8 +1,10 @@
 import Foundation
 import RedeDataHealth
 import RedeDomain
+import RedeL10n
 import RedePersistence
 import RedeTrainingDecision
+import RedeWidgetShared
 
 /// 真 DataHealth gate 适配器（组合层接线，验证逻辑在包内；
 /// EndToEndWriteTests 内有同构副本，两处必须保持一致）。
@@ -66,6 +68,56 @@ final class SessionStore {
     func loadToday() async {
         todayOutcome = await TodayModel.loadOutcomeAsync()
         checkForRestorableDraft()
+        refreshWidgetSnapshot()
+    }
+
+    // MARK: - W-1 Readiness Widget 接线（slice 1）：今日裁决落定 → 写 App Group 派生只读快照 → 触发刷新
+
+    /// 今日加载成功后刷新 widget 快照。仅 .ready 写——unreadable 不覆盖上次好快照（诚实降级：
+    /// 宁可显示旧/占位也不写假数据）。文案与今日页同源（RedeL10n 组装器）；文件 IO + reload 全在
+    /// 后台；失败静默：widget 是增强、不阻塞主流程，也不假装成功。
+    private func refreshWidgetSnapshot(now: Date = Date()) {
+        guard case .ready(let model)? = todayOutcome else { return }
+        // 在主调用侧把裁决投影成 Sendable primitives，避免把 TodayModel 整体跨 actor 边界
+        //（审查 M-1）；文案解析含一次文件读，连同写入/刷新一并留后台、不占主线程。
+        let call = model.verdict.call.rawValue
+        let reason = model.verdict.reason.code
+        let dayCode = model.prescription?.dayCode
+        let hasPlan = !(model.prescription?.exercises.isEmpty ?? true)
+        var gapDays: Int?
+        var consecutiveDays: Int?
+        for signal in model.verdict.signals {
+            if case .daysSinceLastSession(let days) = signal { gapDays = days }
+            if case .consecutiveTrainingDays(let days) = signal { consecutiveDays = days }
+        }
+        Task.detached(priority: .utility) {
+            let strings = SessionStore.resolveWidgetStrings()
+            let dayName = dayCode.map(strings.trainingDayName) ?? ""
+            // FR-WD1：只回答「该不该练」+ 训练日名 + 短理由；rows 留空（V1 小尺寸够用）。
+            let snapshot = ReadinessWidgetSnapshot(
+                generatedAtIso: ISO8601DateFormatter().string(from: now),
+                headline: strings.widgetHeadline(call: call, dayName: dayName, hasPlan: hasPlan),
+                advice: strings.widgetAdvice(call: call, reasonCode: reason, dayName: dayName,
+                                             gapDays: gapDays, consecutiveDays: consecutiveDays, hasPlan: hasPlan),
+                rows: []
+            )
+            do {
+                try AppGroupWidgetSnapshotStore().write(snapshot)
+                WidgetTimelineReloader().reloadWidgets()
+            } catch {
+                // App Group 不可用 / 写失败：不 reload、不报错——保留上次好快照或诚实占位。
+            }
+        }
+    }
+
+    /// widget 文案语言/单位解析：取持久化偏好，缺失回退系统语言 / kg（同 LocaleStore 启动口径）。
+    /// 取舍（审查 M-2）：widget 跟「已落盘」的语言，不跟内存 LocaleStore 里未保存的临时切换——
+    /// 设置里改语言会经写闸落盘，下次今日加载即同步 widget，无长期分叉。
+    private static func resolveWidgetStrings() -> RedeStrings {
+        let prefs = loadPreferences()
+        var locale = RedeLocale.resolve(fromLanguageCode: Locale.current.language.languageCode?.identifier)
+        if let raw = prefs.locale, let persisted = RedeLocale(rawValue: raw) { locale = persisted }
+        return RedeStrings(locale: locale, unit: RedeUnit.resolve(prefs.unit))
     }
 
     // MARK: - M5-2 偏好与档案（FR-SE1/SE2/SE3）
