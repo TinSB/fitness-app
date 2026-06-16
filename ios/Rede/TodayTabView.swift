@@ -229,7 +229,7 @@ struct TodayTabView: View {
                 RuleDivider()
 
                 ForEach(Array(exercises.enumerated()), id: \.offset) { idx, ex in
-                    exerciseRow(ex, isFirst: idx == 0)
+                    exerciseRow(ex, isCurrent: idx == activeExerciseIndex)
                         .padding(.horizontal, RedeSpace.page)
                 }
 
@@ -279,11 +279,19 @@ struct TodayTabView: View {
         }
     }
 
+    /// 今日清单橙色条跟随实时训练进度（owner 2026-06-15）：训练进行中标当前动作，
+    /// 无会话/已收尾退回首个（=下一个要练的）。flow.plan 由本处方 expand，下标一一对应
+    /// （TrainTabView「动作 N/总」同源）；换动作就地替换不改下标，故按 index 对位仍准。
+    private var activeExerciseIndex: Int {
+        guard let flow = sessionStore.flow, flow.phase != .summary else { return 0 }
+        return flow.exerciseIndex
+    }
+
     // 单动作行：名称 / 组数·休息·RIR / 目标 / 跟上次比
-    private func exerciseRow(_ ex: ExercisePrescriptionPlan, isFirst: Bool) -> some View {
+    private func exerciseRow(_ ex: ExercisePrescriptionPlan, isCurrent: Bool) -> some View {
         VStack(spacing: 0) {
             HStack(alignment: .top, spacing: 10) {
-                Rectangle().fill(isFirst ? Color.redeEmber : Color.clear)
+                Rectangle().fill(isCurrent ? Color.redeEmber : Color.clear)
                     .frame(width: 3, height: 18)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(localeStore.exerciseName(ex.exerciseId))

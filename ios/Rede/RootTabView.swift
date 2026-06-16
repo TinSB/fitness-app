@@ -117,12 +117,37 @@ struct RootTabView: View {
         // 截图/UI 验证钩子（仅测试脚手架）:
         // -autoStartSession 直接载入今日并开训；
         // -autoCompleteSession 自动按建议打满全部组并落盘（验证杀进程重开记录还在）；
-        // -autoPartialSession 开训并只打 1 组（draft 留存，验证恢复提示）。
+        // -autoPartialSession 开训并只打 1 组（draft 留存，验证恢复提示）；
+        // -autoAdvanceExercises N 开训并打满前 N 个动作（落在第 N+1 个动作，验证今日页橙色条跟随进度）。
         .task {
             let args = ProcessInfo.processInfo.arguments
-            if args.contains("-autoStartSession") || args.contains("-autoCompleteSession") || args.contains("-autoPartialSession") {
+            let advanceTarget = args.firstIndex(of: "-autoAdvanceExercises").flatMap { idx -> Int? in
+                args.indices.contains(idx + 1) ? Int(args[idx + 1]) : nil
+            }
+            if args.contains("-autoStartSession") || args.contains("-autoCompleteSession") || args.contains("-autoPartialSession") || advanceTarget != nil {
                 await sessionStore.loadToday()
                 sessionStore.startSession()
+            }
+            if let target = advanceTarget {
+                var guardCounter = 0 // 防御：异常状态下不空转
+                while let flow = sessionStore.flow, flow.phase != .summary,
+                      flow.exerciseIndex < target, guardCounter < 500 {
+                    guardCounter += 1
+                    switch flow.phase {
+                    case .activeSet:
+                        let rec = flow.currentRecommendation
+                        sessionStore.apply(.logSet(CompletedSetObservation(
+                            weightKg: rec?.targetWeightKg ?? 0,
+                            reps: rec?.targetReps ?? 1,
+                            rir: rec?.targetRir ?? 2,
+                            painReported: false
+                        )))
+                    case .resting:
+                        sessionStore.apply(.restFinished)
+                    default:
+                        break
+                    }
+                }
             }
             if args.contains("-autoPartialSession") {
                 let rec = sessionStore.flow?.currentRecommendation
