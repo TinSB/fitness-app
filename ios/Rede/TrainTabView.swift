@@ -299,13 +299,14 @@ struct TrainTabView: View {
                 .foregroundStyle(Color.redeT1)
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Rectangle().fill(Color(redeHex: 0x231F19)).frame(height: 3)
-                    Rectangle().fill(Color.redeNeu)
-                        .frame(width: geo.size.width * sessionStore.restFraction, height: 3)
+                    Capsule().fill(Color(redeHex: 0x231F19)).frame(height: 4)
+                    // 进度填充用主题琥珀橙（同今日页当前动作条/hero 口音），略加粗到 4pt
+                    Capsule().fill(Color.redeEmber)
+                        .frame(width: geo.size.width * sessionStore.restFraction, height: 4)
                         .animation(.linear(duration: 1), value: remaining)
                 }
             }
-            .frame(width: 180, height: 3)
+            .frame(width: 180, height: 4)
 
             Text(restPreviewText(flow))
                 .font(.redeCallout)
