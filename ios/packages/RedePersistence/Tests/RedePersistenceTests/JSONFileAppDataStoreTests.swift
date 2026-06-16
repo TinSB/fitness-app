@@ -80,7 +80,7 @@ final class JSONFileAppDataStoreTests: XCTestCase {
         try Data(legacy.utf8).write(to: fileURL)
 
         let loaded = try XCTUnwrap(try store.load())
-        XCTAssertEqual(loaded.schemaVersion, 9, "磁盘 v8 经 load 升 9")
+        XCTAssertEqual(loaded.schemaVersion, 10, "磁盘 v8 经 load 升 10")
         XCTAssertEqual(loaded.mesocycle.enabled, false, "迁移播种默认关闭 = 零回归")
         XCTAssertEqual(loaded.mesocycle.blockLengthWeeks, 4)
         XCTAssertEqual(loaded.history.first?.id, "s1", "既有历史无损")

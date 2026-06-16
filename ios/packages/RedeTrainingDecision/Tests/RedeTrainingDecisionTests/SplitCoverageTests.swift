@@ -10,7 +10,10 @@ final class SplitCoverageTests: XCTestCase {
             #"{"id":"h\#(i)","date":"2026-05-\#(String(format: "%02d", 10 + i))","completed":true,"exercises":[]}"#
         }.joined(separator: ",")
         let profile = scenario.map { #","userProfile":{"equipmentScenario":"\#($0)"}"# } ?? ""
-        let json = #"{"schemaVersion":8,"history":[\#(sessions)]\#(profile),"programTemplate":{"splitType":"\#(splitType)","daysPerWeek":5}}"#
+        // push-pull-legs 是 6 天模式（5 天 PPL 已被 9→10 迁移重映成 ppl-ul）；其余按 5 天。
+        // 写对天数才不会被迁移误重映，保住各自的轮换意图。
+        let daysPerWeek = splitType == "push-pull-legs" ? 6 : 5
+        let json = #"{"schemaVersion":8,"history":[\#(sessions)]\#(profile),"programTemplate":{"splitType":"\#(splitType)","daysPerWeek":\#(daysPerWeek)}}"#
         let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-16")
         return try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input)))
     }

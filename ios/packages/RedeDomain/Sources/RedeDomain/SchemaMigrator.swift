@@ -1,8 +1,9 @@
 // SchemaMigrator — schema 版本迁移钩子（系统逻辑 §3/§6.5；schema-migration-guard）。
 //
 // 职责：把旧版 canonical root 升级到 SchemaVersion.current，再交给 SchemaVersion.validate
-// ——迁移**必须先于 validate**（validate 只认 current）。全程纯函数、纯加性、幂等：只加字段 /
-// 抬版本号，绝不删既有键、绝不改既有值。
+// ——迁移**必须先于 validate**（validate 只认 current）。纯函数、幂等。
+// 加性步骤（8→9 播种 mesocycle）不改既有值；**值变换步骤（9→10：5 天 push-pull-legs → ppl-ul）**
+// 是经 owner 批准的例外——有对应 downStep 可逆，且只在内存改读到的 root（见下安全模型）。
 //
 // 安全模型（schema-migration-guard）：迁移只在内存里把解码到的 root 升级（decode 路径），
 // **从不碰磁盘**——磁盘上的 canonical 文件只由已备份的唯一写闸（CanonicalSessionWriter：
@@ -69,6 +70,19 @@ public enum SchemaMigrator {
                 ])
             }
             return r
+        case 9:
+            // 9 → 10：旧引导把「5 天」也存成 push-pull-legs（退化成 3 日循环）。重映成 ppl-ul
+            //（推A拉A腿A·上·下，腿 2× 的循证 5 天分化）。值变换、owner 批准、有 downStep 可逆。
+            // 仅命中「splitType==push-pull-legs && daysPerWeek==5」；6 天 PPL 与其它分化原样不动。
+            var r = root
+            r["schemaVersion"] = .int(10)
+            if case .object(var tmpl)? = r["programTemplate"],
+               tmpl["splitType"]?.asString == "push-pull-legs",
+               tmpl["daysPerWeek"]?.asInt == 5 {
+                tmpl["splitType"] = .string("ppl-ul")
+                r["programTemplate"] = .object(tmpl)
+            }
+            return r
         default:
             return nil   // schema-7 及更早无迁移路径，与迁移前一致地保持 unreadable。
         }
@@ -92,6 +106,18 @@ public enum SchemaMigrator {
 
     private static func downStep(from version: Int, root: [String: JSONValue]) -> [String: JSONValue]? {
         switch version {
+        case 10:
+            // 10 → 9：逆 9→10 的重映（ppl-ul@5 天 → push-pull-legs）。仅保证 up 改过的那一类往返恒等；
+            // 迁移后新建的 ppl-ul 用户回退也变 push-pull-legs（best-effort，down 是非生产回退辅助）。
+            var r = root
+            r["schemaVersion"] = .int(9)
+            if case .object(var tmpl)? = r["programTemplate"],
+               tmpl["splitType"]?.asString == "ppl-ul",
+               tmpl["daysPerWeek"]?.asInt == 5 {
+                tmpl["splitType"] = .string("push-pull-legs")
+                r["programTemplate"] = .object(tmpl)
+            }
+            return r
         case 9:
             var r = root
             r["schemaVersion"] = .int(8)

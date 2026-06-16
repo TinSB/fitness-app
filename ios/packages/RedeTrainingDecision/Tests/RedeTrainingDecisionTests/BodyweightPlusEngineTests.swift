@@ -28,7 +28,7 @@ final class BodyweightPlusEngineTests: XCTestCase {
             // 首练：用「推」动作推进到 pull-a（避开 vertical-pull sticky），t-weighted 自身无历史
             session = #"{"id":"s0","date":"2026-06-10","completed":true,"exercises":[{"exerciseId":"bench-press","sets":[{"weight":60,"reps":10,"rir":2}]}]}"#
         }
-        let json = #"{"schemaVersion":8,"userProfile":{"trainingLevel":"\#(level)"},"history":[\#(session)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":5}}"#
+        let json = #"{"schemaVersion":8,"userProfile":{"trainingLevel":"\#(level)"},"history":[\#(session)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":6}}"#
         let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-13")
         let p = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input), catalog: amended)
         return try XCTUnwrap(p?.exercises.first { $0.exerciseId == "t-weighted" || $0.exerciseId == "pull-up" })
@@ -72,7 +72,7 @@ final class BodyweightPlusEngineTests: XCTestCase {
     /// twinLast==nil 条件——正常阶梯是 自重→负重，回退时必有自重历史，那样提示永不触发）。
     func testDegradationFiresEvenWithBodyweightHistory() throws {
         let s = #"{"id":"s0","date":"2026-06-10","completed":true,"exercises":[{"exerciseId":"t-weighted","sets":[{"weight":2.5,"reps":8,"rir":0}]},{"exerciseId":"pull-up","sets":[{"weight":0,"reps":15,"rir":2}]}]}"#
-        let json = #"{"schemaVersion":8,"userProfile":{"trainingLevel":"intermediate"},"history":[\#(s)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":5}}"#
+        let json = #"{"schemaVersion":8,"userProfile":{"trainingLevel":"intermediate"},"history":[\#(s)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":6}}"#
         let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-13")
         let p = try XCTUnwrap(
             TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input), catalog: amended)?

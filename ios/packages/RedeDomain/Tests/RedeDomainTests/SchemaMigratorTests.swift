@@ -15,7 +15,7 @@ final class SchemaMigratorTests: XCTestCase {
             "history": .array([]),
         ]
         let out = SchemaMigrator.migrate(root: root)
-        XCTAssertEqual(out["schemaVersion"]?.asInt, 9)
+        XCTAssertEqual(out["schemaVersion"]?.asInt, SchemaVersion.current, "升到 current（8→9→10）")
         let meso = out["mesocycle"]?.asObject
         XCTAssertEqual(meso?["enabled"]?.asBool, false, "默认关闭 = 零回归")
         XCTAssertEqual(meso?["blockLengthWeeks"]?.asInt, 4, "4 周块落库")
@@ -43,7 +43,7 @@ final class SchemaMigratorTests: XCTestCase {
             "mesocycle": .object(["enabled": .bool(true), "blockLengthWeeks": .int(6)]),
         ]
         let out = SchemaMigrator.migrate(root: root)
-        XCTAssertEqual(out["schemaVersion"]?.asInt, 9)
+        XCTAssertEqual(out["schemaVersion"]?.asInt, SchemaVersion.current)
         XCTAssertEqual(out["mesocycle"]?.asObject?["enabled"]?.asBool, true, "不覆盖既有 enabled")
         XCTAssertEqual(out["mesocycle"]?.asObject?["blockLengthWeeks"]?.asInt, 6, "不覆盖既有块长")
     }
@@ -53,6 +53,52 @@ final class SchemaMigratorTests: XCTestCase {
         let once = SchemaMigrator.migrate(root: root)
         let twice = SchemaMigrator.migrate(root: once)
         XCTAssertEqual(once, twice, "二次迁移无副作用（已是 current 即 no-op）")
+    }
+
+    // MARK: 升级 9 → 10（5 天 push-pull-legs → ppl-ul，值变换 + 可逆）
+
+    func testMigrateRemapsFiveDayPplToPplUl() {
+        let root: [String: JSONValue] = [
+            "schemaVersion": .int(9),
+            "programTemplate": .object([
+                "splitType": .string("push-pull-legs"),
+                "daysPerWeek": .int(5),
+                "primaryGoal": .string("hypertrophy"),
+            ]),
+        ]
+        let out = SchemaMigrator.migrate(root: root)
+        XCTAssertEqual(out["schemaVersion"]?.asInt, SchemaVersion.current)
+        XCTAssertEqual(out["programTemplate"]?.asObject?["splitType"]?.asString, "ppl-ul", "5 天 PPL → ppl-ul")
+        XCTAssertEqual(out["programTemplate"]?.asObject?["daysPerWeek"]?.asInt, 5, "天数不动")
+        XCTAssertEqual(out["programTemplate"]?.asObject?["primaryGoal"]?.asString, "hypertrophy", "其余字段不动")
+    }
+
+    func testMigrateLeavesSixDayPplAndOtherSplitsUntouched() {
+        let sixDay: [String: JSONValue] = [
+            "schemaVersion": .int(9),
+            "programTemplate": .object(["splitType": .string("push-pull-legs"), "daysPerWeek": .int(6)]),
+        ]
+        XCTAssertEqual(SchemaMigrator.migrate(root: sixDay)["programTemplate"]?.asObject?["splitType"]?.asString,
+                       "push-pull-legs", "6 天 PPL 不重映")
+        let upperLower: [String: JSONValue] = [
+            "schemaVersion": .int(9),
+            "programTemplate": .object(["splitType": .string("upper-lower"), "daysPerWeek": .int(5)]),
+        ]
+        XCTAssertEqual(SchemaMigrator.migrate(root: upperLower)["programTemplate"]?.asObject?["splitType"]?.asString,
+                       "upper-lower", "非 PPL 不动")
+    }
+
+    func testDownMigrateReversesPplUlRemap() {
+        // 9→10 重映 round-trip：5 天 PPL@9 → up → ppl-ul@10 → down(to:9) → push-pull-legs@9（恒等）。
+        let original: [String: JSONValue] = [
+            "schemaVersion": .int(9),
+            "mesocycle": .object(["enabled": .bool(false), "blockLengthWeeks": .int(4)]),
+            "programTemplate": .object(["splitType": .string("push-pull-legs"), "daysPerWeek": .int(5)]),
+        ]
+        let up = SchemaMigrator.migrate(root: original)
+        XCTAssertEqual(up["programTemplate"]?.asObject?["splitType"]?.asString, "ppl-ul")
+        let down = SchemaMigrator.downMigrate(root: up, to: 9)
+        XCTAssertEqual(down, original, "downMigrate(migrate(x), to:9) == x（9↔10 可逆）")
     }
 
     // MARK: 不迁移的边界（绝不伪造）

@@ -21,7 +21,7 @@ final class BandEngineTests: XCTestCase {
     }
 
     private func plan(history: String) throws -> ExercisePrescriptionPlan {
-        let json = #"{"schemaVersion":8,"history":[\#(history)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":5}}"#
+        let json = #"{"schemaVersion":8,"history":[\#(history)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":6}}"#
         let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-14")
         let p = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input), catalog: amended)
         return try XCTUnwrap(p?.exercises.first { $0.exerciseId == "t-band-lateral" })

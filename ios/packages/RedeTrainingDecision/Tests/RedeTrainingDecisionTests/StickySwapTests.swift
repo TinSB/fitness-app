@@ -16,7 +16,7 @@ final class StickySwapTests: XCTestCase {
     /// 1 场历史 → 今天 pull-a（count%3==1）。历史做过的「该模式动作」今天被粘住。
     private func pullDayPlan(historyExercise: String, weight: Double, reps: Int, rir: Int, level: String = "intermediate") throws -> TodayPrescription {
         let session = #"{"id":"s0","date":"2026-06-10","completed":true,"exercises":[{"exerciseId":"\#(historyExercise)","sets":[{"weight":\#(weight),"reps":\#(reps),"rir":\#(rir)}]}]}"#
-        let json = #"{"schemaVersion":8,"userProfile":{"trainingLevel":"\#(level)"},"history":[\#(session)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":5}}"#
+        let json = #"{"schemaVersion":8,"userProfile":{"trainingLevel":"\#(level)"},"history":[\#(session)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":6}}"#
         let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-13")
         return try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input)))
     }
@@ -76,7 +76,7 @@ final class StickySwapTests: XCTestCase {
         let s = ["2026-05-25", "2026-05-26", "2026-05-27", "2026-05-28", "2026-05-29", "2026-05-30"].enumerated().map { i, d in
             #"{"id":"s\#(i)","date":"\#(d)","completed":true,"exercises":[{"exerciseId":"assisted-dip","sets":[{"weight":5,"reps":15,"rir":3}]}]}"#
         }.joined(separator: ",")
-        let json = #"{"schemaVersion":8,"userProfile":{"trainingLevel":"intermediate"},"history":[\#(s)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":5}}"#
+        let json = #"{"schemaVersion":8,"userProfile":{"trainingLevel":"intermediate"},"history":[\#(s)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":6}}"#
         let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-13")
         let plan = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input)))
         XCTAssertEqual(plan.dayCode, "push-a")
@@ -95,7 +95,7 @@ final class StickySwapTests: XCTestCase {
         )
         let cat = ExerciseCatalog(catalogVersion: "test", entries: [dep] + ExerciseCatalog.minimal.entries)
         let session = #"{"id":"s0","date":"2026-06-10","completed":true,"exercises":[{"exerciseId":"old-pulldown","sets":[{"weight":50,"reps":9,"rir":2}]}]}"#
-        let json = #"{"schemaVersion":8,"history":[\#(session)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":5}}"#
+        let json = #"{"schemaVersion":8,"history":[\#(session)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":6}}"#
         let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-13")
         let plan = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input), catalog: cat))
         let vp = try XCTUnwrap(plan.exercises.first {

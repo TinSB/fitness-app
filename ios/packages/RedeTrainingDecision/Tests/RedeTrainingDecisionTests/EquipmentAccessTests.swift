@@ -15,7 +15,7 @@ final class EquipmentAccessTests: XCTestCase {
         var parts = [
             "\"schemaVersion\": 8",
             "\"history\": \(TestSupport.historyJSON(dates: historyDates))",
-            #""programTemplate": {"splitType": "\#(split)", "daysPerWeek": 5}"#,
+            #""programTemplate": {"splitType": "\#(split)", "daysPerWeek": 6}"#,
         ]
         if let scenario {
             parts.append(#""userProfile": {"equipmentScenario": "\#(scenario)"}"#)

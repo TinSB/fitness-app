@@ -47,7 +47,7 @@ final class OnboardingWriteTests: XCTestCase {
 
     func testApplyToEmptyStoreBootstrapsProfileAndTemplate() throws {
         let result = try makeWriter().applyOnboarding(sample)
-        XCTAssertEqual(result.schemaVersion, 9)  // 首写引导用 SchemaVersion.current（= 9）
+        XCTAssertEqual(result.schemaVersion, 10)  // 首写引导用 SchemaVersion.current（= 10）
         XCTAssertEqual(result.userProfile.trainingLevel, "beginner")
         XCTAssertEqual(result.userProfile.primaryGoal, "hypertrophy")
         XCTAssertEqual(result.userProfile.weeklyTrainingDays, 3)

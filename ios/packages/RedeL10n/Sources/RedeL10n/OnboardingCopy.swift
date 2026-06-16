@@ -105,6 +105,8 @@ extension RedeStrings {
     public func onbSplitName(_ code: String) -> String {
         switch code {
         case "push-pull-legs": return locale == .zh ? "推拉腿" : "Push / Pull / Legs"
+        case "ppl-ul": return locale == .zh ? "推拉腿 + 上下分化" : "PPL + Upper / Lower"
+        case "full-body": return locale == .zh ? "全身训练" : "Full Body"
         default: return locale == .zh ? "上下分化" : "Upper / Lower"
         }
     }

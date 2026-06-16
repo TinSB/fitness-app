@@ -33,7 +33,7 @@ final class MesocyclePreferenceWriteTests: XCTestCase {
         let result = try makeWriter().applyMesocyclePreference(enabled: true)
         XCTAssertTrue(result.mesocycle.enabled)
         XCTAssertEqual(result.mesocycle.blockLengthWeeks, 4, "缺则补默认块长")
-        XCTAssertEqual(result.schemaVersion, 9)
+        XCTAssertEqual(result.schemaVersion, 10)
         let onDisk = try XCTUnwrap(try JSONFileAppDataStore(fileURL: fileURL).load())
         XCTAssertTrue(onDisk.mesocycle.enabled, "落盘可回读")
     }

@@ -32,7 +32,7 @@ final class AssistedEngineTests: XCTestCase {
             // 垂直拉动作、t-assisted 上不了场。bench-press 是 horizontal-press，pull-a 无此槽。
             session = #"{"id":"s0","date":"2026-06-10","completed":true,"exercises":[{"exerciseId":"bench-press","sets":[{"weight":60,"reps":10,"rir":2}]}]}"#
         }
-        let json = #"{"schemaVersion":8,"userProfile":{"trainingLevel":"\#(level)"},"history":[\#(session)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":5}}"#
+        let json = #"{"schemaVersion":8,"userProfile":{"trainingLevel":"\#(level)"},"history":[\#(session)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":6}}"#
         let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-13")
         let p = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input), catalog: amended)
         // 毕业会把动作换成 pull-up——两个 id 都接受
@@ -77,7 +77,7 @@ final class AssistedEngineTests: XCTestCase {
     /// 不再每次标 .assistedGraduated（避免 reason=毕业/change=进阶 矛盾）。
     func testGraduationWithExistingBodyweightHistoryUsesNormalProgression() throws {
         let session = #"{"id":"s0","date":"2026-06-10","completed":true,"exercises":[{"exerciseId":"t-assisted","sets":[{"weight":5,"reps":12,"rir":3}]},{"exerciseId":"pull-up","sets":[{"weight":0,"reps":14,"rir":2}]}]}"#
-        let json = #"{"schemaVersion":8,"userProfile":{"trainingLevel":"intermediate"},"history":[\#(session)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":5}}"#
+        let json = #"{"schemaVersion":8,"userProfile":{"trainingLevel":"intermediate"},"history":[\#(session)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":6}}"#
         let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-13")
         let p = try XCTUnwrap(
             TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input), catalog: amended)?

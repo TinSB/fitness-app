@@ -140,7 +140,7 @@ final class CatalogContractTests: XCTestCase {
     /// 磅用户 · 选重机更粗（宁大勿小，裸配重栈整片）：push-a 含 machine-chest-press
     /// （selectorized accessory 槽），其磅值必须落 10 的整数倍（不只是 5）。
     func testLbSelectorizedSnapsToRealizable10lbGrid() throws {
-        let appDataJSON = #"{"schemaVersion": 8, "userProfile": {"unitSystem": "lb"}, "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 5}}"#
+        let appDataJSON = #"{"schemaVersion": 8, "userProfile": {"unitSystem": "lb"}, "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 6}}"#
         let input = try TestSupport.makeInput(appDataJSON: appDataJSON, todayISO: "2026-06-13")
         let plan = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input))
         let machine = try XCTUnwrap(plan?.exercises.first { $0.exerciseId == "machine-chest-press" })
@@ -157,7 +157,7 @@ final class CatalogContractTests: XCTestCase {
         let lat = (0..<6).map { i in
             #"{"id": "s\#(i)", "date": "2026-06-0\#(i + 1)", "completed": true, "exercises": [{"exerciseId": "lateral-raise", "sets": [{"weight": 7.5, "reps": 20, "rir": 2}]}]}"#
         }.joined(separator: ", ")
-        let appDataJSON = #"{"schemaVersion": 8, "userProfile": {"unitSystem": "kg", "trainingLevel": "intermediate"}, "history": [\#(lat)], "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 5}}"#
+        let appDataJSON = #"{"schemaVersion": 8, "userProfile": {"unitSystem": "kg", "trainingLevel": "intermediate"}, "history": [\#(lat)], "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 6}}"#
         let input = try TestSupport.makeInput(appDataJSON: appDataJSON, todayISO: "2026-06-11")
         let plan = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input))
         // 侧平举（哑铃）满次 → +2.5kg = 10（宁大勿小：哑铃没有 1.25kg 微调档）
@@ -190,7 +190,7 @@ final class CatalogContractTests: XCTestCase {
         XCTAssertFalse(EquipmentRegistry.prescribableLoadTypes.contains("kettlebell"),
                        "占位 loadType 必须不在已开闸集合内，否则本测试失效")
         let amended = ExerciseCatalog(catalogVersion: "test", entries: [future] + catalog.entries)
-        let appDataJSON = #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 5}}"#
+        let appDataJSON = #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 6}}"#
         let input = try TestSupport.makeInput(appDataJSON: appDataJSON, todayISO: "2026-06-11")
         let plan = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input), catalog: amended)
         XCTAssertFalse(plan?.exercises.map(\.exerciseId).contains("future-x") ?? true,
@@ -210,7 +210,7 @@ final class CatalogContractTests: XCTestCase {
         )
         let amended = ExerciseCatalog(catalogVersion: "test", entries: [pushUp] + catalog.entries)
         func plan(history: String) throws -> ExercisePrescriptionPlan {
-            let json = #"{"schemaVersion":8,"history":[\#(history)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":5}}"#
+            let json = #"{"schemaVersion":8,"history":[\#(history)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":6}}"#
             let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-13")
             let p = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input), catalog: amended)
             return try XCTUnwrap(p?.exercises.first { $0.exerciseId == "t-pushup" })
@@ -269,7 +269,7 @@ final class CatalogContractTests: XCTestCase {
     // MARK: - 去顺序化：文件顺序不是合同，rank 才是
 
     func testMatchingIsOrderIndependent() throws {
-        let appDataJSON = #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 5}}"#
+        let appDataJSON = #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 6}}"#
         let input = try TestSupport.makeInput(appDataJSON: appDataJSON, todayISO: "2026-06-11")
         let verdict = TodayVerdictEngine.evaluate(input)
         let bundled = TodayPrescriptionEngine.plan(input: input, verdict: verdict, catalog: catalog)
@@ -296,7 +296,7 @@ final class CatalogContractTests: XCTestCase {
             )
         }
         let amended = ExerciseCatalog(catalogVersion: "test", entries: entries)
-        let appDataJSON = #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 5}}"#
+        let appDataJSON = #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 6}}"#
         let input = try TestSupport.makeInput(appDataJSON: appDataJSON, todayISO: "2026-06-11")
         let plan = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input), catalog: amended)
         XCTAssertFalse(plan?.exercises.map(\.exerciseId).contains("bench-press") ?? true)
@@ -333,7 +333,7 @@ final class CatalogContractTests: XCTestCase {
                 var parts = [
                     "\"schemaVersion\": 8",
                     "\"history\": \(TestSupport.historyJSON(dates: dates))",
-                    #""programTemplate": {"splitType": "\#(split)", "daysPerWeek": 5}"#,
+                    #""programTemplate": {"splitType": "\#(split)", "daysPerWeek": 6}"#,
                 ]
                 if let scenario { parts.append(#""userProfile": {"equipmentScenario": "\#(scenario)"}"#) }
                 let input = try TestSupport.makeInput(appDataJSON: "{" + parts.joined(separator: ", ") + "}", todayISO: "2026-06-11")
