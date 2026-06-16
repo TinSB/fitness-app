@@ -48,6 +48,21 @@ final class ProgressSnapshotBuilderTests: XCTestCase {
         XCTAssertEqual(snapshot.history[0].totalVolumeKg, 400)
     }
 
+    /// wave-9：辅助器械不进跨会话吨位/e1RM/趋势（辅助量裸加=方向反）；组数仍如实计。
+    func testAssistedExcludedFromVolumeAndE1RM() {
+        let facts: [String: ExerciseStatsFacts] = [
+            "assisted-pull-up": ExerciseStatsFacts(loadFactor: 1.0, isCompound: true, isAssisted: true),
+            "bench-press": ExerciseStatsFacts(loadFactor: 1.0, isCompound: true),
+        ]
+        let snapshot = ProgressSnapshotBuilder.build(sessions: [
+            session("s1", "2026-06-01", [("assisted-pull-up", [set(30, 8)]), ("bench-press", [set(60, 6)])]),
+        ], facts: facts)
+        XCTAssertEqual(snapshot.history[0].totalVolumeKg, 360, "吨位仅 bench 60×6=360；辅助 30×8 不计")
+        XCTAssertEqual(snapshot.history[0].setCount, 2, "辅助组仍如实计数")
+        XCTAssertFalse(snapshot.exerciseTrends.contains { $0.exerciseId == "assisted-pull-up" },
+                       "辅助器械不产 e1RM 趋势点（重量轴是辅助量）")
+    }
+
     func testSameDateKeepsInputOrderNewestFirst() {
         // 同日两场：历史 newest-first 下，输入靠后的视为更晚。
         let snapshot = ProgressSnapshotBuilder.build(sessions: [
@@ -222,5 +237,22 @@ final class ProgressSnapshotBuilderTests: XCTestCase {
         // 周一自身不动
         XCTAssertEqual(SnapshotDayMath.isoWeekStart(of: "2026-06-08"), "2026-06-08")
         XCTAssertNil(SnapshotDayMath.isoWeekStart(of: "2026-02-30"))
+    }
+
+    // MARK: - §6.2 吨位系数（owner 拍板 B 案 2026-06-11）
+
+    func testVolumeAppliesLoadFactorFromFacts() {
+        let facts = ["db-bench-press": ExerciseStatsFacts(loadFactor: 2.0, isCompound: true)]
+        let snapshot = ProgressSnapshotBuilder.build(sessions: [
+            session("s1", "2026-06-01", [
+                ("db-bench-press", [set(30, 10)]),   // 单只 30 → 吨位 30×10×2 = 600
+                ("bench-press", [set(60, 5)]),       // facts 缺省 → ×1 = 300
+            ]),
+        ], facts: facts)
+        XCTAssertEqual(snapshot.history.first?.totalVolumeKg, 900)
+        XCTAssertEqual(snapshot.weeklyVolume.first?.totalVolumeKg, 900)
+        // e1RM/PR 永不乘系数（只作用于吨位统计）
+        let trend = snapshot.exerciseTrends.first { $0.exerciseId == "db-bench-press" }
+        XCTAssertEqual(trend?.bestWeightKg, 30)
     }
 }

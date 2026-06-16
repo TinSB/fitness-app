@@ -7,19 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		CC00000000000000000000B1 /* LocaleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000000000000000000A1 /* LocaleStore.swift */; };
-		CC00000000000000000000B2 /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000000000000000000A2 /* SettingsSheet.swift */; };
-		CB00000000000000000000B1 /* RedeTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB00000000000000000000A1 /* RedeTheme.swift */; };
-		CB00000000000000000000B2 /* RedeComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB00000000000000000000A2 /* RedeComponents.swift */; };
-		CA00000000000000000000B1 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A1 /* RootTabView.swift */; };
-		CA00000000000000000000B2 /* TodayTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A2 /* TodayTabView.swift */; };
-		BB00000000000000000001D1 /* TodayModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000001D2 /* TodayModel.swift */; };
-		BB00000000000000000001E1 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000001E2 /* SessionStore.swift */; };
-		CC00000000000000000001A1 /* ProgressModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000000000000000001A2 /* ProgressModel.swift */; };
-		CC00000000000000000001C1 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000000000000000001C2 /* OnboardingView.swift */; };
-		CA00000000000000000000B3 /* TrainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A3 /* TrainTabView.swift */; };
-		CA00000000000000000000B4 /* ProgressTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A4 /* ProgressTabView.swift */; };
-		CA00000000000000000000B5 /* PlanTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A5 /* PlanTabView.swift */; };
 		AA00000000000000000000E2 /* RedeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E1 /* RedeApp.swift */; };
 		AA00000000000000000000E7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E6 /* Assets.xcassets */; };
 		AA0000000000000000000117 /* RedeL10n in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000107 /* RedeL10n */; };
@@ -27,10 +14,23 @@
 		BB00000000000000000001A2 /* RedeDataHealth in Frameworks */ = {isa = PBXBuildFile; productRef = BB00000000000000000001B2 /* RedeDataHealth */; };
 		BB00000000000000000001A3 /* RedePersistence in Frameworks */ = {isa = PBXBuildFile; productRef = BB00000000000000000001B3 /* RedePersistence */; };
 		BB00000000000000000001A4 /* RedeTrainingDecision in Frameworks */ = {isa = PBXBuildFile; productRef = BB00000000000000000001B4 /* RedeTrainingDecision */; };
+		BB00000000000000000001D1 /* TodayModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000001D2 /* TodayModel.swift */; };
+		BB00000000000000000001E1 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000001E2 /* SessionStore.swift */; };
+		CA00000000000000000000B1 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A1 /* RootTabView.swift */; };
+		CA00000000000000000000B2 /* TodayTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A2 /* TodayTabView.swift */; };
+		CA00000000000000000000B3 /* TrainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A3 /* TrainTabView.swift */; };
+		CA00000000000000000000B4 /* ProgressTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A4 /* ProgressTabView.swift */; };
+		CA00000000000000000000B5 /* PlanTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A5 /* PlanTabView.swift */; };
+		CB00000000000000000000B1 /* RedeTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB00000000000000000000A1 /* RedeTheme.swift */; };
+		CB00000000000000000000B2 /* RedeComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB00000000000000000000A2 /* RedeComponents.swift */; };
+		CC00000000000000000000B1 /* LocaleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000000000000000000A1 /* LocaleStore.swift */; };
+		CC00000000000000000000B2 /* SettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000000000000000000A2 /* SettingsSheet.swift */; };
+		CC00000000000000000001A1 /* ProgressModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000000000000000001A2 /* ProgressModel.swift */; };
 		CC00000000000000000001B1 /* RedeLocalSnapshot in Frameworks */ = {isa = PBXBuildFile; productRef = CC00000000000000000001B2 /* RedeLocalSnapshot */; };
+		CC00000000000000000001C1 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000000000000000001C2 /* OnboardingView.swift */; };
 		EE00000000000000000000A4 /* RedeWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000A3 /* RedeWidgetBundle.swift */; };
 		EE00000000000000000000A6 /* ReadinessWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000A5 /* ReadinessWidget.swift */; };
-		EE00000000000000000000B3 /* RedeWidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000B2 /* RedeWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		EE00000000000000000000B3 /* RedeWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000B2 /* RedeWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		EE00000000000000000000D2 /* RedeWidgetShared in Frameworks */ = {isa = PBXBuildFile; productRef = EE00000000000000000000D1 /* RedeWidgetShared */; };
 		EE00000000000000000000D4 /* RedeWidgetShared in Frameworks */ = {isa = PBXBuildFile; productRef = EE00000000000000000000D3 /* RedeWidgetShared */; };
 /* End PBXBuildFile section */
@@ -46,38 +46,38 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		EE00000000000000000000D8 /* Embed App Extensions */ = {
+		EE00000000000000000000D8 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				EE00000000000000000000B3 /* RedeWidgetExtension.appex in Embed App Extensions */,
+				EE00000000000000000000B3 /* RedeWidgetExtension.appex in Embed Foundation Extensions */,
 			);
-			name = "Embed App Extensions";
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		CC00000000000000000000A1 /* LocaleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocaleStore.swift; sourceTree = "<group>"; };
-		CC00000000000000000000A2 /* SettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSheet.swift; sourceTree = "<group>"; };
-		CB00000000000000000000A1 /* RedeTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeTheme.swift; sourceTree = "<group>"; };
-		CB00000000000000000000A2 /* RedeComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeComponents.swift; sourceTree = "<group>"; };
-		CA00000000000000000000A1 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
-		CA00000000000000000000A2 /* TodayTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayTabView.swift; sourceTree = "<group>"; };
-		BB00000000000000000001D2 /* TodayModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayModel.swift; sourceTree = "<group>"; };
-		BB00000000000000000001E2 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
-		CC00000000000000000001A2 /* ProgressModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressModel.swift; sourceTree = "<group>"; };
-		CC00000000000000000001C2 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
-		CA00000000000000000000A3 /* TrainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainTabView.swift; sourceTree = "<group>"; };
-		CA00000000000000000000A4 /* ProgressTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressTabView.swift; sourceTree = "<group>"; };
-		CA00000000000000000000A5 /* PlanTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTabView.swift; sourceTree = "<group>"; };
 		AA00000000000000000000B2 /* Rede.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Rede.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA00000000000000000000E1 /* RedeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeApp.swift; sourceTree = "<group>"; };
 		AA00000000000000000000E5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA00000000000000000000E6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B500000000000000000000F5 /* Rede.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Rede.entitlements; sourceTree = "<group>"; };
+		BB00000000000000000001D2 /* TodayModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayModel.swift; sourceTree = "<group>"; };
+		BB00000000000000000001E2 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
+		CA00000000000000000000A1 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
+		CA00000000000000000000A2 /* TodayTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayTabView.swift; sourceTree = "<group>"; };
+		CA00000000000000000000A3 /* TrainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainTabView.swift; sourceTree = "<group>"; };
+		CA00000000000000000000A4 /* ProgressTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressTabView.swift; sourceTree = "<group>"; };
+		CA00000000000000000000A5 /* PlanTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTabView.swift; sourceTree = "<group>"; };
+		CB00000000000000000000A1 /* RedeTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeTheme.swift; sourceTree = "<group>"; };
+		CB00000000000000000000A2 /* RedeComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeComponents.swift; sourceTree = "<group>"; };
+		CC00000000000000000000A1 /* LocaleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocaleStore.swift; sourceTree = "<group>"; };
+		CC00000000000000000000A2 /* SettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSheet.swift; sourceTree = "<group>"; };
+		CC00000000000000000001A2 /* ProgressModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressModel.swift; sourceTree = "<group>"; };
+		CC00000000000000000001C2 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		EE00000000000000000000A3 /* RedeWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeWidgetBundle.swift; sourceTree = "<group>"; };
 		EE00000000000000000000A5 /* ReadinessWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessWidget.swift; sourceTree = "<group>"; };
 		EE00000000000000000000A7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -174,7 +174,7 @@
 				AA00000000000000000000D1 /* Sources */,
 				AA00000000000000000000D2 /* Frameworks */,
 				AA00000000000000000000D3 /* Resources */,
-				EE00000000000000000000D8 /* Embed App Extensions */,
+				EE00000000000000000000D8 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
@@ -223,7 +223,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1540;
-				LastUpgradeCheck = 2650;
+				LastUpgradeCheck = 2660;
 				TargetAttributes = {
 					AA00000000000000000000B1 = {
 						CreatedOnToolsVersion = 15.4;
@@ -353,6 +353,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 86333GV3KJ;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -417,6 +418,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 86333GV3KJ;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -447,7 +449,7 @@
 				CODE_SIGN_ENTITLEMENTS = Rede/Rede.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 86333GV3KJ;
+				DEVELOPMENT_TEAM = 47K95GV3X5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Rede/Info.plist;
@@ -475,7 +477,7 @@
 				CODE_SIGN_ENTITLEMENTS = Rede/Rede.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 86333GV3KJ;
+				DEVELOPMENT_TEAM = 47K95GV3X5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Rede/Info.plist;
@@ -501,7 +503,7 @@
 				CODE_SIGN_ENTITLEMENTS = RedeWidget/RedeWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 86333GV3KJ;
+				DEVELOPMENT_TEAM = 47K95GV3X5;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = RedeWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -528,7 +530,7 @@
 				CODE_SIGN_ENTITLEMENTS = RedeWidget/RedeWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 86333GV3KJ;
+				DEVELOPMENT_TEAM = 47K95GV3X5;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = RedeWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -585,10 +587,6 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = packages/RedeL10n;
 		};
-		EE00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/RedeWidgetShared" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = packages/RedeWidgetShared;
-		};
 		BB00000000000000000001C1 /* XCLocalSwiftPackageReference "packages/RedeDomain" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = packages/RedeDomain;
@@ -609,20 +607,16 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = packages/RedeLocalSnapshot;
 		};
+		EE00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/RedeWidgetShared" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/RedeWidgetShared;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		AA0000000000000000000107 /* RedeL10n */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = RedeL10n;
-		};
-		EE00000000000000000000D1 /* RedeWidgetShared */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = RedeWidgetShared;
-		};
-		EE00000000000000000000D3 /* RedeWidgetShared */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = RedeWidgetShared;
 		};
 		BB00000000000000000001B1 /* RedeDomain */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -643,6 +637,14 @@
 		CC00000000000000000001B2 /* RedeLocalSnapshot */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = RedeLocalSnapshot;
+		};
+		EE00000000000000000000D1 /* RedeWidgetShared */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeWidgetShared;
+		};
+		EE00000000000000000000D3 /* RedeWidgetShared */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeWidgetShared;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

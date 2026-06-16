@@ -71,6 +71,33 @@ final class JSONFileAppDataStoreTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: backupURL), originalBytes)
     }
 
+    // MARK: schema 迁移（系统逻辑 §6.5）——读路径迁移先于 validate、纯内存不碰盘
+
+    func testLoadMigratesLegacyV8FileToCurrent() throws {
+        let store = makeStore()
+        let fileURL = directory.appendingPathComponent("app-data.json")
+        let legacy = #"{"schemaVersion": 8, "history": [{"id": "s1", "completed": true, "date": "2026-06-01"}], "userProfile": {"trainingLevel": "advanced"}}"#
+        try Data(legacy.utf8).write(to: fileURL)
+
+        let loaded = try XCTUnwrap(try store.load())
+        XCTAssertEqual(loaded.schemaVersion, 10, "磁盘 v8 经 load 升 10")
+        XCTAssertEqual(loaded.mesocycle.enabled, false, "迁移播种默认关闭 = 零回归")
+        XCTAssertEqual(loaded.mesocycle.blockLengthWeeks, 4)
+        XCTAssertEqual(loaded.history.first?.id, "s1", "既有历史无损")
+        XCTAssertEqual(loaded.userProfile.trainingLevel, "advanced", "既有 profile 无损")
+    }
+
+    func testLoadDoesNotRewriteFileOnDisk() throws {
+        // 数据安全红线：读永不改盘——迁移只在内存里，磁盘 v8 原文保留（可从备份/原文恢复）。
+        let store = makeStore()
+        let fileURL = directory.appendingPathComponent("app-data.json")
+        let legacyBytes = Data(#"{"schemaVersion": 8, "history": []}"#.utf8)
+        try legacyBytes.write(to: fileURL)
+
+        _ = try store.load()
+        XCTAssertEqual(try Data(contentsOf: fileURL), legacyBytes, "load 不得改写磁盘文件")
+    }
+
     func testSaveToUnwritableLocationThrowsHonestly() throws {
         let store = JSONFileAppDataStore(
             fileURL: URL(fileURLWithPath: "/nonexistent-root/sub/app-data.json")

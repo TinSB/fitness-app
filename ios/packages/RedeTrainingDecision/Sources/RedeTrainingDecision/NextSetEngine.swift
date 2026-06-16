@@ -64,7 +64,6 @@ public struct NextSetRecommendation: Equatable, Sendable {
 }
 
 public enum NextSetEngine {
-    private static let easeStepKg = 2.5
     private static let nearFailureRir = 0.5
 
     /// 全部计划组完成 → nil（动作结束）。
@@ -88,8 +87,21 @@ public enum NextSetEngine {
         }
 
         // 执行事实是基线：用户实际重量延续到下一组。
+        // 回退一档 = 该动作步长（随计划自目录透传，§6.1）：侧平举不再被
+        // 全局 2.5 一刀切成 −33%。自重动作无重量轴：重量恒 0、不走减重瀑布，
+        // 但疼痛/力竭信号仍如实标记（reason/safetyFlags 不变，2026-06-13）。
+        // 负重语义决定缓降方向（wave-9）：external 减重、自重不动、辅助器械加辅助。
+        // 辅助方向反转是安全红线——疼痛/力竭加辅助 = 更轻 = 安全；若套 external 减重
+        // 瀑布则辅助变少 = 更难 = 受伤。
         let base = last.weightKg
-        let eased = max(easeStepKg, base - easeStepKg)
+        let eased: Double
+        switch plan.loadType {
+        case "bodyweight":      eased = base                          // 无重量轴
+        case "band":            eased = base                          // wave-12：弹力带无 kg 轴，同自重（weight 恒 0）
+        case "assisted":        eased = base + plan.stepKg            // 加辅助 = 更轻 = 安全方向
+        case "bodyweight-plus": eased = max(plan.stepKg, base - plan.stepKg)   // 减外挂负重（方向同 external，显式声明 wave-11）
+        default:                eased = max(plan.stepKg, base - plan.stepKg)   // external 减重
+        }
 
         let weight: Double
         let reason: NextSetReason

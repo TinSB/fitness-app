@@ -26,7 +26,9 @@ final class OnboardingColdStartTests: XCTestCase {
         let beginner = try firstPrescription(profileJSON: #", "userProfile": {"trainingLevel": "beginner"}"#)
         XCTAssertEqual(baseline.exercises.map(\.exerciseId), beginner.exercises.map(\.exerciseId))
         for (base, scaled) in zip(baseline.exercises, beginner.exercises) {
-            let expected = max(2.5, ((base.targetWeightKg * 0.5) / 2.5).rounded() * 2.5)
+            // 取整量子 = 该动作器械真实档位（档位系统 2026-06-13）：选重机=5、自由重量=2.5
+            let step = LoadGrid.stepKg(equipment: ExerciseCatalog.minimal.entry(id: base.exerciseId)?.equipment ?? "", unit: .kg)
+            let expected = max(step, ((base.targetWeightKg * 0.5) / step).rounded() * step)
             XCTAssertEqual(scaled.targetWeightKg, expected, "\(base.exerciseId)")
         }
     }
@@ -35,7 +37,8 @@ final class OnboardingColdStartTests: XCTestCase {
         let baseline = try firstPrescription(profileJSON: "")
         let intermediate = try firstPrescription(profileJSON: #", "userProfile": {"trainingLevel": "intermediate"}"#)
         for (base, scaled) in zip(baseline.exercises, intermediate.exercises) {
-            let expected = max(2.5, ((base.targetWeightKg * 0.75) / 2.5).rounded() * 2.5)
+            let step = LoadGrid.stepKg(equipment: ExerciseCatalog.minimal.entry(id: base.exerciseId)?.equipment ?? "", unit: .kg)
+            let expected = max(step, ((base.targetWeightKg * 0.75) / step).rounded() * step)
             XCTAssertEqual(scaled.targetWeightKg, expected, "\(base.exerciseId)")
         }
     }
@@ -49,17 +52,20 @@ final class OnboardingColdStartTests: XCTestCase {
 
     func testRealHistoryOverridesPrior() throws {
         // 有真实记录的动作：上次实际是基线，先验不得再缩放。
-        // 补满一轮（推/拉/腿）让今天轮转回推日（沿 AdjustmentFlowBackTests fixture 模式）。
+        // 补满一整轮 6 天（PPL×2）让今天轮转回推日（沿 AdjustmentFlowBackTests fixture 模式）。
         let history = #"""
         , "userProfile": {"trainingLevel": "beginner"},
           "history": [
-            {"id": "s1", "date": "2026-06-06", "completed": true, "templateId": "push-a",
+            {"id": "s1", "date": "2026-05-25", "completed": true, "templateId": "push-a",
              "exercises": [{"exerciseId": "bench-press", "sets": [
                {"weight": 50, "reps": 8, "rir": 2}, {"weight": 50, "reps": 8, "rir": 2}, {"weight": 50, "reps": 8, "rir": 2}]}]},
-            {"id": "s2", "date": "2026-06-07", "completed": true, "templateId": "pull-a",
+            {"id": "s2", "date": "2026-05-26", "completed": true, "templateId": "pull-a",
              "exercises": [{"exerciseId": "lat-pulldown", "sets": [{"weight": 55, "reps": 8, "rir": 2}]}]},
-            {"id": "s3", "date": "2026-06-08", "completed": true, "templateId": "legs-a",
-             "exercises": [{"exerciseId": "squat", "sets": [{"weight": 80, "reps": 5, "rir": 2}]}]}
+            {"id": "s3", "date": "2026-05-27", "completed": true, "templateId": "legs-a",
+             "exercises": [{"exerciseId": "squat", "sets": [{"weight": 80, "reps": 5, "rir": 2}]}]},
+            {"id": "s4", "date": "2026-05-28", "completed": true, "templateId": "push-b", "exercises": []},
+            {"id": "s5", "date": "2026-05-29", "completed": true, "templateId": "pull-b", "exercises": []},
+            {"id": "s6", "date": "2026-05-30", "completed": true, "templateId": "legs-b", "exercises": []}
           ]
         """#
         let plan = try firstPrescription(profileJSON: history)
@@ -99,7 +105,9 @@ final class OnboardingColdStartTests: XCTestCase {
         // 不变量：叠乘真的发生——萌新值 ≤ 基线值（同日同裁决）、且全部 ≥ 2.5 下限
         for (base, scaled) in zip(baseline.exercises, beginner.exercises) {
             XCTAssertLessThanOrEqual(scaled.targetWeightKg, base.targetWeightKg, base.exerciseId)
-            XCTAssertGreaterThanOrEqual(scaled.targetWeightKg, 2.5)
+            // 下限 = 该动作器械真实档位（选重机 5、自由重量 2.5）——非全局 2.5（审查 MINOR-2）
+            let floor = LoadGrid.stepKg(equipment: ExerciseCatalog.minimal.entry(id: base.exerciseId)?.equipment ?? "", unit: .kg)
+            XCTAssertGreaterThanOrEqual(scaled.targetWeightKg, floor, base.exerciseId)
         }
         // 至少一个动作真被缩小（防止两边相等导致不变量空转）
         XCTAssertTrue(zip(baseline.exercises, beginner.exercises).contains { $0.targetWeightKg > $1.targetWeightKg })
@@ -108,18 +116,22 @@ final class OnboardingColdStartTests: XCTestCase {
     // MARK: - 首版计划初始化（FR-ON3 最小实现）
 
     func testTemplateInitMapsDaysToSplit() {
-        let ppl = OnboardingPlanInit.template(for: .init(
+        // 5 天 → PPL+UL（腿 2×；循证频率映射 2026-06-16）
+        let pplul = OnboardingPlanInit.template(for: .init(
             primaryGoal: "hypertrophy", weeklyDays: 5, equipmentScenario: "commercial-gym", trainingLevel: "intermediate"))
-        XCTAssertEqual(ppl.splitType, "push-pull-legs")
-        XCTAssertEqual(ppl.daysPerWeek, 5)
-        XCTAssertEqual(ppl.primaryGoal, "hypertrophy")
+        XCTAssertEqual(pplul.splitType, "ppl-ul")
+        XCTAssertEqual(pplul.daysPerWeek, 5)
+        XCTAssertEqual(pplul.primaryGoal, "hypertrophy")
 
-        let ul = OnboardingPlanInit.template(for: .init(
+        // 3 天 → 全身（循证 2026-06-16）
+        let fb = OnboardingPlanInit.template(for: .init(
             primaryGoal: "strength", weeklyDays: 3, equipmentScenario: "home-dumbbell", trainingLevel: "beginner"))
-        XCTAssertEqual(ul.splitType, "upper-lower")
-        XCTAssertEqual(ul.daysPerWeek, 3)
+        XCTAssertEqual(fb.splitType, "full-body")
+        XCTAssertEqual(fb.daysPerWeek, 3)
 
-        // 边界：4 天仍 upper-lower；6 天 ppl
+        // 边界：2 天全身；4 天上下肢；6 天完整 PPL×2
+        XCTAssertEqual(OnboardingPlanInit.template(for: .init(
+            primaryGoal: "general", weeklyDays: 2, equipmentScenario: "minimal", trainingLevel: "beginner")).splitType, "full-body")
         XCTAssertEqual(OnboardingPlanInit.template(for: .init(
             primaryGoal: "general", weeklyDays: 4, equipmentScenario: "minimal", trainingLevel: "advanced")).splitType, "upper-lower")
         XCTAssertEqual(OnboardingPlanInit.template(for: .init(

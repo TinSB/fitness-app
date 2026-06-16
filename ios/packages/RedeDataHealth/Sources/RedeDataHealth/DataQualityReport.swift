@@ -58,7 +58,13 @@ public enum DataQualityReportBuilder {
     private static let weightCeilingKg = 400.0
     private static let repsCeiling = 50
 
-    public static func build(view: CleanAppDataView) -> DataQualityReport {
+    /// plausibleCeilingByExercise（§6.2，2026-06-11）：动作级合理上限（由调用方
+    /// 自目录投影：起步值×系数，下限 60、全局 400 仍兜底）——修复「基准 <30kg
+    /// 的小动作只剩 400kg 天花板，10× 手滑永不被标」。缺省空表 = 旧行为。
+    public static func build(
+        view: CleanAppDataView,
+        plausibleCeilingByExercise: [String: Double] = [:]
+    ) -> DataQualityReport {
         var droppedSessions = 0, droppedExercises = 0, droppedSets = 0, ignoredFields = 0
         for issue in view.issues {
             switch issue {
@@ -83,9 +89,13 @@ public enum DataQualityReportBuilder {
 
             for exercise in session.exercises {
                 let baseline = baselineByExercise[exercise.exerciseId]
+                let exerciseCeiling = min(
+                    weightCeilingKg,
+                    plausibleCeilingByExercise[exercise.exerciseId] ?? weightCeilingKg
+                )
                 for (index, set) in exercise.sets.enumerated() {
                     let reason: DataQualityReport.SuspectSet.Reason?
-                    if set.weight > weightCeilingKg {
+                    if set.weight > exerciseCeiling {
                         reason = .weightBeyondPlausibleCeiling
                     } else if let baseline, baseline >= relativeBaselineFloorKg,
                               set.weight > baseline * relativeMultiplier {

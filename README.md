@@ -2,7 +2,7 @@
 
 Rede is a native iOS personal training product for strength and hypertrophy training.
 
-The repository is now governed by a clean iOS rewrite baseline. Future runtime work starts from the living docs, not from the legacy Swift implementation. The former React/Vite PWA, Node dev API, Supabase/Vercel implementation candidates, TypeScript tests, and browser runtime have been removed and must not be restored as this repo's product runtime.
+The repository is governed by a clean iOS rewrite baseline. The clean iOS app under `ios/` is the active runtime, built against the living docs; the former React/Vite PWA, Node dev API, Supabase/Vercel implementation candidates, TypeScript tests, and browser runtime have been removed and must not be restored as this repo's product runtime.
 
 The target product is local-first. The clean iOS runtime must use on-device JSON persistence through Foundation and keep business logic in local Swift packages. It must not contain cloud sync runtime, account auth runtime, remote networking, WebView, CoreData, SwiftData, SQLite, or PWA runtime code unless the Master Architecture is amended first. Future iOS-native account/cloud/sync decisions are preserved in the living docs, but they are not first-version runtime.
 
@@ -22,10 +22,10 @@ The commercial target is defined in `docs/REDE_iOS_SYSTEM_LOGIC.md` and `AGENTS.
 
 ## Repository Status
 
-- Living docs are the current product and engineering truth.
-- Existing `ios/` code is legacy/reference inventory. It can inform naming, fixtures, and local algorithms, but it is not the implementation baseline and must not be presented as shipping progress.
-- The clean iOS runtime is not yet the approved active implementation.
-- External website / landing-page paid-intent validation can happen before the rebuild, but it is separate from this repository's runtime and must not restore a PWA/web app here.
+- Living docs are the product and engineering source of truth; the clean iOS runtime realizes them.
+- The clean iOS rewrite is the active implementation. `ios/Rede` has been a clean app shell since milestone M0-1, and the MVP training loop (today decision, focus training, progress, onboarding, settings) has shipped through milestones M0–M6. Current version is `0.1.0`; only M6-4 (TestFlight upload) remains, blocked on the owner's Apple Developer account, not on code. See `DEV_LOG.md` and `docs/REDE_MVP_IMPLEMENTATION_PLAN.md` §9 for the authoritative progress read-out.
+- The original IronPath/PWA-era Swift packages were retired during M1-0 (reference preserved at git tag `legacy-parity-final`). Do not treat that retired code as a contract, and do not present it as current implementation.
+- External website / landing-page paid-intent validation runs separately from this repository's runtime and must not restore a PWA/web app here.
 
 Systems that are not approved first-version runtime:
 
@@ -39,9 +39,9 @@ Those systems require a new approved architecture amendment and a fresh Swift-na
 
 ## Target Architecture
 
-Rede keeps the iOS app layer thin. SwiftUI views should render state and connect IO seams; business logic belongs in local Swift packages. Existing package names below are target boundaries or reference names, not proof that the clean runtime is complete.
+Rede keeps the iOS app layer thin. SwiftUI views should render state and connect IO seams; business logic belongs in local Swift packages.
 
-Important package groups:
+Local Swift packages that exist today (under `ios/packages/`, all in the CI test matrix):
 
 | Package | Role |
 |---|---|
@@ -50,11 +50,10 @@ Important package groups:
 | `RedeTrainingDecision` | Training decision, scheduling, readiness, insights, and coach-action engines. |
 | `RedePersistence` | Local JSON persistence and canonical write infrastructure. |
 | `RedeLocalSnapshot` | Derived local display snapshots for Focus/session projections. |
-| `RedeHealthKit` | Approved HealthKit adapters only. |
-| `RedeNotifications` | Local notification adapters only. |
-| `RedeWidgetShared` | Read-only widget snapshot model. |
+| `RedeWidgetShared` | Read-only widget snapshot model (drives the shipped Readiness widget). |
 | `RedeL10n` | Terms and formatting support. |
-| `RedeBackup`, `RedeUIKit` | Placeholder packages; not approval to build backup/export or shared UI systems. |
+
+Planned target package names that do **not** yet exist on disk (named in the Master Architecture as future boundaries; creating them requires an approved architecture slice): `RedeHealthKit` (HealthKit adapters), `RedeNotifications` (local notification adapters), `RedeBackup`, `RedeUIKit`.
 
 Core data rules:
 

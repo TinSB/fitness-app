@@ -24,20 +24,24 @@ public struct AdjustOption: Equatable, Sendable {
 }
 
 public enum AdjustOptionsBuilder {
-    /// 引擎处方量子（与 NextSetEngine 的安全瀑布一档同源；
-    /// §6.3 SetExecutionProfile.loadAdjustmentStep 落地时由调用方传个人化步长）。
+    /// UI 无会话态的防御 fallback（非处方链路）：有会话时调用方必须传
+    /// 当前动作计划步长（ExerciseSetPlan.stepKg，随目录透传，§6.1）。
     public static let stepKg = 2.5
 
+    /// 轻一档/重一档取「器械×单位」真实梯子相邻格（2026-06-15 单位原生）：磅哑铃轻段落 2.5lb
+    /// 梯子（20→22.5→25）、中段 5lb；公斤等距 2.5kg = 与旧 followKg±step 逐字段一致（零回归）。
+    /// equipment 传 LoadGrid.gridEquipment 映射后的格子器械（bodyweight-plus→barbell）。
     public static func options(
         followKg: Double,
         lastActualKg: Double?,
         plannedKg: Double,
-        stepKg: Double = AdjustOptionsBuilder.stepKg
+        equipment: String = "dumbbell",
+        unit: LoadUnit = .kg
     ) -> [AdjustOption] {
         var candidates: [(option: AdjustOption, priority: Int)] = [
             (AdjustOption(role: .follow, weightKg: followKg), 1),
-            (AdjustOption(role: .lighter, weightKg: followKg - stepKg), 4),
-            (AdjustOption(role: .heavier, weightKg: followKg + stepKg), 4),
+            (AdjustOption(role: .lighter, weightKg: LoadGrid.nextRungKg(followKg, equipment: equipment, unit: unit, up: false)), 4),
+            (AdjustOption(role: .heavier, weightKg: LoadGrid.nextRungKg(followKg, equipment: equipment, unit: unit, up: true)), 4),
         ]
         if let last = lastActualKg {
             candidates.append((AdjustOption(role: .last, weightKg: last), 2))

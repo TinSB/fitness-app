@@ -4,10 +4,11 @@
 > Every human and every AI agent must read this document before making changes and must obey it. If a requested task conflicts with this document, stop and require explicit architecture approval before writing code.
 
 - **Status:** Authoritative / binding
-- **Version:** 3.0
-- **Last updated:** 2026-06-07
-- **Repository:** `TinSB/fitness-app` (working dir `ironpath`)
-- **v3.0 amendment:** establishes a clean code rewrite baseline. The existing Swift/iOS code in this repository is reference material only and is not the active implementation baseline. The product, system logic, architecture boundaries, and future implementation contract live in the manifest-registered living docs, especially `docs/REDE_iOS_SYSTEM_LOGIC.md`. New runtime code must be written cleanly against these docs instead of extending or porting the polluted legacy implementation by default.
+- **Version:** 3.1
+- **Last updated:** 2026-06-13
+- **Repository:** `TinSB/fitness-app` (the GitHub slug is still `fitness-app`; the product and local working dir are `Rede`)
+- **v3.0 amendment:** established a clean code rewrite baseline, written cleanly against the manifest-registered living docs (especially `docs/REDE_iOS_SYSTEM_LOGIC.md`) instead of extending or porting the polluted legacy implementation.
+- **v3.1 amendment (2026-06-13):** the clean rewrite is now the **active implementation**. `ios/Rede` has been a clean app shell since M0-1, and the MVP training loop has shipped through milestones M0–M6 (only M6-4 TestFlight upload remains). The boundaries and contracts below still bind; where this doc previously said "ios/ is reference-only / not yet implemented," read it as describing the **retired IronPath/PWA-era code** (removed during M1-0, preserved at git tag `legacy-parity-final`), not the current clean `ios/Rede` + 7 in-tree packages.
 
 ---
 
@@ -31,7 +32,7 @@ It does not outrank explicit, in-the-moment human approval that knowingly amends
 | Area | Baseline |
 |---|---|
 | Product truth | `docs/REDE_iOS_SYSTEM_LOGIC.md` plus the other manifest-registered living docs. |
-| Code status | Existing iOS code may be inspected for lessons, fixtures, or terminology, but it is legacy/reference-only and not the implementation source of truth. |
+| Code status | The clean `ios/Rede` app + 7 in-tree Swift packages are the active implementation (M0–M6 shipped). Retired IronPath/PWA-era code is reference-only (git tag `legacy-parity-final`) and is not a contract. |
 | Target runtime | A clean native iOS SwiftUI app with local Swift packages and local-first persistence. |
 | Target source of truth | A single canonical local AppData model, persisted through a gated write path. |
 | Target engine boundary | Raw AppData never enters training engines; engines consume clean typed inputs. |
@@ -46,11 +47,12 @@ Removed implementation surfaces:
 - Supabase/Vercel implementation candidates, browser sync, account/auth runtime code, and cloud candidate code.
 - `RedeCloudSync` Swift package stub.
 
-Legacy/reference implementation surfaces:
+Active vs reference surfaces:
 
-- Existing `ios/` SwiftUI app, widget, local packages, fixtures, and project files remain in the repository only as reference material until they are replaced or explicitly removed.
-- Do not treat legacy runtime behavior as a contract when it conflicts with the living docs.
-- Do not port legacy code wholesale into the clean rewrite without a review slice that proves the behavior is still desired and unpolluted.
+- The clean `ios/Rede` SwiftUI app, the Readiness widget, and the 7 in-tree Swift packages are the **active implementation**.
+- Retired IronPath/PWA-era packages and code (removed during M1-0, preserved at git tag `legacy-parity-final`) are reference-only.
+- Do not treat retired runtime behavior as a contract when it conflicts with the living docs.
+- Do not port retired code wholesale into the clean rewrite without a review slice that proves the behavior is still desired and unpolluted.
 
 ---
 
@@ -84,7 +86,7 @@ ios/
 └── packages/                 Local Swift packages
 ```
 
-This is the target shape for the clean rewrite. Existing folders may not yet match the target quality bar and must not be treated as proof that the target has already been implemented.
+This shape is implemented: the clean `ios/Rede` app, `RedeWidget`, `ParityFixtures`, and `packages/` all exist. (`RedeCloudSync` and the not-yet-created packages noted in §5 are intentionally absent.)
 
 The app layer is a thin renderer and IO seam. It may:
 
@@ -104,7 +106,7 @@ The app layer must not:
 
 ## 5. Target Swift Package Boundaries
 
-### Target Packages
+### Packages present today (7, all in the CI test matrix)
 
 | Package | Responsibility | Depends on |
 |---|---|---|
@@ -113,17 +115,19 @@ The app layer must not:
 | `RedeTrainingDecision` | Training decision, readiness, scheduling, progression, insights, muscle level, support allocation, session prescription, and coach-action engines. | `RedeDomain`, `RedeDataHealth` |
 | `RedePersistence` | AppData store protocol, JSON file store, and canonical write orchestration. | `RedeDomain` |
 | `RedeLocalSnapshot` | Derived Focus/session history snapshots. Never canonical AppData. | Foundation only |
-| `RedeHealthKit` | Approved HealthKit adapters and pure mapping seams. | `RedeDomain` |
-| `RedeNotifications` | Local notification policies and adapters. | Foundation only |
 | `RedeWidgetShared` | Read-only widget snapshot model and App Group snapshot store. | Foundation only |
 | `RedeL10n` | Terms and formatting support. | Foundation only |
 
-### Placeholder Packages
+### Target package names not yet created on disk
 
-| Package | Status |
-|---|---|
-| `RedeBackup` | Placeholder. It does not authorize backup/export implementation. |
-| `RedeUIKit` | Placeholder. It does not authorize a shared UI framework migration. |
+These are reserved future boundaries (named here so logic lands in the right place when approved); none exists in `ios/packages/` today, and creating any requires an approved implementation slice:
+
+| Package | Intended responsibility | Status |
+|---|---|---|
+| `RedeHealthKit` | Approved HealthKit adapters and pure mapping seams. | Not created. No HealthKit code exists yet. |
+| `RedeNotifications` | Local notification policies and adapters. | Not created. No notification code exists yet. |
+| `RedeBackup` | Backup/export. | Not created. Does not authorize backup/export implementation. |
+| `RedeUIKit` | Shared UI framework. | Not created. Does not authorize a shared UI framework migration. |
 
 There is no approved cloud/sync runtime in the clean rewrite baseline. Future iOS-native account/cloud/sync work must follow `docs/REDE_REBUILD_00_IRONRULES_AND_CLOUD.md` and `docs/CLOUD_DECISIONS_ARCHIVE.md`, then land through an explicit Master-approved implementation slice.
 
@@ -133,7 +137,7 @@ There is no approved cloud/sync runtime in the clean rewrite baseline. Future iO
 2. `RedeLocalSnapshot` must stay decoupled from `RedeDomain` and canonical AppData.
 3. The import graph must remain a DAG.
 4. Packages never depend on the app target.
-5. Placeholder packages stay inert until explicitly approved.
+5. Not-yet-created target packages stay unbuilt until an approved slice creates them.
 
 ---
 
@@ -207,8 +211,8 @@ HealthKit imports, widget snapshots, local snapshots, UI receipts, and future pl
 Allowed platform integrations:
 
 - `FileManager` for local JSON persistence and sanctioned backups.
-- HealthKit only inside `RedeHealthKit`.
-- UserNotifications only inside `RedeNotifications`.
+- HealthKit, when added, only inside `RedeHealthKit` (not yet created; no HealthKit code exists today).
+- UserNotifications, when added, only inside `RedeNotifications` (not yet created; no notification code exists today).
 - WidgetKit only inside the widget target and `RedeWidgetShared` adapter.
 - App Groups only for the read-only widget snapshot handoff.
 

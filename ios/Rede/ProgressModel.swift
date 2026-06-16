@@ -3,6 +3,7 @@ import RedeDataHealth
 import RedeDomain
 import RedeLocalSnapshot
 import RedePersistence
+import RedeTrainingDecision
 
 // ProgressModel — 进展页组合层（M4-3）：读 canonical → DataHealth 投影 →
 // clean view 映射为快照输入 → ProgressSnapshot + DataQualityReport。
@@ -46,13 +47,25 @@ struct ProgressModel {
         }
 
         let cleanView = CleanAppDataViewBuilder.build(from: appData)
-        let quality = DataQualityReportBuilder.build(view: cleanView)
+        // §6.2 目录只读投影：吨位系数/复合标记进统计层；合理上限进可疑组判定
+        // （上限 = 起步值×6、下限 60、全局 400 兜底——待校准启发值，留痕 2026-06-11）
+        let catalog = ExerciseCatalog.minimal
+        var facts: [String: ExerciseStatsFacts] = [:]
+        var ceilings: [String: Double] = [:]
+        for entry in catalog.entries {
+            facts[entry.id] = ExerciseStatsFacts(
+                loadFactor: entry.loadFactor, isCompound: entry.kind == "compound",
+                isAssisted: entry.loadType == "assisted"
+            )
+            ceilings[entry.id] = max(60, entry.startWeightKg * 6)
+        }
+        let quality = DataQualityReportBuilder.build(view: cleanView, plausibleCeilingByExercise: ceilings)
         // 可疑组不进统计（趋势/PR/判断句）——可信度的行为表达（§3.4：判断更保守），
         // 数据区仍如实列出（FR-PR4 标记不隐藏）。canonical 原样不动。
         let records = mapToRecords(cleanView)
         let statsRecords = mapToRecords(cleanView, excluding: quality.suspectSets)
-        let snapshot = ProgressSnapshotBuilder.build(sessions: statsRecords)
-        let keyTrend = TrendInsight.keyExercise(of: snapshot)
+        let snapshot = ProgressSnapshotBuilder.build(sessions: statsRecords, facts: facts)
+        let keyTrend = TrendInsight.keyExercise(of: snapshot, facts: facts)
         return .ready(ProgressModel(
             snapshot: snapshot,
             quality: quality,

@@ -47,6 +47,10 @@ final class SessionStore {
     var todayOutcome: TodayModel.LoadOutcome?
     var flow: TrainFlowState?
     var sessionStartedAt: Date?
+    /// 休息倒计时的墙钟锚点（owner 反馈 2026-06-15 修复）：剩余秒数曾放在 TrainTabView
+    /// 的 @State，切 tab 时 RootTabView 用 switch 销毁视图树即归 0。移到会话层后跨切页
+    /// 存活，且按绝对结束时刻求剩余 → 离屏期间真实时间照常流逝。详见 RestCountdown。
+    private(set) var restCountdown = RestCountdown()
     /// 启动时发现的可恢复 draft（FR-TR9 提示「继续进行中的训练」）。
     var pendingDraft: TrainSessionDraft?
     /// 写入失败的如实呈现（FR-TR8：绝不假装成功）；nil = 无错误。
@@ -97,13 +101,52 @@ final class SessionStore {
     struct TemplateFacts {
         let splitType: String?
         let daysPerWeek: Int?
+        let goal: String?
+        let level: String?
+        let equipment: String?
     }
 
     static func loadTemplateFacts() -> TemplateFacts? {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         guard let appData = try? store.load() else { return nil }
         let template = appData.programTemplate
-        return TemplateFacts(splitType: template.splitType, daysPerWeek: template.daysPerWeek)
+        let profile = appData.userProfile
+        // 真数据：分化/天数来自模板；目标/背景/器械统一从档案取（审查 P2：与设置页 ProfileSnapshot
+        // 同源 profile.primaryGoal，避免日后改目标时模板/档案两份漂移）。FR-PL1：只展示真值，不编排期/周期。
+        return TemplateFacts(
+            splitType: template.splitType,
+            daysPerWeek: template.daysPerWeek,
+            goal: profile.primaryGoal,
+            level: profile.trainingLevel,
+            equipment: profile.equipmentScenario
+        )
+    }
+
+    /// 计划页周期条状态（FR-PL2 S5）：仅周期化开启且有真历史锚点时返回，否则 nil（退诚实占位）。
+    /// 走与今日页处方同一 clean pipeline + 同一锚点 → 周期条与处方相位永远一致。
+    static func loadCycleState(now: Date = Date()) -> MesocycleCycleState? {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load(), appData.mesocycle.enabled else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        let todayISO = formatter.string(from: now)
+        let cleanView = CleanAppDataViewBuilder.build(from: appData)
+        guard let input = try? CleanTrainingDecisionInput.make(from: cleanView, todayISO: todayISO) else { return nil }
+        return Mesocycle.cycleState(
+            sessionDatesISO: input.sessions.map(\.date),
+            todayISO: todayISO,
+            enabled: true,
+            blockLengthWeeks: appData.mesocycle.blockLengthWeeks
+        )
+    }
+
+    /// 周期化开关当前持久态（设置页开关初值）；unreadable/缺失 → false（默认关）。
+    static func loadMesocycleEnabled() -> Bool {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load() else { return false }
+        return appData.mesocycle.enabled
     }
 
     /// 偏好写入（FR-SE1/SE3 持久化）：经写闸 scalar edit；失败如实置 saveErrorText。
@@ -124,6 +167,38 @@ final class SessionStore {
                     gate: DataHealthGate()
                 )
                 try writer.applyPreferences(unitSystem: unitSystem, locale: locale)
+                return .success(())
+            } catch {
+                return .failure(error)
+            }
+        }.value
+        switch result {
+        case .success:
+            return true
+        case .failure(let error):
+            saveErrorText = String(describing: error)
+            return false
+        }
+    }
+
+    /// 周期化开关写入（FR-PL2 enablement）：经写闸 scalar edit；失败如实置 saveErrorText。
+    /// isSaving 互斥沿写闸单调用方合同（防快速连点并发 load-modify-write 丢更新，同 savePreferences）。
+    @discardableResult
+    func saveMesocycleEnabled(_ enabled: Bool) async -> Bool {
+        guard !isSaving else { return false }
+        isSaving = true
+        defer { isSaving = false }
+        let fileURL = TodayModel.canonicalFileURL()
+        let result: Result<Void, Error> = await Task.detached(priority: .userInitiated) {
+            do {
+                try FileManager.default.createDirectory(
+                    at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true
+                )
+                let writer = CanonicalSessionWriter(
+                    store: JSONFileAppDataStore(fileURL: fileURL),
+                    gate: DataHealthGate()
+                )
+                try writer.applyMesocyclePreference(enabled: enabled)
                 return .success(())
             } catch {
                 return .failure(error)
@@ -216,13 +291,20 @@ final class SessionStore {
     func restorePendingDraft() {
         guard let draft = pendingDraft else { return }
         pendingDraft = nil
-        guard let restored = draft.restoreFlow() else {
+        guard let restored = draft.restoreFlow(allowedEquipment: allowedEquipment, loadUnit: loadUnit) else {
             // 重放失败（如 catalog 漂移）：宁可不恢复，清掉过期 draft
             DraftFile.clear()
             return
         }
         flow = restored
         sessionStartedAt = draft.startedAt
+        // 跨进程恢复不留旧 deadline（FR-TR9 最小恢复）：若恢复到休息态，按计划秒数
+        // 重新计时；否则清空。
+        if restored.phase == .resting {
+            restCountdown.begin(seconds: restored.restSecondsPlanned)
+        } else {
+            restCountdown.clear()
+        }
     }
 
     func discardPendingDraft() {
@@ -245,7 +327,37 @@ final class SessionStore {
         case .keepTraining: flow?.keepTraining()
         case .confirmEnd(let reason): flow?.confirmEnd(reason: reason)
         }
+        syncRestCountdown(after: event)
         persistDraft()
+    }
+
+    // MARK: - 休息倒计时（会话层接管，详见 SessionStore.restCountdown / RestCountdown）
+
+    /// 当前剩余秒数（按墙钟实时求出；视图每秒重读）。
+    var restRemainingSeconds: Int { restCountdown.remaining() }
+    /// 进度条比例（剩余/总时长，与倒计时数字同源同步；+30 后仍平滑、0:00 精确归零）。
+    var restFraction: Double { restCountdown.fraction() }
+    /// 是否暂停（绑定暂停/继续按钮文案与态）。
+    var restIsPaused: Bool { restCountdown.isPaused }
+
+    /// +30 加时。
+    func addRestTime(_ seconds: Int) { restCountdown.add(seconds: seconds) }
+    /// 暂停 / 继续切换。
+    func toggleRestPause() { restCountdown.togglePause() }
+
+    /// 事件落定后同步倒计时锚点。进入 resting（仅 logSet 一条路）= 开新休息；
+    /// restFinished 或落到 summary = 结束清空；confirmEnd↔resting 折返（结束确认弹层
+    /// 取消后继续训练）期间不动锚点，故剩余随墙钟延续、不会重置。
+    private func syncRestCountdown(after event: TrainFlowEvent) {
+        guard let flow else { restCountdown.clear(); return }
+        switch event {
+        case .logSet where flow.phase == .resting:
+            restCountdown.begin(seconds: flow.restSecondsPlanned)
+        case .restFinished:
+            restCountdown.clear()
+        default:
+            if flow.phase == .summary { restCountdown.clear() }
+        }
     }
 
     private func persistDraft() {
@@ -258,17 +370,30 @@ final class SessionStore {
             dateISO: formatter.string(from: sessionStartedAt ?? Date()),
             startedAt: sessionStartedAt ?? Date(),
             prescription: flow.prescription,
-            events: flow.events
+            events: flow.events,
+            catalogVersion: ExerciseCatalog.minimal.catalogVersion
         )
         Task.detached(priority: .utility) { DraftFile.save(draft) }
+    }
+
+    /// FR-EQ1：当前档案的器械白名单（nil = 不过滤）。
+    private var allowedEquipment: Set<String>? {
+        EquipmentAccess.allowed(for: todayModel?.cleanView.profile.equipmentScenario)
+    }
+
+    /// 档位系统（2026-06-13）：当前档案的重量单位 → 引擎真实档位。
+    private var loadUnit: LoadUnit {
+        LoadUnit(unitSystem: todayModel?.cleanView.profile.unitSystem)
     }
 
     /// 从今日处方开启训练（无处方/休息日则不开）。
     func startSession(now: Date = Date()) {
         guard flow == nil, let prescription = todayModel?.prescription else { return }
         pendingDraft = nil // 显式清提示（不依赖 alert binding 的隐式 dismiss）
-        flow = TrainFlowState(prescription: prescription)
+        // FR-EQ1：换动作候选同守器械白名单
+        flow = TrainFlowState(prescription: prescription, allowedEquipment: allowedEquipment, loadUnit: loadUnit)
         sessionStartedAt = now
+        restCountdown.clear() // 新会话从 activeSet 起步，旧倒计时不得滞留
         persistDraft()
     }
 
@@ -282,7 +407,14 @@ final class SessionStore {
         flow = nil
         sessionStartedAt = nil
         saveErrorText = nil
+        restCountdown.clear()
         DraftFile.clear()
+    }
+
+    /// 放弃进行中训练（owner 反馈 2026-06-13）：清空流与 draft、不写 canonical——
+    /// 与「结束训练→保存并完成」相对，给用户一个「取消、什么都不存」的出口。
+    func abandonActiveSession() {
+        endSession()
     }
 
     /// 完成写入（M3-3）：构建 canonical session → 真 DataHealth gate → 唯一写闸。
@@ -341,10 +473,22 @@ final class SessionStore {
     var sessionSummary: SessionSummary? {
         guard let flow, flow.phase == .summary else { return nil }
         let duration = sessionStartedAt.map { Int(Date().timeIntervalSince($0)) } ?? 0
+        // §6.2：换入动作的 PR 参考 = 它自己的历史（处方只携带原动作的）——
+        // 无历史则不发奖（与首练同口径）。契约假设（审查 N2）：cleanView.sessions
+        // 只含已落盘历史、不含进行中 session——若改动该边界须同步本处口径
+        var overrides: [String: Double] = [:]
+        if let sessions = todayModel?.cleanView.sessions {
+            for id in Set(flow.replacements.map(\.actualExerciseId)) {
+                if let last = TodayPrescriptionEngine.lastTopWeightKg(exerciseId: id, sessions: sessions) {
+                    overrides[id] = last
+                }
+            }
+        }
         return SessionSummaryBuilder.build(
             prescription: flow.prescription,
             observations: flow.observationsByExercise,
-            durationSeconds: max(0, duration)
+            durationSeconds: max(0, duration),
+            previousWeightOverrides: overrides
         )
     }
 }

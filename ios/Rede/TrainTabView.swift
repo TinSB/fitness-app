@@ -15,8 +15,12 @@ struct TrainTabView: View {
     @Environment(LocaleStore.self) private var localeStore
     @Environment(SessionStore.self) private var sessionStore
 
-    @State private var restRemaining = 0
-    @State private var restPaused = false
+    // 休息倒计时单一真相在 SessionStore.restCountdown（墙钟锚点，跨切页/切应用存活）；
+    // 本层只渲染。restTick 每秒由计时 task 递增，驱动按墙钟重算剩余并重绘——
+    // 不用 TimelineView，因其在「切出应用再回」时不保证恢复逐秒刷新（owner 2026-06-15 反馈）；
+    // scenePhase 让计时 task 在回前台时重启（同切 tab 重建视图的效果），既追平剩余又续走。
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var restTick = 0
     @State private var showAdjust = false
     /// 用户在本组是否做过有效调整（用户真机反馈修复 2026-06-10）：
     /// 关面板 = 收起控件，不丢弃决定——暂存值随本组保留直到打勾/跳过/换动作。
@@ -34,6 +38,10 @@ struct TrainTabView: View {
     @State private var selectionPulse = 0
     @State private var clampPulse = 0
     @State private var logPulse = 0
+    /// 通用动作点击触感（.selection）：Hold/More/休息 +30/暂停-继续/下一组。
+    @State private var actionPulse = 0
+    /// 登记不适触感（.warning）。
+    @State private var painPulse = 0
     @FocusState private var weightFieldFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// 快改入口一次性提示（用过即永久消失）。
@@ -73,10 +81,12 @@ struct TrainTabView: View {
                         .padding(.top, 24)
                 }
             }
-            .padding(.bottom, 78)
+            .padding(.bottom, RedeSpace.bottomBar)
         }
         .background(Color.redeBase)
         .sensoryFeedback(.success, trigger: logPulse)
+        .sensoryFeedback(.selection, trigger: actionPulse) // Hold/More/休息控件等动作确认
+        .sensoryFeedback(.warning, trigger: painPulse)      // 登记不适 = caution 口音
         // 会话边界：换场（结束/新开训练）后旧暂存绝不滞留到新会话首组
         .onChange(of: sessionStore.sessionStartedAt) { _, _ in clearAdjustment() }
         .task(id: restTaskKey) { await runRestTimer() }
@@ -125,8 +135,8 @@ struct TrainTabView: View {
     private func progressBar(_ flow: TrainFlowState) -> some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 2).fill(Color(redeHex: 0x1B1813)).frame(height: 3)
-                RoundedRectangle(cornerRadius: 2).fill(Color.redeNeu)
+                Capsule().fill(Color.redeGroove).frame(height: 3)
+                Capsule().fill(Color.redeNeu)
                     .frame(width: geo.size.width * overallFraction, height: 3)
             }
         }
@@ -158,23 +168,32 @@ struct TrainTabView: View {
         let exercise = flow.currentExercise
         let recommendation = flow.currentRecommendation
         return VStack(alignment: .leading, spacing: 0) {
-            Text(exercise.map { s.exerciseName($0.exerciseId) } ?? "")
+            Text(exercise.map { localeStore.exerciseName($0.exerciseId) } ?? "")
                 .font(.redeSubhead)
                 .foregroundStyle(Color.redeT2)
 
             Button(action: { startAdjust(targetKg: targetKg, recommendation: recommendation) }) {
                 let staging = showAdjust || hasAdjustment
+                let heroReps = staging ? adjustReps : (recommendation?.targetReps ?? exercise?.sets.first?.targetReps ?? 0)
                 HStack(alignment: .bottom, spacing: 8) {
-                    Text(s.formatKg(staging ? adjustWeight : targetKg))
+                    // 三态大数字（wave-9）：自重=次数、辅助=「辅助 N」、其余=重量。
+                    Text(s.heroNumber(
+                        loadType: flow.currentExercise?.loadType ?? "external",
+                        weightKg: LoadDisplay.snap(staging ? adjustWeight : targetKg,
+                                                   exerciseId: flow.currentExercise?.exerciseId ?? "", s),
+                        reps: heroReps
+                    ))
                         .font(.redeDisplay)
                         .monospacedDigit()
                         .foregroundStyle(Color.redeT1)
-                        .contentTransition(.numericText(value: staging ? adjustWeight : targetKg))
+                        .contentTransition(.numericText(value: currentIsRepBased ? Double(heroReps) : (staging ? adjustWeight : targetKg)))
                         .animation(reduceMotion ? nil : .easeOut(duration: 0.2),
-                                   value: staging ? adjustWeight : targetKg)
-                    Text(s.trainLoadSuffix(
-                        targetReps: staging ? adjustReps : (recommendation?.targetReps ?? 0),
-                        targetRir: staging ? adjustRir.map(Double.init) : (recommendation?.targetRir ?? 2)
+                                   value: currentIsRepBased ? Double(heroReps) : (staging ? adjustWeight : targetKg))
+                    Text(currentIsRepBased
+                         ? s.trainLoadSuffixBodyweight(targetRir: staging ? adjustRir.map(Double.init) : (recommendation?.targetRir ?? 2))
+                         : s.trainLoadSuffix(
+                            targetReps: staging ? adjustReps : (recommendation?.targetReps ?? 0),
+                            targetRir: staging ? adjustRir.map(Double.init) : (recommendation?.targetRir ?? 2)
                     ))
                     .font(.redeCallout)
                     .monospacedDigit()
@@ -190,8 +209,23 @@ struct TrainTabView: View {
             }
             .buttonStyle(.plain)
 
+            // 跟上次比（基调微调 2026-06-15）：卡片内多一行「上次 W×N + 升降」，基调不动。
+            // 首练 change=start 显式切断（审查 M1）；其余按 loadType 取 L10n 上次行。
+            if let p = currentPrescription(flow), p.change.rawValue != "start",
+               let prev = s.lastRefLine(loadType: p.loadType,
+                                        prevWeightKg: p.previousWeightKg.map { LoadDisplay.snap($0, loadType: p.loadType, equipment: p.equipment, s) },
+                                        prevReps: p.previousTopReps) {
+                HStack(spacing: 6) {
+                    Text(prev)
+                        .font(.redeCaption).monospacedDigit()
+                        .foregroundStyle(Color.redeT4)
+                    changeTag(p.change.rawValue)
+                }
+                .padding(.top, 6)
+            }
+
             if !hasUsedQuickAdjust && !showAdjust {
-                Text(s.adjustDiscoverHint)
+                Text(currentIsAssisted ? s.adjustDiscoverHintAssisted : (currentIsBodyweightPlus ? s.adjustDiscoverHintBodyweightPlus : (currentIsRepBased ? s.adjustDiscoverHintBodyweight : s.adjustDiscoverHint)))
                     .font(.redeCaption)
                     .foregroundStyle(Color.redeT4)
                     .padding(.top, 2)
@@ -207,22 +241,34 @@ struct TrainTabView: View {
                  ? s.holdWhyLine
                  : (flow.completedInCurrentExercise.isEmpty
                     ? s.firstSetWhy
-                    : s.nextSetWhy(
-                        reasonCode: recommendation?.reason.code ?? "onPlan",
-                        fromKg: flow.completedInCurrentExercise.last.map { s.formatKg($0.weightKg) }
-                    )))
+                    : (currentIsAssisted
+                       ? s.nextSetWhyAssisted(reasonCode: recommendation?.reason.code ?? "onPlan")
+                       : (currentIsBodyweightPlus
+                          ? s.nextSetWhyBodyweightPlus(reasonCode: recommendation?.reason.code ?? "onPlan", fromKg: flow.completedInCurrentExercise.last.map { LoadDisplay.weight($0.weightKg, exerciseId: flow.currentExercise?.exerciseId ?? "", s) })
+                          : (currentIsRepBased
+                             ? s.nextSetWhyBodyweight(reasonCode: recommendation?.reason.code ?? "onPlan")
+                             : s.nextSetWhy(
+                                  reasonCode: recommendation?.reason.code ?? "onPlan",
+                                  fromKg: flow.completedInCurrentExercise.last.map { LoadDisplay.weight($0.weightKg, exerciseId: flow.currentExercise?.exerciseId ?? "", s) }
+                              ))))))
                 .font(.redeCallout)
                 .foregroundStyle(Color.redeT3)
                 .padding(.top, 10)
 
             HStack(spacing: 8) {
                 SteelButton(
-                    title: s.holdLabel(kg: s.formatKg(plannedWeight(flow)), holding: flow.isHolding),
+                    title: currentIsAssisted
+                        ? s.holdLabelAssisted(kg: LoadDisplay.weight(plannedWeight(flow), exerciseId: flow.currentExercise?.exerciseId ?? "", s), holding: flow.isHolding)
+                        : (currentIsBodyweightPlus
+                            ? s.holdLabelBodyweightPlus(kg: LoadDisplay.weight(plannedWeight(flow), exerciseId: flow.currentExercise?.exerciseId ?? "", s), holding: flow.isHolding)
+                            : (currentIsRepBased
+                                ? s.holdLabelBodyweight(reps: flow.currentRecommendation?.targetReps ?? plannedSetReps(flow), holding: flow.isHolding)
+                                : s.holdLabel(kg: LoadDisplay.weight(plannedWeight(flow), exerciseId: flow.currentExercise?.exerciseId ?? "", s), holding: flow.isHolding))),
                     isOn: flow.isHolding,
-                    action: { sessionStore.apply(.toggleHold) }
+                    action: { sessionStore.apply(.toggleHold); actionPulse += 1 }
                 )
                 SteelButton(title: s.painAction, action: registerPain)
-                SteelButton(title: s.moreActions, action: { showMoreSheet = true })
+                SteelButton(title: s.moreActions, action: { showMoreSheet = true; actionPulse += 1 })
             }
             .padding(.top, 14)
 
@@ -231,22 +277,45 @@ struct TrainTabView: View {
         }
     }
 
+    // MARK: - 跟上次比（基调微调 2026-06-15；L10n 债同今日/进展：中文串暂在视图层）
+
+    /// 当前动作的处方条目（含「上次」素材）；换动作后原 id 不匹配 → nil（不显示上次行）。
+    private func currentPrescription(_ flow: TrainFlowState) -> ExercisePrescriptionPlan? {
+        flow.prescription.exercises.first { $0.exerciseId == flow.currentExercise?.exerciseId }
+    }
+
+    @ViewBuilder
+    private func changeTag(_ change: String) -> some View {
+        if let tag = s.trainChangeTag(change) {
+            let color: Color = change == "ease" ? .redeEmber2 : (change == "hold" ? .redeT4 : .redeEmber)
+            Text(tag).font(.redeCaption).foregroundStyle(color)
+        }
+    }
+
     private func restState(_ flow: TrainFlowState) -> some View {
-        VStack(spacing: 10) {
+        // 倒计时与进度条按墙钟逐秒重算：剩余值算自 SessionStore 的绝对结束时刻；
+        // 读 restTick（每秒由 runRestTimer 递增）建立每秒重绘依赖（墙钟剩余非 @Observable）。
+        _ = restTick
+        let remaining = sessionStore.restRemainingSeconds
+        return VStack(spacing: 10) {
             Overline(text: s.restLabel, color: .redeRec2)
-            Text(formattedRest)
+            Text(formattedRest(remaining))
                 .font(.redeDisplay)
                 .monospacedDigit()
                 .foregroundStyle(Color.redeT1)
+                // VoiceOver 念「休息，剩 1:57」整条，数字随墙钟更新；下方进度条是同信息的视觉冗余
+                .accessibilityLabel("\(s.restLabel)，\(formattedRest(remaining))")
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Rectangle().fill(Color(redeHex: 0x231F19)).frame(height: 3)
-                    Rectangle().fill(Color.redeNeu)
-                        .frame(width: geo.size.width * restFraction, height: 3)
-                        .animation(.linear(duration: 1), value: restRemaining)
+                    Capsule().fill(Color.redeGroove).frame(height: 4)
+                    // 进度填充用主题琥珀橙（同今日页当前动作条/hero 口音），略加粗到 4pt
+                    Capsule().fill(Color.redeEmber)
+                        .frame(width: geo.size.width * sessionStore.restFraction, height: 4)
+                        .animation(.linear(duration: 1), value: remaining)
                 }
             }
-            .frame(width: 180, height: 3)
+            .frame(width: 180, height: 4)
+            .accessibilityHidden(true) // 进度条是倒计时数字的视觉冗余，避免 VoiceOver 重复噪声
 
             Text(restPreviewText(flow))
                 .font(.redeCallout)
@@ -254,9 +323,10 @@ struct TrainTabView: View {
                 .foregroundStyle(Color.redeT3)
 
             HStack(spacing: 8) {
-                SteelButton(title: s.restAdd30, action: { restRemaining += 30 })
-                SteelButton(title: restPaused ? s.restResume : s.restPause, isOn: restPaused,
-                            action: { restPaused.toggle() })
+                SteelButton(title: s.restAdd30, action: { sessionStore.addRestTime(30); actionPulse += 1 })
+                SteelButton(title: sessionStore.restIsPaused ? s.restResume : s.restPause,
+                            isOn: sessionStore.restIsPaused,
+                            action: { sessionStore.toggleRestPause(); actionPulse += 1 })
                 EmbButton(icon: "forward.fill", title: s.restNextSet, iconSize: 13, fontSize: 14,
                           action: finishRest)
             }
@@ -270,10 +340,19 @@ struct TrainTabView: View {
            flow.completedInCurrentExercise.count + flow.skippedInCurrentExercise >= exercise.sets.count {
             let next = flow.plan.exercises.indices.contains(flow.exerciseIndex + 1)
                 ? flow.plan.exercises[flow.exerciseIndex + 1] : nil
-            return next.map { s.restNextExercise(s.exerciseName($0.exerciseId)) } ?? ""
+            return next.map { s.restNextExercise(localeStore.exerciseName($0.exerciseId)) } ?? ""
         }
         guard let rec = flow.currentRecommendation else { return "" }
-        return s.restNextPreview(setNumber: rec.setIndex, kg: s.formatKg(rec.targetWeightKg), reps: rec.targetReps)
+        if flow.currentExercise?.loadType == "bodyweight" || flow.currentExercise?.loadType == "band" {
+            return s.restNextPreviewBodyweight(setNumber: rec.setIndex, reps: rec.targetReps)
+        }
+        if flow.currentExercise?.loadType == "assisted" {
+            return s.restNextPreviewAssisted(setNumber: rec.setIndex, kg: LoadDisplay.weight(rec.targetWeightKg, exerciseId: flow.currentExercise?.exerciseId ?? "", s), reps: rec.targetReps)
+        }
+        if flow.currentExercise?.loadType == "bodyweight-plus" {
+            return s.restNextPreviewBodyweightPlus(setNumber: rec.setIndex, kg: LoadDisplay.weight(rec.targetWeightKg, exerciseId: flow.currentExercise?.exerciseId ?? "", s), reps: rec.targetReps)
+        }
+        return s.restNextPreview(setNumber: rec.setIndex, kg: LoadDisplay.weight(rec.targetWeightKg, exerciseId: flow.currentExercise?.exerciseId ?? "", s), reps: rec.targetReps)
     }
 
     // MARK: - 快改刻度轨（FR-TR2 两击内；M5-3 拍板设计 = rede-app.html #533）
@@ -283,18 +362,21 @@ struct TrainTabView: View {
     private func adjustPanel(_ flow: TrainFlowState) -> some View {
         let options = adjustOptions(flow)
         return VStack(alignment: .leading, spacing: 0) {
-            railHeader
-                .modifier(CascadeIn(index: 0, enabled: !reduceMotion))
-            railZone(options)
-                .frame(height: 74)
-                .padding(.top, 2)
-                .modifier(CascadeIn(index: 1, enabled: !reduceMotion))
-            if showExactField {
-                exactField
-                    .padding(.top, 4)
+            if !currentIsRepBased {
+                // 自重无重量轴：隐藏重量刻度轨/±/精确，次数带成为主控（wave-6 UI 片）
+                railHeader
+                    .modifier(CascadeIn(index: 0, enabled: !reduceMotion))
+                railZone(options)
+                    .frame(height: 74)
+                    .padding(.top, 2)
+                    .modifier(CascadeIn(index: 1, enabled: !reduceMotion))
+                if showExactField {
+                    exactField
+                        .padding(.top, 4)
+                }
             }
             Overline(text: s.adjustReps)
-                .padding(.top, 14)
+                .padding(.top, currentIsRepBased ? 0 : 14)
                 .modifier(CascadeIn(index: 2, enabled: !reduceMotion))
             repsStrip(flow)
                 .padding(.top, 2)
@@ -313,22 +395,64 @@ struct TrainTabView: View {
         .sensoryFeedback(.error, trigger: clampPulse)
     }
 
+    /// 当前动作的渐进一档（目录步长随计划透传；无会话时回退引擎默认）。
+    private var currentStepKg: Double {
+        flow?.currentExercise?.stepKg ?? AdjustOptionsBuilder.stepKg
+    }
+
+    /// 纯次数动作（无重量轴）：自重（wave-6）+ 弹力带（wave-12，A 案按次数进阶）——
+    /// big hero 显次数、组行重量列显「—」。两者 train 显示完全一致（NextSetEngine 无到顶
+    /// reason，故 train 侧零分叉；到顶换带提示只在今日页 change 行）。
+    private var currentIsRepBased: Bool {
+        let lt = flow?.currentExercise?.loadType
+        return lt == "bodyweight" || lt == "band"
+    }
+    /// 辅助器械（wave-9）：有重量轴（=辅助量），显示带「辅助」前缀，不像自重隐藏重量列。
+    private var currentIsAssisted: Bool { flow?.currentExercise?.loadType == "assisted" }
+    /// 负重自重（wave-11）：有重量轴（=外挂负重），显示带「负重 +」前缀，方向同 external。
+    private var currentIsBodyweightPlus: Bool { flow?.currentExercise?.loadType == "bodyweight-plus" }
+    /// 负荷单元格文案（wave-9/11）：辅助/负重冠前缀。视觉档位/组表行已靠表头标列显裸值
+    /// （避免窄格截断），故本助手现仅 VoiceOver 用——孤立朗读带前缀比裸值清楚。
+    private func loadCellText(_ kg: Double) -> String {
+        let w = LoadDisplay.snap(kg, exerciseId: flow?.currentExercise?.exerciseId ?? "", s)
+        if currentIsAssisted { return s.assistValue(s.formatKg(w)) }
+        if currentIsBodyweightPlus { return s.weightedValue(s.formatKg(w)) }
+        return s.formatKg(w)
+    }
+    /// 小结顶组文案（wave-6/11）：按顶组动作 loadType 分发——自重只显次数、负重自重冠「负重 +」。
+    private func summaryTopSetText(_ top: SessionSummary.TopSet) -> String {
+        let name = localeStore.exerciseName(top.exerciseId)
+        switch ExerciseCatalog.minimal.entry(id: top.exerciseId)?.loadType {
+        case "bodyweight", "band": return s.summaryTopSetBodyweight(name: name, reps: top.reps)   // wave-12：弹力带同自重只显次数
+        case "bodyweight-plus": return s.summaryTopSetBodyweightPlus(name: name, kg: LoadDisplay.weight(top.weightKg, exerciseId: top.exerciseId, s), reps: top.reps)
+        default: return s.summaryTopSet(name: name, kg: LoadDisplay.weight(top.weightKg, exerciseId: top.exerciseId, s), reps: top.reps)
+        }
+    }
+
     private func adjustOptions(_ flow: TrainFlowState) -> [AdjustOption] {
-        AdjustOptionsBuilder.options(
+        // 单位原生（2026-06-15）：档位取真实梯子相邻格，按当前动作器械×显示单位。
+        let exerciseId = flow.currentExercise?.exerciseId ?? ""
+        let equip = LoadGrid.gridEquipment(
+            loadType: flow.currentExercise?.loadType ?? "external",
+            equipment: ExerciseCatalog.minimal.entry(id: exerciseId)?.equipment ?? "dumbbell"
+        )
+        return AdjustOptionsBuilder.options(
             followKg: flow.currentTargetWeightKg ?? 0,
             lastActualKg: flow.completedInCurrentExercise.last?.weightKg,
-            plannedKg: plannedWeight(flow)
+            plannedKg: plannedWeight(flow),
+            equipment: equip,
+            unit: LoadUnit(unitSystem: s.unit.rawValue)
         )
     }
 
     /// 头行：重量标签 + 弱化文字级微调（−/＋ 一档、精确输入），不与档位竞争视觉。
     private var railHeader: some View {
         HStack(spacing: 0) {
-            Overline(text: s.adjustWeight)
+            Overline(text: currentIsAssisted ? s.adjustAssist : (currentIsBodyweightPlus ? s.adjustWeighted : s.adjustWeight))
             Spacer()
-            railOp("−") { stepAdjustWeight(-AdjustOptionsBuilder.stepKg) }
+            railOp("−") { stepAdjustWeight(-currentStepKg) }
             railDivider
-            railOp("＋") { stepAdjustWeight(AdjustOptionsBuilder.stepKg) }
+            railOp("＋") { stepAdjustWeight(currentStepKg) }
             railDivider
             Button(action: {
                 showExactField.toggle()
@@ -371,7 +495,7 @@ struct TrainTabView: View {
         adjustWeightText = s.formatKg(adjustWeight)
     }
 
-    /// 刻度轨：2.5kg 细刻 / 整 10kg 主刻；站点按真实比例落位（最小间距保护）；
+    /// 刻度轨：一档细刻（动作步长）/ 整 10kg 主刻；站点按真实比例落位（最小间距保护）；
     /// ember 指针滑到选中值——选中站点对齐站点，离格值（精确输入）按真实比例。
     private func railZone(_ options: [AdjustOption]) -> some View {
         GeometryReader { geo in
@@ -383,7 +507,8 @@ struct TrainTabView: View {
                     base.move(to: CGPoint(x: 0, y: tickTop))
                     base.addLine(to: CGPoint(x: geo.size.width, y: tickTop))
                     ctx.stroke(base, with: .color(Color.redeHair2), lineWidth: 1)
-                    var v = (layout.lo / 2.5).rounded(.up) * 2.5
+                    let fine = currentStepKg
+                    var v = (layout.lo / fine).rounded(.up) * fine
                     while v <= layout.hi {
                         let x = layout.trueX(v)
                         let major = v.truncatingRemainder(dividingBy: 10) == 0
@@ -391,7 +516,7 @@ struct TrainTabView: View {
                         tick.move(to: CGPoint(x: x, y: tickTop))
                         tick.addLine(to: CGPoint(x: x, y: tickTop + (major ? 10 : 6)))
                         ctx.stroke(tick, with: .color(Color.redeHair), lineWidth: 1)
-                        v += 2.5
+                        v += fine
                     }
                 }
                 .accessibilityHidden(true)
@@ -400,10 +525,12 @@ struct TrainTabView: View {
                     let selected = adjustWeight == option.weightKg
                     Button(action: { selectStation(option) }) {
                         VStack(spacing: 2) {
-                            Overline(text: s.adjustOptionLabel(option.role.rawValue),
+                            Overline(text: currentIsAssisted ? s.adjustOptionLabelAssisted(option.role.rawValue) : s.adjustOptionLabel(option.role.rawValue),
                                      color: selected ? .redeT3 : .redeT4)
                                 .lineLimit(1)
                                 .fixedSize()   // 标签不截断（可视超出命中框，命中区不变）
+                            // 刻度轨表头已标「辅助」→ 档位显裸值（与 external 在「重量」表头下一致；
+                            // 56pt 窄格放不下「辅助 60」会截断）。VoiceOver 仍带前缀见下。
                             Text(s.formatKg(option.weightKg))
                                 .font(.system(size: 17, weight: .semibold))
                                 .monospacedDigit()
@@ -414,7 +541,7 @@ struct TrainTabView: View {
                     }
                     .buttonStyle(.plain)
                     .position(x: layout.stationX[index], y: 22)
-                    .accessibilityLabel("\(s.adjustOptionLabel(option.role.rawValue)) \(s.formatKg(option.weightKg)) \(s.unitLabel)")
+                    .accessibilityLabel("\(currentIsAssisted ? s.adjustOptionLabelAssisted(option.role.rawValue) : s.adjustOptionLabel(option.role.rawValue)) \(loadCellText(option.weightKg)) \(s.unitLabel)")
                 }
 
                 // ember 指针（面板唯一口音）
@@ -447,8 +574,13 @@ struct TrainTabView: View {
             .multilineTextAlignment(.center)
             .frame(width: 76)
             .padding(.vertical, 4)
-            .background(Color.redeHair.opacity(0.6))
-            .clipShape(RoundedRectangle(cornerRadius: 6))
+            // 整面板（2026-06-11 欠账清尾）：输入可供性改 baseline 刻线式
+            // （与刻度轨同族），不再是圆角填充盒；聚焦时基线提亮
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(weightFieldFocused ? Color.redeSteel : Color.redeEtch)
+                    .frame(height: weightFieldFocused ? 2 : 1)
+            }
             .onChange(of: weightFieldFocused) { _, focused in
                 if !focused { commitWeightText() }
             }
@@ -472,6 +604,7 @@ struct TrainTabView: View {
         if let parsed = Double(adjustWeightText.replacingOccurrences(of: ",", with: ".")), parsed >= 0 {
             adjustWeight = s.unit == .lb ? parsed / 2.204_622_621_8 : parsed
             hasAdjustment = true
+            selectionPulse += 1 // 精确输入提交确认
         }
         adjustWeightText = s.formatKg(adjustWeight)
     }
@@ -497,6 +630,8 @@ struct TrainTabView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("\(n)")
+                .accessibilityAddTraits(n == adjustReps ? .isSelected : [])
             }
         }
     }
@@ -522,6 +657,7 @@ struct TrainTabView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(value.map { "RIR \($0)" } ?? "RIR —")
+                .accessibilityAddTraits(value == adjustRir ? .isSelected : [])
             }
         }
     }
@@ -544,7 +680,13 @@ struct TrainTabView: View {
         let text: String
         if let projection {
             let note = s.adjustPreviewNote(reasonCode: projection.reason.code)
-            text = s.adjustPreviewNext(kg: s.formatKg(projection.targetWeightKg))
+            text = (currentIsAssisted
+                    ? s.adjustPreviewNextAssisted(kg: s.formatKg(projection.targetWeightKg))
+                    : (currentIsBodyweightPlus
+                       ? s.adjustPreviewNextBodyweightPlus(kg: s.formatKg(projection.targetWeightKg))
+                       : (currentIsRepBased
+                          ? s.adjustPreviewNextBodyweight(reps: projection.targetReps)
+                          : s.adjustPreviewNext(kg: s.formatKg(projection.targetWeightKg)))))
                 + (note.map { " — \($0)" } ?? "")
         } else {
             text = s.adjustPreviewComplete
@@ -593,8 +735,11 @@ struct TrainTabView: View {
         return VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Overline(text: s.trainColSet).frame(width: 44, alignment: .leading)
-                Overline(text: s.trainColWeight).frame(maxWidth: .infinity, alignment: .leading)
-                Overline(text: s.trainColReps).frame(width: 60, alignment: .leading)
+                if !currentIsRepBased {
+                    Overline(text: currentIsAssisted ? s.trainColAssist : (currentIsBodyweightPlus ? s.trainColWeighted : s.trainColWeight)).frame(maxWidth: .infinity, alignment: .leading)
+                }
+                // 自重无重量列：次数接管弹性空间（整列移除而非留空，2026-06-13 owner 反馈）
+                Overline(text: s.trainColReps).frame(maxWidth: currentIsRepBased ? .infinity : 60, alignment: .leading)
                 Overline(text: s.trainColRir).frame(width: 44, alignment: .leading)
                 Spacer().frame(width: 22)
             }
@@ -606,18 +751,20 @@ struct TrainTabView: View {
                 case .done(let obs):
                     setRow(
                         number: plannedSet.index,
-                        weight: s.formatKg(obs.weightKg),
+                        weight: LoadDisplay.weight(obs.weightKg, exerciseId: flow.currentExercise?.exerciseId ?? "", s),
                         reps: "\(obs.reps)",
                         rir: obs.rir.map { s.formatRir($0) } ?? "—",
-                        marker: .done
+                        marker: .done,
+                        hideWeight: currentIsRepBased
                     )
                 case .skipped:
                     setRow(
                         number: plannedSet.index,
-                        weight: s.formatKg(plannedSet.targetWeightKg),
+                        weight: LoadDisplay.weight(plannedSet.targetWeightKg, exerciseId: flow.currentExercise?.exerciseId ?? "", s),
                         reps: "\(plannedSet.targetReps)",
                         rir: "—",
-                        marker: .skipped
+                        marker: .skipped,
+                        hideWeight: currentIsRepBased
                     )
                 case .active:
                     // 活动行与 hero 卡同源（用户真机反馈 2026-06-10：不能卡片跟随了表里还是计划值）：
@@ -626,20 +773,22 @@ struct TrainTabView: View {
                     let rec = flow.currentRecommendation
                     setRow(
                         number: plannedSet.index,
-                        weight: s.formatKg(staging ? adjustWeight : (rec?.targetWeightKg ?? plannedSet.targetWeightKg)),
+                        weight: LoadDisplay.weight(staging ? adjustWeight : (rec?.targetWeightKg ?? plannedSet.targetWeightKg), exerciseId: flow.currentExercise?.exerciseId ?? "", s),
                         reps: "\(staging ? adjustReps : (rec?.targetReps ?? plannedSet.targetReps))",
                         rir: "—",
-                        marker: .active
+                        marker: .active,
+                        hideWeight: currentIsRepBased
                     )
                 case .pending:
                     // 未来行 = 引擎默认轨迹（执行事实是基线：按当前目标延续；不含未打勾的暂存——
                     // 暂存只在打勾后才会改变轨迹，回流合同口径）
                     setRow(
                         number: plannedSet.index,
-                        weight: s.formatKg(flow.currentTargetWeightKg ?? plannedSet.targetWeightKg),
+                        weight: LoadDisplay.weight(flow.currentTargetWeightKg ?? plannedSet.targetWeightKg, exerciseId: flow.currentExercise?.exerciseId ?? "", s),
                         reps: "\(plannedSet.targetReps)",
                         rir: "—",
-                        marker: .pending
+                        marker: .pending,
+                        hideWeight: currentIsRepBased
                     )
                 }
             }
@@ -648,7 +797,7 @@ struct TrainTabView: View {
 
     private enum RowMarker { case done, skipped, active, pending }
 
-    private func setRow(number: Int, weight: String, reps: String, rir: String, marker: RowMarker) -> some View {
+    private func setRow(number: Int, weight: String, reps: String, rir: String, marker: RowMarker, hideWeight: Bool = false) -> some View {
         let textColor: Color = switch marker {
         case .done: .redeT2
         case .active: .redeT1
@@ -657,8 +806,10 @@ struct TrainTabView: View {
         let isActive = marker == .active
         return HStack {
             Text("\(number)").frame(width: 44, alignment: .leading)
-            Text("\(weight) \(s.unitLabel)").frame(maxWidth: .infinity, alignment: .leading)
-            Text(reps).frame(width: 60, alignment: .leading)
+            if !hideWeight {
+                Text("\(weight) \(s.unitLabel)").frame(maxWidth: .infinity, alignment: .leading)
+            }
+            Text(reps).frame(maxWidth: hideWeight ? .infinity : 60, alignment: .leading)
             Text(rir).frame(width: 44, alignment: .leading)
             Group {
                 switch marker {
@@ -691,7 +842,7 @@ struct TrainTabView: View {
             ? flow.plan.exercises[flow.exerciseIndex + 1] : nil
         return Group {
             if let next {
-                Text(s.restNextExercise(s.exerciseName(next.exerciseId)) + " · \(next.sets.count) × \(next.sets.first?.targetReps ?? 0)")
+                Text(s.restNextExercise(localeStore.exerciseName(next.exerciseId)) + " · \(next.sets.count) × \(next.sets.first?.targetReps ?? 0)")
                     .font(.redeCaption)
                     .monospacedDigit()
                     .foregroundStyle(Color.redeT4)
@@ -708,66 +859,105 @@ struct TrainTabView: View {
         }
     }
 
+    // 整面板（2026-06-11）：空态是「道歉」不是「判断」，不配 hero 铭牌——
+    // 开放式直落 base（与 Progress 空态语法统一）
     private var emptyState: some View {
-        ForgedCard(emberBarInset: 18) {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(s.trainEmptyTitle)
-                    .font(.redeHeadline)
-                    .tracking(RedeTracking.headline)
-                    .foregroundStyle(Color.redeT1)
-                if sessionStore.todayModel != nil, sessionStore.todayModel?.prescription == nil {
-                    Text(s.trainRestDayNote).font(.redeCallout).foregroundStyle(Color.redeT3)
-                }
-                EmbButton(icon: "arrow.left", title: s.trainEmptyAction, action: onGoToday)
+        VStack(alignment: .leading, spacing: 12) {
+            Text(s.trainEmptyTitle)
+                .font(.redeHeadline)
+                .tracking(RedeTracking.headline)
+                .foregroundStyle(Color.redeT1)
+            if sessionStore.todayModel != nil, sessionStore.todayModel?.prescription == nil {
+                Text(s.trainRestDayNote).font(.redeCallout).foregroundStyle(Color.redeT3)
             }
-            .padding(.leading, 13)
-            .padding(.vertical, 18)
-            .padding(.horizontal, RedeSpace.card)
+            EmbButton(icon: "arrow.left", title: s.trainEmptyAction, action: onGoToday)
+                .padding(.top, 4)
         }
+        .padding(.top, 24)
     }
 
     // MARK: - Sheets
 
-    private var moreSheet: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Overline(text: s.skipSetAction)
-            HStack(spacing: 7) {
-                ForEach(["equipmentBusy", "painDiscomfort", "fatigue", "timeShort"], id: \.self) { code in
-                    SteelButton(title: s.skipReasonLabel(code), action: { skipSet(code) })
+    // 整面板公理（拍板 2026-06-11）：sheet = 掀开的 base 锻面，不是弹出的大卡。
+    // 动作列表 = 开放行（文字+chevron+hairline，affordance 三件套），不堆描边按钮。
+
+    /// 开放动作行：文字级 + chevron + hairline 分隔（最后一行由调用方控制）。
+    private func sheetActionRow(_ title: String, divider: Bool = true, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 0) {
+                HStack {
+                    Text(title)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT2)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Color.redeT4)
+                        .accessibilityHidden(true) // 装饰性 affordance；行 Button 已承载动作
+                }
+                .frame(minHeight: 44)
+                if divider {
+                    Rectangle().fill(Color.redeHair2).frame(height: 1)
                 }
             }
-            Divider().overlay(Color.redeHair)
-            SteelButton(title: s.skipExerciseAction, action: skipExercise)
-            SteelButton(title: s.swapExerciseAction, action: {
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var moreSheet: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Overline(text: s.skipSetAction)
+                .padding(.top, 18)
+            VStack(spacing: 0) {
+                ForEach(Array(["equipmentBusy", "painDiscomfort", "fatigue", "timeShort"].enumerated()), id: \.element) { idx, code in
+                    sheetActionRow(s.skipReasonLabel(code), divider: idx < 3) { skipSet(code) }
+                }
+            }
+            .padding(.top, 4)
+            EngraveDivider().padding(.vertical, 12)
+            sheetActionRow(s.skipExerciseAction) { skipExercise() }
+            sheetActionRow(s.swapExerciseAction, divider: false) {
                 showMoreSheet = false
                 showSwapSheet = true
-            })
+            }
             Spacer()
         }
-        .padding(20)
-        .presentationDetents([.height(280)])
-        .presentationBackground(Color.redeSurface)
+        .padding(.horizontal, 20)
+        .presentationDetents([.height(380)])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(Color.redeBase)
     }
 
     private var swapSheet: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 0) {
             Overline(text: s.swapExerciseAction)
+                .padding(.top, 18)
             if let candidates = flow?.replacementCandidates, !candidates.isEmpty {
-                ForEach(candidates, id: \.self) { id in
-                    SteelButton(title: s.exerciseName(id), action: {
-                        clearAdjustment() // 换动作 = 新目标，旧暂存作废
-                        sessionStore.apply(.replaceExercise(id))
-                        showSwapSheet = false
-                    })
+                // bug 修复（2026-06-14，真机抓到）：候选随内容扩充可多达 12 项（卧推/划船/深蹲族），
+                // 原「普通 VStack + 固定 280pt sheet」放不下又无滚动容器 → 底部动作划不动够不着。
+                // 套 ScrollView 让列表可滚（标题固定只滚列表），detents 改可变半屏/全屏。
+                ScrollView {
+                    VStack(spacing: 0) {
+                        ForEach(Array(candidates.enumerated()), id: \.element) { idx, id in
+                            sheetActionRow(localeStore.exerciseName(id), divider: idx < candidates.count - 1) {
+                                clearAdjustment() // 换动作 = 新目标，旧暂存作废
+                                sessionStore.apply(.replaceExercise(id))
+                                showSwapSheet = false
+                            }
+                        }
+                    }
+                    .padding(.top, 4)
                 }
             } else {
-                Text("—").foregroundStyle(Color.redeT3)
+                Text("—").foregroundStyle(Color.redeT3).padding(.top, 12)
+                Spacer()
             }
-            Spacer()
         }
-        .padding(20)
-        .presentationDetents([.height(240)])
-        .presentationBackground(Color.redeSurface)
+        .padding(.horizontal, 20)
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(Color.redeBase)
     }
 
     private var confirmBinding: Binding<Bool> {
@@ -788,12 +978,38 @@ struct TrainTabView: View {
             EmbButton(icon: nil, title: s.endWorkoutConfirm, action: {
                 sessionStore.apply(.confirmEnd(.timeUp))
             })
-            SteelButton(title: s.keepTraining, action: { sessionStore.apply(.keepTraining) })
+            // 整面板：次操作降文字级（A2-6），不再双按钮盒并立
+            Button(action: { sessionStore.apply(.keepTraining) }) {
+                Text(s.keepTraining)
+                    .font(.redeBody)
+                    .foregroundStyle(Color.redeT3)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            // 放弃出口（owner 反馈 2026-06-13）：取消进行中训练、什么都不存
+            EngraveDivider().padding(.vertical, 2)
+            Button(action: { sessionStore.abandonActiveSession() }) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(s.endWorkoutDiscard)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeRisk)
+                    Text(s.endWorkoutDiscardNote)
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeT4)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
             Spacer()
         }
         .padding(20)
-        .presentationDetents([.height(260)])
-        .presentationBackground(Color.redeSurface)
+        .presentationDetents([.height(360)])
+        .presentationDragIndicator(.visible) // 审查 MINOR-2：§12.3 grabber
+        .presentationBackground(Color.redeBase)
     }
 
     private var summaryBinding: Binding<Bool> {
@@ -817,14 +1033,28 @@ struct TrainTabView: View {
             HStack(spacing: 20) {
                 summaryStat(value: s.formatKg(summary?.totalVolumeKg ?? 0), label: s.summaryVolume)
                 summaryStat(value: "\(summary?.completedSetCount ?? 0)", label: s.summarySets)
-                if summary?.isPersonalRecord == true {
-                    summaryStat(value: "1", label: s.summaryPr, valueColor: .redeEmber)
-                }
             }
             .padding(.top, 4)
 
-            if let top = summary?.topSet {
-                Text(s.summaryTopSet(name: s.exerciseName(top.exerciseId), kg: s.formatKg(top.weightKg), reps: top.reps))
+            // 整面板：PR 时刻 = 本弹层唯一铭牌（原型 #sumPRcard 语法，两端统一拍板 2026-06-11）
+            if summary?.isPersonalRecord == true, let top = summary?.topSet {
+                ForgedCard {
+                    HStack(spacing: 11) {
+                        Image(systemName: "trophy")
+                            .font(.system(size: 20))
+                            .foregroundStyle(Color.redeEmber)
+                            .accessibilityHidden(true) // 装饰图标；PR 文本已表语义
+                        VStack(alignment: .leading, spacing: 2) {
+                            Overline(text: s.summaryPr, color: .redeEmber2)
+                            Text(summaryTopSetText(top))
+                                .font(.redeBody)
+                                .foregroundStyle(Color.redeT1)
+                        }
+                    }
+                    .padding(14)
+                }
+            } else if let top = summary?.topSet {
+                Text(summaryTopSetText(top))   // 非 PR 顶组也走三态分发（审查 MAJOR：原内联只判 bodyweight，负重自重裸显）
                     .font(.redeCallout)
                     .foregroundStyle(Color.redeT2)
             }
@@ -850,8 +1080,8 @@ struct TrainTabView: View {
             Spacer()
         }
         .padding(20)
-        .presentationDetents([.height(320)])
-        .presentationBackground(Color.redeSurface)
+        .presentationDetents([.height(380)])
+        .presentationBackground(Color.redeBase)
         .interactiveDismissDisabled(true)
     }
 
@@ -863,6 +1093,13 @@ struct TrainTabView: View {
     }
 
     // MARK: - 行为
+
+    /// 当前指针组的计划次数（自重 hold 标签用）。
+    private func plannedSetReps(_ flow: TrainFlowState) -> Int {
+        guard let exercise = flow.currentExercise, !exercise.sets.isEmpty else { return 0 }
+        let pointer = min(flow.completedInCurrentExercise.count + flow.skippedInCurrentExercise, exercise.sets.count - 1)
+        return exercise.sets[pointer].targetReps
+    }
 
     private func plannedWeight(_ flow: TrainFlowState) -> Double {
         guard let exercise = flow.currentExercise, !exercise.sets.isEmpty else { return 0 }
@@ -886,7 +1123,8 @@ struct TrainTabView: View {
 
     /// 暂存生命周期终点：打勾 / 跳过 / 换动作——指针换组后旧暂存绝不能滞留。
     private func clearAdjustment() {
-        showAdjust = false
+        // 关面板与开面板（startAdjust）同款 0.22 easeInOut，使收起也淡出、入退场对称
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) { showAdjust = false }
         hasAdjustment = false
         showExactField = false
     }
@@ -913,15 +1151,13 @@ struct TrainTabView: View {
         logPulse += 1
         clearAdjustment()
         painToastVisible = false
-        if sessionStore.flow?.phase == .resting {
-            restRemaining = sessionStore.flow?.restSecondsPlanned ?? 0
-            restPaused = false
-        }
+        // 进入休息时倒计时由 SessionStore.apply 起锚（见 syncRestCountdown），此处不再手动置位。
     }
 
     private func registerPain() {
         sessionStore.apply(.reportPain)
         painToastVisible = true
+        painPulse += 1
     }
 
     private func skipSet(_ code: String) {
@@ -940,34 +1176,33 @@ struct TrainTabView: View {
     }
 
     private func finishRest() {
-        restRemaining = 0
-        sessionStore.apply(.restFinished)
+        sessionStore.apply(.restFinished) // 清空倒计时锚点在 syncRestCountdown 内
+        actionPulse += 1
     }
 
-    private var formattedRest: String {
-        "\(restRemaining / 60):" + String(format: "%02d", restRemaining % 60)
+    private func formattedRest(_ remaining: Int) -> String {
+        "\(remaining / 60):" + String(format: "%02d", remaining % 60)
     }
 
-    private var restFraction: Double {
-        let planned = max(1, flow?.restSecondsPlanned ?? 1)
-        return min(1, Double(restRemaining) / Double(planned))
-    }
 
+    // 含 scenePhase：回前台时 key 变 → task 重启（同切 tab 重建视图），保证追平剩余并续走逐秒刷新。
     private var restTaskKey: String {
-        "\(flow?.phase == .resting ? "rest" : "idle")-\(flow?.exerciseIndex ?? 0)-\(flow?.completedInCurrentExercise.count ?? 0)"
+        "\(flow?.phase == .resting ? "rest" : "idle")-\(flow?.exerciseIndex ?? 0)-\(flow?.completedInCurrentExercise.count ?? 0)-\(scenePhase == .active ? "fg" : "bg")"
     }
 
+    // 计时 task：每秒递增 restTick 驱动显示按墙钟重算，并在到点时自动进下一组。
+    // 切 tab（视图重建）/ 切应用回前台（scenePhase 变 → restTaskKey 变）都会重启本 task；
+    // 离屏期间剩余在 SessionStore 墙钟锚点里照常流逝，回来即追平、若已到点立即收尾。
     private func runRestTimer() async {
-        guard flow?.phase == .resting else { return }
+        guard scenePhase == .active else { return } // 后台不空转
         while !Task.isCancelled, sessionStore.flow?.phase == .resting {
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            guard !restPaused else { continue }
-            if restRemaining > 1 {
-                restRemaining -= 1
-            } else {
+            // 先判后睡：回来若已到点立即收尾推进（不空等 1 秒、不闪 0:00）。
+            if !sessionStore.restIsPaused, sessionStore.restRemainingSeconds <= 0 {
                 finishRest()
                 break
             }
+            restTick &+= 1 // 触发墙钟剩余重算重绘
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
         }
     }
 }

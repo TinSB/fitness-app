@@ -226,4 +226,25 @@ final class DataQualityReportTests: XCTestCase {
             DataQualityReportBuilder.build(view: view)
         )
     }
+
+    // MARK: - §6.2 动作级合理上限（2026-06-11）
+
+    func testPerExerciseCeilingCatchesSmallLiftTypo() throws {
+        // 侧平举 100kg（10× 手滑/磅公斤混淆）：基准 <30 相对规则不触发、
+        // 全局 400 也不触发——动作级上限 60 必须标住
+        let view = try view(#"{"schemaVersion": 8, "history": [\#(sessionJSON("s1", "2026-06-01", "lateral-raise", sets: [(100, 10)]))]}"#)
+        let flagged = DataQualityReportBuilder.build(
+            view: view, plausibleCeilingByExercise: ["lateral-raise": 60]
+        )
+        XCTAssertEqual(flagged.suspectSets.count, 1)
+        XCTAssertEqual(flagged.suspectSets.first?.reason, .weightBeyondPlausibleCeiling)
+        // 缺省空表 = 旧行为（不标）
+        let legacy = DataQualityReportBuilder.build(view: view)
+        XCTAssertTrue(legacy.suspectSets.isEmpty)
+        // 上限内的正常重量不误标
+        let normal = try self.view(#"{"schemaVersion": 8, "history": [\#(sessionJSON("s1", "2026-06-01", "lateral-raise", sets: [(12.5, 12)]))]}"#)
+        XCTAssertTrue(DataQualityReportBuilder.build(
+            view: normal, plausibleCeilingByExercise: ["lateral-raise": 60]
+        ).suspectSets.isEmpty)
+    }
 }

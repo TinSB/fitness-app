@@ -1,6 +1,43 @@
 import SwiftUI
+import RedeL10n
+import RedeTrainingDecision
 
 // 签名组件 — 按 docs/rede-prototypes/rede-app.html 的 .ov/.forged/.embar/.reg/.emb/.btn2/.ring/.rule/.tb/.seg/.tg 复原。
+
+// MARK: - 显示层重量吸附（系统逻辑 §6.0.1 + 内容系统 §8「显示吸附契约」）
+//
+// 复发根因：旧代码显示层裸换算（formatKg ×2.2046、kg 裸显 double）→ kg 格子 30kg 在 lb 显
+// 66lb（配不出）、lb 输入存奇数 kg 切回显长小数。契约：**任何「可配重量」显示都必须先吸附到
+// 「器械×当前显示单位」真实梯子最近格**，再交 RedeL10n 格式化。禁止裸换算。
+// 只吸附「用户实际要配上器械的重量」（目标/上次/刻度轨/组重）；e1RM、总吨位等估算值不吸附。
+enum LoadDisplay {
+    private static func loadUnit(_ s: RedeStrings) -> LoadUnit { LoadUnit(unitSystem: s.unit.rawValue) }
+
+    /// 吸附到「器械×显示单位」真实梯子的 kg 值——交给 formatKg/heroNumber/railValue 等的 weightKg 实参。
+    /// 格子器械经 LoadGrid.gridEquipment 映射（bodyweight-plus→barbell），与快改档位口径一致。
+    static func snap(_ weightKg: Double, loadType: String, equipment: String, _ s: RedeStrings) -> Double {
+        LoadGrid.snapKg(weightKg, equipment: LoadGrid.gridEquipment(loadType: loadType, equipment: equipment), unit: loadUnit(s))
+    }
+
+    /// 便捷：按 loadType+器械吸附 + formatKg = 直接出显示字符串（处方显示最常用）。
+    static func weight(_ weightKg: Double, loadType: String, equipment: String, _ s: RedeStrings) -> String {
+        s.formatKg(snap(weightKg, loadType: loadType, equipment: equipment, s))
+    }
+
+    /// 历史/进展/训练流：按 exerciseId 回目录查 loadType+器械再吸附（缺→external/dumbbell 兜底）。
+    /// 经 loadType 故 bodyweight-plus 也正确落 barbell 外加负重格。
+    static func snap(_ weightKg: Double, exerciseId: String, _ s: RedeStrings,
+                     catalog: ExerciseCatalog = .minimal) -> Double {
+        let entry = catalog.entry(id: exerciseId)
+        return snap(weightKg, loadType: entry?.loadType ?? "external", equipment: entry?.equipment ?? "dumbbell", s)
+    }
+
+    /// 便捷（历史）：按 exerciseId 吸附 + formatKg。
+    static func weight(_ weightKg: Double, exerciseId: String, _ s: RedeStrings,
+                       catalog: ExerciseCatalog = .minimal) -> String {
+        s.formatKg(snap(weightKg, exerciseId: exerciseId, s, catalog: catalog))
+    }
+}
 
 // MARK: - Overline(.ov: 11/500/+0.18em/uppercase)
 
@@ -19,6 +56,9 @@ struct Overline: View {
 // MARK: - 锻面颗粒(.forged::after 噪声,~1.5% 可见度)
 
 struct ForgedGrain: View {
+    /// 0.5 ≈ 卡面 1.5%（K2 锁定）；base 全屏用 0.33 ≈ 1%（§12.2，真机 25% 亮度校准后定值）。
+    var intensity: Double = 0.5
+
     var body: some View {
         Canvas { context, size in
             var seed: UInt64 = 0x9E3779B97F4A7C15
@@ -44,7 +84,7 @@ struct ForgedGrain: View {
                 y += step
             }
         }
-        .opacity(0.5)
+        .opacity(intensity)
         .allowsHitTesting(false)
     }
 }
@@ -209,9 +249,25 @@ struct RuleDivider: View {
 
 // MARK: - 分段控件(.seg)
 
+/// S2 刻线分组分隔（设置面板首用，rede-app.html .etick）：短竖刻线序列，两端略长收边。
+struct EngraveDivider: View {
+    var body: some View {
+        HStack(spacing: 20) {
+            ForEach(0..<9, id: \.self) { i in
+                Rectangle()
+                    .fill(Color.redeEtch)
+                    .frame(width: 1, height: (i == 0 || i == 8) ? 9 : 6)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+    }
+}
+
 struct SegControl: View {
     let options: [String]
     @Binding var selection: String
+    /// 机加工凹槽轨（设置面板，rede-app.html .st-seg）：槽顶 inset 暗线模拟铣槽深度。
+    var machined: Bool = false
 
     var body: some View {
         HStack(spacing: 0) {
@@ -233,6 +289,14 @@ struct SegControl: View {
         .padding(3)
         .background(Color.redeSegBase)
         .clipShape(RoundedRectangle(cornerRadius: 9))
+        .overlay(alignment: .top) {
+            if machined {
+                Rectangle()
+                    .fill(Color.black.opacity(0.28))
+                    .frame(height: 1)
+                    .padding(.horizontal, 6)
+            }
+        }
     }
 }
 
@@ -290,6 +354,10 @@ struct RedeTabBar: View {
                     .frame(maxWidth: .infinity, minHeight: RedeShape.controlHeight)
                 }
                 .buttonStyle(.plain)
+                // VoiceOver：图标+文字合成一条原子标签，并报当前选中态（图标本身不单独念）
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(item.label)
+                .accessibilityAddTraits(selection == item.tab ? [.isButton, .isSelected] : .isButton)
             }
         }
         .frame(height: 64)
@@ -298,6 +366,7 @@ struct RedeTabBar: View {
         .overlay(alignment: .top) {
             Rectangle().fill(Color.redeHair2).frame(height: 1)
         }
+        .sensoryFeedback(.selection, trigger: selection) // tab 切换触觉确认
     }
 }
 
@@ -307,6 +376,8 @@ struct ScreenHeader: View {
     let title: String
     var subtitle: String? = nil
     var trailingIcon: String? = nil
+    /// VoiceOver 标签（尾部图标按钮）——图标无文字，缺它只念「按钮」。
+    var trailingAccessibilityLabel: String? = nil
     var onTrailingTap: (() -> Void)? = nil
 
     var body: some View {
@@ -333,6 +404,7 @@ struct ScreenHeader: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(onTrailingTap == nil)
+                .accessibilityLabel(trailingAccessibilityLabel ?? "")
             }
         }
         .padding(.horizontal, RedeSpace.page)

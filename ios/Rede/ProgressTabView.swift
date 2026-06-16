@@ -51,7 +51,7 @@ struct ProgressTabView: View {
                     }
                 }
             }
-            .padding(.bottom, 78)
+            .padding(.bottom, RedeSpace.bottomBar)
         }
         .background(Color.redeBase)
         .onAppear { reload() }
@@ -108,7 +108,8 @@ struct ProgressTabView: View {
     private func content(_ model: ProgressModel) -> some View {
         let view = scaleView(model)
         return VStack(alignment: .leading, spacing: 0) {
-            SegControl(options: segOptions, selection: segSelection)
+            // 整面板（2026-06-11）：通用 seg 凹盒升级机加工凹槽（与设置面板同工艺）
+            SegControl(options: segOptions, selection: segSelection, machined: true)
                 .padding(.horizontal, RedeSpace.page)
                 .padding(.top, 16)
 
@@ -129,25 +130,29 @@ struct ProgressTabView: View {
             .padding(.horizontal, RedeSpace.page)
             .padding(.top, RedeSpace.section)
 
-            VStack(alignment: .leading, spacing: 14) {
-                Overline(text: view.chartTitle)
-                if let bars = view.bars {
-                    barChart(bars)
-                } else if let trend = view.trend {
-                    TrendChart(points: trend.values, emberIndex: trend.emberIndex, emberLabel: trend.emberLabel)
-                        .frame(height: 120)
-                        .frame(maxWidth: .infinity)
+            // 周期尺度（2026-06-15 重做）：多主项 e1RM 趋势清单（小折线 + 升降），
+            // 替代原单主项大折线；单次/本周仍走柱图。
+            if scale == .cycle {
+                cycleTrendList(model)
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.top, RedeSpace.section)
+            } else {
+                VStack(alignment: .leading, spacing: 14) {
+                    Overline(text: view.chartTitle)
+                    if let bars = view.bars {
+                        barChart(bars)
+                    }
+                    HStack(spacing: 6) {
+                        Rectangle().fill(Color.redeEmber).frame(width: 11, height: 2)
+                        Text(view.caption)
+                            .font(.redeCaption)
+                            .foregroundStyle(Color.redeT3)
+                    }
+                    .padding(.top, -2)
                 }
-                HStack(spacing: 6) {
-                    Rectangle().fill(Color.redeEmber).frame(width: 11, height: 2)
-                    Text(view.caption)
-                        .font(.redeCaption)
-                        .foregroundStyle(Color.redeT3)
-                }
-                .padding(.top, -2)
+                .padding(.horizontal, RedeSpace.page)
+                .padding(.top, RedeSpace.section)
             }
-            .padding(.horizontal, RedeSpace.page)
-            .padding(.top, RedeSpace.section)
 
             RuleDivider()
 
@@ -168,7 +173,7 @@ struct ProgressTabView: View {
         let verdict: String
         let sub: String
         let chartTitle: String
-        let bars: [(label: String, fraction: CGFloat, tag: String?, ember: Bool)]?
+        let bars: [(label: String, fraction: CGFloat, tag: String?, ember: Bool, a11y: String)]?
         let trend: (values: [CGFloat], emberIndex: Int, emberLabel: String)?
         let caption: String
     }
@@ -190,18 +195,21 @@ struct ProgressTabView: View {
         let shown = Array(volumes.prefix(5))
         let maxVolume = max(shown.map(\.volume).max() ?? 1, 1)
         let prSet = Set(latest.prExerciseIds)
-        let bars = shown.map { item in
-            (label: s.exerciseName(item.id),
+        let bars = shown.map { item -> (label: String, fraction: CGFloat, tag: String?, ember: Bool, a11y: String) in
+            let name = localeStore.exerciseName(item.id)
+            let isPR = prSet.contains(item.id)
+            return (label: name,
              fraction: CGFloat(item.volume / maxVolume),
-             tag: prSet.contains(item.id) ? s.historyPRBadge : nil,
-             ember: prSet.contains(item.id))
+             tag: isPR ? s.historyPRBadge : nil,
+             ember: isPR,
+             a11y: s.a11yChartBar(name, "\(s.formatKg(item.volume)) \(s.unitLabel)", pr: isPR))
         }
 
         let verdict: String
         let caption: String
         if let firstPR = latest.prExerciseIds.first {
-            verdict = s.sessionVerdictPR(s.exerciseName(firstPR))
-            caption = s.sessionCaptionPR(s.exerciseName(firstPR))
+            verdict = s.sessionVerdictPR(localeStore.exerciseName(firstPR))
+            caption = s.sessionCaptionPR(localeStore.exerciseName(firstPR))
         } else {
             verdict = s.sessionVerdictDone
             caption = s.sessionCaptionNoPR
@@ -213,8 +221,8 @@ struct ProgressTabView: View {
                .points.first(where: { $0.sessionId == latest.sessionId })?.e1RmKg {
             // e1RM 点缺失（理论不可达）→ 保持不含 e1RM 的兜底句，绝不显示「0 kg」
             sub = s.sessionSubTopSet(
-                lift: s.exerciseName(top.exerciseId),
-                kg: s.formatKg(top.weightKg),
+                lift: localeStore.exerciseName(top.exerciseId),
+                kg: LoadDisplay.weight(top.weightKg, exerciseId: top.exerciseId, s),
                 reps: top.reps,
                 e1rmKg: s.formatE1Rm(e1rm)
             )
@@ -235,15 +243,17 @@ struct ProgressTabView: View {
         var deltaPercent: Int?
         if case .vsPreviousWeek(let delta)? = model.weeklyComparison { deltaPercent = delta }
 
-        let bars = shown.map { week in
+        let bars = shown.map { week -> (label: String, fraction: CGFloat, tag: String?, ember: Bool, a11y: String) in
             let isCurrent = week.weekStartISO == latest.weekStartISO
             let tag: String? = isCurrent
                 ? deltaPercent.map { "\($0 >= 0 ? "+" : "−")\(abs($0))%" }
                 : nil
-            return (label: s.weekBarLabel(fromISO: week.weekStartISO),
+            let label = s.weekBarLabel(fromISO: week.weekStartISO)
+            return (label: label,
                     fraction: CGFloat(week.totalVolumeKg / maxVolume),
                     tag: tag,
-                    ember: isCurrent)
+                    ember: isCurrent,
+                    a11y: s.a11yChartBar(label, s.historyRowMeta(sets: week.setCount, volumeKg: s.formatKg(week.totalVolumeKg))))
         }
 
         let verdictCode: String
@@ -279,10 +289,7 @@ struct ProgressTabView: View {
                 caption: s.cycleCaptionPeak
             )
         }
-        let name = s.exerciseName(key.exerciseId)
-        let points = Array(key.points.suffix(6))
-        let values = points.map { CGFloat($0.e1RmKg) }
-        let emberIndex = values.indices.max(by: { values[$0] < values[$1] }) ?? 0
+        let name = localeStore.exerciseName(key.exerciseId)
         let call: String
         switch assessment.call {
         case .up: call = "up"
@@ -290,6 +297,8 @@ struct ProgressTabView: View {
         case .flat: call = "flat"
         case .calibrating: call = "calibrating"
         }
+        // 周期改多主项清单后，单主项 trend 字段不再渲染（审查 [1]）：只产 verdict/sub，
+        // 不再构造 points[emberIndex]（去死计算 + 潜在越界前体）。
         return ScaleView(
             verdict: s.trendVerdict(call: call, liftName: name),
             sub: s.trendSub(
@@ -299,7 +308,7 @@ struct ProgressTabView: View {
             ),
             chartTitle: s.cycleChartTitleFor(name),
             bars: nil,
-            trend: (values, emberIndex, s.formatE1Rm(points[emberIndex].e1RmKg)),
+            trend: nil,
             caption: s.cycleCaptionPeak
         )
     }
@@ -325,9 +334,62 @@ struct ProgressTabView: View {
         )
     }
 
+    // MARK: - 周期：多主项趋势清单（密而干净，2026-06-15）
+
+    private func cycleTrendList(_ model: ProgressModel) -> some View {
+        // 重的主项排前；取 ≤6 条，避免长尾配件刷屏
+        let trends = Array(
+            model.snapshot.exerciseTrends
+                .sorted { $0.bestWeightKg > $1.bestWeightKg }
+                .prefix(6)
+        )
+        return VStack(alignment: .leading, spacing: 0) {
+            // id 用 exerciseId（审查 [2]）：bestWeightKg 并列时 offset 会致行错位/闪烁
+            ForEach(trends, id: \.exerciseId) { trend in
+                trendRow(trend)
+            }
+        }
+    }
+
+    private func trendRow(_ trend: ProgressSnapshot.ExerciseTrend) -> some View {
+        let values = trend.points.map { CGFloat($0.e1RmKg) }
+        let delta = trend.latestE1RmKg - (trend.points.first?.e1RmKg ?? trend.latestE1RmKg)
+        return VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(localeStore.exerciseName(trend.exerciseId))
+                        .font(.redeSubhead).foregroundStyle(Color.redeT1)
+                    Text(s.estimated1RM).font(.redeCaption).foregroundStyle(Color.redeT4)
+                }
+                Spacer()
+                MiniSparkline(values: values).frame(width: 80, height: 26)
+                VStack(alignment: .trailing, spacing: 3) {
+                    Text("\(s.formatE1Rm(trend.latestE1RmKg)) \(s.unitLabel)")
+                        .font(.redeCallout).monospacedDigit().foregroundStyle(Color.redeT2)
+                    deltaLabel(delta)
+                }
+            }
+            .padding(.vertical, 11)
+            // 折线图无语义；把整行合成一条可读元素（动作名·估算1RM·最新值·升降），折线静默
+            .accessibilityElement(children: .combine)
+            Rectangle().fill(Color.redeHair2).frame(height: 1)
+        }
+    }
+
+    @ViewBuilder
+    private func deltaLabel(_ delta: Double) -> some View {
+        if delta > 0.5 {
+            Text("\(Image(systemName: "arrow.up")) \(s.formatE1Rm(delta))").font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeEmber)
+        } else if delta < -0.5 {
+            Text("\(Image(systemName: "arrow.down")) \(s.formatE1Rm(abs(delta)))").font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeEmber2)
+        } else {
+            Text(s.holdShort).font(.redeCaption).foregroundStyle(Color.redeT4)
+        }
+    }
+
     // MARK: - 柱图（原型形态：120pt 区、唯一 ember、标签浮顶）
 
-    private func barChart(_ bars: [(label: String, fraction: CGFloat, tag: String?, ember: Bool)]) -> some View {
+    private func barChart(_ bars: [(label: String, fraction: CGFloat, tag: String?, ember: Bool, a11y: String)]) -> some View {
         HStack(alignment: .bottom, spacing: 11) {
             ForEach(Array(bars.enumerated()), id: \.offset) { _, bar in
                 VStack(spacing: 8) {
@@ -350,6 +412,9 @@ struct ProgressTabView: View {
                         .minimumScaleFactor(0.7)
                 }
                 .frame(maxWidth: .infinity, alignment: .bottom)
+                // 每根柱合成一条读数（标签·原始值[·PR]），替代不可读的归一化柱形
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(bar.a11y)
             }
         }
         .frame(height: 120 + 27, alignment: .bottom)
@@ -407,7 +472,7 @@ struct ProgressTabView: View {
                 }
                 ForEach(Array(record.exercises.enumerated()), id: \.offset) { _, exercise in
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(s.exerciseName(exercise.exerciseId))
+                        Text(localeStore.exerciseName(exercise.exerciseId))
                             .font(.redeBody)
                             .foregroundStyle(Color.redeT1)
                         ForEach(Array(exercise.sets.enumerated()), id: \.offset) { setIndex, set in
@@ -417,7 +482,7 @@ struct ProgressTabView: View {
                                     .monospacedDigit()
                                     .foregroundStyle(Color.redeT4)
                                     .frame(width: 18, alignment: .leading)
-                                Text(s.historySetLine(kg: s.formatKg(set.weightKg), reps: set.reps))
+                                Text(s.historySetLine(kg: LoadDisplay.weight(set.weightKg, exerciseId: exercise.exerciseId, s), reps: set.reps))
                                     .font(.redeBody)
                                     .monospacedDigit()
                                     .foregroundStyle(Color.redeT2)
@@ -430,7 +495,9 @@ struct ProgressTabView: View {
             .padding(RedeSpace.page)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Color.redeRaised)
+        // 整面板公理（2026-06-11）：sheet = 掀开的 base 锻面；raised 是抬升层语义，不当整面底。
+        // 审查 MINOR-3：用 presentationBackground（盖整个 sheet chrome），不是内容 background
+        .presentationBackground(Color.redeBase)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
@@ -458,12 +525,12 @@ struct ProgressTabView: View {
         switch suspect.reason {
         case .repsImplausiblyHigh:
             return s.suspectRepsLine(
-                dateISO: suspect.dateISO, lift: s.exerciseName(suspect.exerciseId),
+                dateISO: suspect.dateISO, lift: localeStore.exerciseName(suspect.exerciseId),
                 setIndex: suspect.setIndex, reps: suspect.reps
             )
         case .weightFarAboveOwnHistory, .weightBeyondPlausibleCeiling:
             return s.suspectWeightLine(
-                dateISO: suspect.dateISO, lift: s.exerciseName(suspect.exerciseId),
+                dateISO: suspect.dateISO, lift: localeStore.exerciseName(suspect.exerciseId),
                 setIndex: suspect.setIndex, kg: s.formatKg(suspect.weightKg)
             )
         }
@@ -473,36 +540,33 @@ struct ProgressTabView: View {
 // SnapshotSessionRecord 作 sheet(item:) 标识（id 即 session id）
 extension SnapshotSessionRecord: @retroactive Identifiable {}
 
-// Cycle 折线（原型 SVG 形态）：单色 polyline，唯一 ember 实心点标最高值 + 数值标签
-private struct TrendChart: View {
-    let points: [CGFloat]
-    let emberIndex: Int
-    let emberLabel: String
+// 行内小折线（周期趋势清单）：单色线 + 余烬橙末点；单点退化为一个点。
+private struct MiniSparkline: View {
+    let values: [CGFloat]
 
     var body: some View {
         Canvas { context, size in
-            guard points.count >= 2 else { return }
-            let W = size.width
-            let H = size.height
-            let maxV = max(points.max() ?? 1, 1)
-            let minV = points.min() ?? 0
-            let span = max(maxV - minV, 1)
-            func xs(_ i: Int) -> CGFloat { 12 + CGFloat(i) * (W - 24) / CGFloat(points.count - 1) }
-            func ys(_ v: CGFloat) -> CGFloat { H - 24 - (v - minV) / span * (H - 48) }
-
-            var line = Path()
-            for (i, p) in points.enumerated() {
-                let point = CGPoint(x: xs(i), y: ys(p))
-                if i == 0 { line.move(to: point) } else { line.addLine(to: point) }
+            guard values.count >= 2 else {
+                let y = size.height / 2
+                context.fill(
+                    Path(ellipseIn: CGRect(x: size.width - 5, y: y - 2.5, width: 5, height: 5)),
+                    with: .color(.redeEmber)
+                )
+                return
             }
-            context.stroke(line, with: .color(.redeNeu), style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
-
-            let dx = xs(emberIndex), dy = ys(points[emberIndex])
-            context.fill(Path(ellipseIn: CGRect(x: dx - 4.5, y: dy - 4.5, width: 9, height: 9)), with: .color(.redeEmber))
-            context.draw(
-                Text(emberLabel).font(.system(size: 11)).foregroundColor(.redeEmber2),
-                at: CGPoint(x: min(max(dx, 18), W - 18), y: dy - 16)
-            )
+            let W = size.width, H = size.height
+            let maxV = values.max() ?? 1, minV = values.min() ?? 0
+            let span = max(maxV - minV, 1)
+            func xs(_ i: Int) -> CGFloat { 2 + CGFloat(i) * (W - 4) / CGFloat(values.count - 1) }
+            func ys(_ v: CGFloat) -> CGFloat { H - 3 - (v - minV) / span * (H - 6) }
+            var line = Path()
+            for (i, v) in values.enumerated() {
+                let p = CGPoint(x: xs(i), y: ys(v))
+                if i == 0 { line.move(to: p) } else { line.addLine(to: p) }
+            }
+            context.stroke(line, with: .color(.redeNeu), style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
+            let lx = xs(values.count - 1), ly = ys(values[values.count - 1])
+            context.fill(Path(ellipseIn: CGRect(x: lx - 2.5, y: ly - 2.5, width: 5, height: 5)), with: .color(.redeEmber))
         }
     }
 }

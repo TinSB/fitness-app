@@ -23,6 +23,7 @@ extension Color {
     static let redeHair2 = Color(redeHex: 0x221F1B)     // --hair2
     static let redeTabBar = Color(redeHex: 0x100E0B)    // tab bar 底
     static let redeSegBase = Color(redeHex: 0x1A1712)   // 分段控件底
+    static let redeEtch = Color(redeHex: 0x2E2A22)      // S2 刻线（rede-app.html .etick）
 
     // 文字
     static let redeT1 = Color(redeHex: 0xECE6D8)
@@ -41,6 +42,7 @@ extension Color {
     // 控件
     static let redeSteel = Color(redeHex: 0x8C8A86)     // --steel 次级控件
     static let redeNeu = Color(redeHex: 0x4A453B)       // --neu 中性数据条
+    static let redeGroove = Color(redeHex: 0x231F19)    // 进度/休息条凹槽底（替代裸 hex，统一轨道色）
     static let redeRegMark = Color(redeHex: 0x5F594C)   // 角标 registration
     static let redeNextDot = Color(redeHex: 0x3A352B)   // next 节点描边
 }
@@ -62,6 +64,7 @@ enum RedeSpace {
     static let section: CGFloat = 24   // 区块间
     static let card: CGFloat = 16      // 卡内
     static let group: CGFloat = 8      // 组内
+    static let bottomBar: CGFloat = 78 // 底栏避让（ScrollView 内容底部留白，避开 tab 栏）
 }
 
 enum RedeShape {

@@ -25,11 +25,11 @@ final class OnboardingCopyTests: XCTestCase {
     func testVerdictAnchors() {
         XCTAssertEqual(
             zh.onbVerdict(splitCode: "upper-lower", days: 4, goalCode: "hypertrophy"),
-            "上下分化，每周 4 天——为增肌而排。"
+            "上下分化，每周 4 天　为增肌而排"
         )
         XCTAssertEqual(
             en.onbVerdict(splitCode: "push-pull-legs", days: 5, goalCode: "strength"),
-            "Push / Pull / Legs, 5 days a week — built for strength."
+            "Push / Pull / Legs, 5 days a week — built for strength"
         )
         XCTAssertEqual(zh.onbSplitName("upper-lower"), "上下分化")
         XCTAssertEqual(en.onbSplitName("push-pull-legs"), "Push / Pull / Legs")

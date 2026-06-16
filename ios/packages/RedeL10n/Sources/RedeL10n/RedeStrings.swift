@@ -62,7 +62,7 @@ public struct RedeStrings: Sendable {
     public var todayTitle: String { t("今日", "Today") }
     public var todayDateLine: String { t("周六 · 6月8日 · 第 3 周", "Sat · Jun 8 · Week 3") }
     public var todayReadyStatus: String { t("可以训练", "Ready to train") }
-    public var todayVerdict: String { t("今天可以练。推力 A 保留，推举量封顶。", "Train today. Push A stays, pressing volume capped.") }
+    public var todayVerdict: String { t("今天可以练　推力 A 保留，推举量封顶", "Train today. Push A stays, pressing volume capped") }
     public var todayStartHere: String { t("从这里开始", "Start here") }
     public var todayLoadDetail: String { t("lb · ×5 · RIR 2", "lb · ×5 · RIR 2") }
     public var todayThenIncline: String { t("接 上斜哑铃推", "then Incline DB") }
@@ -70,7 +70,7 @@ public struct RedeStrings: Sendable {
     public var startTraining: String { t("开始训练", "Start training") }
     public var todayReceiptTitle: String { t("Rede 训练收据", "Rede training receipt") }
     public var todayReceiptTag: String { t("今天", "Today") }
-    public var todayReceiptLine: String { t("本周推举量已封顶。", "Pressing volume is capped this week.") }
+    public var todayReceiptLine: String { t("本周推举量已封顶", "Pressing volume is capped this week") }
     public var todayWhyThisCall: String { t("查看依据", "Why this call") }
     public var todayHideReason: String { t("收起依据", "Hide reason") }
     public var receiptSignal: String { t("信号", "Signal") }
@@ -96,6 +96,10 @@ public struct RedeStrings: Sendable {
     public var trainLogSet: String { t("完成本组", "Log set") }
     public var trainColSet: String { t("组", "Set") }
     public var trainColWeight: String { t("重量", "Weight") }
+    /// 辅助器械（wave-9）：组表「重量」列对辅助动作读「辅助」。
+    public var trainColAssist: String { t("辅助", "Assist") }
+    /// 负重自重（wave-11）：组表「重量」列对负重动作读「负重」（外挂负重）。
+    public var trainColWeighted: String { t("负重", "Load") }
     public var trainColReps: String { t("次数", "Reps") }
     public var trainColRir: String { t("RIR", "RIR") }
     public var trainNextUp: String { t("下一个 · 上斜哑铃推 · 3 × 8", "Next · Incline DB press · 3 × 8") }
@@ -119,12 +123,38 @@ public struct RedeStrings: Sendable {
         t("\(splitName) · 每周 \(days) 天", "\(splitName) · \(days) days a week")
     }
     public var planEmptyHeadline: String {
-        t("计划视图还在路上。", "The plan view is on its way.")
+        t("计划视图还在路上", "The plan view is on its way")
     }
     public var planEmptyNote: String {
-        t("周期结构、调整建议和回滚会在后续版本出现在这里。现在每天的安排由今日页给出。",
-          "Cycle structure, adjustment previews, and rollback will live here in a later version. For now, Today carries each day's call.")
+        t("周期结构、调整建议和回滚将在后续版本加入　现在每天的安排看今日页",
+          "Cycle structure, adjustment previews, and rollback arrive in a later version. For now, Today carries each day's call")
     }
+
+    // MARK: - Plan 周期条（FR-PL2 S5：仅周期化开启且有真历史时显示；按引擎相位 rawValue 取标签）
+    public var planCycleOverline: String { t("当前周期", "Current cycle") }
+    /// 周序 caption（week 取 1-based）："第 3 / 4 周 · 过载"。
+    public func planCycleWeekOf(week: Int, total: Int, phaseLabel: String) -> String {
+        t("第 \(week) / \(total) 周 · \(phaseLabel)", "Week \(week) of \(total) · \(phaseLabel)")
+    }
+    /// 周期条显示时的尾注（已不再是「周期还没来」，但调整/回滚仍在后续）。
+    public var planCycleNote: String {
+        t("调整建议与回滚仍在后续版本　每天的安排看今日页",
+          "Adjustment previews and rollback arrive later. For now, Today carries each day's call")
+    }
+    /// 周期相位短标签（节点下方；按 MesocyclePhase.rawValue 映射）。未知 → 原值兜底。
+    public func mesoPhaseShort(_ raw: String) -> String {
+        switch raw {
+        case "calibrate": return t("校准", "Calibrate")
+        case "build":     return t("构建", "Build")
+        case "overreach": return t("过载", "Overload")
+        case "deload":    return t("减载", "Deload")
+        default:          return raw
+        }
+    }
+
+    // MARK: - 无障碍（VoiceOver hint/label）
+    public var a11yExpand: String { t("展开", "Expand") }
+    public var a11yCollapse: String { t("收起", "Collapse") }
 
     // MARK: - Settings(M5-2 完整接管：单位/语言/背景/数据/免责/反馈)
 
@@ -133,31 +163,52 @@ public struct RedeStrings: Sendable {
     public var settingsDone: String { t("完成", "Done") }
     public var settingsUnit: String { t("单位", "Units") }
     public var settingsBackground: String { t("训练背景", "Training background") }
-    public var settingsEditAnswers: String { t("修改回答", "Edit answers") }
     /// 每周天数行值："每周 4 天" / "4 days a week"。
     public func settingsDaysValue(_ days: Int) -> String {
         t("每周 \(days) 天", "\(days) days a week")
     }
+    // 训练周期开关（FR-PL2 enablement）：诚实说明开/关各自行为，默认关 = opt-in。
+    public var settingsPeriodizationOverline: String { t("训练周期", "Training cycle") }
+    public var settingsPeriodizationLabel: String { t("计划周期化", "Planned periodization") }
+    public var settingsPeriodizationNote: String {
+        t("开启后按 4 周块自动安排过载与减载，计划页显示当前周期；关闭则只按你的身体反应逐次调整。安全规则（高量自动减载）始终生效。",
+          "When on, training runs a 4-week block with built-in overload and deload weeks, and Plan shows your current cycle. When off, each session is tuned only to how you've been responding. The safety rule (auto-deload after heavy load) is always on.")
+    }
     public var settingsData: String { t("数据", "Data") }
     /// FR-SE6 导出占位：数据在本机的事实陈述，不许诺时间表措辞外的能力。
     public var settingsExportNote: String {
-        t("所有训练记录都保存在这台设备本地。一键导出在后续版本提供。",
-          "All training records live on this device. One-tap export ships in a later version.")
+        t("所有训练记录都保存在这台设备本地　一键导出在后续版本加入",
+          "All training records live on this device. One-tap export ships in a later version")
     }
+    /// 设置面板铭牌头型号行（工艺重做 2026-06-10，Overline 渲染为全大写）。
+    public var settingsPanelOverline: String { t("Rede · 调校", "Rede · Tuning") }
     public var settingsPrivacy: String { t("隐私", "Privacy") }
     /// M6-2 隐私说明（FR-DT4 诚实表达 + 文案基线 §7.4）：只说代码可证的事实——
     /// 「默认保存在本机」；禁绝对化（永不/100%/anonymous）。Apple 健康未上线不提。
     public var settingsPrivacyNote: String {
-        t("训练记录默认保存在这台设备本机。Rede 不连网、没有账号，也没有第三方统计组件。删除 App 会同时删除本机数据。",
-          "Training records live on this device by default. Rede has no network connection, no account, and no third-party analytics. Deleting the app also deletes its local data.")
+        t("训练记录默认保存在这台设备本机　Rede 不连网、没有账号，也没有第三方统计组件　删除 App 会同时删除本机数据",
+          "Training records live on this device by default. Rede has no network connection, no account, and no third-party analytics. Deleting the app also deletes its local data")
     }
     public var settingsAbout: String { t("关于", "About") }
     /// FR-SE4 健康免责（fitness 非 medical 口径，沿文案基线 §7.1）。
     public var settingsDisclaimer: String {
-        t("Rede 提供健身训练参考，不构成医疗建议。如有伤病或健康疑虑，训练前请咨询专业人士。",
-          "Rede offers fitness guidance, not medical advice. If you have injuries or health concerns, talk to a professional before training.")
+        t("Rede 提供健身训练参考，不构成医疗建议　如有伤病或健康疑虑，训练前请咨询专业人士",
+          "Rede offers fitness guidance, not medical advice. If you have injuries or health concerns, talk to a professional before training")
     }
     public var settingsFeedback: String { t("发送反馈", "Send feedback") }
+    /// M6-3 正式反馈渠道（owner 确认 2026-06-10）。邮件主题带版本号便于分流。
+    public func feedbackSubject(version: String) -> String {
+        t("Rede 反馈（v\(version)）", "Rede feedback (v\(version))")
+    }
+    /// 邮件正文引导句；上下文行（版本/系统/机型/语言/单位）由 app 层拼接，
+    /// 用户发送前可见可删——透明，不偷带。
+    public var feedbackBodyPrompt: String {
+        t("（写下你的反馈　哪里不对、想要什么）", "(What's off, what you wish it did)")
+    }
+    /// mailto 打不开（设备没配邮件 app）时的兜底：如实给地址让用户自行发送。
+    public func feedbackFallback(address: String) -> String {
+        t("这台设备没有配置邮件 App　可手动发邮件到 \(address)", "No mail app is set up on this device. You can email \(address) directly")
+    }
 
     // MARK: - 展示数据(静态;M2-M4 由 catalog/engine localized 值接管)
 

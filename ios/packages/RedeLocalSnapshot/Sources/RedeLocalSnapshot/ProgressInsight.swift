@@ -1,8 +1,11 @@
 // ProgressInsight — 判断先行的 typed 推导（M4-3）：verdict 句子的数据源。
 // 纯函数、零文案（句子由 RedeL10n 渲染）。规则是 MVP 起步值（测试锁定待校准）：
-// · 趋势：窗口 = 最近 4 个 e1RM 点，delta = 末−首；|delta| < 2.5 → flat；
+// · 趋势：窗口 = 最近 4 个 e1RM 点，delta = 末−首；|delta| < 带宽 → flat；
+//   带宽 = max(1.25, 窗口首点 e1RM × 3%)（§6.2 改相对值 2026-06-11：
+//   绝对 2.5 对小重量动作永远 flat——侧平举 e1RM 10kg 时 ±25% 都被吃掉）；
 //   <2 点 → calibrating（校准期不下结论，与首练不发奖同哲学）。
-// · 关键动作（趋势图画谁）：点数最多，平手取 exerciseId 字典序（确定性）。
+// · 关键动作（趋势图画谁）：复合优先（§6.2：孤立动作天然点数多，100 条
+//   目录下会抢走深蹲的趋势主角位），same 层级内点数最多，平手取字典序。
 // · 周对比：本周 vs 严格上一个 ISO 周；上周缺席或为 0 → noComparison（不硬比）。
 
 public enum TrendCall: Equatable, Sendable {
@@ -22,7 +25,10 @@ public struct TrendAssessment: Equatable, Sendable {
 
 public enum TrendInsight {
     private static let windowSize = 4
-    private static let flatBandKg = 2.5
+    /// 相对带宽比例（§6.2 定案）：窗口首点 e1RM 的 3%；下限 1.25（半个最小步长，
+    /// 防 e1RM 极小时带宽趋零把噪声当趋势）。
+    private static let flatBandRatio = 0.03
+    private static let flatBandFloorKg = 1.25
 
     public static func assess(_ trend: ProgressSnapshot.ExerciseTrend) -> TrendAssessment {
         let window = Array(trend.points.suffix(windowSize))
@@ -33,17 +39,24 @@ public enum TrendInsight {
             )
         }
         let delta = last.e1RmKg - first.e1RmKg
-        let call: TrendCall = abs(delta) < flatBandKg ? .flat : (delta > 0 ? .up : .down)
+        let band = max(flatBandFloorKg, first.e1RmKg * flatBandRatio)
+        let call: TrendCall = abs(delta) < band ? .flat : (delta > 0 ? .up : .down)
         return TrendAssessment(
             exerciseId: trend.exerciseId, call: call,
             deltaKg: delta, windowSessionCount: window.count
         )
     }
 
-    /// 趋势图主角：练得最多的动作（点数最多，平手取字典序）。
-    public static func keyExercise(of snapshot: ProgressSnapshot) -> ProgressSnapshot.ExerciseTrend? {
+    /// 趋势图主角：复合优先 → 点数最多 → 平手取字典序（facts 缺省 = 全部
+    /// 非复合，退化为旧「点数最多」口径）。
+    public static func keyExercise(
+        of snapshot: ProgressSnapshot,
+        facts: [String: ExerciseStatsFacts] = [:]
+    ) -> ProgressSnapshot.ExerciseTrend? {
         snapshot.exerciseTrends.max { a, b in
-            (a.points.count, b.exerciseId) < (b.points.count, a.exerciseId)
+            let ac = facts[a.exerciseId]?.isCompound == true ? 1 : 0
+            let bc = facts[b.exerciseId]?.isCompound == true ? 1 : 0
+            return (ac, a.points.count, b.exerciseId) < (bc, b.points.count, a.exerciseId)
         }
     }
 }

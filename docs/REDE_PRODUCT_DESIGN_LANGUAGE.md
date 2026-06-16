@@ -1,7 +1,7 @@
 # Rede Product Design Language — 产品设计语言
 
 > **状态:** Canonical / living design-language baseline
-> **最后更新:** 2026-06-08（视觉执行决定见 §11：dark 为主 + 暖锻铁 locked tokens；结构 / IA / 组件 / 文案不变）
+> **最后更新:** 2026-06-15（§13 视觉重做「密而干净」：今日改纯清单、进展周期改多主项趋势清单、训练加跟上次比；§11 dark locked tokens / §12 整面板公理仍在）
 > **适用范围:** 产品视觉品牌、App UI 方向、landing page、widget、App Store 截图、v0 / 原型生成、设计 QA
 > **权威边界:** 本文只定义 Rede 应该长什么样、给人什么感觉、哪些视觉方向不能用。它不授权新功能、网络、云、账号、HealthKit 范围、订阅基础设施、source-of-truth 变更或任何 Swift package 边界变化。功能与架构边界以 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 和 `docs/REDE_iOS_SYSTEM_LOGIC.md` 为准。文案语气以 `docs/REDE_PRODUCT_COPY_BASELINE.md` 为准。
 
@@ -9,7 +9,7 @@
 
 ## 品牌 (Brand) — 名称 · Wordmark · 命名体系
 
-> **新增 2026-06-08:** 产品正式定名 **Rede**（原 Rede，因商标/域名占用更名）。视觉装置（Forged Graphite + Emberline + Engrave + Instrument numerals）与名字**无关**，全部承接，不因改名重做。
+> **新增 2026-06-08:** 产品正式定名 **Rede**（原 IronPath，因商标/域名占用更名）。视觉装置（Forged Graphite + Emberline + Engrave + Instrument numerals）与名字**无关**，全部承接，不因改名重做。
 
 | 项 | 定 |
 |---|---|
@@ -231,10 +231,10 @@ Rede 可以使用卡片,但不能堆卡片。
 | Steel 300 | 浅色边界 | `#C8CDD2` |
 | Chalk 50 | 浅色模式页面底 | `#F6F7F5` |
 | Paper 0 | 浅色 surface | `#FFFFFF` |
-| Ember 500 | 品牌线索 / 主操作 / 当前组 | `#E85D2A` |
-| Ember 300 | 轻量强调 | `#F28A5C` |
+| Ember 500 | 品牌线索 / 主操作 / 当前组 | `#E1652B` |
+| Ember 300 | 轻量强调 | `#F0875A` |
 | Recovery 500 | 恢复 / 可练 | `#2F7D5B` |
-| Caution 500 | 注意 / 降载 | `#B7791F` |
+| Caution 500 | 注意 / 降载 | `#C79A3A` |
 | Risk 500 | 风险 / 疼痛 / 破坏性动作 | `#C2413A` |
 | Trust 500 | 数据可信度 / 导入证据 | `#3267B7` |
 
@@ -559,7 +559,7 @@ Core copy:
 
 ## 11. 视觉执行决定 (2026-06-08 · owner review)
 
-创始人审完整套设计稿后拍板的视觉执行决定。**与前文冲突处以本节为准**；IA、命名组件、页面语言、文案、禁区均不变。详细品质层 / 构建规格另见 `.ai-tmp/2026-06-08-claude-design-system-review/REDE_CRAFT_LAYER_AND_SPEC.md`（成型后按 DOCS_MANIFEST 另立登记）。
+创始人审完整套设计稿后拍板的视觉执行决定。**与前文冲突处以本节为准**；IA、命名组件、页面语言、文案、禁区均不变。详细品质层 / 构建规格另见 `docs/REDE_CRAFT_SPEC.md`（2026-06-11 转正登记，原 .ai-tmp 工作稿）。
 
 ### 11.1 主模式 ＝ 深色暖锻铁
 App 主模式深色（见 §3.3 更新）。浅色为受支持的次级 theme，token 双模备好。
@@ -570,9 +570,9 @@ App 主模式深色（见 §3.3 更新）。浅色为受支持的次级 theme，
 | 角色 | locked |
 |---|---|
 | Base / Surface / Hairline | `#15130F` / `#1F1C17` / `#2A261F` |
-| Text 主 / 次 / 三（chalk·steel） | `#ECE6D8` / `#C9C2B4` / `#6B6457` |
+| Text 主 / 次 / 三（chalk·steel） | `#ECE6D8` / `#C9C2B4` / `#9C9484` |
 | Ember 500 / 300 | `#E1652B` / `#F0875A` |
-| Recovery / Caution / Risk / Trust（仅判断时） | `#2F7D5B` / `#B7791F` / `#C2413A` / `#3267B7` |
+| Recovery / Caution / Risk / Trust（仅判断时） | `#2F7D5B` / `#C79A3A` / `#C2413A` / `#3267B7` |
 
 比例不变：中性 70–85% / 文字·线 10–20% / Ember 3–8% / 语义仅判断时。§3.1 的 Graphite / Steel / Chalk 仍是参考族与浅色 theme 取值。
 
@@ -591,3 +591,65 @@ App 主模式深色（见 §3.3 更新）。浅色为受支持的次级 theme，
 
 ### 11.5 覆盖关系
 本节覆盖：§3.1（暖 locked tokens）、§3.3（dark 为主）、§4.3（标签 letterspacing 例外）、§4.4（卡片 12px）。**§9 v0-prompt 三行（`8pt radius` / `letter spacing of 0` / `light mode first-class`）已就地更新为 12pt / 标签 letterspacing / dark-first。** 其余全部不变。
+
+---
+
+## 12. 整面板公理 (2026-06-11 · owner review)
+
+创始人反馈「都是卡片式布局，感觉很 AI 而且不够高级」后，经全 app 容器盘点（19 项取证）拍板。**与前文冲突处以本节为准。**
+
+### 12.1 公理
+
+> **每屏 = 一块连续锻面。至多一张铭牌（ForgedCard / .forged）＝该屏唯一 hero；其余一切直接蚀刻在 base 上——分区靠 S2 刻线 + overline + 密度节奏，层级靠字阶 + 亮度，控件要么是工艺件（机加工凹槽 / 刻度轨站点）要么是文字级操作。通用圆角描边框，禁。**
+
+「屏」按呈现单元计：tab 主屏、push 目标页、每张 sheet/overlay 各算一屏；互斥替换的双卡（如引导题卡⇄结果卡）算 1。
+
+### 12.2 铭牌语义（卡 = 物件，不是布局容器）
+
+卡片只允许是「可锻造的语义物件」：今日判断牌、训练仪表读数、设备铭牌（设置背景）、PR 成就牌（小结）、分享工件、引导题卡/结果卡、计划「今天」节点。顶缘高光 + registration 角标 + 颗粒为 **hero 铭牌专属身份**，不再是卡的通用皮。base 自身获得 ≤1% 全屏锻面颗粒（实体感，真机 25% 亮度校准后定值）。
+
+### 12.3 弹层规范
+
+sheet = 掀开的 base 锻面（`presentationBackground = base`，禁 surface/raised 整面底）+ grabber。动作列表 = 开放行（文字 + chevron + hairline），禁描边按钮堆；唯一主操作可用锻面主按钮（emb）。
+
+### 12.4 开放行 affordance 三件套
+
+无框可点元素必须带以下三者之一 + 命中区 ≥44pt + 整行 contentShape：① chevron（导航/展开）；② 钢色 tick 下标（选中态）；③ 数字/文字亮度跳档（站点/档位）。纯文字级操作仅限既有 .ghost / .rop / .ctrlop 类。
+
+### 12.5 空态规范
+
+空态是「道歉」不是「判断」，不配铭牌：headline + 一句注 + 锻面主按钮，开放式直落 base（三 tab 统一此语法）。
+
+### 12.6 覆盖与预算
+
+- 收紧 §2.5：「5 张以上＝IA 错」→ **每屏常驻铭牌至多 1 张**。
+- 收紧品质层 S5：「一屏 ≤3 层 surface」→ **base + hero 铭牌 1 层 + 控件态（seg 凹槽/选中填充）**。
+- 防回潮：质量门禁含每视图 ForgedCard 预算检查（`.claude/quality-gate.cmd`）。
+
+---
+
+## 13. 视觉重做「密而干净」(2026-06-15 · owner review)
+
+去完文案 AI 味后 owner 仍觉「整体有 ai 味」，定位在**构图**（不在文案、不在配色）：内容堆顶部 + 底部死空间、每块顶一个大写 overline 微标签、浮卡通用节奏。试过「精密仪器」（用力过猛）与「纯排版」（信息太少）两极后拍板 **「密而干净」**。**本节是 §11/§12 同一条线（owner 反复的"卡片 = AI"诉求）的延伸，与前文冲突处以本节为准。**
+
+### 13.1 原则
+
+> **密度 ≠ 花哨。把一屏真正有用的信息全铺出来（消灭死空间），但用清单结构 + 字阶层级承载——不靠浮卡分区、不给每块贴大写 overline 微标签。余烬橙只干两件事：标「变化」（↑进阶 / ↓回调 / 保持）与「下一步 / 当前」。** 沿 §12 公理再进一步：连「今日唯一 hero 铭牌」也可让位于清单——今日页现为纯清单、零 ForgedCard（仍在 §12.6 的「≤1」预算内）。
+
+### 13.2 今日（覆盖 §5.1 + §2.3 Decision Receipt 主次 + §2.4 Progress Rail）
+
+状态行（可训练 + 本周次数）→ 判断行（训练日名 · N 个动作 + 依据句）→ **全天动作清单**（每行：动作名 / 组数·休息·RIR / 目标 W×次 / 跟上次比 ↑↓保持）→ 合计 → 开始训练 → 查看依据折叠（信号/调整/控制保留）。原「hero 判断牌 + Decision Receipt + Progress Rail」三件套退役：判断降为一行；Rail 的「上次→今天」并进每行的「上次 X」；Receipt 降为可折叠的「查看依据」。
+
+### 13.3 进展（覆盖 §5.3 周期尺度）
+
+周期尺度从「单主项大折线」改为 **多主项 e1RM 趋势清单**（每行：动作名 + 行内小折线 + 估算 1RM + 升降幅度），按重量取前若干主项。单次 / 本周仍柱图（原「单周大橙块」是单周数据假象，多周历史下自然成正常多柱图）。
+
+### 13.4 训练（基调保留 + 微调）
+
+锻面卡片基调 **不动**（§12.2 仪表读数铭牌保留）；仅卡内加一行「上次 W×次 + 升降」，把跟上次比带进动作。
+
+### 13.5 文案与债
+
+- 嗓音口径见 `REDE_PRODUCT_COPY_BASELINE.md` §3.4 / §3.5（去 AI 三铁律：冷准短有分量 / 砍 AI 四病 / 不要句号）。
+- 三屏清单/行文案双语化归 `RedeL10n/ListCopy.swift`（动作名/数字本就 localized，补的是标签词）。
+- 计划页（§5.4）仍待**计划引擎**，未上目标形态——见 STATUS / DEV_LOG。

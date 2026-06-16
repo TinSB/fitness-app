@@ -1,0 +1,190 @@
+<!doctype html>
+<!-- 设置页工艺重做方向稿（2026-06-10，owner 反馈「UX 不够好 UI 不够高级」）。
+     三镜头调研（合规审计/UX 架构/仪器隐喻）收敛为「检修面板」架构：
+     面板铭牌头 + 机加工分段开关 + 设备铭牌 spec plate（hero）+ 背板蚀刻渐进披露。
+     方向 A = 零 ember（纯锻铁克制）；方向 B = 发送反馈升 ember 信号键（beta 期唯一向外动作）。
+     拍板后写回 rede-app.html 设置 overlay。 -->
+<html lang="zh">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rede · 设置 — 检修面板方向稿</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+<style>
+:root{
+ --base:#15130F;--surface:#1F1C17;--raised:#262219;--btn:#211E18;--hair:#2A261F;--hair2:#221F1B;
+ --t1:#ECE6D8;--t2:#C9C2B4;--t3:#9C9484;--t4:#908A7C;
+ --ember:#E1652B;--ember2:#F0875A;--steel:#8C8A86;--seg:#1A1712;--etch:#2E2A22;
+ --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+body{background:#0A0908;font-family:var(--sans);min-height:100vh;display:flex;gap:40px;align-items:center;justify-content:center;padding:24px;color:var(--t1);flex-wrap:wrap}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+.headline{font-size:22px;font-weight:600;line-height:1.3;letter-spacing:-.01em}
+.body{font-size:14px;font-weight:450;line-height:1.45}
+.callout{font-size:13px;font-weight:400;line-height:1.4}
+.caption{font-size:12px;font-weight:400;line-height:1.45}
+.ov{font-size:11px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--t4)}
+.num{font-variant-numeric:tabular-nums}
+.t2{color:var(--t2)}.t3{color:var(--t3)}.t4{color:var(--t4)}
+
+.col{display:flex;flex-direction:column;gap:14px;align-items:center}
+.lab{font-size:13px;color:var(--t3)}
+.phone{width:384px;height:780px;background:#0E0C09;border-radius:46px;border:1px solid #322c23;padding:9px;position:relative;box-shadow:inset 0 0 0 6px #050403}
+.frame{position:absolute;inset:9px;border-radius:38px;overflow:hidden;display:flex;flex-direction:column;background:rgba(8,7,5,.74)}
+
+/* sheet：顶缘 1px hair 分界 + grabber + 固定 header */
+.sheet{margin-top:64px;flex:1;display:flex;flex-direction:column;background:var(--base);border-radius:22px 22px 0 0;border-top:1px solid var(--hair);overflow:hidden}
+.grab{width:36px;height:5px;border-radius:3px;background:var(--hair);margin:8px auto 0;flex:0 0 auto}
+.shead{flex:0 0 auto;padding:10px 20px 12px;display:flex;justify-content:space-between;align-items:flex-end;border-bottom:1px solid var(--hair2)}
+.done{min-height:44px;display:inline-flex;align-items:flex-end;padding-bottom:2px;color:var(--t2);font-size:13px;font-weight:500}
+.sbody{flex:1;overflow-y:auto;padding:4px 20px 24px}
+.sbody::-webkit-scrollbar{display:none}
+
+/* 偏好行：label 左 + 机加工分段开关 右（凹槽轨+色调滑块，H2：不点 ember） */
+.prow{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+.prow:first-child{margin-top:16px}
+.mseg{display:flex;background:var(--seg);border-radius:9px;padding:3px;width:168px;position:relative;box-shadow:inset 0 1px 0 rgba(0,0,0,.28)}
+.mseg button{flex:1;text-align:center;font-size:12px;font-weight:500;color:var(--t3);min-height:38px;border-radius:7px}
+.mseg button[aria-selected="true"]{background:var(--hair);color:var(--t1)}
+
+/* S2 刻线分组分隔：短竖刻线序列 */
+.etick{display:flex;align-items:center;gap:20px;justify-content:center;margin:24px 0 0;height:9px}
+.etick i{width:1px;height:6px;background:var(--etch);font-size:0}
+.etick i:first-child,.etick i:last-child{height:9px}
+
+/* 设备铭牌 spec plate = 本屏唯一 hero：锻面+顶缘高光+颗粒+registration */
+.plate{position:relative;background:var(--surface);border-radius:12px;border-top:1px solid rgba(236,230,216,.09);overflow:hidden;margin-top:16px;padding:14px 16px 6px}
+.plate::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='90' height='90' filter='url(%23n)' opacity='0.03'/></svg>")}
+.reg{position:absolute;top:8px;right:8px;width:11px;height:11px;border-top:1px solid #5F594C;border-right:1px solid #5F594C;opacity:.7}
+.srow{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0}
+.srow+.srow{border-top:1px solid var(--hair2)}
+.srow .val{font-size:15px;font-weight:600;color:var(--t1)}
+.editrow{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.btn2{color:var(--t2);border:1px solid var(--steel);border-radius:8px;padding:0 13px;min-height:40px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500}
+
+/* 背板蚀刻：渐进披露行表（默认收起） */
+.discl{display:flex;align-items:center;gap:8px;width:100%;text-align:left;min-height:44px;color:var(--t2);font-size:14px;font-weight:450;border-bottom:1px solid var(--hair2)}
+.discl i{margin-left:auto;font-size:14px;color:var(--t4);transition:transform .2s}
+.discl[aria-expanded="true"] i{transform:rotate(180deg)}
+.dbody{display:none;padding:2px 0 12px;border-bottom:1px solid var(--hair2)}
+.discl[aria-expanded="true"]+.dbody{display:block}
+
+/* 反馈：A=钢色 ghost 行 / B=ember 信号键 */
+.fb-ghost{display:flex;align-items:center;gap:8px;min-height:44px;color:var(--t2);font-size:14px;font-weight:450;width:100%;text-align:left}
+.fb-ghost i{color:var(--t4)}
+.emb{background:var(--btn);color:var(--t1);font-weight:600;font-size:15px;padding:0 18px;min-height:44px;border-radius:10px;border-left:2px solid var(--ember);display:inline-flex;align-items:center;gap:8px;margin-top:18px}
+</style>
+</head>
+<body>
+
+<div class="col">
+  <div class="phone"><div class="frame">
+    <div class="sheet">
+      <div class="grab"></div>
+      <div class="shead">
+        <div>
+          <div class="ov">Rede · 调校</div>
+          <div class="headline" style="margin-top:4px">设置</div>
+        </div>
+        <button class="done">完成</button>
+      </div>
+      <div class="sbody">
+        <div class="prow"><span class="body t2">单位</span>
+          <div class="mseg" data-seg><button aria-selected="true">kg</button><button>lb</button></div></div>
+        <div class="prow"><span class="body t2">语言</span>
+          <div class="mseg" data-seg><button aria-selected="true">中文</button><button>English</button></div></div>
+
+        <div class="etick"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+        <div class="ov" style="margin-top:18px">训练背景</div>
+        <div class="plate"><span class="reg"></span>
+          <div class="srow"><span class="ov">目标</span><span class="val">增肌</span></div>
+          <div class="srow"><span class="ov">频率</span><span class="val num">每周 5 天</span></div>
+          <div class="srow"><span class="ov">器械</span><span class="val">商业健身房</span></div>
+          <div class="srow"><span class="ov">背景</span><span class="val">刚接触力量</span></div>
+        </div>
+        <div class="editrow">
+          <span class="caption t4">重新回答 4 个引导问题</span>
+          <button class="btn2">修改回答</button>
+        </div>
+
+        <div class="etick"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+        <div style="margin-top:14px">
+          <button class="discl" aria-expanded="false" data-d>数据<i class="ti ti-chevron-down"></i></button>
+          <div class="dbody caption t3">所有训练记录都保存在这台设备本地。一键导出在后续版本提供。</div>
+          <button class="discl" aria-expanded="true" data-d>隐私<i class="ti ti-chevron-down"></i></button>
+          <div class="dbody caption t3">训练记录默认保存在这台设备本机。Rede 不连网、没有账号，也没有第三方统计组件。删除 App 会同时删除本机数据。</div>
+          <button class="discl" aria-expanded="false" data-d>关于<i class="ti ti-chevron-down"></i></button>
+          <div class="dbody caption t3">Rede 提供健身训练参考，不构成医疗建议。如有伤病或健康疑虑，训练前请咨询专业人士。</div>
+        </div>
+
+        <button class="fb-ghost"><i class="ti ti-mail"></i>发送反馈<i class="ti ti-chevron-right" style="margin-left:auto;font-size:13px;color:var(--t4)"></i></button>
+      </div>
+    </div>
+  </div></div>
+  <div class="lab">A · 纯锻铁（零 ember，反馈=钢色行）</div>
+</div>
+
+<div class="col">
+  <div class="phone"><div class="frame">
+    <div class="sheet">
+      <div class="grab"></div>
+      <div class="shead">
+        <div>
+          <div class="ov">Rede · 调校</div>
+          <div class="headline" style="margin-top:4px">设置</div>
+        </div>
+        <button class="done">完成</button>
+      </div>
+      <div class="sbody">
+        <div class="prow"><span class="body t2">单位</span>
+          <div class="mseg" data-seg><button aria-selected="true">kg</button><button>lb</button></div></div>
+        <div class="prow"><span class="body t2">语言</span>
+          <div class="mseg" data-seg><button aria-selected="true">中文</button><button>English</button></div></div>
+
+        <div class="etick"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+        <div class="ov" style="margin-top:18px">训练背景</div>
+        <div class="plate"><span class="reg"></span>
+          <div class="srow"><span class="ov">目标</span><span class="val">增肌</span></div>
+          <div class="srow"><span class="ov">频率</span><span class="val num">每周 5 天</span></div>
+          <div class="srow"><span class="ov">器械</span><span class="val">商业健身房</span></div>
+          <div class="srow"><span class="ov">背景</span><span class="val">刚接触力量</span></div>
+        </div>
+        <div class="editrow">
+          <span class="caption t4">重新回答 4 个引导问题</span>
+          <button class="btn2">修改回答</button>
+        </div>
+
+        <div class="etick"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+        <div style="margin-top:14px">
+          <button class="discl" aria-expanded="false" data-d>数据<i class="ti ti-chevron-down"></i></button>
+          <div class="dbody caption t3">所有训练记录都保存在这台设备本地。一键导出在后续版本提供。</div>
+          <button class="discl" aria-expanded="true" data-d>隐私<i class="ti ti-chevron-down"></i></button>
+          <div class="dbody caption t3">训练记录默认保存在这台设备本机。Rede 不连网、没有账号，也没有第三方统计组件。删除 App 会同时删除本机数据。</div>
+          <button class="discl" aria-expanded="false" data-d>关于<i class="ti ti-chevron-down"></i></button>
+          <div class="dbody caption t3">Rede 提供健身训练参考，不构成医疗建议。如有伤病或健康疑虑，训练前请咨询专业人士。</div>
+        </div>
+
+        <button class="emb"><i class="ti ti-mail" style="font-size:16px"></i>发送反馈</button>
+      </div>
+    </div>
+  </div></div>
+  <div class="lab">B · 信号键（反馈=全面板唯一 ember）</div>
+</div>
+
+<script>
+document.querySelectorAll('[data-seg]').forEach(seg=>{
+  seg.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+    seg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected','false'));
+    b.setAttribute('aria-selected','true');
+  }));
+});
+document.querySelectorAll('[data-d]').forEach(d=>d.addEventListener('click',()=>{
+  d.setAttribute('aria-expanded', d.getAttribute('aria-expanded')==='true'?'false':'true');
+}));
+</script>
+</body>
+</html>

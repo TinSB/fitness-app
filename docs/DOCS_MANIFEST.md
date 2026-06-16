@@ -1,7 +1,7 @@
 # DOCS_MANIFEST — 文档约束清单(活文档系统)
 
 > 本仓库文档遵循「小固定活文档集」纪律:**只维护下面登记的 canonical 活文档,禁止新建顶层 .md 文档**。
-> 目的:文档 = **约束项目的活规格**。在 clean rewrite 阶段,文档驱动新实现;旧代码只作参考库存,不反向覆盖产品真相。
+> 目的:文档 = **约束项目的活规格(设计真相)**。干净 iOS 实现已 shipping 到 M6,文档与代码双向校准——文档定义目标,已落地的 runtime 行为以代码 + 验证为准;已退役的旧 IronPath/PWA 代码只作参考,不反向覆盖产品真相。
 > 要加一份新文档?——先在本清单登记(写清职责 + 为何现有的容不下),否则不许建。
 
 ## 一、Canonical 活文档(唯一真源 · 相关改动必须同步更新)
@@ -13,6 +13,8 @@
 | **决策日志** | `docs/REDE_REBUILD_00_IRONRULES_AND_CLOUD.md` · `docs/CLOUD_DECISIONS_ARCHIVE.md` | iOS 原生账号 / 云 / 同步 / CRDT / watchOS 的未来决策记录;不授权第一版干净 runtime | 任何架构 / 产品决策拍板 |
 | **产品文案** | `docs/REDE_PRODUCT_COPY_BASELINE.md` | 产品定位 · 双语 voice/tone · UI / paywall / App Store / v0 文案基底 · 风险禁区 | 任何用户可见文案 / 双语 locale / onboarding / paywall / App Store 素材 / 原型生成文案变更 |
 | **产品设计语言** | `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md` | 视觉品牌 · 色彩 / 字体 / 形状 / 动效 · 核心组件隐喻 · App / landing / widget / v0 视觉生成基底；文案文档只管语言,视觉系统单独成文 | 任何用户可见 UI 视觉方向 / 原型生成 / App Store 截图 / landing page / widget 设计变更 |
+| **工艺规格** | `docs/REDE_CRAFT_SPEC.md` | 品质层签名系统(S1-S5)·构图法则·AI 味禁区·工艺清单·真实密度·字阶·像素基准——设计语言的执行细则,§11/§12 引用本文件;视觉方向真源仍是设计语言文档 | 任何签名系统 / 构图法则 / 工艺验收标准变更(2026-06-11 自 .ai-tmp 工作稿转正) |
+| **动作内容系统** | `docs/REDE_EXERCISE_CONTENT_SYSTEM.md` | Catalog 层数据合同与扩容手册:exercises.json 字段/注册表/rank 匹配/覆盖矩阵 golden/id 永生/填充流水线(wave);产品层目标仍以系统逻辑为准 | 任何目录字段 / 注册表 / 匹配策略 / 内容批次规则变更(2026-06-11 owner 拍板创建) |
 | **路线图** | `COMMERCIALIZATION_ROADMAP.md` | 商业化 + 外部付费意向验证 + 干净重写路线 + 待办优先级 | 任何阶段 / 优先级变化 |
 | **产品需求 PRD** | `docs/REDE_PRD.md` | 产品需求真源:给谁做/解决什么/功能需求(FR 编号+用户故事+验收)/优先级(MVP·FF·LATER·GATE)/NFR/指标/发布映射。引擎合同以系统逻辑为准,架构以 Master 为准,商业节奏以 Roadmap 为准 | 任何产品范围 / 功能优先级 / 验收标准 / 发布映射变化 |
 | **MVP 实现** | `docs/REDE_MVP_IMPLEMENTATION_PLAN.md` | MVP 最小训练闭环的实现执行层:范围 IN/OUT · slice 队列 · 验收 · TestFlight 上线 gate · 进度追踪。是 Roadmap P1 的执行清单,不凌驾架构/系统逻辑。**有界活文档:MVP 经用户确认全部完成后,按其 §11 终局流程留痕→回收→解除登记→删除,不长期留存;接棒 = PRD + 基于 PRD 与 MVP 完成度的开发规划(届时另登记)** | 任何 slice 状态 / MVP 范围 / 上线形态 / 里程碑顺序变化;MVP 确认达成 → 执行 §11 终局自清洁 |
@@ -21,10 +23,9 @@
 
 ## 二、参考文档(留存 · 非每次更新)
 - `docs/REDE_PRODUCT_OVERVIEW_CN.md` — 面向用户的功能说明
-- `docs/US_MARKET_CONSUMER_ANALYSIS.md` — Diet Companion / Larder 饮食市场消费者研究;不是 Rede strength-training 的功能、定价或 GTM 证据
 - `docs/REDE_iOS_DECISION_CIRCUIT.html` — 系统回路视觉参考,不得覆盖 `docs/REDE_iOS_SYSTEM_LOGIC.md` 或 Master Architecture
-- **Rede MVP 原型集**:`docs/rede-prototypes/`(index + 01–09 单屏 + rede-app 整合稿 + rede-landing-mocks)— MVP 核心页/推送/widget/分享卡/落地页的 v0 HTML 实现参照;视觉真源仍是 `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md`,不得覆盖系统逻辑/架构/MVP 实现文档
-- **饮食子项目**:`docs/DIET_COMPANION_*.md` + `docs/diet-companion-*.html` + `docs/larder-*.html` + `docs/LARDER_ICON_EXPRESSION_GUIDE.md` + `docs/BLENDER_CLAY_*.md`(Blender 黏土图标构建简报) + `docs/competitor-food-visual-spectrum.html`(竞品食物视觉光谱分析)(成型后另立自己的 manifest)
+- **Rede MVP 原型集**:`docs/rede-prototypes/`(index + 01–09 单屏 + 10a/10b/10c 调参工艺三稿 + 11a/11b onboarding 两稿 + 12 设置仪表 + rede-app 整合稿 + rede-landing-mocks + review-shots/ 改版前后对比截图)— MVP 核心页/推送/widget/分享卡/落地页的 v0 HTML 实现参照;视觉真源仍是 `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md`,不得覆盖系统逻辑/架构/MVP 实现文档
+- **饮食子项目(Larder)** — 已于 2026-06-13 **分家为独立 App / 独立仓 `~/Developer/Larder`**(与 Rede 平级),连同其设计/文案/调研/Blender 简报、HTML 原型、146 个 clay 食物图标资产全部迁出本仓,Rede 不再承载饮食材料。真相清单见该仓自己的 `DOCS_MANIFEST.md`;两仓互不覆盖(Larder 可只读联动 Rede 的目标/活动数据)。
 - **Agent 支撑文档**:`docs/agents/domain.md` · `docs/agents/issue-tracker.md` · `docs/agents/triage-labels.md` — 只服务 agent 工作流和 issue triage,不覆盖产品/架构真源
 
 ## 三、仓库元(标准,不在约束内)

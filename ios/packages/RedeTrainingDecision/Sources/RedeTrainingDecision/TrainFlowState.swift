@@ -73,11 +73,17 @@ public struct TrainFlowState: Equatable, Sendable {
 
     private var phaseBeforeConfirm: Phase = .activeSet
     private let catalog: ExerciseCatalog
+    /// FR-EQ1（2026-06-11）：器械白名单（nil=不过滤），换动作候选据此过滤。
+    private let allowedEquipment: Set<String>?
+    /// 档位系统（2026-06-13）：换动作时按用户单位重算新动作的真实档位步长。
+    private let loadUnit: LoadUnit
 
-    public init(prescription: TodayPrescription, catalog: ExerciseCatalog = .minimal) {
+    public init(prescription: TodayPrescription, catalog: ExerciseCatalog = .minimal, allowedEquipment: Set<String>? = nil, loadUnit: LoadUnit = .kg) {
         self.prescription = prescription
         self.plan = SessionSetPlanner.expand(prescription)
         self.catalog = catalog
+        self.allowedEquipment = allowedEquipment
+        self.loadUnit = loadUnit
     }
 
     // MARK: - 派生
@@ -100,6 +106,8 @@ public struct TrainFlowState: Equatable, Sendable {
             restSeconds: exercise.restSeconds,
             repLowerBound: exercise.repLowerBound,
             repUpperBound: exercise.repUpperBound,
+            stepKg: exercise.stepKg,
+            loadType: exercise.loadType,
             sets: Array(exercise.sets.dropFirst(skippedInCurrentExercise))
         )
     }
@@ -136,7 +144,8 @@ public struct TrainFlowState: Equatable, Sendable {
         return ExerciseReplacementEngine.candidates(
             for: exercise.exerciseId,
             catalog: catalog,
-            excluding: Set(plan.exercises.map(\.exerciseId))
+            excluding: Set(plan.exercises.map(\.exerciseId)),
+            allowedEquipment: allowedEquipment
         )
     }
 
@@ -207,13 +216,36 @@ public struct TrainFlowState: Equatable, Sendable {
               replacementCandidates.contains(newExerciseId) else { return }
         events.append(.replaceExercise(newExerciseId))
         replacements.append(Replacement(originalExerciseId: exercise.exerciseId, actualExerciseId: newExerciseId))
+        let newEntry = catalog.entry(id: newExerciseId)
+        let newLoadType = newEntry?.loadType ?? exercise.loadType
+        // 步长跟动作走（LoadGrid，2026-06-13）；负重自重(equipment=bodyweight step 为 0)
+        // 取挂片档；查不到器械=保守沿用原值。
+        let newStep: Double = {
+            guard let newEntry else { return exercise.stepKg }
+            if newLoadType == "bodyweight-plus" { return LoadGrid.addedLoadStepKg(unit: loadUnit) }
+            return LoadGrid.stepKg(equipment: newEntry.equipment, unit: loadUnit)
+        }()
+        // 换动作重算（wave-9/11，owner 拍板）：换到辅助器械(辅助量)或负重自重(外挂负重)时，
+        // 原动作负重无意义（辅助方向反转、自重无重量轴），用目录默认值重置（下限守护防归零）。
+        // external→external 沿用原负重不变（零回归面）。
+        let newSets: [PlannedSet]
+        if (newLoadType == "assisted" || newLoadType == "bodyweight-plus"), let newEntry {
+            let defaultLoad = max(newStep, (newEntry.startWeightKg / newStep).rounded() * newStep)
+            newSets = exercise.sets.map {
+                PlannedSet(index: $0.index, targetWeightKg: defaultLoad, targetReps: $0.targetReps, targetRir: $0.targetRir)
+            }
+        } else {
+            newSets = exercise.sets
+        }
         var exercises = plan.exercises
         exercises[exerciseIndex] = ExerciseSetPlan(
             exerciseId: newExerciseId,
             restSeconds: exercise.restSeconds,
             repLowerBound: exercise.repLowerBound,
             repUpperBound: exercise.repUpperBound,
-            sets: exercise.sets
+            stepKg: newStep,
+            loadType: newLoadType,
+            sets: newSets
         )
         plan = SessionSetPlan(dayCode: plan.dayCode, exercises: exercises)
     }
@@ -255,9 +287,11 @@ public struct TrainFlowState: Equatable, Sendable {
     public static func restore(
         prescription: TodayPrescription,
         events: [TrainFlowEvent],
-        catalog: ExerciseCatalog = .minimal
+        catalog: ExerciseCatalog = .minimal,
+        allowedEquipment: Set<String>? = nil,
+        loadUnit: LoadUnit = .kg
     ) -> TrainFlowState? {
-        var state = TrainFlowState(prescription: prescription, catalog: catalog)
+        var state = TrainFlowState(prescription: prescription, catalog: catalog, allowedEquipment: allowedEquipment, loadUnit: loadUnit)
         for event in events {
             switch event {
             case .logSet(let observation): state.logSet(observation)

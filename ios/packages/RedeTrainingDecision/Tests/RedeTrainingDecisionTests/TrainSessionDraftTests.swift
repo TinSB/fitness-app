@@ -117,4 +117,23 @@ final class TrainSessionDraftTests: XCTestCase {
         XCTAssertTrue(draft.isRestorable(todayISO: "2026-06-10"))
         XCTAssertFalse(draft.isRestorable(todayISO: "2026-06-11"))
     }
+
+    // §6.2：draft 落盘附目录版本戳；旧 draft（无字段）解码为 nil 不作废
+    func testDraftCarriesCatalogVersionAndOldDraftsDecode() throws {
+        let draft = TrainSessionDraft(
+            dateISO: "2026-06-11", startedAt: Date(timeIntervalSince1970: 0),
+            prescription: TodayPrescription(dayCode: "push-a", exercises: [], dayReasons: []),
+            events: [], catalogVersion: "wave-1.1"
+        )
+        let data = try JSONEncoder().encode(draft)
+        let decoded = try JSONDecoder().decode(TrainSessionDraft.self, from: data)
+        XCTAssertEqual(decoded.catalogVersion, "wave-1.1")
+        // 旧格式（无 catalogVersion 键）仍可解码
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        json.removeValue(forKey: "catalogVersion")
+        let oldData = try JSONSerialization.data(withJSONObject: json)
+        let oldDecoded = try JSONDecoder().decode(TrainSessionDraft.self, from: oldData)
+        XCTAssertNil(oldDecoded.catalogVersion)
+        XCTAssertEqual(oldDecoded.prescription.dayCode, "push-a")
+    }
 }

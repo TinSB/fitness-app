@@ -14,16 +14,16 @@ final class ProgressEngineCopyTests: XCTestCase {
     }
 
     func testTrendVerdictUpMatchesPRDVoice() {
-        XCTAssertEqual(zh.trendVerdict(call: "up", liftName: "卧推"), "卧推仍在上升。")
-        XCTAssertEqual(en.trendVerdict(call: "up", liftName: "Bench press"), "Bench press is still trending up.")
-        XCTAssertEqual(zh.trendSub(call: "up", sessions: 4, deltaKg: "5"), "过去 4 次训练里，估算 1RM 提高 5 kg。")
-        XCTAssertEqual(en.trendSub(call: "up", sessions: 4, deltaKg: "5"), "Estimated 1RM is up 5 kg over the last 4 sessions.")
+        XCTAssertEqual(zh.trendVerdict(call: "up", liftName: "卧推"), "卧推仍在上升")
+        XCTAssertEqual(en.trendVerdict(call: "up", liftName: "Bench press"), "Bench press is still trending up")
+        XCTAssertEqual(zh.trendSub(call: "up", sessions: 4, deltaKg: "5"), "过去 4 次训练里，估算 1RM 提高 5 kg")
+        XCTAssertEqual(en.trendSub(call: "up", sessions: 4, deltaKg: "5"), "Estimated 1RM is up 5 kg over the last 4 sessions")
     }
 
     func testCalibratingMakesNoJudgment() {
-        XCTAssertEqual(zh.trendVerdict(call: "calibrating", liftName: "卧推"), "正在校准。")
+        XCTAssertEqual(zh.trendVerdict(call: "calibrating", liftName: "卧推"), "正在校准")
         XCTAssertEqual(en.trendSub(call: "calibrating", sessions: 1, deltaKg: "0"),
-                       "A few more sessions and the trend shows up.")
+                       "A few more sessions and the trend emerges")
     }
 
     func testWeekComparisonLines() {
@@ -31,11 +31,16 @@ final class ProgressEngineCopyTests: XCTestCase {
                        "训练量较上周 +12% · 18 组 · 5500 kg")
         XCTAssertEqual(en.weekSubCompared(deltaPercent: -8, sets: 12, volumeKg: "4100"),
                        "Volume −8% vs last week · 12 sets · 4100 kg")
-        XCTAssertEqual(zh.weekVerdict("first"), "第一周开账。")
-        XCTAssertEqual(zh.weekVerdict("down"), "本周收着练。")
-        XCTAssertEqual(zh.weekVerdict("gap"), "这周练回来了。")
+        XCTAssertEqual(zh.weekVerdict("first"), "第一周开账")
+        XCTAssertEqual(zh.weekVerdict("down"), "本周收着练")
+        XCTAssertEqual(zh.weekVerdict("gap"), "本周回到训练")
+        XCTAssertEqual(en.weekVerdict("up"), "Volume is up this week")
+        XCTAssertEqual(en.weekVerdict("gap"), "Back to lifting this week")
+        XCTAssertEqual(zh.weekSubFirstWeek(sets: 5, volumeKg: "2000"), "本周 5 组 · 2000 kg　多周后显现对比")
+        XCTAssertEqual(en.weekSubFirstWeek(sets: 5, volumeKg: "2000"),
+                       "5 sets · 2000 kg this week. Comparison appears as weeks add up")
         XCTAssertEqual(en.weekSubGapWeek(sets: 12, volumeKg: "4100"),
-                       "12 sets · 4100 kg this week — no sessions last week to compare.")
+                       "12 sets · 4100 kg this week. No sessions last week to compare")
     }
 
     func testSuspectLinesAreBehavioral() {
@@ -48,7 +53,7 @@ final class ProgressEngineCopyTests: XCTestCase {
     }
 
     func testSessionAndHistoryLines() {
-        XCTAssertEqual(zh.sessionVerdictPR("卧推"), "扎实的一场。卧推新纪录。")
+        XCTAssertEqual(zh.sessionVerdictPR("卧推"), "本场新纪录　卧推")
         XCTAssertEqual(zh.sessionSubTopSet(lift: "卧推", kg: "62.5", reps: 6, e1rmKg: "75"),
                        "顶组 卧推 62.5 kg × 6 · 估算 1RM 75 kg")
         XCTAssertEqual(en.historyRowMeta(sets: 18, volumeKg: "5500"), "18 sets · 5500 kg")

@@ -92,7 +92,34 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .tg b{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--base);transition:left .15s}
 .tg.on b{left:18px}
 .discl{display:flex;align-items:center;gap:6px;width:100%;text-align:left;min-height:44px;padding:11px 0;color:var(--t3);font-size:14px;font-weight:450}
-.ctrlchip{min-height:44px;padding:0 14px;border:1px solid var(--hair);color:var(--t2);border-radius:8px;font-size:12px;display:inline-flex;align-items:center}
+
+/* 设置 overlay（M5-2 工艺重做，拍板方向 B「信号键」2026-06-10；方向稿 rede-12-settings-instrument.html）：
+   面板铭牌头（overline 型号行 + headline）+ 机加工分段开关（凹槽轨 inset 阴影，选中=色调抬升不点 ember）
+   + 设备铭牌 spec plate（唯一 hero：锻面+registration+仪表字阶）+ S2 刻线分组
+   + 背板蚀刻渐进披露（默认收起）+ ember 仅一处=发送反馈（面板唯一向外动作）。 */
+.st-head{display:flex;justify-content:space-between;align-items:flex-end;padding:10px 20px 12px;border-bottom:1px solid var(--hair2)}
+.st-grab{width:36px;height:5px;border-radius:3px;background:var(--hair);margin:8px auto 0}
+.st-prow{display:flex;justify-content:space-between;align-items:center;margin:12px 20px 0}
+.st-seg{width:168px;display:flex;background:#1A1712;border-radius:9px;padding:3px;box-shadow:inset 0 1px 0 rgba(0,0,0,.28)}
+.st-seg button{flex:1;text-align:center;font-size:12px;font-weight:500;color:var(--t3);min-height:38px;border-radius:7px}
+.st-seg button[aria-selected="true"]{background:var(--hair);color:var(--t1)}
+.etick{display:flex;align-items:center;gap:20px;justify-content:center;margin:24px 20px 0;height:9px}
+.etick i{width:1px;height:6px;background:#2E2A22}
+.etick i:first-child,.etick i:last-child{height:9px}
+.st-plate{margin:9px 20px 0;padding:5px 16px}
+.st-srow{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;position:relative;z-index:1}
+.st-srow+.st-srow{border-top:1px solid var(--hair2)}
+.st-srow b{font-size:15px;font-weight:600;color:var(--t1)}
+.st-edit{display:flex;justify-content:space-between;align-items:center;margin:10px 20px 0}
+.st-info{margin:14px 20px 0}
+.st-info .discl{border-bottom:1px solid var(--hair2);color:var(--t2)}
+.st-info .discl i{margin-left:auto;font-size:14px;color:var(--t4);transition:transform .2s}
+.st-info .discl[aria-expanded="true"] i{transform:rotate(180deg)}
+.st-db{display:none;padding:2px 0 12px;border-bottom:1px solid var(--hair2)}
+.discl[aria-expanded="true"]+.st-db{display:block}
+/* 整面板公理（拍板 2026-06-11）：控制操作去描边框（A3 卡墙微缩版）——文字级 + 竖刻线分隔 */
+.ctrlop{min-height:44px;color:var(--t2);font-size:12px;display:inline-flex;align-items:center}
+.optick{width:1px;height:8px;background:#2E2A22;align-self:center}
 /* P2-1：Set⇄Rest 原地 morph（固定 frame + 交叉淡入 scale .98） */
 .hstate{position:absolute;inset:18px 16px;padding-left:13px;transition:opacity .22s ease,transform .22s ease}
 .hstate.out{opacity:0;transform:scale(.98);pointer-events:none}
@@ -174,7 +201,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 
    <!-- ===================== TODAY ===================== -->
    <section class="screen on" id="s-today" role="tabpanel" aria-label="Today">
-     <div class="hdr"><div><div class="headline">Today</div><div class="ov num" style="margin-top:6px">Sat · Jun 8 · Week 3</div></div><button class="iconbtn" aria-label="Settings"><i class="ti ti-settings gear"></i></button></div>
+     <div class="hdr"><div><div class="headline">Today</div><div class="ov num" style="margin-top:6px">Sat · Jun 8 · Week 3</div></div><button class="iconbtn" aria-label="Settings" onclick="openSettings()"><i class="ti ti-settings gear"></i></button></div>
 
      <!-- HERO = 判断块（D-B：判断句独占 hero；185 降到 ~20px 作次级预览） -->
      <div class="forged sect" style="padding:18px 16px;margin-top:20px">
@@ -210,7 +237,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
          <div style="display:grid;grid-template-columns:auto 1fr;gap:8px 14px;padding-top:6px">
            <div class="ov" style="padding-top:3px">Signal</div><div class="callout t2">Last overhead felt heavy · sleep <span class="num">6.2h</span></div>
            <div class="ov" style="padding-top:3px">Change</div><div class="callout t2">Overhead <span class="num">95→85</span> lb · bench holds</div>
-           <div class="ov" style="padding-top:3px">Control</div><div style="display:flex;gap:7px"><button class="ctrlchip">Apply</button><button class="ctrlchip">Hold</button><button class="ctrlchip">Swap</button></div>
+           <div class="ov" style="padding-top:3px">Control</div><div style="display:flex;gap:12px"><button class="ctrlop">Apply</button><span class="optick"></span><button class="ctrlop">Hold</button><span class="optick"></span><button class="ctrlop">Swap</button></div>
          </div>
        </div>
      </div>
@@ -271,7 +298,8 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
          </div>
          <div style="display:flex;gap:8px;margin-top:16px;align-items:center">
            <button class="emb" onclick="logSet()"><i class="ti ti-check" style="font-size:16px"></i>Log set</button>
-           <span class="callout t3" style="display:flex;align-items:center;gap:5px;border:1px solid #3A352B;border-radius:10px;padding:0 15px;min-height:44px"><i class="ti ti-clock" style="font-size:15px"></i><span class="num">2:00</span></span>
+           <!-- 整面板：只读数据不穿描边框（框形=可点暗示；iOS 端早已正确，回写对齐） -->
+           <span class="callout t3" style="display:flex;align-items:center;gap:5px;min-height:44px"><i class="ti ti-clock" style="font-size:15px"></i><span class="num">2:00</span></span>
          </div>
        </div>
        <div id="restState" class="hstate out" style="display:flex;flex-direction:column;justify-content:center;text-align:center;padding-left:13px">
@@ -370,7 +398,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
     <div style="display:flex;justify-content:space-around;padding:8px 24px 20px;text-align:center">
       <div><div class="title num" id="sumVol">14.2k</div><div class="caption t3" style="margin-top:3px">lb</div></div>
       <div><div class="title num" id="sumSets">18</div><div class="caption t3" style="margin-top:3px">sets</div></div>
-      <div><div class="title num" id="sumPR" style="color:var(--ember)">1</div><div class="caption t3" style="margin-top:3px">PR</div></div>
+      <!-- 整面板（审查 MINOR-1）：PR 计数 stat 退役——PR 时刻由下方铭牌独占（两端统一 2026-06-11） -->
     </div>
     <div class="forged" id="sumPRcard" style="margin:0 20px 12px;padding:14px;display:flex;align-items:center;gap:11px"><i class="ti ti-trophy" style="font-size:21px;color:var(--ember)"></i><div><div class="body">New bench PR</div><div class="caption num t3" id="sumPRline" style="margin-top:1px">195 × 3 · +5 lb</div></div></div>
     <div style="padding:6px 20px 0;display:flex;flex-direction:column;align-items:flex-start;gap:10px"><button class="emb" onclick="share()"><i class="ti ti-share-2" style="font-size:16px"></i>Share session</button><button class="body t3" style="min-height:44px;padding:0 4px" onclick="closeOvl()">Done</button></div>
@@ -393,6 +421,44 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
       <button style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:60px;min-height:60px;justify-content:center" class="caption t2"><i class="ti ti-link" style="font-size:25px"></i>Copy link</button>
       <button style="display:flex;flex-direction:column;align-items:center;gap:6px;min-width:60px;min-height:60px;justify-content:center" class="caption t2"><i class="ti ti-dots" style="font-size:25px"></i>More</button>
     </div>
+  </div></div>
+
+  <!-- 设置（M5-2 工艺重做，拍板方向 B「信号键」2026-06-10）：检修面板架构，
+       iOS 实现对照本 overlay；方向稿存档 rede-12-settings-instrument.html -->
+  <div class="ovl" id="ovl-settings" onclick="if(event.target===this)closeSettings()"><div class="sheet">
+    <div class="st-grab"></div>
+    <div class="st-head"><div><div class="ov">Rede · Tuning</div><div class="headline" style="margin-top:4px">Settings</div></div><button class="ghost" onclick="closeSettings()">Done</button></div>
+    <div class="st-prow"><span class="body t2">Units</span><div class="st-seg" data-stseg><button aria-selected="true">kg</button><button aria-selected="false">lb</button></div></div>
+    <div class="st-prow"><span class="body t2">Language</span><div class="st-seg" data-stseg><button aria-selected="false">中文</button><button aria-selected="true">English</button></div></div>
+    <div class="etick"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="ov" style="margin:18px 20px 0">Background</div>
+    <!-- 行内单题编辑（方向 A 拍板 2026-06-10）：改哪题点哪行，整流重跑退役；
+         Days 行接通可交互示例（编辑卡：预填 + dirty 才可保存 + 变更收据） -->
+    <div class="forged st-plate"><svg class="reg" style="right:8px;top:8px" viewBox="0 0 11 11"><path d="M2 0 L11 0 L11 9" stroke="#5F594C" fill="none"/></svg>
+      <button class="st-srow" style="width:100%"><span class="ov">Goal</span><b style="margin-left:auto">Muscle</b><i class="ti ti-chevron-right" style="font-size:12px;color:var(--t4);margin-left:8px"></i></button>
+      <button class="st-srow" style="width:100%" onclick="stEditDays()"><span class="ov">Days</span><b class="num" style="margin-left:auto" id="stDaysVal">5 / week</b><i class="ti ti-chevron-right" style="font-size:12px;color:var(--t4);margin-left:8px"></i></button>
+      <button class="st-srow" style="width:100%"><span class="ov">Equipment</span><b style="margin-left:auto">Commercial gym</b><i class="ti ti-chevron-right" style="font-size:12px;color:var(--t4);margin-left:8px"></i></button>
+      <button class="st-srow" style="width:100%"><span class="ov">Background</span><b style="margin-left:auto">New to lifting</b><i class="ti ti-chevron-right" style="font-size:12px;color:var(--t4);margin-left:8px"></i></button>
+    </div>
+    <div class="st-edit"><span class="caption t4" id="stHint">Tap any row to change it</span></div>
+    <!-- 整面板：编辑态不另起 forged（一屏一铭牌，spec plate 已是 hero）——开放分区 + 刻线上缘 -->
+    <div id="stEditCard" style="margin:10px 20px 0;padding:16px 0 4px;border-top:1px solid var(--hair2);display:none">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start"><div class="ov">Schedule</div><button class="ghost" style="min-height:24px;padding:0" onclick="stEditClose()">Cancel</button></div>
+      <div class="headline" style="margin-top:6px;font-size:18px">How many days can you actually train?</div>
+      <div class="caption t4" style="margin-top:4px">Pick the week you can hold, not the ideal one</div>
+      <div style="display:flex;margin-top:12px" id="stDaysBand"></div>
+      <button class="emb" id="stSave" style="margin-top:14px;opacity:.45" disabled onclick="stEditSave()"><i class="ti ti-check" style="font-size:15px"></i>Save changes</button>
+    </div>
+    <div class="etick"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="st-info">
+      <button class="discl" aria-expanded="false" onclick="dTog(this)">Data<i class="ti ti-chevron-down"></i></button>
+      <div class="st-db caption t3">All training records live on this device. One-tap export ships in a later version.</div>
+      <button class="discl" aria-expanded="false" onclick="dTog(this)">Privacy<i class="ti ti-chevron-down"></i></button>
+      <div class="st-db caption t3">Training records live on this device by default. Rede has no network connection, no account, and no third-party analytics. Deleting the app also deletes its local data.</div>
+      <button class="discl" aria-expanded="false" onclick="dTog(this)">About<i class="ti ti-chevron-down"></i></button>
+      <div class="st-db caption t3">Rede offers fitness guidance, not medical advice. If you have injuries or health concerns, talk to a professional before training.</div>
+    </div>
+    <button class="emb" style="margin:18px 20px 0"><i class="ti ti-mail" style="font-size:16px"></i>Send feedback</button>
   </div></div>
 
  </div>
@@ -672,6 +738,38 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 
  /* ---------- toggles / overlays / summary ---------- */
  function tog(el){ const tg=el.querySelector('.tg'); const on=tg.classList.toggle('on'); el.setAttribute('aria-checked',String(on)); }
+ function openSettings(){ document.getElementById('ovl-settings').classList.add('on'); }
+ function closeSettings(){ document.getElementById('ovl-settings').classList.remove('on'); stEditClose(); }
+ /* 行内单题编辑（Days 示例）：预填 + dirty 才可保存 + 变更收据 */
+ let stDays=5, stPick=5;
+ function stRenderBand(){
+   const band=document.getElementById('stDaysBand');
+   band.innerHTML='';
+   for(let n=2;n<=6;n++){
+     const b=document.createElement('button');
+     b.style.cssText='flex:1;min-height:64px;font-size:24px;font-weight:600;color:'+(n===stPick?'var(--t1)':'var(--t3)');
+     b.innerHTML=n+'<div style="width:12px;height:2px;margin:8px auto 0;background:'+(n===stPick?'var(--steel)':'transparent')+'"></div>';
+     b.onclick=()=>{ stPick=n; stRenderBand(); };
+     band.appendChild(b);
+   }
+   const sv=document.getElementById('stSave'); const dirty=stPick!==stDays;
+   sv.disabled=!dirty; sv.style.opacity=dirty?'1':'.45';
+ }
+ function stEditDays(){ stPick=stDays; stRenderBand(); document.getElementById('stEditCard').style.display='block'; }
+ function stEditClose(){ const c=document.getElementById('stEditCard'); if(c) c.style.display='none'; }
+ function stEditSave(){
+   const old=stDays; stDays=stPick;
+   document.getElementById('stDaysVal').textContent=stDays+' / week';
+   const oldSplit=old>=5?'Push / Pull / Legs':'Upper / Lower', newSplit=stDays>=5?'Push / Pull / Legs':'Upper / Lower';
+   document.getElementById('stHint').textContent='Days '+old+' → '+stDays+(oldSplit!==newSplit?' · '+oldSplit+' → '+newSplit:'');
+   document.getElementById('stHint').style.color='var(--t3)';
+   stEditClose();
+ }
+ function dTog(b){ b.setAttribute('aria-expanded', b.getAttribute('aria-expanded')==='true'?'false':'true'); }
+ document.querySelectorAll('[data-stseg]').forEach(seg=>seg.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+   seg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected','false'));
+   b.setAttribute('aria-selected','true');
+ })));
  function confirmFinish(){ document.getElementById('ovl-confirm').classList.add('on'); }
  function closeConfirm(){ document.getElementById('ovl-confirm').classList.remove('on'); }   // 取消 = 留在 Train，不重置
  function openSummary(){
@@ -681,7 +779,6 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
    const isPR=top&&top.w>=185;                          // 185 > 之前最好 180 → PR
    document.getElementById('sumVol').textContent=vol>=1000?(vol/1000).toFixed(1)+'k':vol;
    document.getElementById('sumSets').textContent=done.length;
-   document.getElementById('sumPR').textContent=isPR?1:0;
    const card=document.getElementById('sumPRcard');
    if(top){
      const e1=Math.round(top.w*(1+top.r/30));
@@ -696,7 +793,8 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
  }
  function share(){ document.getElementById('ovl-summary').classList.remove('on'); document.getElementById('ovl-share').classList.add('on'); }
  function shareBack(){ document.getElementById('ovl-share').classList.remove('on'); document.getElementById('ovl-summary').classList.add('on'); }   // P2-7: 退回小结
- function closeOvl(){ document.querySelectorAll('.ovl').forEach(o=>o.classList.remove('on')); resetTrain(); go('today'); }
+ /* 审查 NIT-1：只关训练流 overlay，不连带 settings（隔离两条 overlay 通路） */
+ function closeOvl(){ ['ovl-confirm','ovl-summary','ovl-share'].forEach(id=>document.getElementById(id)?.classList.remove('on')); resetTrain(); go('today'); }
 
  buildTable(); seg('Week');
 </script>

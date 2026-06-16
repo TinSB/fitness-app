@@ -1,90 +1,166 @@
-// ExerciseCatalog（最小）— 动作事实唯一权威（系统逻辑 §6.1；PRD FR-EX1 / 开放决策 #1
-// 已拍板：覆盖起始计划生成 + 常见替换的最小集，宁可少而准）。
+// ExerciseCatalog — 动作事实唯一权威（系统逻辑 §6.1；内容系统合同
+// docs/REDE_EXERCISE_CONTENT_SYSTEM.md，P0 拍板 2026-06-11）。
 //
-// 字段只放「事实」：稳定 id、movement pattern、主/次肌群、器械、替代族、保守起始
-// 重量（kg）。展示名（双语）不在这里——引擎零文案，名称归 RedeL10n（M2-3 落地）。
-// 肌群贡献权重与禁忌提示本版缺席：按 §6.1 红线如实声明 limitation，相关高置信
-// 建议（肌群级分析）在补齐前不得基于本 catalog 产出。
+// P0 内容系统基建：
+// - 单一真源 = 包内 Resources/exercises.json（启动解码，零网络）；
+//   31 条 1:1 自原硬编码数组迁移，golden 证明行为零变化。
+// - 展示名（nameZh/nameEn）随规格原文「本地化展示名是动作事实」迁入目录；
+//   RedeL10n 不再维护动作名字典。
+// - 匹配去顺序化：filter → (rank, id) 升序取首——文件顺序不再是合同，
+//   rank 才是。调 rank = 调产品行为，必须显式改 golden 留痕。
+// - id 永生：只可 deprecated，不可删除（用户历史引用必须永远可解析）。
 //
-// 数据来源：legacy 模板库存（tag legacy-parity-final 的 DefaultTemplates/
-// ExerciseLibrary）的事实性复用——id、肌群、器械、起始重量逐条核对移植；
-// 同动作跨模板的起始值冲突取首次声明（MVP 简化，已留痕）。
-//
-// 重量口径（显式产品声明，渲染层据此标注）：哑铃/单边动作 startWeightKg =
-// 单只哑铃重量；杠铃 = 总杠重（含杆）；cable/machine = 配重片读数。
-//
-// 条目声明顺序是合同的一部分：日计划槽位按「目录顺序第一个未用且匹配」选动作，
-// 调整顺序 = 调整生成结果，必须让 goldens 红（五个训练日均有 golden 锁定）。
+// 肌群贡献权重与禁忌提示 P0 仍缺席：按 §6.1 红线如实声明 limitation。
+// 重量口径（系统逻辑 §153）：哑铃/单边 = 单只哑铃重量；杠铃 = 总杠重（含杆）；
+// cable/machine = 配重片读数。
 
-public struct ExerciseCatalogEntry: Equatable, Sendable {
+import Foundation
+
+public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
     public let id: String
+    /// 本地化展示名（动作事实，规格原文）。
+    public let nameZh: String
+    public let nameEn: String
     public let movementPattern: String
     public let primaryMuscle: String
     public let secondaryMuscles: [String]
-    /// barbell / dumbbell / cable / machine
+    /// 器械注册表内取值（EquipmentRegistry.allClasses；MVP `machine` 为
+    /// plate-loaded/selectorized 合并档，P1 拆分=原 id 原地改值，禁止换 id）。
     public let equipment: String
-    /// compound / machine / isolation（训练学角色，沿 legacy 词汇）
+    /// 训练学角色：compound（主项复合）/ accessory（辅助容量）/ isolation（孤立）。
+    /// Blocker schema PR（2026-06-11）：原第三档 "machine" 改名 accessory——
+    /// 它承载的是角色语义（leg-press=辅助 vs hack-squat=主项），不是器械；
+    /// 器械轨道稳定性独立成 isGuided。
     public let kind: String
-    public let substitutionGroup: String
+    /// 替代族（§6.2 升一等公民 2026-06-11）：首元素 = 主族（引擎 P1 仅消费主族，
+    /// 行为与单值时代等价）；副族留给替换候选扩展（填数据须 owner 审定）。
+    public let substitutionGroups: [String]
+    /// 兼容访问器：主族。
+    public var substitutionGroup: String { substitutionGroups.first ?? "" }
     public let startWeightKg: Double
+    /// 负重语义（§6.1 Blocker）：external / bodyweight / bodyweight-plus /
+    /// assisted / band。非 external 条目在对应引擎支持落地前禁止进处方/替换
+    /// （匹配与候选层硬过滤）——assisted 数字=辅助量、越大越轻，直接走现有
+    /// 渐进/疼痛瀑布会方向反转（安全红线）。
+    public let loadType: String
+    /// 吨位换算系数（owner 拍板 B 案 2026-06-11）：吨位 = 重量×次数×loadFactor。
+    /// 双哑铃动作（口径记单只）= 2；杠铃/绳索/器械（记总阻力）与单哑铃双手持 = 1。
+    /// 仅作用于统计展示（小结/进展吨位）——处方/渐进重量永不乘它。
+    public let loadFactor: Double
+    /// 力学等价变体的共享渐进档案指针（§6.2 占位，默认 nil = 各自渐进）；引擎暂不消费。
+    public let progressionKey: String?
+    /// 器械轨道稳定（固定轨迹）；目录事实，引擎暂不消费（P1 校准/展示挂点）。
+    public let isGuided: Bool
+    /// 匹配优先级（升序）；匹配 = filter → (rank, id) 排序，与文件顺序无关。
+    public let rank: Int
+    /// 弃用不删除（id 永生合同）。
+    public let deprecated: Bool
+    /// 真弃用时的继任指针（渐进历史延续挂点，P1 占位）。
+    public let replacedBy: String?
+    /// 禁忌提示 / 证据置信标签（规格要求字段；P1 wave 填充落数据）。
+    public let contraindicationHint: String?
+    public let evidenceTag: String?
 
     public init(
-        id: String, movementPattern: String, primaryMuscle: String,
+        id: String, nameZh: String = "", nameEn: String = "",
+        movementPattern: String, primaryMuscle: String,
         secondaryMuscles: [String] = [], equipment: String, kind: String,
-        substitutionGroup: String, startWeightKg: Double
+        substitutionGroups: [String], startWeightKg: Double,
+        loadType: String = "external",
+        loadFactor: Double = 1.0, progressionKey: String? = nil,
+        isGuided: Bool = false,
+        rank: Int, deprecated: Bool = false,   // rank 无默认值：忘传=编译错（审查 M2）
+        replacedBy: String? = nil,
+        contraindicationHint: String? = nil, evidenceTag: String? = nil
     ) {
         self.id = id
+        self.nameZh = nameZh
+        self.nameEn = nameEn
         self.movementPattern = movementPattern
         self.primaryMuscle = primaryMuscle
         self.secondaryMuscles = secondaryMuscles
         self.equipment = equipment
         self.kind = kind
-        self.substitutionGroup = substitutionGroup
+        self.substitutionGroups = substitutionGroups
         self.startWeightKg = startWeightKg
+        self.loadType = loadType
+        self.loadFactor = loadFactor
+        self.progressionKey = progressionKey
+        self.isGuided = isGuided
+        self.rank = rank
+        self.deprecated = deprecated
+        self.replacedBy = replacedBy
+        self.contraindicationHint = contraindicationHint
+        self.evidenceTag = evidenceTag
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, nameZh, nameEn, movementPattern, primaryMuscle, secondaryMuscles
+        case equipment, kind, substitutionGroups, startWeightKg, rank, deprecated
+        case loadType, loadFactor, progressionKey, isGuided, replacedBy
+        case contraindicationHint, evidenceTag
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        nameZh = try c.decode(String.self, forKey: .nameZh)
+        nameEn = try c.decode(String.self, forKey: .nameEn)
+        movementPattern = try c.decode(String.self, forKey: .movementPattern)
+        primaryMuscle = try c.decode(String.self, forKey: .primaryMuscle)
+        secondaryMuscles = try c.decodeIfPresent([String].self, forKey: .secondaryMuscles) ?? []
+        equipment = try c.decode(String.self, forKey: .equipment)
+        kind = try c.decode(String.self, forKey: .kind)
+        substitutionGroups = try c.decode([String].self, forKey: .substitutionGroups)
+        startWeightKg = try c.decode(Double.self, forKey: .startWeightKg)
+        // loadType / loadFactor 强制显式（内容事实不许靠默认值溜进目录，同 rank
+        // 无默认值的 M2 教训）；步长已移交 LoadGrid（器械×单位）；其余可缺省。严格 decode 只作用于
+        // 包内 exercises.json（唯一被解码的目录文件，与 bundle 同 PR 演进，无历史
+        // 遗留文件需迁移）——缺字段=构建错误，fatal 于开发期（审查 M1 边界澄清）。
+        loadType = try c.decode(String.self, forKey: .loadType)
+        loadFactor = try c.decode(Double.self, forKey: .loadFactor)
+        progressionKey = try c.decodeIfPresent(String.self, forKey: .progressionKey)
+        isGuided = try c.decodeIfPresent(Bool.self, forKey: .isGuided) ?? false
+        rank = try c.decode(Int.self, forKey: .rank)
+        deprecated = try c.decodeIfPresent(Bool.self, forKey: .deprecated) ?? false
+        replacedBy = try c.decodeIfPresent(String.self, forKey: .replacedBy)
+        contraindicationHint = try c.decodeIfPresent(String.self, forKey: .contraindicationHint)
+        evidenceTag = try c.decodeIfPresent(String.self, forKey: .evidenceTag)
     }
 }
 
-public struct ExerciseCatalog: Equatable, Sendable {
+public struct ExerciseCatalog: Equatable, Sendable, Codable {
     public let catalogVersion: String
-    public let entries: [ExerciseCatalogEntry]
+    public let exercises: [ExerciseCatalogEntry]
 
-    public func entry(id: String) -> ExerciseCatalogEntry? {
-        entries.first { $0.id == id }
+    /// 兼容旧 API 名（matching/tests 普遍使用 entries）。
+    public var entries: [ExerciseCatalogEntry] { exercises }
+
+    public init(catalogVersion: String, entries: [ExerciseCatalogEntry]) {
+        self.catalogVersion = catalogVersion
+        self.exercises = entries
     }
 
-    public static let minimal = ExerciseCatalog(
-        catalogVersion: "mvp-1",
-        entries: [
-            // 胸 / 推
-            .init(id: "bench-press", movementPattern: "horizontal-press", primaryMuscle: "chest", secondaryMuscles: ["triceps", "front-delt"], equipment: "barbell", kind: "compound", substitutionGroup: "chest-press", startWeightKg: 60),
-            .init(id: "incline-db-press", movementPattern: "incline-press", primaryMuscle: "chest", secondaryMuscles: ["front-delt", "triceps"], equipment: "dumbbell", kind: "compound", substitutionGroup: "chest-press", startWeightKg: 22.5),
-            .init(id: "db-bench-press", movementPattern: "horizontal-press", primaryMuscle: "chest", secondaryMuscles: ["triceps", "front-delt"], equipment: "dumbbell", kind: "compound", substitutionGroup: "chest-press", startWeightKg: 30),
-            .init(id: "machine-chest-press", movementPattern: "horizontal-press", primaryMuscle: "chest", secondaryMuscles: ["triceps"], equipment: "machine", kind: "machine", substitutionGroup: "chest-press", startWeightKg: 55),
-            .init(id: "cable-fly", movementPattern: "fly", primaryMuscle: "chest", equipment: "cable", kind: "isolation", substitutionGroup: "chest-fly", startWeightKg: 17.5),
-            // 背 / 拉
-            .init(id: "lat-pulldown", movementPattern: "vertical-pull", primaryMuscle: "back", secondaryMuscles: ["biceps"], equipment: "cable", kind: "compound", substitutionGroup: "vertical-pull", startWeightKg: 55),
-            .init(id: "seated-row", movementPattern: "horizontal-pull", primaryMuscle: "back", secondaryMuscles: ["biceps", "rear-delt"], equipment: "cable", kind: "compound", substitutionGroup: "row", startWeightKg: 50),
-            .init(id: "barbell-row", movementPattern: "horizontal-pull", primaryMuscle: "back", secondaryMuscles: ["biceps", "rear-delt"], equipment: "barbell", kind: "compound", substitutionGroup: "row", startWeightKg: 50),
-            // legacy 起始值 26kg，归一化到 2.5kg 网格（处方重量一律 2.5 取整）。
-            .init(id: "one-arm-db-row", movementPattern: "horizontal-pull", primaryMuscle: "back", secondaryMuscles: ["biceps"], equipment: "dumbbell", kind: "compound", substitutionGroup: "row", startWeightKg: 25),
-            .init(id: "face-pull", movementPattern: "rear-delt", primaryMuscle: "rear-delt", secondaryMuscles: ["upper-back"], equipment: "cable", kind: "isolation", substitutionGroup: "rear-delt", startWeightKg: 20),
-            // 肩
-            .init(id: "shoulder-press", movementPattern: "vertical-press", primaryMuscle: "shoulder", secondaryMuscles: ["triceps"], equipment: "dumbbell", kind: "compound", substitutionGroup: "shoulder-press", startWeightKg: 20),
-            .init(id: "lateral-raise", movementPattern: "lateral-raise", primaryMuscle: "side-delt", equipment: "dumbbell", kind: "isolation", substitutionGroup: "side-delt", startWeightKg: 7.5),
-            // 手臂
-            .init(id: "db-curl", movementPattern: "curl", primaryMuscle: "biceps", equipment: "dumbbell", kind: "isolation", substitutionGroup: "biceps-curl", startWeightKg: 12.5),
-            .init(id: "hammer-curl", movementPattern: "curl", primaryMuscle: "biceps", secondaryMuscles: ["forearm"], equipment: "dumbbell", kind: "isolation", substitutionGroup: "biceps-curl", startWeightKg: 12.5),
-            .init(id: "preacher-curl", movementPattern: "curl", primaryMuscle: "biceps", equipment: "barbell", kind: "isolation", substitutionGroup: "biceps-curl", startWeightKg: 25),
-            .init(id: "triceps-pushdown", movementPattern: "triceps-extension", primaryMuscle: "triceps", equipment: "cable", kind: "isolation", substitutionGroup: "triceps", startWeightKg: 25),
-            .init(id: "close-grip-bench", movementPattern: "horizontal-press", primaryMuscle: "triceps", secondaryMuscles: ["chest"], equipment: "barbell", kind: "compound", substitutionGroup: "triceps", startWeightKg: 50),
-            // 腿
-            .init(id: "squat", movementPattern: "squat-pattern", primaryMuscle: "quads", secondaryMuscles: ["glutes", "core"], equipment: "barbell", kind: "compound", substitutionGroup: "squat", startWeightKg: 80),
-            .init(id: "hack-squat", movementPattern: "squat-pattern", primaryMuscle: "quads", secondaryMuscles: ["glutes"], equipment: "machine", kind: "compound", substitutionGroup: "squat", startWeightKg: 80),
-            .init(id: "leg-press", movementPattern: "squat-pattern", primaryMuscle: "quads", secondaryMuscles: ["glutes"], equipment: "machine", kind: "machine", substitutionGroup: "squat", startWeightKg: 140),
-            .init(id: "romanian-deadlift", movementPattern: "hinge", primaryMuscle: "hamstrings", secondaryMuscles: ["glutes", "lower-back"], equipment: "barbell", kind: "compound", substitutionGroup: "hinge", startWeightKg: 70),
-            .init(id: "db-rdl", movementPattern: "hinge", primaryMuscle: "hamstrings", secondaryMuscles: ["glutes"], equipment: "dumbbell", kind: "compound", substitutionGroup: "hinge", startWeightKg: 30),
-            .init(id: "leg-curl", movementPattern: "knee-flexion", primaryMuscle: "hamstrings", equipment: "machine", kind: "isolation", substitutionGroup: "hamstring-curl", startWeightKg: 40),
-            .init(id: "calf-raise", movementPattern: "calf-raise", primaryMuscle: "calves", equipment: "machine", kind: "isolation", substitutionGroup: "calves", startWeightKg: 50),
-        ]
-    )
+    public func entry(id: String) -> ExerciseCatalogEntry? {
+        exercises.first { $0.id == id }
+    }
+
+    /// 本地化展示名（"zh" → nameZh，其余 → nameEn）；未知 id 回退裸 id（如实）。
+    public func displayName(_ id: String, localeCode: String) -> String {
+        guard let entry = entry(id: id) else { return id }
+        let name = localeCode == "zh" ? entry.nameZh : entry.nameEn
+        return name.isEmpty ? id : name
+    }
+
+    /// 单一真源：包内 exercises.json。解码失败 = 构建配置错误（CI 合同测试拦截），
+    /// 不做静默回退——宁可炸在开发期，不给用户错目录。
+    public static let minimal: ExerciseCatalog = {
+        guard let url = Bundle.module.url(forResource: "exercises", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let catalog = try? JSONDecoder().decode(ExerciseCatalog.self, from: data)
+        else {
+            fatalError("exercises.json 缺失或解码失败——目录资源构建配置错误")
+        }
+        return catalog
+    }()
 }

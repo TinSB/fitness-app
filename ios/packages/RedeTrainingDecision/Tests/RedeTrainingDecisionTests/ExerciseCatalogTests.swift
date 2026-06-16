@@ -21,7 +21,7 @@ final class ExerciseCatalogTests: XCTestCase {
             XCTAssertFalse(entry.equipment.isEmpty, "\(entry.id) 缺器械需求")
             XCTAssertFalse(entry.substitutionGroup.isEmpty, "\(entry.id) 缺替代族")
             XCTAssertFalse(entry.kind.isEmpty, "\(entry.id) 缺训练学角色")
-            XCTAssertGreaterThan(entry.startWeightKg, 0)
+            if entry.loadType != "bodyweight" && entry.loadType != "band" { XCTAssertGreaterThan(entry.startWeightKg, 0) } // 自重/弹力带=0 合法（wave-6/12）
         }
     }
 

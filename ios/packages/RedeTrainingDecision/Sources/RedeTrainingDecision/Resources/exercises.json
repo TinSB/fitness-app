@@ -1,0 +1,2423 @@
+{
+  "catalogVersion": "wave-15",
+  "exercises": [
+    {
+      "id": "bench-press",
+      "movementPattern": "horizontal-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "triceps",
+        "front-delt"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "chest-press"
+      ],
+      "startWeightKg": 60.0,
+      "nameZh": "平板卧推",
+      "nameEn": "Bench press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 0
+    },
+    {
+      "id": "incline-db-press",
+      "movementPattern": "incline-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "front-delt",
+        "triceps"
+      ],
+      "equipment": "dumbbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "chest-press"
+      ],
+      "startWeightKg": 22.5,
+      "nameZh": "上斜哑铃卧推",
+      "nameEn": "Incline DB press",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 10
+    },
+    {
+      "id": "db-bench-press",
+      "movementPattern": "horizontal-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "triceps",
+        "front-delt"
+      ],
+      "equipment": "dumbbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "chest-press"
+      ],
+      "startWeightKg": 30.0,
+      "nameZh": "哑铃卧推",
+      "nameEn": "DB bench press",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 20
+    },
+    {
+      "id": "machine-chest-press",
+      "movementPattern": "horizontal-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "equipment": "selectorized",
+      "kind": "accessory",
+      "substitutionGroups": [
+        "chest-press"
+      ],
+      "startWeightKg": 55.0,
+      "nameZh": "器械推胸",
+      "nameEn": "Machine chest press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 30
+    },
+    {
+      "id": "cable-fly",
+      "movementPattern": "fly",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [],
+      "equipment": "cable",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "chest-fly"
+      ],
+      "startWeightKg": 17.5,
+      "nameZh": "绳索夹胸",
+      "nameEn": "Cable fly",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 40
+    },
+    {
+      "id": "lat-pulldown",
+      "movementPattern": "vertical-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "cable",
+      "kind": "compound",
+      "substitutionGroups": [
+        "vertical-pull"
+      ],
+      "startWeightKg": 55.0,
+      "nameZh": "高位下拉",
+      "nameEn": "Lat pulldown",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 50
+    },
+    {
+      "id": "seated-row",
+      "movementPattern": "horizontal-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps",
+        "rear-delt"
+      ],
+      "equipment": "cable",
+      "kind": "compound",
+      "substitutionGroups": [
+        "row"
+      ],
+      "startWeightKg": 50.0,
+      "nameZh": "坐姿划船",
+      "nameEn": "Seated row",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 60
+    },
+    {
+      "id": "barbell-row",
+      "movementPattern": "horizontal-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps",
+        "rear-delt"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "row"
+      ],
+      "startWeightKg": 50.0,
+      "nameZh": "杠铃划船",
+      "nameEn": "Barbell row",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 70
+    },
+    {
+      "id": "one-arm-db-row",
+      "movementPattern": "horizontal-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "dumbbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "row"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "单臂哑铃划船",
+      "nameEn": "One-arm DB row",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 80
+    },
+    {
+      "id": "face-pull",
+      "movementPattern": "rear-delt",
+      "primaryMuscle": "rear-delt",
+      "secondaryMuscles": [
+        "upper-back"
+      ],
+      "equipment": "cable",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "rear-delt"
+      ],
+      "startWeightKg": 20.0,
+      "nameZh": "面拉",
+      "nameEn": "Face pull",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 90
+    },
+    {
+      "id": "shoulder-press",
+      "movementPattern": "vertical-press",
+      "primaryMuscle": "shoulder",
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "equipment": "dumbbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "shoulder-press"
+      ],
+      "startWeightKg": 20.0,
+      "nameZh": "哑铃肩推",
+      "nameEn": "Shoulder press",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 100
+    },
+    {
+      "id": "lateral-raise",
+      "movementPattern": "lateral-raise",
+      "primaryMuscle": "side-delt",
+      "secondaryMuscles": [],
+      "equipment": "dumbbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "side-delt"
+      ],
+      "startWeightKg": 7.5,
+      "nameZh": "哑铃侧平举",
+      "nameEn": "Lateral raise",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 110
+    },
+    {
+      "id": "db-curl",
+      "movementPattern": "curl",
+      "primaryMuscle": "biceps",
+      "secondaryMuscles": [],
+      "equipment": "dumbbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "biceps-curl"
+      ],
+      "startWeightKg": 12.5,
+      "nameZh": "哑铃弯举",
+      "nameEn": "DB curl",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 120
+    },
+    {
+      "id": "hammer-curl",
+      "movementPattern": "curl",
+      "primaryMuscle": "biceps",
+      "secondaryMuscles": [
+        "forearm"
+      ],
+      "equipment": "dumbbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "biceps-curl"
+      ],
+      "startWeightKg": 12.5,
+      "nameZh": "锤式弯举",
+      "nameEn": "Hammer curl",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 130
+    },
+    {
+      "id": "preacher-curl",
+      "movementPattern": "curl",
+      "primaryMuscle": "biceps",
+      "secondaryMuscles": [],
+      "equipment": "barbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "biceps-curl"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "牧师凳弯举",
+      "nameEn": "Preacher curl",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 140
+    },
+    {
+      "id": "triceps-pushdown",
+      "movementPattern": "triceps-extension",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [],
+      "equipment": "cable",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "triceps"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "绳索下压",
+      "nameEn": "Triceps pushdown",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 150
+    },
+    {
+      "id": "close-grip-bench",
+      "movementPattern": "horizontal-press",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [
+        "chest"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "triceps"
+      ],
+      "startWeightKg": 50.0,
+      "nameZh": "窄握卧推",
+      "nameEn": "Close-grip bench",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 160
+    },
+    {
+      "id": "squat",
+      "movementPattern": "squat-pattern",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [
+        "glutes",
+        "core"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "squat"
+      ],
+      "startWeightKg": 80.0,
+      "nameZh": "深蹲",
+      "nameEn": "Squat",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 170
+    },
+    {
+      "id": "hack-squat",
+      "movementPattern": "squat-pattern",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "equipment": "plate-loaded",
+      "kind": "compound",
+      "substitutionGroups": [
+        "squat"
+      ],
+      "startWeightKg": 80.0,
+      "nameZh": "哈克深蹲",
+      "nameEn": "Hack squat",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 180
+    },
+    {
+      "id": "leg-press",
+      "movementPattern": "squat-pattern",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "equipment": "plate-loaded",
+      "kind": "accessory",
+      "substitutionGroups": [
+        "squat"
+      ],
+      "startWeightKg": 140.0,
+      "nameZh": "腿举",
+      "nameEn": "Leg press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 190
+    },
+    {
+      "id": "romanian-deadlift",
+      "movementPattern": "hinge",
+      "primaryMuscle": "hamstrings",
+      "secondaryMuscles": [
+        "glutes",
+        "lower-back"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "hinge"
+      ],
+      "startWeightKg": 70.0,
+      "nameZh": "罗马尼亚硬拉",
+      "nameEn": "Romanian deadlift",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 200
+    },
+    {
+      "id": "db-rdl",
+      "movementPattern": "hinge",
+      "primaryMuscle": "hamstrings",
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "equipment": "dumbbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "hinge"
+      ],
+      "startWeightKg": 30.0,
+      "nameZh": "哑铃罗马尼亚硬拉",
+      "nameEn": "DB RDL",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 210
+    },
+    {
+      "id": "leg-curl",
+      "movementPattern": "knee-flexion",
+      "primaryMuscle": "hamstrings",
+      "secondaryMuscles": [],
+      "equipment": "selectorized",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "hamstring-curl"
+      ],
+      "startWeightKg": 40.0,
+      "nameZh": "腿弯举",
+      "nameEn": "Leg curl",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 220
+    },
+    {
+      "id": "calf-raise",
+      "movementPattern": "calf-raise",
+      "primaryMuscle": "calves",
+      "secondaryMuscles": [],
+      "equipment": "selectorized",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "calves"
+      ],
+      "startWeightKg": 50.0,
+      "nameZh": "提踵",
+      "nameEn": "Calf raise",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 230
+    },
+    {
+      "id": "goblet-squat",
+      "movementPattern": "squat-pattern",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [
+        "glutes",
+        "core"
+      ],
+      "equipment": "dumbbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "squat"
+      ],
+      "startWeightKg": 17.5,
+      "nameZh": "高脚杯深蹲",
+      "nameEn": "Goblet squat",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 240
+    },
+    {
+      "id": "db-lunge",
+      "movementPattern": "squat-pattern",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "equipment": "dumbbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "squat"
+      ],
+      "startWeightKg": 12.5,
+      "nameZh": "哑铃箭步蹲",
+      "nameEn": "DB lunge",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 250
+    },
+    {
+      "id": "db-fly",
+      "movementPattern": "fly",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [],
+      "equipment": "dumbbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "chest-fly"
+      ],
+      "startWeightKg": 10.0,
+      "nameZh": "哑铃飞鸟",
+      "nameEn": "DB fly",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 260
+    },
+    {
+      "id": "db-pullover",
+      "movementPattern": "vertical-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "chest"
+      ],
+      "equipment": "dumbbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "vertical-pull"
+      ],
+      "startWeightKg": 15.0,
+      "nameZh": "哑铃仰卧上拉",
+      "nameEn": "DB pullover",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 270
+    },
+    {
+      "id": "rear-delt-fly",
+      "movementPattern": "rear-delt",
+      "primaryMuscle": "rear-delt",
+      "secondaryMuscles": [
+        "upper-back"
+      ],
+      "equipment": "dumbbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "rear-delt"
+      ],
+      "startWeightKg": 7.5,
+      "nameZh": "俯身反向飞鸟",
+      "nameEn": "Rear-delt fly",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 280
+    },
+    {
+      "id": "db-overhead-triceps-extension",
+      "movementPattern": "triceps-extension",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [],
+      "equipment": "dumbbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "triceps"
+      ],
+      "startWeightKg": 10.0,
+      "nameZh": "哑铃颈后臂屈伸",
+      "nameEn": "Overhead triceps extension",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 290
+    },
+    {
+      "id": "db-calf-raise",
+      "movementPattern": "calf-raise",
+      "primaryMuscle": "calves",
+      "secondaryMuscles": [],
+      "equipment": "dumbbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "calves"
+      ],
+      "startWeightKg": 17.5,
+      "nameZh": "哑铃提踵",
+      "nameEn": "DB calf raise",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 300
+    },
+    {
+      "id": "db-floor-press",
+      "movementPattern": "horizontal-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "triceps",
+        "front-delt"
+      ],
+      "equipment": "dumbbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "chest-press"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "哑铃地板卧推",
+      "nameEn": "DB floor press",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 310
+    },
+    {
+      "id": "chest-supported-db-row",
+      "movementPattern": "horizontal-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps",
+        "rear-delt"
+      ],
+      "equipment": "dumbbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "row"
+      ],
+      "startWeightKg": 17.5,
+      "nameZh": "上斜凳哑铃划船",
+      "nameEn": "Chest-supported DB row",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 320
+    },
+    {
+      "id": "db-leg-curl",
+      "movementPattern": "knee-flexion",
+      "primaryMuscle": "hamstrings",
+      "secondaryMuscles": [],
+      "equipment": "dumbbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "hamstring-curl"
+      ],
+      "startWeightKg": 10.0,
+      "nameZh": "哑铃腿弯举",
+      "nameEn": "DB leg curl",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 330
+    },
+    {
+      "id": "overhead-press",
+      "movementPattern": "vertical-press",
+      "primaryMuscle": "shoulder",
+      "secondaryMuscles": [
+        "triceps",
+        "core"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "shoulder-press"
+      ],
+      "startWeightKg": 30.0,
+      "nameZh": "杠铃推举",
+      "nameEn": "Overhead press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 340
+    },
+    {
+      "id": "deadlift",
+      "movementPattern": "hinge",
+      "primaryMuscle": "glutes",
+      "secondaryMuscles": [
+        "hamstrings",
+        "lower-back",
+        "upper-back"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "hinge"
+      ],
+      "startWeightKg": 80.0,
+      "nameZh": "硬拉",
+      "nameEn": "Deadlift",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 350
+    },
+    {
+      "id": "front-squat",
+      "movementPattern": "squat-pattern",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [
+        "glutes",
+        "core"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "squat"
+      ],
+      "startWeightKg": 50.0,
+      "nameZh": "颈前深蹲",
+      "nameEn": "Front squat",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 360
+    },
+    {
+      "id": "incline-barbell-press",
+      "movementPattern": "incline-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "front-delt",
+        "triceps"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "chest-press"
+      ],
+      "startWeightKg": 45.0,
+      "nameZh": "上斜杠铃卧推",
+      "nameEn": "Incline barbell press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 370
+    },
+    {
+      "id": "barbell-curl",
+      "movementPattern": "curl",
+      "primaryMuscle": "biceps",
+      "secondaryMuscles": [
+        "forearm"
+      ],
+      "equipment": "barbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "biceps-curl"
+      ],
+      "startWeightKg": 20.0,
+      "nameZh": "杠铃弯举",
+      "nameEn": "Barbell curl",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 380
+    },
+    {
+      "id": "hip-thrust",
+      "movementPattern": "hinge",
+      "primaryMuscle": "glutes",
+      "secondaryMuscles": [
+        "hamstrings"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "hinge"
+      ],
+      "startWeightKg": 60.0,
+      "nameZh": "杠铃臀推",
+      "nameEn": "Hip thrust",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 390
+    },
+    {
+      "id": "bulgarian-split-squat",
+      "movementPattern": "squat-pattern",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "equipment": "dumbbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "squat"
+      ],
+      "startWeightKg": 10.0,
+      "nameZh": "保加利亚分腿蹲",
+      "nameEn": "Bulgarian split squat",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 400
+    },
+    {
+      "id": "cable-lateral-raise",
+      "movementPattern": "lateral-raise",
+      "primaryMuscle": "side-delt",
+      "secondaryMuscles": [],
+      "equipment": "cable",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "side-delt"
+      ],
+      "startWeightKg": 7.5,
+      "nameZh": "绳索侧平举",
+      "nameEn": "Cable lateral raise",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 410
+    },
+    {
+      "id": "cable-curl",
+      "movementPattern": "curl",
+      "primaryMuscle": "biceps",
+      "secondaryMuscles": [],
+      "equipment": "cable",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "biceps-curl"
+      ],
+      "startWeightKg": 20.0,
+      "nameZh": "绳索弯举",
+      "nameEn": "Cable curl",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 420
+    },
+    {
+      "id": "cable-overhead-triceps",
+      "movementPattern": "triceps-extension",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [],
+      "equipment": "cable",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "triceps"
+      ],
+      "startWeightKg": 17.5,
+      "nameZh": "绳索过顶臂屈伸",
+      "nameEn": "Overhead cable triceps extension",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 430
+    },
+    {
+      "id": "straight-arm-pulldown",
+      "movementPattern": "vertical-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [],
+      "equipment": "cable",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "lat-isolation"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "直臂下压",
+      "nameEn": "Straight-arm pulldown",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 440
+    },
+    {
+      "id": "pec-deck",
+      "movementPattern": "fly",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [],
+      "equipment": "selectorized",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "chest-fly"
+      ],
+      "startWeightKg": 40.0,
+      "nameZh": "蝴蝶机夹胸",
+      "nameEn": "Pec deck",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 450
+    },
+    {
+      "id": "machine-shoulder-press",
+      "movementPattern": "vertical-press",
+      "primaryMuscle": "shoulder",
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "equipment": "selectorized",
+      "kind": "accessory",
+      "substitutionGroups": [
+        "shoulder-press"
+      ],
+      "startWeightKg": 35.0,
+      "nameZh": "器械肩推",
+      "nameEn": "Machine shoulder press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 460
+    },
+    {
+      "id": "machine-row",
+      "movementPattern": "horizontal-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps",
+        "rear-delt"
+      ],
+      "equipment": "selectorized",
+      "kind": "accessory",
+      "substitutionGroups": [
+        "row"
+      ],
+      "startWeightKg": 45.0,
+      "nameZh": "器械划船",
+      "nameEn": "Machine row",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 470
+    },
+    {
+      "id": "seated-calf-raise",
+      "movementPattern": "calf-raise",
+      "primaryMuscle": "calves",
+      "secondaryMuscles": [],
+      "equipment": "plate-loaded",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "calves"
+      ],
+      "startWeightKg": 30.0,
+      "nameZh": "坐姿提踵",
+      "nameEn": "Seated calf raise",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 480
+    },
+    {
+      "id": "arnold-press",
+      "movementPattern": "vertical-press",
+      "primaryMuscle": "shoulder",
+      "secondaryMuscles": [
+        "triceps",
+        "front-delt"
+      ],
+      "equipment": "dumbbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "shoulder-press"
+      ],
+      "startWeightKg": 12.5,
+      "nameZh": "阿诺德推举",
+      "nameEn": "Arnold press",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 490
+    },
+    {
+      "id": "skullcrusher",
+      "movementPattern": "triceps-extension",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [],
+      "equipment": "barbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "triceps"
+      ],
+      "startWeightKg": 20.0,
+      "nameZh": "仰卧臂屈伸",
+      "nameEn": "Skullcrusher",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 500
+    },
+    {
+      "id": "incline-db-curl",
+      "movementPattern": "curl",
+      "primaryMuscle": "biceps",
+      "secondaryMuscles": [],
+      "equipment": "dumbbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "biceps-curl"
+      ],
+      "startWeightKg": 10.0,
+      "nameZh": "上斜哑铃弯举",
+      "nameEn": "Incline DB curl",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 510
+    },
+    {
+      "id": "reverse-pec-deck",
+      "movementPattern": "rear-delt",
+      "primaryMuscle": "rear-delt",
+      "secondaryMuscles": [
+        "upper-back"
+      ],
+      "equipment": "selectorized",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "rear-delt"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "反向蝴蝶机",
+      "nameEn": "Reverse pec deck",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 520
+    },
+    {
+      "id": "low-cable-fly",
+      "movementPattern": "fly",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "front-delt"
+      ],
+      "equipment": "cable",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "chest-fly"
+      ],
+      "startWeightKg": 12.5,
+      "nameZh": "低位绳索夹胸",
+      "nameEn": "Low cable fly",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 530
+    },
+    {
+      "id": "good-morning",
+      "movementPattern": "hinge",
+      "primaryMuscle": "hamstrings",
+      "secondaryMuscles": [
+        "glutes",
+        "lower-back"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "hinge"
+      ],
+      "startWeightKg": 30.0,
+      "nameZh": "早安式",
+      "nameEn": "Good morning",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 540
+    },
+    {
+      "id": "seated-leg-curl",
+      "movementPattern": "knee-flexion",
+      "primaryMuscle": "hamstrings",
+      "secondaryMuscles": [],
+      "equipment": "selectorized",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "hamstring-curl"
+      ],
+      "startWeightKg": 35.0,
+      "nameZh": "坐姿腿弯举",
+      "nameEn": "Seated leg curl",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 550
+    },
+    {
+      "id": "pendlay-row",
+      "movementPattern": "horizontal-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps",
+        "rear-delt"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "row"
+      ],
+      "startWeightKg": 50.0,
+      "nameZh": "潘德雷划船",
+      "nameEn": "Pendlay row",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 560
+    },
+    {
+      "id": "t-bar-row",
+      "movementPattern": "horizontal-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "plate-loaded",
+      "kind": "compound",
+      "substitutionGroups": [
+        "row"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "T 杠划船",
+      "nameEn": "T-bar row",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 570
+    },
+    {
+      "id": "machine-lateral-raise",
+      "movementPattern": "lateral-raise",
+      "primaryMuscle": "side-delt",
+      "secondaryMuscles": [],
+      "equipment": "selectorized",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "side-delt"
+      ],
+      "startWeightKg": 15.0,
+      "nameZh": "器械侧平举",
+      "nameEn": "Machine lateral raise",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 580
+    },
+    {
+      "id": "close-grip-pulldown",
+      "movementPattern": "vertical-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "cable",
+      "kind": "compound",
+      "substitutionGroups": [
+        "vertical-pull"
+      ],
+      "startWeightKg": 45.0,
+      "nameZh": "窄握下拉",
+      "nameEn": "Close-grip pulldown",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 590
+    },
+    {
+      "id": "cable-pull-through",
+      "movementPattern": "hinge",
+      "primaryMuscle": "glutes",
+      "secondaryMuscles": [
+        "hamstrings"
+      ],
+      "equipment": "cable",
+      "kind": "accessory",
+      "substitutionGroups": [
+        "hinge"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "绳索髋屈伸",
+      "nameEn": "Cable pull-through",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 600
+    },
+    {
+      "id": "decline-barbell-press",
+      "movementPattern": "horizontal-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "triceps",
+        "front-delt"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "chest-press"
+      ],
+      "startWeightKg": 40.0,
+      "nameZh": "下斜杠铃卧推",
+      "nameEn": "Decline barbell press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 610
+    },
+    {
+      "id": "high-cable-fly",
+      "movementPattern": "fly",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "front-delt"
+      ],
+      "equipment": "cable",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "chest-fly"
+      ],
+      "startWeightKg": 12.5,
+      "nameZh": "高位绳索夹胸",
+      "nameEn": "High cable fly",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 620
+    },
+    {
+      "id": "concentration-curl",
+      "movementPattern": "curl",
+      "primaryMuscle": "biceps",
+      "secondaryMuscles": [],
+      "equipment": "dumbbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "biceps-curl"
+      ],
+      "startWeightKg": 10.0,
+      "nameZh": "集中弯举",
+      "nameEn": "Concentration curl",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 630
+    },
+    {
+      "id": "overhead-barbell-triceps",
+      "movementPattern": "triceps-extension",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [],
+      "equipment": "barbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "triceps"
+      ],
+      "startWeightKg": 20.0,
+      "nameZh": "杠铃过顶臂屈伸",
+      "nameEn": "Overhead barbell extension",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 640
+    },
+    {
+      "id": "single-arm-cable-row",
+      "movementPattern": "horizontal-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps",
+        "rear-delt"
+      ],
+      "equipment": "cable",
+      "kind": "compound",
+      "substitutionGroups": [
+        "row"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "单臂绳索划船",
+      "nameEn": "Single-arm cable row",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 650
+    },
+    {
+      "id": "sumo-deadlift",
+      "movementPattern": "hinge",
+      "primaryMuscle": "glutes",
+      "secondaryMuscles": [
+        "hamstrings",
+        "quads",
+        "lower-back"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "hinge"
+      ],
+      "startWeightKg": 80.0,
+      "nameZh": "相扑硬拉",
+      "nameEn": "Sumo deadlift",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 660
+    },
+    {
+      "id": "wide-grip-pulldown",
+      "movementPattern": "vertical-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "cable",
+      "kind": "compound",
+      "substitutionGroups": [
+        "vertical-pull"
+      ],
+      "startWeightKg": 50.0,
+      "nameZh": "宽握下拉",
+      "nameEn": "Wide-grip pulldown",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 670
+    },
+    {
+      "id": "cable-kickback",
+      "movementPattern": "triceps-extension",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [],
+      "equipment": "cable",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "triceps"
+      ],
+      "startWeightKg": 7.5,
+      "nameZh": "绳索臂屈伸后踢",
+      "nameEn": "Cable kickback",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 680
+    },
+    {
+      "id": "landmine-press",
+      "movementPattern": "vertical-press",
+      "primaryMuscle": "shoulder",
+      "secondaryMuscles": [
+        "triceps",
+        "front-delt"
+      ],
+      "equipment": "plate-loaded",
+      "kind": "compound",
+      "substitutionGroups": [
+        "shoulder-press"
+      ],
+      "startWeightKg": 20.0,
+      "nameZh": "地雷推举",
+      "nameEn": "Landmine press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 690
+    },
+    {
+      "id": "push-press",
+      "movementPattern": "vertical-press",
+      "primaryMuscle": "shoulder",
+      "secondaryMuscles": [
+        "triceps",
+        "quads",
+        "core"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "shoulder-press"
+      ],
+      "startWeightKg": 35.0,
+      "nameZh": "借力推举",
+      "nameEn": "Push press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 700
+    },
+    {
+      "id": "meadows-row",
+      "movementPattern": "horizontal-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "row"
+      ],
+      "startWeightKg": 20.0,
+      "nameZh": "草地划船",
+      "nameEn": "Meadows row",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 710
+    },
+    {
+      "id": "machine-preacher-curl",
+      "movementPattern": "curl",
+      "primaryMuscle": "biceps",
+      "secondaryMuscles": [],
+      "equipment": "selectorized",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "biceps-curl"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "器械牧师弯举",
+      "nameEn": "Machine preacher curl",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 720
+    },
+    {
+      "id": "leg-extension",
+      "movementPattern": "knee-extension",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [],
+      "equipment": "selectorized",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "knee-extension"
+      ],
+      "startWeightKg": 30.0,
+      "nameZh": "腿屈伸",
+      "nameEn": "Leg extension",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 730
+    },
+    {
+      "id": "barbell-shrug",
+      "movementPattern": "shrug",
+      "primaryMuscle": "traps",
+      "secondaryMuscles": [
+        "upper-back"
+      ],
+      "equipment": "barbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "shrug"
+      ],
+      "startWeightKg": 60.0,
+      "nameZh": "杠铃耸肩",
+      "nameEn": "Barbell shrug",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 740
+    },
+    {
+      "id": "db-shrug",
+      "movementPattern": "shrug",
+      "primaryMuscle": "traps",
+      "secondaryMuscles": [
+        "upper-back"
+      ],
+      "equipment": "dumbbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "shrug"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "哑铃耸肩",
+      "nameEn": "DB shrug",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 750
+    },
+    {
+      "id": "cable-crunch",
+      "movementPattern": "core",
+      "primaryMuscle": "core",
+      "secondaryMuscles": [],
+      "equipment": "cable",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "core"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "绳索卷腹",
+      "nameEn": "Cable crunch",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 760
+    },
+    {
+      "id": "ab-crunch-machine",
+      "movementPattern": "core",
+      "primaryMuscle": "core",
+      "secondaryMuscles": [],
+      "equipment": "selectorized",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "core"
+      ],
+      "startWeightKg": 30.0,
+      "nameZh": "卷腹机",
+      "nameEn": "Ab crunch machine",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 770
+    },
+    {
+      "id": "db-crunch",
+      "movementPattern": "core",
+      "primaryMuscle": "core",
+      "secondaryMuscles": [],
+      "equipment": "dumbbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "core"
+      ],
+      "startWeightKg": 10.0,
+      "nameZh": "负重卷腹",
+      "nameEn": "Weighted crunch",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 780
+    },
+    {
+      "id": "push-up",
+      "movementPattern": "horizontal-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "triceps",
+        "front-delt"
+      ],
+      "equipment": "bodyweight",
+      "kind": "compound",
+      "substitutionGroups": [
+        "chest-press"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "俯卧撑",
+      "nameEn": "Push-up",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 800
+    },
+    {
+      "id": "pull-up",
+      "movementPattern": "vertical-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "bodyweight",
+      "kind": "compound",
+      "substitutionGroups": [
+        "vertical-pull"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "引体向上",
+      "nameEn": "Pull-up",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 810
+    },
+    {
+      "id": "inverted-row",
+      "movementPattern": "horizontal-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps",
+        "rear-delt"
+      ],
+      "equipment": "bodyweight",
+      "kind": "compound",
+      "substitutionGroups": [
+        "row"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "反向划船",
+      "nameEn": "Inverted row",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 820
+    },
+    {
+      "id": "bodyweight-squat",
+      "movementPattern": "squat-pattern",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "equipment": "bodyweight",
+      "kind": "compound",
+      "substitutionGroups": [
+        "squat"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "徒手深蹲",
+      "nameEn": "Bodyweight squat",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 830
+    },
+    {
+      "id": "bodyweight-lunge",
+      "movementPattern": "squat-pattern",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "equipment": "bodyweight",
+      "kind": "compound",
+      "substitutionGroups": [
+        "squat"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "徒手弓步蹲",
+      "nameEn": "Bodyweight lunge",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 840
+    },
+    {
+      "id": "hanging-knee-raise",
+      "movementPattern": "core",
+      "primaryMuscle": "core",
+      "secondaryMuscles": [],
+      "equipment": "bodyweight",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "core"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "悬垂举腿",
+      "nameEn": "Hanging knee raise",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 850
+    },
+    {
+      "id": "hammer-chest-press",
+      "movementPattern": "horizontal-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "triceps",
+        "front-delt"
+      ],
+      "equipment": "plate-loaded",
+      "kind": "compound",
+      "substitutionGroups": [
+        "chest-press"
+      ],
+      "startWeightKg": 40.0,
+      "nameZh": "悍马卧推",
+      "nameEn": "Hammer chest press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 860
+    },
+    {
+      "id": "incline-hammer-press",
+      "movementPattern": "incline-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "front-delt",
+        "triceps"
+      ],
+      "equipment": "plate-loaded",
+      "kind": "compound",
+      "substitutionGroups": [
+        "chest-press"
+      ],
+      "startWeightKg": 35.0,
+      "nameZh": "上斜悍马卧推",
+      "nameEn": "Incline Hammer press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 870
+    },
+    {
+      "id": "hammer-row",
+      "movementPattern": "horizontal-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps",
+        "rear-delt"
+      ],
+      "equipment": "plate-loaded",
+      "kind": "compound",
+      "substitutionGroups": [
+        "row"
+      ],
+      "startWeightKg": 40.0,
+      "nameZh": "悍马划船",
+      "nameEn": "Hammer row",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 880
+    },
+    {
+      "id": "hammer-pulldown",
+      "movementPattern": "vertical-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "plate-loaded",
+      "kind": "compound",
+      "substitutionGroups": [
+        "vertical-pull"
+      ],
+      "startWeightKg": 45.0,
+      "nameZh": "悍马高位下拉",
+      "nameEn": "Hammer pulldown",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 890
+    },
+    {
+      "id": "hammer-shoulder-press",
+      "movementPattern": "vertical-press",
+      "primaryMuscle": "shoulder",
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "equipment": "plate-loaded",
+      "kind": "compound",
+      "substitutionGroups": [
+        "shoulder-press"
+      ],
+      "startWeightKg": 30.0,
+      "nameZh": "悍马肩推",
+      "nameEn": "Hammer shoulder press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 900
+    },
+    {
+      "id": "pendulum-squat",
+      "movementPattern": "squat-pattern",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "equipment": "plate-loaded",
+      "kind": "compound",
+      "substitutionGroups": [
+        "squat"
+      ],
+      "startWeightKg": 40.0,
+      "nameZh": "钟摆深蹲",
+      "nameEn": "Pendulum squat",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 910
+    },
+    {
+      "id": "smith-squat",
+      "movementPattern": "squat-pattern",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [
+        "glutes",
+        "core"
+      ],
+      "equipment": "smith",
+      "kind": "compound",
+      "substitutionGroups": [
+        "squat"
+      ],
+      "startWeightKg": 60.0,
+      "nameZh": "史密斯深蹲",
+      "nameEn": "Smith machine squat",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 920
+    },
+    {
+      "id": "smith-bench-press",
+      "movementPattern": "horizontal-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "triceps",
+        "front-delt"
+      ],
+      "equipment": "smith",
+      "kind": "compound",
+      "substitutionGroups": [
+        "chest-press"
+      ],
+      "startWeightKg": 50.0,
+      "nameZh": "史密斯平板卧推",
+      "nameEn": "Smith machine bench press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 930
+    },
+    {
+      "id": "smith-incline-press",
+      "movementPattern": "incline-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "front-delt",
+        "triceps"
+      ],
+      "equipment": "smith",
+      "kind": "compound",
+      "substitutionGroups": [
+        "chest-press"
+      ],
+      "startWeightKg": 40.0,
+      "nameZh": "史密斯上斜卧推",
+      "nameEn": "Smith machine incline press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 940
+    },
+    {
+      "id": "smith-overhead-press",
+      "movementPattern": "vertical-press",
+      "primaryMuscle": "shoulder",
+      "secondaryMuscles": [
+        "triceps",
+        "core"
+      ],
+      "equipment": "smith",
+      "kind": "compound",
+      "substitutionGroups": [
+        "shoulder-press"
+      ],
+      "startWeightKg": 35.0,
+      "nameZh": "史密斯肩推",
+      "nameEn": "Smith machine overhead press",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 950
+    },
+    {
+      "id": "smith-calf-raise",
+      "movementPattern": "calf-raise",
+      "primaryMuscle": "calves",
+      "secondaryMuscles": [],
+      "equipment": "smith",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "calves"
+      ],
+      "startWeightKg": 50.0,
+      "nameZh": "史密斯站姿提踵",
+      "nameEn": "Smith machine calf raise",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 960
+    },
+    {
+      "id": "smith-shrug",
+      "movementPattern": "shrug",
+      "primaryMuscle": "traps",
+      "secondaryMuscles": [
+        "upper-back"
+      ],
+      "equipment": "smith",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "shrug"
+      ],
+      "startWeightKg": 60.0,
+      "nameZh": "史密斯耸肩",
+      "nameEn": "Smith machine shrug",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 970
+    },
+    {
+      "id": "assisted-pull-up",
+      "movementPattern": "vertical-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "selectorized",
+      "kind": "compound",
+      "substitutionGroups": [
+        "vertical-pull"
+      ],
+      "startWeightKg": 30.0,
+      "nameZh": "辅助引体向上",
+      "nameEn": "Assisted pull-up",
+      "loadType": "assisted",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 980
+    },
+    {
+      "id": "assisted-dip",
+      "movementPattern": "triceps-extension",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [
+        "chest",
+        "front-delt"
+      ],
+      "equipment": "selectorized",
+      "kind": "compound",
+      "substitutionGroups": [
+        "triceps"
+      ],
+      "startWeightKg": 30.0,
+      "nameZh": "辅助双杠臂屈伸",
+      "nameEn": "Assisted dip",
+      "loadType": "assisted",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 990
+    },
+    {
+      "id": "dip",
+      "movementPattern": "triceps-extension",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [
+        "chest",
+        "front-delt"
+      ],
+      "equipment": "bodyweight",
+      "kind": "compound",
+      "substitutionGroups": [
+        "triceps"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "双杠臂屈伸",
+      "nameEn": "Dip",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1000
+    },
+    {
+      "id": "single-leg-extension",
+      "movementPattern": "knee-extension",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [],
+      "equipment": "selectorized",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "knee-extension"
+      ],
+      "startWeightKg": 20.0,
+      "nameZh": "单腿腿屈伸",
+      "nameEn": "Single-leg extension",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 1010
+    },
+    {
+      "id": "hammer-leg-extension",
+      "movementPattern": "knee-extension",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [],
+      "equipment": "plate-loaded",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "knee-extension"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "悍马腿屈伸",
+      "nameEn": "Hammer leg extension",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 1020
+    },
+    {
+      "id": "hammer-leg-curl",
+      "movementPattern": "knee-flexion",
+      "primaryMuscle": "hamstrings",
+      "secondaryMuscles": [],
+      "equipment": "plate-loaded",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "hamstring-curl"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "悍马腿弯举",
+      "nameEn": "Hammer leg curl",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 1030
+    },
+    {
+      "id": "cable-shrug",
+      "movementPattern": "shrug",
+      "primaryMuscle": "traps",
+      "secondaryMuscles": [
+        "upper-back"
+      ],
+      "equipment": "cable",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "shrug"
+      ],
+      "startWeightKg": 40.0,
+      "nameZh": "绳索耸肩",
+      "nameEn": "Cable shrug",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1040
+    },
+    {
+      "id": "chin-up",
+      "movementPattern": "vertical-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "bodyweight",
+      "kind": "compound",
+      "substitutionGroups": [
+        "vertical-pull"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "反握引体向上",
+      "nameEn": "Chin-up",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1050
+    },
+    {
+      "id": "weighted-pull-up",
+      "movementPattern": "vertical-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "bodyweight",
+      "kind": "compound",
+      "substitutionGroups": [
+        "vertical-pull"
+      ],
+      "startWeightKg": 5.0,
+      "nameZh": "负重引体向上",
+      "nameEn": "Weighted pull-up",
+      "loadType": "bodyweight-plus",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1060
+    },
+    {
+      "id": "weighted-dip",
+      "movementPattern": "triceps-extension",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [
+        "chest",
+        "front-delt"
+      ],
+      "equipment": "bodyweight",
+      "kind": "compound",
+      "substitutionGroups": [
+        "triceps"
+      ],
+      "startWeightKg": 5.0,
+      "nameZh": "负重双杠臂屈伸",
+      "nameEn": "Weighted dip",
+      "loadType": "bodyweight-plus",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1070
+    },
+    {
+      "id": "band-pull-apart",
+      "movementPattern": "rear-delt",
+      "primaryMuscle": "rear-delt",
+      "secondaryMuscles": [
+        "upper-back"
+      ],
+      "equipment": "band",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "rear-delt"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带分肩",
+      "nameEn": "Band pull-apart",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1080
+    },
+    {
+      "id": "band-lateral-raise",
+      "movementPattern": "lateral-raise",
+      "primaryMuscle": "side-delt",
+      "secondaryMuscles": [],
+      "equipment": "band",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "side-delt"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带侧平举",
+      "nameEn": "Band lateral raise",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1090
+    },
+    {
+      "id": "band-triceps-pushdown",
+      "movementPattern": "triceps-extension",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [],
+      "equipment": "band",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "triceps"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带臂屈伸下压",
+      "nameEn": "Band triceps pushdown",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1100
+    },
+    {
+      "id": "band-curl",
+      "movementPattern": "curl",
+      "primaryMuscle": "biceps",
+      "secondaryMuscles": [],
+      "equipment": "band",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "biceps-curl"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带弯举",
+      "nameEn": "Band curl",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1110
+    },
+    {
+      "id": "band-chest-press",
+      "movementPattern": "horizontal-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "front-delt",
+        "triceps"
+      ],
+      "equipment": "band",
+      "kind": "compound",
+      "substitutionGroups": [
+        "chest-press"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带胸推",
+      "nameEn": "Band chest press",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1120
+    },
+    {
+      "id": "band-row",
+      "movementPattern": "horizontal-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "band",
+      "kind": "compound",
+      "substitutionGroups": [
+        "row"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带划船",
+      "nameEn": "Band row",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1130
+    },
+    {
+      "id": "band-lat-pulldown",
+      "movementPattern": "vertical-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [
+        "biceps"
+      ],
+      "equipment": "band",
+      "kind": "compound",
+      "substitutionGroups": [
+        "vertical-pull"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带高位下拉",
+      "nameEn": "Band lat pulldown",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1140
+    },
+    {
+      "id": "band-overhead-press",
+      "movementPattern": "vertical-press",
+      "primaryMuscle": "shoulder",
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "equipment": "band",
+      "kind": "compound",
+      "substitutionGroups": [
+        "shoulder-press"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带过头推",
+      "nameEn": "Band overhead press",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1150
+    },
+    {
+      "id": "band-good-morning",
+      "movementPattern": "hinge",
+      "primaryMuscle": "hamstrings",
+      "secondaryMuscles": [
+        "glutes",
+        "lower-back"
+      ],
+      "equipment": "band",
+      "kind": "compound",
+      "substitutionGroups": [
+        "hinge"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带早安",
+      "nameEn": "Band good morning",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1160
+    },
+    {
+      "id": "band-squat",
+      "movementPattern": "squat-pattern",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "equipment": "band",
+      "kind": "compound",
+      "substitutionGroups": [
+        "squat"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带深蹲",
+      "nameEn": "Band squat",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1170
+    },
+    {
+      "id": "pike-push-up",
+      "movementPattern": "vertical-press",
+      "primaryMuscle": "shoulder",
+      "secondaryMuscles": [
+        "triceps"
+      ],
+      "equipment": "bodyweight",
+      "kind": "compound",
+      "substitutionGroups": [
+        "shoulder-press"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "派克俯卧撑",
+      "nameEn": "Pike push-up",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1180
+    },
+    {
+      "id": "nordic-curl",
+      "movementPattern": "knee-flexion",
+      "primaryMuscle": "hamstrings",
+      "secondaryMuscles": [],
+      "equipment": "bodyweight",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "hamstring-curl"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "北欧腿弯举",
+      "nameEn": "Nordic curl",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1190
+    },
+    {
+      "id": "glute-bridge",
+      "movementPattern": "hinge",
+      "primaryMuscle": "glutes",
+      "secondaryMuscles": [
+        "hamstrings"
+      ],
+      "equipment": "bodyweight",
+      "kind": "compound",
+      "substitutionGroups": [
+        "hinge"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "臀桥",
+      "nameEn": "Glute bridge",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1200
+    },
+    {
+      "id": "bodyweight-calf-raise",
+      "movementPattern": "calf-raise",
+      "primaryMuscle": "calves",
+      "secondaryMuscles": [],
+      "equipment": "bodyweight",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "calves"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "自重提踵",
+      "nameEn": "Bodyweight calf raise",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1210
+    },
+    {
+      "id": "sissy-squat",
+      "movementPattern": "knee-extension",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [],
+      "equipment": "bodyweight",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "knee-extension"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "西西里深蹲",
+      "nameEn": "Sissy squat",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1220
+    },
+    {
+      "id": "band-straight-arm-pulldown",
+      "movementPattern": "vertical-pull",
+      "primaryMuscle": "back",
+      "secondaryMuscles": [],
+      "equipment": "band",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "lat-isolation"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "弹力带直臂下压",
+      "nameEn": "Band straight-arm pulldown",
+      "loadType": "band",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1230
+    }
+  ]
+}

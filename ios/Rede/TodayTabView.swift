@@ -11,6 +11,7 @@ struct TodayTabView: View {
 
     @Environment(LocaleStore.self) private var localeStore
     @Environment(SessionStore.self) private var sessionStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var reasonExpanded = false
     @State private var showSettings = false
 
@@ -30,23 +31,13 @@ struct TodayTabView: View {
                     title: s.todayTitle,
                     subtitle: model.map { s.dateLine($0.now) } ?? "",
                     trailingIcon: "gearshape",
+                    trailingAccessibilityLabel: s.settingsTitle,
                     onTrailingTap: { showSettings = true }
                 )
 
-                heroCard
-                    .padding(.horizontal, RedeSpace.page)
-                    .padding(.top, 20)
-
-                receiptSection
-                    .padding(.horizontal, RedeSpace.page)
-                    .padding(.top, RedeSpace.section)
-
-                RuleDivider()
-
-                progressRail
-                    .padding(.horizontal, RedeSpace.page)
+                todayContent
             }
-            .padding(.bottom, 78)
+            .padding(.bottom, RedeSpace.bottomBar)
         }
         .background(Color.redeBase)
         .task { if sessionStore.todayOutcome == nil { await sessionStore.loadToday() } }
@@ -69,8 +60,10 @@ struct TodayTabView: View {
             Text(s.resumeSessionMessage)
         }
         .sheet(isPresented: $showSettings) {
+            // 工艺重做（2026-06-10）：内容超半屏，补 .large 档 + 拖拽指示条
             SettingsSheet(store: localeStore)
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
     }
 
@@ -132,111 +125,271 @@ struct TodayTabView: View {
 
     private var changeLineText: String {
         guard let first = firstExercise else { return s.changeLineNone }
+        return changeLine(for: first)
+    }
+
+    /// 单动作变化行（任意动作复用，wave-12 提炼）：原仅头牌动作内联，现抽出供里程摘要按动作调用。
+    private func changeLine(for ex: ExercisePrescriptionPlan) -> String {
+        // 辅助毕业 / 负重回退（wave-9/11）：必须**前置**——切换那刻引擎已切自重孪生
+        //（loadType=bodyweight），靠 reason 区分，否则被下面 bodyweight 分支吞掉、丢文案。
+        if ex.reason == .assistedGraduated {
+            return s.changeLineAssistedGraduated(exerciseName: localeStore.exerciseName(ex.exerciseId))
+        }
+        if ex.reason == .bodyweightPlusDegraded {
+            return s.changeLineBodyweightPlusDegraded(exerciseName: localeStore.exerciseName(ex.exerciseId), reps: ex.targetReps)
+        }
+        if ex.loadType == "bodyweight" || ex.loadType == "band" {
+            // 自重/弹力带共用按次数 change 行；弹力带（wave-12）到顶分叉换带提示。
+            let isBand = ex.loadType == "band"
+            return s.changeLineBodyweight(
+                exerciseName: localeStore.exerciseName(ex.exerciseId),
+                change: ex.change.rawValue,
+                reps: ex.targetReps,
+                atCeiling: ex.reason == (isBand ? .bandCeilingReached : .bodyweightCeilingReached),
+                isBand: isBand
+            )
+        }
+        if ex.loadType == "assisted" {
+            return s.changeLineAssisted(
+                exerciseName: localeStore.exerciseName(ex.exerciseId),
+                change: ex.change.rawValue,
+                fromKg: ex.previousWeightKg.map { LoadDisplay.weight($0, loadType: ex.loadType, equipment: ex.equipment, s) },
+                toKg: LoadDisplay.weight(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s)
+            )
+        }
+        if ex.loadType == "bodyweight-plus" {
+            return s.changeLineBodyweightPlus(
+                exerciseName: localeStore.exerciseName(ex.exerciseId),
+                change: ex.change.rawValue,
+                fromKg: ex.previousWeightKg.map { LoadDisplay.weight($0, loadType: ex.loadType, equipment: ex.equipment, s) },
+                toKg: LoadDisplay.weight(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s)
+            )
+        }
         return s.changeLine(
-            exerciseName: s.exerciseName(first.exerciseId),
-            change: first.change.rawValue,
-            fromKg: first.previousWeightKg.map(s.formatKg),
-            toKg: s.formatKg(first.targetWeightKg)
+            exerciseName: localeStore.exerciseName(ex.exerciseId),
+            change: ex.change.rawValue,
+            fromKg: ex.previousWeightKg.map { LoadDisplay.weight($0, loadType: ex.loadType, equipment: ex.equipment, s) },
+            toKg: LoadDisplay.weight(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s)
         )
     }
 
-    // HERO = 判断块(判断句唯一最大元素 + ember 左缘唯一口音)
-    private var heroCard: some View {
-        ForgedCard(emberBarInset: 18, showReg: true) {
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 7) {
-                    Circle().fill(pillFill).frame(width: 7, height: 7)
-                    Overline(text: isUnreadable ? s.dataUnreadableStatus : s.verdictStatus(call: callCode), color: pillText)
+    /// 里程摘要（wave-12，owner 拍板 B）：头牌变化行只覆盖当日第一个动作，配件类（弹力带/自重/
+    /// 辅助/负重自重）排不到首位，其里程事件（换带/加配重/毕业/回退）会被吞掉。这里扫全表把
+    /// **非头牌**且命中里程的动作单列，复用同一变化行文案。只列里程事件、不列普通进阶——避免每个
+    /// 配件每场都刷屏（高信号优先）。
+    private var milestoneNotes: [String] {
+        guard let exercises = model?.prescription?.exercises, exercises.count > 1 else { return [] }
+        return exercises.dropFirst().filter { isMilestone($0.reason) }.map { changeLine(for: $0) }
+    }
+
+    /// 里程事件 = 引擎里那几个一次性/转折性的 reason（到顶/毕业/回退）；普通进阶不算。
+    private func isMilestone(_ reason: PrescriptionReason) -> Bool {
+        switch reason {
+        case .bandCeilingReached, .bodyweightCeilingReached, .assistedGraduated, .bodyweightPlusDegraded:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private var dayName: String {
+        model?.prescription.map { s.trainingDayName($0.dayCode) } ?? ""
+    }
+
+    // MARK: - 今日页（密而干净，2026-06-15 owner 拍板）：状态 + 全天清单 + 依据
+
+    private var todayContent: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            contextLine
+                .padding(.horizontal, RedeSpace.page)
+                .padding(.top, 4)
+
+            if isUnreadable {
+                unreadableBlock
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.top, 18)
+            } else if let exercises = model?.prescription?.exercises, !exercises.isEmpty {
+                verdictLine(count: exercises.count)
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.top, 14)
+
+                if !milestoneNotes.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(Array(milestoneNotes.enumerated()), id: \.offset) { _, note in
+                            HStack(alignment: .top, spacing: 6) {
+                                Rectangle().fill(Color.redeEmber2).frame(width: 3, height: 3)
+                                    .padding(.top, 7)
+                                Text(note).font(.redeCaption).foregroundStyle(Color.redeT3)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.top, 8)
                 }
 
-                Text(isUnreadable ? s.dataUnreadableHeadline : s.verdictHeadline(
-                    call: callCode,
-                    reasonCode: reasonCode,
-                    dayName: model?.prescription.map { s.trainingDayName($0.dayCode) } ?? "",
-                    gapDays: gapDays,
-                    consecutiveDays: consecutiveDays
-                ))
-                .font(.redeHeadline)
-                .tracking(RedeTracking.headline)
-                .lineSpacing(22 * 0.3)
-                .foregroundStyle(Color.redeT1)
-                .lineLimit(3)
-                .padding(.top, 11)
+                RuleDivider()
 
-                // Load Plate(20px 次级读数)——rest 日无处方时整块隐藏
-                if let first = firstExercise {
-                    HStack(alignment: .bottom) {
-                        VStack(alignment: .leading, spacing: 0) {
-                            Overline(text: s.todayStartHere, color: .redeEmber2)
-                            Text(s.exerciseName(first.exerciseId))
-                                .font(.redeSubhead)
-                                .foregroundStyle(Color.redeT1)
-                                .padding(.top, 7)
-                            HStack(alignment: .bottom, spacing: 6) {
-                                Text(s.formatKg(first.targetWeightKg))
-                                    .font(.system(size: 20, weight: .semibold))
-                                    .monospacedDigit()
-                                    .foregroundStyle(Color.redeT1)
-                                Text(s.loadDetail(targetReps: first.targetReps, targetRir: Int(first.targetRir)))
-                                    .font(.redeCallout)
-                                    .monospacedDigit()
-                                    .foregroundStyle(Color.redeT3)
-                                    .padding(.bottom, 3)
-                            }
-                            .padding(.top, 5)
-                        }
-                        Spacer()
-                        VStack(alignment: .trailing, spacing: 8) {
-                            if let second = model?.prescription?.exercises.dropFirst().first {
-                                Text(s.thenLine(s.exerciseName(second.exerciseId)))
-                                    .font(.redeCaption)
-                                    .monospacedDigit()
-                                    .foregroundStyle(Color.redeT3)
-                            }
-                            if let third = model?.prescription?.exercises.dropFirst(2).first {
-                                HStack(spacing: 5) {
-                                    Rectangle().fill(Color.redeNeu).frame(width: 16, height: 2)
-                                    Text(s.thenLine(s.exerciseName(third.exerciseId)))
-                                        .font(.redeCaption)
-                                        .monospacedDigit()
-                                        .foregroundStyle(Color.redeT3)
-                                }
-                            }
-                        }
-                    }
-                    .padding(.top, RedeSpace.section)
-                    .overlay(alignment: .top) {
-                        Rectangle().fill(Color.redeHair).frame(height: 1)
-                            .padding(.top, 10)
-                    }
+                ForEach(Array(exercises.enumerated()), id: \.offset) { idx, ex in
+                    exerciseRow(ex, isCurrent: idx == activeExerciseIndex)
+                        .padding(.horizontal, RedeSpace.page)
+                }
 
-                    EmbButton(icon: "play.fill", title: s.startTraining, action: onStartTraining)
-                        .padding(.top, 16)
+                summaryLine(exercises: exercises)
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.top, 14)
+
+                EmbButton(icon: "play.fill", title: s.startTraining, action: onStartTraining)
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.top, 16)
+
+                RuleDivider()
+
+                receiptSection
+                    .padding(.horizontal, RedeSpace.page)
+            } else {
+                restBlock
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.top, 18)
+            }
+        }
+    }
+
+    // 状态行：可以训练 + 本周训练次数（去大写微标签前的唯一头部口音 = 状态点）
+    private var contextLine: some View {
+        HStack(spacing: 7) {
+            Circle().fill(pillFill).frame(width: 7, height: 7)
+            Overline(text: isUnreadable ? s.dataUnreadableStatus : s.verdictStatus(call: callCode), color: pillText)
+            Spacer()
+            Text(signalLineText)
+                .font(.redeCaption).monospacedDigit()
+                .foregroundStyle(Color.redeT4)
+        }
+    }
+
+    // 训练日判断行：「推力 A · N 个动作」+ 依据句（顶部，不再用大字号 hero）
+    private func verdictLine(count: Int) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            // iOS 26：Text `+` 拼接已弃用，改字符串插值嵌两段各自带色的 Text（两色一行不变）。
+            Text("\(Text(dayName).foregroundStyle(Color.redeT1))\(Text(s.verdictExerciseCount(count)).foregroundStyle(Color.redeT3))")
+                .font(.redeSubhead)
+                .monospacedDigit()
+            Text(s.receiptConclusion(call: callCode, reasonCode: reasonCode))
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT3)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// 今日清单橙色条跟随实时训练进度（owner 2026-06-15）：训练进行中标当前动作，
+    /// 无会话/已收尾退回首个（=下一个要练的）。flow.plan 由本处方 expand，下标一一对应
+    /// （TrainTabView「动作 N/总」同源）；换动作就地替换不改下标，故按 index 对位仍准。
+    private var activeExerciseIndex: Int {
+        guard let flow = sessionStore.flow, flow.phase != .summary else { return 0 }
+        return flow.exerciseIndex
+    }
+
+    // 单动作行：名称 / 组数·休息·RIR / 目标 / 跟上次比
+    private func exerciseRow(_ ex: ExercisePrescriptionPlan, isCurrent: Bool) -> some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .top, spacing: 10) {
+                Rectangle().fill(isCurrent ? Color.redeEmber : Color.clear)
+                    .frame(width: 3, height: 18)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(localeStore.exerciseName(ex.exerciseId))
+                        .font(.redeSubhead)
+                        .foregroundStyle(Color.redeT1)
+                    Text(s.exerciseMetaLine(sets: ex.sets, restSeconds: ex.restSeconds, rir: ex.targetRir))
+                        .font(.redeCaption).monospacedDigit()
+                        .foregroundStyle(Color.redeT4)
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 3) {
+                    Text(targetSummary(ex))
+                        .font(.redeCallout).monospacedDigit()
+                        .foregroundStyle(Color.redeT2)
+                    lastChangeView(ex)
                 }
             }
-            .padding(.leading, 13)
-            .padding(.vertical, 18)
-            .padding(.horizontal, RedeSpace.card)
+            .padding(.vertical, 11)
+            Rectangle().fill(Color.redeHair2).frame(height: 1)
+        }
+    }
+
+    private func targetSummary(_ ex: ExercisePrescriptionPlan) -> String {
+        // §8 显示吸附：目标重量先落「器械×显示单位」真实梯子，再格式化（禁裸换算）。
+        s.targetLine(loadType: ex.loadType,
+                     weightKg: LoadDisplay.snap(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s),
+                     reps: ex.targetReps)
+    }
+
+    @ViewBuilder
+    private func lastChangeView(_ ex: ExercisePrescriptionPlan) -> some View {
+        let isRep = ex.loadType == "bodyweight" || ex.loadType == "band"
+        // 上次值同有同无（审查 [4]）由 lastRefLine 内部 guard 保证，缺任一→nil 不显示
+        let prevText = s.lastRefLine(
+            loadType: ex.loadType,
+            prevWeightKg: ex.previousWeightKg.map { LoadDisplay.snap($0, loadType: ex.loadType, equipment: ex.equipment, s) },
+            prevReps: ex.previousTopReps)
+        HStack(spacing: 6) {
+            if let prevText {
+                Text(prevText).font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeT4)
+            }
+            switch ex.change.rawValue {
+            case "increase":
+                // 幅度取绝对值（审查 [5]）：assisted 进阶=辅助↓（target<prev），直减会出负号；
+                // 无重量轴或缺上次值则只给箭头。
+                // 增量 = 吸附后目标 − 吸附后上次（两端同梯子，差才是真实可配增量）；箭头用 SFSymbol
+                let amount: String = (isRep || ex.previousWeightKg == nil)
+                    ? ""
+                    : " \(s.formatKg(abs(LoadDisplay.snap(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s) - LoadDisplay.snap(ex.previousWeightKg ?? 0, loadType: ex.loadType, equipment: ex.equipment, s))))"
+                Text("\(Image(systemName: "arrow.up"))\(amount)").font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeEmber)
+            case "ease":
+                Text(Image(systemName: "arrow.down")).font(.redeCaption).foregroundStyle(Color.redeEmber2)
+            case "hold":
+                Text(s.holdShort).font(.redeCaption).foregroundStyle(Color.redeT4)
+            default:
+                Text(s.firstTimeShort).font(.redeCaption).foregroundStyle(Color.redeT4)
+            }
+        }
+    }
+
+    private func summaryLine(exercises: [ExercisePrescriptionPlan]) -> some View {
+        let totalSets = exercises.reduce(0) { $0 + $1.sets }
+        return Text(s.dailySummaryLine(totalSets: totalSets, exerciseCount: exercises.count))
+            .font(.redeCaption).monospacedDigit()
+            .foregroundStyle(Color.redeT4)
+    }
+
+    // 仅 rest/light/deload 等无动作清单态调用（isUnreadable 已被 unreadableBlock 独占，审查 [2]）
+    private var restBlock: some View {
+        Text(s.verdictHeadline(
+            call: callCode, reasonCode: reasonCode,
+            dayName: dayName, gapDays: gapDays, consecutiveDays: consecutiveDays))
+            .font(.redeHeadline)
+            .tracking(RedeTracking.headline)
+            .lineSpacing(22 * 0.3)
+            .foregroundStyle(Color.redeT1)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var unreadableBlock: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(s.dataUnreadableHeadline)
+                .font(.redeHeadline).tracking(RedeTracking.headline)
+                .foregroundStyle(Color.redeT1)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(s.dataUnreadableReceipt)
+                .font(.redeBody).foregroundStyle(Color.redeT3)
         }
     }
 
     // Receipt 渐进披露
     private var receiptSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Overline(text: s.todayReceiptTitle)
-                Spacer()
-                Overline(text: s.todayReceiptTag).monospacedDigit()
-            }
-
-            Text(isUnreadable ? s.dataUnreadableReceipt : s.receiptConclusion(call: callCode, reasonCode: reasonCode))
-                .font(.redeBody)
-                .lineSpacing(14 * 0.45)
-                .foregroundStyle(Color.redeT1)
-                .padding(.top, 8)
-
             Button {
-                withAnimation(.easeInOut(duration: 0.25)) { reasonExpanded.toggle() }
+                // reduce-motion 守卫，与训练页/设置页折叠动画口径一致（无障碍）
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { reasonExpanded.toggle() }
             } label: {
                 HStack(spacing: 6) {
                     Text(reasonExpanded ? s.todayHideReason : s.todayWhyThisCall)
@@ -249,6 +402,7 @@ struct TodayTabView: View {
                 .frame(minHeight: RedeShape.controlHeight)
             }
             .buttonStyle(.plain)
+            .accessibilityHint(reasonExpanded ? s.a11yCollapse : s.a11yExpand)
 
             if reasonExpanded {
                 Grid(alignment: .topLeading, horizontalSpacing: 14, verticalSpacing: 8) {
@@ -266,10 +420,14 @@ struct TodayTabView: View {
                     }
                     GridRow {
                         Overline(text: s.receiptControl).padding(.top, 3)
-                        HStack(spacing: 7) {
-                            controlChip(s.controlApply)
-                            controlChip(s.controlHold)
-                            controlChip(s.controlSwap)
+                        // 整面板（2026-06-11）：去描边小框（A3 卡墙微缩版）——
+                        // 文字级 + 竖刻线分隔，刻度轨轨头 .rop 同款语法
+                        HStack(spacing: 12) {
+                            controlOp(s.controlApply)
+                            opTick
+                            controlOp(s.controlHold)
+                            opTick
+                            controlOp(s.controlSwap)
                         }
                     }
                 }
@@ -278,63 +436,17 @@ struct TodayTabView: View {
         }
     }
 
-    private func controlChip(_ title: String) -> some View {
+    private func controlOp(_ title: String) -> some View {
         Text(title)
             .font(.redeCaption)
             .foregroundStyle(Color.redeT2)
-            .padding(.horizontal, 14)
             .frame(minHeight: RedeShape.controlHeight)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8).stroke(Color.redeHair, lineWidth: 1)
-            )
     }
 
-    // Progress Rail: last → today → next
-    private var progressRail: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Overline(text: firstExercise.map { s.railTitle(s.exerciseName($0.exerciseId)) } ?? s.todayRailTitle)
-            ZStack(alignment: .top) {
-                GeometryReader { geo in
-                    Rectangle()
-                        .fill(Color.redeHair)
-                        .frame(width: geo.size.width * 0.84, height: 2)
-                        .offset(x: geo.size.width * 0.08, y: 7)
-                }
-                .frame(height: 16)
-
-                HStack(alignment: .top, spacing: 0) {
-                    railNode(dot: AnyView(Circle().fill(Color.redeT4).frame(width: 14, height: 14)),
-                             value: s.railValue(weightKg: model?.railLast?.weightKg, reps: model?.railLast?.reps),
-                             valueColor: .redeT3,
-                             label: model?.railLast.map { s.shortDate(fromISO: $0.dateISO) } ?? "—",
-                             labelColor: .redeT4)
-                    railNode(dot: AnyView(RingDot()),
-                             value: s.railValue(weightKg: firstExercise?.targetWeightKg, reps: firstExercise?.targetReps),
-                             valueColor: .redeT1,
-                             label: s.railToday, labelColor: .redeEmber2)
-                    railNode(dot: AnyView(
-                        Circle().fill(Color.redeSurface)
-                            .frame(width: 14, height: 14)
-                            .overlay(Circle().stroke(Color.redeNextDot, lineWidth: 2))),
-                             value: s.railValue(weightKg: firstExercise?.nextProjectedWeightKg, reps: firstExercise.map { $0.repLowerBound }),
-                             valueColor: .redeT3,
-                             label: s.railNext, labelColor: .redeT4)
-                }
-            }
-        }
+    private var opTick: some View {
+        Rectangle().fill(Color.redeEtch).frame(width: 1, height: 8)
     }
 
-    private func railNode(dot: AnyView, value: String, valueColor: Color, label: String, labelColor: Color) -> some View {
-        VStack(spacing: 8) {
-            dot.frame(height: 14)
-            Text(value)
-                .font(.redeCallout)
-                .monospacedDigit()
-                .foregroundStyle(valueColor)
-            Overline(text: label, color: labelColor)
-        }
-        .frame(maxWidth: .infinity)
-    }
 }
 
 #Preview {

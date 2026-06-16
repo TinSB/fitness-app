@@ -100,13 +100,41 @@ final class TrainFlowReducerTests: XCTestCase {
     func testReplaceExerciseSwapsTargetAndKeepsAudit() throws {
         var state = try makeState()
         let candidates = state.replacementCandidates
-        // push-a 当日已排 incline-db-press 与 machine-chest-press → 唯一候选哑铃卧推
-        XCTAssertEqual(candidates, ["db-bench-press"])
+        // push-a 当日已排 incline-db-press 与 machine-chest-press；wave-1/2/4 后
+        // 同族还有 db-floor-press / incline-barbell-press / decline-barbell-press（rank 靠后追加）
+        XCTAssertEqual(candidates, ["db-bench-press", "db-floor-press", "incline-barbell-press", "decline-barbell-press", "push-up", "hammer-chest-press", "incline-hammer-press", "smith-bench-press", "smith-incline-press", "band-chest-press"]) // wave-6/8/13
 
         state.replaceCurrentExercise(with: "db-bench-press")
         XCTAssertEqual(state.currentExercise?.exerciseId, "db-bench-press")
         XCTAssertEqual(state.replacements.first?.originalExerciseId, "bench-press")
         XCTAssertEqual(state.replacements.first?.actualExerciseId, "db-bench-press")
+    }
+
+    // 档位系统（2026-06-13）：换动作后步长按「换入动作器械 × 用户单位」重算
+    // （哑铃 2.5kg → 选重机 5kg），组内疼痛回退立即按新档走。
+    func testReplaceSwitchesStepPerEquipmentGrid() {
+        let cat = ExerciseCatalog(catalogVersion: "test", entries: [
+            ExerciseCatalogEntry(id: "db-x", movementPattern: "curl", primaryMuscle: "biceps",
+                equipment: "dumbbell", kind: "isolation", substitutionGroups: ["g"], startWeightKg: 10, rank: 0),
+            ExerciseCatalogEntry(id: "sel-x", movementPattern: "curl", primaryMuscle: "biceps",
+                equipment: "selectorized", kind: "isolation", substitutionGroups: ["g"], startWeightKg: 20, rank: 10),
+        ])
+        let presc = TodayPrescription(dayCode: "push-a", exercises: [
+            ExercisePrescriptionPlan(
+                exerciseId: "db-x", sets: 3, restSeconds: 60, repLowerBound: 8, repUpperBound: 12,
+                targetReps: 10, targetWeightKg: 30, targetRir: 2, previousWeightKg: nil,
+                previousTopReps: nil, nextProjectedWeightKg: 32.5, progressionStepKg: 2.5,
+                change: .start, reason: .firstExposure
+            ),
+        ], dayReasons: [])
+        var state = TrainFlowState(prescription: presc, catalog: cat) // 默认 kg
+        XCTAssertEqual(state.currentExercise?.stepKg, 2.5) // 哑铃 kg 档
+
+        state.replaceCurrentExercise(with: "sel-x")
+        XCTAssertEqual(state.currentExercise?.stepKg, 5, "选重机 kg 档 = 5（宁大勿小），步长跟器械走")
+        state.logSet(obs(30, 6, rir: 2, pain: true))
+        state.restFinished()
+        XCTAssertEqual(state.currentRecommendation?.targetWeightKg, 25, "疼痛回退一档 = 选重机 5kg")
     }
 
     // 疼痛登记：当前组事实留痕 + 下一组建议自动保守（引擎安全瀑布）

@@ -37,12 +37,8 @@ Thumbs.db
 _slices/
 _scratch/
 
-# Local clay render workspace artifacts only — canonical icons ARE tracked
-# (assets/clay/<kind>.<name>.png landed in #508; do NOT blanket-ignore assets/)
-assets/clay.zip
-assets/clay/_*
-assets/clay/__pycache__/
-assets/clay/.~lock*
+# (Larder 饮食子项目连同其 clay 渲染流水线已于 2026-06-13 迁出为独立仓
+#  ~/Developer/Larder，不再在本仓维护;对应忽略规则随之移到那边。)
 
 # Local tool launchers
 .claude/launch.json

@@ -80,7 +80,14 @@ struct TodayModel {
             return nil
         }
         let verdict = TodayVerdictEngine.evaluate(input)
-        let prescription = TodayPrescriptionEngine.plan(input: input, verdict: verdict)
+        // 周期化引擎 S4：从落库配置读 enabled + blockLengthWeeks 喂引擎（默认 false = 零行为回归）；
+        // 与计划页周期条（loadCycleState）读同一份 mesocycle 配置 → 两页相位永不分叉（审查 MAJOR-1）。
+        // 锚点仍由引擎从真历史现算（FR-PL1 诚实，不读存储 blockStartISO）。
+        let prescription = TodayPrescriptionEngine.plan(
+            input: input, verdict: verdict,
+            mesocycleEnabled: appData.mesocycle.enabled,
+            blockLengthWeeks: appData.mesocycle.blockLengthWeeks
+        )
         return .ready(TodayModel(verdict: verdict, prescription: prescription, cleanView: cleanView, now: now))
     }
 }

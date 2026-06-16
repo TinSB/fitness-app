@@ -1,5 +1,6 @@
 import SwiftUI
 import RedeL10n
+import RedeTrainingDecision
 
 // 语言 + 单位状态（M0-3 语言 → M5-2 增单位与持久化）。
 // 默认：语言跟随系统、单位 kg；启动时由 RootTabView 从 AppData profile
@@ -15,6 +16,11 @@ final class LocaleStore {
     init() {
         let systemCode = Locale.current.language.languageCode?.identifier
         locale = RedeLocale.resolve(fromLanguageCode: systemCode)
+    }
+
+    /// 动作名桥接（内容系统 P0）：单一真源 = 目录 exercises.json。
+    func exerciseName(_ id: String) -> String {
+        ExerciseCatalog.minimal.displayName(id, localeCode: locale.rawValue)
     }
 
     /// 启动时应用 AppData 里的持久化偏好；缺失项保持当前默认（不猜）。

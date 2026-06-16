@@ -34,11 +34,18 @@ public struct ProgramTemplateInit: Equatable, Sendable {
 }
 
 public enum OnboardingPlanInit {
-    /// 天数 → 分化（FR-ON3 最小映射，§6.1：分化是生成策略不是唯一真相）：
-    /// ≥5 天 push/pull/legs，否则 upper/lower。天数钳制 2...6。
+    /// 天数 → 分化（循证频率映射，方案 2026-06-16）：每肌群尽量 2×/周。
+    /// 6→PPL×2(A/B 全 2×)｜5→PPL+UL(腿 2×)｜4→上下肢(2×)｜2-3→全身(每肌群 2-3×)。
+    /// 天数钳制 2...6。
     public static func template(for answers: OnboardingAnswers) -> ProgramTemplateInit {
         let days = min(6, max(2, answers.weeklyDays))
-        let split = days >= 5 ? "push-pull-legs" : "upper-lower"
+        let split: String
+        switch days {
+        case 6: split = "push-pull-legs"   // 推A拉A腿A推B拉B腿B
+        case 5: split = "ppl-ul"           // 推A拉A腿A·上·下（腿 2×）
+        case 4: split = "upper-lower"      // 上·下 ×2
+        default: split = "full-body"       // 2-3 天全身 A/B/C 轮换
+        }
         return ProgramTemplateInit(splitType: split, daysPerWeek: days, primaryGoal: answers.primaryGoal)
     }
 }
@@ -53,9 +60,30 @@ public enum ColdStartPrior {
         }
     }
 
-    /// 首练起始重量：×先验 → 2.5 取整 → 下限 2.5（处方重量口径）。
-    public static func scaledStartKg(_ startWeightKg: Double, trainingLevel: String?) -> Double {
+    /// 首练起始重量：×先验 → 按该动作步长取整 → 下限一档（处方重量口径）。
+    /// §6.1 Blocker：取整量子从全局 2.5 改 per-entry——小重量动作的先验不再
+    /// 被粗量子扭曲（侧平举 7.5×0.5 在 2.5 量子下取整成 5 = 实际 67% 非 50%；
+    /// 步长 1.25 时可落 3.75）。P0 目录全 2.5 → 行为零变化。
+    public static func scaledStartKg(_ startWeightKg: Double, trainingLevel: String?, stepKg: Double = 2.5) -> Double {
         let scaled = startWeightKg * multiplier(trainingLevel: trainingLevel)
-        return max(2.5, (scaled / 2.5).rounded() * 2.5)
+        return max(stepKg, (scaled / stepKg).rounded() * stepKg)
+    }
+
+    /// 辅助器械首练「辅助保守度」——方向反转（wave-9，owner 拍板）：辅助越多=越轻松，
+    /// 故新手要**更多**辅助、高级要更少（external 先验的镜像）。新手 ×1.5 / 中 ×1.0 / 高 ×0.5。
+    /// （external 是 0.5/0.75/1.0——给新手更少负重；assisted 必须倒过来，否则做不动引体
+    /// 的新手得到更少帮助 = 更难 = 危险。）
+    public static func assistMultiplier(trainingLevel: String?) -> Double {
+        switch trainingLevel {
+        case "beginner": return 1.5
+        case "intermediate": return 1.0
+        default: return 0.5   // advanced / 未自报 / 未知值（接近能自重，少帮）
+        }
+    }
+
+    /// 辅助器械首练辅助量：×反转先验 → 按器械步长取整 → 下限一档。
+    public static func scaledAssistKg(_ startAssistKg: Double, trainingLevel: String?, stepKg: Double) -> Double {
+        let scaled = startAssistKg * assistMultiplier(trainingLevel: trainingLevel)
+        return max(stepKg, (scaled / stepKg).rounded() * stepKg)
     }
 }
