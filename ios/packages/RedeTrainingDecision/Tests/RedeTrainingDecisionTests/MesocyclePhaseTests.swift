@@ -28,10 +28,10 @@ final class MesocyclePhaseTests: XCTestCase {
 
     func testModulationTableLocked() {
         // owner 拍板·主动过载版（改这表 = 改训练学契约，须留痕）
-        XCTAssertEqual(MesocyclePhase.calibrate.modulation, PhaseModulation(weightMultiplier: 1.00, setDelta: 0, rirTarget: 2.5))
+        XCTAssertEqual(MesocyclePhase.calibrate.modulation, PhaseModulation(weightMultiplier: 1.00, setDelta: 0, rirTarget: 3.0)) // 整数化 2026-06-16（旧 2.5）
         XCTAssertEqual(MesocyclePhase.build.modulation,     PhaseModulation(weightMultiplier: 1.00, setDelta: 0, rirTarget: 2.0))
         XCTAssertEqual(MesocyclePhase.overreach.modulation, PhaseModulation(weightMultiplier: 1.00, setDelta: 1, rirTarget: 1.0))
-        XCTAssertEqual(MesocyclePhase.deload.modulation,    PhaseModulation(weightMultiplier: 0.85, setDelta: -1, rirTarget: 3.5))
+        XCTAssertEqual(MesocyclePhase.deload.modulation,    PhaseModulation(weightMultiplier: 0.85, setDelta: -1, rirTarget: 4.0)) // 整数化 2026-06-16（旧 3.5）
     }
 
     func testBlockAnchorEmptyAndSingle() {

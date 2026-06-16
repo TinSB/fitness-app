@@ -21,7 +21,9 @@ public struct PhaseModulation: Equatable, Sendable {
     public let weightMultiplier: Double
     /// 组数增减（过载 +1；减载 −1；下限钳到 2 在消费侧做）。
     public let setDelta: Int
-    /// 目标 RIR（覆盖现有硬编码 2.0：校准 2.5 / 构建 2.0 / 过载 1.0 / 减载 3.5）。
+    /// 目标 RIR（覆盖现有硬编码 2.0：校准 3 / 构建 2 / 过载 1 / 减载 4）。
+    /// 全整数（owner 拍板 2026-06-16）：RIR 按整组「保留次数」记录（训练页选择器 0/1/2/3），
+    /// 半档（旧 2.5/3.5）不可执行也不可记录——目标=显示=记录端到端取整。
     public let rirTarget: Double
 
     public init(weightMultiplier: Double, setDelta: Int, rirTarget: Double) {
@@ -41,10 +43,10 @@ public enum MesocyclePhase: String, Equatable, Sendable, CaseIterable {
     /// 该周角色的处方调制（owner 拍板·主动过载版）。
     public var modulation: PhaseModulation {
         switch self {
-        case .calibrate: return PhaseModulation(weightMultiplier: 1.00, setDelta: 0, rirTarget: 2.5)
+        case .calibrate: return PhaseModulation(weightMultiplier: 1.00, setDelta: 0, rirTarget: 3.0)
         case .build:     return PhaseModulation(weightMultiplier: 1.00, setDelta: 0, rirTarget: 2.0)
         case .overreach: return PhaseModulation(weightMultiplier: 1.00, setDelta: 1, rirTarget: 1.0)
-        case .deload:    return PhaseModulation(weightMultiplier: 0.85, setDelta: -1, rirTarget: 3.5)
+        case .deload:    return PhaseModulation(weightMultiplier: 0.85, setDelta: -1, rirTarget: 4.0)
         }
     }
 }
