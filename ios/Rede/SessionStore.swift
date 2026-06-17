@@ -290,8 +290,20 @@ final class SessionStore {
     /// actionKey 必须用引擎产出的 action.actionKey（闭环一致，UI 不手搓 key）。
     @discardableResult
     func dismissCoachAction(actionKey: String) async -> Bool {
+        await performCoachWrite { _ = try $0.applyCoachActionDismissal(actionKey: actionKey) }
+    }
+
+    // MARK: - FR-T5 教练动作 采纳 / 撤销（切片6c）
+
+    /// 教练动作采纳/撤销/暂不处理的统一 gated 写包装：isSaving 互斥（防快速连点并发 load-modify-write 丢更新）
+    /// + 后台唯一写闸（读→改→安检→写前备份→原子保存）+ 成功后重载今日。失败如实置 saveErrorText 返 false。
+    /// 开写即清 saveErrorText（每次尝试干净起步，成功后旧错不残留）；mutate 在后台线程执行、只调写闸方法
+    ///（不捕获 @MainActor 状态）；撤销=单步反向写（owner 拍板，不另起 undo 栈）。
+    @discardableResult
+    private func performCoachWrite(_ mutate: @escaping @Sendable (CanonicalSessionWriter) throws -> Void) async -> Bool {
         guard !isSaving else { return false }
         isSaving = true
+        saveErrorText = nil
         defer { isSaving = false }
         let fileURL = TodayModel.canonicalFileURL()
         let result: Result<Void, Error> = await Task.detached(priority: .userInitiated) {
@@ -303,7 +315,7 @@ final class SessionStore {
                     store: JSONFileAppDataStore(fileURL: fileURL),
                     gate: DataHealthGate()
                 )
-                try writer.applyCoachActionDismissal(actionKey: actionKey)
+                try mutate(writer)
                 return .success(())
             } catch {
                 return .failure(error)
@@ -311,12 +323,36 @@ final class SessionStore {
         }.value
         switch result {
         case .success:
-            await loadToday() // 重载 → 降频后本卡消失（如适用）
+            await loadToday() // 重载 → plan() 消费换动作覆盖 / 引擎按补量态抑制卡
             return true
         case .failure(let error):
             saveErrorText = String(describing: error)
             return false
         }
+    }
+
+    /// 换动作采纳：把到顶动作 originalId 覆盖成用户所选替代 actualId；plan() 下次消费覆盖真正替换处方该槽。
+    @discardableResult
+    func applyExerciseSubstitution(originalId: String, actualId: String) async -> Bool {
+        await performCoachWrite { _ = try $0.applyExerciseSubstitution(originalId: originalId, actualId: actualId) }
+    }
+
+    /// 换动作撤销（单步即时）：移除该动作的覆盖，回到引擎默认选材。
+    @discardableResult
+    func removeExerciseSubstitution(originalId: String) async -> Bool {
+        await performCoachWrite { _ = try $0.removeExerciseSubstitution(originalId: originalId) }
+    }
+
+    /// 补量采纳：记录本周已承认补量（**不改处方、不加训练**）→ 引擎本周抑制补量卡（诚实语义）。
+    @discardableResult
+    func applyVolumeBoost(weekStartISO: String) async -> Bool {
+        await performCoachWrite { _ = try $0.applyVolumeBoost(weekStartISO: weekStartISO) }
+    }
+
+    /// 补量撤销（单步即时）：撤掉本周补量承认 → 若仍落后，补量卡可再出。
+    @discardableResult
+    func removeVolumeBoost(weekStartISO: String) async -> Bool {
+        await performCoachWrite { _ = try $0.removeVolumeBoost(weekStartISO: weekStartISO) }
     }
 
     // MARK: - M5-1b 引导（FR-ON1/3）
