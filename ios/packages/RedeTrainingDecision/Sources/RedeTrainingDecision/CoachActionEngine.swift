@@ -12,7 +12,7 @@
 // v1 范围：换动作（到顶）+ 补量（频率，无肌群无组数）+ 修数据。肌群级补量依赖未实现的 MLE/贡献权重，
 // 推后（系统逻辑 §6.5.2 红线：无权重禁猜肌群）。dismiss 降频在切片5 叠加（本切片不读 dismissed）。
 
-public enum CoachActionKind: String, Equatable, Sendable {
+public enum CoachActionKind: Equatable, Sendable {
     case dataReview      // 修数据：有可疑记录，去进展页核对（只读导航）
     case exerciseSwap    // 换动作：某动作到顶/毕业，可换更难变体（采纳→换动作覆盖）
     case volumeBoost     // 补量：本周练得比计划少，可补一次（频率维度；采纳→补量意图）
@@ -34,14 +34,14 @@ public struct CoachAction: Equatable, Sendable {
 
 /// 生成器输入（app 层把裁决/处方/数据质量摊平成 primitives 注入；clean input contract，§8）。
 public struct CoachActionInput: Equatable, Sendable {
-    public let call: String              // TodayVerdict.call.rawValue（train/light/rest/deload）
+    public let call: TodayCall           // TodayVerdict.call（用枚举，守门编译期穷举安全，审查 M-1）
     public let sessionsLast7: Int
     public let plannedDaysPerWeek: Int
     public let totalSessionCount: Int    // 新用户守门（0 = 全新，不催补量）
     public let stalledExerciseIds: [String]  // 本日处方里到顶/毕业的动作（按出现序）
     public let dataFindingCount: Int     // 数据质量问题数（>0 触发修数据）
     public init(
-        call: String, sessionsLast7: Int, plannedDaysPerWeek: Int, totalSessionCount: Int,
+        call: TodayCall, sessionsLast7: Int, plannedDaysPerWeek: Int, totalSessionCount: Int,
         stalledExerciseIds: [String], dataFindingCount: Int
     ) {
         self.call = call
@@ -71,9 +71,10 @@ public enum CoachActionEngine {
 
         // ③ 补量（频率，最低优先）：仅活跃日（train/light，绝不在 rest/deload 催量）、非新用户、
         // 本周已练 < 计划时出。无肌群无组数（§6.5.2 红线）。count = 本周还差几次。
-        if ["train", "light"].contains(input.call),
+        if [TodayCall.train, .light].contains(input.call),
            input.totalSessionCount > 0,
            input.plannedDaysPerWeek > 0,
+           input.sessionsLast7 >= 0,   // 防御非法负输入（审查 M-2）：负值不催、count 不虚高
            input.sessionsLast7 < input.plannedDaysPerWeek {
             out.append(CoachAction(
                 kind: .volumeBoost, reasonCode: "belowWeeklyPlan",

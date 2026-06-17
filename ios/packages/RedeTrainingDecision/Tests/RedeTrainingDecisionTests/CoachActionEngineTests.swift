@@ -5,7 +5,7 @@ import XCTest
 
 final class CoachActionEngineTests: XCTestCase {
     private func make(
-        call: String = "train", sessionsLast7: Int = 1, plannedDaysPerWeek: Int = 4,
+        call: TodayCall = .train, sessionsLast7: Int = 1, plannedDaysPerWeek: Int = 4,
         totalSessionCount: Int = 5, stalled: [String] = [], findings: Int = 0
     ) -> CoachActionInput {
         CoachActionInput(
@@ -27,14 +27,14 @@ final class CoachActionEngineTests: XCTestCase {
     }
 
     func testVolumeBoostFiresWhenBehindAndActive() throws {
-        let actions = CoachActionEngine.actions(input: make(call: "train", sessionsLast7: 1, plannedDaysPerWeek: 4))
+        let actions = CoachActionEngine.actions(input: make(call: .train, sessionsLast7: 1, plannedDaysPerWeek: 4))
         let boost = try XCTUnwrap(actions.first { $0.kind == .volumeBoost })
         XCTAssertEqual(boost.reasonCode, "belowWeeklyPlan")
         XCTAssertEqual(boost.count, 3, "本周还差 4-1=3 次")
     }
 
     func testVolumeBoostNotOnRestOrDeload() {
-        for call in ["rest", "deload"] {
+        for call in [TodayCall.rest, .deload] {
             let actions = CoachActionEngine.actions(input: make(call: call, sessionsLast7: 0, plannedDaysPerWeek: 5))
             XCTAssertFalse(actions.contains { $0.kind == .volumeBoost }, "\(call) 态绝不催补量")
         }
@@ -54,9 +54,15 @@ final class CoachActionEngineTests: XCTestCase {
 
     func testPriorityOrderDataThenSwapThenBoost() {
         let actions = CoachActionEngine.actions(input: make(
-            call: "train", sessionsLast7: 1, plannedDaysPerWeek: 4, stalled: ["pull-up"], findings: 2
+            call: .train, sessionsLast7: 1, plannedDaysPerWeek: 4, stalled: ["pull-up"], findings: 2
         ))
         XCTAssertEqual(actions.map(\.kind), [.dataReview, .exerciseSwap, .volumeBoost], "修数据>换动作>补量")
+    }
+
+    // 防御非法负输入（审查 M-2）：负 last7 不催补量、不产虚高 count。
+    func testNegativeSessionsLast7DoesNotFireVolumeBoost() {
+        let actions = CoachActionEngine.actions(input: make(call: .train, sessionsLast7: -1, plannedDaysPerWeek: 4))
+        XCTAssertFalse(actions.contains { $0.kind == .volumeBoost }, "负 last7 被守门挡下，不产虚高 count")
     }
 
     func testNoSignalsYieldsEmpty() {
