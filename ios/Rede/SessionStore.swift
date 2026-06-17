@@ -477,6 +477,14 @@ final class SessionStore {
         persistDraft()
     }
 
+    // MARK: - FR-TR10 热身（流内临时引导，不进 events/不落库）
+
+    /// 热身打勾：推进到下一热身步。纯内存态——不进事件日志、不落 draft（热身瞬态、按工作组指针重生）。
+    func advanceWarmupStep() { flow?.advanceWarmupStep() }
+
+    /// 跳过全部热身：直接进首个工作组。同样不进事件日志、不落 draft。
+    func skipAllWarmup() { flow?.skipAllWarmup() }
+
     // MARK: - 休息倒计时（会话层接管，详见 SessionStore.restCountdown / RestCountdown）
 
     /// 当前剩余秒数（按墙钟实时求出；视图每秒重读）。
