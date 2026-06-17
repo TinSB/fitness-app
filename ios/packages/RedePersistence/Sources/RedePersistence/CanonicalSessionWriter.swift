@@ -64,6 +64,7 @@ public enum PreferencesWriteError: Error, Equatable {
 public enum CoachActionWriteError: Error, Equatable {
     case emptyExerciseId
     case substitutionToSelf(String)
+    case emptyKey   // 空 weekStartISO / actionKey
 }
 
 public struct CanonicalSessionWriter {
@@ -190,6 +191,79 @@ public struct CanonicalSessionWriter {
             var subs = storage["exerciseSubstitutions"]?.asObject ?? [:]
             subs[originalId] = nil   // Dictionary 赋 nil = 删键；容器保留为（可能空的）对象
             storage["exerciseSubstitutions"] = .object(subs)
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
+    // MARK: - FR-T5 切片5：补量意图 + dismiss 写入（schema 11 coachAdjustments / coachState）
+    // 本切片只把意图安全落库（数据基础）；降频/窗口消费策略在切片6 接 UI 时定。
+    // 防御读（审查 M-1）：内层数组缺失 → 视为空，不强解包不崩。
+
+    /// 已批准写入类别：采纳补量（频率维度）——记「某 ISO 周已采纳补一次」到
+    /// coachAdjustments.volumeBoosts，按 weekStartISO 去重（一周一条，幂等）；走全套 gate。
+    @discardableResult
+    public func applyVolumeBoost(weekStartISO: String) throws -> AppData {
+        guard !weekStartISO.isEmpty else { throw CoachActionWriteError.emptyKey }
+        return try performGatedMutation { current in
+            var storage = current.storage
+            var adjustments = storage["coachAdjustments"]?.asObject ?? [:]
+            var boosts = adjustments["volumeBoosts"]?.asArray ?? []
+            let already = boosts.contains { $0.asObject?["weekStartISO"]?.asString == weekStartISO }
+            if !already { boosts.append(.object(["weekStartISO": .string(weekStartISO)])) }
+            adjustments["volumeBoosts"] = .array(boosts)
+            storage["coachAdjustments"] = .object(adjustments)
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
+    /// 已批准写入类别：撤销补量采纳（单步撤销=反向 gated 写，删该周条目；幂等）。
+    @discardableResult
+    public func removeVolumeBoost(weekStartISO: String) throws -> AppData {
+        guard !weekStartISO.isEmpty else { throw CoachActionWriteError.emptyKey }
+        return try performGatedMutation { current in
+            var storage = current.storage
+            var adjustments = storage["coachAdjustments"]?.asObject ?? [:]
+            var boosts = adjustments["volumeBoosts"]?.asArray ?? []
+            boosts.removeAll { $0.asObject?["weekStartISO"]?.asString == weekStartISO }
+            adjustments["volumeBoosts"] = .array(boosts)
+            storage["coachAdjustments"] = .object(adjustments)
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
+    /// 已批准写入类别（§5 第 11 类 coach-action dismiss intent）：暂不处理。
+    /// 按 actionKey 累加 count（喂降频学习）；首次 count=1，重复 +1。走全套 gate。
+    @discardableResult
+    public func applyCoachActionDismissal(actionKey: String) throws -> AppData {
+        guard !actionKey.isEmpty else { throw CoachActionWriteError.emptyKey }
+        return try performGatedMutation { current in
+            var storage = current.storage
+            var coachState = storage["coachState"]?.asObject ?? [:]
+            var dismissed = coachState["dismissed"]?.asArray ?? []
+            if let idx = dismissed.firstIndex(where: { $0.asObject?["actionKey"]?.asString == actionKey }) {
+                var entry = dismissed[idx].asObject ?? [:]
+                entry["count"] = .int(Int64((entry["count"]?.asInt ?? 0) + 1))
+                dismissed[idx] = .object(entry)
+            } else {
+                dismissed.append(.object(["actionKey": .string(actionKey), "count": .int(1)]))
+            }
+            coachState["dismissed"] = .array(dismissed)
+            storage["coachState"] = .object(coachState)
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
+    /// 已批准写入类别：撤销 dismiss（反向 gated 写，整条删；幂等）。
+    @discardableResult
+    public func removeCoachActionDismissal(actionKey: String) throws -> AppData {
+        guard !actionKey.isEmpty else { throw CoachActionWriteError.emptyKey }
+        return try performGatedMutation { current in
+            var storage = current.storage
+            var coachState = storage["coachState"]?.asObject ?? [:]
+            var dismissed = coachState["dismissed"]?.asArray ?? []
+            dismissed.removeAll { $0.asObject?["actionKey"]?.asString == actionKey }
+            coachState["dismissed"] = .array(dismissed)
+            storage["coachState"] = .object(coachState)
             return try AppData(decoding: .object(storage))
         }
     }
