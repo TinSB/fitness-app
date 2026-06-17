@@ -69,12 +69,15 @@ struct TrainTabView: View {
                             .padding(.horizontal, RedeSpace.page)
                             .padding(.top, 10)
                     }
-                    setTable(flow)
-                        .padding(.horizontal, RedeSpace.page)
-                        .padding(.top, RedeSpace.section)
-                    nextUpLine(flow)
-                        .padding(.horizontal, RedeSpace.page)
-                        .padding(.top, 12)
+                    // 热身期不显示工作组组表/下一组预告（尚未进首个工作组）。
+                    if !flow.isWarmingUp {
+                        setTable(flow)
+                            .padding(.horizontal, RedeSpace.page)
+                            .padding(.top, RedeSpace.section)
+                        nextUpLine(flow)
+                            .padding(.horizontal, RedeSpace.page)
+                            .padding(.top, 12)
+                    }
                 } else {
                     emptyState
                         .padding(.horizontal, RedeSpace.page)
@@ -148,7 +151,10 @@ struct TrainTabView: View {
     private func heroCard(_ flow: TrainFlowState) -> some View {
         ForgedCard(emberBarInset: 18, showReg: true) {
             ZStack(alignment: .topLeading) {
-                setState(flow)
+                // FR-TR10：动作开头先热身（.activeSet 上的 overlay），热身走完/跳过自动morph到工作组。
+                Group {
+                    if flow.isWarmingUp { warmupState(flow) } else { setState(flow) }
+                }
                     .opacity(flow.phase == .resting ? 0 : 1)
                     .scaleEffect(flow.phase == .resting ? 0.98 : 1)
                 restState(flow)
@@ -156,6 +162,7 @@ struct TrainTabView: View {
                     .scaleEffect(flow.phase == .resting ? 1 : 0.98)
             }
             .animation(.easeInOut(duration: 0.22), value: flow.phase)
+            .animation(.easeInOut(duration: 0.22), value: flow.isWarmingUp)
             .frame(minHeight: 245, alignment: .topLeading)
             .padding(.leading, 13)
             .padding(.vertical, 18)
@@ -289,6 +296,53 @@ struct TrainTabView: View {
         if let tag = s.trainChangeTag(change) {
             let color: Color = change == "ease" ? .redeEmber2 : (change == "hold" ? .redeT4 : .redeEmber)
             Text(tag).font(.redeCaption).foregroundStyle(color)
+        }
+    }
+
+    // MARK: - 热身态（FR-TR10：动作开头的流内临时引导，做完/跳过进首个工作组）
+
+    private func warmupState(_ flow: TrainFlowState) -> some View {
+        let steps = flow.warmupStepsForCurrentExercise
+        let step = steps.indices.contains(flow.warmupPointer) ? steps[flow.warmupPointer] : nil
+        return VStack(alignment: .leading, spacing: 0) {
+            Overline(text: s.warmupProgress(index: flow.warmupPointer + 1, total: steps.count), color: .redeEmber2)
+            Text(flow.currentExercise.map { localeStore.exerciseName($0.exerciseId) } ?? "")
+                .font(.redeSubhead)
+                .foregroundStyle(Color.redeT2)
+                .padding(.top, 6)
+            Text(step.map(warmupMainLine) ?? "")
+                .font(.redeHeadline)
+                .monospacedDigit()
+                .foregroundStyle(Color.redeT1)
+                .padding(.top, 10)
+            Spacer(minLength: 18)
+            EmbButton(icon: "checkmark", title: s.warmupDone, action: {
+                sessionStore.advanceWarmupStep()
+                actionPulse += 1 // 热身打勾=动作确认（.selection），非工作组完成（logPulse/.success 专属工作组）
+            })
+            Button(action: {
+                sessionStore.skipAllWarmup()
+                actionPulse += 1
+            }) {
+                Text(s.warmupSkip)
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT4)
+                    .frame(maxWidth: .infinity, minHeight: RedeShape.controlHeight)
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// 热身主行：空杆/动作模式预热=标签 + ×次；百分比档=重量 + ×次。
+    private func warmupMainLine(_ step: WarmupStep) -> String {
+        switch step.kind {
+        case .emptyBar:
+            return "\(s.warmupEmptyBar) \(s.warmupReps(step.targetReps))"
+        case .movementPrep:
+            return "\(s.warmupMovementPrep) \(s.warmupReps(step.targetReps))"
+        case .percent:
+            return "\(s.warmupWeight(step.targetWeightKg)) \(s.warmupReps(step.targetReps))"
         }
     }
 
