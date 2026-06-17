@@ -180,8 +180,11 @@ public struct CanonicalSessionWriter {
 
     /// 已批准写入类别：撤销换动作覆盖（FR-T5 单步撤销 = 反向 gated 写）。
     /// 删 storage["exerciseSubstitutions"][originalId]；不存在则幂等无变化。走全套 gate（含写前备份）。
+    /// 结构守卫：id 非空（与 apply 对称，审查 M-1）。注意（审查 N-1）：删不存在的键这一幂等路径仍会走
+    /// 一次 gated 写（备份+保存）——调用层若要避免无意义写盘，应在撤销前自查该覆盖是否存在。
     @discardableResult
     public func removeExerciseSubstitution(originalId: String) throws -> AppData {
+        guard !originalId.isEmpty else { throw CoachActionWriteError.emptyExerciseId }
         return try performGatedMutation { current in
             var storage = current.storage
             var subs = storage["exerciseSubstitutions"]?.asObject ?? [:]

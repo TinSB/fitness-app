@@ -73,4 +73,11 @@ final class ExerciseSubstitutionWriteTests: XCTestCase {
             XCTAssertEqual(error as? CoachActionWriteError, .substitutionToSelf("bench-press"))
         }
     }
+
+    // 撤销与采纳守卫对称（审查 M-1）：空 id 在进写闸前抛、不写盘。
+    func testRemoveEmptyIdThrows() {
+        XCTAssertThrowsError(try makeWriter().removeExerciseSubstitution(originalId: "")) { error in
+            XCTAssertEqual(error as? CoachActionWriteError, .emptyExerciseId)
+        }
+    }
 }
