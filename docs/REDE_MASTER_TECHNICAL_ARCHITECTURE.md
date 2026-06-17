@@ -106,7 +106,7 @@ The app layer must not:
 
 ## 5. Target Swift Package Boundaries
 
-### Packages present today (7, all in the CI test matrix)
+### Packages present today (8, all in the CI test matrix)
 
 | Package | Responsibility | Depends on |
 |---|---|---|
@@ -117,6 +117,7 @@ The app layer must not:
 | `RedeLocalSnapshot` | Derived Focus/session history snapshots. Never canonical AppData. | Foundation only |
 | `RedeWidgetShared` | Read-only widget snapshot model and App Group snapshot store. | Foundation only |
 | `RedeL10n` | Terms and formatting support. | Foundation only |
+| `RedeNotifications` | Local-notification policies (FR-NT1/2) + the `#if os(iOS)` UNUserNotificationCenter adapter behind a `NotificationScheduling` seam. Pure policy is host-tested; derived/transient, never canonical, no remote/push. | Foundation only |
 
 ### Target package names not yet created on disk
 
@@ -125,7 +126,6 @@ These are reserved future boundaries (named here so logic lands in the right pla
 | Package | Intended responsibility | Status |
 |---|---|---|
 | `RedeHealthKit` | Approved HealthKit adapters and pure mapping seams. | Not created. No HealthKit code exists yet. |
-| `RedeNotifications` | Local notification policies and adapters. | Not created. No notification code exists yet. |
 | `RedeBackup` | Backup/export. | Not created. Does not authorize backup/export implementation. |
 | `RedeUIKit` | Shared UI framework. | Not created. Does not authorize a shared UI framework migration. |
 
