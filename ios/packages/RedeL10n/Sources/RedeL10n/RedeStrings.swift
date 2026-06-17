@@ -152,6 +152,19 @@ public struct RedeStrings: Sendable {
         }
     }
 
+    // MARK: - Plan 周排期（FR-PL2：本周/下周训练日 + 模式构成，只读派生投影）
+    public var planScheduleThisWeek: String { t("本周", "This week") }
+    public var planScheduleNextWeek: String { t("下周", "Next week") }
+    /// 单训练日动作数："6 个动作" / "6 exercises"。
+    public func planDayExercises(_ count: Int) -> String {
+        t("\(count) 个动作", count == 1 ? "1 exercise" : "\(count) exercises")
+    }
+    /// 周排期下方尾注：排期已按训练进度滚动展示，仅剩调整/回滚待后续（FR-PL3/4）。
+    public var planScheduleNote: String {
+        t("未来安排按你的训练进度滚动　调整建议与回滚将在后续版本加入",
+          "The schedule rolls forward with your training. Adjustment previews and rollback arrive in a later version")
+    }
+
     // MARK: - 无障碍（VoiceOver hint/label）
     public var a11yExpand: String { t("展开", "Expand") }
     public var a11yCollapse: String { t("收起", "Collapse") }
