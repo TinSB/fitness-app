@@ -154,6 +154,14 @@ struct ProgressTabView: View {
                 .padding(.top, RedeSpace.section)
             }
 
+            // FR-PR7 力量里程碑（实测达成；杠铃配片阈值）——非空才显示，含前导分隔线。
+            if !model.milestones.isEmpty {
+                RuleDivider()
+
+                milestonesSection(model)
+                    .padding(.horizontal, RedeSpace.page)
+            }
+
             // 连续性段（含其前导分隔线）随 continuity 一同存在/消失，避免 nil 时双分隔线黏合（审查 MINOR-1）。
             if let month = model.continuity {
                 RuleDivider()
@@ -484,6 +492,29 @@ struct ProgressTabView: View {
             .accessibilityLabel(s.continuityDayA11y(dateISO: iso, trained: day.isTrained))
         } else {
             Color.clear.frame(height: 32)
+        }
+    }
+
+    // MARK: - 力量里程碑（FR-PR7；card-free，0-card 预算；实测达成的杠铃配片阈值）
+
+    private func milestonesSection(_ model: ProgressModel) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Overline(text: s.milestonesTitle)
+            ForEach(model.milestones, id: \.exerciseId) { milestone in
+                let value = "\(milestone.achievedThreshold) \(milestone.unitLabel)"
+                HStack {
+                    Text(localeStore.exerciseName(milestone.exerciseId))
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT2)
+                    Spacer()
+                    Text(value)
+                        .font(.redeCallout).monospacedDigit()
+                        .foregroundStyle(Color.redeEmber2)
+                }
+                .padding(.vertical, 6)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(s.milestoneA11y(lift: localeStore.exerciseName(milestone.exerciseId), value: value))
+            }
         }
     }
 
