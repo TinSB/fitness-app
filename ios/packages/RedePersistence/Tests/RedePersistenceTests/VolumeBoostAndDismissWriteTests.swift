@@ -57,9 +57,10 @@ final class VolumeBoostAndDismissWriteTests: XCTestCase {
 
     func testDismissalAccumulatesCount() throws {
         let writer = makeWriter()
-        _ = try writer.applyCoachActionDismissal(actionKey: "volumeBoost:belowWeeklyPlan")
-        let twice = try writer.applyCoachActionDismissal(actionKey: "volumeBoost:belowWeeklyPlan")
-        XCTAssertEqual(twice.coachDismissals["volumeBoost:belowWeeklyPlan"], 2, "重复暂不处理 → count 累加（喂降频）")
+        // actionKey 与引擎产出一致：补量按周锚点（"volumeBoost:<ISO 周一>"），非 reasonCode。
+        _ = try writer.applyCoachActionDismissal(actionKey: "volumeBoost:2026-06-15")
+        let twice = try writer.applyCoachActionDismissal(actionKey: "volumeBoost:2026-06-15")
+        XCTAssertEqual(twice.coachDismissals["volumeBoost:2026-06-15"], 2, "重复暂不处理 → count 累加（喂降频）")
     }
 
     func testDismissalTwoKeysThenUndoOne() throws {
