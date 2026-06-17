@@ -14,6 +14,8 @@ struct TodayTabView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var reasonExpanded = false
     @State private var showSettings = false
+    /// FR-EX2：点开的动作详情目标（nil = 未打开）。
+    @State private var detailTarget: ExerciseDetailTarget?
 
     private var model: TodayModel? { sessionStore.todayModel }
 
@@ -64,6 +66,9 @@ struct TodayTabView: View {
             SettingsSheet(store: localeStore)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(item: $detailTarget) { target in
+            exerciseDetailSheet(target.id)
         }
     }
 
@@ -231,8 +236,14 @@ struct TodayTabView: View {
                 RuleDivider()
 
                 ForEach(Array(exercises.enumerated()), id: \.offset) { idx, ex in
-                    exerciseRow(ex, isCurrent: idx == activeExerciseIndex)
-                        .padding(.horizontal, RedeSpace.page)
+                    Button {
+                        detailTarget = ExerciseDetailTarget(id: ex.exerciseId)
+                    } label: {
+                        exerciseRow(ex, isCurrent: idx == activeExerciseIndex)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint(s.exerciseDetailHint)
+                    .padding(.horizontal, RedeSpace.page)
                 }
 
                 summaryLine(exercises: exercises)
@@ -445,6 +456,67 @@ struct TodayTabView: View {
 
     private var opTick: some View {
         Rectangle().fill(Color.redeEtch).frame(width: 1, height: 8)
+    }
+
+    // MARK: - 动作详情（FR-EX2；只读元数据 + 同族替代，主界面不堆元数据）
+
+    private struct ExerciseDetailTarget: Identifiable { let id: String } // id = exerciseId
+
+    private func exerciseDetailSheet(_ exerciseId: String) -> some View {
+        let entry = ExerciseCatalog.minimal.entry(id: exerciseId)
+        return ScrollView {
+            VStack(alignment: .leading, spacing: RedeSpace.section) {
+                Text(localeStore.exerciseName(exerciseId))
+                    .font(.redeHeadline)
+                    .tracking(RedeTracking.headline)
+                    .foregroundStyle(Color.redeT1)
+                if let entry {
+                    detailRow(s.exerciseDetailType, s.exerciseKindLabel(entry.kind))
+                    detailRow(s.exerciseDetailPattern, s.movementPatternLabel(entry.movementPattern))
+                    detailRow(s.exerciseDetailPrimary, s.muscleLabel(entry.primaryMuscle))
+                    if !entry.secondaryMuscles.isEmpty {
+                        detailRow(s.exerciseDetailSecondary, s.muscleListLabel(entry.secondaryMuscles))
+                    }
+                    detailRow(s.exerciseDetailEquipment, s.equipmentLabel(entry.equipment))
+                    VStack(alignment: .leading, spacing: 6) {
+                        Overline(text: s.exerciseDetailAlternatives)
+                        let alts = alternatives(for: entry)
+                        if alts.isEmpty {
+                            Text(s.exerciseDetailNoAlternatives)
+                                .font(.redeBody).foregroundStyle(Color.redeT3)
+                        } else {
+                            ForEach(alts, id: \.self) { altId in
+                                Text(localeStore.exerciseName(altId))
+                                    .font(.redeBody).foregroundStyle(Color.redeT2)
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(RedeSpace.page)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        // 整面板公理：sheet = 掀开的 base 锻面（同历史明细 sheet 口径）。
+        .presentationBackground(Color.redeBase)
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func detailRow(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Overline(text: label)
+            Text(value).font(.redeBody).foregroundStyle(Color.redeT1)
+        }
+    }
+
+    /// 同族替代动作（共享任一 substitutionGroup、非自身、未退役）；信息性参考，列前几个。
+    private func alternatives(for entry: ExerciseCatalogEntry) -> [String] {
+        let groups = Set(entry.substitutionGroups)
+        return ExerciseCatalog.minimal.entries
+            .filter { $0.id != entry.id && !$0.deprecated && !Set($0.substitutionGroups).isDisjoint(with: groups) }
+            .sorted { $0.rank < $1.rank }   // 显式 rank 序（审查 Minor-2）：前 6 偏主项/主流器械，不依赖 entries 隐式有序
+            .prefix(6)
+            .map(\.id)
     }
 
 }

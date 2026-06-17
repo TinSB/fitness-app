@@ -11,6 +11,9 @@ final class CatalogContractTests: XCTestCase {
     private let catalog = ExerciseCatalog.minimal
 
     // MARK: - 注册表（封闭集合：写错拼写 = 当场红）
+    // 新增内容波若引入新 pattern/muscle/equipment 码，testEveryEntryPassesRegistries 会先报红——
+    // 更新下面集合时，务必同步把新码加进 RedeL10n/ExerciseDetailCopy 的标签表（FR-EX2 详情页），
+    // 否则详情页会把原始码串直接显示给用户（两包解耦，无法 host 跨包对账，靠这条纪律闭环）。
 
     private let knownPatterns: Set<String> = [
         "horizontal-press", "incline-press", "fly", "vertical-pull", "horizontal-pull",
