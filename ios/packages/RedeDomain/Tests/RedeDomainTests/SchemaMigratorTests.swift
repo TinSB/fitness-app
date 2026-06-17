@@ -15,7 +15,7 @@ final class SchemaMigratorTests: XCTestCase {
             "history": .array([]),
         ]
         let out = SchemaMigrator.migrate(root: root)
-        XCTAssertEqual(out["schemaVersion"]?.asInt, SchemaVersion.current, "升到 current（8→9→10）")
+        XCTAssertEqual(out["schemaVersion"]?.asInt, SchemaVersion.current, "升到 current（8→9→10→11）")
         let meso = out["mesocycle"]?.asObject
         XCTAssertEqual(meso?["enabled"]?.asBool, false, "默认关闭 = 零回归")
         XCTAssertEqual(meso?["blockLengthWeeks"]?.asInt, 4, "4 周块落库")
