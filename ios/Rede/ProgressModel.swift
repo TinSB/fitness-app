@@ -26,12 +26,14 @@ struct ProgressModel {
     let keyTrend: ProgressSnapshot.ExerciseTrend?
     let trendAssessment: TrendAssessment?
     let weeklyComparison: WeeklyComparison?
+    /// FR-PR5 当月训练连续性月历（中性呈现；history 非空时必有，否则 nil）。
+    let continuity: ContinuityCalendar.Month?
 
-    static func loadOutcomeAsync() async -> LoadOutcome? {
-        await Task.detached(priority: .userInitiated) { loadOutcome() }.value
+    static func loadOutcomeAsync(now: Date = Date()) async -> LoadOutcome? {
+        await Task.detached(priority: .userInitiated) { loadOutcome(now: now) }.value
     }
 
-    static func loadOutcome() -> LoadOutcome? {
+    static func loadOutcome(now: Date = Date()) -> LoadOutcome? {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         let appData: AppData
         do {
@@ -66,6 +68,15 @@ struct ProgressModel {
         let statsRecords = mapToRecords(cleanView, excluding: quality.suspectSets)
         let snapshot = ProgressSnapshotBuilder.build(sessions: statsRecords, facts: facts)
         let keyTrend = TrendInsight.keyExercise(of: snapshot, facts: facts)
+        // FR-PR5 连续性月历：训练日 = 有 session 的本地日（含被质量标记的场——那天确实练了，
+        // 故用未过滤 records 而非 statsRecords）；当月网格在包内纯算（civil-days，无时区坑）。
+        let dayFormatter = DateFormatter()
+        dayFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dayFormatter.timeZone = .current
+        dayFormatter.dateFormat = "yyyy-MM-dd"
+        let todayISO = dayFormatter.string(from: now)
+        let trainedDates = Set(records.map { String($0.dateISO.prefix(10)) })
+        let continuity = ContinuityCalendar.month(containing: todayISO, todayISO: todayISO, trainedDatesISO: trainedDates)
         return .ready(ProgressModel(
             snapshot: snapshot,
             quality: quality,
@@ -75,7 +86,8 @@ struct ProgressModel {
             trendAssessment: keyTrend.map(TrendInsight.assess),
             weeklyComparison: snapshot.weeklyVolume.first.map {
                 WeeklyInsight.compare(latest: $0, weeks: snapshot.weeklyVolume)
-            }
+            },
+            continuity: continuity
         ))
     }
 
