@@ -70,6 +70,11 @@ public struct TrainFlowState: Equatable, Sendable {
     public private(set) var skippedInCurrentExercise: Int = 0
     /// 被接受的事件日志（draft 持久化用；被 guard 拒绝的事件不记录）。
     public private(set) var events: [TrainFlowEvent] = []
+    /// FR-TR10 热身指针（当前动作已走过的热身步数）。**纯内存引导态**——不进 events、不进
+    /// observationsByExercise、不落库（绝不毒化 NextSetEngine / 污染统计）；中断恢复时随工作组指针
+    /// 重新生成（热身瞬态，不参与 replay）。热身是 .activeSet 上的 UI 叠加，不新增状态机相位 → 既有
+    /// 流转/守卫/replay/落库零改动（零回归核心设计，切片2）。
+    public private(set) var warmupPointer: Int = 0
 
     private var phaseBeforeConfirm: Phase = .activeSet
     private let catalog: ExerciseCatalog
@@ -147,6 +152,49 @@ public struct TrainFlowState: Equatable, Sendable {
             excluding: Set(plan.exercises.map(\.exerciseId)),
             allowedEquipment: allowedEquipment
         )
+    }
+
+    // MARK: - 热身（FR-TR10 · 流内临时引导，不落库）
+
+    /// 当前动作的保守热身阶梯（按计划工作重 + 目录动作事实生成）。纯派生、确定性。
+    public var warmupStepsForCurrentExercise: [WarmupStep] {
+        guard let exercise = currentExercise, let work = exercise.sets.first?.targetWeightKg else { return [] }
+        let entry = catalog.entry(id: exercise.exerciseId)
+        return WarmupLadderEngine.generate(
+            workWeightKg: work,
+            loadType: exercise.loadType,
+            equipment: entry?.equipment ?? "",
+            kind: entry?.kind ?? "",
+            startWeightKg: entry?.startWeightKg ?? 0,
+            unit: loadUnit
+        )
+    }
+
+    /// 是否处于热身：动作开头（尚未做/跳任何工作组）且热身未走完。phase 仍是 .activeSet——
+    /// 热身是 UI 叠加引导、不改状态机相位，UI 据此先渲染热身卡再渲染首个工作组。
+    public var isWarmingUp: Bool {
+        phase == .activeSet
+            && completedInCurrentExercise.isEmpty
+            && skippedInCurrentExercise == 0
+            && warmupPointer < warmupStepsForCurrentExercise.count
+    }
+
+    /// 当前热身步（isWarmingUp 时非 nil）。
+    public var currentWarmupStep: WarmupStep? {
+        let steps = warmupStepsForCurrentExercise
+        return warmupPointer < steps.count ? steps[warmupPointer] : nil
+    }
+
+    /// 热身打勾：推进到下一热身步。**不落库、不进事件日志、不碰工作组记录**。
+    public mutating func advanceWarmupStep() {
+        guard isWarmingUp else { return }
+        warmupPointer += 1
+    }
+
+    /// 跳过全部热身：直接进首个工作组。**不落库、不进事件日志**（跳过偏好学习后置为独立 slice）。
+    public mutating func skipAllWarmup() {
+        guard isWarmingUp else { return }
+        warmupPointer = warmupStepsForCurrentExercise.count
     }
 
     // MARK: - 事件
@@ -318,6 +366,7 @@ public struct TrainFlowState: Equatable, Sendable {
         skippedInCurrentExercise = 0
         isHolding = false
         painReportedForCurrentSet = false
+        warmupPointer = 0 // 新动作重新进入其热身（内存态，不进 events/落库）
     }
 
     private mutating func finishSession(reason: SessionEndReason) {
