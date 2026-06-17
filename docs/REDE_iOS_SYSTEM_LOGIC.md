@@ -93,8 +93,11 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 - Screening list edit。
 - Program config scalar edit。
 - History set correction。
-- Saved-session exercise replacement。
-- Coach-action dismiss intent。
+- Saved-session exercise replacement（换动作前瞻覆盖，FR-T5）。
+- Coach-action dismiss intent（暂不处理，喂降频计数，FR-T5）。
+- Coach-action volume-boost intent（补量承认，频率维度；不加训练不改处方，FR-T5）。
+
+> 教练动作的采纳、暂不处理及撤销都经同一 gated writer，撤销 = 单步即时反向写（不另起 undo 栈）。**UI 撤销入口只接了换动作 / 补量两类**（`removeExerciseSubstitution` / `removeVolumeBoost`）；「暂不处理」是单向降频信号——写闸层有反向口（`removeCoachActionDismissal`）但不暴露 UI 撤销，卡按降频策略自然再现。引擎契约见 §6.4a。
 
 写入必须满足：
 
@@ -416,6 +419,23 @@ public struct SupportAllocationDecision: Equatable, Sendable {
 - 用羞辱式文案说用户“不均衡”“很弱”。
 - 在训练中弹出长问卷。
 - 把 safety 必要动作藏到付费墙后。
+
+### 6.4a 教练动作引擎（CoachActionEngine · FR-T5）
+
+今日页「教练动作」是把系统已知的可执行建议收敛成**每屏 ≤1 张**优先级最高的卡，用户可**采纳 / 暂不处理**，采纳可**单步撤销**。它是独立于 §6.4 support-allocation、也独立于 §6.5 等级模型的轻量 surface：当前实现只吃裁决信号 + 处方 reason + 数据质量计数，**不读肌群等级**（肌群级教练建议见 §6.5.10，依赖未落地的 MLE）。
+
+**引擎契约（`CoachActionEngine`，归 `RedeTrainingDecision`，纯函数、零文案、不落 engine output）**：
+- **输入（clean input contract，§8）**：app 组合层把信号摊平成 `CoachActionInput` primitives 注入——`call`（TodayCall 枚举）、`sessionsLast7`、`plannedDaysPerWeek`、`totalSessionCount`、`stalledExerciseIds`（当日处方里命中 4 个到顶/毕业 reason 的动作：自重到顶 / 弹力带到顶 / 辅助毕业 / 负重自重回退；**不含**有重量动作的次数到顶 `repCeilingReached`——那只是加重、非换动作场景）、`dataFindingCount`（§8.0.1 数据质量问题数）、本周锚点 `weekStartISO`、`dismissals`、`volumeBoostAdoptedThisWeek`。禁 raw AppData / 等级原始值进引擎。
+- **输出**：优先级排序的 typed `CoachAction`（kind/reasonCode/exerciseId?/count?/actionKey）。**优先级 修数据 > 换动作 > 补量**（数据可信 > 动作 > 量）。UI 取首条渲染。
+- **三类动作与采纳语义**：
+  - **换动作（exerciseSwap · ceilingReached）**：某自重/弹力带动作练到次数上限、或辅助毕业 / 负重自重回退（上列 4 个 reason；有重量动作 `repCeilingReached` 只加重、不触发）。采纳 = 弹**同族替代列表**（同 substitution group、非自身、非退役、按 rank）让用户选 → `applyExerciseSubstitution(originalId,actualId)` → 由 §6.0.1 plan() 消费覆盖（覆盖 > sticky > preferredId > rank）真正替换处方该槽；目标非该槽合法候选时 plan() 优雅回退、处方不变。
+  - **补量（volumeBoost · belowWeeklyPlan）= 频率维度**：`count = plannedDaysPerWeek − sessionsLast7`（本周还差几次）。**红线（§6.5.2）：无肌群名、无组数**——肌群级「补 N 组某肌群」依赖未落地的 MLE/贡献权重，属 §6.5.10 的未来能力，不在此引擎。采纳 = **仅承认**（记录本周已承认、引擎本周抑制本卡），**不加训练、不改处方**——文案与写入都不得宣称替用户加了训练（诚实红线）。守门（全满足才出）：活跃日（train/light，绝不 rest/deload）、非新用户（totalSessionCount>0）、计划有效（plannedDaysPerWeek>0）、本周已练落后且非负（0 ≤ sessionsLast7 < planned；下界防御非法负输入、不虚高 count）。
+  - **修数据（dataReview · dataHasFindings）**：消费 §8.0.1 `DataQualityReport` 的问题计数，提示去进展页核对（只读导航）。
+- **降频（温和政策）**：换动作/修数据同 `actionKey` 连续 **≥2** 次暂不处理后本轮不再出；补量本周已采纳或本周已暂不处理（**≥1**）后本周不再出（补量按周窗口抑制、1 次即够；换动作/修数据按 actionKey 累计、取 ≥2 更宽容）。`actionKey` 由引擎产出（`dataReview` / `exerciseSwap:<id>` / `volumeBoost:<weekStartISO>`），UI 暂不处理即落库该 key、引擎下次据 `dismissals[key]` 降频——闭环，UI 不手拼 key。
+- **采纳 / 撤销写入**：采纳与撤销都走 §5 唯一写闸（写前 backup + atomic + 不 fake success）；撤销 = 单步即时反向写（`removeExerciseSubstitution` / `removeVolumeBoost`），不另起 undo 栈。换动作撤销有三入口：采纳后即时浮条（~5s）+ 处方行「已换」微标（读落库覆盖 map、长存）+ 动作详情页「换回原动作」；补量撤销仅采纳后即时浮条（采纳零可见后果，刻意不造常驻控件）。撤销写失败时浮条保留供重试（错误面如实呈现）；**已知限制**：补量浮条正常超时后无持久撤销入口（刻意接受——补量为轻操作；换动作有微标/详情页两条持久兜底）。「暂不处理」是单向降频信号：写闸层有反向口（`removeCoachActionDismissal`）但**不暴露 UI 撤销**，卡按降频策略自然再现。
+- **UI/文案红线**：每屏 ≤1 卡；不羞辱；不出现算法名/「AI 判断」/「系统认为」/「最佳」；双语。
+
+> **实现状态（2026-06-17）**：R1 FR-T5 切片 6a–6c 已落地换动作（采纳/撤销）+ 补量（采纳/撤销，频率维度）+ 温和降频，写入经 schema 11 三个 open-bag 容器（`exerciseSubstitutions{}` / `coachAdjustments.volumeBoosts[]` / `coachState.dismissed[]`，纯加性可回退）。**修数据卡推后**：`dataFindingCount` 暂恒 0（今日页尚未在该路径计算 `DataQualityReport`），故 dataReview 卡当前不渲染、跨页核对导航随未来「Today 接 DataQualityReport」切片连卡一起做（避免死代码）。真机交互待 owner TestFlight 验收。
 
 ### 6.5 肌群发展等级模型
 
@@ -791,7 +811,7 @@ V1 起始 milestone 示例:
 | Progress | `currentLevel`、`peakLevel`、trend、confidence、evidence、limitations、balanceScore | 展示原始敏感数据或羞辱式弱项文案。 |
 | PlanAdjustment | `decision`、priorityMuscleIds、recoverMuscleIds、goal gap | 只因 level 低就机械加训练量。 |
 | Scheduler | 肌群优先级、恢复限制、覆盖缺口 | 忽略 safety lock 或 recovery signal。 |
-| CoachAction | 可执行建议和解释,例如“本周多补 2-4 组水平拉” | 生成无法执行、不可回滚或强迫用户的建议。 |
+| CoachAction | 可执行建议和解释。**肌群级**建议（例如“本周多补 2-4 组水平拉”——带肌群名与组数）依赖等级模型/贡献权重,属未来能力,**未落地**;已落地的 §6.4a 教练动作引擎只做**频率维度**补量（“本周还差 N 次”,无肌群无组数,§6.5.2 红线）、换动作、修数据 | 生成无法执行、不可回滚或强迫用户的建议;无贡献权重时凭空猜肌群（§6.5.2）。 |
 | Share / Growth | 脱敏后的 Muscle Level / Level Up / Balance projection | 读取 raw AppData、HealthKit 原始值或私人 notes。 |
 | Legacy consumers | 需要 beginner/intermediate/advanced 的保守度或高级功能 gate | 不得继续读取旧 `AutoTrainingLevel` raw string 作为平行真相。 |
 
@@ -1015,6 +1035,7 @@ Progress：
 - **红线（结构化满足）**：只标记不丢弃不改数据（clean view 原样，有测试）；输出零文案——「置信度」在结构上不存在（§3.4 行为表达）；缺 RIR 类数据缺口刻意不进报告（§3.4 折进 Train 补记，不挂 Progress）。UI 标记与修正入口归 M4-3。
 - **消费合同（M4-3 已接线）**：进展页统计（趋势/PR/判断句/历史合计）**排除可疑组**——可信度的行为表达（§3.4 判断更保守）；可疑组仍在数据区如实列出、canonical 原样不动；修正入口随 M5 编辑类写入。
 - **已知边界（审查确认，刻意接受）**：被标组不进基准 ⇒ 单场真实暴涨 >1.5× 后基准不演化、持续被标——视为诚实行为（渐进超负荷不触发；一场跳 50%+ 几乎总是记错/换器械/单位混淆，应持续提示直到经 M4-3 修正入口处理）；有测试锁定该行为，阈值待真实反馈校准。
+- **未来消费方（教练动作 dataReview，§6.4a）**：问题计数（`dataFindingCount`）将喂今日页「修数据」教练卡，提示去进展页核对。**当前推后**：今日页尚未在该路径计算 `DataQualityReport`（`dataFindingCount` 暂注入 0），故 dataReview 卡不渲染、跨页核对导航待「Today 接 DataQualityReport」切片连卡一起做（不接死代码）。
 
 Plan：
 
