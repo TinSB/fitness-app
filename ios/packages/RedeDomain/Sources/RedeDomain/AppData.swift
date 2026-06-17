@@ -61,6 +61,25 @@ public struct AppData: Equatable, Sendable {
         guard let obj = storage["exerciseSubstitutions"]?.asObject else { return [:] }
         return obj.compactMapValues { $0.asString }
     }
+
+    /// FR-T5 已采纳补量的 ISO 周集合（schema 11）。缺容器/内层 → 空（防御读，审查 M-1）。
+    public var volumeBoostWeeks: [String] {
+        guard let arr = storage["coachAdjustments"]?.asObject?["volumeBoosts"]?.asArray else { return [] }
+        return arr.compactMap { $0.asObject?["weekStartISO"]?.asString }
+    }
+
+    /// FR-T5 教练动作 dismiss 计数（schema 11）：actionKey → 累计 dismiss 次数（喂降频）。
+    /// 缺容器/内层 → 空（防御读，审查 M-1）。
+    public var coachDismissals: [String: Int] {
+        guard let arr = storage["coachState"]?.asObject?["dismissed"]?.asArray else { return [:] }
+        var out: [String: Int] = [:]
+        for element in arr {
+            if let key = element.asObject?["actionKey"]?.asString {
+                out[key] = element.asObject?["count"]?.asInt ?? 0
+            }
+        }
+        return out
+    }
 }
 
 /// 顶层 `mesocycle` 的类型化只读视图（不存"当前第几周"——相位永远从 blockStartISO + 今日现算）。
