@@ -251,4 +251,22 @@ final class SchemaMigratorTests: XCTestCase {
         let down = SchemaMigrator.downMigrate(root: up, to: 10)
         XCTAssertEqual(down, original, "downMigrate(migrate(x), to:10) == x（10↔11 可逆）")
     }
+
+    // down-migrate 对**已有用户意图数据**的容器是 best-effort 有损（删整容器）——锁死语义，
+    // 防未来误以为无损可回退（审查 MINOR：仅空容器往返恒等，已有数据会丢）。
+    func testDownMigrateFromElevenWithPopulatedCoachContainersLosesData() {
+        let populated: [String: JSONValue] = [
+            "schemaVersion": .int(11),
+            "exerciseSubstitutions": .object(["bench-press": .string("dumbbell-bench-press")]),
+            "coachAdjustments": .object(["volumeBoosts": .array([.string("2026-06-15")])]),
+            "coachState": .object(["dismissed": .array([.object(["key": .string("dataReview"), "count": .int(2)])])]),
+            "history": .array([.object(["id": .string("s1")])]),
+        ]
+        let down = SchemaMigrator.downMigrate(root: populated, to: 10)
+        XCTAssertEqual(down["schemaVersion"]?.asInt, 10, "版本回落到 10")
+        XCTAssertNil(down["exerciseSubstitutions"], "换动作覆盖整体丢失（有损）")
+        XCTAssertNil(down["coachAdjustments"], "补量意图整体丢失（有损）")
+        XCTAssertNil(down["coachState"], "dismiss 记录整体丢失（有损）")
+        XCTAssertEqual(down["history"], populated["history"], "非教练数据原样保留")
+    }
 }

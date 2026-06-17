@@ -11,7 +11,7 @@
 //
 // v1 范围：换动作（到顶）+ 补量（频率，无肌群无组数）+ 修数据。肌群级补量依赖未实现的 MLE/贡献权重，
 // 推后（系统逻辑 §6.5.2 红线：无权重禁猜肌群）。
-// 降频（切片6a，温和政策）：换动作/修数据同 actionKey 连续 ≥2 次暂不处理后不再出；补量本周已采纳
+// 降频（切片6a，温和政策）：换动作/修数据同 actionKey 累计 ≥2 次暂不处理后不再出；补量本周已采纳
 // （volumeBoostAdoptedThisWeek）或本周已暂不处理（≥1）后本周不再出。dismissals/采纳态由 app 从落库读出注入。
 
 public enum CoachActionKind: Equatable, Sendable {
@@ -71,19 +71,19 @@ public enum CoachActionEngine {
     /// 产出优先级排序的教练动作：修数据 > 换动作 > 补量（数据可信 > 动作 > 量；§6.4/§6.5.10）。
     /// UI 层决定显示几条（设计：每屏 ≤1）。纯函数、确定性。
     public static func actions(input: CoachActionInput) -> [CoachAction] {
-        // 降频（切片6a，温和政策）：换动作/修数据同 key 连续 ≥2 次暂不处理后不再出；
+        // 降频（切片6a，温和政策）：换动作/修数据同 key 累计 ≥2 次暂不处理后不再出；
         // 补量本周已采纳或本周已暂不处理（≥1）后本周不再出。dismissals 来自落库的累计计数。
         func dismissed(_ key: String) -> Int { input.dismissals[key] ?? 0 }
 
         var out: [CoachAction] = []
 
-        // ① 修数据（最高优先）：有可疑/被丢记录就提示去核对；连续 2 次暂不处理后不再出。
+        // ① 修数据（最高优先）：有可疑/被丢记录就提示去核对；累计 2 次暂不处理后不再出。
         if input.dataFindingCount > 0, dismissed("dataReview") < 2 {
             out.append(CoachAction(kind: .dataReview, reasonCode: "dataHasFindings",
                                    count: input.dataFindingCount, actionKey: "dataReview"))
         }
 
-        // ② 换动作：本日处方里到顶/毕业的动作，可换更难变体（按出现序）；同动作连续 2 次暂不处理后不再出。
+        // ② 换动作：本日处方里到顶/毕业的动作，可换更难变体（按出现序）；同动作累计 2 次暂不处理后不再出。
         for id in input.stalledExerciseIds {
             let key = "exerciseSwap:\(id)"
             if dismissed(key) < 2 {
