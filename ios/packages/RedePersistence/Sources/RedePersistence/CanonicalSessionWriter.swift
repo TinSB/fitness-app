@@ -61,6 +61,11 @@ public enum PreferencesWriteError: Error, Equatable {
     case unknownLocale(String)
 }
 
+public enum CoachActionWriteError: Error, Equatable {
+    case emptyExerciseId
+    case substitutionToSelf(String)
+}
+
 public struct CanonicalSessionWriter {
     private let store: AppDataStore
     private let gate: AppDataWriteGate
@@ -150,6 +155,38 @@ public struct CanonicalSessionWriter {
             meso["enabled"] = .bool(enabled)
             if meso["blockLengthWeeks"] == nil { meso["blockLengthWeeks"] = .int(4) }
             storage["mesocycle"] = .object(meso)
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
+    /// 已批准写入类别：换动作前瞻覆盖采纳（FR-T5 saved-session exercise replacement，schema 11）。
+    /// 采纳「以后把 originalId 换成 actualId」→ open-bag 合并写
+    /// storage["exerciseSubstitutions"][originalId]=actualId，其余键原样保留；走全套 gate（写前备份）。
+    /// 结构守卫：id 非空、original != actual。**分层**：actualId 是否合法 catalog 条目 / 同替代族，
+    /// 由持有目录的 app 层（RedeTrainingDecision/ExerciseReplacementEngine 口径）在调用前校验——
+    /// 本层不依赖 RedeTrainingDecision，只做结构化 open-bag 写入。
+    @discardableResult
+    public func applyExerciseSubstitution(originalId: String, actualId: String) throws -> AppData {
+        guard !originalId.isEmpty, !actualId.isEmpty else { throw CoachActionWriteError.emptyExerciseId }
+        guard originalId != actualId else { throw CoachActionWriteError.substitutionToSelf(originalId) }
+        return try performGatedMutation { current in
+            var storage = current.storage
+            var subs = storage["exerciseSubstitutions"]?.asObject ?? [:]
+            subs[originalId] = .string(actualId)
+            storage["exerciseSubstitutions"] = .object(subs)
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
+    /// 已批准写入类别：撤销换动作覆盖（FR-T5 单步撤销 = 反向 gated 写）。
+    /// 删 storage["exerciseSubstitutions"][originalId]；不存在则幂等无变化。走全套 gate（含写前备份）。
+    @discardableResult
+    public func removeExerciseSubstitution(originalId: String) throws -> AppData {
+        return try performGatedMutation { current in
+            var storage = current.storage
+            var subs = storage["exerciseSubstitutions"]?.asObject ?? [:]
+            subs[originalId] = nil   // Dictionary 赋 nil = 删键；容器保留为（可能空的）对象
+            storage["exerciseSubstitutions"] = .object(subs)
             return try AppData(decoding: .object(storage))
         }
     }
