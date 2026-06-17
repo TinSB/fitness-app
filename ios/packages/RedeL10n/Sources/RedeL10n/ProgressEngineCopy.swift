@@ -145,6 +145,42 @@ extension RedeStrings {
     /// 明细行 "60 kg × 6"
     public func historySetLine(kg: String, reps: Int) -> String { "\(kg) \(unitLabel) × \(reps)" }
 
+    // MARK: - 连续性月历（FR-PR5，中性呈现：不算 streak、不羞辱断签）
+
+    public var continuityTitle: String { locale == .zh ? "训练连续性" : "Consistency" }
+
+    /// 月历标题 "2026年6月" / "June 2026"（本地化月名）。
+    public func calendarMonthLabel(year: Int, month: Int) -> String {
+        var components = DateComponents()
+        components.year = year; components.month = month; components.day = 1
+        components.timeZone = TimeZone(identifier: "UTC")
+        let calendar = Calendar(identifier: .gregorian)
+        guard let date = calendar.date(from: components) else { return "\(year)-\(month)" }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: locale == .zh ? "zh_CN" : "en_US")
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.setLocalizedDateFormatFromTemplate(locale == .zh ? "yyyyMMMM" : "MMMM yyyy")
+        return formatter.string(from: date)
+    }
+
+    /// 周一起始的星期首字母表头。
+    public var weekdayInitialsMonFirst: [String] {
+        locale == .zh ? ["一", "二", "三", "四", "五", "六", "日"] : ["M", "T", "W", "T", "F", "S", "S"]
+    }
+
+    /// 中性计数（不羞辱断签）："本月 5 次训练" / "5 sessions this month"。
+    public func continuityCount(_ count: Int) -> String {
+        if locale == .zh { return "本月 \(count) 次训练" }
+        return count == 1 ? "1 session this month" : "\(count) sessions this month"
+    }
+
+    /// 单格 VoiceOver："6月9日，已训练" / "Jun 9, trained"；未训练只读日期。
+    public func continuityDayA11y(dateISO: String, trained: Bool) -> String {
+        let date = shortDate(fromISO: dateISO)
+        guard trained else { return date }
+        return locale == .zh ? "\(date)，已训练" : "\(date), trained"
+    }
+
     // MARK: - 数据质量（FR-PR4，行为化、零置信标签）
 
     public var dataQualityTitle: String { locale == .zh ? "数据" : "Data" }
