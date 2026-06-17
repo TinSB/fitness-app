@@ -156,6 +156,11 @@ struct ProgressTabView: View {
 
             RuleDivider()
 
+            continuitySection(model)
+                .padding(.horizontal, RedeSpace.page)
+
+            RuleDivider()
+
             historySection(model)
                 .padding(.horizontal, RedeSpace.page)
 
@@ -419,6 +424,66 @@ struct ProgressTabView: View {
         }
         .frame(height: 120 + 27, alignment: .bottom)
         .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - 连续性月历（FR-PR5；card-free，守 ProgressTabView 0-card 预算；中性，不羞辱断签）
+
+    @ViewBuilder
+    private func continuitySection(_ model: ProgressModel) -> some View {
+        if let month = model.continuity {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Overline(text: s.continuityTitle)
+                    Spacer()
+                    Text(s.calendarMonthLabel(year: month.year, month: month.month))
+                        .font(.redeCaption).monospacedDigit()
+                        .foregroundStyle(Color.redeT4)
+                }
+                HStack(spacing: 0) {
+                    ForEach(Array(s.weekdayInitialsMonFirst.enumerated()), id: \.offset) { _, initial in
+                        Text(initial)
+                            .font(.redeCaption)
+                            .foregroundStyle(Color.redeT4)
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+                .accessibilityHidden(true)
+                VStack(spacing: 7) {
+                    ForEach(Array(month.weeks.enumerated()), id: \.offset) { _, week in
+                        HStack(spacing: 0) {
+                            ForEach(Array(week.enumerated()), id: \.offset) { _, day in
+                                dayCell(day).frame(maxWidth: .infinity)
+                            }
+                        }
+                    }
+                }
+                Text(s.continuityCount(month.trainedCount))
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT3)
+            }
+        }
+    }
+
+    /// 单格：训练日 = 余烬实心 + 深色日号；今天 = 描边圈；空格 = 透明占位。
+    @ViewBuilder
+    private func dayCell(_ day: ContinuityCalendar.Day) -> some View {
+        if let iso = day.dateISO {
+            ZStack {
+                if day.isTrained {
+                    Circle().fill(Color.redeEmber).frame(width: 26, height: 26)
+                } else if day.isToday {
+                    Circle().stroke(Color.redeT4, lineWidth: 1).frame(width: 26, height: 26)
+                }
+                Text(String(Int(iso.suffix(2)) ?? 0))
+                    .font(.redeCaption).monospacedDigit()
+                    .foregroundStyle(day.isTrained ? Color.redeBase : Color.redeT3)
+            }
+            .frame(height: 32)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(s.continuityDayA11y(dateISO: iso, trained: day.isTrained))
+        } else {
+            Color.clear.frame(height: 32)
+        }
     }
 
     // MARK: - 历史（FR-PR1；原型未画——保守样式：ov 标题 + 行 + 细分隔线）
