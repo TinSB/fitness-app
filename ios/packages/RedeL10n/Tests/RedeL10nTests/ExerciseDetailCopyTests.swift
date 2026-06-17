@@ -62,5 +62,17 @@ final class ExerciseDetailCopyTests: XCTestCase {
     func testSectionTitlesBilingual() {
         XCTAssertEqual(zh.exerciseDetailAlternatives, "替代动作")
         XCTAssertEqual(en.exerciseDetailAlternatives, "Alternatives")
+        // 其余 7 个标题/提示：双语均非空且中英不同（拼写/漏配会报红，审查 Minor-3）。
+        let zhTitles = [zh.exerciseDetailPattern, zh.exerciseDetailPrimary, zh.exerciseDetailSecondary,
+                        zh.exerciseDetailEquipment, zh.exerciseDetailType, zh.exerciseDetailNoAlternatives,
+                        zh.exerciseDetailHint]
+        let enTitles = [en.exerciseDetailPattern, en.exerciseDetailPrimary, en.exerciseDetailSecondary,
+                        en.exerciseDetailEquipment, en.exerciseDetailType, en.exerciseDetailNoAlternatives,
+                        en.exerciseDetailHint]
+        for (zhText, enText) in zip(zhTitles, enTitles) {
+            XCTAssertFalse(zhText.isEmpty, "中文标题为空")
+            XCTAssertFalse(enText.isEmpty, "英文标题为空")
+            XCTAssertNotEqual(zhText, enText, "中英标题相同（疑似漏译）: \(zhText)")
+        }
     }
 }

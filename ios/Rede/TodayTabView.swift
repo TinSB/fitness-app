@@ -514,6 +514,7 @@ struct TodayTabView: View {
         let groups = Set(entry.substitutionGroups)
         return ExerciseCatalog.minimal.entries
             .filter { $0.id != entry.id && !$0.deprecated && !Set($0.substitutionGroups).isDisjoint(with: groups) }
+            .sorted { $0.rank < $1.rank }   // 显式 rank 序（审查 Minor-2）：前 6 偏主项/主流器械，不依赖 entries 隐式有序
             .prefix(6)
             .map(\.id)
     }
