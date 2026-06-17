@@ -68,6 +68,62 @@ final class TodayPrescriptionEngineTests: XCTestCase {
         XCTAssertEqual(prescription.dayCode, "upper")
     }
 
+    // MARK: FR-T5 换动作前瞻覆盖（substitutions）——覆盖生效 / 非法回退 / 空表零变化
+
+    // 从真实处方反推一对「同 (pattern,kind,equipment) 兄弟」：兄弟必是同槽合法候选，覆盖必生效，
+    // 无需猜默认选材。
+    func testSubstitutionOverridesDefaultPickWithValidTarget() throws {
+        let (verdict, input) = try makeVerdictAndInput(
+            appDataJSON: #"{"schemaVersion": 11, "programTemplate": {"splitType": "push-pull-legs"}}"#,
+            today: "2026-06-09"
+        )
+        let base = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict))
+        let usedIds = Set(base.exercises.map(\.exerciseId))
+        var pair: (original: String, target: String)?
+        for ex in base.exercises {
+            guard let e = ExerciseCatalog.minimal.entry(id: ex.exerciseId) else { continue }
+            if let sib = ExerciseCatalog.minimal.entries.first(where: {
+                $0.id != e.id && !$0.deprecated
+                    && $0.movementPattern == e.movementPattern && $0.kind == e.kind && $0.equipment == e.equipment
+                    && EquipmentRegistry.prescribableLoadTypes.contains($0.loadType)
+                    && !usedIds.contains($0.id)
+            }) {
+                pair = (e.id, sib.id); break
+            }
+        }
+        let (original, target) = try XCTUnwrap(pair, "目录应至少有一对同槽可替换动作")
+        let overridden = try XCTUnwrap(TodayPrescriptionEngine.plan(
+            input: input, verdict: verdict, substitutions: [original: target]))
+        XCTAssertTrue(overridden.exercises.contains { $0.exerciseId == target }, "覆盖目标进入处方")
+        XCTAssertFalse(overridden.exercises.contains { $0.exerciseId == original }, "原动作被替换掉")
+    }
+
+    // 非法目标（不存在/非本槽候选）→ 优雅回退原选择，不卡空。
+    func testSubstitutionWithInvalidTargetFallsBackGracefully() throws {
+        let (verdict, input) = try makeVerdictAndInput(
+            appDataJSON: #"{"schemaVersion": 11, "programTemplate": {"splitType": "upper-lower"}}"#,
+            today: "2026-06-09"
+        )
+        let base = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict))
+        let firstId = try XCTUnwrap(base.exercises.first?.exerciseId)
+        let overridden = try XCTUnwrap(TodayPrescriptionEngine.plan(
+            input: input, verdict: verdict, substitutions: [firstId: "no-such-exercise"]))
+        XCTAssertEqual(overridden.exercises.map(\.exerciseId), base.exercises.map(\.exerciseId),
+                       "非法目标 → 回退原处方，逐一相同")
+    }
+
+    // 空覆盖表 = 与不传完全一致（code-regression-guard：未采纳前恒空，处方零变化）。
+    func testEmptySubstitutionsIsZeroChange() throws {
+        let (verdict, input) = try makeVerdictAndInput(
+            appDataJSON: #"{"schemaVersion": 11, "programTemplate": {"splitType": "push-pull-legs"}, "history": [{"id": "s0", "date": "2026-06-05", "completed": true, "exercises": []}, {"id": "s1", "date": "2026-06-07", "completed": true, "exercises": [{"exerciseId": "db-bench-press", "sets": [{"weight": 30, "reps": 10, "rir": 2}]}]}]}"#,
+            today: "2026-06-09"
+        )
+        let withoutArg = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict))
+        let emptyMap = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict, substitutions: [:]))
+        XCTAssertEqual(emptyMap.exercises.map(\.exerciseId), withoutArg.exercises.map(\.exerciseId))
+        XCTAssertEqual(emptyMap.exercises.map(\.targetWeightKg), withoutArg.exercises.map(\.targetWeightKg))
+    }
+
     // 双重渐进：全组打满 repMax 且 RIR 富余 → +2.5kg、次数重置 repMin
     func testProgressionIncreasesAfterRepCeiling() throws {
         // 两条已完成 session 让轮转落回 upper 日（2 % 2 = 0），从而能断言

@@ -86,7 +86,9 @@ struct TodayModel {
         let prescription = TodayPrescriptionEngine.plan(
             input: input, verdict: verdict,
             mesocycleEnabled: appData.mesocycle.enabled,
-            blockLengthWeeks: appData.mesocycle.blockLengthWeeks
+            blockLengthWeeks: appData.mesocycle.blockLengthWeeks,
+            // FR-T5：换动作前瞻覆盖（schema 11；空表 = 零行为变化，未采纳前恒空）
+            substitutions: appData.exerciseSubstitutions
         )
         return .ready(TodayModel(verdict: verdict, prescription: prescription, cleanView: cleanView, now: now))
     }
