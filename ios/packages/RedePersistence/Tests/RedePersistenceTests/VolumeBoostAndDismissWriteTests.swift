@@ -73,21 +73,34 @@ final class VolumeBoostAndDismissWriteTests: XCTestCase {
 
     // MARK: 守卫 + open-bag
 
+    // apply 与 remove 守卫对称（审查 M-1）：四个入口空键都抛 .emptyKey、不写盘。
     func testEmptyKeysThrow() {
         XCTAssertThrowsError(try makeWriter().applyVolumeBoost(weekStartISO: "")) { e in
+            XCTAssertEqual(e as? CoachActionWriteError, .emptyKey)
+        }
+        XCTAssertThrowsError(try makeWriter().removeVolumeBoost(weekStartISO: "")) { e in
             XCTAssertEqual(e as? CoachActionWriteError, .emptyKey)
         }
         XCTAssertThrowsError(try makeWriter().applyCoachActionDismissal(actionKey: "")) { e in
             XCTAssertEqual(e as? CoachActionWriteError, .emptyKey)
         }
+        XCTAssertThrowsError(try makeWriter().removeCoachActionDismissal(actionKey: "")) { e in
+            XCTAssertEqual(e as? CoachActionWriteError, .emptyKey)
+        }
     }
 
     func testWritesPreserveExistingData() throws {
-        try Data(#"{"schemaVersion": 11, "futureKey": 9, "history": [{"id": "a", "completed": true}], "exerciseSubstitutions": {"x": "y"}}"#.utf8).write(to: fileURL)
-        let result = try makeWriter().applyVolumeBoost(weekStartISO: "2026-06-15")
-        XCTAssertEqual(result.volumeBoostWeeks, ["2026-06-15"])
-        XCTAssertEqual(result.history.first?.id, "a", "历史保全")
-        XCTAssertEqual(result.exerciseSubstitutions, ["x": "y"], "换动作覆盖保全（不互相覆盖）")
-        XCTAssertEqual(result.storage["futureKey"]?.asInt, 9, "open-bag 未知键保全")
+        // 预置容器内已有兄弟子键（审查 N-1）：嵌套写不得覆盖 coachState/coachAdjustments 的其它子键。
+        try Data(#"{"schemaVersion": 11, "futureKey": 9, "history": [{"id": "a", "completed": true}], "exerciseSubstitutions": {"x": "y"}, "coachState": {"dismissed": [], "extra": 1}, "coachAdjustments": {"volumeBoosts": [], "note": "keep"}}"#.utf8).write(to: fileURL)
+        let writer = makeWriter()
+        let boosted = try writer.applyVolumeBoost(weekStartISO: "2026-06-15")
+        XCTAssertEqual(boosted.volumeBoostWeeks, ["2026-06-15"])
+        XCTAssertEqual(boosted.storage["coachAdjustments"]?.asObject?["note"]?.asString, "keep", "coachAdjustments 兄弟子键保全")
+        let dismissed = try writer.applyCoachActionDismissal(actionKey: "k")
+        XCTAssertEqual(dismissed.coachDismissals["k"], 1)
+        XCTAssertEqual(dismissed.storage["coachState"]?.asObject?["extra"]?.asInt, 1, "coachState 兄弟子键保全")
+        XCTAssertEqual(dismissed.history.first?.id, "a", "历史保全")
+        XCTAssertEqual(dismissed.exerciseSubstitutions, ["x": "y"], "换动作覆盖保全（不互相覆盖）")
+        XCTAssertEqual(dismissed.storage["futureKey"]?.asInt, 9, "open-bag 未知键保全")
     }
 }

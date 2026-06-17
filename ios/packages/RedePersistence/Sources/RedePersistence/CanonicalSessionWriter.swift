@@ -231,8 +231,9 @@ public struct CanonicalSessionWriter {
         }
     }
 
-    /// 已批准写入类别（§5 第 11 类 coach-action dismiss intent）：暂不处理。
-    /// 按 actionKey 累加 count（喂降频学习）；首次 count=1，重复 +1。走全套 gate。
+    /// 已批准写入类别（§5 第 11 类 coach-action dismiss intent）：用户「暂不处理」某教练动作时落库。
+    /// 按 actionKey 累加 count（喂降频学习）；首次 count=1，重复 +1（约定不产 count=0 条目）。走全套 gate。
+    /// 降频/窗口的消费策略归切片6。
     @discardableResult
     public func applyCoachActionDismissal(actionKey: String) throws -> AppData {
         guard !actionKey.isEmpty else { throw CoachActionWriteError.emptyKey }
