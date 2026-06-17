@@ -86,6 +86,17 @@ public enum SchemaMigrator {
                 r["programTemplate"] = .object(tmpl)
             }
             return r
+        case 10:
+            // 10 → 11：FR-T5 教练动作完整写路径落库（owner 签字批准）。纯加性——抬版本 + 缺则补三个
+            // canonical 容器：exerciseSubstitutions（换动作前瞻覆盖 originalId→actualId）、
+            // coachAdjustments.volumeBoosts（补量意图，频率维度）、coachState.dismissed（dismiss 意图+降频）。
+            // 只播种空容器、不写任何意图（用户尚未采纳）；不覆盖既有（幂等防御，同 mesocycle 范式）。
+            var r = root
+            r["schemaVersion"] = .int(11)
+            if r["exerciseSubstitutions"] == nil { r["exerciseSubstitutions"] = .object([:]) }
+            if r["coachAdjustments"] == nil { r["coachAdjustments"] = .object(["volumeBoosts": .array([])]) }
+            if r["coachState"] == nil { r["coachState"] = .object(["dismissed": .array([])]) }
+            return r
         default:
             return nil   // schema-7 及更早无迁移路径，与迁移前一致地保持 unreadable。
         }
@@ -93,8 +104,8 @@ public enum SchemaMigrator {
 
     /// 可逆回滚：把 root 降到 target（默认 8）。去 mesocycle、版本回落。用于回退/从备份对账。
     /// 与 migrate 构成往返恒等：downMigrate(migrate(x)) == x（x 为无 mesocycle 的 schema-8 root）。
-    /// 契约范围（审查 MINOR-2）：**只保证 9→8 单步**。无 downStep 的版本（如未来 schema-10）原样返回、
-    /// 不抛错也不部分迁移——这是非生产回退辅助，跨多版本/未知版本回退须先补对应 downStep 与测试。
+    /// 契约范围（审查 MINOR-2）：**保证 11→10→9→8 各单步可逆**。无 downStep 的版本（如 schema-7 及更早）
+    /// 原样返回、不抛错也不部分迁移——这是非生产回退辅助，跨更早/未知版本回退须先补对应 downStep 与测试。
     public static func downMigrate(root: [String: JSONValue], to target: Int = 8) -> [String: JSONValue] {
         guard let version = root["schemaVersion"]?.asInt, version > target else { return root }
         var working = root
@@ -109,6 +120,14 @@ public enum SchemaMigrator {
 
     private static func downStep(from version: Int, root: [String: JSONValue]) -> [String: JSONValue]? {
         switch version {
+        case 11:
+            // 11 → 10：逆 10→11 的加性播种——删三个教练容器、版本回落。与 up 精确互逆（往返恒等）。
+            var r = root
+            r["schemaVersion"] = .int(10)
+            r["exerciseSubstitutions"] = nil
+            r["coachAdjustments"] = nil
+            r["coachState"] = nil
+            return r
         case 10:
             // 10 → 9：逆 9→10 的重映（ppl-ul@5 天 → push-pull-legs）。仅保证 up 改过的那一类往返恒等；
             // 迁移后新建的 ppl-ul 用户回退也变 push-pull-legs（best-effort，down 是非生产回退辅助）。

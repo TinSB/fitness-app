@@ -15,7 +15,7 @@ final class SchemaMigratorTests: XCTestCase {
             "history": .array([]),
         ]
         let out = SchemaMigrator.migrate(root: root)
-        XCTAssertEqual(out["schemaVersion"]?.asInt, SchemaVersion.current, "升到 current（8→9→10）")
+        XCTAssertEqual(out["schemaVersion"]?.asInt, SchemaVersion.current, "升到 current（8→9→10→11）")
         let meso = out["mesocycle"]?.asObject
         XCTAssertEqual(meso?["enabled"]?.asBool, false, "默认关闭 = 零回归")
         XCTAssertEqual(meso?["blockLengthWeeks"]?.asInt, 4, "4 周块落库")
@@ -198,5 +198,57 @@ final class SchemaMigratorTests: XCTestCase {
         ])
         XCTAssertFalse(plan.addsMesocycle, "已有 mesocycle → 不报告播种")
         XCTAssertTrue(plan.needsMigration, "但仍需抬版本")
+    }
+
+    // MARK: 升级 10 → 11（FR-T5 教练动作三容器，纯加性 + 可逆）
+
+    func testMigrateBumpsTenToElevenAndSeedsCoachContainers() {
+        let root: [String: JSONValue] = ["schemaVersion": .int(10), "history": .array([])]
+        let out = SchemaMigrator.migrate(root: root)
+        XCTAssertEqual(out["schemaVersion"]?.asInt, 11)
+        XCTAssertEqual(out["exerciseSubstitutions"], .object([:]), "播种空换动作覆盖表")
+        XCTAssertEqual(out["coachAdjustments"], .object(["volumeBoosts": .array([])]), "播种空补量意图")
+        XCTAssertEqual(out["coachState"], .object(["dismissed": .array([])]), "播种空 dismiss 表")
+    }
+
+    func testMigrateTenToElevenPreservesExistingKeys() {
+        let root: [String: JSONValue] = [
+            "schemaVersion": .int(10),
+            "history": .array([.object(["id": .string("s1")])]),
+            "programTemplate": .object(["splitType": .string("upper-lower")]),
+            "unknownFutureKey": .string("keep-me"),
+        ]
+        let out = SchemaMigrator.migrate(root: root)
+        XCTAssertEqual(out["history"], root["history"])
+        XCTAssertEqual(out["programTemplate"], root["programTemplate"])
+        XCTAssertEqual(out["unknownFutureKey"], root["unknownFutureKey"], "open-bag 未知字段不丢")
+    }
+
+    func testMigrateDoesNotOverwriteExistingCoachContainers() {
+        // 防御：若三容器已存在（如重复迁移/手工数据），只抬版本、不覆盖既有意图。
+        let root: [String: JSONValue] = [
+            "schemaVersion": .int(10),
+            "exerciseSubstitutions": .object(["bench-press": .string("dumbbell-bench-press")]),
+            "coachState": .object(["dismissed": .array([.object(["actionId": .string("a1")])])]),
+        ]
+        let out = SchemaMigrator.migrate(root: root)
+        XCTAssertEqual(out["schemaVersion"]?.asInt, 11)
+        XCTAssertEqual(out["exerciseSubstitutions"], root["exerciseSubstitutions"], "不覆盖既有换动作覆盖")
+        XCTAssertEqual(out["coachState"], root["coachState"], "不覆盖既有 dismiss")
+        XCTAssertEqual(out["coachAdjustments"], .object(["volumeBoosts": .array([])]), "缺的仍补默认")
+    }
+
+    func testDownMigrateReversesCoachContainers() {
+        // 10↔11 往返恒等：schema-10 原始 root（无教练容器）→ up → down(to:10) → 精确还原。
+        let original: [String: JSONValue] = [
+            "schemaVersion": .int(10),
+            "mesocycle": .object(["enabled": .bool(false), "blockLengthWeeks": .int(4)]),
+            "programTemplate": .object(["splitType": .string("upper-lower"), "daysPerWeek": .int(4)]),
+            "history": .array([.object(["id": .string("s1")])]),
+        ]
+        let up = SchemaMigrator.migrate(root: original)
+        XCTAssertEqual(up["schemaVersion"]?.asInt, 11)
+        let down = SchemaMigrator.downMigrate(root: up, to: 10)
+        XCTAssertEqual(down, original, "downMigrate(migrate(x), to:10) == x（10↔11 可逆）")
     }
 }

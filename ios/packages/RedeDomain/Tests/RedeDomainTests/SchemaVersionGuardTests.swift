@@ -1,6 +1,6 @@
 // schemaVersion 守卫合同（Master Architecture: No schema bump unless explicitly approved）。
 // 守的不是数字本身，而是「旧版本经已知迁移升级、无迁移路径的旧版本不静默升级、未来版本不静默吞下」。
-// current = 10（5 天 push-pull-legs → ppl-ul 重映）。迁移在 decode 边界先于 validate 编排（见 SchemaMigrator）。
+// current = 11（FR-T5 教练动作三容器加性播种）。迁移在 decode 边界先于 validate 编排（见 SchemaMigrator）。
 
 import Foundation
 import XCTest
@@ -11,20 +11,20 @@ final class SchemaVersionGuardTests: XCTestCase {
         try JSONDecoder().decode(AppData.self, from: Data(json.utf8))
     }
 
-    func testCurrentSchemaVersionIsTen() {
-        // bump 必须显式过架构批准并改这条测试（9→10：5 天 push-pull-legs → ppl-ul，owner 2026-06-16 拍板）。
-        XCTAssertEqual(SchemaVersion.current, 10)
+    func testCurrentSchemaVersionIsEleven() {
+        // bump 必须显式过架构批准并改这条测试（10→11：FR-T5 教练动作三容器，owner 2026-06-16 签字）。
+        XCTAssertEqual(SchemaVersion.current, 11)
     }
 
     func testExactMatchDecodes() throws {
-        let appData = try decodeAppData(#"{"schemaVersion": 10}"#)
-        XCTAssertEqual(appData.schemaVersion, 10)
+        let appData = try decodeAppData(#"{"schemaVersion": 11}"#)
+        XCTAssertEqual(appData.schemaVersion, 11)
     }
 
     func testMigratableOlderVersionUpgradesOnDecode() throws {
-        // schema-8 有迁移路径 → decode 边界升级到 current（8→9→10）并播种 mesocycle（不再 unreadable）。
+        // schema-8 有迁移路径 → decode 边界升级到 current（8→9→10→11）并播种 mesocycle（不再 unreadable）。
         let appData = try decodeAppData(#"{"schemaVersion": 8, "history": []}"#)
-        XCTAssertEqual(appData.schemaVersion, 10, "8 经迁移升 current(10)")
+        XCTAssertEqual(appData.schemaVersion, 11, "8 经迁移升 current(11)")
         XCTAssertEqual(appData.mesocycle.enabled, false, "迁移播种默认关闭")
         XCTAssertEqual(appData.mesocycle.blockLengthWeeks, 4)
         XCTAssertEqual(appData.history.count, 0, "既有数据保留")
@@ -38,8 +38,8 @@ final class SchemaVersionGuardTests: XCTestCase {
     }
 
     func testNewerVersionThrowsFutureIncompatible() {
-        XCTAssertThrowsError(try decodeAppData(#"{"schemaVersion": 11}"#)) { error in
-            XCTAssertEqual(error as? SchemaVersion.ValidationError, .futureIncompatible(found: 11))
+        XCTAssertThrowsError(try decodeAppData(#"{"schemaVersion": 12}"#)) { error in
+            XCTAssertEqual(error as? SchemaVersion.ValidationError, .futureIncompatible(found: 12))
         }
     }
 
@@ -56,10 +56,10 @@ final class SchemaVersionGuardTests: XCTestCase {
     }
 
     func testIntegralFloatLiteralMigratesAndDecodes() throws {
-        // 老导出若写 8.0：Foundation 解码为 .int(8)，经迁移升 9。
+        // 老导出若写 8.0：Foundation 解码为 .int(8)，经迁移升 current。
         // 此行为依赖工具链——这条测试是它的回归保护。
         let appData = try decodeAppData(#"{"schemaVersion": 8.0}"#)
-        XCTAssertEqual(appData.schemaVersion, 10)
+        XCTAssertEqual(appData.schemaVersion, 11)
     }
 
     func testFractionalVersionThrowsNotAnInteger() {
