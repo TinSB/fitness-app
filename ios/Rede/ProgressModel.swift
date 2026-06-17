@@ -79,15 +79,20 @@ struct ProgressModel {
         let todayISO = dayFormatter.string(from: now)
         let trainedDates = Set(records.map { String($0.dateISO.prefix(10)) })
         let continuity = ContinuityCalendar.month(containing: todayISO, todayISO: todayISO, trainedDatesISO: trainedDates)
-        // FR-PR7 力量里程碑：杠铃大项（推/蹲/拉/过头推）实测最佳顶组跨过的配片阈值。eligible 从目录
-        // 注入（本包与目录解耦）；用 snapshot 的 bestWeightKg（真实完成顶组），不产 e1RM 估算里程碑。
+        // FR-PR7 力量里程碑：公认大项实测最佳顶组跨过的配片阈值。eligible = 具体 id 白名单（不按
+        // pattern 宽匹配，避免窄距卧推/臀推/早安/前蹲等稀释成就感，审查 m-1）；与目录交集且排
+        // deprecated（审查 M-1，防日后下线动作仍触发）。扩里程碑动作走此清单——校准项。本包与目录
+        // 解耦，故 eligible 在 app 层注入。用 snapshot 的 bestWeightKg（真实完成顶组），不产 e1RM 估算。
+        let milestoneLiftIds: Set<String> = ["bench-press", "squat", "deadlift", "overhead-press"]
         let milestoneEligible = Set(
             catalog.entries
-                .filter { $0.equipment == "barbell"
-                    && ["horizontal-press", "squat-pattern", "hinge", "vertical-press"].contains($0.movementPattern) }
+                .filter { milestoneLiftIds.contains($0.id) && !$0.deprecated }
                 .map(\.id)
         )
-        let bestByExercise = Dictionary(uniqueKeysWithValues: snapshot.exerciseTrends.map { ($0.exerciseId, $0.bestWeightKg) })
+        let bestByExercise = Dictionary(
+            snapshot.exerciseTrends.map { ($0.exerciseId, $0.bestWeightKg) },
+            uniquingKeysWith: { first, _ in first }  // trends 已按 id 去重；防御重复 key 不崩
+        )
         let milestones = StrengthMilestoneCatalog.achieved(
             bestWeightKgByExercise: bestByExercise,
             eligibleExerciseIds: milestoneEligible,
