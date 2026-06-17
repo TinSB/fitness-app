@@ -181,8 +181,11 @@ Approved target mutation classes include:
 - screening list edit
 - program scalar config edit
 - logged-set correction
-- saved-session exercise replacement
-- coach-action dismissal intent
+- saved-session exercise replacement (forward exercise-swap override, FR-T5)
+- coach-action dismissal intent (FR-T5)
+- coach-action volume-boost intent (frequency acknowledgement; adds no session, mutates no prescription, FR-T5)
+
+Coach-action adopt, dismiss, and the swap/volume undos all flow through this single writer; undo is a single-step reverse write (no separate undo stack). The dismiss intent has a writer-level reverse (`removeCoachActionDismissal`) but no surfaced user undo — it is a one-way throttle signal. Engine contract: system-logic §6.4a.
 
 Rules:
 
