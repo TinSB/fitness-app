@@ -54,6 +54,13 @@ public struct AppData: Equatable, Sendable {
             blockStartISO: obj["blockStartISO"]?.asString
         )
     }
+
+    /// FR-T5 换动作前瞻覆盖（schema 11）：originalId → actualId 的只读映射。
+    /// 缺容器/非字符串值跳过；空 = 无覆盖（schema 10 及更早天然空，零行为回归）。
+    public var exerciseSubstitutions: [String: String] {
+        guard let obj = storage["exerciseSubstitutions"]?.asObject else { return [:] }
+        return obj.compactMapValues { $0.asString }
+    }
 }
 
 /// 顶层 `mesocycle` 的类型化只读视图（不存"当前第几周"——相位永远从 blockStartISO + 今日现算）。

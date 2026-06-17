@@ -203,7 +203,8 @@ public enum TodayPrescriptionEngine {
         verdict: TodayVerdict,
         catalog: ExerciseCatalog = .minimal,
         mesocycleEnabled: Bool = false,
-        blockLengthWeeks: Int = Mesocycle.defaultBlockLengthWeeks
+        blockLengthWeeks: Int = Mesocycle.defaultBlockLengthWeeks,
+        substitutions: [String: String] = [:]
     ) -> TodayPrescription? {
         guard verdict.call != .rest else { return nil }
 
@@ -272,11 +273,17 @@ public enum TodayPrescriptionEngine {
                 ? lastActual[slot.pattern].flatMap { pref in candidates.first { $0.id == pref } }
                 : nil
             let pinnedPick = slot.preferredId.flatMap { id in candidates.first { $0.id == id } }
-            guard let entry = stickyPick ?? pinnedPick ?? candidates.min(by: { ($0.rank, $0.id) < ($1.rank, $1.id) })
+            guard let basePick = stickyPick ?? pinnedPick ?? candidates.min(by: { ($0.rank, $0.id) < ($1.rank, $1.id) })
             else {
                 dayReasons.append(.slotUnfilled(pattern: slot.pattern))
                 continue
             }
+            // 换动作覆盖（FR-T5，优先级最高 > sticky/pinned/rank）：用户显式「以后把 X 换成 Y」。
+            // 仅当目标仍是本槽合法候选（同 pattern + 过 FR-EQ1 白名单/槽位过滤 + 未在本日用过，
+            // 即在 candidates 内）才生效，否则优雅回退原选择（不卡空、不破坏 pattern 覆盖）。
+            // substitutions 为空（schema≤10 或无覆盖）= 完全无行为变化（code-regression-guard）。
+            let entry = substitutions[basePick.id]
+                .flatMap { target in candidates.first { $0.id == target } } ?? basePick
             usedIds.insert(entry.id)
             exercises.append(prescribe(entry: entry, slot: slot, input: input, verdict: verdict, catalog: catalog, phase: phase))
         }

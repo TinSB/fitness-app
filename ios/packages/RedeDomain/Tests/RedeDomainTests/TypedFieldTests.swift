@@ -77,4 +77,13 @@ final class TypedFieldTests: XCTestCase {
         XCTAssertEqual(appData.programTemplate.storage, [:])
         XCTAssertNil(appData.userProfile.name)
     }
+
+    // FR-T5 换动作覆盖只读视图（schema 11）：字符串值保留、非字符串跳过、缺容器为空。
+    func testExerciseSubstitutionsTypedView() throws {
+        let json = #"{"schemaVersion": 11, "exerciseSubstitutions": {"bench-press": "db-bench-press", "bad": 5}}"#
+        let appData = try JSONDecoder().decode(AppData.self, from: Data(json.utf8))
+        XCTAssertEqual(appData.exerciseSubstitutions, ["bench-press": "db-bench-press"], "非字符串值跳过")
+        let empty = try JSONDecoder().decode(AppData.self, from: Data(#"{"schemaVersion": 11}"#.utf8))
+        XCTAssertEqual(empty.exerciseSubstitutions, [:], "缺容器 → 空")
+    }
 }
