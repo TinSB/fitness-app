@@ -6,11 +6,13 @@ import XCTest
 final class CoachActionEngineTests: XCTestCase {
     private func make(
         call: TodayCall = .train, sessionsLast7: Int = 1, plannedDaysPerWeek: Int = 4,
-        totalSessionCount: Int = 5, stalled: [String] = [], findings: Int = 0
+        totalSessionCount: Int = 5, stalled: [String] = [], findings: Int = 0,
+        weekStartISO: String = "2026-06-15", dismissals: [String: Int] = [:], adopted: Bool = false
     ) -> CoachActionInput {
         CoachActionInput(
             call: call, sessionsLast7: sessionsLast7, plannedDaysPerWeek: plannedDaysPerWeek,
-            totalSessionCount: totalSessionCount, stalledExerciseIds: stalled, dataFindingCount: findings
+            totalSessionCount: totalSessionCount, stalledExerciseIds: stalled, dataFindingCount: findings,
+            weekStartISO: weekStartISO, dismissals: dismissals, volumeBoostAdoptedThisWeek: adopted
         )
     }
 
@@ -68,5 +70,40 @@ final class CoachActionEngineTests: XCTestCase {
     func testNoSignalsYieldsEmpty() {
         let actions = CoachActionEngine.actions(input: make(sessionsLast7: 4, plannedDaysPerWeek: 4, stalled: [], findings: 0))
         XCTAssertTrue(actions.isEmpty, "无信号 → 无卡")
+    }
+
+    // MARK: 降频（切片6a，温和政策）+ actionKey
+
+    func testActionKeysAreStable() {
+        let actions = CoachActionEngine.actions(input: make(
+            sessionsLast7: 1, plannedDaysPerWeek: 4, stalled: ["pull-up"], findings: 1, weekStartISO: "2026-06-15"
+        ))
+        XCTAssertEqual(actions.first { $0.kind == .dataReview }?.actionKey, "dataReview")
+        XCTAssertEqual(actions.first { $0.kind == .exerciseSwap }?.actionKey, "exerciseSwap:pull-up")
+        XCTAssertEqual(actions.first { $0.kind == .volumeBoost }?.actionKey, "volumeBoost:2026-06-15")
+    }
+
+    func testSwapSuppressedAfterTwoDismissals() {
+        let once = CoachActionEngine.actions(input: make(stalled: ["pull-up"], dismissals: ["exerciseSwap:pull-up": 1]))
+        XCTAssertTrue(once.contains { $0.kind == .exerciseSwap }, "1 次暂不处理仍出")
+        let twice = CoachActionEngine.actions(input: make(stalled: ["pull-up"], dismissals: ["exerciseSwap:pull-up": 2]))
+        XCTAssertFalse(twice.contains { $0.kind == .exerciseSwap }, "连续 2 次暂不处理后不再出")
+    }
+
+    func testDataReviewSuppressedAfterTwoDismissals() {
+        let once = CoachActionEngine.actions(input: make(findings: 3, dismissals: ["dataReview": 1]))
+        XCTAssertTrue(once.contains { $0.kind == .dataReview })
+        let twice = CoachActionEngine.actions(input: make(findings: 3, dismissals: ["dataReview": 2]))
+        XCTAssertFalse(twice.contains { $0.kind == .dataReview }, "连续 2 次后不再出")
+    }
+
+    func testVolumeBoostSuppressedWhenAdoptedOrDismissedThisWeek() {
+        let adopted = CoachActionEngine.actions(input: make(sessionsLast7: 1, plannedDaysPerWeek: 4, adopted: true))
+        XCTAssertFalse(adopted.contains { $0.kind == .volumeBoost }, "本周已采纳 → 不再出")
+        let dismissed = CoachActionEngine.actions(input: make(
+            sessionsLast7: 1, plannedDaysPerWeek: 4, weekStartISO: "2026-06-15",
+            dismissals: ["volumeBoost:2026-06-15": 1]
+        ))
+        XCTAssertFalse(dismissed.contains { $0.kind == .volumeBoost }, "本周已暂不处理（≥1）→ 本周不再出")
     }
 }
