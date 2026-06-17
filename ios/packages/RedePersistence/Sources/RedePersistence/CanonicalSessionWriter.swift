@@ -255,6 +255,8 @@ public struct CanonicalSessionWriter {
     }
 
     /// 已批准写入类别：撤销 dismiss（反向 gated 写，整条删；幂等）。
+    /// 注：UI **刻意不暴露**「暂不处理」的撤销入口——它是单向降频信号，卡按降频策略自然再现
+    /// （系统逻辑 §5/§6.4a）。本写闸口为对称完整性 + 测试而保留，非缺接线（审查 NIT）。
     @discardableResult
     public func removeCoachActionDismissal(actionKey: String) throws -> AppData {
         guard !actionKey.isEmpty else { throw CoachActionWriteError.emptyKey }

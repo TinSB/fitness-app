@@ -576,7 +576,7 @@ struct TodayTabView: View {
             // 用 Date()（当场取时）而非 model.now（加载时快照）算本周锚点——避免跨午夜/跨周会话存活时
             // 写错周 key、reload 后卡立刻重弹（审查 MINOR）。撤销用同一 week（存进 banner）保持一致。
             adoptCTA(s.coachAdoptVolumeLabel) {
-                let week = TodayModel.isoWeekStart(Date())
+                let week = WeekAnchor.isoWeekStart(Date())
                 Task {
                     if await sessionStore.applyVolumeBoost(weekStartISO: week) {
                         undoBanner = UndoBanner(kind: .volume(weekStartISO: week), text: s.volumeAckToast)

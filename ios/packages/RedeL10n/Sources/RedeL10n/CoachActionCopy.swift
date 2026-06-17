@@ -36,8 +36,9 @@ extension RedeStrings {
             return t2c("近期有 \(n) 条记录看起来不对劲　去进展页核对一下",
                        "\(n) recent entries look off — review them on Progress")
         case "ceilingReached":
-            return t2c("\(exerciseName) 已经练满当前变体　换个更难的版本继续往上走",
-                       "\(exerciseName) has maxed this variation — a harder version keeps you moving up")
+            // 标题已点名该动作（「{name} 到顶了」），正文不再重复主语，避免卡上下相邻读两遍（审查 NIT）。
+            return t2c("当前变体已经练满　换个更难的版本继续往上走",
+                       "This variation is maxed out — a harder version keeps you moving up")
         case "belowWeeklyPlan":
             let n = count ?? 0
             return t2c("本周还差 \(n) 次就到计划　有空补一次就好",

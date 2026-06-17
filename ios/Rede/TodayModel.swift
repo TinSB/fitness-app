@@ -106,7 +106,7 @@ struct TodayModel {
         let stalledIds = (prescription?.exercises ?? [])
             .filter { $0.reason.isCeilingOrGraduationMilestone }
             .map(\.exerciseId)
-        let weekStartISO = isoWeekStart(now)
+        let weekStartISO = WeekAnchor.isoWeekStart(now)
         let coachActions = CoachActionEngine.actions(input: CoachActionInput(
             call: verdict.call,
             sessionsLast7: last7,
@@ -122,23 +122,5 @@ struct TodayModel {
             verdict: verdict, prescription: prescription, cleanView: cleanView, now: now,
             coachActions: coachActions, substitutions: appData.exerciseSubstitutions
         ))
-    }
-
-    /// 本周 ISO 周一（yyyy-MM-dd，本地）——补量按周抑制/采纳的 key 锚点；6c 采纳写入用同一计算。
-    /// 绝不静默回退到 now（按日变化的非周一字符串会让"已采纳/已 dismiss"按周查错位、降频哑火，
-    /// 且 6c 写入时会把错锚点污染进 volumeBoostWeeks）——date(from:) 对合法日期不会失败，万一失败
-    /// 断言暴露 + 返回空串（引擎按周抑制退化为不抑制 = 安全：宁可多弹一次，不查错周，审查 MAJOR-1）。
-    static func isoWeekStart(_ now: Date) -> String {
-        var calendar = Calendar(identifier: .iso8601)
-        calendar.timeZone = .current
-        guard let monday = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) else {
-            assertionFailure("ISO 周一锚点计算失败，输入日期异常: \(now)")
-            return ""
-        }
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: monday)
     }
 }
