@@ -14,6 +14,8 @@ struct PlanTabView: View {
     @Environment(LocaleStore.self) private var localeStore
     @State private var template: SessionStore.TemplateFacts?
     @State private var cycle: MesocycleCycleState?
+    /// FR-PL2：本周/下周训练日排期（只读派生；空 = 无模板/不可读，退占位）。
+    @State private var projection: [[PlanDayProjection]] = []
 
     private var s: RedeStrings { localeStore.strings }
 
@@ -47,28 +49,26 @@ struct PlanTabView: View {
                         MesocycleCycleBar(state: cycle, s: s)
                             .padding(.horizontal, RedeSpace.page)
                             .padding(.top, 8)
-
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text(s.planCycleNote)
-                                .font(.redeCallout)
-                                .foregroundStyle(Color.redeT3)
-                            EmbButton(icon: "arrow.left", title: s.trainEmptyAction, action: onGoToday)
-                                .padding(.top, 4)
-                        }
-                        .padding(.horizontal, RedeSpace.page)
-                        .padding(.top, 16)
-                    } else {
-                        // 诚实占位：排期/周期/调整待计划引擎（FR-PL1：不编数据）
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text(s.planEmptyNote)
-                                .font(.redeCallout)
-                                .foregroundStyle(Color.redeT3)
-                            EmbButton(icon: "arrow.left", title: s.trainEmptyAction, action: onGoToday)
-                                .padding(.top, 4)
-                        }
-                        .padding(.horizontal, RedeSpace.page)
-                        .padding(.top, 8)
                     }
+
+                    // FR-PL2：本周/下周排期（只读派生；有模板即展示，与今日页处方同源）
+                    if !projection.isEmpty {
+                        if cycle != nil { RuleDivider() }
+                        weekScheduleSection
+                            .padding(.horizontal, RedeSpace.page)
+                            .padding(.top, cycle != nil ? 8 : 4)
+                    }
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        // 有排期 → 仅剩调整/回滚待后续；无排期（理论不达）→ 旧诚实占位
+                        Text(projection.isEmpty ? s.planEmptyNote : s.planScheduleNote)
+                            .font(.redeCallout)
+                            .foregroundStyle(Color.redeT3)
+                        EmbButton(icon: "arrow.left", title: s.trainEmptyAction, action: onGoToday)
+                            .padding(.top, 4)
+                    }
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.top, 16)
                 } else {
                     // 无模板（理论上引导后必有）：原诚实占位兜底
                     VStack(alignment: .leading, spacing: 12) {
@@ -93,10 +93,11 @@ struct PlanTabView: View {
             // 一次后台读返回两者、同步一起赋值（审查 MINOR-1）：避免 template 先到、cycle 仍 nil 时
             // 闪一帧诚实占位再跳出周期条——已开周期化的用户不应看到占位闪变。
             let loaded = await Task.detached {
-                (SessionStore.loadTemplateFacts(), SessionStore.loadCycleState())
+                (SessionStore.loadTemplateFacts(), SessionStore.loadCycleState(), SessionStore.loadPlanProjection())
             }.value
             template = loaded.0
             cycle = loaded.1
+            projection = loaded.2
         }
     }
 
@@ -106,6 +107,44 @@ struct PlanTabView: View {
         if let level = facts.level { parts.append(s.onbLevelOption(level).title) }
         if let equip = facts.equipment { parts.append(s.onbEquipOption(equip).title) }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    // MARK: - 本周/下周排期（FR-PL2；0 卡，纯文本行；训练日名 + 动作数 + 模式构成）
+
+    private var weekScheduleSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            ForEach(Array(projection.enumerated()), id: \.offset) { weekIdx, week in
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(weekIdx == 0 ? s.planScheduleThisWeek : s.planScheduleNextWeek)
+                        .font(.redeOverline)
+                        .tracking(RedeTracking.overline)
+                        .foregroundStyle(Color.redeT3)
+                    ForEach(Array(week.enumerated()), id: \.offset) { _, day in
+                        dayScheduleRow(day)
+                    }
+                }
+            }
+        }
+    }
+
+    private func dayScheduleRow(_ day: PlanDayProjection) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack {
+                Text(s.trainingDayName(day.dayCode))
+                    .font(.redeSubhead)
+                    .foregroundStyle(Color.redeT1)
+                Spacer()
+                Text(s.planDayExercises(day.exerciseCount))
+                    .font(.redeCaption).monospacedDigit()
+                    .foregroundStyle(Color.redeT4)
+            }
+            Text(day.patternCodes.map(s.movementPatternLabel).joined(separator: " · "))
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT3)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.vertical, 6)
+        .accessibilityElement(children: .combine)
     }
 }
 

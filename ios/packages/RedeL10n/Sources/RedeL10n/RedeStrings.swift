@@ -136,11 +136,6 @@ public struct RedeStrings: Sendable {
     public func planCycleWeekOf(week: Int, total: Int, phaseLabel: String) -> String {
         t("第 \(week) / \(total) 周 · \(phaseLabel)", "Week \(week) of \(total) · \(phaseLabel)")
     }
-    /// 周期条显示时的尾注（已不再是「周期还没来」，但调整/回滚仍在后续）。
-    public var planCycleNote: String {
-        t("调整建议与回滚仍在后续版本　每天的安排看今日页",
-          "Adjustment previews and rollback arrive later. For now, Today carries each day's call")
-    }
     /// 周期相位短标签（节点下方；按 MesocyclePhase.rawValue 映射）。未知 → 原值兜底。
     public func mesoPhaseShort(_ raw: String) -> String {
         switch raw {
@@ -150,6 +145,19 @@ public struct RedeStrings: Sendable {
         case "deload":    return t("减载", "Deload")
         default:          return raw
         }
+    }
+
+    // MARK: - Plan 周排期（FR-PL2：本周/下周训练日 + 模式构成，只读派生投影）
+    public var planScheduleThisWeek: String { t("本周", "This week") }
+    public var planScheduleNextWeek: String { t("下周", "Next week") }
+    /// 单训练日动作数："6 个动作" / "6 exercises"。
+    public func planDayExercises(_ count: Int) -> String {
+        t("\(count) 个动作", count == 1 ? "1 exercise" : "\(count) exercises")
+    }
+    /// 周排期下方尾注：排期已按训练进度滚动展示，仅剩调整/回滚待后续（FR-PL3/4）。
+    public var planScheduleNote: String {
+        t("未来安排按你的训练进度滚动　调整建议与回滚将在后续版本加入",
+          "The schedule rolls forward with your training. Adjustment previews and rollback arrive in a later version")
     }
 
     // MARK: - 无障碍（VoiceOver hint/label）

@@ -194,6 +194,26 @@ final class SessionStore {
         )
     }
 
+    /// 计划页周排期投影（FR-PL2）：本周/下周训练日 + 模式构成，只读派生。与今日页处方走同一
+    /// clean pipeline + 同一轮转口径（input.program/sessions）→ 第一天 == 今日页此刻训练日，永不分叉。
+    /// unreadable/缺失 → 空（计划页退回诚实占位）。
+    static func loadPlanProjection(now: Date = Date()) -> [[PlanDayProjection]] {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load() else { return [] }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        let cleanView = CleanAppDataViewBuilder.build(from: appData)
+        guard let input = try? CleanTrainingDecisionInput.make(from: cleanView, todayISO: formatter.string(from: now)),
+              let daysPerWeek = input.program.daysPerWeek else { return [] }
+        return PlanWeekProjection.weeks(
+            splitType: input.program.splitType,
+            daysPerWeek: daysPerWeek,
+            completedSessionCount: input.sessions.count
+        )
+    }
+
     /// 周期化开关当前持久态（设置页开关初值）；unreadable/缺失 → false（默认关）。
     static func loadMesocycleEnabled() -> Bool {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
