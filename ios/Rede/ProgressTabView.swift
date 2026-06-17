@@ -154,10 +154,13 @@ struct ProgressTabView: View {
                 .padding(.top, RedeSpace.section)
             }
 
-            RuleDivider()
+            // 连续性段（含其前导分隔线）随 continuity 一同存在/消失，避免 nil 时双分隔线黏合（审查 MINOR-1）。
+            if let month = model.continuity {
+                RuleDivider()
 
-            continuitySection(model)
-                .padding(.horizontal, RedeSpace.page)
+                continuitySection(month)
+                    .padding(.horizontal, RedeSpace.page)
+            }
 
             RuleDivider()
 
@@ -428,43 +431,41 @@ struct ProgressTabView: View {
 
     // MARK: - 连续性月历（FR-PR5；card-free，守 ProgressTabView 0-card 预算；中性，不羞辱断签）
 
-    @ViewBuilder
-    private func continuitySection(_ model: ProgressModel) -> some View {
-        if let month = model.continuity {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Overline(text: s.continuityTitle)
-                    Spacer()
-                    Text(s.calendarMonthLabel(year: month.year, month: month.month))
-                        .font(.redeCaption).monospacedDigit()
+    private func continuitySection(_ month: ContinuityCalendar.Month) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Overline(text: s.continuityTitle)
+                Spacer()
+                Text(s.calendarMonthLabel(year: month.year, month: month.month))
+                    .font(.redeCaption).monospacedDigit()
+                    .foregroundStyle(Color.redeT4)
+            }
+            HStack(spacing: 0) {
+                ForEach(Array(s.weekdayInitialsMonFirst.enumerated()), id: \.offset) { _, initial in
+                    Text(initial)
+                        .font(.redeCaption)
                         .foregroundStyle(Color.redeT4)
+                        .frame(maxWidth: .infinity)
                 }
-                HStack(spacing: 0) {
-                    ForEach(Array(s.weekdayInitialsMonFirst.enumerated()), id: \.offset) { _, initial in
-                        Text(initial)
-                            .font(.redeCaption)
-                            .foregroundStyle(Color.redeT4)
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-                .accessibilityHidden(true)
-                VStack(spacing: 7) {
-                    ForEach(Array(month.weeks.enumerated()), id: \.offset) { _, week in
-                        HStack(spacing: 0) {
-                            ForEach(Array(week.enumerated()), id: \.offset) { _, day in
-                                dayCell(day).frame(maxWidth: .infinity)
-                            }
+            }
+            .accessibilityHidden(true)
+            VStack(spacing: 7) {
+                ForEach(Array(month.weeks.enumerated()), id: \.offset) { _, week in
+                    HStack(spacing: 0) {
+                        ForEach(Array(week.enumerated()), id: \.offset) { _, day in
+                            dayCell(day).frame(maxWidth: .infinity)
                         }
                     }
                 }
-                Text(s.continuityCount(month.trainedCount))
-                    .font(.redeCaption)
-                    .foregroundStyle(Color.redeT3)
             }
+            Text(s.continuityCount(month.trainedCount))
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT3)
         }
     }
 
     /// 单格：训练日 = 余烬实心 + 深色日号；今天 = 描边圈；空格 = 透明占位。
+    /// 训练优先：当某天既是今天又是训练日，显示余烬实心、不叠描边圈（行为有 ContinuityCalendarTests 守着）。
     @ViewBuilder
     private func dayCell(_ day: ContinuityCalendar.Day) -> some View {
         if let iso = day.dateISO {

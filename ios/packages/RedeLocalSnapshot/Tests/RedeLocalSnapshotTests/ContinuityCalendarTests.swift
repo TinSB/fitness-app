@@ -32,6 +32,18 @@ final class ContinuityCalendarTests: XCTestCase {
         XCTAssertFalse(m.weeks[0][0].isToday)
     }
 
+    func testTodayAndTrainedSameCellBothFlagged() {
+        // 同一天既是今天又练了：引擎两 flag 都置真（视图 dayCell 再决定训练优先、今天圈不叠，
+        // 见 ProgressTabView.dayCell 注释）。守住这两 flag 不被改坏。
+        let m = try! XCTUnwrap(ContinuityCalendar.month(
+            containing: "2026-06-09", todayISO: "2026-06-09", trainedDatesISO: ["2026-06-09"]
+        ))
+        let cell = m.weeks[1][1]  // 6 月 9 号
+        XCTAssertEqual(cell.dateISO, "2026-06-09")
+        XCTAssertTrue(cell.isTrained)
+        XCTAssertTrue(cell.isToday)
+    }
+
     func testJulyLeadingPad() {
         // 7 月 1 号 = 周三 → 周一、周二两格空（前导补 2）。
         let m = try! XCTUnwrap(ContinuityCalendar.month(
