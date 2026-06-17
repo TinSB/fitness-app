@@ -42,6 +42,18 @@ public enum PrescriptionReason: Equatable, Sendable, Codable {
         case .bandCeilingReached: return "bandCeilingReached"
         }
     }
+
+    /// 到顶/毕业里程事件：换动作教练卡触发源（FR-T5 stalledExerciseIds）+ 处方行里程标注同口径。
+    /// **穷举无 default**：新增 ceiling/graduation case 时编译器强制本处与两个 app 消费点同步更新，
+    /// 杜绝无声漂移（审查）。注意：有重量动作的 `repCeilingReached` 只是加重、不触发换动作。
+    public var isCeilingOrGraduationMilestone: Bool {
+        switch self {
+        case .bodyweightCeilingReached, .assistedGraduated, .bodyweightPlusDegraded, .bandCeilingReached:
+            return true
+        case .firstExposure, .repCeilingReached, .nearFailureLastTime, .belowRepFloor, .holdProgressing:
+            return false
+        }
+    }
 }
 
 /// 日级处方理由（裁决调制与生成限制）。

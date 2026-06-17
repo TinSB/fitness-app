@@ -19,10 +19,6 @@ struct TodayTabView: View {
     /// FR-T5 切片6c：采纳后的撤销条（瞬态，挂今日页根 overlay，独立于教练卡生命周期——
     /// 抗"写后 reload 卡消失"导致撤销入口蒸发）。约 5s 自动淡出。
     @State private var undoBanner: UndoBanner?
-    /// 本页是否发起过教练写入（采纳/撤销/暂不处理）。saveErrorText 是全局共享态——训练落盘/
-    /// 偏好写入失败也会写它；只在本页确实写过时才显示错误面，避免把别处的失败错配到教练卡语境
-    ///（切 tab 重建本视图 → 自动复位 false，根治跨页污染，审查 MAJOR）。
-    @State private var coachWriteAttempted = false
 
     private var model: TodayModel? { sessionStore.todayModel }
 
@@ -56,7 +52,10 @@ struct TodayTabView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: undoBanner?.id)
-        .task { if sessionStore.todayOutcome == nil { await sessionStore.loadToday() } }
+        .task {
+            sessionStore.coachSaveErrorText = nil // 进页清教练写错误（新视图干净起步；隔离于全局 saveErrorText）
+            if sessionStore.todayOutcome == nil { await sessionStore.loadToday() }
+        }
         .alert(s.resumeSessionTitle, isPresented: Binding(
             get: { sessionStore.pendingDraft != nil },
             // 系统 Cancel/滑走 = 稍后再说：清提示但保留 draft 文件，下次启动再问
@@ -198,17 +197,9 @@ struct TodayTabView: View {
     /// 配件每场都刷屏（高信号优先）。
     private var milestoneNotes: [String] {
         guard let exercises = model?.prescription?.exercises, exercises.count > 1 else { return [] }
-        return exercises.dropFirst().filter { isMilestone($0.reason) }.map { changeLine(for: $0) }
-    }
-
-    /// 里程事件 = 引擎里那几个一次性/转折性的 reason（到顶/毕业/回退）；普通进阶不算。
-    private func isMilestone(_ reason: PrescriptionReason) -> Bool {
-        switch reason {
-        case .bandCeilingReached, .bodyweightCeilingReached, .assistedGraduated, .bodyweightPlusDegraded:
-            return true
-        default:
-            return false
-        }
+        // 里程事件（到顶/毕业/回退）与换动作教练卡触发同口径——共用 PrescriptionReason 穷举判定，
+        // 新增 case 时编译器强制同步（审查：消除跨文件 default:false 无声漂移）。
+        return exercises.dropFirst().filter { $0.reason.isCeilingOrGraduationMilestone }.map { changeLine(for: $0) }
     }
 
     private var dayName: String {
@@ -226,10 +217,10 @@ struct TodayTabView: View {
                 .padding(.horizontal, RedeSpace.page)
                 .padding(.top, 4)
 
-            // 切片6c 红线：今日页写入（采纳/撤销/暂不处理）失败时如实呈现，绝不静默假成功
-            //（与 TrainTabView 收尾页同口径：saveFailedLine + 明细；下次成功写入自动清空）。
-            // 仅在本页确实发起过教练写入时显示——saveErrorText 是全局态，不抢显别处的失败（审查 MAJOR）。
-            if coachWriteAttempted, let errorText = sessionStore.saveErrorText {
+            // 切片6c 红线：今日页教练写入（采纳/撤销/暂不处理）失败时如实呈现，绝不静默假成功
+            //（与 TrainTabView 收尾页同口径：saveFailedLine + 明细；下次教练写入开写自动清空）。
+            // 读教练专属 coachSaveErrorText，与全局 saveErrorText 隔离——不抢显训练/设置写失败（审查 MAJOR）。
+            if let errorText = sessionStore.coachSaveErrorText {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(s.saveFailedLine)
                         .font(.redeCaption).foregroundStyle(Color.redeRisk)
@@ -531,7 +522,6 @@ struct TodayTabView: View {
                 coachAdoptButton(action, exerciseName: exName)
                 Spacer()
                 Button(s.coachDismissLabel) {
-                    coachWriteAttempted = true
                     Task { await sessionStore.dismissCoachAction(actionKey: action.actionKey) }
                 }
                 .font(.redeCaption)
@@ -583,10 +573,10 @@ struct TodayTabView: View {
             }
         case .volumeBoost:
             // 诚实：采纳=记录本周已承认补量（不加训练、不改处方）→ 引擎本周抑制本卡。
+            // 用 Date()（当场取时）而非 model.now（加载时快照）算本周锚点——避免跨午夜/跨周会话存活时
+            // 写错周 key、reload 后卡立刻重弹（审查 MINOR）。撤销用同一 week（存进 banner）保持一致。
             adoptCTA(s.coachAdoptVolumeLabel) {
-                guard let now = model?.now else { return }
-                let week = TodayModel.isoWeekStart(now)
-                coachWriteAttempted = true
+                let week = TodayModel.isoWeekStart(Date())
                 Task {
                     if await sessionStore.applyVolumeBoost(weekStartISO: week) {
                         undoBanner = UndoBanner(kind: .volume(weekStartISO: week), text: s.volumeAckToast)
@@ -624,12 +614,13 @@ struct TodayTabView: View {
         .transition(.opacity)
         .task(id: banner.id) {
             try? await Task.sleep(for: .seconds(5))
-            if undoBanner?.id == banner.id { undoBanner = nil }
+            // 撤销写进行中（isSaving）不自毁——否则 5s 定时器会与撤销写竞争，写失败后撤销条已消失、
+            // 用户失去重试入口（补量撤销无持久兜底，审查 MAJOR）。撤销失败时撤销条留存供再试。
+            if undoBanner?.id == banner.id, !sessionStore.isSaving { undoBanner = nil }
         }
     }
 
     private func undoAdoption(_ banner: UndoBanner) async {
-        coachWriteAttempted = true
         let ok: Bool
         switch banner.kind {
         case .swap(let originalId): ok = await sessionStore.removeExerciseSubstitution(originalId: originalId)
@@ -676,7 +667,6 @@ struct TodayTabView: View {
 
                 if let originalId = revertOriginalId {
                     adoptCTA(s.swapRevertHint(originalName: localeStore.exerciseName(originalId))) {
-                        coachWriteAttempted = true
                         Task {
                             if await sessionStore.removeExerciseSubstitution(originalId: originalId) { detailTarget = nil }
                         }
@@ -701,18 +691,21 @@ struct TodayTabView: View {
                         } else if target.swapIntent {
                             ForEach(alts, id: \.self) { altId in
                                 Button {
-                                    coachWriteAttempted = true
+                                    // root-collapse：若当前动作本身是某动作的替代，覆盖写在**根 originalId** 上，
+                                    // 不建 B→C 链（避免 A→B、B→C 两条 key 语义错位；撤销也回到根，审查 MINOR）。
+                                    let rootOriginal = swapOriginalId(for: exerciseId) ?? exerciseId
                                     Task {
-                                        if await sessionStore.applyExerciseSubstitution(originalId: exerciseId, actualId: altId) {
+                                        if await sessionStore.applyExerciseSubstitution(originalId: rootOriginal, actualId: altId) {
                                             detailTarget = nil
-                                            // 诚实：仅当 plan() 真把原动作换出处方才报「已换成」+ 给撤销；若该替代非此槽
+                                            // 诚实：仅当 plan() 真把当前动作换出处方才报「已换成」+ 给撤销；若该替代非此槽
                                             // 合法候选、plan() 优雅回退（处方没变），清掉这条死覆盖、绝不假报成功（审查 MINOR/诚实红线）。
-                                            let stillHasOriginal = model?.prescription?.exercises.contains { $0.exerciseId == exerciseId } ?? true
+                                            // model 为 nil（无法确认）时默认 false：倾向**保留**刚写盘的覆盖、不误删（审查 MAJOR）。
+                                            let stillHasOriginal = model?.prescription?.exercises.contains { $0.exerciseId == exerciseId } ?? false
                                             if stillHasOriginal {
-                                                _ = await sessionStore.removeExerciseSubstitution(originalId: exerciseId)
+                                                _ = await sessionStore.removeExerciseSubstitution(originalId: rootOriginal)
                                             } else {
                                                 undoBanner = UndoBanner(
-                                                    kind: .swap(originalId: exerciseId),
+                                                    kind: .swap(originalId: rootOriginal),
                                                     text: s.swapAdoptedToast(exerciseName: localeStore.exerciseName(altId))
                                                 )
                                             }

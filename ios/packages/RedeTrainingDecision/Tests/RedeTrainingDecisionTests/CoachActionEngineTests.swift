@@ -106,4 +106,22 @@ final class CoachActionEngineTests: XCTestCase {
         ))
         XCTAssertFalse(dismissed.contains { $0.kind == .volumeBoost }, "本周已暂不处理（≥1）→ 本周不再出")
     }
+
+    // weekStartISO="" 降级路径（isoWeekStart 日历异常返回空串）：key = "volumeBoost:"。
+    // 合同锁死：① 空串时仍正常出卡（无误抑制，安全降级宁可多弹一次）；② 对应空串 key 的 dismiss 仍生效抑制。
+    func testVolumeBoostWithEmptyWeekStillFiresWhenNotDismissed() {
+        let actions = CoachActionEngine.actions(input: make(
+            sessionsLast7: 1, plannedDaysPerWeek: 4, weekStartISO: "", dismissals: [:]
+        ))
+        let boost = actions.first { $0.kind == .volumeBoost }
+        XCTAssertNotNil(boost, "空 weekStartISO 不误抑制")
+        XCTAssertEqual(boost?.actionKey, "volumeBoost:", "降级 key = volumeBoost:（空串锚点）")
+    }
+
+    func testVolumeBoostWithEmptyWeekSuppressedByMatchingDismiss() {
+        let actions = CoachActionEngine.actions(input: make(
+            sessionsLast7: 1, plannedDaysPerWeek: 4, weekStartISO: "", dismissals: ["volumeBoost:": 1]
+        ))
+        XCTAssertFalse(actions.contains { $0.kind == .volumeBoost }, "空串 key 的 dismiss(≥1) 同样抑制本卡")
+    }
 }

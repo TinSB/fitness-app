@@ -104,7 +104,7 @@ struct TodayModel {
             if case .plannedDaysPerWeek(let n) = signal { planned = n }
         }
         let stalledIds = (prescription?.exercises ?? [])
-            .filter { isStalledReason($0.reason) }
+            .filter { $0.reason.isCeilingOrGraduationMilestone }
             .map(\.exerciseId)
         let weekStartISO = isoWeekStart(now)
         let coachActions = CoachActionEngine.actions(input: CoachActionInput(
@@ -122,16 +122,6 @@ struct TodayModel {
             verdict: verdict, prescription: prescription, cleanView: cleanView, now: now,
             coachActions: coachActions, substitutions: appData.exerciseSubstitutions
         ))
-    }
-
-    /// 到顶/毕业 reason（换动作教练卡的触发源；与 TodayTabView.isMilestone 同口径）。
-    private static func isStalledReason(_ reason: PrescriptionReason) -> Bool {
-        switch reason {
-        case .bodyweightCeilingReached, .bandCeilingReached, .assistedGraduated, .bodyweightPlusDegraded:
-            return true
-        default:
-            return false
-        }
     }
 
     /// 本周 ISO 周一（yyyy-MM-dd，本地）——补量按周抑制/采纳的 key 锚点；6c 采纳写入用同一计算。

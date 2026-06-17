@@ -55,8 +55,11 @@ final class SessionStore {
     private(set) var restCountdown = RestCountdown()
     /// 启动时发现的可恢复 draft（FR-TR9 提示「继续进行中的训练」）。
     var pendingDraft: TrainSessionDraft?
-    /// 写入失败的如实呈现（FR-TR8：绝不假装成功）；nil = 无错误。
+    /// 写入失败的如实呈现（FR-TR8：绝不假装成功）；nil = 无错误。训练落盘/偏好/引导共用。
     var saveErrorText: String?
+    /// FR-T5 教练动作写入（采纳/撤销/暂不处理）失败的如实呈现，与全局 saveErrorText **隔离**——
+    /// 今日页教练错误面只读它，杜绝训练/设置写失败错配到教练卡语境（审查 MAJOR：跨域错误污染）。
+    var coachSaveErrorText: String?
     /// 保存进行中（防双击双写；MainActor 上同步置位）。
     var isSaving = false
 
@@ -296,14 +299,15 @@ final class SessionStore {
     // MARK: - FR-T5 教练动作 采纳 / 撤销（切片6c）
 
     /// 教练动作采纳/撤销/暂不处理的统一 gated 写包装：isSaving 互斥（防快速连点并发 load-modify-write 丢更新）
-    /// + 后台唯一写闸（读→改→安检→写前备份→原子保存）+ 成功后重载今日。失败如实置 saveErrorText 返 false。
-    /// 开写即清 saveErrorText（每次尝试干净起步，成功后旧错不残留）；mutate 在后台线程执行、只调写闸方法
-    ///（不捕获 @MainActor 状态）；撤销=单步反向写（owner 拍板，不另起 undo 栈）。
+    /// + 后台唯一写闸（读→改→安检→写前备份→原子保存）+ 成功后重载今日。失败如实置 coachSaveErrorText 返 false。
+    /// 开写即清 coachSaveErrorText（每次尝试干净起步，成功后旧错不残留）；用教练专属错误字段（非全局 saveErrorText）
+    /// 隔离今日页错误面，杜绝跨域污染（审查 MAJOR）。mutate 在后台线程执行、只调写闸方法（不捕获 @MainActor 状态）；
+    /// 撤销=单步反向写（owner 拍板，不另起 undo 栈）。
     @discardableResult
     private func performCoachWrite(_ mutate: @escaping @Sendable (CanonicalSessionWriter) throws -> Void) async -> Bool {
         guard !isSaving else { return false }
         isSaving = true
-        saveErrorText = nil
+        coachSaveErrorText = nil
         defer { isSaving = false }
         let fileURL = TodayModel.canonicalFileURL()
         let result: Result<Void, Error> = await Task.detached(priority: .userInitiated) {
@@ -326,7 +330,7 @@ final class SessionStore {
             await loadToday() // 重载 → plan() 消费换动作覆盖 / 引擎按补量态抑制卡
             return true
         case .failure(let error):
-            saveErrorText = String(describing: error)
+            coachSaveErrorText = String(describing: error)
             return false
         }
     }

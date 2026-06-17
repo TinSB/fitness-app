@@ -121,7 +121,9 @@ public enum SchemaMigrator {
     private static func downStep(from version: Int, root: [String: JSONValue]) -> [String: JSONValue]? {
         switch version {
         case 11:
-            // 11 → 10：逆 10→11 的加性播种——删三个教练容器、版本回落。与 up 精确互逆（往返恒等）。
+            // 11 → 10：逆 10→11 的加性播种——删三个教练容器、版本回落。仅保证「**空容器** up→down 往返恒等」；
+            // 若容器已有用户意图数据（换动作覆盖/补量/dismiss），down 会整体丢失（best-effort，down 是非生产回退辅助，
+            // 不用于生产回滚，审查 MINOR）。
             var r = root
             r["schemaVersion"] = .int(10)
             r["exerciseSubstitutions"] = nil
