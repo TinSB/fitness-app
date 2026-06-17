@@ -5,6 +5,11 @@
 // N 周、每周 daysPerWeek 个训练日；每日给训练日 code、动作数、去重后的模式码。
 //
 // 零行为变更：只读引擎已有的 daySequence/slots，不改任何处方逻辑（既有引擎测试即回归兜底）。
+//
+// 只展示「结构层」（训练日序 + 槽位数 + 模式），不区分目标：strength 目标在今日页走
+// slots().map(strengthShaped)，但 strengthShaped 只改强度参数（组数/次数/RIR/休息），
+// 不增删槽位、不改 pattern，故排期的 exerciseCount/patternCodes 对 strength 与 general 一致。
+// 审查 m-1：若将来 strengthShaped 改成可增删槽位，此处展示需相应区分目标。
 
 import Foundation
 

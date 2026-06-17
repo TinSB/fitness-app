@@ -28,12 +28,12 @@ final class PlanWeekProjectionTests: XCTestCase {
         XCTAssertEqual(weeks[0].count, 6)
     }
 
-    func testPatternCodesDedupedPerDay() {
+    func testPatternCodesDedupedPerDay() throws {
         // push-a 含两处 horizontal-press（compound + accessory）→ 投影去重，只出现一次。
         let weeks = PlanWeekProjection.weeks(
             splitType: "push-pull-legs", daysPerWeek: 6, completedSessionCount: 0, weeks: 1
         )
-        let pushA = try! XCTUnwrap(weeks[0].first { $0.dayCode == "push-a" })
+        let pushA = try XCTUnwrap(weeks[0].first { $0.dayCode == "push-a" })
         XCTAssertEqual(pushA.patternCodes.count, Set(pushA.patternCodes).count, "模式码未去重")
         XCTAssertEqual(pushA.patternCodes.filter { $0 == "horizontal-press" }.count, 1)
     }

@@ -136,11 +136,6 @@ public struct RedeStrings: Sendable {
     public func planCycleWeekOf(week: Int, total: Int, phaseLabel: String) -> String {
         t("第 \(week) / \(total) 周 · \(phaseLabel)", "Week \(week) of \(total) · \(phaseLabel)")
     }
-    /// 周期条显示时的尾注（已不再是「周期还没来」，但调整/回滚仍在后续）。
-    public var planCycleNote: String {
-        t("调整建议与回滚仍在后续版本　每天的安排看今日页",
-          "Adjustment previews and rollback arrive later. For now, Today carries each day's call")
-    }
     /// 周期相位短标签（节点下方；按 MesocyclePhase.rawValue 映射）。未知 → 原值兜底。
     public func mesoPhaseShort(_ raw: String) -> String {
         switch raw {
