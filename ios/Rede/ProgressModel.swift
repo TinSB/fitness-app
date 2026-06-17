@@ -28,6 +28,8 @@ struct ProgressModel {
     let weeklyComparison: WeeklyComparison?
     /// FR-PR5 当月训练连续性月历（中性呈现；history 非空时必有，否则 nil）。
     let continuity: ContinuityCalendar.Month?
+    /// FR-PR7 力量里程碑（杠铃大项已达成的配片阈值；只认实测，未达成则空）。
+    let milestones: [StrengthMilestone]
 
     static func loadOutcomeAsync(now: Date = Date()) async -> LoadOutcome? {
         await Task.detached(priority: .userInitiated) { loadOutcome(now: now) }.value
@@ -77,6 +79,20 @@ struct ProgressModel {
         let todayISO = dayFormatter.string(from: now)
         let trainedDates = Set(records.map { String($0.dateISO.prefix(10)) })
         let continuity = ContinuityCalendar.month(containing: todayISO, todayISO: todayISO, trainedDatesISO: trainedDates)
+        // FR-PR7 力量里程碑：杠铃大项（推/蹲/拉/过头推）实测最佳顶组跨过的配片阈值。eligible 从目录
+        // 注入（本包与目录解耦）；用 snapshot 的 bestWeightKg（真实完成顶组），不产 e1RM 估算里程碑。
+        let milestoneEligible = Set(
+            catalog.entries
+                .filter { $0.equipment == "barbell"
+                    && ["horizontal-press", "squat-pattern", "hinge", "vertical-press"].contains($0.movementPattern) }
+                .map(\.id)
+        )
+        let bestByExercise = Dictionary(uniqueKeysWithValues: snapshot.exerciseTrends.map { ($0.exerciseId, $0.bestWeightKg) })
+        let milestones = StrengthMilestoneCatalog.achieved(
+            bestWeightKgByExercise: bestByExercise,
+            eligibleExerciseIds: milestoneEligible,
+            unitSystem: cleanView.profile.unitSystem
+        )
         return .ready(ProgressModel(
             snapshot: snapshot,
             quality: quality,
@@ -87,7 +103,8 @@ struct ProgressModel {
             weeklyComparison: snapshot.weeklyVolume.first.map {
                 WeeklyInsight.compare(latest: $0, weeks: snapshot.weeklyVolume)
             },
-            continuity: continuity
+            continuity: continuity,
+            milestones: milestones
         ))
     }
 

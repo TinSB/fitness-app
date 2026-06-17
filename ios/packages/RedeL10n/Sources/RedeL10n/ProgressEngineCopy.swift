@@ -181,6 +181,14 @@ extension RedeStrings {
         return locale == .zh ? "\(date)，已训练" : "\(date), trained"
     }
 
+    // MARK: - 力量里程碑（FR-PR7，实测达成；杠铃配片阈值，待校准起步值）
+
+    public var milestonesTitle: String { locale == .zh ? "力量里程碑" : "Milestones" }
+    /// 里程碑行 VoiceOver："卧推 100 kg 已达成" / "Bench press, 100 kg reached"。
+    public func milestoneA11y(lift: String, value: String) -> String {
+        locale == .zh ? "\(lift) \(value) 已达成" : "\(lift), \(value) reached"
+    }
+
     // MARK: - 数据质量（FR-PR4，行为化、零置信标签）
 
     public var dataQualityTitle: String { locale == .zh ? "数据" : "Data" }
