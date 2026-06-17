@@ -17,7 +17,7 @@ final class RealExportSmokeTests: XCTestCase {
         let data = try loadRealExport()
         let original = try JSONDecoder().decode(AppData.self, from: data)
 
-        XCTAssertEqual(original.schemaVersion, 10, "磁盘 v8 经 decode 边界迁移升 10")
+        XCTAssertEqual(original.schemaVersion, SchemaVersion.current, "磁盘 v8 经 decode 边界迁移升 current")
         XCTAssertEqual(original.mesocycle.enabled, false, "迁移播种默认关闭 = 零回归")
         XCTAssertFalse(original.history.isEmpty, "既有训练历史无损保留")
         XCTAssertNotNil(original.userProfile.trainingLevel)
