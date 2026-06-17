@@ -16,6 +16,13 @@ struct TodayTabView: View {
     @State private var showSettings = false
     /// FR-EX2：点开的动作详情目标（nil = 未打开）。
     @State private var detailTarget: ExerciseDetailTarget?
+    /// FR-T5 切片6c：采纳后的撤销条（瞬态，挂今日页根 overlay，独立于教练卡生命周期——
+    /// 抗"写后 reload 卡消失"导致撤销入口蒸发）。约 5s 自动淡出。
+    @State private var undoBanner: UndoBanner?
+    /// 本页是否发起过教练写入（采纳/撤销/暂不处理）。saveErrorText 是全局共享态——训练落盘/
+    /// 偏好写入失败也会写它；只在本页确实写过时才显示错误面，避免把别处的失败错配到教练卡语境
+    ///（切 tab 重建本视图 → 自动复位 false，根治跨页污染，审查 MAJOR）。
+    @State private var coachWriteAttempted = false
 
     private var model: TodayModel? { sessionStore.todayModel }
 
@@ -42,6 +49,13 @@ struct TodayTabView: View {
             .padding(.bottom, RedeSpace.bottomBar)
         }
         .background(Color.redeBase)
+        // 切片6c：撤销条挂今日页根、避开 tab 栏；独立于教练卡，卡 reload 消失也不丢撤销入口。
+        .overlay(alignment: .bottom) {
+            if let banner = undoBanner {
+                undoBannerView(banner)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: undoBanner?.id)
         .task { if sessionStore.todayOutcome == nil { await sessionStore.loadToday() } }
         .alert(s.resumeSessionTitle, isPresented: Binding(
             get: { sessionStore.pendingDraft != nil },
@@ -68,7 +82,7 @@ struct TodayTabView: View {
                 .presentationDragIndicator(.visible)
         }
         .sheet(item: $detailTarget) { target in
-            exerciseDetailSheet(target.id)
+            exerciseDetailSheet(target)
         }
     }
 
@@ -212,6 +226,21 @@ struct TodayTabView: View {
                 .padding(.horizontal, RedeSpace.page)
                 .padding(.top, 4)
 
+            // 切片6c 红线：今日页写入（采纳/撤销/暂不处理）失败时如实呈现，绝不静默假成功
+            //（与 TrainTabView 收尾页同口径：saveFailedLine + 明细；下次成功写入自动清空）。
+            // 仅在本页确实发起过教练写入时显示——saveErrorText 是全局态，不抢显别处的失败（审查 MAJOR）。
+            if coachWriteAttempted, let errorText = sessionStore.saveErrorText {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(s.saveFailedLine)
+                        .font(.redeCaption).foregroundStyle(Color.redeRisk)
+                    Text(errorText)
+                        .font(.redeCaption).foregroundStyle(Color.redeT4)
+                        .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, RedeSpace.page)
+                .padding(.top, 8)
+            }
+
             if isUnreadable {
                 unreadableBlock
                     .padding(.horizontal, RedeSpace.page)
@@ -316,9 +345,15 @@ struct TodayTabView: View {
                 Rectangle().fill(isCurrent ? Color.redeEmber : Color.clear)
                     .frame(width: 3, height: 18)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(localeStore.exerciseName(ex.exerciseId))
-                        .font(.redeSubhead)
-                        .foregroundStyle(Color.redeT1)
+                    HStack(spacing: 6) {
+                        Text(localeStore.exerciseName(ex.exerciseId))
+                            .font(.redeSubhead)
+                            .foregroundStyle(Color.redeT1)
+                        // 切片6c：该动作是某到顶动作的替代 → 「已换」微标（长存、读落库 map）；点行进 detail 可换回。
+                        if swapOriginalId(for: ex.exerciseId) != nil {
+                            Overline(text: s.exerciseSwappedBadge, color: .redeEmber2)
+                        }
+                    }
                     Text(s.exerciseMetaLine(sets: ex.sets, restSeconds: ex.restSeconds, rir: ex.targetRir))
                         .font(.redeCaption).monospacedDigit()
                         .foregroundStyle(Color.redeT4)
@@ -493,13 +528,16 @@ struct TodayTabView: View {
                 }
             }
             HStack {
+                coachAdoptButton(action, exerciseName: exName)
                 Spacer()
                 Button(s.coachDismissLabel) {
+                    coachWriteAttempted = true
                     Task { await sessionStore.dismissCoachAction(actionKey: action.actionKey) }
                 }
                 .font(.redeCaption)
                 .foregroundStyle(Color.redeT4)
                 .buttonStyle(.plain)
+                .disabled(sessionStore.isSaving)
             }
         }
         .padding(14)
@@ -522,18 +560,129 @@ struct TodayTabView: View {
         }
     }
 
+    /// 采纳类强调按钮统一样式（卡主 CTA + 撤销条共用）；写进行中 .disabled 给诚实反馈，不静默吞点击。
+    private func adoptCTA(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(title, action: action)
+            .font(.redeCaption.weight(.semibold))
+            .foregroundStyle(Color.redeEmber2)
+            .buttonStyle(.plain)
+            .disabled(sessionStore.isSaving)
+    }
+
+    /// 采纳主 CTA（切片6c）：换动作→打开替代列表（detail sheet 换动作意图）；补量→直接记一次。
+    @ViewBuilder
+    private func coachAdoptButton(_ action: CoachAction, exerciseName: String) -> some View {
+        switch action.kind {
+        case .exerciseSwap:
+            // 引擎保证：exerciseSwap 的 exerciseId 恒非 nil（CoachActionEngine 从 [String] stalledExerciseIds 构造）。
+            // 故此 if-let 不会落空成"无采纳 CTA 的半残卡"；保留可选解包仅为类型安全（审查 NIT）。
+            if let exerciseId = action.exerciseId {
+                adoptCTA(s.coachAdoptSwapLabel) {
+                    detailTarget = ExerciseDetailTarget(id: exerciseId, swapIntent: true)
+                }
+            }
+        case .volumeBoost:
+            // 诚实：采纳=记录本周已承认补量（不加训练、不改处方）→ 引擎本周抑制本卡。
+            adoptCTA(s.coachAdoptVolumeLabel) {
+                guard let now = model?.now else { return }
+                let week = TodayModel.isoWeekStart(now)
+                coachWriteAttempted = true
+                Task {
+                    if await sessionStore.applyVolumeBoost(weekStartISO: week) {
+                        undoBanner = UndoBanner(kind: .volume(weekStartISO: week), text: s.volumeAckToast)
+                    }
+                }
+            }
+        case .dataReview:
+            // 修数据采纳=跨页核对，待 Today 算 DataQualityReport 让 dataFindingCount>0 后随该切片连卡带跳转一起做。
+            EmptyView()
+        }
+    }
+
+    /// 采纳后撤销条：正文 + 「撤销」（反向 gated 写）；约 5s 自动淡出，写进行中禁用撤销。
+    private func undoBannerView(_ banner: UndoBanner) -> some View {
+        HStack(spacing: 12) {
+            Text(banner.text)
+                .font(.redeCaption).foregroundStyle(Color.redeT1)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+            adoptCTA(s.coachUndoLabel) {
+                Task { await undoAdoption(banner) }
+            }
+        }
+        .padding(.horizontal, 14).padding(.vertical, 11)
+        .background(
+            RoundedRectangle(cornerRadius: RedeShape.cardRadius, style: .continuous)
+                .fill(Color.redeRaised)
+                .overlay(
+                    RoundedRectangle(cornerRadius: RedeShape.cardRadius, style: .continuous)
+                        .strokeBorder(Color.redeHair, lineWidth: 1)
+                )
+        )
+        .padding(.horizontal, RedeSpace.page)
+        .padding(.bottom, RedeSpace.bottomBar + 8)
+        .transition(.opacity)
+        .task(id: banner.id) {
+            try? await Task.sleep(for: .seconds(5))
+            if undoBanner?.id == banner.id { undoBanner = nil }
+        }
+    }
+
+    private func undoAdoption(_ banner: UndoBanner) async {
+        coachWriteAttempted = true
+        let ok: Bool
+        switch banner.kind {
+        case .swap(let originalId): ok = await sessionStore.removeExerciseSubstitution(originalId: originalId)
+        case .volume(let week): ok = await sessionStore.removeVolumeBoost(weekStartISO: week)
+        }
+        // 撤销写失败保留撤销条（错误面已如实呈现），用户可再试——尤其补量撤销无持久兜底入口（审查 MAJOR）。
+        if ok { undoBanner = nil }
+    }
+
+    /// 该动作当前是哪个到顶动作的替代（actualId→originalId 反查落库覆盖 map）；非替代返回 nil。
+    private func swapOriginalId(for exerciseId: String) -> String? {
+        model?.substitutions.first { $0.value == exerciseId }?.key
+    }
+
     // MARK: - 动作详情（FR-EX2；只读元数据 + 同族替代，主界面不堆元数据）
 
-    private struct ExerciseDetailTarget: Identifiable { let id: String } // id = exerciseId
+    private struct ExerciseDetailTarget: Identifiable {
+        let id: String              // id = exerciseId
+        var swapIntent: Bool = false // 切片6c：教练卡「换个动作」入口 = true → 替代列表升级为可点采纳
+    }
 
-    private func exerciseDetailSheet(_ exerciseId: String) -> some View {
+    /// 切片6c：采纳后撤销条。kind 携带反向写所需 key；id 供动画/自毁去重。
+    private struct UndoBanner: Identifiable {
+        enum Kind {
+            case swap(originalId: String)
+            case volume(weekStartISO: String)
+        }
+        let id = UUID()
+        let kind: Kind
+        let text: String
+    }
+
+    private func exerciseDetailSheet(_ target: ExerciseDetailTarget) -> some View {
+        let exerciseId = target.id
         let entry = ExerciseCatalog.minimal.entry(id: exerciseId)
+        // 该动作若是某到顶动作的替代 → 顶部露「换回原动作」撤销入口（持久，与即时 toast 互补）。
+        let revertOriginalId = swapOriginalId(for: exerciseId)
         return ScrollView {
             VStack(alignment: .leading, spacing: RedeSpace.section) {
                 Text(localeStore.exerciseName(exerciseId))
                     .font(.redeHeadline)
                     .tracking(RedeTracking.headline)
                     .foregroundStyle(Color.redeT1)
+
+                if let originalId = revertOriginalId {
+                    adoptCTA(s.swapRevertHint(originalName: localeStore.exerciseName(originalId))) {
+                        coachWriteAttempted = true
+                        Task {
+                            if await sessionStore.removeExerciseSubstitution(originalId: originalId) { detailTarget = nil }
+                        }
+                    }
+                }
+
                 if let entry {
                     detailRow(s.exerciseDetailType, s.exerciseKindLabel(entry.kind))
                     detailRow(s.exerciseDetailPattern, s.movementPatternLabel(entry.movementPattern))
@@ -543,11 +692,45 @@ struct TodayTabView: View {
                     }
                     detailRow(s.exerciseDetailEquipment, s.equipmentLabel(entry.equipment))
                     VStack(alignment: .leading, spacing: 6) {
-                        Overline(text: s.exerciseDetailAlternatives)
+                        // 换动作意图：标题换成选择提示，替代项升级为可点采纳行（选中即写，撤销兜底，无二次确认）。
+                        Overline(text: target.swapIntent ? s.swapPickerHint : s.exerciseDetailAlternatives)
                         let alts = alternatives(for: entry)
                         if alts.isEmpty {
                             Text(s.exerciseDetailNoAlternatives)
                                 .font(.redeBody).foregroundStyle(Color.redeT3)
+                        } else if target.swapIntent {
+                            ForEach(alts, id: \.self) { altId in
+                                Button {
+                                    coachWriteAttempted = true
+                                    Task {
+                                        if await sessionStore.applyExerciseSubstitution(originalId: exerciseId, actualId: altId) {
+                                            detailTarget = nil
+                                            // 诚实：仅当 plan() 真把原动作换出处方才报「已换成」+ 给撤销；若该替代非此槽
+                                            // 合法候选、plan() 优雅回退（处方没变），清掉这条死覆盖、绝不假报成功（审查 MINOR/诚实红线）。
+                                            let stillHasOriginal = model?.prescription?.exercises.contains { $0.exerciseId == exerciseId } ?? true
+                                            if stillHasOriginal {
+                                                _ = await sessionStore.removeExerciseSubstitution(originalId: exerciseId)
+                                            } else {
+                                                undoBanner = UndoBanner(
+                                                    kind: .swap(originalId: exerciseId),
+                                                    text: s.swapAdoptedToast(exerciseName: localeStore.exerciseName(altId))
+                                                )
+                                            }
+                                        }
+                                    }
+                                } label: {
+                                    HStack {
+                                        Text(localeStore.exerciseName(altId))
+                                            .font(.redeBody).foregroundStyle(Color.redeT1)
+                                        Spacer()
+                                        Image(systemName: "arrow.left.arrow.right")
+                                            .font(.redeCaption).foregroundStyle(Color.redeEmber2)
+                                    }
+                                    .frame(minHeight: RedeShape.controlHeight)
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(sessionStore.isSaving)
+                            }
                         } else {
                             ForEach(alts, id: \.self) { altId in
                                 Text(localeStore.exerciseName(altId))

@@ -23,6 +23,9 @@ struct TodayModel {
     let now: Date
     /// FR-T5 教练动作（切片6b）：优先级排序、已降频的建议；UI 取首条渲染（每屏 ≤1）。
     let coachActions: [CoachAction]
+    /// FR-T5 换动作覆盖（切片6c）：originalId→actualId 落库真相。UI 据此在处方行显「已换·撤销」微标、
+    /// detail sheet 露撤销入口（读落库 map = 真相、不缓存 @State，抗教练卡 reload 消失）。
+    let substitutions: [String: String]
 
     /// Rail「上次」节点：首个处方动作最近一次实绩（重量×次数 + 日期）。
     struct RailLast {
@@ -117,7 +120,7 @@ struct TodayModel {
         ))
         return .ready(TodayModel(
             verdict: verdict, prescription: prescription, cleanView: cleanView, now: now,
-            coachActions: coachActions
+            coachActions: coachActions, substitutions: appData.exerciseSubstitutions
         ))
     }
 

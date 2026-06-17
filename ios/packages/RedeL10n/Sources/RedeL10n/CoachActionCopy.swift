@@ -50,6 +50,37 @@ extension RedeStrings {
     /// 「暂不处理」按钮文案（降频入口；中性，不催促、不羞辱）。
     public var coachDismissLabel: String { t2c("暂不处理", "Not now") }
 
+    // MARK: - 采纳 / 撤销（切片6c）
+
+    /// 换动作采纳主 CTA（动词引导：打开替代列表让用户选）。
+    public var coachAdoptSwapLabel: String { t2c("换个动作", "Swap exercise") }
+
+    /// 补量采纳主 CTA。**诚实红线**：只表"收到、本周别再催"，绝不含"加训练/已安排/补一次"——
+    /// applyVolumeBoost 真实语义仅记录本周已承认、让引擎抑制补量卡，不加训练、不改处方。
+    public var coachAdoptVolumeLabel: String { t2c("知道了", "Got it") }
+
+    /// 换动作选择器顶部提示（detail sheet 进入换动作意图时）。
+    public var swapPickerHint: String { t2c("选一个替代当前动作", "Pick a replacement") }
+
+    /// 处方行「已换」微标（该动作是某到顶动作的替代）。
+    public var exerciseSwappedBadge: String { t2c("已换", "Swapped") }
+
+    /// 通用「撤销」按钮（换动作微标 / 撤销条共用）。
+    public var coachUndoLabel: String { t2c("撤销", "Undo") }
+
+    /// detail sheet 撤销入口：当前动作替代了哪个原动作。
+    public func swapRevertHint(originalName: String) -> String {
+        t2c("替代了 \(originalName)　可换回", "Replaced \(originalName) · restore")
+    }
+
+    /// 换动作采纳后撤销条正文。
+    public func swapAdoptedToast(exerciseName: String) -> String {
+        t2c("已换成 \(exerciseName)", "Swapped to \(exerciseName)")
+    }
+
+    /// 补量采纳后撤销条正文。**诚实红线**：只说"本周不再提醒"，不暗示已加训练/已补量。
+    public var volumeAckToast: String { t2c("本周不再提醒补量", "No more nudges this week") }
+
     private func t2c(_ zh: String, _ en: String) -> String {
         locale == .zh ? zh : en
     }

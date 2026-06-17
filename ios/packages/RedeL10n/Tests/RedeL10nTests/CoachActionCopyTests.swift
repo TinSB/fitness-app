@@ -86,4 +86,58 @@ final class CoachActionCopyTests: XCTestCase {
         XCTAssertEqual(zh.coachDismissLabel, "暂不处理")
         XCTAssertEqual(en.coachDismissLabel, "Not now")
     }
+
+    // MARK: - 采纳 / 撤销（切片6c）
+
+    func testAdoptAndUndoLabelsBilingualNonEmpty() {
+        let zhLabels = [zh.coachAdoptSwapLabel, zh.coachAdoptVolumeLabel, zh.swapPickerHint,
+                        zh.exerciseSwappedBadge, zh.coachUndoLabel, zh.volumeAckToast]
+        let enLabels = [en.coachAdoptSwapLabel, en.coachAdoptVolumeLabel, en.swapPickerHint,
+                        en.exerciseSwappedBadge, en.coachUndoLabel, en.volumeAckToast]
+        for (z, e) in zip(zhLabels, enLabels) {
+            XCTAssertFalse(z.isEmpty, "中文文案为空")
+            XCTAssertFalse(e.isEmpty, "英文文案为空")
+            XCTAssertNotEqual(z, e, "中英相同（疑似漏译）: \(z)")
+        }
+    }
+
+    // 红线（§4.2）：6c 新增换动作 UI 文案也不得出现禁词（补 testNoBannedWordsInAnyCopy 的覆盖缺口）。
+    func testNoBannedWordsInSwapUICopy() {
+        let zhTexts = [zh.coachAdoptSwapLabel, zh.swapPickerHint, zh.exerciseSwappedBadge, zh.coachUndoLabel,
+                       zh.swapRevertHint(originalName: "引体向上"), zh.swapAdoptedToast(exerciseName: "负重引体")]
+        let enTexts = [en.coachAdoptSwapLabel, en.swapPickerHint, en.exerciseSwappedBadge, en.coachUndoLabel,
+                       en.swapRevertHint(originalName: "Pull-up"), en.swapAdoptedToast(exerciseName: "Weighted pull-up")]
+        let bannedZh = ["算法", "AI", "系统认为", "最佳"]
+        for t in zhTexts {
+            for w in bannedZh { XCTAssertFalse(t.contains(w), "换动作中文出现禁词 \(w): \(t)") }
+        }
+        for t in enTexts {
+            let words = enWords(t)
+            XCTAssertFalse(words.contains("ai") || words.contains("best") || words.contains("optimal"),
+                           "换动作英文出现禁词: \(t)")
+            XCTAssertFalse(t.lowercased().contains("algorithm"), "换动作英文出现禁词 algorithm: \(t)")
+        }
+    }
+
+    func testSwapHintsInterpolateOriginalName() {
+        XCTAssertTrue(zh.swapRevertHint(originalName: "引体向上").contains("引体向上"))
+        XCTAssertTrue(en.swapRevertHint(originalName: "Pull-up").contains("Pull-up"))
+        XCTAssertTrue(zh.swapAdoptedToast(exerciseName: "负重引体").contains("负重引体"))
+        XCTAssertTrue(en.swapAdoptedToast(exerciseName: "Weighted pull-up").contains("Weighted pull-up"))
+    }
+
+    // 诚实红线（硬约束2）：补量采纳=仅承认+停提醒，绝不暗示"已加训练/已补量/已安排"。
+    func testVolumeAdoptCopyDoesNotImplyAWriteHappened() {
+        let zhText = zh.coachAdoptVolumeLabel + zh.volumeAckToast
+        let enText = (en.coachAdoptVolumeLabel + en.volumeAckToast).lowercased()
+        let zhForbidden = ["已加", "已补", "已安排", "加了", "补了", "安排了", "加一次", "补一次", "已记"]
+        for w in zhForbidden { XCTAssertFalse(zhText.contains(w), "补量采纳中文不得暗示已写入: \(w)") }
+        let enForbidden = ["added", "scheduled", "logged", "created", "workout"]
+        for w in enForbidden { XCTAssertFalse(enText.contains(w), "补量采纳英文不得暗示已写入: \(w)") }
+        // 同样守住肌群/组数/禁词红线。
+        XCTAssertFalse(zhText.contains("组"), "补量采纳中文不得提组数")
+        let words = enWords(en.coachAdoptVolumeLabel + en.volumeAckToast)
+        XCTAssertFalse(words.contains("set") || words.contains("sets"), "补量采纳英文不得提组数")
+        XCTAssertFalse(words.contains("best") || words.contains("ai") || words.contains("optimal"), "补量采纳英文不得出现禁词")
+    }
 }
