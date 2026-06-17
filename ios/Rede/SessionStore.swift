@@ -285,6 +285,40 @@ final class SessionStore {
         }
     }
 
+    /// FR-T5 教练卡「暂不处理」（切片6b）：经写闸累加 dismiss 计数 → 重载今日 →
+    /// 引擎据降频政策决定本卡是否再出（温和：换动作/修数据连续 2 次后、补量本周 1 次后不再出）。
+    /// actionKey 必须用引擎产出的 action.actionKey（闭环一致，UI 不手搓 key）。
+    @discardableResult
+    func dismissCoachAction(actionKey: String) async -> Bool {
+        guard !isSaving else { return false }
+        isSaving = true
+        defer { isSaving = false }
+        let fileURL = TodayModel.canonicalFileURL()
+        let result: Result<Void, Error> = await Task.detached(priority: .userInitiated) {
+            do {
+                try FileManager.default.createDirectory(
+                    at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true
+                )
+                let writer = CanonicalSessionWriter(
+                    store: JSONFileAppDataStore(fileURL: fileURL),
+                    gate: DataHealthGate()
+                )
+                try writer.applyCoachActionDismissal(actionKey: actionKey)
+                return .success(())
+            } catch {
+                return .failure(error)
+            }
+        }.value
+        switch result {
+        case .success:
+            await loadToday() // 重载 → 降频后本卡消失（如适用）
+            return true
+        case .failure(let error):
+            saveErrorText = String(describing: error)
+            return false
+        }
+    }
+
     // MARK: - M5-1b 引导（FR-ON1/3）
 
     /// 是否需要首启引导。铁律：unreadable ≠ 新用户——文件在但读不懂时绝不进引导

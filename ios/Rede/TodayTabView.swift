@@ -201,6 +201,9 @@ struct TodayTabView: View {
         model?.prescription.map { s.trainingDayName($0.dayCode) } ?? ""
     }
 
+    /// FR-T5 教练卡（切片6b）：引擎已按优先级排序并降频，每屏只取首条（设计 ≤1）。
+    private var coachAction: CoachAction? { model?.coachActions.first }
+
     // MARK: - 今日页（密而干净，2026-06-15 owner 拍板）：状态 + 全天清单 + 依据
 
     private var todayContent: some View {
@@ -231,6 +234,12 @@ struct TodayTabView: View {
                     }
                     .padding(.horizontal, RedeSpace.page)
                     .padding(.top, 8)
+                }
+
+                if let action = coachAction {
+                    coachCard(action)
+                        .padding(.horizontal, RedeSpace.page)
+                        .padding(.top, 12)
                 }
 
                 RuleDivider()
@@ -456,6 +465,61 @@ struct TodayTabView: View {
 
     private var opTick: some View {
         Rectangle().fill(Color.redeEtch).frame(width: 1, height: 8)
+    }
+
+    // MARK: - 教练卡（FR-T5 切片6b；首个用户可见教练动作 — 只读卡 + 暂不处理）
+
+    /// 教练卡：信号+影响双语句 + 「暂不处理」（降频入口）。采纳/撤销在切片6c 接。
+    /// 视觉用 redeSurface 子面，不用 ForgedCard——保留 hero 判断牌的整面板公理预算（budget 1）。
+    /// 仅在有处方的分支渲染：6b 能出的两类卡（换动作=源自处方到顶 reason、补量=仅 train/light）
+    /// 都以"今日有处方"为前提，故 rest/无处方/unreadable 分支不渲染卡 = 设计取舍，非遗漏（审查 MINOR-2）。
+    private func coachCard(_ action: CoachAction) -> some View {
+        let exName = action.exerciseId.map { localeStore.exerciseName($0) } ?? ""
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 9) {
+                Image(systemName: coachIcon(action.kind))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.redeEmber2)
+                    .padding(.top, 2)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(s.coachCardTitle(reasonCode: action.reasonCode, exerciseName: exName))
+                        .font(.redeSubhead)
+                        .foregroundStyle(Color.redeT1)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(s.coachCardBody(reasonCode: action.reasonCode, exerciseName: exName, count: action.count))
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeT3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            HStack {
+                Spacer()
+                Button(s.coachDismissLabel) {
+                    Task { await sessionStore.dismissCoachAction(actionKey: action.actionKey) }
+                }
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT4)
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: RedeShape.cardRadius, style: .continuous)
+                .fill(Color.redeSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: RedeShape.cardRadius, style: .continuous)
+                        .strokeBorder(Color.redeHair, lineWidth: 1)
+                )
+        )
+    }
+
+    private func coachIcon(_ kind: CoachActionKind) -> String {
+        switch kind {
+        case .dataReview: return "checklist"
+        case .exerciseSwap: return "arrow.triangle.2.circlepath"
+        case .volumeBoost: return "plus.circle"
+        }
     }
 
     // MARK: - 动作详情（FR-EX2；只读元数据 + 同族替代，主界面不堆元数据）
