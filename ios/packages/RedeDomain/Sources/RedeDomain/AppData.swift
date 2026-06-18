@@ -55,6 +55,16 @@ public struct AppData: Equatable, Sendable {
         )
     }
 
+    /// FR-NT1 休息结束提醒偏好（open-bag 加性，缺=关；不 seed、无 schema bump）。授权态由系统持有、不落库。
+    public var notificationRestEndEnabled: Bool {
+        storage["notifications"]?.asObject?["restEndEnabled"]?.asBool ?? false
+    }
+
+    /// FR-NT2 每周训练提醒偏好（同上；UI/调度接线见后续 slice）。
+    public var notificationWeeklyEnabled: Bool {
+        storage["notifications"]?.asObject?["weeklyEnabled"]?.asBool ?? false
+    }
+
     /// FR-T5 换动作前瞻覆盖（schema 11）：originalId → actualId 的只读映射。
     /// 缺容器/非字符串值跳过；空 = 无覆盖（schema 10 及更早天然空，零行为回归）。
     public var exerciseSubstitutions: [String: String] {
