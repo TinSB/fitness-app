@@ -48,17 +48,36 @@ public struct NotificationPreferences: Equatable, Sendable {
     }
 }
 
-/// 平台调度 seam（切片2 的 UNUserNotificationCenter 适配器实现；app 只见此协议）。
-/// 通知绝不碰 canonical——本协议只做平台侧调度/取消，幂等。
+/// 已渲染的每周提醒（平台调度入参）：策略产 messageCode，app 用 RedeL10n 解析成 title/body 后传入。
+public struct ResolvedWeeklyReminder: Equatable, Sendable {
+    public let id: String
+    public let weekday: Int   // 1=周日…7=周六
+    public let hour: Int
+    public let minute: Int
+    public let title: String
+    public let body: String
+    public init(id: String, weekday: Int, hour: Int, minute: Int, title: String, body: String) {
+        self.id = id
+        self.weekday = weekday
+        self.hour = hour
+        self.minute = minute
+        self.title = title
+        self.body = body
+    }
+}
+
+/// 平台调度 seam（UNUserNotificationCenter 适配器实现；app 只见此协议）。
+/// 通知绝不碰 canonical——本协议只做平台侧调度/取消，幂等。**取已渲染文案**（title/body）：
+/// code→文案由 app 层用 RedeL10n 解析后传入，本包/适配器零文案、零 RedeL10n 依赖（边界干净 + Sendable）。
 public protocol NotificationScheduling: Sendable {
     /// 请求授权（价值先行：在用户首次开开关时调，非首屏）。返回是否获授权。
     func requestAuthorization() async -> Bool
-    /// 安排休息结束提醒（FR-NT1）。
-    func scheduleRest(_ notification: ScheduledRestNotification)
+    /// 安排休息结束提醒（FR-NT1）。fireAfterSeconds > 0。
+    func scheduleRest(id: String, fireAfterSeconds: Int, title: String, body: String)
     /// 取消休息结束提醒（返回/跳过/结束训练时）。
     func cancelRest(id: String)
     /// 重注册每周提醒（FR-NT2，先清旧 weekly ids 再注册，幂等）。
-    func replaceWeekly(_ reminders: [WeeklyTrainingReminder])
+    func replaceWeekly(_ reminders: [ResolvedWeeklyReminder])
     /// 清除全部待发通知（总开关关闭/登出场景）。
     func cancelAll()
 }
