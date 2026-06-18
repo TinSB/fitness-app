@@ -14,6 +14,7 @@
 		BB00000000000000000001A2 /* RedeDataHealth in Frameworks */ = {isa = PBXBuildFile; productRef = BB00000000000000000001B2 /* RedeDataHealth */; };
 		BB00000000000000000001A3 /* RedePersistence in Frameworks */ = {isa = PBXBuildFile; productRef = BB00000000000000000001B3 /* RedePersistence */; };
 		BB00000000000000000001A4 /* RedeTrainingDecision in Frameworks */ = {isa = PBXBuildFile; productRef = BB00000000000000000001B4 /* RedeTrainingDecision */; };
+		DD00000000000000000000A1 /* RedeNotifications in Frameworks */ = {isa = PBXBuildFile; productRef = DD00000000000000000000B1 /* RedeNotifications */; };
 		BB00000000000000000001D1 /* TodayModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000001D2 /* TodayModel.swift */; };
 		BB00000000000000000001E1 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000001E2 /* SessionStore.swift */; };
 		CA00000000000000000000B1 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A1 /* RootTabView.swift */; };
@@ -96,6 +97,7 @@
 				BB00000000000000000001A3 /* RedePersistence in Frameworks */,
 				BB00000000000000000001A4 /* RedeTrainingDecision in Frameworks */,
 				CC00000000000000000001B1 /* RedeLocalSnapshot in Frameworks */,
+				DD00000000000000000000A1 /* RedeNotifications in Frameworks */,
 				EE00000000000000000000D2 /* RedeWidgetShared in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -189,6 +191,7 @@
 				BB00000000000000000001B3 /* RedePersistence */,
 				BB00000000000000000001B4 /* RedeTrainingDecision */,
 				CC00000000000000000001B2 /* RedeLocalSnapshot */,
+				DD00000000000000000000B1 /* RedeNotifications */,
 				EE00000000000000000000D1 /* RedeWidgetShared */,
 			);
 			productName = Rede;
@@ -246,6 +249,7 @@
 				BB00000000000000000001C3 /* XCLocalSwiftPackageReference "packages/RedePersistence" */,
 				BB00000000000000000001C4 /* XCLocalSwiftPackageReference "packages/RedeTrainingDecision" */,
 				CC00000000000000000001B3 /* XCLocalSwiftPackageReference "packages/RedeLocalSnapshot" */,
+				DD00000000000000000000C1 /* XCLocalSwiftPackageReference "packages/RedeNotifications" */,
 				EE00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/RedeWidgetShared" */,
 			);
 			productRefGroup = AA00000000000000000000A3 /* Products */;
@@ -607,6 +611,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = packages/RedeLocalSnapshot;
 		};
+		DD00000000000000000000C1 /* XCLocalSwiftPackageReference "packages/RedeNotifications" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/RedeNotifications;
+		};
 		EE00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/RedeWidgetShared" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = packages/RedeWidgetShared;
@@ -637,6 +645,10 @@
 		CC00000000000000000001B2 /* RedeLocalSnapshot */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = RedeLocalSnapshot;
+		};
+		DD00000000000000000000B1 /* RedeNotifications */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeNotifications;
 		};
 		EE00000000000000000000D1 /* RedeWidgetShared */ = {
 			isa = XCSwiftPackageProductDependency;

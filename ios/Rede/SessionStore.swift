@@ -2,6 +2,7 @@ import Foundation
 import RedeDataHealth
 import RedeDomain
 import RedeL10n
+import RedeNotifications
 import RedePersistence
 import RedeTrainingDecision
 import RedeWidgetShared
@@ -49,6 +50,9 @@ final class SessionStore {
     var todayOutcome: TodayModel.LoadOutcome?
     var flow: TrainFlowState?
     var sessionStartedAt: Date?
+    /// FR-NT1/2 本地通知调度 seam（切片2 接线证明：包已链入 app + 适配器编译）。
+    /// 切片3 起接休息生命周期 schedule/cancel + 偏好 + RedeL10n 文案；当前仅持有、不调用（休眠）。
+    let notificationScheduler: NotificationScheduling = UNUserNotificationCenterScheduler()
     /// 休息倒计时的墙钟锚点（owner 反馈 2026-06-15 修复）：剩余秒数曾放在 TrainTabView
     /// 的 @State，切 tab 时 RootTabView 用 switch 销毁视图树即归 0。移到会话层后跨切页
     /// 存活，且按绝对结束时刻求剩余 → 离屏期间真实时间照常流逝。详见 RestCountdown。
