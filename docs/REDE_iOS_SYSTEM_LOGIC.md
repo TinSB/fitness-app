@@ -19,7 +19,7 @@ iOS 原生账号、云同步、CRDT/watchOS 的已拍板方向保留在 `docs/RE
 
 legacy/reference inventory 处置状态(2026-06-09 M1-0 起):
 
-- **旧包退役 + 干净重建**:9 个旧 IronPath/PWA 时代 Swift 包(`RedeDomain`、`RedeDataHealth`、`RedePersistence`、`RedeHealthKit`、`RedeTrainingDecision`、`RedeBackup`、`RedeUIKit`、`RedeLocalSnapshot`、`RedeNotifications`)于 M1-0 整体移出编译面,旧实现参考走 git 历史(tag `legacy-parity-final`),其 PWA parity golden 测试随旧包退役。**随后 5 个名字以干净包重建并现役**(M1-1 起,带全新测试):`RedeDomain`、`RedeDataHealth`、`RedePersistence`、`RedeTrainingDecision`、`RedeLocalSnapshot`——它们是 §6/§8 描述的"已实现"引擎的承载包,当前在 `ios/packages/` 中、在 CI 测试面内(连同一直在树的 `RedeWidgetShared`、`RedeL10n`,共 7 个)。**未重建、当前不存在**的 4 个:`RedeHealthKit`、`RedeBackup`、`RedeUIKit`、`RedeNotifications`(目标包名,待未来 amend 后才创建)。
+- **旧包退役 + 干净重建**:9 个旧 IronPath/PWA 时代 Swift 包(`RedeDomain`、`RedeDataHealth`、`RedePersistence`、`RedeHealthKit`、`RedeTrainingDecision`、`RedeBackup`、`RedeUIKit`、`RedeLocalSnapshot`、`RedeNotifications`)于 M1-0 整体移出编译面,旧实现参考走 git 历史(tag `legacy-parity-final`),其 PWA parity golden 测试随旧包退役。**随后 5 个名字以干净包重建并现役**(M1-1 起,带全新测试):`RedeDomain`、`RedeDataHealth`、`RedePersistence`、`RedeTrainingDecision`、`RedeLocalSnapshot`——它们是 §6/§8 描述的"已实现"引擎的承载包,当前在 `ios/packages/` 中、在 CI 测试面内(连同一直在树的 `RedeWidgetShared`、`RedeL10n`,共 7 个;FR-NT1/2 批准后新建 `RedeNotifications`(本地通知 policy + #if os(iOS) adapter),现共 **8 个**在 CI 测试面内)。**未重建、当前不存在**的 3 个:`RedeHealthKit`、`RedeBackup`、`RedeUIKit`(目标包名,待未来 amend 后才创建)。
 - **仍在树内的 legacy/参考材料**:`ios/packages/RedeL10n` 内的 legacy Terms/Formatters parity 文件(与 M0-3 新代码并存,待后续 slice 清退)、`ios/RedeWidget`(旧 widget,仅参考)、`ios/ParityFixtures`(冻结参考输入;RedeL10n parity 测试仍在消费,并保留为未来老数据迁移的验收素材——是否做迁移为待定产品决策,新模型按开门设计:open-bag + 沿用 legacy 字段词汇表)。`ios/Rede` 自 M0-1 起已是 clean shell,不再属于 legacy。
 - **通用规则不变**:legacy 材料可以帮助理解曾经的命名、测试和局部算法,但不得作为“已完成实现”的证明,也不得被整包搬运。任何复用都必须进入明确 rewrite slice,先审查输入输出、source-of-truth 和测试合同。
 
@@ -96,6 +96,9 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 - Saved-session exercise replacement（换动作前瞻覆盖，FR-T5）。
 - Coach-action dismiss intent（暂不处理，喂降频计数，FR-T5）。
 - Coach-action volume-boost intent（补量承认，频率维度；不加训练不改处方，FR-T5）。
+- Notification preference edit（FR-NT1/2 通知开关；open-bag 加性、缺=关、无 schema bump）。
+
+> 本地通知（FR-NT1 休息结束 + FR-NT2 每周）由 `RedeNotifications` 纯策略 + `#if os(iOS)` UNUserNotificationCenter 适配器调度：**派生临时、绝不落 canonical**（只把开关偏好当只读输入）；无 remote push（Master §9）；策略产 typed code、文案归 RedeL10n（§7.3 中性、禁断签/羞辱/施压）。FR-NT1 在休息生命周期 schedule/cancel（rest-begin 排、rest-finished/收尾/放弃取消）；FR-NT2 固定 2 条（周一上午「新周」/周四傍晚「保持节奏」，UNCalendarTrigger repeats，幂等重注册，可关）。授权价值先行（首次开开关时请求），被拒不影响核心功能。阶梯外的频率/时间为 MVP 起步值待校准；按 daysPerWeek 缩放 + 用户自选时间后置。
 
 > 教练动作的采纳、暂不处理及撤销都经同一 gated writer，撤销 = 单步即时反向写（不另起 undo 栈）。**UI 撤销入口只接了换动作 / 补量两类**（`removeExerciseSubstitution` / `removeVolumeBoost`）；「暂不处理」是单向降频信号——写闸层有反向口（`removeCoachActionDismissal`）但不暴露 UI 撤销，卡按降频策略自然再现。引擎契约见 §6.4a。
 

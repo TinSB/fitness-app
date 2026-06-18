@@ -32,4 +32,29 @@ final class NotificationCopyTests: XCTestCase {
             for w in enForbidden { XCTAssertFalse(lower.contains(w), "英文出现禁词 \(w): \(t)") }
         }
     }
+
+    // FR-NT2 每周文案：两个 code 双语非空互异、未知 code 空 + 设置标签双语 + §7.3 红线。
+    func testWeeklyCopyPerCodeAndSettings() {
+        for code in ["weekly_new_week", "weekly_keep_pace"] {
+            for s in [zh, en] {
+                XCTAssertFalse(s.notificationWeeklyTitle(messageCode: code).isEmpty, "缺标题 \(code)")
+                XCTAssertFalse(s.notificationWeeklyBody(messageCode: code).isEmpty, "缺正文 \(code)")
+            }
+            XCTAssertNotEqual(zh.notificationWeeklyTitle(messageCode: code), en.notificationWeeklyTitle(messageCode: code))
+        }
+        XCTAssertEqual(zh.notificationWeeklyTitle(messageCode: "made-up"), "", "未知 code 空")
+        XCTAssertNotEqual(zh.notificationWeeklyLabel, en.notificationWeeklyLabel)
+        XCTAssertFalse(zh.notificationWeeklyHint.isEmpty)
+    }
+
+    func testWeeklyCopyNoForbiddenTone() {
+        let zhForbidden = ["别断", "断签", "别偷懒", "逆袭", "加油", "坚持住"]
+        let enForbidden = ["streak", "don't break", "no excuses", "crush", "don't stop"]
+        for code in ["weekly_new_week", "weekly_keep_pace"] {
+            let zhText = zh.notificationWeeklyTitle(messageCode: code) + zh.notificationWeeklyBody(messageCode: code)
+            let enText = (en.notificationWeeklyTitle(messageCode: code) + en.notificationWeeklyBody(messageCode: code)).lowercased()
+            for w in zhForbidden { XCTAssertFalse(zhText.contains(w), "每周中文禁词 \(w)") }
+            for w in enForbidden { XCTAssertFalse(enText.contains(w), "每周英文禁词 \(w)") }
+        }
+    }
 }
