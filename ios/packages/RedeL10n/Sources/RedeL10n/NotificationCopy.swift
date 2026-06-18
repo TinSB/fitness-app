@@ -24,5 +24,29 @@ extension RedeStrings {
             "Notifications are off in iOS Settings — turn them on there to use this.")
     }
 
+    // MARK: FR-NT2 每周训练提醒（中性、价值先行；§7.3 禁断签/羞辱/streak 施压）
+    /// 按 messageCode 渲染每周提醒标题（weekly_new_week / weekly_keep_pace）。
+    public func notificationWeeklyTitle(messageCode: String) -> String {
+        switch messageCode {
+        case "weekly_new_week": return t2n("新的一周", "New week")
+        case "weekly_keep_pace": return t2n("保持训练节奏", "Keep your training going")
+        default: return ""
+        }
+    }
+    public func notificationWeeklyBody(messageCode: String) -> String {
+        switch messageCode {
+        case "weekly_new_week": return t2n("安排一下本周训练。", "A good time to plan this week's training.")
+        case "weekly_keep_pace": return t2n("本周还有训练日，方便时练一次。", "Still time for a session this week.")
+        default: return ""
+        }
+    }
+
+    // MARK: 设置页每周开关
+    public var notificationWeeklyLabel: String { t2n("每周训练提醒", "Weekly training reminder") }
+    public var notificationWeeklyHint: String {
+        t2n("每周两次轻提醒（周一上午、周四傍晚）——中性、不催促。",
+            "A light nudge twice a week (Mon morning, Thu evening) — neutral, no pressure.")
+    }
+
     private func t2n(_ zh: String, _ en: String) -> String { locale == .zh ? zh : en }
 }

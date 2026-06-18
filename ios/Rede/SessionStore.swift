@@ -54,6 +54,7 @@ final class SessionStore {
     let notificationScheduler: NotificationScheduling = UNUserNotificationCenterScheduler()
     /// 通知偏好/语言缓存（rest-begin 不每次读盘）：loadToday + saveNotificationPreferences 后刷新。
     private var notifRestEndEnabled = false
+    private var notifWeeklyEnabled = false
     private var notifLocale: RedeLocale = .en
     /// 休息倒计时的墙钟锚点（owner 反馈 2026-06-15 修复）：剩余秒数曾放在 TrainTabView
     /// 的 @State，切 tab 时 RootTabView 用 switch 销毁视图树即归 0。移到会话层后跨切页
@@ -241,11 +242,36 @@ final class SessionStore {
     }
 
     /// 刷新通知缓存（rest-begin 调度用，避免每组读盘）：loadToday + 保存偏好后调用。
+    /// 顺带按当前偏好重注册每周提醒（幂等；偏好/语言变更后保持系统侧一致）。
     private func refreshNotificationCache() {
-        notifRestEndEnabled = SessionStore.loadNotificationPreferences().restEnd
+        let prefs = SessionStore.loadNotificationPreferences()
+        notifRestEndEnabled = prefs.restEnd
+        notifWeeklyEnabled = prefs.weekly
         var locale = RedeLocale.resolve(fromLanguageCode: Locale.current.language.languageCode?.identifier)
         if let raw = SessionStore.loadPreferences().locale, let persisted = RedeLocale(rawValue: raw) { locale = persisted }
         notifLocale = locale
+        syncWeeklyReminders()
+    }
+
+    /// FR-NT2：按偏好重注册每周提醒。先清掉"策略管理但当前不激活"的每周 id（含全关时清全部），
+    /// 再注册激活的（文案经 RedeL10n 按 messageCode 解析）。幂等。
+    private func syncWeeklyReminders() {
+        let prefs = NotificationPreferences(masterEnabled: true, restEndEnabled: notifRestEndEnabled, weeklyEnabled: notifWeeklyEnabled)
+        let reminders = WeeklyTrainingReminderPolicy.weeklyReminders(preferences: prefs)
+        let activeIds = Set(reminders.map(\.reminderId))
+        for id in WeeklyTrainingReminderPolicy.managedWeeklyIds where !activeIds.contains(id) {
+            notificationScheduler.cancelRest(id: id) // 通用按 id 移除待发——清掉已不激活的每周项
+        }
+        guard !reminders.isEmpty else { return }
+        let strings = RedeStrings(locale: notifLocale)
+        let resolved = reminders.map { reminder in
+            ResolvedWeeklyReminder(
+                id: reminder.reminderId, weekday: reminder.weekday, hour: reminder.hour, minute: reminder.minute,
+                title: strings.notificationWeeklyTitle(messageCode: reminder.messageCode),
+                body: strings.notificationWeeklyBody(messageCode: reminder.messageCode)
+            )
+        }
+        notificationScheduler.replaceWeekly(resolved)
     }
 
     /// 请求系统通知授权（价值先行：在用户首次开开关时调）。返回是否获授权。

@@ -14,6 +14,10 @@ public enum WeeklyTrainingReminderPolicy {
     private static let mondayHour = 9     // 周一上午起动
     private static let thursdayHour = 18  // 周四傍晚进度检查
 
+    /// 本策略**可能管理**的全部每周 id（完整集合）。app 在每次同步时先清掉"不在当前激活集"的这些 id，
+    /// 保证关闭每周 / 减少条数时旧注册被清除（replaceWeekly 只清本批 id，无法清"已不激活"的旧 id）。
+    public static let managedWeeklyIds = ["weekly-mon", "weekly-thu"]
+
     /// 当前偏好下的每周提醒计划。返回 [] = 不提醒（总开关或每周项关）。
     public static func weeklyReminders(preferences: NotificationPreferences) -> [WeeklyTrainingReminder] {
         guard preferences.masterEnabled, preferences.weeklyEnabled else { return [] }

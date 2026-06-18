@@ -209,50 +209,21 @@ struct SettingsSheet: View {
         .sensoryFeedback(.selection, trigger: mesocycleOn)
     }
 
-    // 通知（FR-NT1）：休息结束提醒。开启先请求系统授权（价值先行 opt-in），被拒回滚 + 指向系统设置。
+    // 通知（FR-NT1 休息结束 + FR-NT2 每周）：开启先请求系统授权（价值先行 opt-in），被拒回滚 + 指向系统设置。
     private var notificationsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Overline(text: s.notificationsSectionTitle)
                 .padding(.top, 18)
-            HStack {
-                Text(s.notificationRestEndLabel)
-                    .font(.redeBody)
-                    .foregroundStyle(Color.redeT2)
-                Spacer()
-                SteelToggle(isOn: Binding(
-                    get: { notifRestEndOn },
-                    set: { newValue in
-                        guard newValue != notifRestEndOn, !isNotifBusy else { return }
-                        isNotifBusy = true
-                        // UI 态在写盘**成功后**才置（不乐观更新）→ 与磁盘一致；isNotifBusy 串行化 +
-                        // .disabled 防授权/写盘期间并发切换的竞态（审查 MAJOR-2）。
-                        if newValue {
-                            Task {
-                                defer { isNotifBusy = false }
-                                let granted = await sessionStore.requestNotificationAuthorization()
-                                guard granted else { notifPermissionDenied = true; return }
-                                notifPermissionDenied = false
-                                if await sessionStore.saveNotificationPreferences(restEndEnabled: true, weeklyEnabled: notifWeeklyOn) {
-                                    notifRestEndOn = true
-                                }
-                            }
-                        } else {
-                            notifPermissionDenied = false
-                            Task {
-                                defer { isNotifBusy = false }
-                                if await sessionStore.saveNotificationPreferences(restEndEnabled: false, weeklyEnabled: notifWeeklyOn) {
-                                    notifRestEndOn = false
-                                }
-                            }
-                        }
-                    }
-                ))
-                .disabled(isNotifBusy)
-            }
-            Text(s.notificationRestEndHint)
-                .font(.redeCaption)
-                .foregroundStyle(Color.redeT3)
-                .fixedSize(horizontal: false, vertical: true)
+            notifToggleRow(
+                label: s.notificationRestEndLabel, hint: s.notificationRestEndHint, isOn: { notifRestEndOn },
+                persist: { await sessionStore.saveNotificationPreferences(restEndEnabled: $0, weeklyEnabled: notifWeeklyOn) },
+                setLocal: { notifRestEndOn = $0 }
+            )
+            notifToggleRow(
+                label: s.notificationWeeklyLabel, hint: s.notificationWeeklyHint, isOn: { notifWeeklyOn },
+                persist: { await sessionStore.saveNotificationPreferences(restEndEnabled: notifRestEndOn, weeklyEnabled: $0) },
+                setLocal: { notifWeeklyOn = $0 }
+            )
             if notifPermissionDenied {
                 Text(s.notificationPermissionDeniedHint)
                     .font(.redeCaption)
@@ -261,6 +232,46 @@ struct SettingsSheet: View {
             }
         }
         .sensoryFeedback(.selection, trigger: notifRestEndOn)
+        .sensoryFeedback(.selection, trigger: notifWeeklyOn)
+    }
+
+    /// 单个通知开关行 + 说明。UI 态写盘**成功后**才置（与磁盘一致）；isNotifBusy 串行化 + .disabled
+    /// 防授权/写盘期间并发切换竞态（审查 MAJOR-2）；开启先请求系统授权（价值先行）。
+    @ViewBuilder
+    private func notifToggleRow(
+        label: String, hint: String, isOn: @escaping () -> Bool,
+        persist: @escaping (Bool) async -> Bool, setLocal: @escaping (Bool) -> Void
+    ) -> some View {
+        HStack {
+            Text(label).font(.redeBody).foregroundStyle(Color.redeT2)
+            Spacer()
+            SteelToggle(isOn: Binding(
+                get: isOn,
+                set: { newValue in
+                    guard newValue != isOn(), !isNotifBusy else { return }
+                    isNotifBusy = true
+                    if newValue {
+                        Task {
+                            defer { isNotifBusy = false }
+                            guard await sessionStore.requestNotificationAuthorization() else { notifPermissionDenied = true; return }
+                            notifPermissionDenied = false
+                            if await persist(true) { setLocal(true) }
+                        }
+                    } else {
+                        notifPermissionDenied = false
+                        Task {
+                            defer { isNotifBusy = false }
+                            if await persist(false) { setLocal(false) }
+                        }
+                    }
+                }
+            ))
+            .disabled(isNotifBusy)
+        }
+        Text(hint)
+            .font(.redeCaption)
+            .foregroundStyle(Color.redeT3)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     // MARK: - 设备铭牌（唯一 hero）：训练背景 spec plate + 修改回答（FR-SE2）
