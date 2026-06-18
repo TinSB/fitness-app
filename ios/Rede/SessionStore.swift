@@ -50,9 +50,11 @@ final class SessionStore {
     var todayOutcome: TodayModel.LoadOutcome?
     var flow: TrainFlowState?
     var sessionStartedAt: Date?
-    /// FR-NT1/2 本地通知调度 seam（切片2 接线证明：包已链入 app + 适配器编译）。
-    /// 切片3 起接休息生命周期 schedule/cancel + 偏好 + RedeL10n 文案；当前仅持有、不调用（休眠）。
+    /// FR-NT1/2 本地通知调度 seam（切片2 链接证明 → 切片3 接休息生命周期）。
     let notificationScheduler: NotificationScheduling = UNUserNotificationCenterScheduler()
+    /// 通知偏好/语言缓存（rest-begin 不每次读盘）：loadToday + saveNotificationPreferences 后刷新。
+    private var notifRestEndEnabled = false
+    private var notifLocale: RedeLocale = .en
     /// 休息倒计时的墙钟锚点（owner 反馈 2026-06-15 修复）：剩余秒数曾放在 TrainTabView
     /// 的 @State，切 tab 时 RootTabView 用 switch 销毁视图树即归 0。移到会话层后跨切页
     /// 存活，且按绝对结束时刻求剩余 → 离屏期间真实时间照常流逝。详见 RestCountdown。
@@ -76,6 +78,7 @@ final class SessionStore {
         todayOutcome = await TodayModel.loadOutcomeAsync()
         checkForRestorableDraft()
         refreshWidgetSnapshot()
+        refreshNotificationCache() // FR-NT1：缓存偏好/语言供 rest-begin 调度
     }
 
     // MARK: - W-1 Readiness Widget 接线（slice 1）：今日裁决落定 → 写 App Group 派生只读快照 → 触发刷新
@@ -228,6 +231,59 @@ final class SessionStore {
         return appData.mesocycle.enabled
     }
 
+    // MARK: - FR-NT1/2 通知偏好 + 授权
+
+    /// 读当前通知偏好（设置开关初值；缺=关）。
+    static func loadNotificationPreferences() -> (restEnd: Bool, weekly: Bool) {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load() else { return (false, false) }
+        return (appData.notificationRestEndEnabled, appData.notificationWeeklyEnabled)
+    }
+
+    /// 刷新通知缓存（rest-begin 调度用，避免每组读盘）：loadToday + 保存偏好后调用。
+    private func refreshNotificationCache() {
+        notifRestEndEnabled = SessionStore.loadNotificationPreferences().restEnd
+        var locale = RedeLocale.resolve(fromLanguageCode: Locale.current.language.languageCode?.identifier)
+        if let raw = SessionStore.loadPreferences().locale, let persisted = RedeLocale(rawValue: raw) { locale = persisted }
+        notifLocale = locale
+    }
+
+    /// 请求系统通知授权（价值先行：在用户首次开开关时调）。返回是否获授权。
+    func requestNotificationAuthorization() async -> Bool {
+        await notificationScheduler.requestAuthorization()
+    }
+
+    /// 通知偏好写入：经唯一写闸 open-bag scalar edit；成功后刷新缓存。失败如实置 saveErrorText。
+    @discardableResult
+    func saveNotificationPreferences(restEndEnabled: Bool, weeklyEnabled: Bool) async -> Bool {
+        guard !isSaving else { return false }
+        isSaving = true
+        defer { isSaving = false }
+        let fileURL = TodayModel.canonicalFileURL()
+        let result: Result<Void, Error> = await Task.detached(priority: .userInitiated) {
+            do {
+                try FileManager.default.createDirectory(
+                    at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true
+                )
+                let writer = CanonicalSessionWriter(
+                    store: JSONFileAppDataStore(fileURL: fileURL), gate: DataHealthGate()
+                )
+                try writer.applyNotificationPreferences(restEndEnabled: restEndEnabled, weeklyEnabled: weeklyEnabled)
+                return .success(())
+            } catch {
+                return .failure(error)
+            }
+        }.value
+        switch result {
+        case .success:
+            refreshNotificationCache()
+            return true
+        case .failure(let error):
+            saveErrorText = String(describing: error)
+            return false
+        }
+    }
+
     /// 偏好写入（FR-SE1/SE3 持久化）：经写闸 scalar edit；失败如实置 saveErrorText。
     /// isSaving 互斥沿写闸单调用方合同（审查 MAJOR-1：防快速连点并发 load-modify-write 丢更新）。
     @discardableResult
@@ -253,6 +309,7 @@ final class SessionStore {
         }.value
         switch result {
         case .success:
+            refreshNotificationCache() // 改语言后同步通知文案语言缓存（审查 MINOR-1）
             return true
         case .failure(let error):
             saveErrorText = String(describing: error)
@@ -507,15 +564,36 @@ final class SessionStore {
     /// restFinished 或落到 summary = 结束清空；confirmEnd↔resting 折返（结束确认弹层
     /// 取消后继续训练）期间不动锚点，故剩余随墙钟延续、不会重置。
     private func syncRestCountdown(after event: TrainFlowEvent) {
-        guard let flow else { restCountdown.clear(); return }
+        guard let flow else { restCountdown.clear(); cancelRestNotification(); return }
         switch event {
         case .logSet where flow.phase == .resting:
             restCountdown.begin(seconds: flow.restSecondsPlanned)
+            scheduleRestNotification(restSecondsPlanned: flow.restSecondsPlanned)
         case .restFinished:
             restCountdown.clear()
+            cancelRestNotification()
         default:
-            if flow.phase == .summary { restCountdown.clear() }
+            if flow.phase == .summary { restCountdown.clear(); cancelRestNotification() }
         }
+    }
+
+    /// FR-NT1：休息开始时按偏好安排锁屏提醒（偏好关→策略返回 nil→不安排）。文案经 RedeL10n 解析后传适配器。
+    private func scheduleRestNotification(restSecondsPlanned: Int) {
+        // MVP：masterEnabled 假设与 notifRestEndEnabled 对齐（开关开启已过授权流）。用户事后在 iOS
+        // 系统设置关掉通知时，这里仍会 scheduleRest，但系统端静默不送达（不崩、无害）——审查 MINOR-2。
+        let prefs = NotificationPreferences(masterEnabled: true, restEndEnabled: notifRestEndEnabled, weeklyEnabled: false)
+        guard let plan = RestNotificationPolicy.scheduleOnRestBegin(restSecondsPlanned: restSecondsPlanned, preferences: prefs) else { return }
+        let strings = RedeStrings(locale: notifLocale)
+        notificationScheduler.scheduleRest(
+            id: plan.notificationId,
+            fireAfterSeconds: plan.fireAfterSeconds,
+            title: strings.notificationRestEndTitle,
+            body: strings.notificationRestEndBody
+        )
+    }
+
+    private func cancelRestNotification() {
+        notificationScheduler.cancelRest(id: RestNotificationPolicy.shouldCancelRestNotification())
     }
 
     private func persistDraft() {
@@ -566,6 +644,7 @@ final class SessionStore {
         sessionStartedAt = nil
         saveErrorText = nil
         restCountdown.clear()
+        cancelRestNotification() // FR-NT1：放弃/收尾时清掉待发的休息提醒，避免训练已结束还弹（审查 MAJOR-1）
         DraftFile.clear()
     }
 

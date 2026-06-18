@@ -160,6 +160,20 @@ public struct CanonicalSessionWriter {
         }
     }
 
+    /// 已批准写入类别：通知偏好编辑（FR-NT1/2）。open-bag 加性 scalar edit——只动 notifications 容器、
+    /// 其余顶层键原样保留；缺=关、无 seed、无 schema bump。授权态由系统持有、不落库（默认 off = opt-in）。
+    @discardableResult
+    public func applyNotificationPreferences(restEndEnabled: Bool, weeklyEnabled: Bool) throws -> AppData {
+        return try performGatedMutation { current in
+            var storage = current.storage
+            var notif = storage["notifications"]?.asObject ?? [:]
+            notif["restEndEnabled"] = .bool(restEndEnabled)
+            notif["weeklyEnabled"] = .bool(weeklyEnabled)
+            storage["notifications"] = .object(notif)
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
     /// 已批准写入类别：换动作前瞻覆盖采纳（FR-T5 saved-session exercise replacement，schema 11）。
     /// 采纳「以后把 originalId 换成 actualId」→ open-bag 合并写
     /// storage["exerciseSubstitutions"][originalId]=actualId，其余键原样保留；走全套 gate（写前备份）。
