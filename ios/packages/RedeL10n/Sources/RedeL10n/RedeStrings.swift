@@ -73,7 +73,6 @@ public struct RedeStrings: Sendable {
     public var todayReceiptLine: String { t("本周推举量已封顶", "Pressing volume is capped this week") }
     public var todayWhyThisCall: String { t("查看依据", "Why this call") }
     public var todayHideReason: String { t("收起依据", "Hide reason") }
-    public var receiptSignal: String { t("信号", "Signal") }
     public var receiptChange: String { t("调整", "Change") }
     public var receiptControl: String { t("控制", "Control") }
     public var todaySignalLine: String { t("上次肩推偏沉 · 睡眠 6.2h", "Last overhead felt heavy · sleep 6.2h") }
@@ -132,9 +131,9 @@ public struct RedeStrings: Sendable {
 
     // MARK: - Plan 周期条（FR-PL2 S5：仅周期化开启且有真历史时显示；按引擎相位 rawValue 取标签）
     public var planCycleOverline: String { t("当前周期", "Current cycle") }
-    /// 周序 caption（week 取 1-based）："第 3 / 4 周 · 过载"。
-    public func planCycleWeekOf(week: Int, total: Int, phaseLabel: String) -> String {
-        t("第 \(week) / \(total) 周 · \(phaseLabel)", "Week \(week) of \(total) · \(phaseLabel)")
+    /// 周序 caption（无相位，相位已在节点下逐个标，摘要不重复）："第 3 / 4 周"。
+    public func planCycleWeek(week: Int, total: Int) -> String {
+        t("第 \(week) / \(total) 周", "Week \(week) of \(total)")
     }
     /// 周期相位短标签（节点下方；按 MesocyclePhase.rawValue 映射）。未知 → 原值兜底。
     public func mesoPhaseShort(_ raw: String) -> String {
@@ -156,9 +155,12 @@ public struct RedeStrings: Sendable {
     }
     /// 周排期下方尾注：排期已按训练进度滚动展示，仅剩调整/回滚待后续（FR-PL3/4）。
     public var planScheduleNote: String {
-        t("未来安排按你的训练进度滚动　调整建议与回滚将在后续版本加入",
-          "The schedule rolls forward with your training. Adjustment previews and rollback arrive in a later version")
+        // FR-PL3/4 调整建议/回滚已上线（#576–583）——去掉"将在后续版本加入"的腐烂承诺。
+        t("未来安排按你的训练进度滚动",
+          "The schedule rolls forward with your training")
     }
+    /// 计划页「回今日」文字链（有真排期时；大主按钮只留空态承接）。
+    public var planBackToToday: String { t("回今日", "Back to today") }
 
     // MARK: - 无障碍（VoiceOver hint/label）
     public var a11yExpand: String { t("展开", "Expand") }

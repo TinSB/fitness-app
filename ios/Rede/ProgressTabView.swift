@@ -565,6 +565,11 @@ struct ProgressTabView: View {
                             .font(.redeBody)
                             .monospacedDigit()
                             .foregroundStyle(Color.redeT3)
+                        // 可点线索：整行可点开当次详情，尾部 chevron 明示（affordance 三件套之一）。
+                        Image(systemName: "chevron.right")
+                            .font(.redeCaption)
+                            .foregroundStyle(Color.redeT4)
+                            .accessibilityHidden(true) // 装饰性线索；行的可点性已由 Button 表达
                     }
                     .padding(.vertical, 10)
                     .contentShape(Rectangle()) // 整行可点（含 Spacer）+ 按压反馈覆盖全行

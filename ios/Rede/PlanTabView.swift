@@ -80,12 +80,30 @@ struct PlanTabView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
-                        // 有排期 → 仅剩调整/回滚待后续；无排期（理论不达）→ 旧诚实占位
-                        Text(projection.isEmpty ? s.planEmptyNote : s.planScheduleNote)
-                            .font(.redeCallout)
-                            .foregroundStyle(Color.redeT3)
-                        EmbButton(icon: "arrow.left", title: s.trainEmptyAction, action: onGoToday)
-                            .padding(.top, 4)
+                        if projection.isEmpty {
+                            // 无排期（理论不达）→ 诚实占位 + 空态主按钮（§12.5 空态承接）
+                            Text(s.planEmptyNote)
+                                .font(.redeCallout)
+                                .foregroundStyle(Color.redeT3)
+                            EmbButton(icon: "arrow.left", title: s.trainEmptyAction, action: onGoToday)
+                                .padding(.top, 4)
+                        } else {
+                            // 有真排期 →「回今日」降为文字链（大主按钮只留给空态，owner 拍板）。
+                            Text(s.planScheduleNote)
+                                .font(.redeCallout)
+                                .foregroundStyle(Color.redeT3)
+                            Button(action: onGoToday) {
+                                HStack(spacing: 6) {
+                                    Text(s.planBackToToday)
+                                    Image(systemName: "chevron.right").font(.redeCaption)
+                                }
+                                .font(.redeCallout)
+                                .foregroundStyle(Color.redeT3)
+                                .frame(minHeight: RedeShape.controlHeight, alignment: .leading)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.redePressable)
+                        }
                     }
                     .padding(.horizontal, RedeSpace.page)
                     .padding(.top, 16)
@@ -348,13 +366,10 @@ struct MesocycleCycleBar: View {
                 }
             }
 
-            Text(s.planCycleWeekOf(
-                week: state.currentWeekInBlock + 1,
-                total: state.blockLengthWeeks,
-                phaseLabel: s.mesoPhaseShort(state.currentPhase.rawValue)
-            ))
-            .font(.redeCaption)
-            .foregroundStyle(Color.redeT2)
+            // 相位已在节点下逐个标（当前周高亮）——摘要只留周计数，不重复相位（owner 拍板去重）。
+            Text(s.planCycleWeek(week: state.currentWeekInBlock + 1, total: state.blockLengthWeeks))
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT2)
         }
     }
 
