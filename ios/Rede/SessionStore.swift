@@ -375,6 +375,71 @@ final class SessionStore {
         }
     }
 
+    // MARK: - FR-PL3/4 计划频率调整 采纳 / 回滚
+
+    /// 采纳频率调整（FR-PL3）：经写闸改 daysPerWeek + 落回滚记录 → 重载今日（plan 投影/处方吃新值）。
+    /// 失败如实置 saveErrorText 返 false（UI 回滚开关位/卡）。isSaving 互斥（同写闸单调用方合同）。
+    @discardableResult
+    func applyFrequencyAdjustment(fromDaysPerWeek: Int, toDaysPerWeek: Int) async -> Bool {
+        guard !isSaving else { return false }
+        isSaving = true
+        defer { isSaving = false }
+        let fileURL = TodayModel.canonicalFileURL()
+        let result: Result<Void, Error> = await Task.detached(priority: .userInitiated) {
+            do {
+                try FileManager.default.createDirectory(
+                    at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true
+                )
+                let writer = CanonicalSessionWriter(
+                    store: JSONFileAppDataStore(fileURL: fileURL), gate: DataHealthGate()
+                )
+                try writer.applyFrequencyAdjustment(fromDaysPerWeek: fromDaysPerWeek, toDaysPerWeek: toDaysPerWeek)
+                return .success(())
+            } catch {
+                return .failure(error)
+            }
+        }.value
+        switch result {
+        case .success:
+            await loadToday()
+            return true
+        case .failure(let error):
+            saveErrorText = String(describing: error)
+            return false
+        }
+    }
+
+    /// 回滚最近一次计划调整（FR-PL4，单步即时）：经写闸恢复原 daysPerWeek + 删记录 → 重载今日。无记录幂等。
+    @discardableResult
+    func rollbackPlanAdjustment() async -> Bool {
+        guard !isSaving else { return false }
+        isSaving = true
+        defer { isSaving = false }
+        let fileURL = TodayModel.canonicalFileURL()
+        let result: Result<Void, Error> = await Task.detached(priority: .userInitiated) {
+            do {
+                try FileManager.default.createDirectory(
+                    at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true
+                )
+                let writer = CanonicalSessionWriter(
+                    store: JSONFileAppDataStore(fileURL: fileURL), gate: DataHealthGate()
+                )
+                try writer.rollbackPlanAdjustment()
+                return .success(())
+            } catch {
+                return .failure(error)
+            }
+        }.value
+        switch result {
+        case .success:
+            await loadToday()
+            return true
+        case .failure(let error):
+            saveErrorText = String(describing: error)
+            return false
+        }
+    }
+
     /// FR-T5 教练卡「暂不处理」（切片6b）：经写闸累加 dismiss 计数 → 重载今日 →
     /// 引擎据降频政策决定本卡是否再出（温和：换动作/修数据连续 2 次后、补量本周 1 次后不再出）。
     /// actionKey 必须用引擎产出的 action.actionKey（闭环一致，UI 不手搓 key）。

@@ -174,6 +174,43 @@ public struct CanonicalSessionWriter {
         }
     }
 
+    /// 已批准写入类别：计划频率调整采纳（FR-PL3，= 既有「程序配置编辑」类别）。open-bag：写
+    /// programTemplate.daysPerWeek = toDaysPerWeek + 落 planAdjustment 回滚记录（记 fromDaysPerWeek），
+    /// 其余顶层/programTemplate 键原样保留；无 schema bump。owner 拍板「采纳允许改 program 结构」。
+    @discardableResult
+    public func applyFrequencyAdjustment(fromDaysPerWeek: Int, toDaysPerWeek: Int) throws -> AppData {
+        return try performGatedMutation { current in
+            var storage = current.storage
+            var template = storage["programTemplate"]?.asObject ?? [:]
+            template["daysPerWeek"] = .int(Int64(toDaysPerWeek))
+            storage["programTemplate"] = .object(template)
+            storage["planAdjustment"] = .object([
+                "kind": .string("reduceFrequency"),
+                "fromDaysPerWeek": .int(Int64(fromDaysPerWeek)),
+                "toDaysPerWeek": .int(Int64(toDaysPerWeek)),
+            ])
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
+    /// 已批准写入类别：计划调整单步回滚（FR-PL4）。读 planAdjustment.fromDaysPerWeek 恢复 daysPerWeek、
+    /// 删记录；无记录 = 幂等 no-op。反向 gated 写（写前备份），不另起 undo 栈。
+    @discardableResult
+    public func rollbackPlanAdjustment() throws -> AppData {
+        return try performGatedMutation { current in
+            var storage = current.storage
+            guard let record = storage["planAdjustment"]?.asObject,
+                  let from = record["fromDaysPerWeek"]?.asInt else {
+                return current // 无记录：幂等
+            }
+            var template = storage["programTemplate"]?.asObject ?? [:]
+            template["daysPerWeek"] = .int(Int64(from))
+            storage["programTemplate"] = .object(template)
+            storage["planAdjustment"] = nil
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
     /// 已批准写入类别：换动作前瞻覆盖采纳（FR-T5 saved-session exercise replacement，schema 11）。
     /// 采纳「以后把 originalId 换成 actualId」→ open-bag 合并写
     /// storage["exerciseSubstitutions"][originalId]=actualId，其余键原样保留；走全套 gate（写前备份）。
