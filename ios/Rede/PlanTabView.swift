@@ -19,6 +19,9 @@ struct PlanTabView: View {
     @State private var projection: [[PlanDayProjection]] = []
     /// FR-PL3/4：计划调整提案 / 已采纳态（只读派生；.none = 不显示调整区）。
     @State private var adjustment: SessionStore.PlanAdjustmentState = .none
+    /// 触感脉冲计数（采纳/回滚=成功确认，暂不=轻选择）：成功分支自增触发 .sensoryFeedback。
+    @State private var commitPulse = 0
+    @State private var selectPulse = 0
 
     private var s: RedeStrings { localeStore.strings }
 
@@ -103,6 +106,8 @@ struct PlanTabView: View {
             .padding(.bottom, RedeSpace.bottomBar)
         }
         .background(Color.redeBase)
+        .sensoryFeedback(.success, trigger: commitPulse)   // 采纳 / 改回成功 = 提交确认
+        .sensoryFeedback(.selection, trigger: selectPulse) // 暂不 = 轻选择
         .task { await reload() }
     }
 
@@ -191,15 +196,21 @@ struct PlanTabView: View {
                         Task {
                             if await sessionStore.applyFrequencyAdjustment(
                                 fromDaysPerWeek: p.fromDaysPerWeek, toDaysPerWeek: p.toDaysPerWeek
-                            ) { await reload() }
+                            ) {
+                                commitPulse += 1
+                                await reload()
+                            }
                         }
                     }
                     .font(.redeCaption.weight(.semibold)).foregroundStyle(Color.redeEmber2)
-                    .buttonStyle(.plain).disabled(sessionStore.isSaving)
+                    .buttonStyle(.redePressable).disabled(sessionStore.isSaving)
                     Spacer()
-                    Button(s.planAdjustDismiss) { sessionStore.planProposalSnoozed = true }
-                        .font(.redeCaption).foregroundStyle(Color.redeT4)
-                        .buttonStyle(.plain).disabled(sessionStore.isSaving)
+                    Button(s.planAdjustDismiss) {
+                        selectPulse += 1
+                        sessionStore.planProposalSnoozed = true
+                    }
+                    .font(.redeCaption).foregroundStyle(Color.redeT4)
+                    .buttonStyle(.redePressable).disabled(sessionStore.isSaving)
                 }
             }
         }
@@ -227,12 +238,13 @@ struct PlanTabView: View {
                         if await sessionStore.rollbackPlanAdjustment() {
                             // 回滚 = 用户明确否决本次建议 → 本会话不再就同一提案复弹（尊重决定，不复推销）。
                             sessionStore.planProposalSnoozed = true
+                            commitPulse += 1
                             await reload()
                         }
                     }
                 }
                 .font(.redeCaption.weight(.semibold)).foregroundStyle(Color.redeEmber2)
-                .buttonStyle(.plain).disabled(sessionStore.isSaving)
+                .buttonStyle(.redePressable).disabled(sessionStore.isSaving)
             }
         }
     }

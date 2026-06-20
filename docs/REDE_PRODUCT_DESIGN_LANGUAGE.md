@@ -653,3 +653,40 @@ sheet = 掀开的 base 锻面（`presentationBackground = base`，禁 surface/ra
 - 嗓音口径见 `REDE_PRODUCT_COPY_BASELINE.md` §3.4 / §3.5（去 AI 三铁律：冷准短有分量 / 砍 AI 四病 / 不要句号）。
 - 三屏清单/行文案双语化归 `RedeL10n/ListCopy.swift`（动作名/数字本就 localized，补的是标签词）。
 - 计划页（§5.4）仍待**计划引擎**，未上目标形态——见 STATUS / DEV_LOG。
+
+---
+
+## 14. 动效与触感 (Motion & Haptics) (2026-06-20 · owner UX review)
+
+> 创始人真机验收「功能都行、但 UX 不够好（视觉精致/交互手感/信息清晰）」后定位：前文只写了**静态构图**（色彩/字阶/构图公理），**从没写交互手感**——按下无反馈、关键动作无触感，是「手感生硬」的根因。本节补上**手感契约**。本节正文是**目标契约**；实现进度看 DEV_LOG。
+
+### 14.1 按压反馈（RedePressableStyle）
+
+> **每个常规可点元素按下都要有即时视觉反馈：降亮 + 轻微缩放。** `SwiftUI` 的 `.buttonStyle(.plain)` 不给任何按下态（点下去画面不动）——禁止再裸用 `.plain`。
+
+- **控件**（按钮/小控件/节点/档位）：`.buttonStyle(.redePressable)` = 按下 opacity 0.55 + scale 0.97。
+- **行 / 卡**（整行可点的清单项、提案卡）：`.buttonStyle(.redePressableRow)` = 只降亮（0.6）**不缩放**——整行缩放会让边缘内拉、反显廉价。行类必须同时 `.contentShape(Rectangle())`（含 `Spacer` 空白整行可点 + 按压反馈覆盖全行，§12.4）。
+- **缩放受 reduce-motion 守卫**（关动效时只降亮、不缩放）；降亮本身不算 motion，保留。
+- **豁免**（自带状态切换反馈，不套本样式）：`SteelToggle`（滑块横移动画）、`RedeTabBar`（选中 ember 色 + 切换触感）。
+- 共享原语 `EmbButton` / `SteelButton` / `SegControl` / 页头齿轮已内建本样式 → 全 app（含设置/引导）的这些元素自动获得反馈。
+
+### 14.2 触感词汇表（haptic vocabulary）
+
+> **一个动作一个口音；绝不双震。** 触感分档语义固定，跨屏一致：
+
+| 触感 | 语义 | 用在 |
+|---|---|---|
+| `.selection` | 轻选择 | 选档/切尺度/点历史行进详情/暂不/展开折叠/Hold·More·休息控件 |
+| `.success` | 成功提交 | 完成工作组、采纳/撤销教练动作、采纳/改回计划调整、普通完成小结 |
+| `.impact(.medium)` | 物理敲击 | 休息倒计时**自动到点**进下一组（用户多半没看屏，需可感知敲击，强于手动 `.selection`） |
+| `.impact(.heavy)` | 最重一击 | **破 PR**——全程最该有仪式感的时刻 |
+| `.warning` | 警示 | 登记不适 |
+| `.error` | 阻挡 | 撞负荷钳制边界 |
+
+- **末组直接进小结**：不发组完成 `.success`，把该击口音让给小结（破 PR → `.impact(.heavy)`；普通完成 → `.success`），避免「打勾 + 小结」背靠背双震。
+- **trigger 必须用单调自增的 pulse 计数器**（只增不减，每次恰好响一次）；**禁用会回落 `nil` 的可选呈现态**（如 `.sheet(item:)` 绑定的 optional id——关 sheet 时 `id→nil` 会幽灵多震一次）。
+
+### 14.3 动效守卫
+
+- 一切位移/缩放/转场动效都过 `@Environment(\.accessibilityReduceMotion)` 守卫（关则降级为无动效或纯透明度）。折叠/撤销条/按压缩放均遵此。
+- 余下分屏动效（清单/图表入场过渡、卡出现消失）属后续 Phase——见 DEV_LOG。

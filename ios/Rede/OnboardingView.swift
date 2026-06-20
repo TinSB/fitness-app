@@ -116,7 +116,7 @@ struct OnboardingView: View {
                         .frame(minHeight: 44) // 命中区
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.redePressableRow)
                 // a11y 对齐 11b：题名 + 状态（原仅「1/4」，VO 用户不知道跳到哪题）
                 .accessibilityLabel(tickLabel(index, answered: answered, current: isCurrent))
                 .accessibilityHidden(!answered && !isCurrent)
@@ -394,7 +394,7 @@ struct OnbOptionRows: View {
                     }
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.redePressableRow)
                 .accessibilityAddTraits(isOn ? .isSelected : [])
             }
         }
@@ -427,7 +427,7 @@ struct OnbDaysBand: View {
                     .frame(maxWidth: .infinity, minHeight: 76)
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.redePressableRow)
                 .accessibilityLabel(daysLabel(n))
                 .accessibilityAddTraits(selected == n ? .isSelected : [])
             }

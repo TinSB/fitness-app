@@ -124,7 +124,7 @@ struct SettingsSheet: View {
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(Color.redeT2)
                 .frame(minWidth: 44, minHeight: 44, alignment: .bottomTrailing)
-                .buttonStyle(.plain)
+                .buttonStyle(.redePressable)
         }
         .padding(.horizontal, RedeSpace.page)
         .padding(.top, 14)
@@ -334,7 +334,7 @@ struct SettingsSheet: View {
             .padding(.vertical, 9)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.redePressableRow)
         .accessibilityHint(profileComplete ? s.settingsPlateHint : "")
     }
 
@@ -371,7 +371,7 @@ struct SettingsSheet: View {
                 .frame(minHeight: 44)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.redePressableRow)
             if expanded {
                 Text(detail)
                     .font(.redeCaption)
@@ -490,7 +490,7 @@ struct PlateQuestionEditView: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Color.redeT2)
                     .frame(minWidth: 44, minHeight: 44, alignment: .bottomTrailing)
-                    .buttonStyle(.plain)
+                    .buttonStyle(.redePressable)
             }
             .padding(.top, 14)
             .padding(.bottom, 12)

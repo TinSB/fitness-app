@@ -19,6 +19,9 @@ struct TodayTabView: View {
     /// FR-T5 切片6c：采纳后的撤销条（瞬态，挂今日页根 overlay，独立于教练卡生命周期——
     /// 抗"写后 reload 卡消失"导致撤销入口蒸发）。约 5s 自动淡出。
     @State private var undoBanner: UndoBanner?
+    /// 触感脉冲（采纳/撤销=成功确认，暂不/展开折叠=轻选择）：成功分支自增触发 .sensoryFeedback。
+    @State private var commitPulse = 0
+    @State private var selectPulse = 0
 
     private var model: TodayModel? { sessionStore.todayModel }
 
@@ -52,6 +55,8 @@ struct TodayTabView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: undoBanner?.id)
+        .sensoryFeedback(.success, trigger: commitPulse)   // 采纳 / 撤销成功 = 提交确认
+        .sensoryFeedback(.selection, trigger: selectPulse) // 暂不 / 展开折叠 = 轻选择
         .task {
             sessionStore.coachSaveErrorText = nil // 进页清教练写错误（新视图干净起步；隔离于全局 saveErrorText）
             if sessionStore.todayOutcome == nil { await sessionStore.loadToday() }
@@ -269,8 +274,9 @@ struct TodayTabView: View {
                         detailTarget = ExerciseDetailTarget(id: ex.exerciseId)
                     } label: {
                         exerciseRow(ex, isCurrent: idx == activeExerciseIndex)
+                            .contentShape(Rectangle()) // 整行可点（含 Spacer 空白）+ 按压反馈覆盖全行
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.redePressableRow)
                     .accessibilityHint(s.exerciseDetailHint)
                     .padding(.horizontal, RedeSpace.page)
                 }
@@ -434,6 +440,7 @@ struct TodayTabView: View {
     private var receiptSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button {
+                selectPulse += 1
                 // reduce-motion 守卫，与训练页/设置页折叠动画口径一致（无障碍）
                 withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { reasonExpanded.toggle() }
             } label: {
@@ -446,8 +453,9 @@ struct TodayTabView: View {
                 .font(.redeBody)
                 .foregroundStyle(Color.redeT3)
                 .frame(minHeight: RedeShape.controlHeight)
+                .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.redePressable)
             .accessibilityHint(reasonExpanded ? s.a11yCollapse : s.a11yExpand)
 
             if reasonExpanded {
@@ -522,11 +530,12 @@ struct TodayTabView: View {
                 coachAdoptButton(action, exerciseName: exName)
                 Spacer()
                 Button(s.coachDismissLabel) {
+                    selectPulse += 1
                     Task { await sessionStore.dismissCoachAction(actionKey: action.actionKey) }
                 }
                 .font(.redeCaption)
                 .foregroundStyle(Color.redeT4)
-                .buttonStyle(.plain)
+                .buttonStyle(.redePressable)
                 .disabled(sessionStore.isSaving)
             }
         }
@@ -555,7 +564,7 @@ struct TodayTabView: View {
         Button(title, action: action)
             .font(.redeCaption.weight(.semibold))
             .foregroundStyle(Color.redeEmber2)
-            .buttonStyle(.plain)
+            .buttonStyle(.redePressable)
             .disabled(sessionStore.isSaving)
     }
 
@@ -579,6 +588,7 @@ struct TodayTabView: View {
                 let week = WeekAnchor.isoWeekStart(Date())
                 Task {
                     if await sessionStore.applyVolumeBoost(weekStartISO: week) {
+                        commitPulse += 1
                         undoBanner = UndoBanner(kind: .volume(weekStartISO: week), text: s.volumeAckToast)
                     }
                 }
@@ -627,7 +637,10 @@ struct TodayTabView: View {
         case .volume(let week): ok = await sessionStore.removeVolumeBoost(weekStartISO: week)
         }
         // 撤销写失败保留撤销条（错误面已如实呈现），用户可再试——尤其补量撤销无持久兜底入口（审查 MAJOR）。
-        if ok { undoBanner = nil }
+        if ok {
+            commitPulse += 1
+            undoBanner = nil
+        }
     }
 
     /// 该动作当前是哪个到顶动作的替代（actualId→originalId 反查落库覆盖 map）；非替代返回 nil。
@@ -704,6 +717,7 @@ struct TodayTabView: View {
                                             if stillHasOriginal {
                                                 _ = await sessionStore.removeExerciseSubstitution(originalId: rootOriginal)
                                             } else {
+                                                commitPulse += 1
                                                 undoBanner = UndoBanner(
                                                     kind: .swap(originalId: rootOriginal),
                                                     text: s.swapAdoptedToast(exerciseName: localeStore.exerciseName(altId))
@@ -720,8 +734,9 @@ struct TodayTabView: View {
                                             .font(.redeCaption).foregroundStyle(Color.redeEmber2)
                                     }
                                     .frame(minHeight: RedeShape.controlHeight)
+                                    .contentShape(Rectangle())
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.redePressableRow)
                                 .disabled(sessionStore.isSaving)
                             }
                         } else {
