@@ -42,6 +42,12 @@ struct TrainTabView: View {
     @State private var actionPulse = 0
     /// 登记不适触感（.warning）。
     @State private var painPulse = 0
+    /// 休息倒计时自动到点进组触感（.impact）：用户多半没在看屏，需可感知的物理敲击（强于手动 .selection）。
+    @State private var restDonePulse = 0
+    /// 破 PR 时刻触感（.impact 重）：全程最该有仪式感的一击。
+    @State private var prPulse = 0
+    /// 普通完成（非 PR）小结出现触感（.success）：末组已跳过 logPulse，由此补该击唯一口音。
+    @State private var summaryDonePulse = 0
     @FocusState private var weightFieldFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// 快改入口一次性提示（用过即永久消失）。
@@ -90,6 +96,7 @@ struct TrainTabView: View {
         .sensoryFeedback(.success, trigger: logPulse)
         .sensoryFeedback(.selection, trigger: actionPulse) // Hold/More/休息控件等动作确认
         .sensoryFeedback(.warning, trigger: painPulse)      // 登记不适 = caution 口音
+        .sensoryFeedback(.impact(weight: .medium), trigger: restDonePulse) // 休息到点自动进组（用户多半没看屏）
         // 会话边界：换场（结束/新开训练）后旧暂存绝不滞留到新会话首组
         .onChange(of: sessionStore.sessionStartedAt) { _, _ in clearAdjustment() }
         .task(id: restTaskKey) { await runRestTimer() }
@@ -121,7 +128,7 @@ struct TrainTabView: View {
                     .foregroundStyle(Color.redeT3)
                     .frame(minHeight: RedeShape.controlHeight)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.redePressable)
         }
         .padding(.horizontal, RedeSpace.page)
         .padding(.top, 14)
@@ -214,7 +221,7 @@ struct TrainTabView: View {
                 }
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.redePressable)
 
             // 跟上次比（基调微调 2026-06-15）：卡片内多一行「上次 W×N + 升降」，基调不动。
             // 首练 change=start 显式切断（审查 M1）；其余按 loadType 取 L10n 上次行。
@@ -329,7 +336,7 @@ struct TrainTabView: View {
                     .foregroundStyle(Color.redeT4)
                     .frame(maxWidth: .infinity, minHeight: RedeShape.controlHeight)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.redePressableRow)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -382,7 +389,7 @@ struct TrainTabView: View {
                             isOn: sessionStore.restIsPaused,
                             action: { sessionStore.toggleRestPause(); actionPulse += 1 })
                 EmbButton(icon: "forward.fill", title: s.restNextSet, iconSize: 13, fontSize: 14,
-                          action: finishRest)
+                          action: { finishRest() })
             }
             .padding(.top, 4)
         }
@@ -516,7 +523,7 @@ struct TrainTabView: View {
                     .frame(minWidth: 44, minHeight: 44)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.redePressable)
         }
     }
 
@@ -529,7 +536,7 @@ struct TrainTabView: View {
                 .frame(minWidth: 44, minHeight: 44)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.redePressable)
     }
 
     private var railDivider: some View {
@@ -593,7 +600,7 @@ struct TrainTabView: View {
                         .frame(width: 56, height: 44)
                         .contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.redePressable)
                     .position(x: layout.stationX[index], y: 22)
                     .accessibilityLabel("\(currentIsAssisted ? s.adjustOptionLabelAssisted(option.role.rawValue) : s.adjustOptionLabel(option.role.rawValue)) \(loadCellText(option.weightKg)) \(s.unitLabel)")
                 }
@@ -683,7 +690,7 @@ struct TrainTabView: View {
                         }
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.redePressable)
                 .accessibilityLabel("\(n)")
                 .accessibilityAddTraits(n == adjustReps ? .isSelected : [])
             }
@@ -709,7 +716,7 @@ struct TrainTabView: View {
                         }
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.redePressable)
                 .accessibilityLabel(value.map { "RIR \($0)" } ?? "RIR —")
                 .accessibilityAddTraits(value == adjustRir ? .isSelected : [])
             }
@@ -956,7 +963,7 @@ struct TrainTabView: View {
             }
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.redePressableRow)
     }
 
     private var moreSheet: some View {
@@ -1040,7 +1047,7 @@ struct TrainTabView: View {
                     .frame(minHeight: 44)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.redePressable)
 
             // 放弃出口（owner 反馈 2026-06-13）：取消进行中训练、什么都不存
             EngraveDivider().padding(.vertical, 2)
@@ -1057,7 +1064,7 @@ struct TrainTabView: View {
                 .frame(minHeight: 44)
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.redePressableRow)
             Spacer()
         }
         .padding(20)
@@ -1137,6 +1144,12 @@ struct TrainTabView: View {
         .presentationDetents([.height(380)])
         .presentationBackground(Color.redeBase)
         .interactiveDismissDisabled(true)
+        .sensoryFeedback(.impact(weight: .heavy), trigger: prPulse) // 破 PR = 全程最重一击
+        .sensoryFeedback(.success, trigger: summaryDonePulse)        // 普通完成 = .success（末组让给小结）
+        .onAppear {
+            // 小结出现 = 末组那一击的触感口音：破 PR → 最重 impact；否则 → 完成 .success。二选一，不双震。
+            if summary?.isPersonalRecord == true { prPulse += 1 } else { summaryDonePulse += 1 }
+        }
     }
 
     private func summaryStat(value: String, label: String, valueColor: Color = .redeT1) -> some View {
@@ -1202,7 +1215,9 @@ struct TrainTabView: View {
             painReported: flow.painReportedForCurrentSet
         )
         sessionStore.apply(.logSet(observation))
-        logPulse += 1
+        // 末组直接进小结时不发 .success——把该击触感让给小结（破 PR=.impact heavy / 完成=.success），
+        // 避免「打勾 .success + 小结 .impact」背靠背双震（审查 design MINOR）。
+        if sessionStore.flow?.phase != .summary { logPulse += 1 }
         clearAdjustment()
         painToastVisible = false
         // 进入休息时倒计时由 SessionStore.apply 起锚（见 syncRestCountdown），此处不再手动置位。
@@ -1229,9 +1244,10 @@ struct TrainTabView: View {
         sessionStore.apply(.skipExercise(.other))
     }
 
-    private func finishRest() {
+    private func finishRest(auto: Bool = false) {
         sessionStore.apply(.restFinished) // 清空倒计时锚点在 syncRestCountdown 内
-        actionPulse += 1
+        // 自动到点（用户多半没看屏）= 可感知的 impact 敲击；手动点「下一组」= 轻 .selection。
+        if auto { restDonePulse += 1 } else { actionPulse += 1 }
     }
 
     private func formattedRest(_ remaining: Int) -> String {
@@ -1252,7 +1268,7 @@ struct TrainTabView: View {
         while !Task.isCancelled, sessionStore.flow?.phase == .resting {
             // 先判后睡：回来若已到点立即收尾推进（不空等 1 秒、不闪 0:00）。
             if !sessionStore.restIsPaused, sessionStore.restRemainingSeconds <= 0 {
-                finishRest()
+                finishRest(auto: true)
                 break
             }
             restTick &+= 1 // 触发墙钟剩余重算重绘

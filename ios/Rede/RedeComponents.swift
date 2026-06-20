@@ -154,6 +154,34 @@ struct ForgedCard<Content: View>: View {
     }
 }
 
+// MARK: - 按压反馈样式（统一手感：按下降亮 + 轻微缩放，reduceMotion 守卫）
+//
+// 复发根因：全 app 可点元素用 `.buttonStyle(.plain)`，而 `.plain` **不给任何按下态**
+// （无降亮、无缩放）——点下去画面纹丝不动，是 owner UX 反馈「手感生硬」的头号来源。
+// 契约：常规可点元素（行/卡/按钮/控件）**默认**统一用本样式给即时视觉反馈。reduce-motion 下只降亮、
+// 不缩放（动效守卫）。行/卡类用 `.redePressableRow`（不缩放——整行缩放会让边缘内拉、反显廉价）；
+// 常规控件用 `.redePressable`。**豁免**（自带状态切换反馈，故不套本样式）：`SteelToggle`（滑块横移动画）、
+// `RedeTabBar`（选中 ember 色 + 切换触感）。
+struct RedePressableStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var scale: CGFloat = 0.97
+    var dim: Double = 0.55
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? dim : 1)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? scale : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
+extension ButtonStyle where Self == RedePressableStyle {
+    /// 常规控件按压反馈（降亮 + 微缩）。
+    static var redePressable: RedePressableStyle { RedePressableStyle() }
+    /// 行 / 卡按压反馈（只降亮、不缩放——整行缩放会让边缘内拉、显廉价）。
+    static var redePressableRow: RedePressableStyle { RedePressableStyle(scale: 1, dim: 0.6) }
+}
+
 // MARK: - 主操作按钮(.emb: 锻面底 + ember 左缘 2px,非全宽左锚)
 
 struct EmbButton: View {
@@ -182,7 +210,7 @@ struct EmbButton: View {
             }
             .clipShape(RoundedRectangle(cornerRadius: RedeShape.buttonRadius))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.redePressable)
     }
 }
 
@@ -213,7 +241,7 @@ struct SteelButton: View {
             )
             .clipShape(RoundedRectangle(cornerRadius: RedeShape.steelRadius))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.redePressable)
     }
 }
 
@@ -281,9 +309,9 @@ struct SegControl: View {
                         .frame(maxWidth: .infinity, minHeight: RedeShape.controlHeight)
                         .background(selection == option ? Color.redeHair : .clear)
                         .clipShape(RoundedRectangle(cornerRadius: 7))
-                        .contentShape(Rectangle()) // 透明区域也可点中（.plain 默认只命中不透明像素）
+                        .contentShape(Rectangle()) // 透明区域也可点中（默认只命中不透明像素）
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.redePressableRow)
             }
         }
         .padding(3)
@@ -402,7 +430,7 @@ struct ScreenHeader: View {
                         .foregroundStyle(Color.redeT4)
                         .frame(minWidth: RedeShape.controlHeight, minHeight: RedeShape.controlHeight)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.redePressable)
                 .disabled(onTrailingTap == nil)
                 .accessibilityLabel(trailingAccessibilityLabel ?? "")
             }

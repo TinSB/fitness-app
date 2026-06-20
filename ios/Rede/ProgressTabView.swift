@@ -28,6 +28,9 @@ struct ProgressTabView: View {
     }()
     @State private var outcome: ProgressModel.LoadOutcome?
     @State private var detailRecord: SnapshotSessionRecord?
+    /// 点历史行进详情的触感脉冲（单调自增）——不绑 detailRecord?.id：那是 .sheet(item:) 会回落 nil 的
+    /// 呈现态，关 sheet 时 id→nil 会幽灵多震一次（审查确认）。只在「打开」自增 → 关闭不误触。
+    @State private var historyOpenPulse = 0
 
     private var s: RedeStrings { localeStore.strings }
 
@@ -54,6 +57,8 @@ struct ProgressTabView: View {
             .padding(.bottom, RedeSpace.bottomBar)
         }
         .background(Color.redeBase)
+        .sensoryFeedback(.selection, trigger: scale)             // 尺度切换 = 轻选择确认
+        .sensoryFeedback(.selection, trigger: historyOpenPulse)  // 点历史行进详情 = 轻选择（仅开启时）
         .onAppear { reload() }
         .sheet(item: $detailRecord) { record in
             historyDetailSheet(record)
@@ -527,6 +532,7 @@ struct ProgressTabView: View {
             ForEach(Array(model.snapshot.history.prefix(10).enumerated()), id: \.element.sessionId) { index, entry in
                 Button {
                     detailRecord = model.records.first { $0.id == entry.sessionId }
+                    historyOpenPulse += 1
                 } label: {
                     HStack {
                         Text(s.shortDate(fromISO: entry.dateISO))
@@ -546,8 +552,9 @@ struct ProgressTabView: View {
                             .foregroundStyle(Color.redeT3)
                     }
                     .padding(.vertical, 10)
+                    .contentShape(Rectangle()) // 整行可点（含 Spacer）+ 按压反馈覆盖全行
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.redePressableRow)
                 .overlay(alignment: .bottom) {
                     if index < min(model.snapshot.history.count, 10) - 1 {
                         Rectangle().fill(Color.redeHair2).frame(height: 1)
