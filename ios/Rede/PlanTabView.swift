@@ -177,7 +177,7 @@ struct PlanTabView: View {
                 HStack(alignment: .top, spacing: 9) {
                     Image(systemName: "slider.horizontal.3")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Color.redeEmber2)
+                        .foregroundStyle(Color.redeT3) // ember 收敛：分类图标用中性，橙留给采纳 CTA（同教练卡）
                         .padding(.top, 2)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(s.planAdjustOverline)
@@ -231,7 +231,7 @@ struct PlanTabView: View {
                 HStack(alignment: .top, spacing: 9) {
                     Image(systemName: "checkmark.circle")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(Color.redeEmber2)
+                        .foregroundStyle(Color.redeT3) // ember 收敛：分类图标用中性，橙留给"改回原计划"CTA
                         .padding(.top, 2)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(s.planAdjustActiveOverline)
@@ -257,19 +257,15 @@ struct PlanTabView: View {
         }
     }
 
-    /// 调整卡通用 surface（与今日页教练卡同语言：redeSurface + redeHair 描边；非 ForgedCard，守 0 卡预算）。
+    /// 调整卡通用 surface（与今日页教练卡同语言）：整面板公理——去通用圆角描边盒子，蚀刻在 base 上，
+    /// 顶部一条发丝线收边、内容直落底面（§12.1 禁通用圆角描边框；与今日页教练卡同款，全 app 一致）。
     private func adjustmentCardSurface<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         content()
-            .padding(14)
+            .padding(.vertical, 12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: RedeShape.cardRadius, style: .continuous)
-                    .fill(Color.redeSurface)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: RedeShape.cardRadius, style: .continuous)
-                            .strokeBorder(Color.redeHair, lineWidth: 1)
-                    )
-            )
+            .overlay(alignment: .top) {
+                Rectangle().fill(Color.redeHair2).frame(height: 1)
+            }
     }
 
     // MARK: - 本周/下周排期（FR-PL2；0 卡，纯文本行；训练日名 + 动作数 + 模式构成）

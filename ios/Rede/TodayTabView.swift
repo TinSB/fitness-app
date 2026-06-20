@@ -519,7 +519,7 @@ struct TodayTabView: View {
             HStack(alignment: .top, spacing: 9) {
                 Image(systemName: coachIcon(action.kind))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color.redeEmber2)
+                    .foregroundStyle(Color.redeT3) // ember 收敛：图标是分类标识非"下一步"，橙留给采纳 CTA（§1.3）
                     .padding(.top, 2)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(s.coachCardTitle(reasonCode: action.reasonCode, exerciseName: exName))
@@ -545,16 +545,13 @@ struct TodayTabView: View {
                 .disabled(sessionStore.isSaving)
             }
         }
-        .padding(14)
+        // 整面板公理：去通用圆角描边盒子，蚀刻在 base 上——顶部一条发丝线收边、内容直落底面
+        //（owner UX 反馈"卡片描边=AI 味"，§12.1 禁通用圆角描边框）。下方既有 RuleDivider 收尾。
+        .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: RedeShape.cardRadius, style: .continuous)
-                .fill(Color.redeSurface)
-                .overlay(
-                    RoundedRectangle(cornerRadius: RedeShape.cardRadius, style: .continuous)
-                        .strokeBorder(Color.redeHair, lineWidth: 1)
-                )
-        )
+        .overlay(alignment: .top) {
+            Rectangle().fill(Color.redeHair2).frame(height: 1)
+        }
     }
 
     private func coachIcon(_ kind: CoachActionKind) -> String {
@@ -617,13 +614,10 @@ struct TodayTabView: View {
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 11)
+        // 浮层 toast 需背景才可读，故保留 raised 填充；但去掉描边框（§12.1 禁通用圆角描边框）。
         .background(
             RoundedRectangle(cornerRadius: RedeShape.cardRadius, style: .continuous)
                 .fill(Color.redeRaised)
-                .overlay(
-                    RoundedRectangle(cornerRadius: RedeShape.cardRadius, style: .continuous)
-                        .strokeBorder(Color.redeHair, lineWidth: 1)
-                )
         )
         .padding(.horizontal, RedeSpace.page)
         .padding(.bottom, RedeSpace.bottomBar + 8)
