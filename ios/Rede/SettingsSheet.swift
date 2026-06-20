@@ -37,9 +37,9 @@ struct SettingsSheet: View {
     /// 背板折叠态（J5 渐进披露：默认全收起）。
     @State private var expandedInfo: Set<String> = []
 
-    /// M6-3 正式反馈渠道（owner 确认 2026-06-10）。mailto 外部拉起，
-    /// 不算 app runtime 网络真相（隐私文案「不连网」仍属实）。
-    private let feedbackAddress = "xuhaochen122@gmail.com"
+    /// M6-3 正式反馈渠道。mailto 外部拉起，不算 app runtime 网络真相（隐私文案「不连网」仍属实）。
+    /// 2026-06-19 改用 hello@rede.fit（Cloudflare Email Routing 转发到 owner 收件箱），不再暴露个人邮箱。
+    private let feedbackAddress = "hello@rede.fit"
 
     private var s: RedeStrings { store.strings }
 
