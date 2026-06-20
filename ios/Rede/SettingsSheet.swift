@@ -215,12 +215,12 @@ struct SettingsSheet: View {
             Overline(text: s.notificationsSectionTitle)
                 .padding(.top, 18)
             notifToggleRow(
-                label: s.notificationRestEndLabel, hint: s.notificationRestEndHint, isOn: { notifRestEndOn },
+                label: s.notificationRestEndLabel, isOn: { notifRestEndOn },
                 persist: { await sessionStore.saveNotificationPreferences(restEndEnabled: $0, weeklyEnabled: notifWeeklyOn) },
                 setLocal: { notifRestEndOn = $0 }
             )
             notifToggleRow(
-                label: s.notificationWeeklyLabel, hint: s.notificationWeeklyHint, isOn: { notifWeeklyOn },
+                label: s.notificationWeeklyLabel, isOn: { notifWeeklyOn },
                 persist: { await sessionStore.saveNotificationPreferences(restEndEnabled: notifRestEndOn, weeklyEnabled: $0) },
                 setLocal: { notifWeeklyOn = $0 }
             )
@@ -239,7 +239,7 @@ struct SettingsSheet: View {
     /// 防授权/写盘期间并发切换竞态（审查 MAJOR-2）；开启先请求系统授权（价值先行）。
     @ViewBuilder
     private func notifToggleRow(
-        label: String, hint: String, isOn: @escaping () -> Bool,
+        label: String, isOn: @escaping () -> Bool,
         persist: @escaping (Bool) async -> Bool, setLocal: @escaping (Bool) -> Void
     ) -> some View {
         HStack {
@@ -268,10 +268,7 @@ struct SettingsSheet: View {
             ))
             .disabled(isNotifBusy)
         }
-        Text(hint)
-            .font(.redeCaption)
-            .foregroundStyle(Color.redeT3)
-            .fixedSize(horizontal: false, vertical: true)
+        // 开关说明副文已删（owner：标题自解释，副文太重）。授权被拒的提示仍在 section 级保留。
     }
 
     // MARK: - 设备铭牌（唯一 hero）：训练背景 spec plate + 修改回答（FR-SE2）
