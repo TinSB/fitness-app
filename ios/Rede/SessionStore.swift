@@ -67,6 +67,12 @@ final class SessionStore {
     /// FR-T5 教练动作写入（采纳/撤销/暂不处理）失败的如实呈现，与全局 saveErrorText **隔离**——
     /// 今日页教练错误面只读它，杜绝训练/设置写失败错配到教练卡语境（审查 MAJOR：跨域错误污染）。
     var coachSaveErrorText: String?
+    /// FR-PL3/4 计划调整写入（采纳/回滚）失败的如实呈现，同样与全局 saveErrorText 隔离——
+    /// 计划页调整面只读它，不抢显训练/设置/教练写失败（复刻教练隔离修复，防跨面错误污染）。
+    var planSaveErrorText: String?
+    /// FR-PL3：本次 app 会话内「暂不」了频率提案（会话级、不落库——存活于切 tab，重启后清。
+    /// 建议仍有效故重启可再提，但同一会话内不再反复弹，避免每次进计划页都催）。
+    var planProposalSnoozed = false
     /// 保存进行中（防双击双写；MainActor 上同步置位）。
     var isSaving = false
 
@@ -225,6 +231,52 @@ final class SessionStore {
         )
     }
 
+    // MARK: - FR-PL3/4 计划调整提案 / 已采纳态（计划页只读派生）
+
+    /// 计划页调整卡所需状态：要么有一条**待采纳提案**（含 before/after 本周训练日预览），
+    /// 要么有一条**已采纳记录**（可撤）；二者互斥——已采纳时抑制新提案（单记录无栈，避免有损覆盖，
+    /// owner 拍板）。无提案且无记录 → `.none`，计划页不显示调整区。
+    struct PlanAdjustmentState: Equatable {
+        var proposal: PlanAdjustmentProposal?     // 待采纳（nil = 无）
+        var activeTo: Int?                          // 已采纳记录的现频率（非 nil = 可撤）
+        var proposedWeekDays: [PlanDayProjection]   // 提案后本周训练日（预览，答「影响哪几天」）
+
+        static let none = PlanAdjustmentState(proposal: nil, activeTo: nil, proposedWeekDays: [])
+    }
+
+    /// 计划页调整状态（FR-PL3 提案 + FR-PL4 可撤）。走与处方同一 clean pipeline。
+    /// unreadable/缺 daysPerWeek → 仍如实报已采纳记录（理论必有 daysPerWeek，防御保留撤销入口）。
+    static func loadPlanAdjustmentState(now: Date = Date()) -> PlanAdjustmentState {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load() else { return .none }
+        let activeTo = appData.planAdjustment?.toDaysPerWeek
+        // 已有采纳记录 → 只给撤销，抑制新提案（单记录无栈，二次采纳会有损覆盖原值）。
+        if activeTo != nil {
+            return PlanAdjustmentState(proposal: nil, activeTo: activeTo, proposedWeekDays: [])
+        }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        let todayISO = formatter.string(from: now)
+        let cleanView = CleanAppDataViewBuilder.build(from: appData)
+        guard let input = try? CleanTrainingDecisionInput.make(from: cleanView, todayISO: todayISO),
+              let planned = input.program.daysPerWeek else { return .none }
+        let counts = WeeklyAdherence.recentWeeklySessionCounts(
+            sessionDatesISO: input.sessions.map(\.date), todayISO: todayISO
+        )
+        guard let proposal = PlanAdjustmentEngine.frequencyProposal(
+            plannedDaysPerWeek: planned, recentWeeklySessionCounts: counts
+        ) else { return .none }
+        // 提案后本周训练日（同投影口径，weeks:1 取本周；与今日页处方/计划排期同源、不分叉）——
+        // 答「影响哪几天」。提案前的完整排期就在调整区下方，故不再重复列 before。
+        let proposed = PlanWeekProjection.weeks(
+            splitType: input.program.splitType, daysPerWeek: proposal.toDaysPerWeek,
+            completedSessionCount: input.sessions.count, weeks: 1
+        ).first ?? []
+        return PlanAdjustmentState(proposal: proposal, activeTo: nil, proposedWeekDays: proposed)
+    }
+
     /// 周期化开关当前持久态（设置页开关初值）；unreadable/缺失 → false（默认关）。
     static func loadMesocycleEnabled() -> Bool {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
@@ -378,11 +430,12 @@ final class SessionStore {
     // MARK: - FR-PL3/4 计划频率调整 采纳 / 回滚
 
     /// 采纳频率调整（FR-PL3）：经写闸改 daysPerWeek + 落回滚记录 → 重载今日（plan 投影/处方吃新值）。
-    /// 失败如实置 saveErrorText 返 false（UI 回滚开关位/卡）。isSaving 互斥（同写闸单调用方合同）。
+    /// 失败如实置 planSaveErrorText 返 false（计划页专属错误面，隔离于全局）。isSaving 互斥（同写闸单调用方合同）。
     @discardableResult
     func applyFrequencyAdjustment(fromDaysPerWeek: Int, toDaysPerWeek: Int) async -> Bool {
         guard !isSaving else { return false }
         isSaving = true
+        planSaveErrorText = nil // 开写即清旧错（每次尝试干净起步，成功后不残留）
         defer { isSaving = false }
         let fileURL = TodayModel.canonicalFileURL()
         let result: Result<Void, Error> = await Task.detached(priority: .userInitiated) {
@@ -404,7 +457,7 @@ final class SessionStore {
             await loadToday()
             return true
         case .failure(let error):
-            saveErrorText = String(describing: error)
+            planSaveErrorText = String(describing: error)
             return false
         }
     }
@@ -414,6 +467,7 @@ final class SessionStore {
     func rollbackPlanAdjustment() async -> Bool {
         guard !isSaving else { return false }
         isSaving = true
+        planSaveErrorText = nil // 开写即清旧错（同采纳，干净起步）
         defer { isSaving = false }
         let fileURL = TodayModel.canonicalFileURL()
         let result: Result<Void, Error> = await Task.detached(priority: .userInitiated) {
@@ -435,7 +489,7 @@ final class SessionStore {
             await loadToday()
             return true
         case .failure(let error):
-            saveErrorText = String(describing: error)
+            planSaveErrorText = String(describing: error)
             return false
         }
     }
