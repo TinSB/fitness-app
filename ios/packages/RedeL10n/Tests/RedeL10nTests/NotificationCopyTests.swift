@@ -9,9 +9,9 @@ final class NotificationCopyTests: XCTestCase {
 
     func testBilingualNonEmptyDistinct() {
         let zhAll = [zh.notificationRestEndTitle, zh.notificationRestEndBody, zh.notificationsSectionTitle,
-                     zh.notificationRestEndLabel, zh.notificationRestEndHint, zh.notificationPermissionDeniedHint]
+                     zh.notificationRestEndLabel, zh.notificationPermissionDeniedHint]
         let enAll = [en.notificationRestEndTitle, en.notificationRestEndBody, en.notificationsSectionTitle,
-                     en.notificationRestEndLabel, en.notificationRestEndHint, en.notificationPermissionDeniedHint]
+                     en.notificationRestEndLabel, en.notificationPermissionDeniedHint]
         for (z, e) in zip(zhAll, enAll) {
             XCTAssertFalse(z.isEmpty); XCTAssertFalse(e.isEmpty)
             XCTAssertNotEqual(z, e, "中英应不同: \(z)")
@@ -20,8 +20,8 @@ final class NotificationCopyTests: XCTestCase {
 
     // §7.3：通知文案禁鸡汤/羞辱/streak 施压/绝对承诺。
     func testNoForbiddenToneInNotificationCopy() {
-        let zhTexts = [zh.notificationRestEndTitle, zh.notificationRestEndBody, zh.notificationRestEndHint, zh.notificationPermissionDeniedHint]
-        let enTexts = [en.notificationRestEndTitle, en.notificationRestEndBody, en.notificationRestEndHint, en.notificationPermissionDeniedHint]
+        let zhTexts = [zh.notificationRestEndTitle, zh.notificationRestEndBody, zh.notificationPermissionDeniedHint]
+        let enTexts = [en.notificationRestEndTitle, en.notificationRestEndBody, en.notificationPermissionDeniedHint]
         let zhForbidden = ["继续坚持", "别停", "别偷懒", "逆袭", "断签", "加油", "最佳"]
         let enForbidden = ["don't stop", "keep going", "no excuses", "streak", "crush", "don't break", "best"]
         for t in zhTexts {
@@ -44,7 +44,6 @@ final class NotificationCopyTests: XCTestCase {
         }
         XCTAssertEqual(zh.notificationWeeklyTitle(messageCode: "made-up"), "", "未知 code 空")
         XCTAssertNotEqual(zh.notificationWeeklyLabel, en.notificationWeeklyLabel)
-        XCTAssertFalse(zh.notificationWeeklyHint.isEmpty)
     }
 
     func testWeeklyCopyNoForbiddenTone() {

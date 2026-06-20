@@ -14,10 +14,7 @@ extension RedeStrings {
     // MARK: 设置页通知 section
     public var notificationsSectionTitle: String { t2n("通知", "Notifications") }
     public var notificationRestEndLabel: String { t2n("休息结束提醒", "Rest-timer alert") }
-    public var notificationRestEndHint: String {
-        t2n("组间休息结束时提醒你回来——锁屏也能收到。",
-            "A heads-up when your rest timer ends — even on the lock screen.")
-    }
+    // 开关说明副文已移除（owner 2026-06-20：开关标题自解释，副文太重）。
     /// 系统层拒绝授权时的诚实引导（不能代开，指向 iOS 设置）。
     public var notificationPermissionDeniedHint: String {
         t2n("通知已在系统里关闭　到 iOS「设置」开启后再用。",
@@ -43,10 +40,7 @@ extension RedeStrings {
 
     // MARK: 设置页每周开关
     public var notificationWeeklyLabel: String { t2n("每周训练提醒", "Weekly training reminder") }
-    public var notificationWeeklyHint: String {
-        t2n("每周两次轻提醒（周一上午、周四傍晚）——中性、不催促。",
-            "A light nudge twice a week (Mon morning, Thu evening) — neutral, no pressure.")
-    }
+    // 开关说明副文已移除（owner 2026-06-20：开关标题自解释，副文太重）。
 
     private func t2n(_ zh: String, _ en: String) -> String { locale == .zh ? zh : en }
 }
