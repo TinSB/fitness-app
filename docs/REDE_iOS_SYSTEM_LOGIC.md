@@ -99,6 +99,8 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 - Notification preference edit（FR-NT1/2 通知开关；open-bag 加性、缺=关、无 schema bump）。
 
 > 本地通知（FR-NT1 休息结束 + FR-NT2 每周）由 `RedeNotifications` 纯策略 + `#if os(iOS)` UNUserNotificationCenter 适配器调度：**派生临时、绝不落 canonical**（只把开关偏好当只读输入）；无 remote push（Master §9）；策略产 typed code、文案归 RedeL10n（§7.3 中性、禁断签/羞辱/施压）。FR-NT1 在休息生命周期 schedule/cancel（rest-begin 排、rest-finished/收尾/放弃取消）；FR-NT2 固定 2 条（周一上午「新周」/周四傍晚「保持节奏」，UNCalendarTrigger repeats，幂等重注册，可关）。授权价值先行（首次开开关时请求），被拒不影响核心功能。阶梯外的频率/时间为 MVP 起步值待校准；按 daysPerWeek 缩放 + 用户自选时间后置。
+>
+> **送达正确性（2026-06-20 真机 bug 修复，关键契约）**：① **前台必须显式呈现**——App 设 `UNUserNotificationCenter` delegate（启动即接管）+ `willPresent` 返回 banner/sound，否则 iOS 在前台静默丢弃本地通知（"开了权限却没收到"的根因）。② **取消只清待发（pending），不动已送达（delivered）**——否则锁屏期间已弹出、解锁回 App 时会把已送达那条也抹掉。③ **休息自然到点（倒计时归零）不取消通知**——它正该此刻送达（`apply(.restFinished, restCompletedNaturally:)` 区分：自然到点不取消 / 手动「下一组」提前结束或收尾才取消）；后台锁屏时 `runRestTimer` 不运行、`finishRest` 不触发，故通知不被取消、由系统按 time-interval 触发器送达。④ **加时（+30）/ 暂停-继续必须按新剩余重排**（暂停撤回、继续/加时重排），否则 time-interval 触发器仍按原时点弹、早于实际结束。⑤ scheduleRest 排程前清同 id 已送达历史（离触发尚远、不误删新条），避免通知中心堆叠。**这些是 iOS 运行时行为，host SPM 单测覆盖不到——靠真机 TestFlight 验收。**
 
 > 教练动作的采纳、暂不处理及撤销都经同一 gated writer，撤销 = 单步即时反向写（不另起 undo 栈）。**UI 撤销入口只接了换动作 / 补量两类**（`removeExerciseSubstitution` / `removeVolumeBoost`）；「暂不处理」是单向降频信号——写闸层有反向口（`removeCoachActionDismissal`）但不暴露 UI 撤销，卡按降频策略自然再现。引擎契约见 §6.4a。
 
