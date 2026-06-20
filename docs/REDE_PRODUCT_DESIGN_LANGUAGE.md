@@ -691,3 +691,26 @@ sheet = 掀开的 base 锻面（`presentationBackground = base`，禁 surface/ra
 - 一切位移/缩放/转场动效都过 `@Environment(\.accessibilityReduceMotion)` 守卫（关则降级为无动效或纯透明度）。折叠/撤销条/按压缩放/分屏过渡均遵此。
 - **分屏过渡（Phase 1 已落地）**：进展尺度切换（session/week/cycle）交叉淡入（`.id(scale)` + `.transition` + setter `withAnimation`）；计划调整卡、今日教练卡、写失败提示的出现/消失走 `.transition` + body `.animation(value:)`。**绑定原则**：`.animation` 一律用带 `value:` 的现代形式（作用域限定该值变化，不泄漏到无关更新）；trigger/`value:` 用稳定标识或 Equatable 实值。
 - 余下入场动效（图表/折线 grow-in、numericText 数字滚动）属后续 Phase——见 DEV_LOG。
+
+---
+
+## 15. 视觉纠偏 (2026-06-20 · owner Phase 2)
+
+> 真机验收后系统性把实现拉回 §1.3/§12.1 既有规则（此前多处违反）。本节是**目标契约**；进度看 DEV_LOG。
+
+### 15.1 提案/callout 面 = 蚀刻，不是描边盒子
+
+> 行内的「可操作提案」面（今日教练卡、计划调整卡）**禁用通用圆角描边盒子**（§12.1）——改**蚀刻**：顶部一条发丝线（`redeHair2`，同 `RuleDivider` 口径）收边 + 内容**直落 base、对齐页栅格**（横向无额外内缩，与判断行/动作行同栏），靠标题字阶（subhead T1）+ ember CTA 表达"这是可操作 callout"。**例外**：浮层 toast（撤销条）需背景才可读，保留 `redeRaised` 填充、但同样去描边框。
+
+### 15.2 ember 纪律细则（橙只标"正向进展 / 下一步"）
+
+owner 拍板，细化 §1.3：
+
+- **数据趋势方向**（进展页 e1RM 升降）：**↑ 进步 = ember；↓ 回调 = 中性灰 `redeT3`**（不报警、不羞辱、不用红绿灯语义色）；保持 = `redeT4`。
+- **分类性图标**（教练卡/调整卡左上的 kind 图标）= 中性 `redeT3`，**不用 ember**——ember 留给该面真正的"下一步"（采纳/换动作/改回 CTA）。
+- **时间流逝类进度**（休息倒计时条）= 中性钢色 `redeSteel`，不用 ember——ember 留给"下一组"操作。
+- 注：今日页**处方行内**的"跟上次比 ↑↓保持"仍按 §13.1「ember 标变化」用 ember（与上面"数据趋势方向"是不同语境——一个是单组目标对比、一个是多周趋势）；如需统一为 owner 后续口味决定。
+
+### 15.3 消灭死空间
+
+- 进展柱图（单次/本周）容器高度按是否有 PR 浮标动态：无标签时去掉顶部 27pt 标签头位（`120 + (hasTag ? 27 : 0)`），不留空墨。柱比例（归一化最高柱 = 96pt）不变。

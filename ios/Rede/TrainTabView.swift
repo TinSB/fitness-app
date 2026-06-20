@@ -369,8 +369,9 @@ struct TrainTabView: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.redeGroove).frame(height: 4)
-                    // 进度填充用主题琥珀橙（同今日页当前动作条/hero 口音），略加粗到 4pt
-                    Capsule().fill(Color.redeEmber)
+                    // 休息条表"时间在流逝"（倒数），非"下一步"——用中性钢色，把 ember 留给真正的"下一组"
+                    //（owner 拍板，§1.3 ember 纪律）。
+                    Capsule().fill(Color.redeSteel)
                         .frame(width: geo.size.width * sessionStore.restFraction, height: 4)
                         .animation(.linear(duration: 1), value: remaining)
                 }

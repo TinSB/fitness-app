@@ -411,9 +411,11 @@ struct ProgressTabView: View {
     @ViewBuilder
     private func deltaLabel(_ delta: Double) -> some View {
         if delta > 0.5 {
+            // 选项 C（owner 拍板）：橙 = 正向进步（ember 守"进展/下一步"纪律）。
             Text("\(Image(systemName: "arrow.up")) \(s.formatE1Rm(delta))").font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeEmber)
         } else if delta < -0.5 {
-            Text("\(Image(systemName: "arrow.down")) \(s.formatE1Rm(abs(delta)))").font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeEmber2)
+            // 回调用中性灰、不报警不羞辱（不用橙、不用红绿灯语义色）。
+            Text("\(Image(systemName: "arrow.down")) \(s.formatE1Rm(abs(delta)))").font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeT3)
         } else {
             Text(s.holdShort).font(.redeCaption).foregroundStyle(Color.redeT4)
         }
@@ -422,7 +424,9 @@ struct ProgressTabView: View {
     // MARK: - 柱图（原型形态：120pt 区、唯一 ember、标签浮顶）
 
     private func barChart(_ bars: [(label: String, fraction: CGFloat, tag: String?, ember: Bool, a11y: String)]) -> some View {
-        HStack(alignment: .bottom, spacing: 11) {
+        // 仅当有 PR 标签时才预留顶部标签头位（offset -19 的浮标）；无标签时去掉那 27pt 死空间。
+        let hasTag = bars.contains { $0.tag != nil }
+        return HStack(alignment: .bottom, spacing: 11) {
             ForEach(Array(bars.enumerated()), id: \.offset) { _, bar in
                 VStack(spacing: 8) {
                     ZStack(alignment: .top) {
@@ -437,7 +441,7 @@ struct ProgressTabView: View {
                     .frame(height: 0)
                     UnevenRoundedRectangle(topLeadingRadius: 3, topTrailingRadius: 3)
                         .fill(bar.ember ? Color.redeEmber : Color.redeNeu)
-                        .frame(height: max(8, bar.fraction * 96)) // 容器 120，最高柱 96——顶部留标签头位（原型口径）
+                        .frame(height: max(8, bar.fraction * 96)) // 柱区高 96（hasTag 时容器额外预留 27pt 给浮标头位）
                         .frame(maxWidth: .infinity)
                     Overline(text: bar.label, color: bar.ember ? .redeEmber2 : .redeT4)
                         .lineLimit(1)
@@ -449,7 +453,7 @@ struct ProgressTabView: View {
                 .accessibilityLabel(bar.a11y)
             }
         }
-        .frame(height: 120 + 27, alignment: .bottom)
+        .frame(height: 120 + (hasTag ? 27 : 0), alignment: .bottom)
         .frame(maxWidth: .infinity)
     }
 
