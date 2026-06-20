@@ -362,11 +362,19 @@ struct TodayTabView: View {
                         .foregroundStyle(Color.redeT4)
                 }
                 Spacer()
-                VStack(alignment: .trailing, spacing: 3) {
-                    Text(targetSummary(ex))
-                        .font(.redeCallout).monospacedDigit()
-                        .foregroundStyle(Color.redeT2)
-                    lastChangeView(ex)
+                // chevron 与右侧目标/升降列居中对齐（不随外层 .top 顶对齐而偏高，与进展历史行一致）。
+                HStack(alignment: .center, spacing: 8) {
+                    VStack(alignment: .trailing, spacing: 3) {
+                        Text(targetSummary(ex))
+                            .font(.redeCallout).monospacedDigit()
+                            .foregroundStyle(Color.redeT2)
+                        lastChangeView(ex)
+                    }
+                    // 可点线索（affordance 三件套之一）：整行可点开动作详情，尾部 chevron 明示。
+                    Image(systemName: "chevron.right")
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeT4)
+                        .accessibilityHidden(true) // 装饰性线索；行的可点性已由 Button + hint 表达
                 }
             }
             .padding(.vertical, 11)
@@ -465,13 +473,9 @@ struct TodayTabView: View {
             .accessibilityHint(reasonExpanded ? s.a11yCollapse : s.a11yExpand)
 
             if reasonExpanded {
+                // 「信号」已在顶部状态行（contextLine）一眼可见——依据里不再重复同一句（owner 拍板 A），
+                // 只留「变化 + 你的控制权」。Decision Receipt 的 Signal = 顶部状态行（上移、非删除）。
                 Grid(alignment: .topLeading, horizontalSpacing: 14, verticalSpacing: 8) {
-                    GridRow {
-                        Overline(text: s.receiptSignal).padding(.top, 3)
-                        Text(signalLineText)
-                            .font(.redeCallout).monospacedDigit()
-                            .foregroundStyle(Color.redeT2)
-                    }
                     GridRow {
                         Overline(text: s.receiptChange).padding(.top, 3)
                         Text(changeLineText)

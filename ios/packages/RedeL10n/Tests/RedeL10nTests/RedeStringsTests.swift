@@ -15,7 +15,7 @@ final class RedeStringsTests: XCTestCase {
             ("todayThenIncline", s.todayThenIncline), ("todayThenCable", s.todayThenCable), ("startTraining", s.startTraining),
             ("todayReceiptTitle", s.todayReceiptTitle), ("todayReceiptTag", s.todayReceiptTag), ("todayReceiptLine", s.todayReceiptLine),
             ("todayWhyThisCall", s.todayWhyThisCall), ("todayHideReason", s.todayHideReason),
-            ("receiptSignal", s.receiptSignal), ("receiptChange", s.receiptChange), ("receiptControl", s.receiptControl),
+            ("receiptChange", s.receiptChange), ("receiptControl", s.receiptControl),
             ("todaySignalLine", s.todaySignalLine), ("todayChangeLine", s.todayChangeLine),
             ("controlApply", s.controlApply), ("controlHold", s.controlHold), ("controlSwap", s.controlSwap),
             ("todayRailTitle", s.todayRailTitle), ("railLastDate", s.railLastDate), ("railToday", s.railToday), ("railNext", s.railNext),
@@ -26,7 +26,9 @@ final class RedeStringsTests: XCTestCase {
             ("progressTitle", s.progressTitle), ("scaleSession", s.scaleSession), ("scaleWeek", s.scaleWeek), ("scaleCycle", s.scaleCycle),
             ("sessionChartTitle", s.sessionChartTitle),
             ("planTitle", s.planTitle), ("planEmptyHeadline", s.planEmptyHeadline),
-            ("planEmptyNote", s.planEmptyNote),
+            ("planEmptyNote", s.planEmptyNote), ("planBackToToday", s.planBackToToday),
+            ("planScheduleNote", s.planScheduleNote),
+            ("planCycleWeek", s.planCycleWeek(week: 3, total: 4)),
             ("planTemplateLine", s.planTemplateLine(splitName: s.onbSplitName("upper-lower"), days: 4)),
             ("settingsTitle", s.settingsTitle), ("settingsLanguage", s.settingsLanguage),
             ("settingsDone", s.settingsDone), ("settingsUnit", s.settingsUnit),
@@ -77,6 +79,8 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertEqual(zh.tabPlan, "计划")
         XCTAssertEqual(en.trainLogSet, "Log set")
         XCTAssertEqual(en.todayWhyThisCall, "Why this call")
+        XCTAssertEqual(zh.planBackToToday, "回今日")
+        XCTAssertEqual(en.planBackToToday, "Back to today")
     }
 
     func testZhEnDifferWhereExpected() {
