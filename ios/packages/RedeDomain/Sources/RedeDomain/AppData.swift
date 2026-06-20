@@ -65,6 +65,16 @@ public struct AppData: Equatable, Sendable {
         storage["notifications"]?.asObject?["weeklyEnabled"]?.asBool ?? false
     }
 
+    /// FR-PL3/4 已采纳的计划调整记录（open-bag 加性，缺=无；不 seed、无 schema bump）。
+    /// 单条最近一次（无栈）；`fromDaysPerWeek` 供 FR-PL4 单步回滚恢复，UI 据此显示「可撤」。
+    public var planAdjustment: PlanAdjustmentRecord? {
+        guard let obj = storage["planAdjustment"]?.asObject,
+              let kind = obj["kind"]?.asString,
+              let from = obj["fromDaysPerWeek"]?.asInt,
+              let to = obj["toDaysPerWeek"]?.asInt else { return nil }
+        return PlanAdjustmentRecord(kind: kind, fromDaysPerWeek: from, toDaysPerWeek: to)
+    }
+
     /// FR-T5 换动作前瞻覆盖（schema 11）：originalId → actualId 的只读映射。
     /// 缺容器/非字符串值跳过；空 = 无覆盖（schema 10 及更早天然空，零行为回归）。
     public var exerciseSubstitutions: [String: String] {
@@ -93,6 +103,19 @@ public struct AppData: Equatable, Sendable {
 }
 
 /// 顶层 `mesocycle` 的类型化只读视图（不存"当前第几周"——相位永远从 blockStartISO + 今日现算）。
+/// FR-PL3/4 已采纳计划调整的类型化只读记录（canonical，open-bag 落库）。引擎提案类型在
+/// RedeTrainingDecision，本记录是域层落库镜像（plain 字段、不跨包依赖）。
+public struct PlanAdjustmentRecord: Equatable, Sendable {
+    public let kind: String            // 如 "reduceFrequency"
+    public let fromDaysPerWeek: Int    // 采纳前周计划天数（FR-PL4 回滚恢复用）
+    public let toDaysPerWeek: Int      // 采纳后周计划天数
+    public init(kind: String, fromDaysPerWeek: Int, toDaysPerWeek: Int) {
+        self.kind = kind
+        self.fromDaysPerWeek = fromDaysPerWeek
+        self.toDaysPerWeek = toDaysPerWeek
+    }
+}
+
 public struct MesocycleConfig: Equatable, Sendable {
     /// 计划周期化是否生效（默认 false = 零行为回归）。
     public let enabled: Bool
