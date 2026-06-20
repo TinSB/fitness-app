@@ -12,10 +12,13 @@ struct PlanTabView: View {
     let onGoToday: () -> Void
 
     @Environment(LocaleStore.self) private var localeStore
+    @Environment(SessionStore.self) private var sessionStore
     @State private var template: SessionStore.TemplateFacts?
     @State private var cycle: MesocycleCycleState?
     /// FR-PL2：本周/下周训练日排期（只读派生；空 = 无模板/不可读，退占位）。
     @State private var projection: [[PlanDayProjection]] = []
+    /// FR-PL3/4：计划调整提案 / 已采纳态（只读派生；.none = 不显示调整区）。
+    @State private var adjustment: SessionStore.PlanAdjustmentState = .none
 
     private var s: RedeStrings { localeStore.strings }
 
@@ -43,6 +46,17 @@ struct PlanTabView: View {
                     .padding(.top, 24)
 
                     RuleDivider()
+
+                    if showsAdjustmentCard {
+                        // FR-PL3/4：计划调整提案（采纳/暂不）或已采纳态（可撤）。紧贴计划摘要——
+                        // 改的正是摘要里的「每周天数」。0 卡公理：用 surface 原语（非 ForgedCard）。
+                        adjustmentSection
+                            .padding(.horizontal, RedeSpace.page)
+                            .padding(.top, 12)
+                        if cycle != nil || !projection.isEmpty {
+                            RuleDivider().padding(.top, 12)
+                        }
+                    }
 
                     if let cycle {
                         // FR-PL2 S5：真周期条（周期化开启且有真历史时）
@@ -89,16 +103,20 @@ struct PlanTabView: View {
             .padding(.bottom, RedeSpace.bottomBar)
         }
         .background(Color.redeBase)
-        .task {
-            // 一次后台读返回两者、同步一起赋值（审查 MINOR-1）：避免 template 先到、cycle 仍 nil 时
-            // 闪一帧诚实占位再跳出周期条——已开周期化的用户不应看到占位闪变。
-            let loaded = await Task.detached {
-                (SessionStore.loadTemplateFacts(), SessionStore.loadCycleState(), SessionStore.loadPlanProjection())
-            }.value
-            template = loaded.0
-            cycle = loaded.1
-            projection = loaded.2
-        }
+        .task { await reload() }
+    }
+
+    /// 一次后台读、同步一起赋值（审查 MINOR-1）：避免分批到达时闪占位。
+    /// 采纳/回滚后复用此函数刷新（写入口已落库 + loadToday，这里重读派生让计划页跟上）。
+    private func reload() async {
+        let loaded = await Task.detached {
+            (SessionStore.loadTemplateFacts(), SessionStore.loadCycleState(),
+             SessionStore.loadPlanProjection(), SessionStore.loadPlanAdjustmentState())
+        }.value
+        template = loaded.0
+        cycle = loaded.1
+        projection = loaded.2
+        adjustment = loaded.3
     }
 
     /// 背景 · 器械（真数据，引导选项标题）；缺则 nil。
@@ -107,6 +125,131 @@ struct PlanTabView: View {
         if let level = facts.level { parts.append(s.onbLevelOption(level).title) }
         if let equip = facts.equipment { parts.append(s.onbEquipOption(equip).title) }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    // MARK: - 计划调整（FR-PL3 提案 / FR-PL4 可撤）
+
+    /// 已采纳记录永远展示（撤销入口）；待采纳提案在本会话「暂不」后隐藏。
+    private var showsAdjustmentCard: Bool {
+        if adjustment.activeTo != nil { return true }
+        if adjustment.proposal != nil { return !sessionStore.planProposalSnoozed }
+        return false
+    }
+
+    @ViewBuilder
+    private var adjustmentSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let activeTo = adjustment.activeTo {
+                adjustmentActiveCard(to: activeTo)
+            } else if let proposal = adjustment.proposal {
+                adjustmentProposalCard(proposal)
+            }
+            // 写失败如实呈现（FR-TR8 红线：绝不静默假成功）；读计划专属字段，隔离于全局/教练错误。
+            if let errorText = sessionStore.planSaveErrorText {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(s.saveFailedLine)
+                        .font(.redeCaption).foregroundStyle(Color.redeRisk)
+                    Text(errorText)
+                        .font(.redeCaption).foregroundStyle(Color.redeT4)
+                        .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+    }
+
+    /// 待采纳提案卡：信号 + 影响（before→after 频率 + 调整后本周训练日）+ 调整/暂不。
+    private func adjustmentProposalCard(_ p: PlanAdjustmentProposal) -> some View {
+        adjustmentCardSurface {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top, spacing: 9) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.redeEmber2)
+                        .padding(.top, 2)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(s.planAdjustOverline)
+                            .font(.redeSubhead).foregroundStyle(Color.redeT1)
+                        Text(s.planAdjustReduceBody(from: p.fromDaysPerWeek, to: p.toDaysPerWeek))
+                            .font(.redeCaption).foregroundStyle(Color.redeT3)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Text(s.planAdjustFromTo(from: p.fromDaysPerWeek, to: p.toDaysPerWeek))
+                    .font(.redeCallout).monospacedDigit().foregroundStyle(Color.redeT2)
+                if !adjustment.proposedWeekDays.isEmpty {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(s.planAdjustAfterLabel)
+                            .font(.redeOverline).tracking(RedeTracking.overline)
+                            .foregroundStyle(Color.redeT3)
+                        Text(adjustment.proposedWeekDays.map { s.trainingDayName($0.dayCode) }.joined(separator: " · "))
+                            .font(.redeCaption).foregroundStyle(Color.redeT2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                HStack {
+                    Button(s.planAdjustAdopt) {
+                        Task {
+                            if await sessionStore.applyFrequencyAdjustment(
+                                fromDaysPerWeek: p.fromDaysPerWeek, toDaysPerWeek: p.toDaysPerWeek
+                            ) { await reload() }
+                        }
+                    }
+                    .font(.redeCaption.weight(.semibold)).foregroundStyle(Color.redeEmber2)
+                    .buttonStyle(.plain).disabled(sessionStore.isSaving)
+                    Spacer()
+                    Button(s.planAdjustDismiss) { sessionStore.planProposalSnoozed = true }
+                        .font(.redeCaption).foregroundStyle(Color.redeT4)
+                        .buttonStyle(.plain).disabled(sessionStore.isSaving)
+                }
+            }
+        }
+    }
+
+    /// 已采纳态卡：现状 + 改回原计划（单步即时回滚）。
+    private func adjustmentActiveCard(to: Int) -> some View {
+        adjustmentCardSurface {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top, spacing: 9) {
+                    Image(systemName: "checkmark.circle")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.redeEmber2)
+                        .padding(.top, 2)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(s.planAdjustActiveOverline)
+                            .font(.redeSubhead).foregroundStyle(Color.redeT1)
+                        Text(s.planAdjustActiveBody(to: to))
+                            .font(.redeCaption).foregroundStyle(Color.redeT3)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Button(s.planAdjustUndo) {
+                    Task {
+                        if await sessionStore.rollbackPlanAdjustment() {
+                            // 回滚 = 用户明确否决本次建议 → 本会话不再就同一提案复弹（尊重决定，不复推销）。
+                            sessionStore.planProposalSnoozed = true
+                            await reload()
+                        }
+                    }
+                }
+                .font(.redeCaption.weight(.semibold)).foregroundStyle(Color.redeEmber2)
+                .buttonStyle(.plain).disabled(sessionStore.isSaving)
+            }
+        }
+    }
+
+    /// 调整卡通用 surface（与今日页教练卡同语言：redeSurface + redeHair 描边；非 ForgedCard，守 0 卡预算）。
+    private func adjustmentCardSurface<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        content()
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: RedeShape.cardRadius, style: .continuous)
+                    .fill(Color.redeSurface)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: RedeShape.cardRadius, style: .continuous)
+                            .strokeBorder(Color.redeHair, lineWidth: 1)
+                    )
+            )
     }
 
     // MARK: - 本周/下周排期（FR-PL2；0 卡，纯文本行；训练日名 + 动作数 + 模式构成）
@@ -215,6 +358,7 @@ struct MesocycleCycleBar: View {
 #Preview {
     PlanTabView(onGoToday: {})
         .environment(LocaleStore())
+        .environment(SessionStore())
         .background(Color.redeBase)
         .preferredColorScheme(.dark)
 }
