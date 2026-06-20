@@ -13,6 +13,7 @@ struct PlanTabView: View {
 
     @Environment(LocaleStore.self) private var localeStore
     @Environment(SessionStore.self) private var sessionStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var template: SessionStore.TemplateFacts?
     @State private var cycle: MesocycleCycleState?
     /// FR-PL2：本周/下周训练日排期（只读派生；空 = 无模板/不可读，退占位）。
@@ -56,6 +57,8 @@ struct PlanTabView: View {
                         adjustmentSection
                             .padding(.horizontal, RedeSpace.page)
                             .padding(.top, 12)
+                            // 卡进出（暂不/采纳/回滚）= 上方滑入 + 淡入，不硬闪（reduceMotion 守卫）。
+                            .transition(reduceMotion ? .identity : .opacity.combined(with: .move(edge: .top)))
                         if cycle != nil || !projection.isEmpty {
                             RuleDivider().padding(.top, 12)
                         }
@@ -108,6 +111,11 @@ struct PlanTabView: View {
         .background(Color.redeBase)
         .sensoryFeedback(.success, trigger: commitPulse)   // 采纳 / 改回成功 = 提交确认
         .sensoryFeedback(.selection, trigger: selectPulse) // 暂不 = 轻选择
+        // 调整卡进出 + 采纳/回滚后的提案↔已采纳态切换 + 排期变化，统一交叉过渡（reduceMotion 守卫）。
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: showsAdjustmentCard)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: adjustment)
+        // 写失败提示出现/消失也淡入（与今日页 coachSaveErrorText 对等，审查 M-1）。
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: sessionStore.planSaveErrorText)
         .task { await reload() }
     }
 
