@@ -816,7 +816,7 @@ V1 起始 milestone 示例:
 | 消费方 | 读取内容 | 不允许 |
 |---|---|---|
 | Progress | `currentLevel`、`peakLevel`、trend、confidence、evidence、limitations、balanceScore | 展示原始敏感数据或羞辱式弱项文案。 |
-| PlanAdjustment | `decision`、priorityMuscleIds、recoverMuscleIds、goal gap | 只因 level 低就机械加训练量。 |
+| PlanAdjustment | `decision`、priorityMuscleIds、recoverMuscleIds、goal gap。**注意分层**：读这些等级语义的**肌群级均衡建议**（补足/维持/减少，FR-PL5）**依赖未落地的 MLE/贡献权重，未落地**；已落地的是**频率维度**提案（FR-PL3/4，§8.1）——只吃周计划天数 + 依从历史，**不读肌群等级**，与今日页频率补量同源（§6.5.2 红线）。两者接进**同一**提案/预览/采纳/回滚框架（`PlanAdjustmentEngine` 增源，MLE 落地后零返工）。 | 只因 level 低就机械加训练量；无贡献权重时凭空给肌群级建议。 |
 | Scheduler | 肌群优先级、恢复限制、覆盖缺口 | 忽略 safety lock 或 recovery signal。 |
 | CoachAction | 可执行建议和解释。**肌群级**建议（例如“本周多补 2-4 组水平拉”——带肌群名与组数）依赖等级模型/贡献权重,属未来能力,**未落地**;已落地的 §6.4a 教练动作引擎只做**频率维度**补量（“本周还差 N 次”,无肌群无组数,§6.5.2 红线）、换动作、修数据 | 生成无法执行、不可回滚或强迫用户的建议;无贡献权重时凭空猜肌群（§6.5.2）。 |
 | Share / Growth | 脱敏后的 Muscle Level / Level Up / Balance projection | 读取 raw AppData、HealthKit 原始值或私人 notes。 |
@@ -1052,6 +1052,28 @@ Plan：
 - rollbackable plan decisions。
 - 基于肌群发展等级的均衡发展建议:补足、维持、减少或暂不判断。
 - 从已确认计划派生的计划/动作分享入口。
+
+### 8.1 计划调整（PlanAdjustment · FR-PL3/4 频率提案已实现）
+
+> **实现状态（2026-06-20）：** 路线 B 首个提案 = **频率/依从**已端到端落地（引擎 → 写入口 → 计划页 UI），用户可见。肌群级均衡（FR-PL5）仍**未落地**（依赖未实现的 MLE/贡献权重），后置接进同一框架。本节正文是**目标契约**；进度/证据看 DEV_LOG。
+
+**分层（防混淆，呼应 §6.5.10）。** 「计划调整」是一个统一的**提案 → 预览 → 采纳 → 回滚**框架，提案可来自多个源：
+
+- **频率/依从提案（FR-PL3/4，已实现）**：当用户**持续低于周计划**时，建议把周计划降到更可持续的频率。**纯频率维度**——只读「周计划天数 + 依从历史」，**不读肌群等级**（与今日页频率补量 §6.4a 同源，§6.5.2 红线：无肌群名、无组数）。
+- **肌群级均衡提案（FR-PL5，未落地）**：补足/维持/减少某肌群，读 §6.5.10 等级语义；依赖未落地的 MLE，后置零返工接进同一框架。
+
+**频率提案合同（FR-PL3）。**
+- **依从信号（纯派生）**：`WeeklyAdherence.recentWeeklySessionCounts(sessionDatesISO:, todayISO:, timeZone:, maxWeeks:)` 把 clean 历史摊平成「最近若干**完整周**每周完成场次」。三条公平红线：① **排除进行中的本周**（半周完成数会低估、误判落后）；② **起点不早于首训周**（开训前的空周是「还没开始」、不计 0）；③ **中间空周计 0**（练过又停正是「持续落后」要捕捉的信号）。周锚点复用 `WeekAnchor.isoWeekStart`（与 §6.4a 按周抑制同源、不分叉）。
+- **提案引擎（纯函数、零文案）**：`PlanAdjustmentEngine.frequencyProposal(plannedDaysPerWeek:, recentWeeklySessionCounts:)` → `PlanAdjustmentProposal(kind:.reduceFrequency, reasonCode:"belowPlanSustained", from, to)` 或 nil。**保守守门（起步值，待真机校准）**：planned > 下限 2、数据 ≥ 4 完整周、近况中位数 ≤ planned−1、`to = max(2, 中位数)` 且 to < planned。
+- **预览**：用 `PlanWeekProjection.weeks(daysPerWeek: to, weeks:1)` 现算「调整后本周训练日」答「影响哪几天」；提案前完整排期就在计划页同屏，故不重复列 before。
+
+**采纳 / 回滚合同（FR-PL3/4）。**
+- **采纳**：经唯一写闸 `CanonicalSessionWriter.applyFrequencyAdjustment(from:to:)` 把 `programTemplate.daysPerWeek` 改成 to（= 已有的「程序配置编辑」写类别）**+ 落 open-bag 回滚记录** `planAdjustment{kind, fromDaysPerWeek, toDaysPerWeek}`（记原值供回滚）。**纯加性、不改 schema**（current=11 不变）。
+- **回滚（单步即时）**：`rollbackPlanAdjustment()` 读记录里的原值恢复 daysPerWeek、删记录；**无记录幂等**（什么都不做）。
+- **单记录无栈**：已有采纳记录时**抑制新提案**（避免二次采纳有损覆盖原始值）；UI 只显示「已调整 · 改回原计划」。
+- **诚实红线**：写失败置**计划页专属** `planSaveErrorText`（与全局 `saveErrorText` / 教练 `coachSaveErrorText` **隔离**，防跨面错误污染）、UI 如实呈现，**绝不静默假成功**；文案（RedeL10n `PlanAdjustmentCopy`，§5.4/§7.3）中性、不羞辱、强调可逆，**不报具体观测频率数**（引擎只给 to=目标值、不等于真实频率，报了会虚高）。
+- **会话级「暂不」**：`planProposalSnoozed`（不落库）——本次使用期间不再就同一提案复弹；回滚成功亦置位（尊重用户决定、不复推销）；重启后若仍符合条件可再温和提一次。
+- **0 卡公理**：计划页调整卡用 `RoundedRectangle` 面（非 `ForgedCard`），守 PlanTabView 0 预算。
 
 Settings：
 
