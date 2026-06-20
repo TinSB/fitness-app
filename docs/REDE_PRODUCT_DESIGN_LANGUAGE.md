@@ -688,5 +688,6 @@ sheet = 掀开的 base 锻面（`presentationBackground = base`，禁 surface/ra
 
 ### 14.3 动效守卫
 
-- 一切位移/缩放/转场动效都过 `@Environment(\.accessibilityReduceMotion)` 守卫（关则降级为无动效或纯透明度）。折叠/撤销条/按压缩放均遵此。
-- 余下分屏动效（清单/图表入场过渡、卡出现消失）属后续 Phase——见 DEV_LOG。
+- 一切位移/缩放/转场动效都过 `@Environment(\.accessibilityReduceMotion)` 守卫（关则降级为无动效或纯透明度）。折叠/撤销条/按压缩放/分屏过渡均遵此。
+- **分屏过渡（Phase 1 已落地）**：进展尺度切换（session/week/cycle）交叉淡入（`.id(scale)` + `.transition` + setter `withAnimation`）；计划调整卡、今日教练卡、写失败提示的出现/消失走 `.transition` + body `.animation(value:)`。**绑定原则**：`.animation` 一律用带 `value:` 的现代形式（作用域限定该值变化，不泄漏到无关更新）；trigger/`value:` 用稳定标识或 Equatable 实值。
+- 余下入场动效（图表/折线 grow-in、numericText 数字滚动）属后续 Phase——见 DEV_LOG。

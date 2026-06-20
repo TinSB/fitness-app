@@ -31,6 +31,7 @@ struct ProgressTabView: View {
     /// 点历史行进详情的触感脉冲（单调自增）——不绑 detailRecord?.id：那是 .sheet(item:) 会回落 nil 的
     /// 呈现态，关 sheet 时 id→nil 会幽灵多震一次（审查确认）。只在「打开」自增 → 关闭不误触。
     @State private var historyOpenPulse = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var s: RedeStrings { localeStore.strings }
 
@@ -118,46 +119,53 @@ struct ProgressTabView: View {
                 .padding(.horizontal, RedeSpace.page)
                 .padding(.top, 16)
 
-            // HERO = 判断句（靠字号不靠 ember）
-            VStack(alignment: .leading, spacing: 8) {
-                Text(view.verdict)
-                    .font(.redeHeadline)
-                    .tracking(RedeTracking.headline)
-                    .lineSpacing(22 * 0.3)
-                    .foregroundStyle(Color.redeT1)
-                    .lineLimit(2)
-                Text(view.sub)
-                    .font(.redeBody)
-                    .lineSpacing(14 * 0.45)
-                    .foregroundStyle(Color.redeT3)
-                    .lineLimit(3)
-            }
-            .padding(.horizontal, RedeSpace.page)
-            .padding(.top, RedeSpace.section)
-
-            // 周期尺度（2026-06-15 重做）：多主项 e1RM 趋势清单（小折线 + 升降），
-            // 替代原单主项大折线；单次/本周仍走柱图。
-            if scale == .cycle {
-                cycleTrendList(model)
-                    .padding(.horizontal, RedeSpace.page)
-                    .padding(.top, RedeSpace.section)
-            } else {
-                VStack(alignment: .leading, spacing: 14) {
-                    Overline(text: view.chartTitle)
-                    if let bars = view.bars {
-                        barChart(bars)
-                    }
-                    HStack(spacing: 6) {
-                        Rectangle().fill(Color.redeEmber).frame(width: 11, height: 2)
-                        Text(view.caption)
-                            .font(.redeCaption)
-                            .foregroundStyle(Color.redeT3)
-                    }
-                    .padding(.top, -2)
+            // 尺度切换 = 整块交叉淡入（治"硬跳"）：HERO 判断句 + 图表/趋势随 scale 一起换。
+            // .id(scale) 让换尺度时旧块淡出、新块淡入；动效由 segSelection setter 的 withAnimation 驱动、
+            // reduceMotion 守卫。HERO + 图表合一个块，保证两者同步过渡、不各自闪。
+            VStack(alignment: .leading, spacing: 0) {
+                // HERO = 判断句（靠字号不靠 ember）
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(view.verdict)
+                        .font(.redeHeadline)
+                        .tracking(RedeTracking.headline)
+                        .lineSpacing(22 * 0.3)
+                        .foregroundStyle(Color.redeT1)
+                        .lineLimit(2)
+                    Text(view.sub)
+                        .font(.redeBody)
+                        .lineSpacing(14 * 0.45)
+                        .foregroundStyle(Color.redeT3)
+                        .lineLimit(3)
                 }
                 .padding(.horizontal, RedeSpace.page)
                 .padding(.top, RedeSpace.section)
+
+                // 周期尺度（2026-06-15 重做）：多主项 e1RM 趋势清单（小折线 + 升降），
+                // 替代原单主项大折线；单次/本周仍走柱图。
+                if scale == .cycle {
+                    cycleTrendList(model)
+                        .padding(.horizontal, RedeSpace.page)
+                        .padding(.top, RedeSpace.section)
+                } else {
+                    VStack(alignment: .leading, spacing: 14) {
+                        Overline(text: view.chartTitle)
+                        if let bars = view.bars {
+                            barChart(bars)
+                        }
+                        HStack(spacing: 6) {
+                            Rectangle().fill(Color.redeEmber).frame(width: 11, height: 2)
+                            Text(view.caption)
+                                .font(.redeCaption)
+                                .foregroundStyle(Color.redeT3)
+                        }
+                        .padding(.top, -2)
+                    }
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.top, RedeSpace.section)
+                }
             }
+            .id(scale)
+            .transition(reduceMotion ? .identity : .opacity)
 
             // FR-PR7 力量里程碑（实测达成；杠铃配片阈值）——非空才显示，含前导分隔线。
             if !model.milestones.isEmpty {
@@ -348,9 +356,12 @@ struct ProgressTabView: View {
                 }
             },
             set: { newValue in
-                if newValue == s.scaleSession { scale = .session }
-                else if newValue == s.scaleWeek { scale = .week }
-                else { scale = .cycle }
+                // 尺度切换裹 withAnimation 驱动 content 块的交叉淡入（reduceMotion 守卫）。
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
+                    if newValue == s.scaleSession { scale = .session }
+                    else if newValue == s.scaleWeek { scale = .week }
+                    else { scale = .cycle }
+                }
             }
         )
     }

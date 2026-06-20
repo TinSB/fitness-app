@@ -54,7 +54,10 @@ struct TodayTabView: View {
                 undoBannerView(banner)
             }
         }
-        .animation(.easeInOut(duration: 0.2), value: undoBanner?.id)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: undoBanner?.id)
+        // 教练卡 / 写失败提示的出现消失（采纳/暂不后随 reload 变化）= 过渡，不硬闪（reduceMotion 守卫）。
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: coachAction?.actionKey)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: sessionStore.coachSaveErrorText)
         .sensoryFeedback(.success, trigger: commitPulse)   // 采纳 / 撤销成功 = 提交确认
         .sensoryFeedback(.selection, trigger: selectPulse) // 暂不 / 展开折叠 = 轻选择
         .task {
@@ -235,6 +238,7 @@ struct TodayTabView: View {
                 }
                 .padding(.horizontal, RedeSpace.page)
                 .padding(.top, 8)
+                .transition(reduceMotion ? .identity : .opacity) // 写失败提示淡入，不硬闪
             }
 
             if isUnreadable {
@@ -265,6 +269,8 @@ struct TodayTabView: View {
                     coachCard(action)
                         .padding(.horizontal, RedeSpace.page)
                         .padding(.top, 12)
+                        // 教练卡进出（采纳/暂不后随 reload 出现/消失）= 上方滑入 + 淡入，不硬闪。
+                        .transition(reduceMotion ? .identity : .opacity.combined(with: .move(edge: .top)))
                 }
 
                 RuleDivider()
