@@ -1246,7 +1246,8 @@ struct TrainTabView: View {
     }
 
     private func finishRest(auto: Bool = false) {
-        sessionStore.apply(.restFinished) // 清空倒计时锚点在 syncRestCountdown 内
+        // auto=自然到点：通知不取消、让它送达（restCompletedNaturally）；手动「下一组」=提前结束、取消待发通知。
+        sessionStore.apply(.restFinished, restCompletedNaturally: auto)
         // 自动到点（用户多半没看屏）= 可感知的 impact 敲击；手动点「下一组」= 轻 .selection。
         if auto { restDonePulse += 1 } else { actionPulse += 1 }
     }

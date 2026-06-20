@@ -143,7 +143,7 @@ struct RootTabView: View {
                             painReported: false
                         )))
                     case .resting:
-                        sessionStore.apply(.restFinished)
+                        sessionStore.apply(.restFinished, restCompletedNaturally: true)
                     default:
                         break
                     }
@@ -172,7 +172,7 @@ struct RootTabView: View {
                             painReported: false
                         )))
                     case .resting:
-                        sessionStore.apply(.restFinished)
+                        sessionStore.apply(.restFinished, restCompletedNaturally: true)
                     default:
                         break
                     }

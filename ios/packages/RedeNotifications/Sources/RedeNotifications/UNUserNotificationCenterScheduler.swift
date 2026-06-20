@@ -22,6 +22,9 @@ public struct UNUserNotificationCenterScheduler: NotificationScheduling {
 
     public func scheduleRest(id: String, fireAfterSeconds: Int, title: String, body: String) {
         guard fireAfterSeconds > 0 else { return }
+        // 排程前清掉上一轮同 id 的**已送达**历史（此刻离触发还有 N 秒，绝不会误删刚弹出的新通知）——
+        // 避免通知中心堆多条 rest-end；同 id 重排只替换 pending、不会自动清旧 delivered。
+        center.removeDeliveredNotifications(withIdentifiers: [id])
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
@@ -31,8 +34,9 @@ public struct UNUserNotificationCenterScheduler: NotificationScheduling {
     }
 
     public func cancelRest(id: String) {
+        // 只清**待发**（取消尚未触发的提醒）；不动**已送达**——否则用户锁屏期间通知已弹出、
+        // 解锁回到 App 时这里会把那条已送达通知也抹掉，造成"明明响过却看不到"（真机 bug 根因之一）。
         center.removePendingNotificationRequests(withIdentifiers: [id])
-        center.removeDeliveredNotifications(withIdentifiers: [id])
     }
 
     public func replaceWeekly(_ reminders: [ResolvedWeeklyReminder]) {

@@ -665,7 +665,9 @@ final class SessionStore {
     }
 
     /// 事件包装：转移 + 即时 draft 留存（每个动作后都可恢复）。
-    func apply(_ event: TrainFlowEvent) {
+    /// restCompletedNaturally=true：休息倒计时自然归零（前台 runRestTimer 推进）——**不取消**已排程的
+    /// 休息提醒，让它此刻送达（前台经 delegate 呈现 / 后台系统送达）。手动「下一组」提前结束或收尾才取消。
+    func apply(_ event: TrainFlowEvent, restCompletedNaturally: Bool = false) {
         guard flow != nil else { return }
         switch event {
         case .logSet(let obs): flow?.logSet(obs)
@@ -679,7 +681,7 @@ final class SessionStore {
         case .keepTraining: flow?.keepTraining()
         case .confirmEnd(let reason): flow?.confirmEnd(reason: reason)
         }
-        syncRestCountdown(after: event)
+        syncRestCountdown(after: event, restCompletedNaturally: restCompletedNaturally)
         persistDraft()
     }
 
@@ -700,15 +702,25 @@ final class SessionStore {
     /// 是否暂停（绑定暂停/继续按钮文案与态）。
     var restIsPaused: Bool { restCountdown.isPaused }
 
-    /// +30 加时。
-    func addRestTime(_ seconds: Int) { restCountdown.add(seconds: seconds) }
-    /// 暂停 / 继续切换。
-    func toggleRestPause() { restCountdown.togglePause() }
+    /// +30 加时。同步按新剩余重排休息提醒——否则通知仍按原时点弹、早于实际结束（审查 MAJOR-1）。
+    func addRestTime(_ seconds: Int) {
+        restCountdown.add(seconds: seconds)
+        if !restCountdown.isPaused { scheduleRestNotification(restSecondsPlanned: restCountdown.remaining()) }
+    }
+    /// 暂停 / 继续切换。暂停撤回待发提醒（别在暂停期间弹）；继续按剩余重排（审查 MAJOR-1）。
+    func toggleRestPause() {
+        restCountdown.togglePause()
+        if restCountdown.isPaused {
+            cancelRestNotification()
+        } else {
+            scheduleRestNotification(restSecondsPlanned: restCountdown.remaining())
+        }
+    }
 
     /// 事件落定后同步倒计时锚点。进入 resting（仅 logSet 一条路）= 开新休息；
     /// restFinished 或落到 summary = 结束清空；confirmEnd↔resting 折返（结束确认弹层
     /// 取消后继续训练）期间不动锚点，故剩余随墙钟延续、不会重置。
-    private func syncRestCountdown(after event: TrainFlowEvent) {
+    private func syncRestCountdown(after event: TrainFlowEvent, restCompletedNaturally: Bool = false) {
         guard let flow else { restCountdown.clear(); cancelRestNotification(); return }
         switch event {
         case .logSet where flow.phase == .resting:
@@ -716,7 +728,8 @@ final class SessionStore {
             scheduleRestNotification(restSecondsPlanned: flow.restSecondsPlanned)
         case .restFinished:
             restCountdown.clear()
-            cancelRestNotification()
+            // 自然到点：不取消——通知正该此刻送达。仅手动提前结束才取消待发提醒（避免训练已推进还弹）。
+            if !restCompletedNaturally { cancelRestNotification() }
         default:
             if flow.phase == .summary { restCountdown.clear(); cancelRestNotification() }
         }
