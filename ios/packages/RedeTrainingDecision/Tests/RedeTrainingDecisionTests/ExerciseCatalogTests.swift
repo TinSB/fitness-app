@@ -53,6 +53,29 @@ final class ExerciseCatalogTests: XCTestCase {
         }
     }
 
+    // FR-EX2 批次无关不变量（自动覆盖所有内容批次，无需硬编码 id）：
+    //  - 有技术要点的动作：中英条数一致、均非空；
+    //  - 有循证标签的动作：URL 必须 https（真实可核验）；
+    //  - 无孤立 evidenceUrl（有 URL 必有 tag）。
+    func testCuedEntriesAreBilingualAndEvidenceWellFormed() {
+        var cuedCount = 0
+        for e in ExerciseCatalog.minimal.entries {
+            if let en = e.techniqueCuesEn {
+                cuedCount += 1
+                XCTAssertFalse(en.isEmpty, "\(e.id) techniqueCuesEn 空")
+                XCTAssertEqual(e.techniqueCuesZh?.count, en.count, "\(e.id) 中英要点条数不一致")
+            }
+            if let tag = e.evidenceTag {
+                XCTAssertFalse(tag.isEmpty, "\(e.id) evidenceTag 空")
+                XCTAssertEqual(e.evidenceUrl?.hasPrefix("https://"), true, "\(e.id) 循证 URL 非 https")
+            }
+            if e.evidenceUrl != nil {
+                XCTAssertNotNil(e.evidenceTag, "\(e.id) 有 evidenceUrl 却无 evidenceTag（孤立 URL）")
+            }
+        }
+        XCTAssertGreaterThanOrEqual(cuedCount, 19, "应已覆盖主项 7 + 第2批 12 = 19 个动作的技术要点")
+    }
+
     // 诚实红线：front-squat 来源是 CrossFit.com（非证据级）→ 只留技术要点、不挂循证标签（不冒充循证）。
     func testFrontSquatHasCuesButNoEvidenceTag() {
         let e = ExerciseCatalog.minimal.entry(id: "front-squat")
