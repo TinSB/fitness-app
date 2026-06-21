@@ -8,6 +8,8 @@ import RedeTrainingDecision
 
 struct TodayTabView: View {
     let onStartTraining: () -> Void
+    /// FR-T5 修数据卡「去核对」：跳到进展页数据质量区（跨 tab；由 RootTabView 切 selection）。
+    var onReviewData: () -> Void = {}
 
     @Environment(LocaleStore.self) private var localeStore
     @Environment(SessionStore.self) private var sessionStore
@@ -601,8 +603,8 @@ struct TodayTabView: View {
                 }
             }
         case .dataReview:
-            // 修数据采纳=跨页核对，待 Today 算 DataQualityReport 让 dataFindingCount>0 后随该切片连卡带跳转一起做。
-            EmptyView()
+            // 修数据「去核对」= 跨页导航到进展页数据质量区（不改状态、不假报）；可疑数据修好后卡自然消失。
+            adoptCTA(s.coachAdoptReviewLabel) { onReviewData() }
         }
     }
 

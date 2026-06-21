@@ -637,6 +637,12 @@ struct ProgressTabView: View {
                     .font(.redeCaption)
                     .foregroundStyle(Color.redeT3)
             }
+            // 超 3 条时给溢出提示——与今日「修数据」卡显示的可疑组总数对账（卡说 N 条、这里别只见 3 条）。
+            if quality.suspectSets.count > 3 {
+                Text(s.suspectMoreLine(quality.suspectSets.count - 3))
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT4)
+            }
             if dropped > 0 {
                 Text(s.droppedRecordsLine(dropped))
                     .font(.redeCaption)

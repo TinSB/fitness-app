@@ -60,6 +60,9 @@ extension RedeStrings {
     /// applyVolumeBoost 真实语义仅记录本周已承认、让引擎抑制补量卡，不加训练、不改处方。
     public var coachAdoptVolumeLabel: String { t2c("知道了", "Got it") }
 
+    /// 修数据采纳主 CTA（动词引导：跳进展页数据质量区核对，非状态变更）。
+    public var coachAdoptReviewLabel: String { t2c("去核对", "Review") }
+
     /// 换动作选择器顶部提示（detail sheet 进入换动作意图时）。
     public var swapPickerHint: String { t2c("选一个替代当前动作", "Pick a replacement") }
 
