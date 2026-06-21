@@ -76,7 +76,21 @@
       "loadType": "external",
       "loadFactor": 2.0,
       "isGuided": false,
-      "rank": 20
+      "rank": 20,
+      "techniqueCuesEn": [
+        "Lie supine on a flat bench keeping five points of contact (head, upper back/shoulders, glutes, both feet flat); preserve a neutral spine and avoid excessive low-back arching.",
+        "Depress and retract your shoulder blades firmly into the bench before pressing, and keep them retracted throughout to stabilize the shoulders.",
+        "Hold each dumbbell with a closed, secure grip and a neutral wrist (no flexion/extension); start with arms extended and the weights at or just below eye level.",
+        "Lower under control toward the mid-chest, slightly toward the armpits, then press both dumbbells up in unison to full elbow extension without bouncing."
+      ],
+      "techniqueCuesZh": [
+        "仰卧平凳保持五点支撑（头、上背/肩、臀、双脚踏实）；脊柱中立、避免过度弓腰。",
+        "推之前肩胛下沉后缩压向凳面，全程保持后缩稳住肩。",
+        "每只哑铃闭握、手腕中立（不前屈后伸）；起始手臂伸直、哑铃在眼睛高度或略低。",
+        "控制下放到胸中部、略偏腋窝，再双手同步推到肘部完全伸直、不反弹。"
+      ],
+      "evidenceTag": "ACE Exercise Library: Chest Press (dumbbell)",
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/19/chest-press/"
     },
     {
       "id": "machine-chest-press",
@@ -134,7 +148,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 50
+      "rank": 50,
+      "techniqueCuesEn": [
+        "Grip the bar with an overhand (pronated) grip, hands slightly wider than shoulder-width; sit tall with thighs locked under the pad, chest up.",
+        "Brace your abs to keep a neutral spine and lean back no more than ~30 degrees; avoid arching the low back or swinging the torso.",
+        "Before pulling, depress and retract your shoulder blades (pull them down and back) and keep them set throughout the rep.",
+        "Drive your elbows down toward your sides to bring the bar to your upper chest, then control the bar all the way back up to full elbow extension."
+      ],
+      "techniqueCuesZh": [
+        "正手握杠（掌心朝前）、握距略宽于肩；坐直、大腿固定在垫下，挺胸。",
+        "收紧腹部保持脊柱中立，后仰不超过约 30°；不要弓腰或甩动躯干。",
+        "下拉前先肩胛下沉后缩（向下向后收），全程保持这个状态。",
+        "肘部向身体两侧下压，把杠拉到上胸，再控制还原到肘部完全伸直。"
+      ],
+      "evidenceTag": "ACE Exercise Library: Seated Lat Pulldown",
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/158/seated-lat-pulldown/"
     },
     {
       "id": "seated-row",
@@ -155,7 +183,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 60
+      "rank": 60,
+      "techniqueCuesEn": [
+        "Sit tall with a neutral spine: brace your abs and keep the natural arch in your low back; do not round forward or press your low back into the pad.",
+        "Initiate the pull by depressing and retracting your shoulder blades (pull them back and down) before bending the elbows.",
+        "Drive your elbows back toward your torso, keeping them close to your sides, and pull the handle to your mid-torso; keep wrists neutral, in line with your forearms.",
+        "Avoid leaning back or jerking with momentum; return under control, resisting the weight while keeping your chest up and torso upright."
+      ],
+      "techniqueCuesZh": [
+        "坐直、脊柱中立：收紧腹部、保持腰部自然弓，不前弓也不把腰压向靠垫。",
+        "先肩胛下沉后缩（向后向下收）再屈肘发力。",
+        "肘部向后带、贴近身体两侧，把握把拉向腹中部；手腕中立、与前臂成一线。",
+        "不后仰、不靠惯性甩；控制还原、对抗阻力，全程挺胸、躯干挺直。"
+      ],
+      "evidenceTag": "ACE Exercise Library: Seated Row",
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/168/seated-row/"
     },
     {
       "id": "barbell-row",
@@ -437,7 +479,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 190
+      "rank": 190,
+      "techniqueCuesEn": [
+        "Sit with your back and tailbone flat against the backrest, brace your abdominals, and grip the side handles to keep your spine stable and your hips down throughout.",
+        "Set feet shoulder-width on the middle of the platform with toes pointing slightly out; keep your whole foot, especially the heels, pressed flat into the plate.",
+        "Lower under control until your knees reach roughly 90 degrees, going only as deep as you can without your lower back rounding or your hips rolling off the pad.",
+        "Press the platform away through your heels and forefoot, extending knees and hips, but stop short of locking out the knees to keep tension on the muscles and protect the joint."
+      ],
+      "techniqueCuesZh": [
+        "后背与尾骨贴实靠背、收紧腹部、握住两侧把手稳住脊柱、臀部不离垫。",
+        "双脚与肩同宽踩在踏板中部、脚尖略外展；全脚掌尤其脚跟踩实踏板。",
+        "控制下放到膝盖约 90°，只下到腰不弓圆、臀不离垫的深度。",
+        "经脚跟与前掌把踏板蹬开、伸膝伸髋，但膝盖不锁死，保持张力、护膝。"
+      ],
+      "evidenceTag": "ACE Exercise Library: Seated Leg Press",
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/154/seated-leg-press/"
     },
     {
       "id": "romanian-deadlift",
@@ -549,7 +605,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 240
+      "rank": 240,
+      "techniqueCuesEn": [
+        "Hold the dumbbell or kettlebell vertically against your chest, cupping the top end with both hands, and stand with feet about shoulder-width apart.",
+        "Keep your chest up and torso upright with a neutral, straight back throughout the movement; let the anterior load counterbalance you into a vertical trunk.",
+        "Sit the hips back and down, driving the knees out so they track over the toes (avoid letting the knees cave inward), with elbows staying close to the rib cage.",
+        "Descend until the thighs are at least parallel to the floor (hips below knees) as mobility allows, then drive through the heels/mid-foot to stand back up fully."
+      ],
+      "techniqueCuesZh": [
+        "竖握哑铃或壶铃抵在胸前、双手捧住上端，双脚约与肩同宽站立。",
+        "全程挺胸、躯干挺直、背部中立平直；前侧负重帮你保持躯干竖直。",
+        "髋向后向下坐、膝盖外展顺脚尖（不内扣），肘部贴近肋廓。",
+        "蹲到大腿至少与地面平行（髋低于膝）、活动度允许时更低，再经脚跟/中足发力站直。"
+      ],
+      "evidenceTag": "ACE Exercise Library: Goblet Squat",
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/362/goblet-squat/"
     },
     {
       "id": "db-lunge",
@@ -848,7 +918,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 370
+      "rank": 370,
+      "techniqueCuesEn": [
+        "Set the bench to roughly a 30-45 degree incline; angles much steeper than 45 degrees shift the work onto the front delts and off the upper chest.",
+        "Before unracking, depress and retract your shoulder blades into the bench and keep head, upper back, hips, and feet in firm contact throughout to protect the shoulders and keep the spine neutral.",
+        "Grip the bar slightly wider than shoulder width with thumbs wrapped around it, and keep elbows tucked at about 30-60 degrees from the torso (not flared to 90) with wrists stacked over elbows.",
+        "Lower the bar under control to the upper chest just below the collarbone, touch without bouncing, then press up to nearly straight arms while keeping the shoulder blades retracted."
+      ],
+      "techniqueCuesZh": [
+        "凳面调到约 30–45° 上斜；远超 45° 会把负荷转到前束、离开上胸。",
+        "出杠前肩胛下沉后缩压向凳面，全程头、上背、臀、脚稳定贴实，护肩、脊柱中立。",
+        "握距略宽于肩、拇指环握，肘部与躯干约成 30–60°（不外展到 90°）、手腕叠在肘上方。",
+        "控制下放到锁骨下方的上胸，轻触不反弹，再推到手臂近伸直、肩胛保持后缩。"
+      ],
+      "evidenceTag": "ACE Exercise Library: Incline Chest Press",
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/25/incline-chest-press/"
     },
     {
       "id": "barbell-curl",
@@ -888,7 +972,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 390
+      "rank": 390,
+      "techniqueCuesEn": [
+        "Sit with your upper back against a bench and position the padded barbell in the crease of your hips, just above the pelvis.",
+        "Set your feet shoulder-width so your shins are vertical (about a 90-degree knee angle) at the top of the lift; keep knees tracking over your toes.",
+        "Brace your core and drive your hips up by extending from the hips, keeping your spine and pelvis near-neutral; avoid excessive lower-back arching.",
+        "Keep your head and neck in line with your spine and stop at full hip extension when your torso is parallel to the floor."
+      ],
+      "techniqueCuesZh": [
+        "上背靠凳，把加垫的杠铃放在髋折处、略高于骨盆。",
+        "双脚与肩同宽，顶部时小腿竖直（膝约 90°）；膝盖顺脚尖方向。",
+        "收紧核心、伸髋顶起，脊柱与骨盆近中立；避免过度弓腰。",
+        "头颈与脊柱成一线，顶到髋充分伸展、躯干与地面平行即停。"
+      ],
+      "evidenceTag": "Contreras et al., Strength and Conditioning Journal (2011)",
+      "evidenceUrl": "https://bretcontreras.com/wp-content/uploads/Barbell-Hip-Thrust.pdf"
     },
     {
       "id": "bulgarian-split-squat",
@@ -908,7 +1006,21 @@
       "loadType": "external",
       "loadFactor": 2.0,
       "isGuided": false,
-      "rank": 400
+      "rank": 400,
+      "techniqueCuesEn": [
+        "Set the rear foot on a knee-height bench and step the front foot far enough forward that, at the bottom, the front shin stays roughly vertical and the front knee tracks over the toes (not caving inward).",
+        "Keep the torso upright with ribs down, core braced, and spine neutral; avoid leaning excessively forward or hyperextending the lower back.",
+        "Lower under control, dropping straight down until the front thigh is about parallel to the floor, keeping weight on the mid-foot/heel of the front leg.",
+        "Drive up through the front foot to return to standing; let the front leg do the work rather than pushing off the rear leg."
+      ],
+      "techniqueCuesZh": [
+        "后脚搭在膝高的凳上，前脚向前迈够远，使底部时前侧小腿大致竖直、前膝顺脚尖（不内扣）。",
+        "躯干挺直、肋骨下沉、核心收紧、脊柱中立；不过度前倾、不弓腰后伸。",
+        "控制下蹲、垂直下沉到前侧大腿约与地面平行，重心在前脚的中足/脚跟。",
+        "经前脚发力起身；让前腿主导发力，而非靠后腿蹬。"
+      ],
+      "evidenceTag": "NASM Exercise Library: Bulgarian Split Squat",
+      "evidenceUrl": "https://www.nasm.org/resource-center/exercise-library/bulgarian-split-squat"
     },
     {
       "id": "cable-lateral-raise",
@@ -1412,7 +1524,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 660
+      "rank": 660,
+      "techniqueCuesEn": [
+        "Set a wide stance with feet outside shoulder-width and toes turned out (~30-45 degrees); grip the bar with hands inside your knees, shins close to the bar.",
+        "Brace and keep a flat, neutral spine throughout: chest 'proud' and up, head and eyes forward, no rounding or hyperextension of the low back or neck.",
+        "Drive the knees out over the toes and 'spread the floor' with your feet to create a stable base and keep the knees tracking the toes.",
+        "Engage the lats to keep the bar tight against your body, then extend hips and knees together to lock out tall with shoulders back."
+      ],
+      "techniqueCuesZh": [
+        "宽站距、双脚超肩宽、脚尖外展约 30–45°；双手握在膝内侧、小腿贴近杠铃。",
+        "全程收紧、背部平直中立：挺胸、目视前方，腰与颈不弓圆也不后伸。",
+        "膝盖向脚尖方向外推、双脚“撑开地面”，建立稳定底座、膝盖顺脚尖。",
+        "收紧背阔肌让杠铃贴身，再髋膝同步伸展锁定、肩向后挺直站起。"
+      ],
+      "evidenceTag": "Wenning, NSCA TSAC Report (2014)",
+      "evidenceUrl": "https://www.nsca.com/education/articles/tsac-report/the-deadlift-and-its-application-to-overall-performance/"
     },
     {
       "id": "wide-grip-pulldown",
@@ -1664,7 +1790,21 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 800
+      "rank": 800,
+      "techniqueCuesEn": [
+        "Set hands shoulder-width apart (or slightly wider), fingers pointing forward or slightly inward, with shoulders stacked directly over your hands.",
+        "Brace your core, glutes, and quads so your body holds one rigid line from head to heels — never let your low back sag or your hips pike up.",
+        "Keep your head aligned with your spine (neutral neck) and tuck your elbows back toward your feet rather than flaring them straight out to the sides.",
+        "Lower under control until your chest nears the floor, then press the floor away through full elbow extension while keeping the torso rigid."
+      ],
+      "techniqueCuesZh": [
+        "双手约与肩同宽（或略宽）、指尖朝前或略内，肩部正对双手上方。",
+        "收紧核心、臀、股四头，让身体从头到脚跟保持一条直线——腰不塌、臀不抬。",
+        "头与脊柱成一线（颈中立），肘部向脚方向后收、不向两侧直张。",
+        "控制下放到胸接近地面，再撑地推到肘部完全伸直、躯干保持刚性。"
+      ],
+      "evidenceTag": "ACE Exercise Library: Push-Up",
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/41/push-up/"
     },
     {
       "id": "pull-up",
@@ -1684,7 +1824,21 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 810
+      "rank": 810,
+      "techniqueCuesEn": [
+        "Grip the bar with a pronated (overhand) full grip, palms facing away, hands about shoulder-to-1.5x shoulder width, thumbs wrapped around.",
+        "Brace your core and keep your trunk vertical with your head in line with your spine; avoid swinging or kipping the body.",
+        "Set the shoulder blades first: depress and retract the scapulae (pull shoulders down and back) before bending the elbows, and hold that position throughout.",
+        "Pull until your chin clears the bar, then lower under control until the elbows are fully extended for a full range of motion."
+      ],
+      "techniqueCuesZh": [
+        "正手满握（掌心朝外），握距约肩宽到 1.5 倍肩宽，拇指环握。",
+        "收紧核心、躯干保持竖直、头与脊柱成一线；不要摆荡或借力摆动。",
+        "先定肩胛：屈肘前先肩胛下沉后缩（肩向下向后），全程保持。",
+        "上拉到下巴过杠，再控制下放到肘部完全伸直、做满全程。"
+      ],
+      "evidenceTag": "ACE Exercise Library: Pull-ups",
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/191/pull-ups/"
     },
     {
       "id": "inverted-row",
@@ -2070,7 +2224,21 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1000
+      "rank": 1000,
+      "techniqueCuesEn": [
+        "Grip the bars firmly with arms locked out, shoulders pulled down and back, and brace your core to keep the spine neutral.",
+        "Stay upright to bias the triceps or lean the torso slightly forward to bias the chest, keeping elbows tracking close (not flaring wide).",
+        "Lower under control until your upper arms reach about parallel to the floor; avoid dropping deeper into end-range shoulder extension.",
+        "Press back up by extending the elbows until your arms are straight, keeping the movement smooth and controlled."
+      ],
+      "techniqueCuesZh": [
+        "稳握双杠、手臂锁定，肩向下向后收，收紧核心保持脊柱中立。",
+        "躯干竖直偏重三头，略前倾偏重胸；肘部贴近轨迹（不外张）。",
+        "控制下放到上臂约与地面平行；不要沉到肩关节后伸的末端。",
+        "伸肘推起到手臂伸直，动作平稳可控。"
+      ],
+      "evidenceTag": "Boehler & Porcari, ACE-sponsored Research (2011)",
+      "evidenceUrl": "https://www.acefitness.org/certifiednewsarticle/1562/ace-sponsored-research-best-triceps-exercises/"
     },
     {
       "id": "single-leg-extension",
