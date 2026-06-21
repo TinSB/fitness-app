@@ -693,6 +693,20 @@ struct TodayTabView: View {
                 }
 
                 if let entry {
+                    // FR-EX2 技术要点（双语自由 prose；缺则不显示）——放元数据前，最有用内容优先。
+                    if let cues = (s.locale == .zh ? entry.techniqueCuesZh : entry.techniqueCuesEn), !cues.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Overline(text: s.exerciseDetailTechnique)
+                            ForEach(Array(cues.enumerated()), id: \.offset) { _, cue in
+                                HStack(alignment: .top, spacing: 7) {
+                                    Text("·").font(.redeBody).foregroundStyle(Color.redeT3)
+                                    Text(cue).font(.redeBody).foregroundStyle(Color.redeT2)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                            }
+                        }
+                    }
+
                     detailRow(s.exerciseDetailType, s.exerciseKindLabel(entry.kind))
                     detailRow(s.exerciseDetailPattern, s.movementPatternLabel(entry.movementPattern))
                     detailRow(s.exerciseDetailPrimary, s.muscleLabel(entry.primaryMuscle))
@@ -749,6 +763,21 @@ struct TodayTabView: View {
                             ForEach(alts, id: \.self) { altId in
                                 Text(localeStore.exerciseName(altId))
                                     .font(.redeBody).foregroundStyle(Color.redeT2)
+                            }
+                        }
+                    }
+
+                    // FR-EX2 循证依据（真实可核验来源；缺则不显示）——置底作引用脚注，可点开真实出处。
+                    if let tag = entry.evidenceTag, !tag.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Overline(text: s.exerciseDetailEvidence)
+                            Text(tag).font(.redeCaption).foregroundStyle(Color.redeT3)
+                                .fixedSize(horizontal: false, vertical: true)
+                            // URL 失败（理论不达，来源已核验 https）则优雅降级：只显引用文本、无链接（graceful degradation）。
+                            if let urlString = entry.evidenceUrl, let url = URL(string: urlString) {
+                                Link(s.exerciseDetailViewSource, destination: url)
+                                    .font(.redeCaption).foregroundStyle(Color.redeEmber2)
+                                    .accessibilityLabel(s.exerciseDetailViewSource + "：" + tag) // VoiceOver 带来源上下文
                             }
                         }
                     }

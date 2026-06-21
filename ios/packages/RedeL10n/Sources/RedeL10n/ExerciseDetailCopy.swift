@@ -3,8 +3,8 @@
 //
 // 码源 = Resources/exercises.json（wave-15，123 条）的 distinct 值：
 //   movementPattern 17 · primaryMuscle/secondaryMuscles 合并 17 · equipment 8 · kind 3。
-// 未知码回退原值（不崩、不编）。技术要点/循证 prose 目录暂无（contraindicationHint /
-// evidenceTag 全为空），故详情页 v1 只展示结构化元数据，不假造要点。
+// 未知码回退原值（不崩、不编）。技术要点/循证（R1 收尾）：7 主项已填 techniqueCuesZh/En +
+// 真实核验 evidenceTag/Url（同行评审/NSCA）；其余动作字段为空 → 详情页只展示结构化元数据、不假造。
 
 import Foundation
 
@@ -17,6 +17,12 @@ extension RedeStrings {
     public var exerciseDetailEquipment: String { locale == .zh ? "器械" : "Equipment" }
     public var exerciseDetailType: String { locale == .zh ? "类型" : "Type" }
     public var exerciseDetailAlternatives: String { locale == .zh ? "替代动作" : "Alternatives" }
+    /// FR-EX2 技术要点区块标题。
+    public var exerciseDetailTechnique: String { locale == .zh ? "技术要点" : "Technique" }
+    /// FR-EX2 循证依据区块标题（来源真实可核验，不编引用）。
+    public var exerciseDetailEvidence: String { locale == .zh ? "循证依据" : "Evidence" }
+    /// 循证来源链接行（点开真实出处）。
+    public var exerciseDetailViewSource: String { locale == .zh ? "查看来源" : "View source" }
     /// 无替代动作时的诚实占位。
     public var exerciseDetailNoAlternatives: String {
         locale == .zh ? "暂无同族替代动作" : "No equivalent alternatives yet"
