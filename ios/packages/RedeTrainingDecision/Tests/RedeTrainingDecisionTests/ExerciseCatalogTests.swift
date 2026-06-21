@@ -57,6 +57,14 @@ final class ExerciseCatalogTests: XCTestCase {
     //  - 有技术要点的动作：中英条数一致、均非空；
     //  - 有循证标签的动作：URL 必须 https（真实可核验）；
     //  - 无孤立 evidenceUrl（有 URL 必有 tag）。
+    //
+    // 循证分级政策（owner 拍板「真实循证」，#591 起既定先例）：挂 evidenceUrl 的来源
+    // 必须真实、可核验、且确实研究/覆盖该动作。接受两档来源：
+    //  - 同行评审研究（PubMed/PMC/JSCR/PeerJ 等）——有直接研究时优先；
+    //  - 权威认证机构动作库（NSCA / ACE / NASM）——常见机器/器械动作无直接 RCT 时采用，
+    //    它们是机构编审的技术指引、非个人博客或掠夺性期刊（后者一律降级 cues-only，
+    //    见 front-squat=CrossFit、arnold-press=IJPHRD 掠夺性期刊）。
+    // 每条 URL 均经研究 workflow 逐条 WebFetch 对抗核验 + 提交前 curl 抽检 200。
     func testCuedEntriesAreBilingualAndEvidenceWellFormed() {
         var cuedCount = 0
         for e in ExerciseCatalog.minimal.entries {
@@ -73,7 +81,8 @@ final class ExerciseCatalogTests: XCTestCase {
                 XCTAssertNotNil(e.evidenceTag, "\(e.id) 有 evidenceUrl 却无 evidenceTag（孤立 URL）")
             }
         }
-        XCTAssertGreaterThanOrEqual(cuedCount, 19, "应已覆盖主项 7 + 第2批 12 = 19 个动作的技术要点")
+        // 净新增累计：批1 主项 7 + 批2 高频复合 12 + 批3 A档 16 = 35（各批为不重叠净增）。
+        XCTAssertGreaterThanOrEqual(cuedCount, 35, "技术要点累计应 ≥ 35（批1=7 + 批2=12 + 批3=16）")
     }
 
     // 诚实红线：front-squat 来源是 CrossFit.com（非证据级）→ 只留技术要点、不挂循证标签（不冒充循证）。
@@ -85,8 +94,9 @@ final class ExerciseCatalogTests: XCTestCase {
     }
 
     // 回归：未填内容的动作 techniqueCues 为 nil（加性、零行为变化）。
+    // 样例用 db-pullover（长尾 C 档，批3/批4 都不填充，长期保持未填）。
     func testUntouchedExerciseHasNilCues() {
-        let e = ExerciseCatalog.minimal.entry(id: "incline-db-press")
+        let e = ExerciseCatalog.minimal.entry(id: "db-pullover")
         XCTAssertNotNil(e, "样例动作应存在")
         XCTAssertNil(e?.techniqueCuesEn)
         XCTAssertNil(e?.techniqueCuesZh)
