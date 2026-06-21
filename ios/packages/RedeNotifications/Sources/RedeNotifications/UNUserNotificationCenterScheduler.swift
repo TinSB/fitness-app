@@ -29,6 +29,9 @@ public struct UNUserNotificationCenterScheduler: NotificationScheduling {
         content.title = title
         content.body = body
         content.sound = .default
+        // 休息结束 = 时效性提醒：用 .timeSensitive 让它在用户忙于别的 App / 开了专注模式时也强弹横幅
+        //（默认 .active 会被降级成静悄悄进通知中心、不弹）。需 time-sensitive entitlement（见 Rede.entitlements）。
+        content.interruptionLevel = .timeSensitive
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(fireAfterSeconds), repeats: false)
         center.add(UNNotificationRequest(identifier: id, content: content, trigger: trigger))
     }
@@ -47,6 +50,9 @@ public struct UNUserNotificationCenterScheduler: NotificationScheduling {
             content.title = reminder.title
             content.body = reminder.body
             content.sound = .default
+            // 每周提醒也用 .timeSensitive（owner 拍板"也弹"）：在别的 App 前台 / 专注模式时也强弹横幅。
+            // 文案仍中性（§7.3 管语气、这管送达）；如日后觉太扰可单独降回 .active。
+            content.interruptionLevel = .timeSensitive
             var components = DateComponents()
             components.weekday = reminder.weekday
             components.hour = reminder.hour

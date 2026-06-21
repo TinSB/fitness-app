@@ -8,6 +8,10 @@
 	     slice. No iCloud/CloudKit/network entitlements. -->
 	<key>com.apple.developer.healthkit</key>
 	<true/>
+	<!-- FR-NT1/2: 休息结束 + 每周提醒用 Time Sensitive 抢占级别（穿透专注模式 / 在别的 App 前台时也强弹横幅）。
+	     仅本地通知，无 remote push；自动签名会把此 capability 注册进描述文件。 -->
+	<key>com.apple.developer.usernotifications.time-sensitive</key>
+	<true/>
 	<!-- W-1: App Group shared with the RedeWidget extension. The app WRITES a
 	     small derived read-only readiness snapshot here; the widget READS it. A
 	     derived presentation share only (§12) — never canonical AppData, never a
