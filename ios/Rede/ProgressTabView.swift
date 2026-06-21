@@ -520,20 +520,28 @@ struct ProgressTabView: View {
     private func milestonesSection(_ model: ProgressModel) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Overline(text: s.milestonesTitle)
-            ForEach(model.milestones, id: \.exerciseId) { milestone in
+            // id 用整条（Hashable）——同一动作可能既有实测又有估算两条，不能再用 exerciseId（会重复 id）。
+            ForEach(model.milestones, id: \.self) { milestone in
                 let value = "\(milestone.achievedThreshold) \(milestone.unitLabel)"
-                HStack {
+                HStack(spacing: 8) {
                     Text(localeStore.exerciseName(milestone.exerciseId))
                         .font(.redeBody)
                         .foregroundStyle(Color.redeT2)
+                    // 估算里程碑明确标「估算」中性微标——不冒充实测（FR-PR7 诚信红线）。
+                    if milestone.isEstimated {
+                        Text(s.milestoneEstimatedBadge)
+                            .font(.redeCaption)
+                            .foregroundStyle(Color.redeT4)
+                    }
                     Spacer()
                     Text(value)
                         .font(.redeCallout).monospacedDigit()
-                        .foregroundStyle(Color.redeEmber2)
+                        // 实测 = ember 成就口音；估算 = 降一档中性，视觉上不与实测争辉。
+                        .foregroundStyle(milestone.isEstimated ? Color.redeT3 : Color.redeEmber2)
                 }
                 .padding(.vertical, 6)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(s.milestoneA11y(lift: localeStore.exerciseName(milestone.exerciseId), value: value))
+                .accessibilityLabel(s.milestoneA11y(lift: localeStore.exerciseName(milestone.exerciseId), value: value, estimated: milestone.isEstimated))
             }
         }
     }
