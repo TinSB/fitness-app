@@ -41,7 +41,7 @@ struct ProgressModel {
     let weeklyComparison: WeeklyComparison?
     /// FR-PR5 当月训练连续性月历（中性呈现；history 非空时必有，否则 nil）。
     let continuity: ContinuityCalendar.Month?
-    /// FR-PR7 力量里程碑（杠铃大项已达成的配片阈值；只认实测，未达成则空）。
+    /// FR-PR7 力量里程碑（杠铃大项配片阈值）：实测 isEstimated=false；估算更高档时追加 isEstimated=true。
     let milestones: [StrengthMilestone]
 
     static func loadOutcomeAsync(now: Date = Date()) async -> LoadOutcome? {
@@ -93,7 +93,7 @@ struct ProgressModel {
         // FR-PR7 力量里程碑：公认大项实测最佳顶组跨过的配片阈值。eligible = 具体 id 白名单（不按
         // pattern 宽匹配，避免窄距卧推/臀推/早安/前蹲等稀释成就感，审查 m-1）；与目录交集且排
         // deprecated（审查 M-1，防日后下线动作仍触发）。扩里程碑动作走此清单——校准项。本包与目录
-        // 解耦，故 eligible 在 app 层注入。用 snapshot 的 bestWeightKg（真实完成顶组），不产 e1RM 估算。
+        // 解耦，故 eligible 在 app 层注入。实测用 snapshot 的 bestWeightKg；估算用 bestE1RmKg（FR-PR7 收尾，明确标注）。
         let milestoneLiftIds: Set<String> = ["bench-press", "squat", "deadlift", "overhead-press"]
         let milestoneEligible = Set(
             catalog.entries
@@ -104,8 +104,14 @@ struct ProgressModel {
             snapshot.exerciseTrends.map { ($0.exerciseId, $0.bestWeightKg) },
             uniquingKeysWith: { first, _ in first }  // trends 已按 id 去重；防御重复 key 不崩
         )
+        // FR-PR7 收尾：估算里程碑用 bestE1RmKg（估算峰值）；可疑组已排除（statsRecords），不被坏数据带偏。
+        let estByExercise = Dictionary(
+            snapshot.exerciseTrends.map { ($0.exerciseId, $0.bestE1RmKg) },
+            uniquingKeysWith: { first, _ in first }
+        )
         let milestones = StrengthMilestoneCatalog.achieved(
             bestWeightKgByExercise: bestByExercise,
+            estimatedE1RmKgByExercise: estByExercise,
             eligibleExerciseIds: milestoneEligible,
             unitSystem: cleanView.profile.unitSystem
         )
