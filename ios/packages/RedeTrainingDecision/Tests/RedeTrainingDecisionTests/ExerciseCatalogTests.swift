@@ -81,8 +81,8 @@ final class ExerciseCatalogTests: XCTestCase {
                 XCTAssertNotNil(e.evidenceTag, "\(e.id) 有 evidenceUrl 却无 evidenceTag（孤立 URL）")
             }
         }
-        // 净新增累计：批1 主项 7 + 批2 高频复合 12 + 批3 A档 16 = 35（各批为不重叠净增）。
-        XCTAssertGreaterThanOrEqual(cuedCount, 35, "技术要点累计应 ≥ 35（批1=7 + 批2=12 + 批3=16）")
+        // 净新增累计：批1=7 + 批2=12 + 批3 A档=16 + 批4 B档=16 = 51（各批为不重叠净增）。
+        XCTAssertGreaterThanOrEqual(cuedCount, 51, "技术要点累计应 ≥ 51（批1=7 + 批2=12 + 批3=16 + 批4=16）")
     }
 
     // 诚实红线：front-squat 来源是 CrossFit.com（非证据级）→ 只留技术要点、不挂循证标签（不冒充循证）。
