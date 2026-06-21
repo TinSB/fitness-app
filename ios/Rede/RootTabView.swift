@@ -56,7 +56,7 @@ struct RootTabView: View {
                             }
                             selection = .train
                         }
-                    })
+                    }, onReviewData: { selection = .progress }) // FR-T5 修数据卡「去核对」→ 进展页
                 case .train:
                     TrainTabView(onGoToday: { selection = .today })
                 case .progress:

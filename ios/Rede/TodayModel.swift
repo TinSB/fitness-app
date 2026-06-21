@@ -97,7 +97,10 @@ struct TodayModel {
         )
 
         // FR-T5 教练动作（切片6b）：摊平裁决信号 + 处方到顶 reason + 落库 dismiss/采纳态 → 引擎产卡。
-        // 修数据卡需在 Today 算 DataQualityReport，推后（dataFindingCount=0 = 暂不出修数据卡）。
+        // FR-T5 收尾：算数据质量报告（与进展页同口径，DataQualityComposer）→ 可疑组条数喂修数据卡。
+        // 可疑组数（"看起来不对劲、去核对"）才触发卡；静默净化的丢弃/忽略不算（无可核对项）。
+        // 注：此处为取 count 算了全量报告（进展页加载时会再算一次，不共享缓存）——健身数据量级小、可接受。
+        let dataFindingCount = DataQualityComposer.report(cleanView: cleanView).suspectSets.count
         var last7 = 0, planned = 0
         for signal in verdict.signals {
             if case .sessionsInLast7Days(let n) = signal { last7 = n }
@@ -113,7 +116,7 @@ struct TodayModel {
             plannedDaysPerWeek: planned,
             totalSessionCount: cleanView.sessions.count,
             stalledExerciseIds: stalledIds,
-            dataFindingCount: 0,
+            dataFindingCount: dataFindingCount,
             weekStartISO: weekStartISO,
             dismissals: appData.coachDismissals,
             volumeBoostAdoptedThisWeek: appData.volumeBoostWeeks.contains(weekStartISO)

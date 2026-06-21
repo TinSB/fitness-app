@@ -211,4 +211,9 @@ extension RedeStrings {
             ? "\(count) 条记录有问题，没有计入统计"
             : count == 1 ? "1 record couldn't be counted" : "\(count) records couldn't be counted"
     }
+
+    /// 可疑组超出前若干条时的溢出提示（与今日「修数据」卡的总数对账，避免卡说 N 条这里只见 3 条）。
+    public func suspectMoreLine(_ more: Int) -> String {
+        locale == .zh ? "还有 \(more) 条待核对" : "\(more) more to review"
+    }
 }

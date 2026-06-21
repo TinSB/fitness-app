@@ -444,7 +444,7 @@ public struct SupportAllocationDecision: Equatable, Sendable {
 - **采纳 / 撤销写入**：采纳与撤销都走 §5 唯一写闸（写前 backup + atomic + 不 fake success）；撤销 = 单步即时反向写（`removeExerciseSubstitution` / `removeVolumeBoost`），不另起 undo 栈。换动作撤销有三入口：采纳后即时浮条（~5s）+ 处方行「已换」微标（读落库覆盖 map、长存）+ 动作详情页「换回原动作」；补量撤销仅采纳后即时浮条（采纳零可见后果，刻意不造常驻控件）。撤销写失败时浮条保留供重试（错误面如实呈现）；**已知限制**：补量浮条正常超时后无持久撤销入口（刻意接受——补量为轻操作；换动作有微标/详情页两条持久兜底）。「暂不处理」是单向降频信号：写闸层有反向口（`removeCoachActionDismissal`）但**不暴露 UI 撤销**，卡按降频策略自然再现。
 - **UI/文案红线**：每屏 ≤1 卡；不羞辱；不出现算法名/「AI 判断」/「系统认为」/「最佳」；双语。
 
-> **实现状态（2026-06-17）**：R1 FR-T5 切片 6a–6c 已落地换动作（采纳/撤销）+ 补量（采纳/撤销，频率维度）+ 温和降频，写入经 schema 11 三个 open-bag 容器（`exerciseSubstitutions{}` / `coachAdjustments.volumeBoosts[]` / `coachState.dismissed[]`，纯加性；`downMigrate 11→10` 删三容器=**best-effort 有损回退**：空容器往返恒等，已有用户意图数据则丢失，仅用于非生产备份对账、不用于生产回滚）。**修数据卡推后**：`dataFindingCount` 暂恒 0（今日页尚未在该路径计算 `DataQualityReport`），故 dataReview 卡当前不渲染、跨页核对导航随未来「Today 接 DataQualityReport」切片连卡一起做（避免死代码）。真机交互待 owner TestFlight 验收。
+> **实现状态（2026-06-17）**：R1 FR-T5 切片 6a–6c 已落地换动作（采纳/撤销）+ 补量（采纳/撤销，频率维度）+ 温和降频，写入经 schema 11 三个 open-bag 容器（`exerciseSubstitutions{}` / `coachAdjustments.volumeBoosts[]` / `coachState.dismissed[]`，纯加性；`downMigrate 11→10` 删三容器=**best-effort 有损回退**：空容器往返恒等，已有用户意图数据则丢失，仅用于非生产备份对账、不用于生产回滚）。**修数据卡（R1 收尾 2026-06-20 已接线）**：今日页经 `DataQualityComposer`（与进展页**同口径同计数**的单一组装真源）算 `DataQualityReport`，`dataFindingCount = suspectSets.count`（可疑组数；静默净化的丢弃/忽略不算）喂引擎；可疑组 >0 出「修数据」卡，采纳「去核对」跨 tab 跳进展页数据质量区（不改状态、不假报；可疑数据修好后卡自然消失）。**遗留**：跳转目前落在进展页（数据质量区在页底），自动滚动定位是小跟进项。真机交互待 owner TestFlight 验收。
 
 ### 6.5 肌群发展等级模型
 
@@ -1044,7 +1044,7 @@ Progress：
 - **红线（结构化满足）**：只标记不丢弃不改数据（clean view 原样，有测试）；输出零文案——「置信度」在结构上不存在（§3.4 行为表达）；缺 RIR 类数据缺口刻意不进报告（§3.4 折进 Train 补记，不挂 Progress）。UI 标记与修正入口归 M4-3。
 - **消费合同（M4-3 已接线）**：进展页统计（趋势/PR/判断句/历史合计）**排除可疑组**——可信度的行为表达（§3.4 判断更保守）；可疑组仍在数据区如实列出、canonical 原样不动；修正入口随 M5 编辑类写入。
 - **已知边界（审查确认，刻意接受）**：被标组不进基准 ⇒ 单场真实暴涨 >1.5× 后基准不演化、持续被标——视为诚实行为（渐进超负荷不触发；一场跳 50%+ 几乎总是记错/换器械/单位混淆，应持续提示直到经 M4-3 修正入口处理）；有测试锁定该行为，阈值待真实反馈校准。
-- **未来消费方（教练动作 dataReview，§6.4a）**：问题计数（`dataFindingCount`）将喂今日页「修数据」教练卡，提示去进展页核对。**当前推后**：今日页尚未在该路径计算 `DataQualityReport`（`dataFindingCount` 暂注入 0），故 dataReview 卡不渲染、跨页核对导航待「Today 接 DataQualityReport」切片连卡一起做（不接死代码）。
+- **消费方（教练动作 dataReview，§6.4a；R1 收尾 2026-06-20 已接线）**：今日页与进展页都经 `DataQualityComposer`（app 层单一组装真源：目录投影 ceilings + `DataQualityReportBuilder.build`）算报告，**同口径同计数**。今日页取 `suspectSets.count` 喂 `dataFindingCount`，>0 出「修数据」卡 → 「去核对」跨 tab 跳进展页数据质量区。进展页可疑组列表超 3 条给「还有 N 条」溢出提示，与卡上总数对账。
 
 Plan：
 

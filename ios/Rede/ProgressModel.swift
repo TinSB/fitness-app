@@ -10,6 +10,19 @@ import RedeTrainingDecision
 // 全部判断在包内（投影/趋势/周对比/质量规则），app 层只接线渲染。
 // Master 合同：RedeLocalSnapshot 与 RedeDomain 解耦——映射就发生在这里。
 
+/// 数据质量报告的**单一组装真源**：从动作目录投影合理上限（起步值×6、下限 60、全局 400 兜底），
+/// 再交 DataQualityReportBuilder。今日页「修数据」教练卡（FR-T5）与进展页数据质量区**同口径同计数**
+/// 都走这里——绝不各算各的、避免卡说 N 条而进展页显示 M 条。
+enum DataQualityComposer {
+    static func report(cleanView: CleanAppDataView, catalog: ExerciseCatalog = .minimal) -> DataQualityReport {
+        var ceilings: [String: Double] = [:]
+        for entry in catalog.entries {
+            ceilings[entry.id] = max(60, entry.startWeightKg * 6) // 待校准启发值，留痕 2026-06-11
+        }
+        return DataQualityReportBuilder.build(view: cleanView, plausibleCeilingByExercise: ceilings)
+    }
+}
+
 struct ProgressModel {
     enum LoadOutcome {
         case ready(ProgressModel)
@@ -52,18 +65,16 @@ struct ProgressModel {
 
         let cleanView = CleanAppDataViewBuilder.build(from: appData)
         // §6.2 目录只读投影：吨位系数/复合标记进统计层；合理上限进可疑组判定
-        // （上限 = 起步值×6、下限 60、全局 400 兜底——待校准启发值，留痕 2026-06-11）
         let catalog = ExerciseCatalog.minimal
         var facts: [String: ExerciseStatsFacts] = [:]
-        var ceilings: [String: Double] = [:]
         for entry in catalog.entries {
             facts[entry.id] = ExerciseStatsFacts(
                 loadFactor: entry.loadFactor, isCompound: entry.kind == "compound",
                 isAssisted: entry.loadType == "assisted"
             )
-            ceilings[entry.id] = max(60, entry.startWeightKg * 6)
         }
-        let quality = DataQualityReportBuilder.build(view: cleanView, plausibleCeilingByExercise: ceilings)
+        // 数据质量报告走单一组装真源（与今日页修数据卡同口径），见 DataQualityComposer。
+        let quality = DataQualityComposer.report(cleanView: cleanView, catalog: catalog)
         // 可疑组不进统计（趋势/PR/判断句）——可信度的行为表达（§3.4：判断更保守），
         // 数据区仍如实列出（FR-PR4 标记不隐藏）。canonical 原样不动。
         let records = mapToRecords(cleanView)
