@@ -60,6 +60,11 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
     /// 禁忌提示 / 证据置信标签（规格要求字段；P1 wave 填充落数据）。
     public let contraindicationHint: String?
     public let evidenceTag: String?
+    /// FR-EX2 技术要点（双语自由 prose；缺 = 详情页不显示「技术要点」区块、零回归）。
+    public let techniqueCuesZh: [String]?
+    public let techniqueCuesEn: [String]?
+    /// FR-EX2 循证来源 URL（与 evidenceTag 配对，已对抗核验真实可访问；缺 = 不显示链接）。
+    public let evidenceUrl: String?
 
     public init(
         id: String, nameZh: String = "", nameEn: String = "",
@@ -71,7 +76,9 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
         isGuided: Bool = false,
         rank: Int, deprecated: Bool = false,   // rank 无默认值：忘传=编译错（审查 M2）
         replacedBy: String? = nil,
-        contraindicationHint: String? = nil, evidenceTag: String? = nil
+        contraindicationHint: String? = nil, evidenceTag: String? = nil,
+        techniqueCuesZh: [String]? = nil, techniqueCuesEn: [String]? = nil,
+        evidenceUrl: String? = nil
     ) {
         self.id = id
         self.nameZh = nameZh
@@ -92,6 +99,9 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
         self.replacedBy = replacedBy
         self.contraindicationHint = contraindicationHint
         self.evidenceTag = evidenceTag
+        self.techniqueCuesZh = techniqueCuesZh
+        self.techniqueCuesEn = techniqueCuesEn
+        self.evidenceUrl = evidenceUrl
     }
 
     enum CodingKeys: String, CodingKey {
@@ -99,6 +109,7 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
         case equipment, kind, substitutionGroups, startWeightKg, rank, deprecated
         case loadType, loadFactor, progressionKey, isGuided, replacedBy
         case contraindicationHint, evidenceTag
+        case techniqueCuesZh, techniqueCuesEn, evidenceUrl
     }
 
     public init(from decoder: Decoder) throws {
@@ -126,6 +137,9 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
         replacedBy = try c.decodeIfPresent(String.self, forKey: .replacedBy)
         contraindicationHint = try c.decodeIfPresent(String.self, forKey: .contraindicationHint)
         evidenceTag = try c.decodeIfPresent(String.self, forKey: .evidenceTag)
+        techniqueCuesZh = try c.decodeIfPresent([String].self, forKey: .techniqueCuesZh)
+        techniqueCuesEn = try c.decodeIfPresent([String].self, forKey: .techniqueCuesEn)
+        evidenceUrl = try c.decodeIfPresent(String.self, forKey: .evidenceUrl)
     }
 }
 

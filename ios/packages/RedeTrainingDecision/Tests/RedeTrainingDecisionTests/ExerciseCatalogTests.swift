@@ -37,4 +37,37 @@ final class ExerciseCatalogTests: XCTestCase {
         XCTAssertNotNil(ExerciseCatalog.minimal.entry(id: "bench-press"))
         XCTAssertNil(ExerciseCatalog.minimal.entry(id: "no-such-exercise"))
     }
+
+    // FR-EX2 收尾：主项动作有双语技术要点 + 证据级来源挂循证（真实可核验，研究 workflow 已对抗核验）。
+    func testMainLiftsHaveBilingualCuesAndVerifiedEvidence() {
+        let evidenceGrade = ["bench-press", "squat", "deadlift", "overhead-press", "barbell-row", "romanian-deadlift"]
+        for id in evidenceGrade {
+            let e = ExerciseCatalog.minimal.entry(id: id)
+            XCTAssertNotNil(e, "缺动作 \(id)")
+            XCTAssertEqual(e?.techniqueCuesEn?.isEmpty, false, "\(id) 缺英文技术要点")
+            XCTAssertEqual(e?.techniqueCuesZh?.isEmpty, false, "\(id) 缺中文技术要点")
+            XCTAssertEqual(e?.techniqueCuesZh?.count, e?.techniqueCuesEn?.count, "\(id) 中英要点条数应一致")
+            XCTAssertEqual(e?.evidenceTag?.isEmpty, false, "\(id) 缺循证来源")
+            // 真实可核验来源：URL 必须是 http(s)（research workflow 已 WebFetch 核验存在）。
+            XCTAssertEqual(e?.evidenceUrl?.hasPrefix("https://"), true, "\(id) 循证 URL 非 https")
+        }
+    }
+
+    // 诚实红线：front-squat 来源是 CrossFit.com（非证据级）→ 只留技术要点、不挂循证标签（不冒充循证）。
+    func testFrontSquatHasCuesButNoEvidenceTag() {
+        let e = ExerciseCatalog.minimal.entry(id: "front-squat")
+        XCTAssertEqual(e?.techniqueCuesEn?.isEmpty, false, "front-squat 应有技术要点")
+        XCTAssertNil(e?.evidenceTag, "front-squat 非证据级来源，不应挂循证标签")
+        XCTAssertNil(e?.evidenceUrl, "front-squat 不应有孤立的循证 URL")
+    }
+
+    // 回归：未填内容的动作 techniqueCues 为 nil（加性、零行为变化）。
+    func testUntouchedExerciseHasNilCues() {
+        let e = ExerciseCatalog.minimal.entry(id: "incline-db-press")
+        XCTAssertNotNil(e, "样例动作应存在")
+        XCTAssertNil(e?.techniqueCuesEn)
+        XCTAssertNil(e?.techniqueCuesZh)
+        XCTAssertNil(e?.evidenceTag)
+        XCTAssertNil(e?.evidenceUrl)
+    }
 }

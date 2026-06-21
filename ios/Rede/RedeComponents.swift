@@ -46,7 +46,9 @@ struct Overline: View {
     var color: Color = .redeT4
 
     var body: some View {
-        Text(text.uppercased())
+        // 用 .textCase 而非 text.uppercased()：视觉同为大写，但 VoiceOver 读原文（不逐字母拼读）。
+        Text(text)
+            .textCase(.uppercase)
             .font(.redeOverline)
             .tracking(RedeTracking.overline)
             .foregroundStyle(color)

@@ -20,7 +20,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 0
+      "rank": 0,
+      "techniqueCuesZh": [
+        "五点支撑建立稳定底座：后脑勺、上背/肩胛、臀部贴凳，双脚踏实地面。",
+        "肩胛后缩下沉（向中间夹紧、向下收），全程保持脊柱中立、核心收紧。",
+        "握距略宽于肩（不要过宽），拇指环握杠铃，手腕叠在杠铃与肘部正上方。",
+        "控制下放到胸骨中部，肘部适度内收（不外展到 90°）；下放吸气、上推呼气。"
+      ],
+      "techniqueCuesEn": [
+        "Set up in five points of contact: keep the back of your head, upper back/shoulder blades, and glutes on the bench, and both feet flat on the floor for a stable base.",
+        "Retract and depress your shoulder blades, pinching them together and tucking them down, then keep the spine neutral and core braced throughout the lift.",
+        "Grip the bar just outside shoulder width (avoid an excessively wide grip) with thumbs wrapped around the bar, stacking your wrists directly over the bar and elbows.",
+        "Lower the bar under control to the mid-chest with elbows tucked moderately (not flared to 90 degrees); inhale on the way down and exhale as you press up."
+      ],
+      "evidenceTag": "Noteboom et al., Frontiers in Physiology (2024)",
+      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11224528/"
     },
     {
       "id": "incline-db-press",
@@ -162,7 +176,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 70
+      "rank": 70,
+      "techniqueCuesZh": [
+        "双脚约与髋至肩同宽站立，屈髋、膝盖微屈，上身前倾到与地面约 30–60°。",
+        "收紧核心、全程脊柱中立平直，腰部不弓圆，目视前方地面让颈部与脊柱成一线。",
+        "正手握杠（掌心向下）、握距略宽于肩，手腕、肘、肩成一线。",
+        "肘部向后带（不外展），把杠铃拉向下肋/上腹，再受控下放、不靠甩动躯干借力。"
+      ],
+      "techniqueCuesEn": [
+        "Set your stance feet about hip- to shoulder-width apart, then hinge at the hips with a slight knee bend until your torso is roughly 30-60 degrees from the floor.",
+        "Brace your core and keep a neutral, flat spine throughout the set; do not let your lower back round, and keep your neck in line by looking at the floor ahead.",
+        "Grip the bar overhand, slightly wider than shoulder-width, with wrists, elbows, and shoulders stacked in line.",
+        "Drive your elbows back (not flared out) and pull the bar to your lower ribs or upper abdomen, then lower under control without jerking the torso."
+      ],
+      "evidenceTag": "Fenwick et al., J Strength Cond Res (2009)",
+      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/19620925/"
     },
     {
       "id": "one-arm-db-row",
@@ -355,7 +383,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 170
+      "rank": 170,
+      "techniqueCuesZh": [
+        "杠铃横置上背（斜方肌/后肩），不压颈；握距略宽于肩，挺胸夹肩胛建立稳定支撑。",
+        "双脚约与肩同宽或略宽，脚尖略外展，全程全脚掌着地、脚跟不离地。",
+        "保持脊柱中立（腰部自然微弓）、上身挺直；下蹲前先收紧核心，避免弓背或过度前倾。",
+        "控制下蹲、髋向后坐，膝盖顺脚尖方向外展（不内扣），蹲到脊柱能保持中立的深度，再蹬地、髋膝同步起身。"
+      ],
+      "techniqueCuesEn": [
+        "Set the bar across the upper back (on the traps/rear shoulders), not on the neck; grip slightly wider than shoulder-width, lift the chest and squeeze the shoulder blades together to build a stable shelf.",
+        "Stand with feet about shoulder-width or slightly wider, toes turned out slightly, and keep the whole foot planted with the heels down through the entire rep.",
+        "Keep a neutral spine with a slight natural lumbar arch and an upright chest; brace your core before descending and avoid rounding or excessive forward lean.",
+        "Descend with control by sitting the hips back and tracking the knees out over the toes (no inward collapse) to a depth you can reach with a neutral spine, then drive the feet into the floor and extend hips and knees to stand."
+      ],
+      "evidenceTag": "Kushner et al., Strength and Conditioning Journal (2015)",
+      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4725067/"
     },
     {
       "id": "hack-squat",
@@ -416,7 +458,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 200
+      "rank": 200,
+      "techniqueCuesZh": [
+        "正手闭握杠铃（掌心向下）、约与肩同宽，双脚与髋同宽、重心落足中。",
+        "膝盖保持微屈并全程维持这个角度，靠髋向后推来折叠、而非继续屈膝。",
+        "保持脊柱中立拉长、挺胸、肩胛下沉；下巴微收、目视地面。",
+        "杠铃贴身下放到腘绳肌有牵拉感（约膝盖下方），一旦脊柱无法保持中立即停，再发力顶髋起身。"
+      ],
+      "techniqueCuesEn": [
+        "Set up with a closed, pronated (palms-down) grip on the bar, hands about shoulder-width apart, feet hip-width with weight balanced over the midfoot.",
+        "Keep the knees slightly flexed and hold that bend throughout, hinging by pushing the hips back rather than bending the knees further.",
+        "Maintain a neutral, lengthened spine with the chest up and shoulder blades pulled down; keep the chin lightly tucked and gaze toward the floor.",
+        "Lower the bar close to the body until you feel a stretch in the hamstrings (around just below the knee), stopping the moment a neutral spine can no longer be maintained, then drive the hips forward to stand."
+      ],
+      "evidenceTag": "NSCA Exercise Technique Manual for Resistance Training, 3rd ed. (2019)",
+      "evidenceUrl": "https://www.nsca.com/education/articles/kinetic-select/romanian-deadlift-rdl/"
     },
     {
       "id": "db-rdl",
@@ -688,7 +744,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 340
+      "rank": 340,
+      "techniqueCuesZh": [
+        "双脚约与肩同宽、重心落足中建立稳定底座；握距略宽于肩、手腕叠在肘部正上方、握法稳固舒适。",
+        "全程收紧躯干、脊柱中立，臀腹收紧、肋骨下沉，不靠弓腰/过度后仰硬顶杠铃。",
+        "杠铃沿垂直线上推，头略后移避开面部，锁定时杠铃位于足中与肩正上方一线。",
+        "推到肘部充分但不强行锁定，再缓慢受控地下放回上胸前架位。"
+      ],
+      "techniqueCuesEn": [
+        "Set feet about shoulder-width apart with weight through the midfoot to build a stable base, and take a secure, comfortable grip just outside the shoulders with wrists stacked over the elbows.",
+        "Brace the trunk and keep the spine neutral throughout, glutes and abs tight, ribs down, do not arch or hyperextend the lower back to muscle the bar up.",
+        "Press the bar in a straight vertical line, moving the head slightly back so the bar clears the face, then finish with the bar stacked over the midfoot and shoulders.",
+        "Press to full but unforced elbow extension, then lower the bar slowly and under control back to the front-rack position on the upper chest."
+      ],
+      "evidenceTag": "Kroell & Mike, Strength and Conditioning Journal (2017)",
+      "evidenceUrl": "https://aquila.usm.edu/fac_pubs/17605/"
     },
     {
       "id": "deadlift",
@@ -710,7 +780,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 350
+      "rank": 350,
+      "techniqueCuesZh": [
+        "杠铃位于足中正上方、贴近腿；收紧背阔肌让杠铃全程贴近小腿上拉。",
+        "全程脊柱中立：挺胸、头与脊柱成一线，背部保持平直不弓圆。",
+        "上拉前深吸气、收紧核心（像即将被打一拳），稳住躯干；避免长时间憋气。",
+        "腿蹬地发力、膝盖向两侧外推（“撑开地面”），让臀髋充分参与。"
+      ],
+      "techniqueCuesEn": [
+        "Set up with the bar over your midfoot and keep it close to your legs; engage your lats so the bar stays near your shins as you pull.",
+        "Keep a neutral spine throughout: lift the chest and keep the head in line so the back stays flat, not rounded.",
+        "Take a deep breath and brace your core (as if about to be punched) before pulling to stabilize the trunk; avoid prolonged breath-holding.",
+        "Drive through the floor with the legs and push the knees apart (\"spread the floor\") to keep the glutes and hips active."
+      ],
+      "evidenceTag": "Wenning, NSCA TSAC Report (2014)",
+      "evidenceUrl": "https://www.nsca.com/education/articles/tsac-report/the-deadlift-and-its-application-to-overall-performance/"
     },
     {
       "id": "front-squat",
@@ -731,7 +815,19 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 360
+      "rank": 360,
+      "techniqueCuesZh": [
+        "杠铃架在锁骨上方的肩前，肘部高抬前顶、上臂大致与地面平行，手指仅起稳定作用。",
+        "双脚约与肩同宽、脚尖略外展，全程膝盖顺脚尖方向。",
+        "下蹲前深吸气至腹部、收紧核心；挺胸、脊柱中立，蹲到髋折低于膝顶。",
+        "经足中/脚跟发力起身，全程肘部保持高抬，让躯干挺直、上背不弓圆。"
+      ],
+      "techniqueCuesEn": [
+        "Rack the bar across the front of the shoulders above the collarbones, drive the elbows high and forward so the upper arms stay roughly parallel to the floor, and let the fingers only steady the bar.",
+        "Set feet about shoulder-width with toes turned slightly out, and track the knees in line with the toes through the whole rep.",
+        "Take a deep belly breath and brace the core before descending; keep the chest tall and the spine neutral, descending until hip crease is below the top of the knees.",
+        "Drive up through mid-foot/heels and keep the elbows up the entire time so the torso stays upright and the upper back does not round."
+      ]
     },
     {
       "id": "incline-barbell-press",
