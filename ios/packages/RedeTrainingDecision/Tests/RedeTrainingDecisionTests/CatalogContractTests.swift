@@ -20,6 +20,9 @@ final class CatalogContractTests: XCTestCase {
         "rear-delt", "vertical-press", "lateral-raise", "curl", "triceps-extension",
         "squat-pattern", "hinge", "knee-flexion", "calf-raise",
         "knee-extension", "shrug", "core",   // wave-5：新增动作类（新槽位，行为变化）
+        // wave-17：5 个新 pattern——均无模板槽引用 = 惰性加性（永不自动进处方、零行为变化、
+        // 覆盖矩阵 golden 不动），仅作目录事实 + 详情页标签；新动作靠替代族/浏览触达。
+        "hip-abduction", "hip-adduction", "front-raise", "upright-row", "wrist-curl",
     ]
     /// 器械类注册表已升运行时单一真源（EquipmentRegistry，§6.1）——测试直接引用，
     /// 不再各抄一份字面量。
@@ -30,16 +33,17 @@ final class CatalogContractTests: XCTestCase {
         "chest", "back", "shoulder", "front-delt", "side-delt", "rear-delt", "upper-back",
         "biceps", "triceps", "forearm", "quads", "hamstrings", "glutes", "calves",
         "core", "lower-back", "traps",   // wave-5：耸肩主肌群
+        "adductors",   // wave-17：髋内收机主肌群
     ]
 
     // MARK: - 解码完整性
 
     func testBundledCatalogIntegrity() {
-        XCTAssertEqual(catalog.catalogVersion, "wave-16")   // wave-16：+18 新动作（核心/单侧腿/手臂/力量举变体）
-        XCTAssertEqual(catalog.entries.count, 141)
+        XCTAssertEqual(catalog.catalogVersion, "wave-17")   // wave-17：+13 新动作（臀孤立/前束/直立划船/后链/前臂/核心/小腿；惰性 pattern，零处方变化）
+        XCTAssertEqual(catalog.entries.count, 154)
         // id 唯一 + 永生合同的前半（唯一）；rank 唯一保证匹配全序确定
-        XCTAssertEqual(Set(catalog.entries.map(\.id)).count, 141, "id 重复")
-        XCTAssertEqual(Set(catalog.entries.map(\.rank)).count, 141, "rank 重复——匹配次序歧义")
+        XCTAssertEqual(Set(catalog.entries.map(\.id)).count, 154, "id 重复")
+        XCTAssertEqual(Set(catalog.entries.map(\.rank)).count, 154, "rank 重复——匹配次序歧义")
         // 锚点：迁移自原数组的首尾条目
         XCTAssertEqual(catalog.entry(id: "bench-press")?.rank, 0)
         XCTAssertEqual(catalog.entry(id: "bench-press")?.startWeightKg, 60)
