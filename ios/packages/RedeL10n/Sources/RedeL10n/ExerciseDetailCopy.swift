@@ -23,6 +23,12 @@ extension RedeStrings {
     public var exerciseDetailEvidence: String { locale == .zh ? "循证依据" : "Evidence" }
     /// 循证来源链接行（点开真实出处）。
     public var exerciseDetailViewSource: String { locale == .zh ? "查看来源" : "View source" }
+    /// FR-EX2 退阶/进阶区块标题与行内标签（缺内容则不显示）。
+    public var exerciseDetailScaling: String { locale == .zh ? "调整难度" : "Adjust difficulty" }
+    public var exerciseDetailRegression: String { locale == .zh ? "退阶" : "Easier" }
+    public var exerciseDetailProgression: String { locale == .zh ? "进阶" : "Harder" }
+    /// FR-EX2 注意事项区块标题（映射规格「禁忌提示」；§7.1 fitness≠medical 措辞，不用「禁忌」字样）。
+    public var exerciseDetailSafety: String { locale == .zh ? "注意事项" : "Form & safety" }
     /// 无替代动作时的诚实占位。
     public var exerciseDetailNoAlternatives: String {
         locale == .zh ? "暂无同族替代动作" : "No equivalent alternatives yet"

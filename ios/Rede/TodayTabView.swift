@@ -707,6 +707,26 @@ struct TodayTabView: View {
                         }
                     }
 
+                    // FR-EX2 调整难度（退阶/进阶；任一缺则不显示该行，零回归）——紧接技术要点，最有用的「怎么调」。
+                    let regression = s.locale == .zh ? entry.regressionZh : entry.regressionEn
+                    let progression = s.locale == .zh ? entry.progressionZh : entry.progressionEn
+                    if regression?.isEmpty == false || progression?.isEmpty == false {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Overline(text: s.exerciseDetailScaling)
+                            if let r = regression, !r.isEmpty { scalingRow(s.exerciseDetailRegression, r) }
+                            if let p = progression, !p.isEmpty { scalingRow(s.exerciseDetailProgression, p) }
+                        }
+                    }
+
+                    // FR-EX2 注意事项（保守安全提示；§7.1 fitness≠medical，中性呈现不施压；缺则不显示）。
+                    if let safety = (s.locale == .zh ? entry.safetyNoteZh : entry.safetyNoteEn), !safety.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Overline(text: s.exerciseDetailSafety)
+                            Text(safety).font(.redeBody).foregroundStyle(Color.redeT2)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+
                     detailRow(s.exerciseDetailType, s.exerciseKindLabel(entry.kind))
                     detailRow(s.exerciseDetailPattern, s.movementPatternLabel(entry.movementPattern))
                     detailRow(s.exerciseDetailPrimary, s.muscleLabel(entry.primaryMuscle))
@@ -796,6 +816,19 @@ struct TodayTabView: View {
         VStack(alignment: .leading, spacing: 4) {
             Overline(text: label)
             Text(value).font(.redeBody).foregroundStyle(Color.redeT1)
+        }
+    }
+
+    // FR-EX2 退阶/进阶行：行内小标签（退阶/进阶）+ 双语 prose。
+    private func scalingRow(_ label: String, _ text: String) -> some View {
+        HStack(alignment: .top, spacing: 7) {
+            Text(label)
+                .font(.redeCaption).foregroundStyle(Color.redeT3)
+                .lineLimit(1)
+                .frame(minWidth: 30, alignment: .leading)
+            Text(text)
+                .font(.redeBody).foregroundStyle(Color.redeT2)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

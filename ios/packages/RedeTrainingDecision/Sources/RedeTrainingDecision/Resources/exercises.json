@@ -34,7 +34,13 @@
         "Lower the bar under control to the mid-chest with elbows tucked moderately (not flared to 90 degrees); inhale on the way down and exhale as you press up."
       ],
       "evidenceTag": "Noteboom et al., Frontiers in Physiology (2024)",
-      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11224528/"
+      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11224528/",
+      "regressionZh": "把重量减到很轻（空杆或低负荷），手肘略微收向身侧；如果控制自由杠不稳，可改用史密斯机或哑铃卧推。",
+      "regressionEn": "Drop to a lighter load (an empty or low-weight barbell) and tuck the elbows slightly, or switch to a Smith-machine or dumbbell press if balancing the free bar feels unstable.",
+      "progressionZh": "逐步加重，或用 3–4 秒的慢速下放配合触胸短暂停顿再推起来提升难度。",
+      "progressionEn": "Add load progressively, or increase difficulty with a slow 3–4 second lowering tempo and a brief pause on the chest before pressing back up.",
+      "safetyNoteZh": "保持肩胛骨收紧，手肘约呈 45 度收向身侧而非完全外展；大重量或接近力竭时找人保护或使用安全杠。如果肩部以往有不适，建议负荷适中，并在上大重量前咨询专业人士。",
+      "safetyNoteEn": "Keep the shoulder blades retracted and elbows tucked at roughly 45 degrees rather than flared straight out, and when pushing heavy or near failure use a spotter or safety pins; if you have a history of shoulder discomfort, keep the load moderate and consider checking with a qualified professional before loading heavy."
     },
     {
       "id": "incline-db-press",
@@ -69,7 +75,13 @@
         "Lower under control until you feel a stretch across the upper chest, letting the dumbbells drop a touch deeper than a barbell would allow; inhale on the way down and exhale as you drive up."
       ],
       "evidenceTag": "ACE Exercise Library: Incline Chest Press",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/25/incline-chest-press/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/25/incline-chest-press/",
+      "regressionZh": "把靠背调低到更平缓的角度（约 15–30°）并换更轻的哑铃，减小肩部受力角度，让你在舒适的幅度内稳稳控制推举。",
+      "regressionEn": "Lower the bench to a shallower incline (around 15–30°) and use lighter dumbbells, which eases the shoulder angle and lets you control the press through a comfortable range.",
+      "progressionZh": "调高靠背角度、加大配重，或把下放放慢到 3 秒的离心节奏，让上胸承受更长时间的张力。",
+      "progressionEn": "Raise the incline angle, add load, or slow the lowering phase to a 3-count eccentric to keep the upper chest under tension longer.",
+      "safetyNoteZh": "上斜角度比平板卧推更多地压到肩部前侧，所以肘部别完全外展到 90°、略微收拢，下放也不要过深；如果你肩部曾有不适，建议把重量控制在中等，加大重量前先咨询合格的专业人士。",
+      "safetyNoteEn": "The inclined angle loads the front of the shoulder more than a flat press, so keep your elbows tucked slightly (not flared at 90°) and avoid dropping the dumbbells too deep; if you have a history of shoulder discomfort, keep the load moderate and consider checking with a qualified professional before going heavy."
     },
     {
       "id": "db-bench-press",
@@ -104,7 +116,13 @@
         "控制下放到胸中部、略偏腋窝，再双手同步推到肘部完全伸直、不反弹。"
       ],
       "evidenceTag": "ACE Exercise Library: Chest Press (dumbbell)",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/19/chest-press/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/19/chest-press/",
+      "regressionZh": "换一对更轻的哑铃，下放到大臂与躯干大致齐平就停，缩短行程、把节奏放慢更可控。",
+      "regressionEn": "Use a lighter pair of dumbbells and stop the descent when your upper arms reach roughly torso level, keeping the range of motion shorter and more controlled.",
+      "progressionZh": "加大重量、把下放放慢到 3 秒，或在最低点停顿一拍，增加张力时间和底部的拉伸幅度。",
+      "progressionEn": "Increase the load, slow the lowering to a 3-second tempo, or pause for a beat at the bottom to add time under tension and a deeper stretch.",
+      "safetyNoteZh": "哑铃在底部可能下沉到胸线以下，下放要受控、降到自己舒服的幅度就好，不要硬压最低点；若肩部曾有不适，建议先用中等重量，并在大重量推举前咨询专业人士。",
+      "safetyNoteEn": "Because the dumbbells can drop below chest level, lower under control to a comfortable depth rather than forcing the bottom; if you have a history of shoulder discomfort, keep the load moderate and consider checking with a qualified professional before pressing heavy."
     },
     {
       "id": "machine-chest-press",
@@ -138,7 +156,11 @@
         "Press the handles forward smoothly until your elbows are nearly straight but not locked, then lower under control to a full but pain-free stretch; exhale as you push out, inhale as you return."
       ],
       "evidenceTag": "ACE Exercise Library: Seated Chest Press",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/188/seated-chest-press/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/188/seated-chest-press/",
+      "regressionZh": "把配重销插到更轻的片数，推到接近伸直前就停，让胸部持续受力又不给肩膀添负担。",
+      "regressionEn": "Drop the pin to a lighter plate and stop just short of full extension so the chest stays under tension without straining the shoulders.",
+      "progressionZh": "增加一片配重，把下放过程放慢到 3 秒，在胸部拉伸的最低点稍作停顿再推回去。",
+      "progressionEn": "Add a plate and slow the lowering phase to a 3-second count, pausing briefly at the stretched position before pressing back out."
     },
     {
       "id": "cable-fly",
@@ -170,7 +192,13 @@
         "Squeeze the chest and pause briefly as the hands meet, exhaling on the way in; inhale and let the arms open back out under control to a comfortable stretch (about chest level) without overstretching the shoulders."
       ],
       "evidenceTag": "ACE Exercise Library: Standing Chest Fly",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/160/standing-chest-fly/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/160/standing-chest-fly/",
+      "regressionZh": "减轻绳索配重，并缩小底部行程，让双手不要过度向后展开到胸后方，把拉伸幅度控制在舒适范围内。",
+      "regressionEn": "Drop the cable weight and shorten the bottom range so your hands don't travel far behind your chest, keeping the stretch comfortable.",
+      "progressionZh": "加大配重，或采用 3 秒慢离心下放并在顶端完全收缩处稍作停顿挤压，提升肌肉张力时间。",
+      "progressionEn": "Increase the load or add a slow 3-second eccentric and a brief squeeze at full contraction to raise time under tension.",
+      "safetyNoteZh": "底部时肩部处于被拉伸的位置，注意不要让双手过度向后展开；若你以往有肩部不适，建议把幅度控制在适中范围、保持挺胸，并在加大幅度或配重前先咨询合格的专业人士。",
+      "safetyNoteEn": "At the bottom your shoulders are in a stretched position, so avoid letting the hands drift too far back; if you have a history of shoulder discomfort, keep the range moderate and the chest lifted, and check with a qualified professional before pushing depth or load."
     },
     {
       "id": "lat-pulldown",
@@ -204,7 +232,11 @@
         "肘部向身体两侧下压，把杠拉到上胸，再控制还原到肘部完全伸直。"
       ],
       "evidenceTag": "ACE Exercise Library: Seated Lat Pulldown",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/158/seated-lat-pulldown/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/158/seated-lat-pulldown/",
+      "regressionZh": "减轻配重，改用辅助弹力带或较舒适的中立宽握，身体略微后仰，只把把手拉到下巴高度，这样既能保持张力又不勉强。",
+      "regressionEn": "Reduce the load and use an assisted band or wide neutral grip with a slight torso lean, pulling only to chin height so you can keep tension without straining.",
+      "progressionZh": "加大配重，全程把把手拉到上胸位置并用 2–3 秒控制离心，或进阶到单臂绳索下拉以加强背阔肌负荷。",
+      "progressionEn": "Increase the load, pull through a full range to the upper chest with a 2–3 second controlled eccentric, or progress to single-arm cable pulldowns for greater lat demand."
     },
     {
       "id": "seated-row",
@@ -239,7 +271,13 @@
         "不后仰、不靠惯性甩；控制还原、对抗阻力，全程挺胸、躯干挺直。"
       ],
       "evidenceTag": "ACE Exercise Library: Seated Row",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/168/seated-row/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/168/seated-row/",
+      "regressionZh": "减轻配重，换成有胸垫支撑或较窄的中立握把，让你能在不靠身体后仰借力的情况下，从容地把每一次都完整收回到位。",
+      "regressionEn": "Lighten the stack and use a chest-supported or narrower neutral-grip handle so you can complete each rep with a controlled, full retraction without leaning back.",
+      "progressionZh": "加重并在收紧顶点停留 1–2 秒、放慢离心还原，或改成单臂划船以增大行程并增加躯干抗旋转的挑战。",
+      "progressionEn": "Add load while pausing 1–2 seconds at peak contraction with a slow eccentric, or switch to single-arm rows to increase range and challenge anti-rotation through the torso.",
+      "safetyNoteZh": "保持下背处于中立位，靠背部发力把把手拉回，而不是用身体来回甩动借力；若你曾有下背不适的情况，建议把重量控制在适中范围，并在上大重量前先咨询专业人士。",
+      "safetyNoteEn": "Keep your lower back in a neutral position and drive the movement from the back rather than swinging the torso; if you have a history of lower-back discomfort, keep the load moderate and consider checking with a qualified professional before going heavy."
     },
     {
       "id": "barbell-row",
@@ -274,7 +312,13 @@
         "Drive your elbows back (not flared out) and pull the bar to your lower ribs or upper abdomen, then lower under control without jerking the torso."
       ],
       "evidenceTag": "Fenwick et al., J Strength Cond Res (2009)",
-      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/19620925/"
+      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/19620925/",
+      "regressionZh": "减轻重量，改用单臂哑铃划船——一只手撑在长凳上支撑躯干，去掉俯身负荷脊柱的压力，同时照样练到背。",
+      "regressionEn": "Drop the load and brace your non-working hand on a bench to do single-arm dumbbell rows, removing the bent-over spinal demand while still training the back.",
+      "progressionZh": "增加重量，并采用严格节奏——每次拉到顶端停顿 1–2 秒、收紧背部再下放，以加大背部张力。",
+      "progressionEn": "Add load while holding a strict tempo with a 1–2 second pause and squeeze at the top of each rep to maximize back tension.",
+      "safetyNoteZh": "从髋部屈髋俯身、保持脊柱中立不要弓背，全程收紧核心；若你以往有下背不适，建议把重量控制在中等，上大重量前先咨询专业人士。",
+      "safetyNoteEn": "Hinge from the hips and keep your spine neutral rather than rounding, and brace your core throughout; if you have a history of lower-back discomfort, keep the load moderate and consider checking with a qualified professional before going heavy."
     },
     {
       "id": "one-arm-db-row",
@@ -308,7 +352,13 @@
         "Lower the dumbbell under control to a full stretch at the bottom (let the shoulder blade reach forward slightly without rounding the spine); exhale as you row up, inhale as you lower."
       ],
       "evidenceTag": "ACE Exercise Library: Single-arm Row",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/126/single-arm-row/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/126/single-arm-row/",
+      "regressionZh": "减轻哑铃重量，把一只手和同侧膝盖稳稳撑在长凳上，用支撑姿势分担脊柱负担，专注把背肌干净地拉起来。",
+      "regressionEn": "Drop the dumbbell weight and brace a hand and knee firmly on a bench so the supported position takes load off the spine and lets you focus on a clean pull.",
+      "progressionZh": "加大重量，并在顶端肘部充分后拉时停顿 1-2 秒，全程保持躯干端正、不晃动。",
+      "progressionEn": "Increase the load and add a 1-2 second pause at the top with the elbow fully driven back, keeping the torso square and motionless throughout.",
+      "safetyNoteZh": "保持脊柱中立、躯干端正，不要靠扭转身体去甩起更大的重量；若你过去有下背不适的情况，建议把重量控制在适中范围，上大重量前可先咨询专业人士。",
+      "safetyNoteEn": "Keep your spine neutral and your torso square—avoid twisting or rotating to heave heavier weight; if you have a history of lower-back discomfort, keep the load moderate and consider checking with a qualified professional before going heavy."
     },
     {
       "id": "face-pull",
@@ -342,7 +392,11 @@
         "Pull until the rope's center clasp is near your face and you feel the rear delts and mid-back squeeze, then return under control to full arm extension; exhale as you pull and inhale as you let the weight back."
       ],
       "evidenceTag": "NSCA Kinetic Select: Face Pull (Machine)",
-      "evidenceUrl": "https://www.nsca.com/education/articles/kinetic-select/face-pull-machine/"
+      "evidenceUrl": "https://www.nsca.com/education/articles/kinetic-select/face-pull-machine/",
+      "regressionZh": "减轻配重，把绳索锚点调到与脸大致同高，让你水平后拉、负荷更小、行程更短也更省力。",
+      "regressionEn": "Drop the cable weight and set the rope anchor at roughly face height so you pull straight back with less load and a shorter, easier path.",
+      "progressionZh": "逐步加重，并在绳索拉到脸前的位置停顿 1–2 秒、同时主动把手向外旋转（外旋），让三角肌后束和上背收缩更彻底。",
+      "progressionEn": "Add load and finish each rep with a 1–2 second hold at the rope-to-face position while consciously rotating the hands outward (external rotation) for a stronger rear-delt and upper-back contraction."
     },
     {
       "id": "shoulder-press",
@@ -376,7 +430,13 @@
         "Lower under control until the dumbbells return to shoulder/ear height for a full range of motion; inhale as you lower and exhale as you press up."
       ],
       "evidenceTag": "ACE Exercise Library: Seated Overhead Press (Dumbbell)",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/45/seated-overhead-press/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/45/seated-overhead-press/",
+      "regressionZh": "坐在有靠背的椅子上、用更轻的哑铃推，或先把哑铃停在肩膀高度、走小一点的行程，等推到顶端不别扭了再加大幅度。",
+      "regressionEn": "Sit on a bench with back support and press lighter dumbbells, or keep the dumbbells at shoulder height and work through a shorter range until you can lock out comfortably.",
+      "progressionZh": "加大重量、把下放阶段放慢到 3 秒，或改成单臂交替推举，增加核心和稳定性的挑战。",
+      "progressionEn": "Increase the load, slow the lowering phase to a 3-second count, or press one arm at a time to add core and stability demand.",
+      "safetyNoteZh": "只在肩膀感觉舒适的范围内推举，靠核心收住肋骨、别靠塌腰挺背去借力把重量顶上去；如果肩膀以前有过不适，重量先保守些，加大负荷前可以先咨询专业人士。",
+      "safetyNoteEn": "Press only through a range where your shoulders feel comfortable and keep your ribs down rather than arching your lower back to push the weight up; if you have a history of shoulder discomfort, keep the load moderate and consider checking with a qualified professional before going heavy."
     },
     {
       "id": "lateral-raise",
@@ -408,7 +468,11 @@
         "Raise no higher than shoulder level (going higher shifts work to the traps), exhale as you lift and inhale as you lower the dumbbells slowly and under control back to your thighs."
       ],
       "evidenceTag": "ACE Exercise Library: Lateral Raise",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/26/lateral-raise/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/26/lateral-raise/",
+      "regressionZh": "换用更轻的哑铃，手肘略微弯曲，只抬到稍低于肩的舒适高度；或一次只练一只手，扶住固定物借力更稳。",
+      "regressionEn": "Use lighter dumbbells with a slight elbow bend and raise only to a comfortable height (just below shoulder level), or do one arm at a time so you can lean on something for support.",
+      "progressionZh": "采用 3 秒慢放并在顶端短暂停顿，或改用拉索/侧身单臂版本，让侧束在整个动作范围内持续受力。",
+      "progressionEn": "Add a slow 3-second lowering tempo and a brief pause at the top, or use a cable/leaning single-arm version to keep tension on the side delt through the full range."
     },
     {
       "id": "db-curl",
@@ -438,7 +502,11 @@
         "Brace your core and keep your chest up, shoulders back and down; pin your upper arms against your ribcage so your elbows stay fixed at your sides throughout the set.",
         "Curl the dumbbells up by bending only at the elbows, keeping the wrists neutral (no flexing or rolling), and stop short of swinging the torso or letting the elbows drift forward.",
         "Exhale as you curl up and squeeze the biceps at the top, then inhale and lower under control through the full range until the arms are nearly straight before the next rep."
-      ]
+      ],
+      "regressionZh": "换一副更轻的哑铃，单手轮流弯举，把肘部贴紧体侧、避免靠身体晃动借力。",
+      "regressionEn": "Drop to a lighter pair of dumbbells and curl one arm at a time, keeping your elbow pinned to your side to remove body swing.",
+      "progressionZh": "加重，或把下放过程放慢到 3–4 秒离心，全程保持标准动作、不靠惯性甩起。",
+      "progressionEn": "Add load or slow the lowering phase to a 3–4 second eccentric, keeping strict form with no swing through the full range."
     },
     {
       "id": "hammer-curl",
@@ -472,7 +540,11 @@
         "Lower under control all the way until your elbows are fully extended for a complete range of motion; exhale as you curl up and inhale as you lower."
       ],
       "evidenceTag": "ACE Exercise Library: Hammer Curl (American Council on Exercise)",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/10/hammer-curl/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/10/hammer-curl/",
+      "regressionZh": "换用更轻的哑铃、改成单臂交替进行，这样能把肘部固定、手腕保持中立，不靠摆动借力。",
+      "regressionEn": "Drop to a lighter dumbbell and curl one arm at a time so you can keep the elbow pinned and the wrist neutral without swinging.",
+      "progressionZh": "加大哑铃重量，或每次下放都用 3 秒慢放，全程固定大臂不动，让肱肌和前臂承受更大张力。",
+      "progressionEn": "Use a heavier dumbbell or add a slow 3-second lowering on each rep, keeping the upper arm motionless to maximize tension on the brachialis and forearm."
     },
     {
       "id": "preacher-curl",
@@ -522,7 +594,11 @@
         "Push the bar down in a controlled arc until the elbows lock out fully and the triceps fully contract, then let it rise slowly to a full stretch at chest height; exhale as you press down, inhale as you return."
       ],
       "evidenceTag": "Hussain et al., \"Muscle Fatigue in the Three Heads of Triceps Brachii During Intensity and Speed Variations of Triceps Push-Down Exercise,\" Frontiers in Physiology (2020)",
-      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7047337/"
+      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7047337/",
+      "regressionZh": "减轻配重，用绳索或直杆并略微缩小行程，把大臂始终夹在体侧，让肱三头肌单独发力、不靠肩膀借力。",
+      "regressionEn": "Lighten the stack and use a rope or straight bar with a slightly shorter range, keeping your upper arms pinned to your sides so the triceps do the work without recruiting the shoulders.",
+      "progressionZh": "加大配重，配合 2-3 秒的离心下放、底部完全伸直并短暂收紧，或改为单臂下压来暴露并纠正左右两侧的力量差。",
+      "progressionEn": "Add load and lock in a 2-3 second eccentric with a full lockout and a brief squeeze at the bottom, or switch to a single-arm pushdown to expose and correct side-to-side imbalances."
     },
     {
       "id": "close-grip-bench",
@@ -556,7 +632,13 @@
         "Inhale and stay tight as you lower to a light touch on the chest, then exhale and drive the bar up by extending the elbows, locking out over the chest without bouncing the bar off your body."
       ],
       "evidenceTag": "Lockie et al., Sports (Basel), 2017 — \"An Investigation of the Mechanics and Sticking Region of a One-Repetition Maximum Close-Grip Bench Press versus the Traditional Bench Press\"",
-      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5968970/"
+      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5968970/",
+      "regressionZh": "用更轻的重量、握距稍微放宽到与肩同宽，或改在史密斯机上做以固定杆路，先把\"夹肘下压\"的动作模式练顺再加难度。",
+      "regressionEn": "Use a lighter load and a slightly wider (shoulder-width) grip, or do the press on a Smith machine for a fixed bar path until the tucked-elbow pattern feels controlled.",
+      "progressionZh": "在保持夹肘的前提下加重，或把下放放慢到 3 秒离心并在胸口短暂停顿，让肱三头肌在全程承受更大张力。",
+      "progressionEn": "Add load while keeping elbows tucked, or slow the lowering to a 3-second tempo with a brief pause on the chest to increase triceps tension through the full range.",
+      "safetyNoteZh": "让杠铃压在手腕正上方、手腕保持中立不要后折，重量大时请找人保护或使用安全杠；若你的手腕或肘部以往有不适，先把重量控制在中等程度，并在加重前咨询专业人士。",
+      "safetyNoteEn": "Keep the bar over your wrists with a neutral, not bent-back, wrist position, and use a spotter or safety bars when pressing heavy; if you have a history of wrist or elbow discomfort, keep the load moderate and check with a qualified professional before going heavier."
     },
     {
       "id": "squat",
@@ -591,7 +673,13 @@
         "Descend with control by sitting the hips back and tracking the knees out over the toes (no inward collapse) to a depth you can reach with a neutral spine, then drive the feet into the floor and extend hips and knees to stand."
       ],
       "evidenceTag": "Kushner et al., Strength and Conditioning Journal (2015)",
-      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4725067/"
+      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4725067/",
+      "regressionZh": "改做箱式深蹲，坐到长凳或跳箱上控制深度、固定动作轨迹，并用更轻的杠铃或空杆起步。",
+      "regressionEn": "Swap to a box squat, sitting back to a bench or box to control depth and groove the pattern, with a lighter bar or empty barbell.",
+      "progressionZh": "增加杠铃负重、把下蹲离心放慢到 3 秒，或在最低点停顿 2 秒，提升在全幅深蹲下的张力时间。",
+      "progressionEn": "Add load on the bar, slow to a 3-second eccentric, or pause for two seconds at the bottom to increase time under tension at full depth.",
+      "safetyNoteZh": "深蹲会给脊柱带来明显的纵向负荷，请收紧核心、保持脊柱中立，并循序渐进地加重。若你过往有下背不适，可考虑把重量控制在中等强度，并在大重量前咨询合格的专业人士。",
+      "safetyNoteEn": "Squats place significant axial load on the spine, so brace your core, keep your spine neutral, and add weight gradually. If you have a history of lower-back discomfort, consider keeping the load moderate and checking with a qualified professional before going heavy."
     },
     {
       "id": "hack-squat",
@@ -625,7 +713,13 @@
         "Lower under control until your thighs reach at least parallel to the footplate (about 90 degrees of knee bend or deeper if mobility allows), then drive up through your whole foot by extending knees and hips; inhale on the way down and exhale as you press up."
       ],
       "evidenceTag": "Clark DR, Lambert MI, Hunter AM. \"Trunk Muscle Activation in the Back and Hack Squat at the Same Relative Loads.\" Journal of Strength and Conditioning Research (NSCA), 2019.",
-      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/28704312/"
+      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/28704312/",
+      "regressionZh": "减轻配重并缩小下蹲幅度（蹲到大腿略高于平行就停），全程让后背贴紧靠垫。",
+      "regressionEn": "Reduce the load and limit depth to a comfortable range (stopping above parallel), keeping the back flat against the pad throughout.",
+      "progressionZh": "增加配重并加大下蹲幅度至接近全程，或采用 3 秒慢速下放并在底部短暂停顿，以延长肌肉张力时间。",
+      "progressionEn": "Add load and increase depth toward full range, or use a slow 3-second lowering phase and a brief pause at the bottom to raise time under tension.",
+      "safetyNoteZh": "全程让后背与臀部贴紧靠垫、脊柱保持中立；若你过往有腰部或膝盖不适，建议配重适中、控制下蹲幅度，并在上大重量前咨询专业人士。",
+      "safetyNoteEn": "Keep your whole back and hips in contact with the pad and the spine neutral; if you have a history of lower-back or knee discomfort, keep the load moderate, control the depth, and check with a qualified professional before going heavy."
     },
     {
       "id": "leg-press",
@@ -659,7 +753,13 @@
         "经脚跟与前掌把踏板蹬开、伸膝伸髋，但膝盖不锁死，保持张力、护膝。"
       ],
       "evidenceTag": "ACE Exercise Library: Seated Leg Press",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/154/seated-leg-press/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/154/seated-leg-press/",
+      "regressionZh": "减轻配重并缩小行程，在下放到腰部要离开靠垫之前停住，让整组动作保持可控、不勉强。",
+      "regressionEn": "Reduce the load and shorten the range of motion, stopping before your lower back rounds off the pad, so the working set stays controlled and comfortable.",
+      "progressionZh": "加重配重，并以更深的可控行程配合 2–3 秒的离心下放节奏，或进阶为单腿腿举来增加单侧负荷。",
+      "progressionEn": "Add plates while taking each rep through a deeper, controlled range with a 2–3 second lowering tempo, or progress to a single-leg press for greater per-leg demand.",
+      "safetyNoteZh": "保持臀部和下背贴紧靠垫，下放过深导致腰背离开椅垫时及时收住，顶端也别把膝盖猛地锁死；若你有腰背或膝盖不适史，深度和配重都先保守一些，加大重量前可先咨询专业人士。",
+      "safetyNoteEn": "Keep your hips and lower back flat against the pad and avoid letting the knees fully snap into lockout; if you have a history of lower-back or knee discomfort, keep the depth and load moderate and consider checking with a qualified professional before going heavy."
     },
     {
       "id": "romanian-deadlift",
@@ -694,7 +794,13 @@
         "Lower the bar close to the body until you feel a stretch in the hamstrings (around just below the knee), stopping the moment a neutral spine can no longer be maintained, then drive the hips forward to stand."
       ],
       "evidenceTag": "NSCA Exercise Technique Manual for Resistance Training, 3rd ed. (2019)",
-      "evidenceUrl": "https://www.nsca.com/education/articles/kinetic-select/romanian-deadlift-rdl/"
+      "evidenceUrl": "https://www.nsca.com/education/articles/kinetic-select/romanian-deadlift-rdl/",
+      "regressionZh": "改用一对较轻的哑铃放在身体两侧，只下放到小腿中段（缩小幅度），膝盖保持微屈，感受到腘绳肌被拉伸即可，不必硬往下够。",
+      "regressionEn": "Use lighter dumbbells held at your sides and hinge only to mid-shin (reduced range), keeping a slight knee bend so you feel the stretch without overreaching.",
+      "progressionZh": "增加杠铃负重，并在最低位拉伸点有控制地停顿 2–3 秒，或进阶到单腿罗马尼亚硬拉来提升难度。",
+      "progressionEn": "Add load on the bar and pause 2–3 seconds at the bottom of the stretch under control, or progress to a single-leg Romanian deadlift to raise the demand.",
+      "safetyNoteZh": "全程保持脊柱中立，靠髋部发力下放，不要让下背拱起；若你以往有下背不适，建议负重保持适中，并在大重量前先咨询专业人士。",
+      "safetyNoteEn": "Keep your spine neutral and drive the movement from your hips rather than rounding the lower back; if you have a history of lower-back discomfort, keep the load moderate and consider checking with a qualified professional before going heavy."
     },
     {
       "id": "db-rdl",
@@ -728,7 +834,13 @@
         "Lower until you feel a strong hamstring stretch (around mid-shin) without rounding the lower back; inhale on the way down, then drive the hips forward and exhale to stand tall, squeezing the glutes at the top."
       ],
       "evidenceTag": "NASM Exercise Library: Dumbbell Romanian Deadlift",
-      "evidenceUrl": "https://www.nasm.org/resource-center/exercise-library/dumbbell-romanian-deadlift"
+      "evidenceUrl": "https://www.nasm.org/resource-center/exercise-library/dumbbell-romanian-deadlift",
+      "regressionZh": "换用更轻的哑铃并缩小动作幅度，只下放到小腿中段或膝盖高度，在背部想要弓起之前就停住。",
+      "regressionEn": "Use lighter dumbbells and shorten the range so you hinge only to mid-shin or knee height, stopping before your back wants to round.",
+      "progressionZh": "增加重量、把下放放慢到 3–4 秒节奏，或进阶到单腿哑铃罗马尼亚硬拉，提升对腘绳肌和平衡的要求。",
+      "progressionEn": "Add load, slow the lowering to a 3–4 second tempo, or progress to a single-leg dumbbell RDL to increase the hamstring and balance demand.",
+      "safetyNoteZh": "保持脊柱中立，动作由髋部主导发力，而不是靠下背部弓起；如果你有下背部不适史，建议把重量控制在中等，并在上大重量前咨询专业人士。",
+      "safetyNoteEn": "Keep a neutral spine and drive the hinge from your hips rather than rounding the lower back; if you have a history of lower-back discomfort, keep the load moderate and consider checking with a qualified professional before loading heavy."
     },
     {
       "id": "leg-curl",
@@ -760,7 +872,11 @@
         "Exhale and squeeze as you curl up, then inhale and lower under control through the full range until the knees are nearly straight (don't let the stack slam)."
       ],
       "evidenceTag": "ACE Exercise Library: Lying Hamstrings Curl",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/153/lying-hamstrings-curl/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/153/lying-hamstrings-curl/",
+      "regressionZh": "把配重销下调，放慢节奏，只在自己能完全控住、髋部不离垫的舒适范围内弯举。",
+      "regressionEn": "Lighter pin, controlled tempo, and only curl through a comfortable range you can fully control without arching off the pad.",
+      "progressionZh": "增加配重，并把还原放慢到 3-4 秒的离心，每次顶峰收缩处稍作停顿再继续。",
+      "progressionEn": "Add load and slow the lowering to a 3-4 second eccentric, pausing briefly at full contraction before each rep."
     },
     {
       "id": "calf-raise",
@@ -792,7 +908,11 @@
         "Lower under control until you feel a deep stretch with the heels dropping below the platform for full range; exhale as you press up, inhale as you lower."
       ],
       "evidenceTag": "ACE Exercise Library: Calf Raise (selectorized weight machine), American Council on Exercise",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/294/calf-raise/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/294/calf-raise/",
+      "regressionZh": "减轻配重并缩小幅度，只做到舒适的中段提踵，在顶端稍作停顿求控制，而不是追求最大抬起高度。",
+      "regressionEn": "Reduce the machine load and shorten the range to a comfortable mid-foot lift, pausing briefly at the top for control rather than chasing maximum height.",
+      "progressionZh": "加大配重并改为单腿全幅度，下放放慢到 2–3 秒、顶端用力停顿，把拉伸与收缩都做到位。",
+      "progressionEn": "Increase the load and perform full-range single-leg reps with a slow 2–3 second lower and a strong pause at the top to maximize stretch and contraction."
     },
     {
       "id": "goblet-squat",
@@ -827,7 +947,13 @@
         "蹲到大腿至少与地面平行（髋低于膝）、活动度允许时更低，再经脚跟/中足发力站直。"
       ],
       "evidenceTag": "ACE Exercise Library: Goblet Squat",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/362/goblet-squat/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/362/goblet-squat/",
+      "regressionZh": "换更轻的哑铃（或改用壶铃/杠铃片），只蹲到能稳稳控制的箱子或椅子高度，先坐到上面再站起来。",
+      "regressionEn": "Use a lighter dumbbell (or hold a kettlebell/plate) and squat only to a box or chair height you can control, sitting back to it before standing.",
+      "progressionZh": "加大哑铃重量，在最低点停顿 2-3 秒，或在深度和控制都稳定后过渡到前架位/双哑铃深蹲。",
+      "progressionEn": "Increase the dumbbell weight, add a 2-3 second pause in the bottom position, or progress toward a front-rack/double-dumbbell squat once depth and control are solid.",
+      "safetyNoteZh": "下蹲时保持躯干挺直、脊柱中立，臀部往两腿之间坐，脚跟踩实地面；如果你有腰部或膝盖不适史，重量先控制在中等，加大负荷前可先咨询专业人士。",
+      "safetyNoteEn": "Keep your torso tall and spine neutral as you sit between your hips, letting your heels stay grounded; if you have a history of lower-back or knee discomfort, keep the load moderate and consider checking with a qualified professional before going heavy."
     },
     {
       "id": "db-lunge",
@@ -861,7 +987,13 @@
         "Inhale as you descend and exhale as you push back up; control the full range of motion and don't bounce off the bottom or let the rear knee crash into the floor."
       ],
       "evidenceTag": "Riemann BL, Lapinski S, Smith L, Davies G. \"Biomechanical Analysis of the Anterior Lunge During 4 External-Load Conditions.\" Journal of Athletic Training. 2012;47(4):372–378.",
-      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3396296/"
+      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3396296/",
+      "regressionZh": "改做后脚固定的分腿蹲（或减轻、空手），单腿原地完成，不用迈步，降低平衡难度和动作幅度。",
+      "regressionEn": "Do split squats with your rear foot planted (or lighter/no dumbbells) so each leg stays in place instead of stepping, reducing balance demand and range.",
+      "progressionZh": "改为持更重哑铃的行进式箭步蹲，或前脚垫高做赤字版本，增大动作幅度和股四头肌负荷。",
+      "progressionEn": "Switch to walking lunges with heavier dumbbells, or add a deficit (front foot on a low step) for greater range and quad load.",
+      "safetyNoteZh": "保持上身挺直，让前膝沿脚尖方向下蹲、避免内扣；如果膝盖以往有不适，先从轻重量开始、控制下蹲节奏，加大负荷前可咨询合格的专业人士。",
+      "safetyNoteEn": "Keep your torso tall and let the front knee track over your foot without caving inward; if you have a history of knee discomfort, start light, control the descent, and consider checking with a qualified professional before loading heavy."
     },
     {
       "id": "db-fly",
@@ -893,7 +1025,13 @@
         "Lower under control until the dumbbells reach roughly chest/shoulder level and you feel a stretch across the chest (don't drop the elbows below the bench line); inhale on the way down, then squeeze the chest to bring the dumbbells together and exhale on the way up."
       ],
       "evidenceTag": "ACE Exercise Library: Lying Chest Fly",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/21/lying-chest-fly/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/21/lying-chest-fly/",
+      "regressionZh": "换更轻的哑铃，手肘略弯、缩小下放幅度，在大臂降到与胸齐平之前就停住，让张力更可控。",
+      "regressionEn": "Use lighter dumbbells and a slightly bent-elbow, shortened arc that stops before the upper arms drop below chest level, keeping tension manageable.",
+      "progressionZh": "增加重量，把下放放慢到 3–4 秒离心，并在最低、充分拉伸的位置停顿一拍，再夹胸收回。",
+      "progressionEn": "Add load, slow the eccentric to a 3–4 second lowering, and pause for a beat at the fully stretched bottom position before squeezing back up.",
+      "safetyNoteZh": "底部不要过度拉伸：手肘保持微弯，只下放到舒适幅度，别让哑铃远低于胸部水平，重量大时尤其注意；如果你有肩部不适史，把重量控制在中等，并在加大幅度或加重前咨询专业人士。",
+      "safetyNoteEn": "Avoid over-stretching at the bottom: keep a soft bend in the elbows and lower only to a comfortable range rather than letting the dumbbells drop far below chest level, especially when going heavy; if you have a history of shoulder discomfort, keep the load moderate and check with a qualified professional before pushing depth or weight."
     },
     {
       "id": "db-pullover",
@@ -945,7 +1083,11 @@
         "Keep your back flat and spine neutral (don't round), brace your core, and let your arms hang with a slight, fixed bend at the elbows that you maintain for the whole set.",
         "Lead with your elbows and raise the dumbbells out to the sides in a wide arc up to shoulder height, focusing on the rear delts rather than yanking the shoulder blades together; stop at the top instead of swinging the weight up with momentum.",
         "Use a light-to-moderate weight you can control through a full range; exhale as you raise the dumbbells, pause briefly at the top, then inhale and lower them slowly back to the start under control."
-      ]
+      ],
+      "regressionZh": "把胸口靠在调低的上斜凳上、换更轻的哑铃，靠凳子支撑去掉借力，更专注地孤立后束三角肌。",
+      "regressionEn": "Rest your chest on an incline bench set low and use lighter dumbbells so the support removes momentum and lets you isolate the rear delts.",
+      "progressionZh": "每次顶端停顿、收紧后束保持 1 到 2 秒再控制下放，只有当顶峰收缩仍干净利落时再加重量。",
+      "progressionEn": "Pause and squeeze for a one-to-two-second hold at the top of each rep before lowering under control, adding load only once the squeeze stays clean."
     },
     {
       "id": "db-overhead-triceps-extension",
@@ -977,7 +1119,13 @@
         "Lower the dumbbell behind your head under control as far as your shoulders comfortably allow for a full stretch, moving only at the elbows and keeping your upper arms still; inhale on the way down and exhale as you press up."
       ],
       "evidenceTag": "ACE Exercise Library: Triceps Extension (two-hand dumbbell, overhead)",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/74/triceps-extension/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/74/triceps-extension/",
+      "regressionZh": "换更轻的哑铃并缩小幅度，只把哑铃下放到头后半程，同时让肘部保持朝前。",
+      "regressionEn": "Use a lighter dumbbell and shorten the range, lowering only partway behind your head while keeping the elbows tracking forward.",
+      "progressionZh": "改为单臂颈后臂屈伸，或用更重的哑铃做 2-3 秒离心下放，增加在深度拉伸位的张力。",
+      "progressionEn": "Switch to a single-arm overhead extension or add a 2-3 second eccentric with a heavier dumbbell to increase tension at the deep stretch.",
+      "safetyNoteZh": "颈后深屈的位置会让肘关节在拉伸幅度下承受负荷，如果肘部感到不适，可减小下放幅度或重量并控制动作节奏；若不适持续，请咨询专业人士。",
+      "safetyNoteEn": "The deep behind-the-head position loads the elbows in a stretched range, so if you feel elbow discomfort, reduce the depth or load and keep movement controlled; consult a qualified professional if discomfort persists."
     },
     {
       "id": "db-calf-raise",
@@ -1090,7 +1238,13 @@
         "Press to full but unforced elbow extension, then lower the bar slowly and under control back to the front-rack position on the upper chest."
       ],
       "evidenceTag": "Kroell & Mike, Strength and Conditioning Journal (2017)",
-      "evidenceUrl": "https://aquila.usm.edu/fac_pubs/17605/"
+      "evidenceUrl": "https://aquila.usm.edu/fac_pubs/17605/",
+      "regressionZh": "改用坐姿哑铃或器械推举，或减轻杠铃重量、只推到额头高度，这样不必兼顾站姿稳定和完整过头幅度就能控制好负荷。",
+      "regressionEn": "Switch to a seated dumbbell or machine shoulder press, or lighten the bar and press to forehead height, so you can control the load without the standing balance and full overhead demand.",
+      "progressionZh": "在保证完整过头锁定的前提下加重，或进阶到严格推举——顶端短暂停顿、下放放慢，去掉借腿发力。",
+      "progressionEn": "Add load while pressing to full lockout overhead, or progress to a strict press with a brief pause at the top and a controlled descent to remove leg drive.",
+      "safetyNoteZh": "只在肩部能舒适活动的范围内向上推，收住肋骨、保持脊柱中立，别靠塌腰借力，重量循序渐进地加；若肩部有过不适史，可考虑把重量控制在中等，并在上大重量前咨询专业人士。",
+      "safetyNoteEn": "Press overhead only as far as your shoulders move comfortably, keep your ribs down and spine neutral rather than overarching your lower back, and build the load gradually; if you have a history of shoulder discomfort, consider keeping the weight moderate and checking with a qualified professional before loading heavy."
     },
     {
       "id": "deadlift",
@@ -1126,7 +1280,13 @@
         "Drive through the floor with the legs and push the knees apart (\"spread the floor\") to keep the glutes and hips active."
       ],
       "evidenceTag": "Wenning, NSCA TSAC Report (2014)",
-      "evidenceUrl": "https://www.nsca.com/education/articles/tsac-report/the-deadlift-and-its-application-to-overall-performance/"
+      "evidenceUrl": "https://www.nsca.com/education/articles/tsac-report/the-deadlift-and-its-application-to-overall-performance/",
+      "regressionZh": "改做从膝盖高度的杠铃架或垫块起拉（架上硬拉），或把杠铃换成更轻的壶铃/哑铃，缩短行程、更容易保持脊柱中立。",
+      "regressionEn": "Start from blocks or a rack at knee height (rack pull) or swap the barbell for a lighter kettlebell/dumbbell, shortening the range and making a neutral spine easier to hold.",
+      "progressionZh": "逐步加重，或站在矮垫上做赤字硬拉以增大行程，并放慢离心或在地面增加停顿，提高张力。",
+      "progressionEn": "Add load progressively, or pull from a deficit (standing on a low platform) to increase range, and slow the eccentric or add a pause off the floor for more tension.",
+      "safetyNoteZh": "这是脊柱负荷较大的动作，发力时收紧核心、保持脊柱中立，不要在负重下弓背；若你以往有下背不适，建议先用中等重量，并在加大重量前咨询专业人士。",
+      "safetyNoteEn": "This is a heavy spinal-loading lift, so brace your core and keep the spine neutral rather than rounding under load; if you have a history of lower-back discomfort, keep the weight moderate and consider checking with a qualified professional before going heavy."
     },
     {
       "id": "front-squat",
@@ -1159,7 +1319,13 @@
         "Set feet about shoulder-width with toes turned slightly out, and track the knees in line with the toes through the whole rep.",
         "Take a deep belly breath and brace the core before descending; keep the chest tall and the spine neutral, descending until hip crease is below the top of the knees.",
         "Drive up through mid-foot/heels and keep the elbows up the entire time so the torso stays upright and the upper back does not round."
-      ]
+      ],
+      "regressionZh": "改用高脚杯深蹲（goblet squat），双手在胸前抱一个哑铃或壶铃，同样练到挺胸直立的发力模式，但负荷更轻、也不需要颈前架杠那种手腕和肩部的柔韧度。",
+      "regressionEn": "Switch to a goblet squat holding a single dumbbell or kettlebell at chest height, which trains the same upright-torso pattern with less load and no front-rack mobility demand.",
+      "progressionZh": "逐步增加杠铃重量，或在蹲到最低点处停顿 2–3 秒，延长张力时间、对躯干和颈前架杠的稳定性提出更高要求。",
+      "progressionEn": "Add load progressively, or pause for 2–3 seconds in the bottom position to increase time under tension and demand a stronger, more stable front rack.",
+      "safetyNoteZh": "这是杠铃架在颈前的负重深蹲，过程中保持挺胸直立、手肘抬高、脊柱中立，避免上背在负荷下塌腰拱背。如果你以往有腰背或手腕不适，可以把重量控制在中等，并在上大重量前先咨询专业人士。",
+      "safetyNoteEn": "This is a loaded squat with the bar in a front-rack position, so keep the torso upright with elbows high and the spine neutral, and avoid letting the upper back round under load. If you have a history of back or wrist discomfort, consider keeping the load moderate and checking with a qualified professional before going heavy."
     },
     {
       "id": "incline-barbell-press",
@@ -1194,7 +1360,13 @@
         "控制下放到锁骨下方的上胸，轻触不反弹，再推到手臂近伸直、肩胛保持后缩。"
       ],
       "evidenceTag": "ACE Exercise Library: Incline Chest Press",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/25/incline-chest-press/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/25/incline-chest-press/",
+      "regressionZh": "把椅背调到更平缓的低斜度（约 15–30°）并减轻杠铃重量，或改用史密斯机或哑铃，让推举沿更稳定可控的轨迹进行。",
+      "regressionEn": "Drop the bench to a low incline (about 15–30°) and lighten the bar, or swap to a Smith machine or dumbbells so you can press through a fixed, more controllable path.",
+      "progressionZh": "在保持上胸完整可控行程的前提下加重，或把下放放慢到 3–4 秒离心、在最低点稍作停顿后再推起。",
+      "progressionEn": "Add load while keeping a controlled full range to the upper chest, or slow the lowering to a 3–4 second tempo with a brief pause at the bottom before pressing back up.",
+      "safetyNoteZh": "上斜推举的最低点会给肩前侧带来较大负荷；下放时控制速度、只下到舒适的深度，不要硬压到胸口；若你的肩部有过不适史，建议把重量控制在中等，并在大重量推举前咨询专业人士。",
+      "safetyNoteEn": "The bottom of the incline press loads the front of the shoulder; lower the bar under control to a comfortable depth rather than forcing it to the chest, and if you have a history of shoulder discomfort, keep the load moderate and consider checking with a qualified professional before pressing heavy."
     },
     {
       "id": "barbell-curl",
@@ -1228,7 +1400,11 @@
         "Squeeze the biceps at the top, then lower under control through a full range until the elbows are nearly straight; exhale as you curl up and inhale as you lower."
       ],
       "evidenceTag": "Marcolin et al., \"Differences in electromyographic activity of biceps brachii and brachioradialis while performing three variants of curl,\" PeerJ (2018)",
-      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6047503/"
+      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6047503/",
+      "regressionZh": "改用曲杆（EZ 杠）或更轻的重量，只在能稳定控制、不靠晃身体或后仰借力的幅度内弯举。",
+      "regressionEn": "Use an EZ-curl bar or lighter weight and curl only through the range you can control without swinging or leaning back.",
+      "progressionZh": "加重，或把下放放慢到 3-4 秒并在最低点稍作停顿，去掉惯性、让肱二头肌全程吃住张力。",
+      "progressionEn": "Add load or slow the lowering to a 3-4 second tempo, pausing briefly at the bottom to kill momentum and keep tension on the biceps."
     },
     {
       "id": "hip-thrust",
@@ -1262,7 +1438,13 @@
         "头颈与脊柱成一线，顶到髋充分伸展、躯干与地面平行即停。"
       ],
       "evidenceTag": "Contreras et al., Strength and Conditioning Journal (2011)",
-      "evidenceUrl": "https://bretcontreras.com/wp-content/uploads/Barbell-Hip-Thrust.pdf"
+      "evidenceUrl": "https://bretcontreras.com/wp-content/uploads/Barbell-Hip-Thrust.pdf",
+      "regressionZh": "去掉杠铃，改做自重或单片杠铃片的臀桥（直接躺地面做），缩短行程、减轻负重，直到能稳稳地把髋部顶起来。",
+      "regressionEn": "Drop the barbell and do bodyweight or single-plate glute bridges off the floor, shortening the range and reducing load until you can drive the hips up with control.",
+      "progressionZh": "增加杠铃重量，并在髋部完全伸展的顶点停顿 1–2 秒、用力夹紧臀部；或进阶到单腿臀推，加大每侧的负荷。",
+      "progressionEn": "Add load on the bar and pause for 1–2 seconds at full hip extension with a hard glute squeeze, or progress to a single-leg hip thrust for more demand per side.",
+      "safetyNoteZh": "顶点用臀部发力、收紧肋骨、不要靠腰部反弓来锁定，下巴微收，杠铃处垫好护垫；若以往腰部容易不适，重量先放保守些，大重量前请咨询专业人士。",
+      "safetyNoteEn": "Finish by squeezing the glutes and tucking the ribs down rather than arching the lower back, keep the chin tucked, and use a pad on the bar; if you have a history of lower-back discomfort, keep the load moderate and check with a qualified professional before going heavy."
     },
     {
       "id": "bulgarian-split-squat",
@@ -1296,7 +1478,13 @@
         "经前脚发力起身；让前腿主导发力，而非靠后腿蹬。"
       ],
       "evidenceTag": "NASM Exercise Library: Bulgarian Split Squat",
-      "evidenceUrl": "https://www.nasm.org/resource-center/exercise-library/bulgarian-split-squat"
+      "evidenceUrl": "https://www.nasm.org/resource-center/exercise-library/bulgarian-split-squat",
+      "regressionZh": "先放下哑铃做徒手版，一只手扶墙或扶架子帮助平衡，只下蹲到自己能稳稳控制的深度。",
+      "regressionEn": "Drop the dumbbells and do it bodyweight with a hand on a wall or rack for balance, lowering only as far as you can control.",
+      "progressionZh": "加大哑铃重量并蹲得更深，或在每次最低点停顿 2-3 秒增加难度。",
+      "progressionEn": "Increase the dumbbell load and sink to a deeper bottom position, or add a 2-3 second pause at the bottom of each rep.",
+      "safetyNoteZh": "让前膝顺着脚尖方向移动，并控制下蹲深度；如果膝盖以往有不适，可先从徒手或小重量开始，加大重量前不妨咨询专业人士。",
+      "safetyNoteEn": "Keep the front knee tracking over your toes and control the depth; if you have a history of knee discomfort, start with bodyweight or light load and consider checking with a qualified professional before loading heavy."
     },
     {
       "id": "cable-lateral-raise",
@@ -1420,7 +1608,13 @@
         "Exhale and press the handles overhead until your elbows are fully extended but not locked out, keeping your head aligned with your spine; inhale and engage your lats to pull the weight back down under control through a full range to shoulder level."
       ],
       "evidenceTag": "ACE Exercise Library: Seated Shoulder Press (Weight Machines / Selectorized)",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/186/seated-shoulder-press/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/186/seated-shoulder-press/",
+      "regressionZh": "把配重销插到更轻的档位，推到肘部大约与肩同高就停，配合放慢的节奏保持对动作的控制。",
+      "regressionEn": "Drop the pin to a lighter plate and stop pressing where your elbows reach roughly shoulder height, using a slow tempo to stay in control.",
+      "progressionZh": "增加配重，若器械允许可改为单臂依次推，或采用 3 秒慢速下放并在底部短暂停顿，增加肌肉张力时间。",
+      "progressionEn": "Add load, press one arm at a time if the machine allows, or use a slow 3-second lowering with a brief pause at the bottom to increase time under tension.",
+      "safetyNoteZh": "如果你过头动作时肩部有过不适，建议把配重控制在适中范围、推到舒适幅度即可而不必用力锁死，必要时在加大重量前先咨询专业人士。",
+      "safetyNoteEn": "If you have a history of shoulder discomfort overhead, keep the load moderate, press within a comfortable range rather than locking out hard, and consider checking with a qualified professional before pushing heavy."
     },
     {
       "id": "machine-row",
@@ -1455,7 +1649,11 @@
         "Squeeze briefly at the back, then return under control until your arms are fully extended and shoulder blades stretch forward; exhale as you pull, inhale as you let it return."
       ],
       "evidenceTag": "ACE Exercise Library: Seated Row",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/168/seated-row/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/168/seated-row/",
+      "regressionZh": "把配重销插到更轻的档位，回放阶段用 2-3 秒慢放，让你能全程控制、不靠后仰甩重量带起来。",
+      "regressionEn": "Drop the pin to a lighter plate and use a slow 2-3 second eccentric so you can control the full range without leaning back to heave the weight.",
+      "progressionZh": "加大配重并在收缩顶端停 1-2 秒做顶峰挤压，或改成单臂划船以增加行程并单独挑战每一侧。",
+      "progressionEn": "Add load while holding a 1-2 second squeeze at full contraction, or switch to a single-arm pull to add range and challenge each side independently."
     },
     {
       "id": "seated-calf-raise",
@@ -1506,7 +1704,13 @@
         "Brace your core and keep your ribs down so you don't arch your lower back; let your shoulders do the work rather than leaning back to heave the weight up.",
         "Press the dumbbells up and simultaneously rotate your wrists outward, finishing overhead with palms facing forward and elbows just short of lockout, keeping the weights tracking over your shoulders (not flaring wide).",
         "Exhale as you press and rotate up, inhale as you reverse the rotation back to the palms-facing-you start; lower under control through the full range and avoid letting the dumbbells crash down."
-      ]
+      ],
+      "regressionZh": "去掉旋转动作，改用更轻的哑铃做坐姿中立握距推举，肩部发紧时就停一下。",
+      "regressionEn": "Drop the rotation and just do a seated neutral-grip dumbbell shoulder press with lighter weights, pausing if your shoulders feel tight.",
+      "progressionZh": "放慢\"旋转到推起\"的节奏（比如 3 秒推上）并加重，或改成单臂轮流做来提高难度。",
+      "progressionEn": "Slow the rotation-to-press tempo (e.g. 3 seconds up) and add load, or train one arm at a time to increase the demand.",
+      "safetyNoteZh": "这是过顶推举，旋转要顺、重量要控得住；若肩部有过不适，建议用中等重量、保持舒适的活动范围，加大重量前先咨询专业人士。",
+      "safetyNoteEn": "This is an overhead press, so keep the rotation smooth and the weight controlled; if you have a history of shoulder discomfort, stay with moderate loads and a comfortable range, and check with a qualified professional before pressing heavy."
     },
     {
       "id": "skullcrusher",
@@ -1536,7 +1740,13 @@
         "Tilt your upper arms slightly back toward your head (not straight vertical) and lock that shoulder angle in place; brace your core and keep your elbows pinned in line with your shoulders rather than letting them flare out.",
         "Bend only at the elbows to lower the bar under control toward your forehead or just behind your head, keeping your upper arms still so the triceps do all the work.",
         "Drive the bar back up by extending the elbows without fully locking out at the top (to keep tension on the triceps); inhale as you lower and exhale as you press up."
-      ]
+      ],
+      "regressionZh": "改用较轻的哑铃或曲杠，只下放到额头上方舒适的幅度，全程别让肘部外张。",
+      "regressionEn": "Use lighter dumbbells or an EZ-bar and lower only to a comfortable range above the forehead, keeping the elbows from flaring.",
+      "progressionZh": "加大配重、把下放放慢到 3 秒离心，或改为放到头后以加大幅度、增强三头肌牵伸。",
+      "progressionEn": "Add load, slow the lowering to a 3-second tempo, or extend the range by lowering behind the head for a deeper triceps stretch.",
+      "safetyNoteZh": "让肘尖朝前、配重适中，并控制好运动轨迹，别让杠铃直直落向面部；若肘部容易酸痛，先减小幅度并可改用曲杠，加大重量前请咨询专业人士。",
+      "safetyNoteEn": "Keep the elbows pointed forward and the load moderate, and use a controlled path so the bar never travels straight down over your face; if your elbows tend to ache, reduce range and consider an EZ-bar, and check with a qualified professional before loading heavy."
     },
     {
       "id": "incline-db-curl",
@@ -1629,7 +1839,13 @@
         "Keep the spine neutral and the bar pulled tight into your traps throughout; inhale and brace as you hinge down, then drive the hips forward to stand and exhale at the top."
       ],
       "evidenceTag": "Vigotsky, Harper, Ryan & Contreras, \"Effects of load on good morning kinematics and EMG activity,\" PeerJ (2015)",
-      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4304869/"
+      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4304869/",
+      "regressionZh": "改用空杠（或一根木棍），下放幅度小一些、节奏放慢，全程保持脊柱中立，先把髋铰链的动作模式练扎实。",
+      "regressionEn": "Use an empty barbell (or a dowel) and hinge to a shallower range with a slow tempo, keeping the spine neutral until the pattern feels solid.",
+      "progressionZh": "逐步加重并把下放幅度加深到接近躯干与地面平行，或在最低点加入停顿来提高难度，同时保持脊柱中立。",
+      "progressionEn": "Add load gradually and increase the hinge depth toward parallel, or add a pause at the bottom to raise the demand while keeping a neutral spine.",
+      "safetyNoteZh": "这个动作通过较长的力臂给下背部带来明显负荷；建议负重适中、从髋部发力铰链、保持脊柱中立，如果你曾有下背不适，可考虑循序渐进加重，并在上大重量前先咨询专业人士。",
+      "safetyNoteEn": "This movement puts notable load on the lower back through a long lever; keep the load moderate, hinge from the hips with a neutral spine, and if you have a history of lower-back discomfort, consider building up slowly and checking with a qualified professional before going heavy."
     },
     {
       "id": "seated-leg-curl",
@@ -1680,7 +1896,13 @@
         "Hinge forward until your torso is parallel (roughly horizontal) to the floor and hold it there for every rep; keep a neutral spine, brace your core hard, and do not let the torso rise or bounce as you pull.",
         "Pull the bar explosively in a straight line into your lower chest/upper abdomen, driving the elbows up and back and squeezing the shoulder blades together at the top.",
         "Lower under control and let the plates fully settle (dead-stop) on the floor between every rep to reset; inhale and brace before the pull, exhale as the bar comes down."
-      ]
+      ],
+      "regressionZh": "用更轻的杠铃，并把杠铃垫高架在矮垫块或深蹲架低挡上，让上身保持更平的同时缩短行程、从更高的死点起拉，降低发力和支撑难度。",
+      "regressionEn": "Use a lighter bar and elevate it on low blocks or rack pins so the torso can stay flatter and each rep resets from a higher dead stop, reducing range and bracing demand.",
+      "progressionZh": "在保持上身严格与地面平行、每次都让杠铃完全落地死点的前提下加重，或在顶峰停顿 1–2 秒消除惯性、延长张力时间。",
+      "progressionEn": "Add load while keeping the torso strictly parallel to the floor and the bar dead-stopping fully each rep, or add a 1–2 second pause at the top to remove momentum and increase time under tension.",
+      "safetyNoteZh": "由于上身在负重下基本与地面平行，请保持脊柱中立、核心收紧，不要为了够到杠铃而弓背；如果你以往有下背不适的情况，建议把重量控制在中等，并在上大重量前咨询专业人士。",
+      "safetyNoteEn": "Because your torso stays near-parallel to the floor under load, keep the spine neutral and the core braced rather than rounding to chase the bar; if you have a history of lower-back discomfort, keep the load moderate and consider checking with a qualified professional before going heavy."
     },
     {
       "id": "t-bar-row",
@@ -1712,7 +1934,13 @@
         "Hinge at the hips and push your butt back to a torso angle around 45 degrees, keeping a slight knee bend, a flat neutral spine (chest up, no rounding), and your core braced to protect the lower back.",
         "Pull by driving your elbows back and slightly out, leading with the elbows (not the hands), and squeeze your shoulder blades together at the top so the plates touch or reach your chest/lower ribs.",
         "Lower the weight under control until your arms are nearly straight and the lats lengthen for full range of motion; exhale as you row up, inhale as you lower, and avoid jerking with the lower back."
-      ]
+      ],
+      "regressionZh": "减掉一两片杠铃片，并改用胸部支撑的 T 杠划船，让靠垫承托上身、卸掉下背负荷，专心练划船动作。",
+      "regressionEn": "Strip a plate or two and use a chest-supported T-bar variation so the pad takes your bodyweight, removing the lower-back demand while you groove the row.",
+      "progressionZh": "在保持上身前倾的前提下加片，并在顶端肩胛完全收紧处停顿一到两秒，再有控制地放下。",
+      "progressionEn": "Add plates while keeping a hinged torso, and pause for one to two seconds at the top with the shoulder blades fully squeezed before lowering under control.",
+      "safetyNoteZh": "这是负重的俯身划船，要把髋部后坐、收紧核心、保持脊柱中立，别在重量下弓背；如果你以往有下背不适，建议把重量控制在中等并优先选择胸部支撑版本，加大重量前先咨询专业人士。",
+      "safetyNoteEn": "This is a loaded bent-over pull, so set your hips back, brace your core, and keep a neutral spine rather than rounding under the weight; if you have a history of lower-back discomfort, keep the load moderate and consider a chest-supported variation, and check with a qualified professional before loading heavy."
     },
     {
       "id": "machine-lateral-raise",
@@ -1764,7 +1992,11 @@
         "Squeeze the lats briefly at the bottom, then control the bar back up to a full stretch with arms long (don't let the weight slam the stack); exhale as you pull down and inhale as you return."
       ],
       "evidenceTag": "Andersen V, Fimland MS, Wiik E, Skoglund A, Saeterbakken AH. Effects of grip width on muscle strength and activation in the lat pull-down. J Strength Cond Res. 2014;28(4):1135-1142.",
-      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/24662157/"
+      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/24662157/",
+      "regressionZh": "减轻配重并放慢还原阶段，靠自己控制把手回到顶端、而不是被配重块拽着走；若最轻一片仍然吃不住，就改用带辅助的下拉档位。",
+      "regressionEn": "Drop the weight and slow the lowering phase so you control the bar back up instead of letting the stack pull your arms, or use the assisted-pulldown setting if the lightest plate still overpowers you.",
+      "progressionZh": "增加配重，并在把手贴近胸口的最低点停顿一到两秒；或改成单臂窄握下拉，让左右背阔肌各自单独发力。",
+      "progressionEn": "Add load and pause one to two seconds at the bottom with the handle squeezed to your chest, or switch to a single-arm close-grip pulldown to challenge each lat independently."
     },
     {
       "id": "cable-pull-through",
@@ -1796,7 +2028,13 @@
         "Hinge at the hips by pushing your butt straight back toward the machine while keeping a neutral spine, chest tall, and core braced; let the knees bend only slightly so the movement comes from the hips, not the low back, and keep your arms straight and relaxed (they only guide the rope).",
         "Lower until you feel a strong stretch in the hamstrings (torso near 45 degrees), keeping the rope close to your body; then drive your hips forward and squeeze your glutes to stand tall, finishing in a full lockout without leaning back or overarching the lower back.",
         "Inhale and brace as you hinge back, then exhale as you snap the hips forward; control the eccentric rather than letting the cable yank you, and own the full range from a deep hip-hinge stretch to a hard glute squeeze at the top."
-      ]
+      ],
+      "regressionZh": "减轻配重并缩小幅度，只屈髋到能保持脊柱中立的舒适深度即可。",
+      "regressionEn": "Drop the stack weight and shorten the range, hinging only to a comfortable depth where you can keep a neutral spine.",
+      "progressionZh": "增加配重并放慢离心、在锁定位用力夹臀并短暂停顿，或进阶到单腿（B 字站姿）划拉。",
+      "progressionEn": "Add load and emphasize a slow eccentric with a strong glute squeeze and brief hold at lockout, or progress to a single-leg (B-stance) pull-through.",
+      "safetyNoteZh": "用髋部发力带动动作，而不是靠下背，负重时保持脊柱中立、不要弓背；若你有下背不适史，先把配重控制在中等强度，并在加大重量前咨询专业人士。",
+      "safetyNoteEn": "Drive the movement from the hips, not the lower back, and keep the spine neutral rather than rounding under load; if you have a history of lower-back discomfort, keep the load moderate and check with a qualified professional before going heavy."
     },
     {
       "id": "decline-barbell-press",
@@ -1930,7 +2168,13 @@
         "收紧背阔肌让杠铃贴身，再髋膝同步伸展锁定、肩向后挺直站起。"
       ],
       "evidenceTag": "Wenning, NSCA TSAC Report (2014)",
-      "evidenceUrl": "https://www.nsca.com/education/articles/tsac-report/the-deadlift-and-its-application-to-overall-performance/"
+      "evidenceUrl": "https://www.nsca.com/education/articles/tsac-report/the-deadlift-and-its-application-to-overall-performance/",
+      "regressionZh": "把杠铃垫在卧推垫块或卧推架的安全销上、从小腿中段的高度起拉，缩短行程，先把起拉位置的力量练扎实。",
+      "regressionEn": "Elevate the barbell on blocks or pull from rack pins at mid-shin height to shorten the range of motion while you build position strength.",
+      "progressionZh": "逐步加重，或在杠铃刚离地处停顿 1–2 秒、消除牵张反射，专门练起始位置的发力。",
+      "progressionEn": "Add load progressively, or pause 1-2 seconds just off the floor to kill the stretch reflex and build strength out of the bottom.",
+      "safetyNoteZh": "这是一个负重很大的髋铰链动作：收紧核心、保持脊柱中立，靠蹬地发力而不是弓背硬提；若你有腰部不适史，建议把重量控制在适中范围，加大重量前可咨询专业人士。",
+      "safetyNoteEn": "This is a heavily loaded hinge: brace your core, keep the spine neutral, and drive through the floor rather than rounding to lift — if you have a history of lower-back discomfort, keep the load moderate and consider checking with a qualified professional before going heavy."
     },
     {
       "id": "wide-grip-pulldown",
@@ -2081,7 +2325,13 @@
         "Lower the weight slowly through the full range, resisting on the way down; exhale as you extend and inhale as you lower, and ease the load near full extension if your knees feel strained."
       ],
       "evidenceTag": "Mesfar & Shirazi-Adl, \"Computational biomechanics of knee joint in open kinetic chain extension exercises,\" Computer Methods in Biomechanics and Biomedical Engineering (2008)",
-      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/17943486/"
+      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/17943486/",
+      "regressionZh": "减轻配重，只做从底部到小腿中段的部分行程，如果膝盖前侧不舒服就别每次都伸到完全锁定。",
+      "regressionEn": "Drop to a lighter plate and work a partial range from the bottom up to mid-shin, easing back from full lockout if the front of the knee feels stressed.",
+      "progressionZh": "加大配重并做完整可控的全程，顶端停顿 1–2 秒并主动收紧，或改成单腿，让每条股四头肌单独承受负荷。",
+      "progressionEn": "Add load and extend through a full controlled range with a 1–2 second pause and squeeze at the top, or switch to single-leg reps to expose each quad individually.",
+      "safetyNoteZh": "这台器械在膝关节完全伸直时负荷最大，如果你膝盖前侧曾有不适，建议把配重控制在中等、动作平稳不要猛地顶到锁死，并在上大重量前咨询专业人士。",
+      "safetyNoteEn": "This machine loads the knee at full extension, so if you have a history of front-of-knee discomfort, keep the load moderate, move smoothly without slamming into lockout, and consider checking with a qualified professional before going heavy."
     },
     {
       "id": "barbell-shrug",
@@ -2115,7 +2365,13 @@
         "Pause and squeeze the traps hard at the top; exhale as you shrug up and inhale as you lower, keeping the tempo controlled rather than swinging the weight."
       ],
       "evidenceTag": "ACE Exercise Library: Shrug (Barbell)",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/72/shrug/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/72/shrug/",
+      "regressionZh": "把杠铃换成一对哑铃（或直接减轻重量），让双臂自然垂在身侧，专注于单纯地竖直上耸。",
+      "regressionEn": "Swap the barbell for a pair of dumbbells (or simply lighten the load) so your arms hang naturally at your sides and you can focus on a clean straight-up shrug.",
+      "progressionZh": "加重，并在每次耸肩的最高点停顿一到两秒收紧斜方肌，配合助力带，避免握力先于斜方肌力竭而成为限制因素。",
+      "progressionEn": "Add load and pause for a one-to-two-second squeeze at the top of each shrug, using lifting straps so grip isn't the limiting factor before the traps are fully worked.",
+      "safetyNoteZh": "耸肩时上下竖直运动，不要绕圈转肩，并保持颈部放松、下巴平视，不要前探脖子；若你有颈部不适史，建议把重量控制在中等，上大重量前先咨询专业人士。",
+      "safetyNoteEn": "Shrug straight up and down rather than rolling the shoulders in circles, and keep your neck relaxed and chin level instead of jutting it forward; if you have a history of neck discomfort, keep the load moderate and consider checking with a qualified professional before going heavy."
     },
     {
       "id": "db-shrug",
@@ -2165,7 +2421,11 @@
         "Lock your hips in place and keep them motionless throughout — the movement is spinal flexion (ribs toward pelvis), NOT hinging or pulling down with the arms or hips; keep elbows tucked and the rope anchored at your head so the abs, not your shoulders, do the work.",
         "Initiate by drawing your belly button toward your spine and curling your rib cage down toward your pelvis, rounding the spine segment by segment against the cable's pull until your abs are fully shortened.",
         "Control the return, letting the weight smoothly stretch your abs back to the top without letting the stack slam or your lower back overarch; exhale as you crunch down, inhale as you rise, and keep tension on the abs through the full range."
-      ]
+      ],
+      "regressionZh": "减轻配重、缩小卷动幅度，只让上背随脊柱屈曲卷起、髋部保持不动，更容易找到腹部发力。",
+      "regressionEn": "Lighten the stack and crunch through a shorter range, rounding only the upper back while keeping the hips still.",
+      "progressionZh": "增加配重、把还原放慢到 3 秒离心，并在完全卷起处停顿片刻，让腹部张力拉满。",
+      "progressionEn": "Add load and slow the eccentric to a 3-second return, pausing briefly at full crunch to maximize tension."
     },
     {
       "id": "ab-crunch-machine",
@@ -2236,7 +2496,13 @@
         "控制下放到胸接近地面，再撑地推到肘部完全伸直、躯干保持刚性。"
       ],
       "evidenceTag": "ACE Exercise Library: Push-Up",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/41/push-up/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/41/push-up/",
+      "regressionZh": "把双手撑在长凳或稳固的桌面等高处做斜上俯卧撑，减轻胸部承受的负荷，让你在更完整的幅度里保持动作不变形。",
+      "regressionEn": "Do incline push-ups with your hands elevated on a bench or sturdy table, which reduces the load on your chest and lets you keep clean form through a fuller range.",
+      "progressionZh": "进阶到双脚垫高的下斜俯卧撑、加入 3 秒缓慢下放的节奏，或逐步过渡到单臂俯卧撑，以增加负荷和难度。",
+      "progressionEn": "Progress to decline push-ups with your feet elevated, add a slow 3-second lowering tempo, or move toward a single-arm variation to increase load and difficulty.",
+      "safetyNoteZh": "收紧核心，让身体从头到脚跟保持一条直线，不要让髋部塌陷；如果你过去有腰背或肩部不适，可考虑先退阶到斜上俯卧撑，并咨询专业人士。",
+      "safetyNoteEn": "Keep your core braced and your body in one straight line from head to heels rather than letting your hips sag; if you have a history of lower-back or shoulder discomfort, consider regressing to incline push-ups and checking with a qualified professional."
     },
     {
       "id": "pull-up",
@@ -2270,7 +2536,13 @@
         "上拉到下巴过杠，再控制下放到肘部完全伸直、做满全程。"
       ],
       "evidenceTag": "ACE Exercise Library: Pull-ups",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/191/pull-ups/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/191/pull-ups/",
+      "regressionZh": "在单杠上挂一条弹力带（或用助力引体机）抵消部分体重，或只做从顶端缓慢下放的离心动作。",
+      "regressionEn": "Use a resistance band looped over the bar (or an assisted pull-up machine) to offset part of your bodyweight, or do slow eccentric-only reps lowering from the top.",
+      "progressionZh": "用负重腰带或脚夹哑铃增加负荷，在顶端停顿，或进阶到弓箭式、单臂辅助等更难的变式。",
+      "progressionEn": "Add load with a weight belt or dumbbell between the feet, pause at the top, or progress toward harder variants like archer or one-arm-assisted pull-ups.",
+      "safetyNoteZh": "底部不要完全松垮地悬吊，保持肩部略微发力，下放时控制节奏而非直接坠落；若肩部曾有不适，可考虑减小幅度或训练量，并在加量前咨询专业人士。",
+      "safetyNoteEn": "Keep the shoulders slightly engaged at the bottom rather than hanging fully limp, and control the descent instead of dropping; if you have a history of shoulder discomfort, consider limiting range or volume and check with a qualified professional before progressing."
     },
     {
       "id": "inverted-row",
@@ -2670,7 +2942,13 @@
         "伸肘推起到手臂伸直，动作平稳可控。"
       ],
       "evidenceTag": "Boehler & Porcari, ACE-sponsored Research (2011)",
-      "evidenceUrl": "https://www.acefitness.org/certifiednewsarticle/1562/ace-sponsored-research-best-triceps-exercises/"
+      "evidenceUrl": "https://www.acefitness.org/certifiednewsarticle/1562/ace-sponsored-research-best-triceps-exercises/",
+      "regressionZh": "用助力臂屈伸机或在膝下挂一根弹力带分担体重，也可改做脚踩地的长凳臂屈伸，并减小下放幅度，让肩高保持在肘部之上。",
+      "regressionEn": "Use a dip-assist machine or a resistance band looped under your knees, or do bench dips with feet on the floor, and shorten the depth so your shoulders stay above your elbows.",
+      "progressionZh": "用负重腰带或脚夹哑铃加重，以 2–3 秒可控节奏下放到充分深度，并在最低点略作停顿后再撑起。",
+      "progressionEn": "Add load with a dip belt or a dumbbell between your feet, descend to a full depth with a controlled 2–3 second tempo, and pause briefly at the bottom before pressing back up.",
+      "safetyNoteZh": "下放过深会让肩前侧承受很大压力，可考虑让躯干略前倾、下放到大约肘部呈 90 度即可；若你曾有肩部不适，建议控制幅度与负重，并在加量前咨询专业人士。",
+      "safetyNoteEn": "Dropping very deep loads the front of the shoulder heavily, so consider keeping your torso slightly forward and lowering only to about elbows-at-90-degrees; if you have a history of shoulder discomfort, limit depth and load and check with a qualified professional before progressing."
     },
     {
       "id": "single-leg-extension",
@@ -3145,7 +3423,11 @@
         "Avoid shrugging—keep shoulders pulled down away from your ears; breathe steadily in short controlled breaths rather than holding your breath, and stop the hold once your hips start to drop."
       ],
       "evidenceTag": "ACE Exercise Library: Front Plank",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/32/front-plank/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/32/front-plank/",
+      "regressionZh": "改用膝盖着地（或把前臂撑在长凳等高处）缩短力臂、减轻负荷，同时保持头到髋的一条直线。",
+      "regressionEn": "Drop to your knees (or set forearms on an elevated bench) to shorten the lever and cut the load while keeping a straight line from head to hips.",
+      "progressionZh": "延长支撑时间，或通过单腿抬起、RKC 式全身收紧、在上背放一片小杠铃片来增加不稳定性或负荷。",
+      "progressionEn": "Extend hold time, or add instability/load with a single-leg lift, forearm-to-RKC tension, or a small plate on your upper back."
     },
     {
       "id": "side-plank",
@@ -3177,7 +3459,11 @@
         "Breathe steadily throughout (exhale as you lift the hips, don't hold your breath); hold the top position for time without letting the bottom hip drop, then lower under control."
       ],
       "evidenceTag": "ACE Exercise Library: Side Plank with Straight Leg",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/101/side-plank-with-straight-leg/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/101/side-plank-with-straight-leg/",
+      "regressionZh": "把下方膝盖落地做屈膝侧支撑以缩短力臂，或改成多次短时支撑、每次之间稍作休息。",
+      "regressionEn": "Drop to the bottom knee (knee-supported side plank) to shorten the lever, or do short timed holds with a brief rest between reps.",
+      "progressionZh": "延长支撑时间、抬起并保持上方腿（星式侧支撑），或加入髋部下沉与伸够动作，提高抗侧屈难度。",
+      "progressionEn": "Extend the hold time, lift and hold the top leg (star plank), or add a hip-dip/reach for more anti-lateral-flexion demand."
     },
     {
       "id": "lying-leg-raise",
@@ -3209,7 +3495,11 @@
         "Lower the legs slowly under control and stop 2-3 inches above the floor to keep constant tension and protect the low back; exhale as you raise, inhale as you lower, and reduce range or bend the knees if your back starts to arch."
       ],
       "evidenceTag": "Kim K, Lee T. Comparison of muscular activities in the abdomen and lower limbs while performing sit-up and leg-raise. J Phys Ther Sci. 2016;28(2):491-494.",
-      "evidenceUrl": "https://www.jstage.jst.go.jp/article/jpts/28/2/28_jpts-2015-820/_article/-char/en"
+      "evidenceUrl": "https://www.jstage.jst.go.jp/article/jpts/28/2/28_jpts-2015-820/_article/-char/en",
+      "regressionZh": "屈膝把膝盖收向胸口、抬起弯曲的双腿，缩短力臂，让腹部更省力、更好上手。",
+      "regressionEn": "Bend your knees toward your chest and lift the bent legs, shortening the lever so the abs work less.",
+      "progressionZh": "双腿伸直、用 3 秒慢速下放，并在贴近地面前停住，把下腹张力拉到最满。",
+      "progressionEn": "Keep the legs straight and add a slow 3-second lowering tempo, pausing just above the floor to maximize lower-ab tension."
     },
     {
       "id": "russian-twist",
@@ -3239,7 +3529,13 @@
         "Set a tall, neutral spine and brace your core hard - do not let your lower back round or collapse; keep your chest lifted throughout the set.",
         "Rotate from the trunk (not just the arms), sweeping the dumbbell from hip to hip in a smooth, controlled arc while your arms stay slightly bent and move as one unit with your torso.",
         "Exhale as you rotate to each side and inhale returning toward center; control the range and avoid swinging the weight by momentum. To regress keep feet planted, to progress lift your heels a few inches off the floor."
-      ]
+      ],
+      "regressionZh": "脚跟踩实地面、上半身坐得更直一些，只转到能控制住的幅度；或干脆放下哑铃用徒手做，以降低难度。",
+      "regressionEn": "Keep your heels planted on the floor and your torso more upright, twisting only as far as feels controlled—or drop the dumbbell and go bodyweight—to reduce the demand.",
+      "progressionZh": "把双脚抬离地面、用坐骨保持平衡，并换更重的哑铃，配合缓慢可控的转体、在每一侧短暂停顿。",
+      "progressionEn": "Lift your feet off the floor to balance on your sit bones and use a heavier dumbbell with a slow, controlled rotation and a brief pause at each side.",
+      "safetyNoteZh": "这是一个负重、反复的转体动作，转动时主要靠躯干带动、让脊柱保持相对中立，不要猛拧腰部；若你以往腰背容易不适，可考虑用更轻的重量，并在加码前咨询专业人士。",
+      "safetyNoteEn": "This is a loaded, repetitive rotation, so rotate mainly through your trunk while keeping the spine relatively neutral rather than wrenching the low back; if you have a history of lower-back discomfort, consider keeping the load light and checking with a qualified professional before progressing."
     },
     {
       "id": "cable-woodchop",
@@ -3269,7 +3565,13 @@
         "Brace your core hard and keep your torso tall and stable—the power comes from rotating through your mid-back and hips, not from bending or crunching the lower back; keep your arms relatively straight so the trunk does the work, not the shoulders.",
         "Pull the handle diagonally down and across your body toward the opposite hip in a controlled chop, rotating your trunk and pivoting the rear foot as you turn; stop the rotation before your lower back twists past a safe range.",
         "Exhale as you chop down and across, inhale as you control the handle back up to the start through a full but pain-free range; resist the cable on the way back rather than letting it snap your torso around, and finish all reps before switching sides."
-      ]
+      ],
+      "regressionZh": "减轻配重，把劈砍轨迹缩短到由高到中、行程更小，手臂微屈、主要靠躯干转动，让你能稳稳控制旋转。",
+      "regressionEn": "Lighter the cable stack and shorten the arc to a higher-to-mid path, keeping arms slightly bent and pivoting mainly through the trunk so you can control the rotation.",
+      "progressionZh": "加大配重，走完从高到低的完整劈砍轨迹，配合放慢的离心节奏或后脚轻微转动，带出更大的旋转幅度并对抗更重的配重。",
+      "progressionEn": "Increase the load and rotate through a full high-to-low arc, adding a controlled tempo or a slight pivot of the rear foot to drive more rotational range and resist a heavier stack.",
+      "safetyNoteEn": "This is a loaded rotational move, so rotate through the trunk under control with a neutral spine rather than yanking or over-twisting the lower back; if you have a history of back discomfort, keep the load light and the range moderate.",
+      "safetyNoteZh": "这是负重旋转动作，靠躯干受控转动、保持脊柱中立，不要猛甩或让下背过度扭转；若你以往有背部不适，建议配重轻一些、幅度适中。"
     },
     {
       "id": "pallof-press",
@@ -3301,7 +3603,11 @@
         "Exhale and keep the core braced as you press out, hold the extended position for a beat resisting the pull, then inhale and return the handle to your chest under control without letting it yank you off balance; complete all reps, then switch sides."
       ],
       "evidenceTag": "Juan-Recio et al., Medicina (Kaunas) (2025): \"Effect of Body Position and Support Surface on the Postural Control Challenge During the Pallof Press Exercise: A Smartphone Accelerometer-Based Study\"",
-      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11857476/"
+      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11857476/",
+      "regressionZh": "站得离绳索机近一些、用更轻的配重，让需要对抗的旋转拉力变小，每次推出后停留的时间也缩短。",
+      "regressionEn": "Step closer to the cable column and use a lighter weight so there's less rotational pull to resist, and hold the press for shorter counts.",
+      "progressionZh": "远离绳索机以拉长力臂、加大配重，并在手臂完全伸直处停留更久；也可改用半跪或弓步站姿，进一步加大抗旋转难度。",
+      "progressionEn": "Move farther from the column for a longer lever, add weight, and pause longer at full extension—or do it in a half-kneeling or split stance to challenge anti-rotation harder."
     },
     {
       "id": "step-up",
@@ -3335,7 +3641,13 @@
         "Stand fully upright at the top, then lower the trailing foot back to the floor under control over 2-3 seconds; exhale as you step up, inhale as you step down."
       ],
       "evidenceTag": "ACE Exercise Library: Step-Up",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/28/step-up/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/28/step-up/",
+      "regressionZh": "先用较矮的台阶、徒手（不拿哑铃）做，用上方腿主动发力蹬起，下落时控制好节奏。",
+      "regressionEn": "Use a lower step and bodyweight only (no dumbbells), driving up through the lead leg and stepping down under control.",
+      "progressionZh": "加大哑铃重量或抬高台阶，并尽量减少后侧腿蹬地借力、让上方工作腿独立完成动作，可再加上缓慢下落的离心阶段。",
+      "progressionEn": "Increase the dumbbell load or step height, and minimize push-off from the trailing leg so the working leg does the work, optionally adding a slow lowering phase.",
+      "safetyNoteZh": "选用稳固的台阶，蹬起时让工作腿的膝盖顺着脚尖方向、不要内扣；如果觉得重心不稳，就降低重量或台阶高度，必要时扶墙或栏杆辅助。",
+      "safetyNoteEn": "Use a stable platform and keep the working knee tracking over your foot rather than letting it cave inward; if balance feels shaky, lower the load or step height, and consider a wall or rail for support."
     },
     {
       "id": "reverse-lunge",
@@ -3367,7 +3679,13 @@
         "Step one foot straight back (not onto a tightrope line) to about hip-width, keeping your torso upright and most of your weight loaded into the front heel and mid-foot.",
         "Lower under control until your front thigh is near parallel and the back knee taps toward the floor, keeping the front shin roughly vertical and the front knee tracking over your toes (not caving inward).",
         "Drive through the front heel to stand, letting the dumbbells hang straight down throughout; inhale as you lower and exhale as you push back up to the start."
-      ]
+      ],
+      "regressionZh": "先放下哑铃做徒手后撤弓步，用一只手扶墙或扶栏杆保持平衡，步幅迈小一点、下蹲幅度也浅一些。",
+      "regressionEn": "Drop the dumbbells and do bodyweight reverse lunges with a hand on a wall or rail for balance, shortening the step and reducing depth as needed.",
+      "progressionZh": "加大哑铃重量，或改做垫高后撤弓步（前脚踩在低杠片或台阶上）来增加动作幅度和下蹲深度。",
+      "progressionEn": "Increase the dumbbell load, or move to a deficit reverse lunge (front foot on a low plate/step) for greater range of motion and depth.",
+      "safetyNoteZh": "保持上身挺直，让前膝沿脚尖方向移动、不要往内扣；后撤时控制好节奏，重心稳之前先用较轻的哑铃。若你的膝盖有过不适，建议把重量控制在中等，加大负重前先咨询专业人士。",
+      "safetyNoteEn": "Keep your torso tall and let the front knee track over your foot rather than caving inward; control the step back and start with lighter dumbbells until your balance is steady. If you have a history of knee discomfort, consider keeping the load moderate and check with a qualified professional before going heavy."
     },
     {
       "id": "walking-lunge",
@@ -3399,7 +3717,13 @@
         "Step forward with one leg into a stride longer than a normal walking step, planting the front foot flat with the front knee tracking in line over your toes (not caving inward) while keeping your torso upright over your hips.",
         "Lower under control until both knees reach roughly 90 degrees and the trailing knee hovers just above the floor; drive through the front heel to stand and bring the rear leg through into the next step in one continuous walking motion.",
         "Inhale as you descend into each lunge and exhale as you push up and step through; let the dumbbells hang straight down so the load stays over your midfoot and your stride length stays consistent for full range of motion."
-      ]
+      ],
+      "regressionZh": "先放下哑铃，改做原地徒手弓步（每次退回起点，不向前行走），平衡吃力时再把步幅缩小一些。",
+      "regressionEn": "Drop the dumbbells and do bodyweight stationary lunges in place (step back to start instead of walking forward), shortening the stride if balance is an issue.",
+      "progressionZh": "加大哑铃重量、加大步幅以加深屈髋幅度，或在每次最低点停顿 2-3 秒再蹬起。",
+      "progressionEn": "Increase the dumbbell load, lengthen each stride for deeper hip flexion, or add a 2-3 second pause at the bottom of each rep before driving up.",
+      "safetyNoteZh": "下蹲时让前侧膝盖对准脚尖、不要内扣，并控制下放速度以稳住重心；若膝盖曾有不适，建议先用中等重量，并在加重前咨询专业人士。",
+      "safetyNoteEn": "Keep your front knee tracking over your toes rather than caving inward, and control the descent for balance; if you have a history of knee discomfort, keep the load moderate and consider checking with a qualified professional before adding weight."
     },
     {
       "id": "back-extension",
@@ -3434,7 +3758,13 @@
         "Stop at that straight line, never arching the lower back past neutral; exhale as you rise and inhale as you lower, moving slowly through the full range."
       ],
       "evidenceTag": "Park SY & Yoo WG, \"Effects of hand and knee positions on muscular activity during trunk extension exercise with the Roman chair,\" Journal of Electromyography and Kinesiology, 24(6):972-976 (2014)",
-      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/25245250/"
+      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/25245250/",
+      "regressionZh": "缩小动作幅度，只下放到一半、抬起到躯干与下肢成直线（不过度后仰）即可，双手抱胸而不是放在头后，以降低难度。",
+      "regressionEn": "Reduce the range of motion by only lowering partway and raising to a neutral (not hyperextended) torso, keeping arms crossed on the chest instead of behind the head.",
+      "progressionZh": "怀抱杠铃片（或把片举到头顶前方）增加负重，并放慢节奏、顶端短暂停顿来提升强度。",
+      "progressionEn": "Add load by holding a weight plate against your chest (or extending it overhead) and use a slow, controlled tempo with a brief pause at the top.",
+      "safetyNoteZh": "在可控幅度内完成动作，顶端抬到躯干与下肢成直线即可、不要刻意过度后仰；若你过去有腰部不适的经历，建议负重从轻开始，并在加量前咨询专业人士。",
+      "safetyNoteEn": "Move through a controlled range and stop at a neutral, straight-torso position rather than forcing hyperextension at the top; if you have a history of lower-back discomfort, keep the load light and consider checking with a qualified professional before progressing."
     },
     {
       "id": "reverse-curl",
@@ -3468,7 +3798,13 @@
         "Exhale and raise the bar under control to the top, then inhale and lower slowly through the full range until the arms are extended again; avoid swinging or letting the elbows drift forward to cheat the weight up."
       ],
       "evidenceTag": "ACE Exercise Library: Reverse Bicep Curl",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/310/reverse-bicep-curl/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/310/reverse-bicep-curl/",
+      "regressionZh": "减轻杠铃重量（或改用曲杠），用稍窄、舒适的反握，配合放慢的可控节奏，让肱桡肌主导发力，避免手腕和杠铃较劲。",
+      "regressionEn": "Drop the load (or switch to an EZ-bar) and use a slightly narrower, comfortable pronated grip with a slow controlled tempo so the brachioradialis can do the work without the wrists fighting the bar.",
+      "progressionZh": "在保持标准动作的前提下加重，或把下放放慢到 3–4 秒离心并在顶端停顿，增加前臂和肱肌的张力持续时间。",
+      "progressionEn": "Add load while keeping strict form, or slow the lowering to a 3–4 second eccentric and pause at the top to increase time under tension for the forearm and brachialis.",
+      "safetyNoteZh": "反握会比普通弯举更吃手腕，所以重量别贪大、手腕尽量保持中立而不要向后折；若你以往有手腕不适，可考虑改用曲杠，并在上大重量前咨询专业人士。",
+      "safetyNoteEn": "The overhand grip loads the wrists more than a standard curl, so keep the weight moderate and wrists fairly straight rather than letting them bend back; if you have a history of wrist discomfort, consider an EZ-bar and check with a qualified professional before going heavy."
     },
     {
       "id": "spider-curl",
@@ -3498,7 +3834,11 @@
         "Plant your feet for balance and let both arms hang fully vertical from the shoulders with a dumbbell in each hand, palms facing forward; keep your upper arms still and perpendicular to the floor throughout.",
         "Curl the dumbbells up by flexing only at the elbows, squeezing the biceps and supinating (turning the pinkies up) at the top, without swinging your torso or letting the shoulders drift forward.",
         "Lower under control through a full range until the elbows are nearly straight; exhale as you curl up and inhale as you lower, keeping constant tension rather than resting at the bottom."
-      ]
+      ],
+      "regressionZh": "换更轻的哑铃（或一次只弯举一只手臂），并把幅度略微缩小，让上臂始终垂直悬着、不靠摆动借力。",
+      "regressionEn": "Drop to a lighter pair of dumbbells (or curl one arm at a time) and shorten the range slightly so you can keep the upper arms hanging still without swinging.",
+      "progressionZh": "增加重量、改成单臂交替，或把下放放慢到 3-4 秒并在完全伸展位停顿，以最大化底部的张力。",
+      "progressionEn": "Add load, work one arm at a time, or slow the lowering to a 3-4 second tempo with a pause at full stretch to maximize tension at the bottom."
     },
     {
       "id": "jm-press",
@@ -3530,7 +3870,13 @@
         "Unrack and hold the bar over your upper chest with elbows tucked in and pointed forward (not flared out to the sides) and your core braced — keeping the elbows forward is what loads the triceps and protects the shoulders.",
         "Lower the bar in a controlled diagonal path toward your chin/lower face, letting the elbows travel forward and down so the bar drifts back over the face — a blend of a skull crusher and a press, not a straight-down bench rep.",
         "Extend the elbows to drive the bar back up and stop just short of full lockout to keep constant tension on the triceps; inhale as you lower and exhale as you press, never bouncing the bar off the throat."
-      ]
+      ],
+      "regressionZh": "减轻杠铃重量并缩小行程，只把杠铃下放到接近下巴的一半位置、同时保持肘部向前走，或先换成窄握卧推，直到肘部轨迹稳定可控。",
+      "regressionEn": "Drop the load and shorten the range, lowering the bar only partway toward the chin while keeping elbows tracking forward, or swap to a close-grip bench press until the elbow position feels controlled.",
+      "progressionZh": "逐步加重，下放到接近下巴的完整行程，或放慢离心下放节奏（3–4 秒），加大底部肱三头肌的张力。",
+      "progressionEn": "Add load incrementally, use the full range down to the chin, or slow the lowering tempo (3–4 seconds) to increase tension on the triceps at the bottom.",
+      "safetyNoteZh": "由于杠铃会朝下巴方向移动、且对肘部负荷较大，建议先用轻重量熟悉轨迹，保持肘部向前走而非外张，并考虑使用保护者或安全杆；若你曾有肘部不适，重量保持适中，加大负荷前先咨询专业人士。",
+      "safetyNoteEn": "Because the bar travels toward your chin and loads the elbows heavily, start light to groove the path, keep elbows tracking forward rather than flaring, and consider a spotter or safety pins; if you have a history of elbow discomfort, keep the load moderate and check with a qualified professional before going heavy."
     },
     {
       "id": "box-squat",
@@ -3564,7 +3910,13 @@
         "Inhale and brace at the top before descending, hold the brace as you sit back and pause on the box, and exhale forcefully as you drive up through the sticking point."
       ],
       "evidenceTag": "Swinton PA, Lloyd R, Keogh JWL, Agouris I, Stewart AD. A biomechanical comparison of the traditional squat, powerlifting squat, and box squat. J Strength Cond Res. 2012 Jul;26(7):1805-16.",
-      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/22505136/"
+      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/22505136/",
+      "regressionZh": "把箱子垫高、用空杆或轻重量，让你坐到更浅、更易控制的深度。",
+      "regressionEn": "Raise the box higher and use a light or empty bar so you sit to a shallower, easier depth with more control.",
+      "progressionZh": "把箱子降到平行或更低并加重，坐稳后停顿再起身，去掉牵张反射让发力更难。",
+      "progressionEn": "Lower the box toward parallel or below and add load, pausing fully seated before driving up to remove the stretch reflex.",
+      "safetyNoteZh": "作为负重深蹲动作，它对脊柱有明显负荷，下坐和起身时保持核心收紧、脊柱中立，控制着坐到箱上，不要砸下去或在箱上晃动。若你有腰部不适史，可以把重量放保守些，加大重量前先咨询专业人士。",
+      "safetyNoteEn": "As a loaded squat pattern, this puts meaningful load through your spine, so keep your core braced and spine neutral as you sit and stand—settle onto the box under control rather than dropping or rocking on it. If you have a history of lower-back discomfort, consider keeping the load moderate and checking with a qualified professional before going heavy."
     },
     {
       "id": "pause-squat",
@@ -3596,7 +3948,13 @@
         "Take a big breath into your belly and brace your core hard, keep your chest up and spine neutral, and keep your whole foot (heel, big toe, little toe) planted with knees tracking out over your toes.",
         "Descend under control to at least parallel, then hold a full, motionless 2-3 second pause in the bottom with the torso braced - do not bounce or relax, then drive up through midfoot, since the pause kills the stretch-reflex rebound and forces your quads to do the work.",
         "Stay braced and hold your breath through the pause and the hardest part of the ascent, then exhale near the top; keep the bar over your midfoot the entire rep and avoid letting the hips shoot up first."
-      ]
+      ],
+      "regressionZh": "把底部停顿缩短到 1 秒并减轻杠铃重量（或改用高脚杯/坐箱版本），让你在站起前能稳住一个直立、可控的底部姿势。",
+      "regressionEn": "Shorten the pause to 1 second and lighten the bar (or use a goblet/box variation) so you can hold a stable, upright bottom position before standing.",
+      "progressionZh": "把停顿延长到全幅度下蹲底部 3–5 秒，再逐步加重，全程保持躯干收紧、底部完全静止不借力。",
+      "progressionEn": "Extend the pause to 3–5 seconds at full depth, then add load while keeping the torso braced and dead-stop motionless at the bottom.",
+      "safetyNoteZh": "底部停顿时脊柱要持续承受轴向负荷，所以全程保持脊柱中立、核心收紧；若你有腰部不适史，建议把重量控制在中等，加大重量前先咨询专业人士。",
+      "safetyNoteEn": "This loads the spine axially while you hold tension at the bottom, so keep the spine neutral and the core braced throughout the pause; if you have a history of lower-back discomfort, keep the load moderate and consider checking with a qualified professional before loading heavy."
     },
     {
       "id": "rack-pull",
@@ -3630,7 +3988,13 @@
         "Hinge down and grip the bar just outside your shins (double-overhand or mixed grip), set your chest up, pull your shoulder blades back, and brace your core so the spine stays neutral, not rounded.",
         "Take the slack out of the bar, then drive through your heels and push your hips forward to stand tall, squeezing your glutes at the top without leaning back or hyperextending your lower back.",
         "Inhale and brace before you pull; lower the bar under control along your thighs back to the pins, and exhale near the top of the lockout rather than holding your breath the whole rep."
-      ]
+      ],
+      "regressionZh": "把保护杠（安全销）升到膝盖略上方并减轻重量，在最短、最有力的行程里以平直背部完成上拉。",
+      "regressionEn": "Raise the pins to just above the knees and use lighter load so you pull through the shortest, strongest range with a flat back.",
+      "progressionZh": "把保护杠降到小腿中段以拉长行程，在保持脊柱中立、杠铃轨迹受控的前提下逐步加重。",
+      "progressionEn": "Lower the pins toward mid-shin to lengthen the range, then add load progressively while keeping a neutral spine and controlled bar path.",
+      "safetyNoteZh": "由于行程短、容易上大重量，请收紧核心、保持脊柱中立，不要在杠下弓背；若你过去有下背不适的情况，建议把重量控制在中等，并在大重量训练前咨询专业人士。",
+      "safetyNoteEn": "Because the short range lets you load heavily, brace your core and keep the spine neutral rather than rounding under the bar; if you have a history of lower-back discomfort, keep the load moderate and check with a qualified professional before going heavy."
     },
     {
       "id": "deficit-deadlift",
@@ -3664,7 +4028,13 @@
         "Hinge down and grip the bar just outside your knees (double-overhand or mixed grip); because of the deeper start, drop your hips lower, keep the chest tall, lats engaged, and lock the spine into a neutral position before any pull.",
         "Brace your core hard, then drive through the whole foot and push the floor away, keeping the bar dragging close to your shins and thighs; extend hips and knees together and finish by squeezing the glutes at lockout without leaning back.",
         "Take a big breath and brace at the bottom, hold it through the lift (Valsalva), and exhale at the top; control the descent through the full deficit range and reset your brace before each rep rather than bouncing off the platform."
-      ]
+      ],
+      "regressionZh": "去掉垫高、直接从地面（或垫块/安全销上）用更轻的杠铃拉，缩短行程，直到髋和背能在中立、收紧的起始位稳住。",
+      "regressionEn": "Drop the deficit and pull from the floor (or from blocks/pins) with a lighter barbell to shorten the range until your hips and back can hold a neutral, braced start position.",
+      "progressionZh": "站上更高的杠铃片或台子加大垫高幅度，或加重并在起始位做停顿，对底部的行程和张力提出更高要求。",
+      "progressionEn": "Stand on a taller plate or platform to deepen the deficit, or add load and a paused start off the floor to demand more range and tension out of the bottom.",
+      "safetyNoteZh": "加大的行程让下背在更深的起始位发力，所以全程收紧核心、保持脊柱中立，不要为了够到杠铃而弓背；若你以往有下背不适，建议把垫高幅度和负重都控制得保守一些，并在大重量训练前咨询专业人士。",
+      "safetyNoteEn": "The added range puts the lower back in a deeper start, so brace your core and keep the spine neutral throughout rather than rounding to reach the bar; if you have a history of lower-back discomfort, keep the deficit small and the load moderate, and check with a qualified professional before pulling heavy."
     },
     {
       "id": "seal-row",
@@ -3699,7 +4069,13 @@
         "Pull through full range with control, pausing briefly at the top contraction; exhale as you row up and inhale as you lower the bar all the way back to a complete dead hang."
       ],
       "evidenceTag": "Fischer J, Burger C, Manieu Seguel J, Rodoplu C, Paternoster FK, Tilp M, Konrad A. \"Impact of different ranges of motion in the prone barbell row on muscle excitation.\" J Electromyogr Kinesiol. 2025 Aug;83:103025.",
-      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/40513198/"
+      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/40513198/",
+      "regressionZh": "减轻杠铃重量（或改用哑铃），并略微缩小行程，只拉到胸口不离开凳面的高度即可。",
+      "regressionEn": "Lighten the bar (or use dumbbells) and shorten the range slightly, pulling only as high as you can without the chest leaving the bench.",
+      "progressionZh": "加重，并在每次顶端停顿一到两秒挤压背部，底部让杠铃完全下沉、充分拉伸背阔肌后再上拉。",
+      "progressionEn": "Add load and pause for a one-to-two-second squeeze at the top each rep, letting the bar fully stretch the lats at the bottom before pulling.",
+      "safetyNoteZh": "下放时控制住节奏，别让杠铃在底部猛拽肩膀；若肩部有过不适史，建议把重量和行程都控制在舒适范围内，加大重量前先咨询专业人士。",
+      "safetyNoteEn": "Lower under control rather than letting the bar yank your shoulders at the bottom; if you have a history of shoulder discomfort, keep the load moderate and the range comfortable, and check with a qualified professional before going heavy."
     },
     {
       "id": "hip-abduction",
@@ -3731,7 +4107,11 @@
         "Move slowly—especially on the return—and resist the pads back to the start instead of letting them slam together; exhale as you push out and inhale as you bring the legs back in."
       ],
       "evidenceTag": "de Almeida Paz et al., Journal of Bodywork and Movement Therapies, 30:160-167 (2022)",
-      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/35500965/"
+      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/35500965/",
+      "regressionZh": "把配重销往轻档调几片，坐直，在舒适的活动范围内用缓慢可控的节奏完成，不要硬把腿往外撑到极限。",
+      "regressionEn": "Drop the pin a few plates, sit tall, and use a slow, controlled tempo through a comfortable range rather than forcing the legs out wide.",
+      "progressionZh": "加大配重，并在两腿完全外展的终点位顶峰停顿 2 秒、充分夹紧臀部，再缓慢控制还原。",
+      "progressionEn": "Add load and a 2-second pause at the fully abducted position, squeezing the glutes hard before slowly returning under control."
     },
     {
       "id": "hip-adduction",
@@ -3761,7 +4141,11 @@
         "Keep your spine neutral and core braced, with the pelvis stable and pressed into the seat—avoid arching the lower back or letting the pads force you into an overstretched start position.",
         "Squeeze your inner thighs to draw the pads together smoothly until they nearly meet, pausing briefly at the contraction; keep the movement driven by the adductors, not by leaning your torso or jerking.",
         "Control the return, letting the legs open only as far as you can without losing tension or feeling a pinch in the groin; exhale as you squeeze in and inhale as you slowly open."
-      ]
+      ],
+      "regressionZh": "减轻配重片，并把起始时大腿张开的幅度调小，用更短、更舒适的行程把双腿向中间夹拢。",
+      "regressionEn": "Lower the pin weight and reduce the starting spread of the pads so you work through a shorter, more comfortable range as you squeeze the thighs together.",
+      "progressionZh": "增加配重，把护垫起始张开角度调得更大以获得充分而可控的拉伸，并在每次内收末端短暂夹紧、用 2-3 秒慢速离心还原。",
+      "progressionEn": "Increase the load, open the pads a little wider to a full but controlled stretch, and add a 2-3 second eccentric with a brief squeeze at the inner end of each rep."
     },
     {
       "id": "cable-glute-kickback",
@@ -3793,7 +4177,11 @@
         "Stand on your supporting leg with a soft knee, hinge slightly forward at the hips, and brace your core so your lower back stays neutral and does not arch as you kick.",
         "Lead from the glute and drive the working leg straight back to about hip height, keeping only a slight bend in the knee so the glute (not the hamstring) does the work, and pause to squeeze hard at the top.",
         "Keep your hips square to the machine (no twisting) and your foot flexed; exhale as you kick back, inhale as you control the leg forward, and let the cable stretch the glute before the next rep instead of dropping the weight."
-      ]
+      ],
+      "regressionZh": "减轻配重、缩小后踢幅度到能稳稳完成的范围，不靠甩腿或塌腰借力，扶稳支撑架保持平衡。",
+      "regressionEn": "Lighten the stack and shorten the kick to a controlled range you can finish without swinging or arching, holding the support upright for balance.",
+      "progressionZh": "加大配重、把腿踢到髋部完全伸展，顶点收紧臀部停 1-2 秒，躯干固定不动，让臀部独立发力。",
+      "progressionEn": "Add load and drive the leg through full hip extension with a 1-2 second squeeze at the top, keeping the torso fixed so the glute does all the work."
     },
     {
       "id": "front-raise",
@@ -3825,7 +4213,11 @@
         "Exhale as you lift and inhale as you lower the dumbbells under control through the full range; resist the eccentric rather than dropping them, and keep arms slightly ahead of the dumbbells throughout."
       ],
       "evidenceTag": "ACE Exercise Library: Front Raise",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/54/front-raise/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/54/front-raise/",
+      "regressionZh": "换更轻的哑铃、只举到与肩同高（或单臂交替进行），手肘保持微屈，减轻前束负荷。",
+      "regressionEn": "Use lighter dumbbells and raise only to shoulder height (or one arm at a time), keeping a slight elbow bend to reduce the load on the front delt.",
+      "progressionZh": "加重、改为严格的单臂动作，或用 3 秒缓慢下放并在顶端短暂停顿，延长前束的张力时间。",
+      "progressionEn": "Add load, switch to a strict single-arm version, or use a slow 3-second lowering tempo with a brief pause at the top to increase time under tension."
     },
     {
       "id": "upright-row",
@@ -3859,7 +4251,13 @@
         "Pull only until the bar reaches roughly chest/lower-sternum height, keeping your elbows no higher than shoulder level (lower is safer — raising the elbows above the shoulders pinches the shoulder joint); exhale as you lift, inhale and lower under control to full extension, and stop or reduce the height if you feel any shoulder pinch."
       ],
       "evidenceTag": "McAllister MJ, Schilling BK, Hammond KG, Weiss LW, Farney TM. \"Effect of Grip Width on Electromyographic Activity During the Upright Row.\" Journal of Strength and Conditioning Research 27(1): 181-187, 2013.",
-      "evidenceUrl": "https://journals.lww.com/nsca-jscr/fulltext/2013/01000/Effect_of_Grip_Width_on_Electromyographic_Activity.25.aspx"
+      "evidenceUrl": "https://journals.lww.com/nsca-jscr/fulltext/2013/01000/Effect_of_Grip_Width_on_Electromyographic_Activity.25.aspx",
+      "regressionZh": "采用较宽握距、只拉到胸口高度（或把杠铃换成绳索/哑铃），让杠杆贴近身体、肘部始终低于肩膀。",
+      "regressionEn": "Use a wider grip and pull only to chest height (or swap the barbell for a cable or dumbbells), keeping the bar close to the body and the elbows below shoulder level.",
+      "progressionZh": "逐步加重并在顶端停顿 1–2 秒，或放慢下放节奏，全程保持肘部领先、躯干直立不晃动。",
+      "progressionEn": "Add load and pause for a 1–2 second hold at the top, or slow the lowering tempo, while keeping the elbows leading and the torso upright.",
+      "safetyNoteZh": "握距过窄加上把杠铃拉得过高会让肩关节空间变窄；可考虑加宽握距、拉到胸口高度即停，若你过去有肩部不适，建议把重量控制在中等，并在加大负荷前咨询专业人士。",
+      "safetyNoteEn": "A narrow grip combined with pulling the bar high can crowd the shoulder; consider a wider grip and stopping around chest height, and if you have a history of shoulder discomfort, keep the load moderate and check with a qualified professional before going heavy."
     },
     {
       "id": "trap-bar-deadlift",
@@ -3895,7 +4293,13 @@
         "Take a big breath and brace your core before each rep, holding the brace as you stand; exhale near the top, then lower under control along the same path to a full stretch, resetting your breath between reps for heavier sets."
       ],
       "evidenceTag": "Swinton et al., \"A biomechanical analysis of straight and hexagonal barbell deadlifts using submaximal loads,\" Journal of Strength and Conditioning Research (2011)",
-      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/21659894/"
+      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/21659894/",
+      "regressionZh": "把梯铃架高在垫块或杠片上，缩短动作行程并减轻重量，让躯干保持更直立，更容易拉起。",
+      "regressionEn": "Raise the trap bar on blocks or plates to shorten the range of motion and use lighter load, keeping the torso more upright for an easier pull.",
+      "progressionZh": "增加重量并从地面全程拉起，或把下放放慢到 3 秒节奏，延长肌肉张力时间。",
+      "progressionEn": "Add load and pull from the floor through full range, or slow the lowering to a 3-second tempo to increase time under tension.",
+      "safetyNoteZh": "这是负重较大的髋铰链动作，脊柱承受明显轴向负荷；收紧核心、保持脊柱中立不要弓背，若你有腰部不适史，建议把重量控制在适中范围，并在加大重量前咨询专业人士。",
+      "safetyNoteEn": "This is a heavy hinge with significant spinal loading; brace your core and keep the spine neutral rather than rounding, and if you have a history of lower-back discomfort, keep the load moderate and consider checking with a qualified professional before going heavy."
     },
     {
       "id": "stiff-leg-deadlift",
@@ -3930,7 +4334,13 @@
         "Drive your hips forward to stand tall and squeeze your glutes at the top, keeping the bar against your legs; inhale and brace at the top, hold the breath through the descent, and exhale as you lock out, and stop the descent before your lower back starts to round."
       ],
       "evidenceTag": "Coratella G. et al., \"An Electromyographic Analysis of Romanian, Step-Romanian, and Stiff-Leg Deadlift: Implication for Resistance Training,\" Int. J. Environ. Res. Public Health (2022)",
-      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8835508/"
+      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8835508/",
+      "regressionZh": "减轻杠铃重量并缩短行程，只把杠铃下放到小腿中段、不必碰地，全程保持膝关节微屈和脊柱中立。",
+      "regressionEn": "Reduce the load and shorten the range of motion by lowering the bar only to mid-shin instead of the floor, keeping a soft micro-bend and neutral spine throughout.",
+      "progressionZh": "逐步加重，或在底部最大牵伸位停顿 2–3 秒，也可站上矮垫加大行程，让腘绳肌承受更大张力。",
+      "progressionEn": "Increase the load or pause for 2–3 seconds at the bottom stretch, or stand on a low platform to extend the range of motion for greater hamstring tension.",
+      "safetyNoteZh": "这个动作在髋部前屈、腘绳肌深度牵伸时会给脊柱施加负荷，所以应保持脊柱中立、靠髋部折叠发力，而不是让下背部弓起；若你以往有下背不适，建议把重量控制在中等、只下放到能保持姿势的幅度，并在大重量训练前咨询专业人士。",
+      "safetyNoteEn": "This movement loads the spine while you hinge into a deep stretch, so keep the spine neutral and hips hinging rather than the lower back rounding; if you have a history of lower-back discomfort, keep the load moderate, only go as low as you can hold position, and check with a qualified professional before loading heavy."
     },
     {
       "id": "glute-ham-raise",
@@ -3964,7 +4374,11 @@
         "Drive back up by contracting the hamstrings and extending the hips to bring the torso to parallel, then re-flex the knees to return to the upright start; inhale as you lower and exhale as you raise, and only go as deep as you can control without losing the neutral-spine position."
       ],
       "evidenceTag": "NSCA Exercise Technique Manual for Resistance Training, 3rd Edition — \"Glute-Ham Raise\"",
-      "evidenceUrl": "https://www.nsca.com/education/articles/kinetic-select/glute-ham-raise/"
+      "evidenceUrl": "https://www.nsca.com/education/articles/kinetic-select/glute-ham-raise/",
+      "regressionZh": "用弹力带或同伴在身前辅助，并把动作幅度限制在上半段（更直立的区间），让你能控制下放、不至于直接砸下去。",
+      "regressionEn": "Use band or partner assistance and limit the range to the upper, more upright portion so you can control the descent without collapsing.",
+      "progressionZh": "把杠铃片抱在胸前增加负荷，或把下放过程放慢到 3-4 秒的离心、并做满全程幅度。",
+      "progressionEn": "Hold a weight plate at your chest or slow the lowering phase to a 3-4 second eccentric through full range."
     },
     {
       "id": "wrist-curl",
@@ -3996,7 +4410,11 @@
         "Inhale as you lower into extension and exhale as you curl up; move slowly and use a light load - momentum and a loose grip put the wrist joint at risk."
       ],
       "evidenceTag": "ACE Exercise Library: Wrist Curl - Flexion",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/30/wrist-curl-flexion/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/30/wrist-curl-flexion/",
+      "regressionZh": "换更轻的哑铃，并把前臂稳稳压在长凳或大腿上，只在舒适的上半段范围内做卷腕，减小活动幅度。",
+      "regressionEn": "Use a lighter dumbbell and shorten the range by curling only through the comfortable top portion, keeping the forearm fully supported on a bench or thigh.",
+      "progressionZh": "用更大的重量做满幅，并放慢离心下放的节奏，再进阶到单手单侧卷腕以增加控制和难度。",
+      "progressionEn": "Go heavier through the full range with a slow lowering phase, and progress to one wrist at a time to add control and demand."
     },
     {
       "id": "reverse-wrist-curl",
@@ -4026,7 +4444,11 @@
         "Keep your elbows pinned at roughly 90 degrees and your forearms flat and still throughout the set—do not let the upper arms lift, lean, or swing to cheat the weight up.",
         "Lower the dumbbells under control by letting your wrists drop into full flexion (knuckles toward the floor), then contract the forearm extensors on top to roll the knuckles up as high as you can.",
         "Move slowly through a full range of motion and pause briefly at the bottom; inhale as the wrists lower and exhale as you extend the wrists up—use a light load since the extensors fatigue fast."
-      ]
+      ],
+      "regressionZh": "换更轻的哑铃、缩小活动范围，腕部一感到吃力就停，同时把前臂完整地撑在长凳或大腿上做。",
+      "regressionEn": "Drop to a lighter dumbbell and curl through a shorter range, stopping where the wrist starts to strain, while keeping the forearm fully supported on a bench or thigh.",
+      "progressionZh": "加重量或改成单臂轮流做，并在顶端略作停顿、下放放慢到 3 秒，让腕伸肌承受更长的张力。",
+      "progressionEn": "Increase the load or train one arm at a time, and add a slow 3-second lowering with a brief pause at the top to maximize tension on the wrist extensors."
     },
     {
       "id": "hanging-leg-raise",
@@ -4058,7 +4480,11 @@
         "Lower slowly and with control back to the dead hang, resisting the descent; exhale as you raise the legs and inhale on the way down, keeping the core braced throughout."
       ],
       "evidenceTag": "McGill, Andersen & Cannon, \"Muscle activity and spine load during anterior chain whole body linkage exercises: the body saw, hanging leg raise and walkout from a push-up\", Journal of Sports Sciences (2015)",
-      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/25111163/"
+      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/25111163/",
+      "regressionZh": "改用屈膝的悬垂屈膝举腿，缩短力臂、降低对核心的要求。",
+      "regressionEn": "Bend your knees into a hanging knee raise to shorten the lever and cut the core demand.",
+      "progressionZh": "保持双腿伸直举到脚尖触杠，或用双脚夹住哑铃，并放慢下放过程。",
+      "progressionEn": "Keep the legs fully straight and raise to toes-to-bar, or grip a dumbbell between your feet, slowing the lowering phase."
     },
     {
       "id": "ab-wheel",
@@ -4090,7 +4516,13 @@
         "Pull the wheel back by contracting your abs (not by yanking with your arms or shoulders); inhale as you roll out, exhale as you pull back to the start."
       ],
       "evidenceTag": "Marchetti PH, Schoenfeld BJ, et al., \"Muscle Activation Pattern During Isometric Ab Wheel Rollout Exercise in Different Shoulder Angle-Positions,\" MedicalExpress (São Paulo) 2(4), 2015",
-      "evidenceUrl": "https://www.scielo.br/j/medical/a/BK4tJ3s4p95tKh86MKPTy4P/?lang=en"
+      "evidenceUrl": "https://www.scielo.br/j/medical/a/BK4tJ3s4p95tKh86MKPTy4P/?lang=en",
+      "regressionZh": "改成跪姿，只推到你能始终绷紧核心、保持脊柱中立的距离，缩短行程，让滚轮在髋部即将塌陷之前就停住。",
+      "regressionEn": "Roll out from your knees and only go as far as you can keep a braced, neutral spine, shortening the range so the wheel never travels past where your hips start to drop.",
+      "progressionZh": "进阶到站姿全程腹轮，从脚尖出发一路推到接近水平，同时保持脊柱中立、肋骨内收。",
+      "progressionEn": "Progress to full standing rollouts from your feet, reaching all the way out to near-horizontal while keeping the spine neutral and ribs down.",
+      "safetyNoteZh": "全程绷紧核心、保持脊柱中立，只推到你能避免下背塌陷或反弓的距离；若你下背曾有不适，请缩短行程，并在加大幅度前咨询专业人士。",
+      "safetyNoteEn": "Brace your core and keep the spine neutral throughout, only rolling out as far as you can avoid letting the lower back sag or arch; if you have a history of lower-back discomfort, keep the range short and check with a qualified professional before progressing."
     },
     {
       "id": "donkey-calf-raise",
@@ -4120,7 +4552,11 @@
         "Position the load pad squarely across your hips/lower back, not the lumbar spine, and keep your back flat and core braced with a slight bend in the knees held constant throughout to bias the gastrocnemius.",
         "Drive through the balls of your feet to press your heels as high as possible, squeezing the calves hard at the top without letting your knees flex or your hips bob to cheat the weight up.",
         "Lower under control until your heels drop below the platform for a full stretch at the bottom; exhale as you press up onto the toes and inhale as you lower into the stretch."
-      ]
+      ],
+      "regressionZh": "减少负重铁片（或先只用自身体重），并缩小底部的下沉幅度，在更小、更稳的范围内完成，等小腿力量和平衡感稳定后再加大。",
+      "regressionEn": "Reduce the plate load (or use bodyweight only) and limit the stretch at the bottom, working through a shorter, comfortable range until the calves and balance feel solid.",
+      "progressionZh": "增加铁片负重并做满全程——底部充分下沉拉伸、顶端彻底收紧提起——再在拉伸位加入 2–3 秒停顿或放慢离心，或进阶到单腿提踵。",
+      "progressionEn": "Add plate load and drive through a full range—deep stretch at the bottom, full squeeze at the top—then add a 2–3 second pause or slow eccentric at the stretched position, or progress to single-leg reps."
     },
     {
       "id": "decline-situp",
@@ -4150,7 +4586,13 @@
         "Cross your arms over your chest or rest your hands lightly at the sides of your head (do not lace fingers and yank the neck); keep your chin slightly tucked and core braced before you move.",
         "Curl up by peeling the spine off the pad vertebra by vertebra, leading with your sternum toward your thighs and letting the abs do the work, not the hip flexors pulling from the legs.",
         "Exhale and squeeze the abs as you rise, inhale as you lower under control; lower only until your back nears the pad (avoid slamming back or fully arching off it) to keep constant tension and protect the lumbar spine."
-      ]
+      ],
+      "regressionZh": "把斜板角度调缓、接近水平（或直接在地面做仰卧起坐），让重力的阻力变小、更容易完成。",
+      "regressionEn": "Reduce the bench decline angle toward flat (or do sit-ups on the floor) so gravity assists less through the range.",
+      "progressionZh": "加大斜板下倾角度，并把杠铃片抱在胸前，逐步过渡到举过头顶，以增加阻力。",
+      "progressionEn": "Steepen the decline angle and hold a weight plate at your chest, progressing to holding it overhead for greater resistance.",
+      "safetyNoteZh": "如果你以前腰背容易不适，建议把斜度放缓、负重从轻开始，用平稳可控的卷腹方式起身、别猛地甩起来；想加重量或加大斜度前，先咨询专业人士。",
+      "safetyNoteEn": "If you have a history of lower-back discomfort, consider keeping the decline shallow and the load light, moving in a smooth controlled curl rather than yanking up, and check with a qualified professional before adding weight or steeper angles."
     },
     {
       "id": "bicycle-crunch",
@@ -4182,7 +4624,11 @@
         "Move under control rather than rushing—extend the leg only as far as you can keep the low back glued to the mat; exhale as you crunch and rotate, inhale as you switch sides."
       ],
       "evidenceTag": "ACE Exercise Library: Supine Bicycle Crunches",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/241/supine-bicycle-crunches/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/241/supine-bicycle-crunches/",
+      "regressionZh": "把双脚抬高一些（更接近垂直）并放慢节奏，肘部去碰同侧膝盖而非对侧，以减小旋转和杠杆负荷。",
+      "regressionEn": "Keep both feet hovering higher (closer to vertical) and slow the pace, touching elbow toward the same-side knee instead of the opposite one to cut the rotational and leverage demand.",
+      "progressionZh": "把伸直腿压得更低、更贴近地面，并在对侧肘碰膝的顶点处刻意停顿，以拉长力臂、延长肌肉张力时间。",
+      "progressionEn": "Extend the straight leg lower toward the floor and add a deliberate pause at full opposite-elbow-to-knee contraction to increase the lever arm and time under tension."
     },
     {
       "id": "dead-bug",
@@ -4214,7 +4660,11 @@
         "Move slowly with no momentum, exhale as you extend the arm and leg out and inhale as you return; if your back lifts off the floor, shorten the range until you can keep it pinned."
       ],
       "evidenceTag": "ACE Exercise Library: Supine Dead Bug",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/147/supine-dead-bug/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/147/supine-dead-bug/",
+      "regressionZh": "每次只放下一侧手脚（或保持膝盖弯曲收向胸口，不把腿伸直），全程让下背紧贴地面。",
+      "regressionEn": "Lower only one limb at a time (or keep knees bent toward the chest instead of extending the legs straight), and press your lower back firmly into the floor throughout.",
+      "progressionZh": "把对侧手脚缓慢完全伸直并在最低点停顿，或加上轻量沙袋脚环／手持负重，同时始终保持下背贴地。",
+      "progressionEn": "Extend opposite arm and leg fully and slowly, pausing at the bottom, or add light ankle weights or a held weight while keeping the lower back flat."
     },
     {
       "id": "single-leg-hip-thrust",
@@ -4248,7 +4698,11 @@
         "Pause and squeeze at the top, then lower under control through a full range of motion until your hips just clear the floor; exhale as you thrust up and inhale as you lower."
       ],
       "evidenceTag": "Collings TJ, Bourne MN, Barrett RS, Meinders E, Gonçalves BAM, Shield AJ, Diamond LE. \"Gluteal Muscle Forces during Hip-Focused Injury Prevention and Rehabilitation Exercises.\" Medicine & Science in Sports & Exercise. 2023.",
-      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/36918403/"
+      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/36918403/",
+      "regressionZh": "先退回双腿臀冲（或地面臀桥），等能在骨盆不歪斜的情况下完全顶髋锁定后，再过渡到单腿。",
+      "regressionEn": "Drop back to a two-leg hip thrust (or a glute bridge from the floor), then transition to single-leg only once you can fully lock out the hips without the pelvis tilting.",
+      "progressionZh": "在顶髋锁定位停顿 2-3 秒并放慢离心下放，之后再进阶到把支撑脚垫高，或在髋部加负重。",
+      "progressionEn": "Add a 2-3 second pause at full hip lockout and a slow eccentric, then progress to elevating the working foot or adding load across the hips."
     },
     {
       "id": "lateral-lunge",
@@ -4282,7 +4736,13 @@
         "Descend until the working thigh is roughly parallel to the floor (or to a depth you control without rounding the lower back); inhale as you lower, then drive through that foot and exhale to push back to the upright start."
       ],
       "evidenceTag": "ACE Exercise Library: Lateral Lunge",
-      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/364/lateral-lunge/"
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/364/lateral-lunge/",
+      "regressionZh": "放下哑铃，做徒手侧向弓步，下蹲浅一些，必要时扶住固定物或墙面帮助保持平衡。",
+      "regressionEn": "Drop the dumbbell and do a bodyweight lateral lunge with a shallower depth, holding a rack or wall for balance as you sit back.",
+      "progressionZh": "改用单只更重的哑铃做高脚杯式负重，每次下蹲更深，并放慢、控制下放节奏。",
+      "progressionEn": "Use a single heavier dumbbell in the goblet position and sink deeper into each rep with a slow, controlled lowering tempo.",
+      "safetyNoteZh": "下蹲时让弯曲的膝盖沿脚尖方向、避免向内塌陷，重心后坐到髋部；若你以往有膝部不适，先把负重和深度控制在适中范围，加大重量前请咨询合格的专业人士。",
+      "safetyNoteEn": "Keep the bending knee tracking over your toes rather than caving inward, and sit back into the hip; if you have a history of knee discomfort, keep the load and depth moderate and check with a qualified professional before going heavy."
     },
     {
       "id": "curtsy-lunge",
@@ -4314,7 +4774,13 @@
         "Step one leg back and diagonally behind the standing leg — crossing roughly to the opposite side — keeping your hips and shoulders square to the front instead of rotating toward the rear leg.",
         "Lower straight down until your front thigh is near parallel and the back knee hovers just above the floor; keep the front knee tracking over the foot (don’t let it cave inward) and most of your weight in the front heel.",
         "Drive through the front heel to stand back up, squeezing the glutes at the top; inhale as you lower and exhale as you push up, and avoid bouncing out of the bottom."
-      ]
+      ],
+      "regressionZh": "放下哑铃改做徒手屈膝礼弓步，扶墙或扶架子保持平衡，并缩小向后交叉跨步的幅度和下蹲深度。",
+      "regressionEn": "Drop the dumbbells and do bodyweight curtsy lunges, holding a wall or rack for balance and reducing the depth of the cross-behind step.",
+      "progressionZh": "加大哑铃重量或向后跨得更远以增加动作幅度，也可以让每次下放放慢到 3 秒的离心节奏。",
+      "progressionEn": "Increase the dumbbell load or step further behind for a deeper range, or add a slow 3-second lowering tempo on each rep.",
+      "safetyNoteZh": "向后交叉的站姿会让膝盖承受偏斜的负荷，动作要慢而可控，让前侧膝盖顺着脚尖方向、避免内扣；若你过去有膝部不适，建议把重量控制在中等，并在加量前咨询专业人士。",
+      "safetyNoteEn": "The crossed-behind stance loads the knee at an angle, so keep movement controlled and let the front knee track over the foot rather than caving inward; if you have a history of knee discomfort, keep the load moderate and consider checking with a qualified professional before progressing."
     },
     {
       "id": "leg-press-calf-raise",
@@ -4346,7 +4812,11 @@
         "Lower under control into a deep ankle stretch (full dorsiflexion) for a complete range of motion; exhale as you press up onto the toes and inhale as you let the heels sink."
       ],
       "evidenceTag": "NASM Exercise Library: Leg Press Calf Raise",
-      "evidenceUrl": "https://www.nasm.org/resource-center/exercise-library/leg-press-calf-raise"
+      "evidenceUrl": "https://www.nasm.org/resource-center/exercise-library/leg-press-calf-raise",
+      "regressionZh": "减掉配重片、缩小底部下沉幅度，用双脚前掌缓慢可控地推蹬，降低难度。",
+      "regressionEn": "Strip plates to lighten the load and limit the bottom stretch, pressing through the balls of both feet with a slow, controlled tempo.",
+      "progressionZh": "加配重片并做满全程——脚跟充分下沉拉伸、推到顶峰完全踮起并在顶端停顿——或改为单腿交替进行。",
+      "progressionEn": "Add plates and use the full range—dropping the heels for a deep stretch, then driving to a full toe-point with a pause at the top—or perform one leg at a time."
     },
     {
       "id": "decline-db-press",
@@ -4379,7 +4849,13 @@
         "Plant your hips and head on the bench, retract and depress your shoulder blades, and brace your core; because blood pools toward the head on a decline, keep reps deliberate and avoid holding your breath too long.",
         "Start with the dumbbells stacked over your lower chest, wrists straight and stacked over the elbows, and keep elbows tucked at roughly 45 degrees (not flared to 90) to protect the shoulders.",
         "Lower under control until the dumbbells are level with your lower chest/sternum, feeling a stretch without letting them drift apart; inhale on the way down, then press up and slightly inward, exhaling, and stop just short of clashing the bells together."
-      ]
+      ],
+      "regressionZh": "换更轻的哑铃、把下斜角度调缓一些（更接近平板），在舒适范围内推到底，直到底部位置和持铃都很稳为止。",
+      "regressionEn": "Use lighter dumbbells and a shallower decline angle (closer to flat), pressing through a comfortable range until the bottom position and dumbbell handling feel controlled.",
+      "progressionZh": "加大重量，或在底部停顿 1–2 秒、配合 3 秒慢速离心，先把下胸张力练足再往上加重。",
+      "progressionEn": "Add load, or pause 1–2 seconds at the bottom with a slow 3-second eccentric to increase lower-chest tension before progressing the weight.",
+      "safetyNoteZh": "头朝下的下斜卧推取放重哑铃比较别扭，建议用稳妥的起始方式（让人递铃或用膝顶上肩）、保持手腕在手肘正上方；若头部偏低让你感到头晕，就减小下斜角度或减轻重量。",
+      "safetyNoteEn": "Getting heavy dumbbells in and out of position on a head-down decline bench is awkward, so use a controlled setup (have a spotter hand them off or use a knee-kick), keep wrists stacked over elbows, and if the head-low position makes you lightheaded, reduce the decline or load."
     },
     {
       "id": "bench-dip",
@@ -4414,7 +4890,13 @@
         "Don't sink below 90 degrees of elbow bend, since deep shoulder extension stresses the front of the shoulder; inhale as you lower and exhale as you press to the top."
       ],
       "evidenceTag": "McKenzie et al., Int. J. Environ. Res. Public Health (2022) — \"Bench, Bar, and Ring Dips: Do Kinematics and Muscle Activity Differ?\"",
-      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9603242/"
+      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9603242/",
+      "regressionZh": "双脚踩地、屈膝靠近身体让腿分担一部分体重，下降到上臂大致与地面平行即可，不必沉得太低。",
+      "regressionEn": "Keep your feet flat and close with knees bent so your legs share the load, and only lower until your upper arms reach about parallel.",
+      "progressionZh": "把双腿伸直架到对面的第二张凳子上，让几乎全部体重压在肱三头肌上，再在大腿上加一片杠铃片增加负荷。",
+      "progressionEn": "Extend your legs straight out onto a second bench to put nearly all your bodyweight on the triceps, then add a plate on your lap for extra load.",
+      "safetyNoteZh": "由于双手撑在身体后方，肩关节会处于被拉伸的受力位置；下降幅度适中即可，不要刻意沉到最低，如果肩部曾有不适，建议缩小动作幅度，并在加大难度前咨询专业人士。",
+      "safetyNoteEn": "Because your hands are placed behind your body, the shoulders are loaded in a stretched position; keep the depth moderate rather than sinking as low as possible, and if you have a history of shoulder discomfort, limit the range and check with a qualified professional before progressing."
     },
     {
       "id": "diamond-push-up",
@@ -4449,7 +4931,13 @@
         "Lower your chest under control until it lightly touches your hands, then press all the way up to full elbow lock-out; inhale on the way down and exhale as you push up."
       ],
       "evidenceTag": "Intziegianni K, Katsamis E, Michaelides M, Parpa K. Electromyographic Activation of the Pectoralis Major and Triceps Brachii Muscles During Standard, Diamond, and Wide Hand Position Push-Ups. Muscles. 2026;5(1):18.",
-      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13029269/"
+      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13029269/",
+      "regressionZh": "把双手撑在长凳或台面等较高的支撑面上，仍保持钻石手型，让肱三头肌承担更少的体重，更容易完成。",
+      "regressionEn": "Place your hands on a raised surface like a bench or countertop, keeping the diamond shape, so less bodyweight loads the triceps.",
+      "progressionZh": "把双脚垫高在长凳上，让更多体重压到肱三头肌；或采用 3 秒慢速下放的节奏，延长肌肉张力时间来加大难度。",
+      "progressionEn": "Elevate your feet on a bench to shift more weight onto the triceps, or add a slow 3-second lowering tempo for greater time under tension.",
+      "safetyNoteZh": "钻石手型比普通俯卧撑让手腕承受更大的背伸压力；如果手腕感到吃力，可把钻石手型稍微放宽、改用俯卧撑支架，并循序渐进地增加次数。",
+      "safetyNoteEn": "The close hand position loads the wrists in more extension than a normal push-up; if your wrists feel strained, widen the diamond slightly, try push-up handles, and build up gradually."
     },
     {
       "id": "zottman-curl",
@@ -4481,7 +4969,11 @@
         "Pin your elbows close to your ribs and keep them fixed there; brace your core and avoid swinging the torso or letting the upper arms drift forward.",
         "Curl up with palms facing up using your biceps, then at the top rotate your wrists to a pronated (palms-down) grip before you begin lowering.",
         "Lower under slow control in the pronated grip so the forearms and brachioradialis brake the descent; exhale curling up, inhale on the way down, and rotate back to palms-up at the bottom."
-      ]
+      ],
+      "regressionZh": "用更轻的哑铃、单臂轮流做，下放（反握）阶段只放到手腕能稳住不塌的幅度即可。",
+      "regressionEn": "Use lighter dumbbells and do one arm at a time, slowing the pronated lowering phase only as far as you can control without the wrist collapsing.",
+      "progressionZh": "加大重量，或把反握下放刻意拉长到每次 4-5 秒缓慢离心，最大化前臂和肱肌张力。",
+      "progressionEn": "Add load or draw out the pronated eccentric to a slow 4-5 second lowering on each rep to maximize forearm and brachialis tension."
     }
   ]
 }
