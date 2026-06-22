@@ -178,7 +178,7 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 **最小渐进（goldens 锁定）**：双重渐进三分支，RIR 一律取 **min 口径**（最差一组；任何一组打到力竭就不加重——安全优先于抗噪，2026-06-09 审查后显式拍板）——全组打满 repMax 且 min RIR ≥1.0(含 1.0；无 RIR 数据视为有余力) → +2.5kg、次数重置 repMin；上次力竭(min RIR≤0.5) 或最高组未到 repMin → −2.5kg；否则持平冲 repMax。加重无上限（有意为之）。裁决调制在渐进后：light ×0.9；deload ×0.8 且组数 −1(下限 2)。**重量按「器械×用户单位」真实梯子取整**（§8 LoadGrid：公斤自由重量 2.5kg 等距、磅哑铃分段 2.5/5/10lb 梯子等），下限一档；**调制后若取整弹回原重量且原重量 > 一档，强制下调一格**（轻练/减载必须真减，小重量动作不得被取整吃掉）。**重量口径**：哑铃/单边动作 = 单只哑铃重量；杠铃 = 总杠重（含杆）；plate-loaded = 配重片读数；cable = 配重栈读数（美国习惯，引擎内部按手上有效推进）——**渲染层据此口径吸附梯子最近格显示，非裸换算**（§8 显示吸附契约）。
 
-**catalog limitation（§6.1 红线如实声明）**：MVP catalog 缺肌群贡献权重与禁忌提示——肌群级高置信分析（肌群等级/瓶颈识别）在补齐前不得基于本 catalog 产出；双语展示名归 RedeL10n。组形（top/backoff）归 M3-1 后续学习层；restSeconds 已在 M3-1 落地（slot 生成参数）。
+**catalog limitation（§6.1 红线如实声明）**：MVP catalog 缺**肌群贡献权重**——肌群级高置信分析（肌群等级/瓶颈识别）在补齐前不得基于本 catalog 产出；双语展示名归 RedeL10n。**注意事项（原"禁忌提示"）已落地为展示层**（FR-EX2：`safetyNoteZh/En`，按 §7.1 fitness≠medical 措辞——保守训练注意 + 条件句 +「咨询专业人士」，绝不诊断/治疗/防伤承诺；只给有风险动作、低风险诚实不加；经安全合规对抗审查）——它是**展示提示、不是引擎输入**，不参与处方/降级决策（疼痛驱动的保守调整仍走 §6.4 实时信号，与本字段独立）。组形（top/backoff）归 M3-1 后续学习层；restSeconds 已在 M3-1 落地（slot 生成参数）。
 
 ### 6.0.2 逐组处方与下一组建议（M3-1 已实现 · §6.3 的确定性最小子集）
 
@@ -202,6 +202,7 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 - 覆盖美国商业健身房常见动作:barbell、dumbbell、cable、plate-loaded machine、selectorized machine、bodyweight、assisted machine、band、kettlebell。
 - 每个动作必须有稳定 `exerciseId`、本地化展示名、movement pattern、primary/secondary muscle contribution、equipment requirement、substitution group、contraindication hint 和 evidence/confidence tag。
+- FR-EX2 展示内容（加性、零引擎影响、缺则不显示）：`techniqueCuesZh/En`（技术要点）、`evidenceTag/evidenceUrl`（真实循证）、`regressionZh/En`+`progressionZh/En`（退阶/进阶）、`safetyNoteZh/En`（§7.1 保守注意，取代旧单语 `contraindicationHint`）。均 decodeIfPresent、nil 默认、不参与匹配/处方/吨位、不 bump catalogVersion。
 - 动作事实由 curated catalog 和版本化 migration 管理。LLM 可以帮助生成候选解释或缺口清单,但不得成为动作事实的最终来源。
 - catalog 缺失贡献权重时,引擎必须输出 limitation,不能猜肌群或把动作强行归类。
 - UI 默认只展示用户需要的训练信息;完整动作元数据只在详情/调试/专业解释里出现。

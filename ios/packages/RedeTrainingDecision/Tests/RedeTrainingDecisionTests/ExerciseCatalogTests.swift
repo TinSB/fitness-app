@@ -86,6 +86,31 @@ final class ExerciseCatalogTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(cuedCount, 93, "技术要点累计应 ≥ 93（51 高频 + 42 新动作）")
     }
 
+    // FR-EX2 退阶/进阶 + 注意事项（§7.1）批次无关不变量：
+    //  - 退阶/进阶/安全注意三组字段各自中英成对（缺则两边都缺，绝不单边露原始码）；
+    //  - 有要点的动作（93）应同时有退阶+进阶（同批补齐）；
+    //  - 安全注意只给有风险的动作（≥40），低风险动作 nil（诚实不臆造风险，§7.1）。
+    func testScalingAndSafetyAreBilingualAndCovered() {
+        var scaled = 0, safe = 0
+        for e in ExerciseCatalog.minimal.entries {
+            XCTAssertEqual(e.regressionZh == nil, e.regressionEn == nil, "\(e.id) 退阶中英不成对")
+            XCTAssertEqual(e.progressionZh == nil, e.progressionEn == nil, "\(e.id) 进阶中英不成对")
+            XCTAssertEqual(e.safetyNoteZh == nil, e.safetyNoteEn == nil, "\(e.id) 安全注意中英不成对")
+            // 退阶与进阶配对出现（要么都有、要么都无；不单给一边）
+            XCTAssertEqual(e.regressionZh == nil, e.progressionZh == nil, "\(e.id) 退阶/进阶未配对")
+            if e.regressionZh != nil { scaled += 1 }
+            if e.safetyNoteZh != nil { safe += 1 }
+            // 有要点的动作应已补退阶/进阶（同批；防止漏填）
+            if e.techniqueCuesEn != nil {
+                XCTAssertNotNil(e.regressionZh, "\(e.id) 有技术要点却缺退阶/进阶")
+            }
+            // 安全注意不得做成孤立空串
+            if let s = e.safetyNoteZh { XCTAssertFalse(s.isEmpty, "\(e.id) safetyNoteZh 空") }
+        }
+        XCTAssertGreaterThanOrEqual(scaled, 93, "退阶/进阶应覆盖 93 个有要点的动作")
+        XCTAssertGreaterThanOrEqual(safe, 55, "安全注意应覆盖有风险的动作（实际 60；留小余量防降级）")
+    }
+
     // 诚实红线：front-squat 来源是 CrossFit.com（非证据级）→ 只留技术要点、不挂循证标签（不冒充循证）。
     func testFrontSquatHasCuesButNoEvidenceTag() {
         let e = ExerciseCatalog.minimal.entry(id: "front-squat")
@@ -103,5 +128,11 @@ final class ExerciseCatalogTests: XCTestCase {
         XCTAssertNil(e?.techniqueCuesZh)
         XCTAssertNil(e?.evidenceTag)
         XCTAssertNil(e?.evidenceUrl)
+        // 退阶/进阶/安全注意同属加性展示字段，长尾未填动作应全 nil（零回归）。
+        // 故意跨语言抽查（regression 查 Zh、progression 查 En）；另一半由
+        // testScalingAndSafetyAreBilingualAndCovered 的中英成对约束覆盖。
+        XCTAssertNil(e?.regressionZh)
+        XCTAssertNil(e?.progressionEn)
+        XCTAssertNil(e?.safetyNoteZh)
     }
 }

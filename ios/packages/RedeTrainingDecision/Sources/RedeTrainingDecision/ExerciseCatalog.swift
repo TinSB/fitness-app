@@ -65,6 +65,16 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
     public let techniqueCuesEn: [String]?
     /// FR-EX2 循证来源 URL（与 evidenceTag 配对，已对抗核验真实可访问；缺 = 不显示链接）。
     public let evidenceUrl: String?
+    /// FR-EX2 退阶（更易/更安全的做法）/ 进阶（更难的做法）双语 prose（缺 = 详情页不显示该行、零回归）。
+    public let regressionZh: String?
+    public let regressionEn: String?
+    public let progressionZh: String?
+    public let progressionEn: String?
+    /// FR-EX2 注意事项 / 保守安全提示（双语；映射规格「禁忌提示」，但按 §7.1 fitness≠medical
+    /// 措辞——只给保守训练注意 +「必要时咨询专业人士」，绝不诊断/治疗/防伤承诺）。
+    /// 取代旧的单语 contraindicationHint（后者保留为 legacy、恒 nil）。
+    public let safetyNoteZh: String?
+    public let safetyNoteEn: String?
 
     public init(
         id: String, nameZh: String = "", nameEn: String = "",
@@ -78,7 +88,10 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
         replacedBy: String? = nil,
         contraindicationHint: String? = nil, evidenceTag: String? = nil,
         techniqueCuesZh: [String]? = nil, techniqueCuesEn: [String]? = nil,
-        evidenceUrl: String? = nil
+        evidenceUrl: String? = nil,
+        regressionZh: String? = nil, regressionEn: String? = nil,
+        progressionZh: String? = nil, progressionEn: String? = nil,
+        safetyNoteZh: String? = nil, safetyNoteEn: String? = nil
     ) {
         self.id = id
         self.nameZh = nameZh
@@ -102,6 +115,12 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
         self.techniqueCuesZh = techniqueCuesZh
         self.techniqueCuesEn = techniqueCuesEn
         self.evidenceUrl = evidenceUrl
+        self.regressionZh = regressionZh
+        self.regressionEn = regressionEn
+        self.progressionZh = progressionZh
+        self.progressionEn = progressionEn
+        self.safetyNoteZh = safetyNoteZh
+        self.safetyNoteEn = safetyNoteEn
     }
 
     enum CodingKeys: String, CodingKey {
@@ -110,6 +129,7 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
         case loadType, loadFactor, progressionKey, isGuided, replacedBy
         case contraindicationHint, evidenceTag
         case techniqueCuesZh, techniqueCuesEn, evidenceUrl
+        case regressionZh, regressionEn, progressionZh, progressionEn, safetyNoteZh, safetyNoteEn
     }
 
     public init(from decoder: Decoder) throws {
@@ -140,6 +160,12 @@ public struct ExerciseCatalogEntry: Equatable, Sendable, Codable {
         techniqueCuesZh = try c.decodeIfPresent([String].self, forKey: .techniqueCuesZh)
         techniqueCuesEn = try c.decodeIfPresent([String].self, forKey: .techniqueCuesEn)
         evidenceUrl = try c.decodeIfPresent(String.self, forKey: .evidenceUrl)
+        regressionZh = try c.decodeIfPresent(String.self, forKey: .regressionZh)
+        regressionEn = try c.decodeIfPresent(String.self, forKey: .regressionEn)
+        progressionZh = try c.decodeIfPresent(String.self, forKey: .progressionZh)
+        progressionEn = try c.decodeIfPresent(String.self, forKey: .progressionEn)
+        safetyNoteZh = try c.decodeIfPresent(String.self, forKey: .safetyNoteZh)
+        safetyNoteEn = try c.decodeIfPresent(String.self, forKey: .safetyNoteEn)
     }
 }
 
