@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "wave-17",
+  "catalogVersion": "wave-18",
   "exercises": [
     {
       "id": "bench-press",
@@ -3713,6 +3713,221 @@
       "loadFactor": 1.0,
       "isGuided": true,
       "rank": 1540
+    },
+    {
+      "id": "decline-situp",
+      "movementPattern": "core",
+      "primaryMuscle": "core",
+      "secondaryMuscles": [],
+      "equipment": "bodyweight",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "core"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "下斜仰卧起坐",
+      "nameEn": "Decline sit-up",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1550
+    },
+    {
+      "id": "bicycle-crunch",
+      "movementPattern": "core",
+      "primaryMuscle": "core",
+      "secondaryMuscles": [],
+      "equipment": "bodyweight",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "core"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "单车卷腹",
+      "nameEn": "Bicycle crunch",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1560
+    },
+    {
+      "id": "dead-bug",
+      "movementPattern": "core",
+      "primaryMuscle": "core",
+      "secondaryMuscles": [],
+      "equipment": "bodyweight",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "core"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "死虫式",
+      "nameEn": "Dead bug",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1570
+    },
+    {
+      "id": "single-leg-hip-thrust",
+      "movementPattern": "hinge",
+      "primaryMuscle": "glutes",
+      "secondaryMuscles": [
+        "hamstrings"
+      ],
+      "equipment": "bodyweight",
+      "kind": "compound",
+      "substitutionGroups": [
+        "hinge"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "单腿臀冲",
+      "nameEn": "Single-leg hip thrust",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1580
+    },
+    {
+      "id": "lateral-lunge",
+      "movementPattern": "squat-pattern",
+      "primaryMuscle": "quads",
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "equipment": "dumbbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "squat"
+      ],
+      "startWeightKg": 10.0,
+      "nameZh": "侧向弓步",
+      "nameEn": "Lateral lunge",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 1590
+    },
+    {
+      "id": "curtsy-lunge",
+      "movementPattern": "squat-pattern",
+      "primaryMuscle": "glutes",
+      "secondaryMuscles": [
+        "quads"
+      ],
+      "equipment": "dumbbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "squat"
+      ],
+      "startWeightKg": 10.0,
+      "nameZh": "屈膝礼弓步",
+      "nameEn": "Curtsy lunge",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 1600
+    },
+    {
+      "id": "leg-press-calf-raise",
+      "movementPattern": "calf-raise",
+      "primaryMuscle": "calves",
+      "secondaryMuscles": [],
+      "equipment": "plate-loaded",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "calves"
+      ],
+      "startWeightKg": 40.0,
+      "nameZh": "腿举机提踵",
+      "nameEn": "Leg-press calf raise",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 1610
+    },
+    {
+      "id": "decline-db-press",
+      "movementPattern": "horizontal-press",
+      "primaryMuscle": "chest",
+      "secondaryMuscles": [
+        "triceps",
+        "front-delt"
+      ],
+      "equipment": "dumbbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "chest-press"
+      ],
+      "startWeightKg": 22.5,
+      "nameZh": "下斜哑铃卧推",
+      "nameEn": "Decline DB press",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 1620
+    },
+    {
+      "id": "bench-dip",
+      "movementPattern": "triceps-extension",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [
+        "chest",
+        "front-delt"
+      ],
+      "equipment": "bodyweight",
+      "kind": "compound",
+      "substitutionGroups": [
+        "triceps"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "凳上臂屈伸",
+      "nameEn": "Bench dip",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1630
+    },
+    {
+      "id": "diamond-push-up",
+      "movementPattern": "horizontal-press",
+      "primaryMuscle": "triceps",
+      "secondaryMuscles": [
+        "chest",
+        "front-delt"
+      ],
+      "equipment": "bodyweight",
+      "kind": "compound",
+      "substitutionGroups": [
+        "triceps"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "钻石俯卧撑",
+      "nameEn": "Diamond push-up",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1640
+    },
+    {
+      "id": "zottman-curl",
+      "movementPattern": "curl",
+      "primaryMuscle": "biceps",
+      "secondaryMuscles": [
+        "forearm"
+      ],
+      "equipment": "dumbbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "biceps-curl"
+      ],
+      "startWeightKg": 7.5,
+      "nameZh": "兹特曼弯举",
+      "nameEn": "Zottman curl",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 1650
     }
   ]
 }
