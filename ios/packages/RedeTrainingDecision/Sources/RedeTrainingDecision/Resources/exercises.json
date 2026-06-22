@@ -1,5 +1,5 @@
 {
-  "catalogVersion": "wave-16",
+  "catalogVersion": "wave-17",
   "exercises": [
     {
       "id": "bench-press",
@@ -3466,6 +3466,253 @@
       "loadFactor": 1.0,
       "isGuided": false,
       "rank": 1410
+    },
+    {
+      "id": "hip-abduction",
+      "movementPattern": "hip-abduction",
+      "primaryMuscle": "glutes",
+      "secondaryMuscles": [],
+      "equipment": "selectorized",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "hip-abduction"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "髋外展机",
+      "nameEn": "Hip abduction (machine)",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 1420
+    },
+    {
+      "id": "hip-adduction",
+      "movementPattern": "hip-adduction",
+      "primaryMuscle": "adductors",
+      "secondaryMuscles": [],
+      "equipment": "selectorized",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "hip-adduction"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "髋内收机",
+      "nameEn": "Hip adduction (machine)",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 1430
+    },
+    {
+      "id": "cable-glute-kickback",
+      "movementPattern": "hinge",
+      "primaryMuscle": "glutes",
+      "secondaryMuscles": [
+        "hamstrings"
+      ],
+      "equipment": "cable",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "hinge"
+      ],
+      "startWeightKg": 10.0,
+      "nameZh": "绳索臀后踢",
+      "nameEn": "Cable glute kickback",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1440
+    },
+    {
+      "id": "front-raise",
+      "movementPattern": "front-raise",
+      "primaryMuscle": "front-delt",
+      "secondaryMuscles": [],
+      "equipment": "dumbbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "front-delt"
+      ],
+      "startWeightKg": 7.5,
+      "nameZh": "前平举",
+      "nameEn": "Front raise",
+      "loadType": "external",
+      "loadFactor": 2.0,
+      "isGuided": false,
+      "rank": 1450
+    },
+    {
+      "id": "upright-row",
+      "movementPattern": "upright-row",
+      "primaryMuscle": "side-delt",
+      "secondaryMuscles": [
+        "traps"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "upright-row"
+      ],
+      "startWeightKg": 25.0,
+      "nameZh": "直立划船",
+      "nameEn": "Upright row",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1460
+    },
+    {
+      "id": "trap-bar-deadlift",
+      "movementPattern": "hinge",
+      "primaryMuscle": "glutes",
+      "secondaryMuscles": [
+        "quads",
+        "hamstrings",
+        "lower-back"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "hinge"
+      ],
+      "startWeightKg": 80.0,
+      "nameZh": "梯铃硬拉",
+      "nameEn": "Trap-bar deadlift",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1470
+    },
+    {
+      "id": "stiff-leg-deadlift",
+      "movementPattern": "hinge",
+      "primaryMuscle": "hamstrings",
+      "secondaryMuscles": [
+        "glutes",
+        "lower-back"
+      ],
+      "equipment": "barbell",
+      "kind": "compound",
+      "substitutionGroups": [
+        "hinge"
+      ],
+      "startWeightKg": 60.0,
+      "nameZh": "直腿硬拉",
+      "nameEn": "Stiff-leg deadlift",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1480
+    },
+    {
+      "id": "glute-ham-raise",
+      "movementPattern": "knee-flexion",
+      "primaryMuscle": "hamstrings",
+      "secondaryMuscles": [
+        "glutes"
+      ],
+      "equipment": "bodyweight",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "hamstring-curl"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "臀腿举",
+      "nameEn": "Glute-ham raise",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1490
+    },
+    {
+      "id": "wrist-curl",
+      "movementPattern": "wrist-curl",
+      "primaryMuscle": "forearm",
+      "secondaryMuscles": [],
+      "equipment": "dumbbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "forearm"
+      ],
+      "startWeightKg": 7.5,
+      "nameZh": "腕弯举",
+      "nameEn": "Wrist curl",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1500
+    },
+    {
+      "id": "reverse-wrist-curl",
+      "movementPattern": "wrist-curl",
+      "primaryMuscle": "forearm",
+      "secondaryMuscles": [],
+      "equipment": "dumbbell",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "forearm"
+      ],
+      "startWeightKg": 5.0,
+      "nameZh": "反向腕弯举",
+      "nameEn": "Reverse wrist curl",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1510
+    },
+    {
+      "id": "hanging-leg-raise",
+      "movementPattern": "core",
+      "primaryMuscle": "core",
+      "secondaryMuscles": [],
+      "equipment": "bodyweight",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "core"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "悬垂举腿",
+      "nameEn": "Hanging leg raise",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1520
+    },
+    {
+      "id": "ab-wheel",
+      "movementPattern": "core",
+      "primaryMuscle": "core",
+      "secondaryMuscles": [],
+      "equipment": "bodyweight",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "core"
+      ],
+      "startWeightKg": 0.0,
+      "nameZh": "腹轮",
+      "nameEn": "Ab-wheel rollout",
+      "loadType": "bodyweight",
+      "loadFactor": 1.0,
+      "isGuided": false,
+      "rank": 1530
+    },
+    {
+      "id": "donkey-calf-raise",
+      "movementPattern": "calf-raise",
+      "primaryMuscle": "calves",
+      "secondaryMuscles": [],
+      "equipment": "plate-loaded",
+      "kind": "isolation",
+      "substitutionGroups": [
+        "calves"
+      ],
+      "startWeightKg": 40.0,
+      "nameZh": "驴式提踵",
+      "nameEn": "Donkey calf raise",
+      "loadType": "external",
+      "loadFactor": 1.0,
+      "isGuided": true,
+      "rank": 1540
     }
   ]
 }

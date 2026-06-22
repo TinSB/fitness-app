@@ -67,6 +67,11 @@ extension RedeStrings {
         "fly": ("飞鸟", "Fly"),
         "shrug": ("耸肩", "Shrug"),
         "core": ("核心", "Core"),
+        "hip-abduction": ("髋外展", "Hip abduction"),   // wave-17
+        "hip-adduction": ("髋内收", "Hip adduction"),   // wave-17
+        "front-raise": ("前平举", "Front raise"),       // wave-17
+        "upright-row": ("直立划船", "Upright row"),     // wave-17
+        "wrist-curl": ("腕屈伸", "Wrist curl"),         // wave-17（含正/反向腕弯举）
     ]
 
     private static let muscleLabels: [String: (zh: String, en: String)] = [
@@ -87,6 +92,7 @@ extension RedeStrings {
         "hamstrings": ("腘绳", "Hamstrings"),
         "glutes": ("臀", "Glutes"),
         "calves": ("小腿", "Calves"),
+        "adductors": ("内收肌", "Adductors"),   // wave-17：髋内收机
     ]
 
     private static let equipmentLabels: [String: (zh: String, en: String)] = [
