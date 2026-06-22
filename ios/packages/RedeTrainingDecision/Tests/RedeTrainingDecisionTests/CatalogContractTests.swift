@@ -35,11 +35,11 @@ final class CatalogContractTests: XCTestCase {
     // MARK: - 解码完整性
 
     func testBundledCatalogIntegrity() {
-        XCTAssertEqual(catalog.catalogVersion, "wave-15")
-        XCTAssertEqual(catalog.entries.count, 123)
+        XCTAssertEqual(catalog.catalogVersion, "wave-16")   // wave-16：+18 新动作（核心/单侧腿/手臂/力量举变体）
+        XCTAssertEqual(catalog.entries.count, 141)
         // id 唯一 + 永生合同的前半（唯一）；rank 唯一保证匹配全序确定
-        XCTAssertEqual(Set(catalog.entries.map(\.id)).count, 123, "id 重复")
-        XCTAssertEqual(Set(catalog.entries.map(\.rank)).count, 123, "rank 重复——匹配次序歧义")
+        XCTAssertEqual(Set(catalog.entries.map(\.id)).count, 141, "id 重复")
+        XCTAssertEqual(Set(catalog.entries.map(\.rank)).count, 141, "rank 重复——匹配次序歧义")
         // 锚点：迁移自原数组的首尾条目
         XCTAssertEqual(catalog.entry(id: "bench-press")?.rank, 0)
         XCTAssertEqual(catalog.entry(id: "bench-press")?.startWeightKg, 60)
