@@ -3131,7 +3131,21 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1240
+      "rank": 1240,
+      "techniqueCuesZh": [
+        "俯卧在垫上，肘关节正对肩膀下方，前臂平行、掌心朝下；脚尖踩地、勾脚背（脚趾向胫骨方向收），建立稳定底座。",
+        "从头到脚跟连成一条直线：髋部保持水平（不要塌腰也不要翘臀），目视双手前方地面让颈部中立。",
+        "收紧核心、肚脐内收向脊柱靠拢，同时夹紧臀部和大腿，把躯干锁成刚体，防止下背反弓。",
+        "不要耸肩——肩膀下沉远离耳朵；用短而可控的节奏平稳呼吸、不要憋气，一旦髋部开始下沉就结束这一组。"
+      ],
+      "techniqueCuesEn": [
+        "Set up prone on a mat with your elbows directly under your shoulders, forearms parallel and palms down; come onto your toes with ankles dorsiflexed (toes pulled toward shins) for a stable base.",
+        "Set a straight line from head to heels: keep your hips level (don't let them sag or pike up) and your neck neutral by looking at the floor just ahead of your hands.",
+        "Brace your core by drawing your navel toward your spine, and squeeze your glutes and quads to lock the torso stiff and prevent your low back from arching.",
+        "Avoid shrugging—keep shoulders pulled down away from your ears; breathe steadily in short controlled breaths rather than holding your breath, and stop the hold once your hips start to drop."
+      ],
+      "evidenceTag": "ACE Exercise Library: Front Plank",
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/32/front-plank/"
     },
     {
       "id": "side-plank",
@@ -3149,7 +3163,21 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1250
+      "rank": 1250,
+      "techniqueCuesZh": [
+        "侧躺，双腿伸直上下叠放、双脚并拢；前臂平贴垫面，肘关节正对肩膀正下方（不靠前也不靠后），建立稳定支撑底座。",
+        "全身从头到脚跟连成一条直线——髋部抬起并正对前方（不要塌陷或向后倾倒），脊柱中立，头与脊柱保持一线。",
+        "收紧核心与腹斜肌，把髋部顶离垫面，用前臂和下侧脚的外缘支撑；夹紧臀部让整条线保持刚硬。",
+        "全程平稳呼吸（顶髋时呼气，切勿憋气）；在最高位按时间保持、不让下侧髋部下沉，再控制着缓慢落下。"
+      ],
+      "techniqueCuesEn": [
+        "Lie on your side with legs extended and stacked, feet together; place your forearm flat on the mat with the elbow directly under your shoulder (not in front of or behind it) for a stable base.",
+        "Stack your body in one straight line from head to heels - keep hips lifted and squared forward (don't let them sag or roll backward), spine neutral, and head aligned with your spine.",
+        "Brace your core and obliques to drive the hips up off the mat, balancing on the forearm and the side of the bottom foot; squeeze your glutes to keep the line rigid.",
+        "Breathe steadily throughout (exhale as you lift the hips, don't hold your breath); hold the top position for time without letting the bottom hip drop, then lower under control."
+      ],
+      "evidenceTag": "ACE Exercise Library: Side Plank with Straight Leg",
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/101/side-plank-with-straight-leg/"
     },
     {
       "id": "lying-leg-raise",
@@ -3167,7 +3195,21 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1260
+      "rank": 1260,
+      "techniqueCuesZh": [
+        "仰卧在垫子上，双腿伸直并拢，双臂放体侧、手掌压实地面建立稳定底座；也可把手垫在臀部下方帮助托住下背。",
+        "建立轻微骨盆后倾，让下背始终贴平地面、核心收紧；全程保持\"沉肋、贴背\"，不要让腰椎拱起离地。",
+        "膝盖保持伸直（自然不锁死），双腿一起上抬到大约垂直（与躯干约 90°）；再往上对腹肌帮助不大，还容易把骨盆带离地面。",
+        "缓慢有控制地下放，停在离地面 2-3 厘米处保持持续张力、保护腰部；上抬呼气、下放吸气；一旦下背开始拱起就减小幅度或微屈膝。"
+      ],
+      "techniqueCuesEn": [
+        "Lie flat on your back on a mat with legs straight and together, arms by your sides with palms pressing into the floor for a stable base; you can tuck your hands under your glutes to support the lower back.",
+        "Set a slight posterior pelvic tilt so your lower back stays flat against the floor and your core is braced; keep this rib-down, flat-back position throughout instead of letting the lumbar spine arch up.",
+        "Keeping the knees straight (soft, not locked), lift both legs together until they reach roughly vertical (about 90 degrees to the torso); going higher adds little for the abs and tends to round the pelvis off the floor.",
+        "Lower the legs slowly under control and stop 2-3 inches above the floor to keep constant tension and protect the low back; exhale as you raise, inhale as you lower, and reduce range or bend the knees if your back starts to arch."
+      ],
+      "evidenceTag": "Kim K, Lee T. Comparison of muscular activities in the abdomen and lower limbs while performing sit-up and leg-raise. J Phys Ther Sci. 2016;28(2):491-494.",
+      "evidenceUrl": "https://www.jstage.jst.go.jp/article/jpts/28/2/28_jpts-2015-820/_article/-char/en"
     },
     {
       "id": "russian-twist",
@@ -3185,7 +3227,19 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1270
+      "rank": 1270,
+      "techniqueCuesZh": [
+        "坐在地面屈膝，上身后仰到约 45° 角，双手一起握住一只哑铃，贴近胸口/胸骨前方。",
+        "脊柱拉长保持中立、核心用力收紧——别让下背拱起或塌陷，全程保持挺胸。",
+        "用躯干（不只是手臂）发力旋转，让哑铃在两侧髋部之间画一道平稳受控的弧线，手臂微屈、与躯干作为一个整体一起转动。",
+        "向每侧旋转时呼气、回中线时吸气；控制幅度，别靠惯性甩重量。降阶时双脚踩地，进阶时脚跟抬离地面几厘米。"
+      ],
+      "techniqueCuesEn": [
+        "Sit on the floor with knees bent, then recline your torso to about a 45-degree angle, holding one dumbbell with both hands close to your chest or sternum.",
+        "Set a tall, neutral spine and brace your core hard - do not let your lower back round or collapse; keep your chest lifted throughout the set.",
+        "Rotate from the trunk (not just the arms), sweeping the dumbbell from hip to hip in a smooth, controlled arc while your arms stay slightly bent and move as one unit with your torso.",
+        "Exhale as you rotate to each side and inhale returning toward center; control the range and avoid swinging the weight by momentum. To regress keep feet planted, to progress lift your heels a few inches off the floor."
+      ]
     },
     {
       "id": "cable-woodchop",
@@ -3203,7 +3257,19 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1280
+      "rank": 1280,
+      "techniqueCuesZh": [
+        "把绳索滑轮调到立柱最高处，挂上绳头或单握把；身体侧对配重片站成运动姿势，双脚略宽于肩、膝盖微屈，双手在高侧一起握住握把。",
+        "核心用力收紧、上身保持高挺稳定——力量来自胸椎和髋部的旋转，而不是弯腰或卷腹给下背受力；手臂保持相对伸直，让躯干发力而不是靠肩膀。",
+        "把握把沿对角线向下、横过身体劈向对侧髋部，做出受控的劈砍动作，旋转躯干并随转体碾转后脚；下背旋转到安全范围边缘前就停住，别拧过头。",
+        "向下横劈时呼气，控制握把回到起点时吸气，走完整且不痛的活动范围；回程要对抗绳索张力、别让它把躯干甩回去，做完一侧全部次数再换边。"
+      ],
+      "techniqueCuesEn": [
+        "Set the cable pulley to the top of the column and attach a rope or single handle; stand side-on to the stack in an athletic stance with feet just outside shoulder width, knees softly bent, and grip the handle with both hands at the high side.",
+        "Brace your core hard and keep your torso tall and stable—the power comes from rotating through your mid-back and hips, not from bending or crunching the lower back; keep your arms relatively straight so the trunk does the work, not the shoulders.",
+        "Pull the handle diagonally down and across your body toward the opposite hip in a controlled chop, rotating your trunk and pivoting the rear foot as you turn; stop the rotation before your lower back twists past a safe range.",
+        "Exhale as you chop down and across, inhale as you control the handle back up to the start through a full but pain-free range; resist the cable on the way back rather than letting it snap your torso around, and finish all reps before switching sides."
+      ]
     },
     {
       "id": "pallof-press",
@@ -3221,7 +3287,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1290
+      "rank": 1290,
+      "techniqueCuesZh": [
+        "侧身（与拉索成 90°）站在龙门架旁，滑轮调到约胸口高度；双手在胸骨前握住把手，向外侧迈步离开配重片，直到拉索绷紧、把你往机器方向拽。",
+        "双脚约与肩同宽、膝盖微屈，髋部和肩膀都正对前方，收紧核心，顶住拉索把躯干往机器方向拧转的横向力。",
+        "沿身体中线把把手从胸前笔直推到手臂完全伸直，双手用力均匀；目的是抗旋转、不是主动扭转，所以肩和髋都不要跟着转。",
+        "推出时呼气、核心持续收紧，在伸直位顶住拉力停一拍，再吸气把把手有控制地收回胸前，别让它把你拽得失去平衡；做完一侧次数后换另一侧。"
+      ],
+      "techniqueCuesEn": [
+        "Stand side-on (perpendicular) to the cable column with the pulley set at about chest height; grip the handle with both hands at your sternum and step away from the stack until the cable is taut and pulling you toward the machine.",
+        "Set feet about shoulder-width with a slight knee bend, square your hips and shoulders to face straight ahead, and brace your core so the cable's sideways pull cannot rotate your trunk toward the stack.",
+        "Press the handle straight out from your chest to full arm extension along your body's midline, keeping equal pressure in both hands; the goal is to resist rotation, not to twist, so do not let your shoulders or hips turn.",
+        "Exhale and keep the core braced as you press out, hold the extended position for a beat resisting the pull, then inhale and return the handle to your chest under control without letting it yank you off balance; complete all reps, then switch sides."
+      ],
+      "evidenceTag": "Juan-Recio et al., Medicina (Kaunas) (2025): \"Effect of Body Position and Support Surface on the Postural Control Challenge During the Pallof Press Exercise: A Smartphone Accelerometer-Based Study\"",
+      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11857476/"
     },
     {
       "id": "step-up",
@@ -3241,7 +3321,21 @@
       "loadType": "external",
       "loadFactor": 2.0,
       "isGuided": false,
-      "rank": 1300
+      "rank": 1300,
+      "techniqueCuesZh": [
+        "台阶设在膝盖高度或更低（约 30-45 厘米），人站得离台阶近一点；双手各握一只哑铃垂于体侧，掌心相对，手臂自然下垂放松。",
+        "前脚整只踏实台阶面，重量压在全脚掌上；上身挺直、核心收紧，让两侧哑铃保持稳定不晃。",
+        "用前腿脚跟发力站起，膝盖始终对准第二脚趾方向（不要内扣）；尽量别靠后脚脚尖猛蹬借力。",
+        "顶端完全站直，再用 2-3 秒控制把后脚放回地面；登上时呼气，下落时吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Set the box at knee height or lower (about 12-18 in) and stand close to it; hold a dumbbell in each hand at your sides with palms facing in and arms hanging long.",
+        "Place your lead foot fully on the platform, weight through the whole foot, and keep your torso tall with a braced core so the dumbbells stay still at your sides.",
+        "Drive through the heel of the lead leg to stand up, keeping the knee tracking over your second toe (don't let it cave in); avoid pushing off hard with the trailing toes.",
+        "Stand fully upright at the top, then lower the trailing foot back to the floor under control over 2-3 seconds; exhale as you step up, inhale as you step down."
+      ],
+      "evidenceTag": "ACE Exercise Library: Step-Up",
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/28/step-up/"
     },
     {
       "id": "reverse-lunge",
@@ -3261,7 +3355,19 @@
       "loadType": "external",
       "loadFactor": 2.0,
       "isGuided": false,
-      "rank": 1310
+      "rank": 1310,
+      "techniqueCuesZh": [
+        "双脚与髋同宽站直，双手各持一只哑铃自然垂于体侧（中立握），收紧核心、肋骨叠在骨盆正上方，别让重量把上身拽向前。",
+        "一只脚笔直向后撤步（不要踩在一条直线上），约与髋同宽，保持上身直立，重心主要压在前脚的脚跟与脚掌中段。",
+        "控制着下蹲，直到前侧大腿接近水平、后膝轻触地面，前侧小腿大致垂直、前膝对准脚尖方向（不要向内塌）。",
+        "用前脚脚跟发力站起，全程让哑铃自然垂直下垂；下蹲时吸气，蹬起回到起始位时呼气。"
+      ],
+      "techniqueCuesEn": [
+        "Stand tall with feet hip-width apart, holding a dumbbell in each hand at your sides with a neutral grip; brace your core and stack your ribs over your hips so the load doesn't pull you forward.",
+        "Step one foot straight back (not onto a tightrope line) to about hip-width, keeping your torso upright and most of your weight loaded into the front heel and mid-foot.",
+        "Lower under control until your front thigh is near parallel and the back knee taps toward the floor, keeping the front shin roughly vertical and the front knee tracking over your toes (not caving inward).",
+        "Drive through the front heel to stand, letting the dumbbells hang straight down throughout; inhale as you lower and exhale as you push back up to the start."
+      ]
     },
     {
       "id": "walking-lunge",
@@ -3281,7 +3387,19 @@
       "loadType": "external",
       "loadFactor": 2.0,
       "isGuided": false,
-      "rank": 1320
+      "rank": 1320,
+      "techniqueCuesZh": [
+        "双脚与髋同宽站直，两手各持一只哑铃自然垂于体侧、掌心相对；迈出第一步前先收紧核心、肩部下沉后收。",
+        "向前迈出一步，步幅比平常走路更大，前脚掌踏实落地，前膝对准脚尖方向（不要内扣），躯干保持直立、稳在髋部上方。",
+        "控制下蹲到双膝约 90°、后膝接近地面但不触地；前脚跟发力站起，顺势把后腿带到前方进入下一步，连贯地向前行走。",
+        "每次下蹲时吸气、蹬起迈步时呼气；让哑铃自然垂直下垂，使负重落在脚掌中段，并保持步幅一致以走出完整活动幅度。"
+      ],
+      "techniqueCuesEn": [
+        "Stand tall with feet hip-width apart, holding a dumbbell in each hand at arm's length by your sides, palms facing in; brace your core and set your shoulders down and back before the first step.",
+        "Step forward with one leg into a stride longer than a normal walking step, planting the front foot flat with the front knee tracking in line over your toes (not caving inward) while keeping your torso upright over your hips.",
+        "Lower under control until both knees reach roughly 90 degrees and the trailing knee hovers just above the floor; drive through the front heel to stand and bring the rear leg through into the next step in one continuous walking motion.",
+        "Inhale as you descend into each lunge and exhale as you push up and step through; let the dumbbells hang straight down so the load stays over your midfoot and your stride length stays consistent for full range of motion."
+      ]
     },
     {
       "id": "back-extension",
@@ -3302,7 +3420,21 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1350
+      "rank": 1350,
+      "techniqueCuesZh": [
+        "髋垫卡在髋骨稍下方（顶在大腿根，别顶肚子），让骨盆能自由折叠；脚跟扣稳踝垫、双腿伸直。",
+        "双臂交叉抱胸（想加难度可双手轻扶后脑），颈部与脊柱保持中立成一条线，发力前先收紧核心。",
+        "从髋部折叠、控制着下放躯干，再夹紧臀部和腘绳肌把身体抬起，直到从头到脚跟连成一条直线。",
+        "抬到这条直线就停，腰部绝不超过中立位再后仰；起身呼气、下放吸气，全程缓慢走满幅度。"
+      ],
+      "techniqueCuesEn": [
+        "Set the hip pad just below your hip bones (on your upper thighs, not your stomach) so your pelvis is free to hinge, and anchor your heels under the ankle pads with legs straight.",
+        "Cross your arms over your chest (or place hands lightly behind your head for more load), keep your neck neutral in line with your spine, and brace your core before you move.",
+        "Hinge from the hips by lowering your torso under control, then drive up by squeezing your glutes and hamstrings until your body forms one straight line from head to heels.",
+        "Stop at that straight line, never arching the lower back past neutral; exhale as you rise and inhale as you lower, moving slowly through the full range."
+      ],
+      "evidenceTag": "Park SY & Yoo WG, \"Effects of hand and knee positions on muscular activity during trunk extension exercise with the Roman chair,\" Journal of Electromyography and Kinesiology, 24(6):972-976 (2014)",
+      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/25245250/"
     },
     {
       "id": "reverse-curl",
@@ -3322,7 +3454,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1380
+      "rank": 1380,
+      "techniqueCuesZh": [
+        "站直，双脚与髋同宽、膝盖微屈，用反握（掌心朝下/正手）握住杠铃，握距约与肩同宽，杠铃贴在大腿前侧、手臂自然伸直。",
+        "双肘紧贴体侧并全程固定在那里，肩胛收稳、脊柱中立、核心收紧，靠屈肘发力上举，而不是靠身体摆动借力。",
+        "只在肘关节屈曲，把杠铃朝肩部弯举，手腕保持稳定挺直（指节朝上），不要被重量压得手腕塌下去。",
+        "上举时呼气、控制到顶点，下放时吸气、缓慢经全程把手臂重新伸直；不要甩动身体，也不要让肘部前移借力把杠铃带起来。"
+      ],
+      "techniqueCuesEn": [
+        "Stand tall with feet hip-width apart, knees soft, and grip the barbell with a pronated (palms-down/overhand) grip about shoulder-width, so the bar rests against your thighs with arms fully extended.",
+        "Pin your elbows close to your sides and keep them fixed there throughout, with shoulder blades set, spine neutral, and core braced so the lift comes from elbow flexion, not body swing.",
+        "Curl the bar up toward your shoulders by bending only at the elbows, keeping the wrists firm and straight (knuckles up) rather than letting them droop under the load.",
+        "Exhale and raise the bar under control to the top, then inhale and lower slowly through the full range until the arms are extended again; avoid swinging or letting the elbows drift forward to cheat the weight up."
+      ],
+      "evidenceTag": "ACE Exercise Library: Reverse Bicep Curl",
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/310/reverse-bicep-curl/"
     },
     {
       "id": "spider-curl",
@@ -3340,7 +3486,19 @@
       "loadType": "external",
       "loadFactor": 2.0,
       "isGuided": false,
-      "rank": 1390
+      "rank": 1390,
+      "techniqueCuesZh": [
+        "把可调斜凳调到约 45°，胸腹贴在靠垫上俯卧其上，让双臂自然垂在斜凳顶端外、可以完全垂直下垂。",
+        "双脚踩稳保持平衡，双手各握一只哑铃，手臂从肩部完全垂直悬垂、掌心朝前；全程保持上臂固定不动、与地面垂直。",
+        "只屈肘把哑铃弯举上来，顶端挤压肱二头并外旋前臂（小指朝上），不要靠躯干晃动借力、也别让肩膀前移。",
+        "控制还原走完整行程，直到肘部接近伸直；上举时呼气、下放时吸气，保持持续张力，底部不要松劲休息。"
+      ],
+      "techniqueCuesEn": [
+        "Set an incline bench to roughly 45 degrees and lie face-down (prone) along it with your chest and stomach supported on the pad, so your arms can hang straight down off the top edge.",
+        "Plant your feet for balance and let both arms hang fully vertical from the shoulders with a dumbbell in each hand, palms facing forward; keep your upper arms still and perpendicular to the floor throughout.",
+        "Curl the dumbbells up by flexing only at the elbows, squeezing the biceps and supinating (turning the pinkies up) at the top, without swinging your torso or letting the shoulders drift forward.",
+        "Lower under control through a full range until the elbows are nearly straight; exhale as you curl up and inhale as you lower, keeping constant tension rather than resting at the bottom."
+      ]
     },
     {
       "id": "jm-press",
@@ -3360,7 +3518,19 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1400
+      "rank": 1400,
+      "techniqueCuesZh": [
+        "像窄握卧推一样建立支撑：仰卧上背与肩胛压实凳面，臀部贴垫、双脚踏实地面；正握（掌心朝脚）握距略窄于肩，手腕中立、叠在杠铃正上方。",
+        "出杠后把杠铃停在上胸上方，双肘内收、肘尖朝前（不要向两侧外展），核心收紧——肘部始终朝前才能把负荷压在肱三头肌上，同时保护肩关节。",
+        "控制下放，沿斜向轨迹朝下巴/下面部下降，让肘部向前下方移动、杠铃略向后回到脸部上方——它是颈后臂屈伸与推举的结合，不是垂直下放的卧推。",
+        "伸肘把杠铃推回，停在接近锁定前一点，保持肱三头肌持续张力；下放吸气、上推呼气，绝不让杠铃弹砸喉咙。"
+      ],
+      "techniqueCuesEn": [
+        "Set up like a close-grip bench: lie on the bench with upper back and shoulder blades pinned down, glutes on the pad and feet flat on the floor, then take a pronated grip just inside shoulder width with straight wrists stacked over the bar.",
+        "Unrack and hold the bar over your upper chest with elbows tucked in and pointed forward (not flared out to the sides) and your core braced — keeping the elbows forward is what loads the triceps and protects the shoulders.",
+        "Lower the bar in a controlled diagonal path toward your chin/lower face, letting the elbows travel forward and down so the bar drifts back over the face — a blend of a skull crusher and a press, not a straight-down bench rep.",
+        "Extend the elbows to drive the bar back up and stop just short of full lockout to keep constant tension on the triceps; inhale as you lower and exhale as you press, never bouncing the bar off the throat."
+      ]
     },
     {
       "id": "box-squat",
@@ -3380,7 +3550,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1330
+      "rank": 1330,
+      "techniqueCuesZh": [
+        "在身后放一个略低于平行位的箱子（或凳子），将杠铃扛在上背/后三角，退出后双脚站距略宽于肩、脚尖微微外展。",
+        "核心用力收紧、保持脊柱中立，先屈髋、笔直地向后坐向箱子（不是直上直下往下掉），小腿尽量保持垂直。",
+        "控制下放，轻轻坐到箱子上但不要弹跳、也不要完全放松——保持全身紧绷、短暂停顿，再用臀部蹬地起身。",
+        "顶部先吸气并收紧腹腔再下蹲，向后坐、在箱子上停顿时维持住这口气，蹬起过黏滞点时用力呼气。"
+      ],
+      "techniqueCuesEn": [
+        "Set a box (or bench) just below parallel height behind you, unrack the bar onto your upper back/rear delts, and step back into a wider-than-shoulder stance with toes turned out slightly.",
+        "Brace your core hard and keep a neutral spine, then break at the hips first and sit STRAIGHT BACK toward the box (don't just drop down), keeping your shins close to vertical.",
+        "Lower under control and lightly settle onto the box without bouncing or fully relaxing—stay tight, pause briefly, then drive your hips and the floor away to stand back up.",
+        "Inhale and brace at the top before descending, hold the brace as you sit back and pause on the box, and exhale forcefully as you drive up through the sticking point."
+      ],
+      "evidenceTag": "Swinton PA, Lloyd R, Keogh JWL, Agouris I, Stewart AD. A biomechanical comparison of the traditional squat, powerlifting squat, and box squat. J Strength Cond Res. 2012 Jul;26(7):1805-16.",
+      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/22505136/"
     },
     {
       "id": "pause-squat",
@@ -3400,7 +3584,19 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1340
+      "rank": 1340,
+      "techniqueCuesZh": [
+        "杠铃置于上背/后束（高杠位），在深蹲架内把安全销调到蹲到底的高度；出杠后退 1-2 步站稳，双脚约与肩同宽、脚尖外展 15-30 度。",
+        "大口吸气沉入腹部、核心狠狠绷紧，挺胸、脊柱中立；全脚掌（脚跟、大脚趾、小脚趾）踩实地面，膝盖顺着脚尖方向外推。",
+        "控制下蹲至少到大腿与地面平行，到底后稳稳停住、完全不动地暂停 2-3 秒，躯干保持绷紧——不要借弹力反弹、也不要松懈，再经前脚掌发力站起；暂停消除了牵张反射的反弹，逼股四头肌真正出力。",
+        "暂停期间和起身最吃力的阶段都保持绷紧、屏住呼吸，接近顶端再呼气；全程让杠铃压在脚掌中心正上方，避免起身时臀部先顶起来。"
+      ],
+      "techniqueCuesEn": [
+        "Set the bar on your upper back/rear delts (high-bar) in a power rack with safety pins set at depth, unrack it, take 1-2 steps back, and stand with feet about shoulder-width and toes turned out 15-30 degrees.",
+        "Take a big breath into your belly and brace your core hard, keep your chest up and spine neutral, and keep your whole foot (heel, big toe, little toe) planted with knees tracking out over your toes.",
+        "Descend under control to at least parallel, then hold a full, motionless 2-3 second pause in the bottom with the torso braced - do not bounce or relax, then drive up through midfoot, since the pause kills the stretch-reflex rebound and forces your quads to do the work.",
+        "Stay braced and hold your breath through the pause and the hardest part of the ascent, then exhale near the top; keep the bar over your midfoot the entire rep and avoid letting the hips shoot up first."
+      ]
     },
     {
       "id": "rack-pull",
@@ -3422,7 +3618,19 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1360
+      "rank": 1360,
+      "techniqueCuesZh": [
+        "把架内安全销或保护臂调到杠铃起始位于膝盖高度或略低于膝；双脚约与髋同宽，杠铃压在脚掌中段正上方，小腿几乎贴杠。",
+        "屈髋下沉，握距略宽于小腿外侧（正握或正反握皆可），挺胸、肩胛后收，收紧核心，让脊柱保持中立、不要弓背。",
+        "先拉紧杠铃消除旷量，再用脚跟蹬地、送髋向前站直，顶部夹紧臀部，不要后仰或过度反弓下背。",
+        "起拉前先吸气并收紧腹腔；下放时控制杠铃贴着大腿回到安全销上，临近顶部锁定时再呼气，别整组憋气。"
+      ],
+      "techniqueCuesEn": [
+        "Set the rack pins or safety arms so the bar starts at or just below knee height, then position your feet about hip-width with the bar over your mid-foot and your shins nearly touching it.",
+        "Hinge down and grip the bar just outside your shins (double-overhand or mixed grip), set your chest up, pull your shoulder blades back, and brace your core so the spine stays neutral, not rounded.",
+        "Take the slack out of the bar, then drive through your heels and push your hips forward to stand tall, squeezing your glutes at the top without leaning back or hyperextending your lower back.",
+        "Inhale and brace before you pull; lower the bar under control along your thighs back to the pins, and exhale near the top of the lockout rather than holding your breath the whole rep."
+      ]
     },
     {
       "id": "deficit-deadlift",
@@ -3444,7 +3652,19 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1370
+      "rank": 1370,
+      "techniqueCuesZh": [
+        "双脚踩在稳固的垫高物上（结实的杠铃片或垫块，一般 2-10 厘米），让杠铃比正常地面更低、加大行程；杠铃压在脚掌中部正上方，双脚约与髋同宽，小腿贴近杠铃。",
+        "屈髋下沉，在膝盖外侧正握或正反握抓杠；因为起始更深，要把臀部坐得更低、挺起胸口、收紧背阔肌，发力前先把脊柱锁在中立位。",
+        "用力收紧核心，然后整个脚掌发力、像把地面蹬开一样起杠，全程让杠铃贴着小腿和大腿走；髋膝同步伸展，锁定时夹紧臀部，不要后仰。",
+        "底部深吸一口气并憋住核心（瓦式呼吸），起杠全程保持，到顶再呼气；在加大的行程里控制下放，每一次都重新建立核心张力，别借垫高物反弹起杠。"
+      ],
+      "techniqueCuesEn": [
+        "Stand on a stable raised platform (a sturdy plate or block, typically 1-4 inches/2-10 cm) so the bar sits below normal floor height, increasing the range of motion; set the bar over mid-foot with feet about hip-width and shins close to the bar.",
+        "Hinge down and grip the bar just outside your knees (double-overhand or mixed grip); because of the deeper start, drop your hips lower, keep the chest tall, lats engaged, and lock the spine into a neutral position before any pull.",
+        "Brace your core hard, then drive through the whole foot and push the floor away, keeping the bar dragging close to your shins and thighs; extend hips and knees together and finish by squeezing the glutes at lockout without leaning back.",
+        "Take a big breath and brace at the bottom, hold it through the lift (Valsalva), and exhale at the top; control the descent through the full deficit range and reset your brace before each rep rather than bouncing off the platform."
+      ]
     },
     {
       "id": "seal-row",
@@ -3465,7 +3685,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1410
+      "rank": 1410,
+      "techniqueCuesZh": [
+        "用一张架高的平凳（或专用海豹划船平台），高度要让你趴下后手臂完全伸直仍能离地悬空；杠铃放在凳子下方，胸腹朝下趴好，让凳面托住整个躯干。",
+        "把身体固定住：额头/胸口贴紧凳面，夹紧臀部、收紧核心，让躯干全程保持不动——靠凳子而不是下背承担重量。",
+        "从手臂完全悬垂的位置起拉，采用略宽于肩的正握；拉时肘部向上向后驱动，肩胛后缩夹紧，直到杠铃触到凳子底面。",
+        "走完整行程并控制节奏，在顶端收缩处略作停顿；上拉时呼气，下放时吸气，把杠铃完全放回到彻底悬垂的起始位。"
+      ],
+      "techniqueCuesEn": [
+        "Set up on an elevated flat bench (or seal-row platform) high enough that your fully extended arms hang clear of the floor when you lie face-down; load the barbell underneath and lie chest-and-hips down with the bench supporting your torso.",
+        "Anchor your body: keep your forehead/chest pinned to the pad, squeeze your glutes, and brace your core so your torso stays still — let the bench, not your lower back, support the load throughout.",
+        "Start from a dead hang with a slightly-wider-than-shoulder overhand grip, then row by driving your elbows up and back, retracting and squeezing your shoulder blades together until the bar touches the underside of the bench.",
+        "Pull through full range with control, pausing briefly at the top contraction; exhale as you row up and inhale as you lower the bar all the way back to a complete dead hang."
+      ],
+      "evidenceTag": "Fischer J, Burger C, Manieu Seguel J, Rodoplu C, Paternoster FK, Tilp M, Konrad A. \"Impact of different ranges of motion in the prone barbell row on muscle excitation.\" J Electromyogr Kinesiol. 2025 Aug;83:103025.",
+      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/40513198/"
     },
     {
       "id": "hip-abduction",
@@ -3483,7 +3717,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 1420
+      "rank": 1420,
+      "techniqueCuesZh": [
+        "坐到底、后背平贴靠垫，膝/大腿外侧顶住活动挡板；把起始宽度挡位调到双腿并拢（或略窄于髋宽）开始，配重销选中等重量。",
+        "臀部坐实座位，双脚踏稳脚踏，收紧核心让躯干保持稳定——靠双腿发力外展，别晃髋或往前出溜。",
+        "顺畅且有控制地把膝盖向外打开到舒适的终点（别强行外掰、超过骨盆能坐稳的范围），在最宽处夹紧臀部外侧。",
+        "动作放慢、尤其回程要顶住挡板控制回起点，别让两块垫子哐当合拢；外推时呼气、收腿时吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Sit fully back into the machine with your back flat against the pad and the outer side of your knees/thighs against the moving pads; adjust the width-stop so your legs start together (or just inside hip width) and select a moderate weight on the pin.",
+        "Plant your glutes firmly in the seat, keep both feet flat on the footrests, and brace your core so your torso stays still—let the legs do the work rather than rocking your hips or sliding forward.",
+        "Press your knees outward smoothly and under control to a comfortable end range (do not force the legs apart past where the pelvis stays seated), squeezing the outer glutes at the widest point.",
+        "Move slowly—especially on the return—and resist the pads back to the start instead of letting them slam together; exhale as you push out and inhale as you bring the legs back in."
+      ],
+      "evidenceTag": "de Almeida Paz et al., Journal of Bodywork and Movement Therapies, 30:160-167 (2022)",
+      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/35500965/"
     },
     {
       "id": "hip-adduction",
@@ -3501,7 +3749,19 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 1430
+      "rank": 1430,
+      "techniqueCuesZh": [
+        "调好器械，让腿垫靠在大腿内侧（不是膝盖），双腿张到舒服、不疼的起始宽度；坐直，整个后背和臀部贴靠背，双手握住把手。",
+        "保持脊柱中立、核心收紧，骨盆稳定压实在座垫上；不要塌腰，也别让腿垫把你撞到过度拉伸的起始位。",
+        "用大腿内侧发力，顺畅地把腿垫夹拢到几乎相碰，在最紧处略停一下；靠内收肌发力，不要靠躯干前倾或猛然带动。",
+        "控制还原，双腿只打开到不丢张力、腕部不发生刺痛的幅度；夹拢时呼气，缓慢打开时吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Set up the machine so the thigh pads sit against the inner thighs (not the knees) with legs spread to a comfortable, pain-free start width; sit tall with your whole back and glutes against the backrest and grip the handles.",
+        "Keep your spine neutral and core braced, with the pelvis stable and pressed into the seat—avoid arching the lower back or letting the pads force you into an overstretched start position.",
+        "Squeeze your inner thighs to draw the pads together smoothly until they nearly meet, pausing briefly at the contraction; keep the movement driven by the adductors, not by leaning your torso or jerking.",
+        "Control the return, letting the legs open only as far as you can without losing tension or feeling a pinch in the groin; exhale as you squeeze in and inhale as you slowly open."
+      ]
     },
     {
       "id": "cable-glute-kickback",
@@ -3521,7 +3781,19 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1440
+      "rank": 1440,
+      "techniqueCuesZh": [
+        "把滑轮调到最低档，将脚踝绑带牢牢扣在发力腿的脚踝上；面向器械站立、距离约一臂长，双手扶住框架或把手保持平衡。",
+        "支撑腿微屈站稳，髋部略向前折，收紧核心，全程保持下背中立、踢腿时不要塌腰反弓。",
+        "从臀部发力，把发力腿径直向后蹬到约与髋同高，膝盖只保留轻微弯曲，让臀肌（而非腘绳肌）主导，顶端停顿用力夹紧臀部。",
+        "髋部正对器械、保持端正不要扭转，脚背勾紧；后踢时呼气、向前回收时吸气，回收时让绳索充分牵拉臀部再做下一次，不要松力让配重砸回去。"
+      ],
+      "techniqueCuesEn": [
+        "Set the pulley to its lowest position and fasten the ankle cuff snugly around your working ankle; stand facing the machine about arm's length away and hold the frame or handles with both hands for balance.",
+        "Stand on your supporting leg with a soft knee, hinge slightly forward at the hips, and brace your core so your lower back stays neutral and does not arch as you kick.",
+        "Lead from the glute and drive the working leg straight back to about hip height, keeping only a slight bend in the knee so the glute (not the hamstring) does the work, and pause to squeeze hard at the top.",
+        "Keep your hips square to the machine (no twisting) and your foot flexed; exhale as you kick back, inhale as you control the leg forward, and let the cable stretch the glute before the next rep instead of dropping the weight."
+      ]
     },
     {
       "id": "front-raise",
@@ -3539,7 +3811,21 @@
       "loadType": "external",
       "loadFactor": 2.0,
       "isGuided": false,
-      "rank": 1450
+      "rank": 1450,
+      "techniqueCuesZh": [
+        "双脚约与肩同宽站稳（或采用前后小弓步以增加稳定），双手各持一只哑铃贴在大腿前侧，正握（掌心朝向大腿、拇指环握）。",
+        "肩胛下沉后缩（双肩向下、向后收），收紧核心，保持躯干直立不动，不要后仰或借助甩动把重量荡起来。",
+        "肘部保持微屈固定，以肩关节屈曲把哑铃向前抬起，直到手臂约与肩同高（与地面平行）；不要抬过头，让负荷留在前束而不转移到斜方肌。",
+        "上抬时呼气、下放时吸气，全程控制下放、不要松手砸下，对抗离心；整个过程让上臂略领先于哑铃。"
+      ],
+      "techniqueCuesEn": [
+        "Stand tall with feet roughly shoulder-width (or in a slight split stance for stability), holding a dumbbell in each hand against the front of your thighs with a pronated grip (palms facing your thighs, thumbs wrapped).",
+        "Depress and retract your shoulder blades (pull your shoulders down and back) and brace your core, keeping your torso upright and still so you don't lean back or swing the weight up.",
+        "With elbows just slightly bent and fixed, raise the dumbbells forward in shoulder flexion until your arms reach about shoulder height (parallel to the floor); avoid going higher so the load stays on the front delt instead of shifting to the traps.",
+        "Exhale as you lift and inhale as you lower the dumbbells under control through the full range; resist the eccentric rather than dropping them, and keep arms slightly ahead of the dumbbells throughout."
+      ],
+      "evidenceTag": "ACE Exercise Library: Front Raise",
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/54/front-raise/"
     },
     {
       "id": "upright-row",
@@ -3559,7 +3845,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1460
+      "rank": 1460,
+      "techniqueCuesZh": [
+        "双脚与髋同宽到与肩同宽站直，膝盖微屈；正握（掌心向后）抓杠，握距略宽于肩，让杠铃自然垂在大腿前贴住身体。",
+        "肩胛骨下沉后收，挺胸、核心收紧，保持脊柱中立挺拔，让杠铃贴着身体竖直上行，而不是向前荡出去。",
+        "用肘部带动发力，把肘向上、向外顶起，让杠铃沿躯干竖直上拉；全程手腕放松、始终低于肘部，不要靠后仰或送髋甩重量。",
+        "上拉到杠铃约到胸口/下胸骨高度即可，肘部不要超过肩高（更低更安全——肘抬过肩会夹挤肩关节）；上拉时呼气，下放时吸气并控制还原到完全伸直；一旦肩部有夹挤感就降低高度或停下。"
+      ],
+      "techniqueCuesEn": [
+        "Stand tall with feet hip-to-shoulder width and a soft knee bend; grip the barbell with an overhand (pronated) grip slightly wider than shoulder width and let it hang at thigh level against the front of your legs.",
+        "Set your shoulder blades down and back, keep the chest up and core braced, and hold a tall neutral spine so the bar travels straight up close to your body rather than swinging away from you.",
+        "Lead with the elbows, driving them up and out to pull the bar vertically along your torso; keep your wrists relaxed and below the elbows the whole way, and avoid using a backward lean or hip swing to heave the weight.",
+        "Pull only until the bar reaches roughly chest/lower-sternum height, keeping your elbows no higher than shoulder level (lower is safer — raising the elbows above the shoulders pinches the shoulder joint); exhale as you lift, inhale and lower under control to full extension, and stop or reduce the height if you feel any shoulder pinch."
+      ],
+      "evidenceTag": "McAllister MJ, Schilling BK, Hammond KG, Weiss LW, Farney TM. \"Effect of Grip Width on Electromyographic Activity During the Upright Row.\" Journal of Strength and Conditioning Research 27(1): 181-187, 2013.",
+      "evidenceUrl": "https://journals.lww.com/nsca-jscr/fulltext/2013/01000/Effect_of_Grip_Width_on_Electromyographic_Activity.25.aspx"
     },
     {
       "id": "trap-bar-deadlift",
@@ -3581,7 +3881,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1470
+      "rank": 1470,
+      "techniqueCuesZh": [
+        "站进梯铃中央，双脚与髋同宽，左右居中让握把正好落在脚掌中段两侧；髋/踝灵活性差就用高握把，想更深的髋主导发力就用低握把。",
+        "屈髋屈膝抓住身体两侧的中立握把，建立脊柱中立——挺胸、背阔收紧，起杠前先拉紧杠铃消除旷量，让肩部位于握把正上方或略偏后。",
+        "全脚掌发力、像把地板蹬开，让杠铃贴近身体竖直上行；髋膝同步伸展站直，顶端夹紧臀部收尾，不要后仰或过度挺腰。",
+        "每次起杠前深吸一口气、收紧核心，站起全程保持腹压；接近顶端再呼气，然后沿原轨迹控制下放到充分伸展，大重量组每次之间重新调整呼吸。"
+      ],
+      "techniqueCuesEn": [
+        "Stand inside the trap bar with feet hip-width apart, centering yourself so the handles line up beside your mid-foot; pick the high handles if you have limited hip or ankle mobility, low handles for a deeper hip-driven pull.",
+        "Hinge at the hips and bend the knees to grip both neutral handles at your sides; set a neutral spine with chest up and lats engaged, then pull the slack out of the bar before lifting so your shoulders sit over or just behind the handles.",
+        "Drive through your whole foot and push the floor away, keeping the bar tracking straight up close to your body; stand tall by extending hips and knees together and finish by squeezing the glutes without leaning back or hyperextending.",
+        "Take a big breath and brace your core before each rep, holding the brace as you stand; exhale near the top, then lower under control along the same path to a full stretch, resetting your breath between reps for heavier sets."
+      ],
+      "evidenceTag": "Swinton et al., \"A biomechanical analysis of straight and hexagonal barbell deadlifts using submaximal loads,\" Journal of Strength and Conditioning Research (2011)",
+      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/21659894/"
     },
     {
       "id": "stiff-leg-deadlift",
@@ -3602,7 +3916,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1480
+      "rank": 1480,
+      "techniqueCuesZh": [
+        "站姿起势：双脚与髋同宽，杠铃压在脚掌中段、几乎贴住小腿；双手正握，握距略宽于大腿外侧。",
+        "膝关节几乎伸直、只留一个固定的微屈，挺胸、肩胛下沉，核心用力收紧，让脊柱保持中立（不要弓背），起杠前先稳住这个姿态。",
+        "髋部向后顶启动（屈髋折叠），杠铃贴着腿往下放，直到腘绳肌有明显牵拉感；全程膝角固定，靠髋走、不靠屈膝。",
+        "顶髋站直、顶端夹紧臀部，杠铃始终贴腿；在顶端站姿大吸一口气稳住核心，下放全程屏息保持腹压，站起回到顶端锁定时再呼气；下放到腰背即将开始弓起前就停住。"
+      ],
+      "techniqueCuesEn": [
+        "Set up standing with feet hip-width, the loaded barbell over your mid-foot and almost touching your shins; take a double-overhand grip just outside your thighs.",
+        "Set a near-straight knee position with only a soft, fixed bend, lift your chest, and brace your core hard with shoulder blades pulled down so your spine stays neutral (not rounded) before the bar moves.",
+        "Initiate by pushing your hips straight back (hip hinge), lowering the bar close to your legs until you feel a strong stretch in your hamstrings; keep the knee angle fixed and let the hips, not the knees, travel.",
+        "Drive your hips forward to stand tall and squeeze your glutes at the top, keeping the bar against your legs; inhale and brace at the top, hold the breath through the descent, and exhale as you lock out, and stop the descent before your lower back starts to round."
+      ],
+      "evidenceTag": "Coratella G. et al., \"An Electromyographic Analysis of Romanian, Step-Romanian, and Stiff-Leg Deadlift: Implication for Resistance Training,\" Int. J. Environ. Res. Public Health (2022)",
+      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8835508/"
     },
     {
       "id": "glute-ham-raise",
@@ -3622,7 +3950,21 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1490
+      "rank": 1490,
+      "techniqueCuesZh": [
+        "在臀腿举凳上就位：脚踝卡进滚轮垫之间，双脚踏实蹬住踏板，大腿（膝盖正上方）紧压在大垫上，膝盖屈约 90°，让躯干起始时与地面垂直。",
+        "收紧核心、保持脊柱中立，肩、髋、膝三点连成一条直线；切勿塌腰或腰部过伸，那会把负荷从腘绳肌转移到腰椎上。",
+        "缓慢伸膝、控制下放，全程把肩-髋-膝锁成一条刚性直线（不要塌髋或折髋），靠腘绳肌发力一路控制下降到你能掌控的最低点，而不是松垮坠落。",
+        "靠腘绳肌收缩、伸髋把躯干拉回到与地面平行，再重新屈膝回到直立起始位；下放吸气、上起呼气，只下到你能控制住、且不丢失脊柱中立的幅度。"
+      ],
+      "techniqueCuesEn": [
+        "Set up on the glute-ham bench: anchor your ankles between the roller pads, plant both feet flat against the foot platform, and press your thighs (just above the knees) firmly into the pad with knees bent to about 90 degrees so your torso starts perpendicular to the floor.",
+        "Brace your core and keep a neutral spine with shoulders, hips, and knees stacked in a straight line; do not let your lower back arch or hyperextend, which shifts load off the hamstrings and onto the lumbar spine.",
+        "Lower under control by slowly extending the knees while holding a rigid shoulder-hip-knee line throughout (don't let the hips pike or fold) — descend only as far as your hamstrings can control, letting them do the work rather than collapsing.",
+        "Drive back up by contracting the hamstrings and extending the hips to bring the torso to parallel, then re-flex the knees to return to the upright start; inhale as you lower and exhale as you raise, and only go as deep as you can control without losing the neutral-spine position."
+      ],
+      "evidenceTag": "NSCA Exercise Technique Manual for Resistance Training, 3rd Edition — \"Glute-Ham Raise\"",
+      "evidenceUrl": "https://www.nsca.com/education/articles/kinetic-select/glute-ham-raise/"
     },
     {
       "id": "wrist-curl",
@@ -3640,7 +3982,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1500
+      "rank": 1500,
+      "techniqueCuesZh": [
+        "跪姿或坐姿，把前臂平放在长凳上（或大腿上），肘部约屈 90°，掌心朝上，手腕略微悬在凳沿外，只让手部能自由活动。",
+        "双手各握一只哑铃，握紧、握满，全程把前臂压实在凳面上——不要抬肘、不要伸直手臂，也不要靠身体晃动把重量荡起来。",
+        "控制下放到手腕完全背伸（让哑铃滚向指根，但绝不松手），再用前臂屈肌把手腕向上卷起，做满整个活动范围。",
+        "下放背伸时吸气、向上卷起时呼气；动作放慢、用轻重量——惯性和松握都会让腕关节受伤。"
+      ],
+      "techniqueCuesEn": [
+        "Kneel or sit and rest your forearms flat on a bench (or your thighs) with elbows bent about 90 degrees, palms facing up and both wrists hanging just off the edge so only the hands can move freely.",
+        "Hold a dumbbell in each hand with a full, secure grip and keep the forearms pinned to the bench throughout - don't lift the elbows, extend the arms, or rock your body to swing the weight up.",
+        "Lower under control into full wrist extension (let the dumbbells roll down toward your fingers but never release your grip), then contract the forearm flexors to curl the wrists up through the complete range.",
+        "Inhale as you lower into extension and exhale as you curl up; move slowly and use a light load - momentum and a loose grip put the wrist joint at risk."
+      ],
+      "evidenceTag": "ACE Exercise Library: Wrist Curl - Flexion",
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/30/wrist-curl-flexion/"
     },
     {
       "id": "reverse-wrist-curl",
@@ -3658,7 +4014,19 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1510
+      "rank": 1510,
+      "techniqueCuesZh": [
+        "坐姿，前臂平放在凳面（或大腿）上、手腕略微探出边缘，每手持一只哑铃，采用旋前的正握（掌心朝下）。",
+        "肘部保持约 90° 顶住固定，全程让前臂贴稳不动——不要靠抬大臂、前后晃身或摆动借力把重量甩上去。",
+        "控制下放，让手腕充分屈曲（指节朝地面下沉），再用前臂上侧的伸肌收缩、把指节尽量向上卷起。",
+        "全程慢速走满幅度，最低点略作停顿；下放时吸气、上抬伸腕时呼气——伸肌很容易疲劳，重量要偏轻。"
+      ],
+      "techniqueCuesEn": [
+        "Set up seated with your forearms resting on a bench (or your thighs) and your wrists just past the edge, holding a dumbbell in each hand with a pronated, overhand grip (palms facing down).",
+        "Keep your elbows pinned at roughly 90 degrees and your forearms flat and still throughout the set—do not let the upper arms lift, lean, or swing to cheat the weight up.",
+        "Lower the dumbbells under control by letting your wrists drop into full flexion (knuckles toward the floor), then contract the forearm extensors on top to roll the knuckles up as high as you can.",
+        "Move slowly through a full range of motion and pause briefly at the bottom; inhale as the wrists lower and exhale as you extend the wrists up—use a light load since the extensors fatigue fast."
+      ]
     },
     {
       "id": "hanging-leg-raise",
@@ -3676,7 +4044,21 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1520
+      "rank": 1520,
+      "techniqueCuesZh": [
+        "双手正握固定单杠，握距略宽于肩，手臂完全伸直悬垂；主动把肩胛向下沉、远离耳朵（锁肩），不要松垮被动地挂着，以保护肩关节。",
+        "举腿前先做骨盆后倾（把尾骨向内卷）并收紧核心，让下背贴平、消除晃动，给腹肌预先发力——靠躯干带动抬腿，而不是只用髂屈肌。",
+        "尽量保持双腿伸直，控制着把腿抬到至少与地面平行（顶端再把骨盆向上卷一点，让腹肌走满行程）；不要借力摆荡、甩腿或靠惯性。",
+        "缓慢、有控制地落回完全悬垂位，主动对抗下放；抬腿时呼气、下放时吸气，全程保持核心收紧。"
+      ],
+      "techniqueCuesEn": [
+        "Hang from a fixed pull-up bar with a slightly-wider-than-shoulder overhand grip, arms fully extended; keep your shoulders 'packed' by actively pulling your shoulder blades down away from your ears rather than hanging passively, to protect the shoulder joint.",
+        "Before lifting, posteriorly tilt your pelvis (tuck your tailbone under) and brace your core to flatten the lower back, killing the swing and pre-tensioning the abs so the legs raise from the trunk, not just the hip flexors.",
+        "Keep your legs as straight as possible and lift them under control until they reach at least parallel to the floor, curling the pelvis up at the top for full abdominal range; avoid kipping, swinging, or using momentum.",
+        "Lower slowly and with control back to the dead hang, resisting the descent; exhale as you raise the legs and inhale on the way down, keeping the core braced throughout."
+      ],
+      "evidenceTag": "McGill, Andersen & Cannon, \"Muscle activity and spine load during anterior chain whole body linkage exercises: the body saw, hanging leg raise and walkout from a push-up\", Journal of Sports Sciences (2015)",
+      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/25111163/"
     },
     {
       "id": "ab-wheel",
@@ -3694,7 +4076,21 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1530
+      "rank": 1530,
+      "techniqueCuesZh": [
+        "跪姿起始，滚轮正对肩膀下方，膝盖与髋同宽（垫块护膝），双手握住把手、手臂绷直（肘部只留微屈），动作前先把核心收紧。",
+        "骨盆后倾把下背压平、腹部用力收紧，全程脊柱中立、肋骨下沉（别让腰塌下去或反弓）。",
+        "缓慢、有控制地向前推出，只推到能保持背部平直的范围；一旦髋部下沉或腰塌陷，立刻停住并往回收。",
+        "靠腹肌发力把滚轮收回（不要用手臂或肩膀硬拽）；推出时吸气，收回到起始位时呼气。"
+      ],
+      "techniqueCuesEn": [
+        "Start kneeling with the wheel directly under your shoulders, knees about hip-width on a pad for comfort, and grip both handles with arms taut (only a slight elbow bend) before you move.",
+        "Posteriorly tilt your pelvis to flatten the lower back and brace your abs hard, then keep the spine neutral and ribs down throughout (do not let the lower back sag or arch).",
+        "Roll the wheel forward slowly and under control only as far as you can hold a flat back; the moment your hips drop or lower back caves, stop and reverse.",
+        "Pull the wheel back by contracting your abs (not by yanking with your arms or shoulders); inhale as you roll out, exhale as you pull back to the start."
+      ],
+      "evidenceTag": "Marchetti PH, Schoenfeld BJ, et al., \"Muscle Activation Pattern During Isometric Ab Wheel Rollout Exercise in Different Shoulder Angle-Positions,\" MedicalExpress (São Paulo) 2(4), 2015",
+      "evidenceUrl": "https://www.scielo.br/j/medical/a/BK4tJ3s4p95tKh86MKPTy4P/?lang=en"
     },
     {
       "id": "donkey-calf-raise",
@@ -3712,7 +4108,19 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 1540
+      "rank": 1540,
+      "techniqueCuesZh": [
+        "在驴式提踵机上就位（或由同伴/配重压在髋部）：前脚掌踩稳踏板、脚跟悬空，髋部前屈约 90°，双手握住支撑把手保持平衡。",
+        "让负重垫平稳压在髋部/下背，避开腰椎；保持背部平直、核心收紧，膝盖微屈并全程固定不变，以更多刺激腓肠肌。",
+        "用前脚掌发力把脚跟尽量顶高，顶峰用力收紧小腿；过程中不要屈膝、也不要靠髋部上下晃动借力把重量送上去。",
+        "控制下放，让脚跟降到踏板以下、在底部充分拉伸小腿；提踵向上时呼气，下放进入拉伸时吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Set up on the donkey machine (or with a partner/plate over your hips): place the balls of your feet on the platform with heels hanging free, then hinge at the hips to roughly 90 degrees and grip the support handles for balance.",
+        "Position the load pad squarely across your hips/lower back, not the lumbar spine, and keep your back flat and core braced with a slight bend in the knees held constant throughout to bias the gastrocnemius.",
+        "Drive through the balls of your feet to press your heels as high as possible, squeezing the calves hard at the top without letting your knees flex or your hips bob to cheat the weight up.",
+        "Lower under control until your heels drop below the platform for a full stretch at the bottom; exhale as you press up onto the toes and inhale as you lower into the stretch."
+      ]
     },
     {
       "id": "decline-situp",
@@ -3730,7 +4138,19 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1550
+      "rank": 1550,
+      "techniqueCuesZh": [
+        "把下斜凳调到适中角度（约 15-30°），双脚牢牢勾住脚踝/滚轮垫；起始时身体后躺、屈膝，下背贴紧凳面。",
+        "双臂交叉抱胸或双手轻扶头两侧（别十指交叉硬拽脖子）；下巴微收，发力前先收紧核心。",
+        "起身时让脊柱一节一节地离开凳面，以胸骨带头向大腿方向卷起，用腹肌发力，不要靠髋屈肌从腿部拉起。",
+        "上卷时呼气、收紧腹肌，下放时吸气并控制速度；只下放到背部接近凳面（不要砸回去，也不要后仰越过凳面水平位），保持持续张力、保护腰椎。"
+      ],
+      "techniqueCuesEn": [
+        "Set the decline bench to a moderate angle (roughly 15-30 degrees) and hook your feet securely under the ankle/roller pads; lie back with knees bent and your lower back flat against the pad to start.",
+        "Cross your arms over your chest or rest your hands lightly at the sides of your head (do not lace fingers and yank the neck); keep your chin slightly tucked and core braced before you move.",
+        "Curl up by peeling the spine off the pad vertebra by vertebra, leading with your sternum toward your thighs and letting the abs do the work, not the hip flexors pulling from the legs.",
+        "Exhale and squeeze the abs as you rise, inhale as you lower under control; lower only until your back nears the pad (avoid slamming back or fully arching off it) to keep constant tension and protect the lumbar spine."
+      ]
     },
     {
       "id": "bicycle-crunch",
@@ -3748,7 +4168,21 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1560
+      "rank": 1560,
+      "techniqueCuesZh": [
+        "平躺在垫上，下背始终压实地面；抬起双脚让大腿与地面垂直（髋部约 90°），收紧腹部把这个起始位锁住。",
+        "双手轻托后脑、肘部向两侧打开，颈部拉长、与上背保持一条线——是托住头，绝不要在卷腹时往前拽头。",
+        "一侧膝盖向胸口收，同时另一条腿向前伸直，转动躯干让对侧手肘靠近收起的膝盖——旋转来自肋廓和躯干，而不是硬拽手肘或甩髋。",
+        "动作要控制、不要图快——伸腿只伸到下背仍能贴住垫子的程度；卷腹转体时呼气，换边时吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Lie flat on your back on a mat with your low back pressed into the floor; lift your feet so your thighs are vertical (about a 90-degree angle at the hips) and brace your abs to lock in this position.",
+        "Cradle your head lightly in your hands with elbows wide and keep your neck long and aligned with your upper spine—support the head, never pull on it during the curl.",
+        "Drive one knee toward your chest while you extend the other leg out straight, and rotate your torso to bring the opposite elbow toward the up knee—the twist comes from your ribcage and trunk, not from yanking the elbow or swinging the hips.",
+        "Move under control rather than rushing—extend the leg only as far as you can keep the low back glued to the mat; exhale as you crunch and rotate, inhale as you switch sides."
+      ],
+      "evidenceTag": "ACE Exercise Library: Supine Bicycle Crunches",
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/241/supine-bicycle-crunches/"
     },
     {
       "id": "dead-bug",
@@ -3766,7 +4200,21 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1570
+      "rank": 1570,
+      "techniqueCuesZh": [
+        "仰卧在垫子上，双臂垂直指向天花板，髋和膝都屈到 90°，小腿大致与地面平行（即\"桌面位\"）。",
+        "肩胛轻轻下沉后缩，再把肋骨向下收、收紧腹部，让下背压平贴地——全程腰与垫子之间不留缝隙。",
+        "缓慢地把一侧手臂过头下放、同时下放对侧腿，只下放到腰不会拱起离地的幅度，再控制收回并左右交替。",
+        "全程慢动作、不借惯性，伸出手脚时呼气、收回时吸气；一旦腰离地，就缩小幅度直到能始终把腰压住。"
+      ],
+      "techniqueCuesEn": [
+        "Lie supine on a mat with arms reaching straight toward the ceiling and hips and knees both bent to 90 degrees, so your shins are roughly parallel to the floor (the 'tabletop' position).",
+        "Gently depress and retract your shoulder blades, then flatten your lower back into the floor by drawing your ribs down and bracing your abs - there should be no gap between your low back and the mat throughout.",
+        "Slowly lower one arm overhead and the opposite leg toward the floor at the same time, moving only as far as you can go without your low back arching up off the mat, then return under control and alternate sides.",
+        "Move slowly with no momentum, exhale as you extend the arm and leg out and inhale as you return; if your back lifts off the floor, shorten the range until you can keep it pinned."
+      ],
+      "evidenceTag": "ACE Exercise Library: Supine Dead Bug",
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/147/supine-dead-bug/"
     },
     {
       "id": "single-leg-hip-thrust",
@@ -3786,7 +4234,21 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1580
+      "rank": 1580,
+      "techniqueCuesZh": [
+        "上背与肩胛横靠在稳固的长凳或箱子上（约膝盖高度），支撑脚踏实、略向前放，使顶端小腿大致垂直地面；另一条腿可伸直前伸，或把膝盖收向胸口，避免它替你借力。",
+        "微收下巴、收紧核心，保持脊柱中立并做骨盆后倾（肋骨下沉，别塌腰反弓）；全程让两侧髋部保持水平方正，非支撑侧不要下沉或旋转。",
+        "用支撑脚脚跟发力伸髋，挤压臀部把髋抬到躯干与大腿成一条直线（接近水平桌面状），但不要让腰椎过度后伸。",
+        "顶端停顿夹紧臀部，再控制着沿全程下放，直到髋部刚离开地面；上推时呼气，下放时吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Set up with your upper back and shoulder blades resting across a sturdy bench or box (about knee height), plant your working foot flat and slightly forward so the shin is roughly vertical at the top, and either extend the free leg straight out or tuck that knee toward your chest to keep it from helping.",
+        "Tuck your chin slightly and brace your core, keeping a neutral spine and a posterior pelvic tilt (ribs down, not arched lower back); keep your hips square and level so the unsupported side does not drop or rotate during the rep.",
+        "Drive forcefully through the planted heel to extend the hip, squeezing the glute to lift your hips until your torso and thigh form a straight line (about a flat tabletop) without hyperextending your lower back.",
+        "Pause and squeeze at the top, then lower under control through a full range of motion until your hips just clear the floor; exhale as you thrust up and inhale as you lower."
+      ],
+      "evidenceTag": "Collings TJ, Bourne MN, Barrett RS, Meinders E, Gonçalves BAM, Shield AJ, Diamond LE. \"Gluteal Muscle Forces during Hip-Focused Injury Prevention and Rehabilitation Exercises.\" Medicine & Science in Sports & Exercise. 2023.",
+      "evidenceUrl": "https://pubmed.ncbi.nlm.nih.gov/36918403/"
     },
     {
       "id": "lateral-lunge",
@@ -3806,7 +4268,21 @@
       "loadType": "external",
       "loadFactor": 2.0,
       "isGuided": false,
-      "rank": 1590
+      "rank": 1590,
+      "techniqueCuesZh": [
+        "双脚与髋同宽、平行站立，双手各握一只哑铃，掌心相对（中立握），下蹲前先收紧核心、建立稳定挺直的底座。",
+        "径直向一侧跨出一步，落地脚保持踏实、与另一只脚平行，把重心压进跨出腿，后侧腿保持伸直、脚掌踩稳不离地。",
+        "臀部后坐、屈跨出腿的膝盖下沉成弓步，膝盖始终对准第二脚趾方向（不要内扣），随着髋部前折，让哑铃自然下放到工作腿两侧。",
+        "下蹲到工作腿大腿大致与地面平行（或下到你能控制、腰背不弓的深度）；下放时吸气，然后蹬地、呼气把身体推回直立起始位。"
+      ],
+      "techniqueCuesEn": [
+        "Stand tall with feet hip-width apart and parallel, holding a dumbbell in each hand with palms facing each other (neutral grip); brace your core and set a stable, upright base before you step.",
+        "Step directly out to one side, keeping that foot flat and parallel to the other, and load the weight into the stepping leg while the trailing leg stays straight with its foot planted.",
+        "Sit the hip back and bend the stepping knee to lower into the lunge, keeping the knee tracking over the second toe (not caving inward) and letting the dumbbells lower on either side of the working leg as you hinge from the hips.",
+        "Descend until the working thigh is roughly parallel to the floor (or to a depth you control without rounding the lower back); inhale as you lower, then drive through that foot and exhale to push back to the upright start."
+      ],
+      "evidenceTag": "ACE Exercise Library: Lateral Lunge",
+      "evidenceUrl": "https://www.acefitness.org/resources/everyone/exercise-library/364/lateral-lunge/"
     },
     {
       "id": "curtsy-lunge",
@@ -3826,7 +4302,19 @@
       "loadType": "external",
       "loadFactor": 2.0,
       "isGuided": false,
-      "rank": 1600
+      "rank": 1600,
+      "techniqueCuesZh": [
+        "双脚与髋同宽站直，双手各持一只哑铃（或一只抱于胸前）；收紧核心、肩膀后展，全程保持胸口挺立。",
+        "一条腿向后斜插到支撑腿的后外侧（大致交叉到另一侧），髋和肩始终正对前方，不要随后腿向后转。",
+        "竖直下蹲到前侧大腿接近水平、后膝悬在地面上方；前膝沿脚尖方向（别向内塌），重心多压在前脚跟。",
+        "用前脚跟蹬地起身，顶端夹紧臀部；下放吸气、起身呼气，别在最低点借力反弹。"
+      ],
+      "techniqueCuesEn": [
+        "Start tall with feet hip-width and a dumbbell in each hand (or one held at chest); brace your core and pull your shoulders back so your chest stays upright throughout.",
+        "Step one leg back and diagonally behind the standing leg — crossing roughly to the opposite side — keeping your hips and shoulders square to the front instead of rotating toward the rear leg.",
+        "Lower straight down until your front thigh is near parallel and the back knee hovers just above the floor; keep the front knee tracking over the foot (don’t let it cave inward) and most of your weight in the front heel.",
+        "Drive through the front heel to stand back up, squeezing the glutes at the top; inhale as you lower and exhale as you push up, and avoid bouncing out of the bottom."
+      ]
     },
     {
       "id": "leg-press-calf-raise",
@@ -3844,7 +4332,21 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 1610
+      "rank": 1610,
+      "techniqueCuesZh": [
+        "坐进腿举机、后背和后脑勺贴紧靠垫，只把前脚掌（脚趾根部）放在踏板下沿，与髋同宽，脚跟悬在踏板边缘外。",
+        "先把踏板蹬起、膝盖伸到接近打直，再解开安全锁扣；膝盖保持微屈不锁死、核心收紧，让腿稳稳托住重量，只用踝关节发力。",
+        "用前脚掌把踏板向远端顶出，做到充分跖屈（提到最高），顶峰稍作停顿、不要弹震，全程脚尖朝正前方。",
+        "控制下放到踝关节充分背屈的深度拉伸，完成全幅度；提踵向上时呼气，脚跟下沉时吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Sit deep in the leg-press machine with your back and head against the pad, then place just the balls of your feet (forefeet) on the lower edge of the platform, hip-width apart, with your heels hanging off the edge.",
+        "Press the platform up to extend your knees nearly straight, then disengage the safety stops; keep your knees soft (not locked) and your core braced so the legs hold the load while only your ankles do the work.",
+        "Drive the platform away by pushing through the balls of your feet into full plantarflexion, pausing briefly at the top instead of bouncing, and keep your toes pointed straight ahead through the squeeze.",
+        "Lower under control into a deep ankle stretch (full dorsiflexion) for a complete range of motion; exhale as you press up onto the toes and inhale as you let the heels sink."
+      ],
+      "evidenceTag": "NASM Exercise Library: Leg Press Calf Raise",
+      "evidenceUrl": "https://www.nasm.org/resource-center/exercise-library/leg-press-calf-raise"
     },
     {
       "id": "decline-db-press",
@@ -3865,7 +4367,19 @@
       "loadType": "external",
       "loadFactor": 2.0,
       "isGuided": false,
-      "rank": 1620
+      "rank": 1620,
+      "techniqueCuesZh": [
+        "凳面调成中等下斜（约 15-30°），把小腿/大腿卡进踏垫和腿垫下，让身体无法下滑；先把哑铃放在大腿上，躺下时用膝盖上送的力把哑铃带到肩前。",
+        "臀部和后脑勺贴稳凳面，肩胛后缩下沉、核心收紧；下斜位血液偏向头部，节奏要稳、别长时间憋气。",
+        "起始时哑铃叠在下胸正上方，手腕保持中立、叠在肘部正上方，肘部约 45° 内收（不要外展到 90°）以保护肩关节。",
+        "控制下放到哑铃与下胸/胸骨齐平，找到拉伸感但别让两只哑铃向外散开；下放吸气，上推时略向内合拢并呼气，到顶端留一点空隙、不要让两只哑铃相撞。"
+      ],
+      "techniqueCuesEn": [
+        "Set the bench to a moderate decline (about 15-30 degrees) and lock your legs under the ankle/thigh pads so your body can't slide; bring the dumbbells onto your thighs and use a knee-kick to help hoist them to your shoulders as you lie back.",
+        "Plant your hips and head on the bench, retract and depress your shoulder blades, and brace your core; because blood pools toward the head on a decline, keep reps deliberate and avoid holding your breath too long.",
+        "Start with the dumbbells stacked over your lower chest, wrists straight and stacked over the elbows, and keep elbows tucked at roughly 45 degrees (not flared to 90) to protect the shoulders.",
+        "Lower under control until the dumbbells are level with your lower chest/sternum, feeling a stretch without letting them drift apart; inhale on the way down, then press up and slightly inward, exhaling, and stop just short of clashing the bells together."
+      ]
     },
     {
       "id": "bench-dip",
@@ -3886,7 +4400,21 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1630
+      "rank": 1630,
+      "techniqueCuesZh": [
+        "坐在稳固凳子边缘，双手放在臀部两侧、手指朝前抓住凳沿；把臀部移出凳外，让体重落在双手上。",
+        "躯干保持直立、贴近凳子，肋骨对齐臀部、脊柱中立、核心收紧；不要靠塌腰或弓背去让肩膀下沉更多。",
+        "控制下放到肘部约 90°（上臂大致与地面平行），肘部指向正后方而非外展，然后用手掌撑起、不要借腿发力。",
+        "肘部弯曲不要超过 90°，过深的肩伸会压迫肩前部；下放时吸气、撑起时呼气。"
+      ],
+      "techniqueCuesEn": [
+        "Sit on the edge of a sturdy bench and place your hands next to your hips, fingers pointing forward and gripping the edge; walk your hips off the bench so your weight is supported on your hands.",
+        "Keep your torso upright and close to the bench, ribs stacked over hips with a neutral spine and braced core; avoid arching or rounding your back to force the shoulders deeper.",
+        "Lower under control until your elbows reach about 90 degrees (upper arms roughly parallel to the floor), keeping elbows pointing straight back rather than flaring out, then press up through your palms, not your legs.",
+        "Don't sink below 90 degrees of elbow bend, since deep shoulder extension stresses the front of the shoulder; inhale as you lower and exhale as you press to the top."
+      ],
+      "evidenceTag": "McKenzie et al., Int. J. Environ. Res. Public Health (2022) — \"Bench, Bar, and Ring Dips: Do Kinematics and Muscle Activity Differ?\"",
+      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9603242/"
     },
     {
       "id": "diamond-push-up",
@@ -3907,7 +4435,21 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1640
+      "rank": 1640,
+      "techniqueCuesZh": [
+        "起始为高平板支撑，双手移到胸部正下方、贴近身体中线，让两手拇指与食指相触，在地面拼成一个钻石（三角）形。",
+        "收紧核心、夹紧臀部，把身体锁成从头到脚跟一条直线；底座窄、稳定性差，切勿塌腰或撅臀。",
+        "肘部向后、贴紧两侧肋骨（不要外展到 90°），让负荷集中在三头肌上，同时保护肩关节。",
+        "控制下放，让胸口轻触双手后再撑起到肘部完全伸直锁定；下放时吸气、上推时呼气。"
+      ],
+      "techniqueCuesEn": [
+        "Set up in a high plank with hands directly under the midline of your chest, sliding them together so your thumbs and index fingers touch to form a diamond/triangle shape on the floor.",
+        "Brace your core and squeeze your glutes to lock the body into one straight line from head to heels; do not let your hips sag or pike up, since the narrow base offers less stability.",
+        "Keep your elbows tracking back and tucked close to your ribs (not flared out to 90 degrees) so the load stays on the triceps and you protect the shoulders.",
+        "Lower your chest under control until it lightly touches your hands, then press all the way up to full elbow lock-out; inhale on the way down and exhale as you push up."
+      ],
+      "evidenceTag": "Intziegianni K, Katsamis E, Michaelides M, Parpa K. Electromyographic Activation of the Pectoralis Major and Triceps Brachii Muscles During Standard, Diamond, and Wide Hand Position Push-Ups. Muscles. 2026;5(1):18.",
+      "evidenceUrl": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13029269/"
     },
     {
       "id": "zottman-curl",
@@ -3927,7 +4469,19 @@
       "loadType": "external",
       "loadFactor": 2.0,
       "isGuided": false,
-      "rank": 1650
+      "rank": 1650,
+      "techniqueCuesZh": [
+        "双手各握一只哑铃自然垂于身侧，掌心向上（旋后握），双脚与髋同宽、膝盖微屈，建立稳定底座。",
+        "双肘夹紧贴住肋侧并固定在原位，核心收紧，不要借力甩动躯干，也别让上臂前移。",
+        "掌心向上、用肱二头肌把哑铃弯举到顶点，到顶后先把手腕翻转成掌心向下（旋前握）再开始下放。",
+        "保持掌心向下、缓慢受控地下放，让前臂和肱桡肌刹住整个离心过程；上举呼气、下放吸气，到底部再转回掌心向上。"
+      ],
+      "techniqueCuesEn": [
+        "Stand tall holding a dumbbell in each hand at your sides with a supinated (palms-up) grip, feet hip-width apart, knees soft, for a stable base.",
+        "Pin your elbows close to your ribs and keep them fixed there; brace your core and avoid swinging the torso or letting the upper arms drift forward.",
+        "Curl up with palms facing up using your biceps, then at the top rotate your wrists to a pronated (palms-down) grip before you begin lowering.",
+        "Lower under slow control in the pronated grip so the forearms and brachioradialis brake the descent; exhale curling up, inhale on the way down, and rotate back to palms-up at the bottom."
+      ]
     }
   ]
 }
