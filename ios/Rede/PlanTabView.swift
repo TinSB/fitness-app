@@ -23,6 +23,8 @@ struct PlanTabView: View {
     /// 触感脉冲计数（采纳/回滚=成功确认，暂不=轻选择）：成功分支自增触发 .sensoryFeedback。
     @State private var commitPulse = 0
     @State private var selectPulse = 0
+    /// FR-PL6：正在编辑的训练日（非 nil = 弹出编辑器 sheet）。
+    @State private var editingDay: PlanEditTarget?
 
     private var s: RedeStrings { localeStore.strings }
 
@@ -134,7 +136,18 @@ struct PlanTabView: View {
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: adjustment)
         // 写失败提示出现/消失也淡入（与今日页 coachSaveErrorText 对等，审查 M-1）。
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: sessionStore.planSaveErrorText)
-        .task { await reload() }
+        .task {
+            await reload()
+            // 截图/UI 验证钩子（同 RootTabView -autoStartSession 先例）：simctl launch ... -initialTab plan -autoOpenPlanEditor push-a
+            let args = CommandLine.arguments
+            if let i = args.firstIndex(of: "-autoOpenPlanEditor"), args.indices.contains(i + 1) {
+                editingDay = PlanEditTarget(dayCode: args[i + 1])
+            }
+        }
+        // FR-PL6：训练日编辑器（增删换/重排/预览/采纳·恢复默认）；采纳后 reload 刷新排期。
+        .sheet(item: $editingDay) { target in
+            PlanDayEditorView(dayCode: target.dayCode, onApplied: { Task { await reload() } })
+        }
     }
 
     /// 一次后台读、同步一起赋值（审查 MINOR-1）：避免分批到达时闪占位。
@@ -305,25 +318,35 @@ struct PlanTabView: View {
     }
 
     private func dayScheduleRow(_ day: PlanDayProjection) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack {
-                Text(s.trainingDayName(day.dayCode))
-                    .font(.redeSubhead)
-                    .foregroundStyle(Color.redeT1)
-                Spacer()
-                Text(s.planDayExercises(day.exerciseCount))
-                    .font(.redeCaption).monospacedDigit()
-                    .foregroundStyle(Color.redeT4)
+        // FR-PL6：开放行下钻编辑器（点整行；右侧 chevron 提示可编辑）。
+        Button { editingDay = PlanEditTarget(dayCode: day.dayCode) } label: {
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 8) {
+                    Text(s.trainingDayName(day.dayCode))
+                        .font(.redeSubhead)
+                        .foregroundStyle(Color.redeT1)
+                    Spacer()
+                    Text(s.planDayExercises(day.exerciseCount))
+                        .font(.redeCaption).monospacedDigit()
+                        .foregroundStyle(Color.redeT4)
+                    Image(systemName: "chevron.right").font(.redeCaption).foregroundStyle(Color.redeT4)
+                }
+                Text(day.patternCodes.map(s.movementPatternLabel).joined(separator: " · "))
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT3)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            Text(day.patternCodes.map(s.movementPatternLabel).joined(separator: " · "))
-                .font(.redeCaption)
-                .foregroundStyle(Color.redeT3)
-                .fixedSize(horizontal: false, vertical: true)
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
         }
-        .padding(.vertical, 6)
+        .buttonStyle(.redePressableRow)
         .accessibilityElement(children: .combine)
+        .accessibilityHint(s.planEditDayHint)
     }
 }
+
+/// `.sheet(item:)` 需要 Identifiable 包装 dayCode。
+private struct PlanEditTarget: Identifiable { let dayCode: String; var id: String { dayCode } }
 
 // MARK: - 周期条（FR-PL2 S5）— 4 周累积块·当前周 ember·相位角色。0 卡，纯 ember 轨/节点。
 struct MesocycleCycleBar: View {
