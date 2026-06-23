@@ -1080,6 +1080,20 @@ Plan：
 - **会话级「暂不」**：`planProposalSnoozed`（不落库）——本次使用期间不再就同一提案复弹；回滚成功亦置位（尊重用户决定、不复推销）；重启后若仍符合条件可再温和提一次。
 - **0 卡公理**：计划页调整卡用 `RoundedRectangle` 面（非 `ForgedCard`），守 PlanTabView 0 预算。
 
+### 8.2 用户自定义训练计划（PlanCustomization · FR-PL6/PL7 已实现）
+
+定位 = **「编辑教练给的计划」**（系统先生成 → 用户在此微调），非空白手搭——保「决策在前」：**用户决定练哪个动作 / 什么顺序 / 训练日先后，引擎仍决定多重 / 几次 / 进不进阶 / 今天该不该练**。引擎消费合同见 §8（上方 S2/S3 引擎 seam 段）：默认空覆盖 ≡ 现状（golden 零回归）。本节记 **app/UI/写闸/护栏** 层契约。
+
+**数据与写闸（FR-PL6.2）。** open-bag 顶层 `planCustomization{dayPlans:{dayCode:{exercises:[{exerciseId,sets?,repMin?,repMax?,rest?,crossFamily}]}}, daySequence?:[dayCode]}`（纯加性、缺=nil=完全沿用引擎模板、**不改 schema**）。四个唯一写闸方法 `applyCustomDayPlan / removeCustomDayPlan / applyCustomDaySequence / removeCustomDaySequence`，全过 `performGatedMutation`（load→校验→备份→原子→诚实报错）。**回滚 = remove**（默认模板是确定性纯函数，无需存快照即可重建）；幂等。raw `planCustomization` 经 app/clean 层 catalog 校验（exerciseId 存在/未弃用/可处方/守器械场景）后才构造 `PlanCustomizationInput`（Master §8：raw 不直接进引擎）。
+
+**编辑器 UI（FR-PL6/PL7①）。** 计划页排期行 → `PlanDayEditorView` sheet：动作开放行，每行**上移/下移**（同日重排=FR-PL7①）、**同族换**（`ExerciseReplacementEngine.candidates` 守器械白名单 FR-EQ1）、**移除**；**添加**（`TodayPrescriptionEngine.addCandidates`：该日已有 pattern 族内、未用、守白名单的候选，按 pattern→rank→id；不造新 pattern 槽）。编辑器起点 = `defaultDayExerciseIds`（与 plan() 共用 `slotCandidates` 口径，consistency 测试锁定）。
+
+**日序编辑器 UI（FR-PL7②）。** 计划页「调整训练日顺序」入口 → `PlanDaySequenceEditorView` sheet：整周训练日上移/下移（只重排不增删，保 A/B 分化与肌群 2×/周）；起点 = `resolvedDaySequence`（自定义优先否则默认）；实时预览 `nextDayCode`「下一个训练日将变为 X」——**轮转锚定已完成场次（非日历），重排会使下一个训练日跳变，故须诚实预览**（开放决策#1 落地）。`isCustomized` 须 override 合法排列 **且 ≠ 默认序**（否则「恢复默认」会在已是默认时误显示成 no-op 入口）。
+
+**改动预览与护栏（FR-PL6.1）。** `PlanCustomizationImpact.compute` 算采纳前后**肌群每周频率 delta**（按 `primaryMuscle` 统计每肌群出现在几个训练日 = 次/周）→ `droppedBelowTwice`（从 ≥2× 跌到 <2× 的肌群 = 核心护栏，也即 A/B 分化破坏度量）。**诚实限制**：基于 primaryMuscle 单值近似（贡献权重 P0 未落地），是「频率级」护栏非「容量精算」。**护栏 = 中性提示不强制**（采纳按钮始终可点；唯一例外=跨族换需 inline 确认），§5.4/§7.3 不羞辱不施压。
+
+**诚实红线（FR-PL6.2/6.3）。** 写失败置计划页专属 `planSaveErrorText`（与全局/教练错误面隔离）、UI 如实呈现、绝不静默假成功；编辑器影响计算 off-main（不阻塞主线程）。**0 卡公理**：`PlanDayEditorView` / `PlanDaySequenceEditorView` 均 0 `ForgedCard`（全开放行 + 发丝线 + 单一 ember 主操作；门禁预算锁定）。截图验证钩子 `-autoOpenPlanEditor <dayCode>` / `-autoOpenDaySequenceEditor` / `-autoOpenAddPicker`（仅带参激活，对正式使用零影响）。**遗留**：真手点连贯交互流程待 TestFlight 真机验收（引擎/写闸/护栏已单测 + 各屏模拟器实测）。
+
 Settings：
 
 - Profile。

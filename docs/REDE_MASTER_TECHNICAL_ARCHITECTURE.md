@@ -185,6 +185,8 @@ Approved target mutation classes include:
 - coach-action dismissal intent (FR-T5)
 - coach-action volume-boost intent (frequency acknowledgement; adds no session, mutates no prescription, FR-T5)
 - notification preference edit (FR-NT1/2 toggles; open-bag additive, absent = off, no schema bump; scheduling is platform-side via `RedeNotifications`, never canonical)
+- plan-frequency adjustment adopt/rollback (FR-PL3/4; `programTemplate.daysPerWeek` edit + open-bag `planAdjustment` rollback record; no schema bump)
+- plan customization edit (FR-PL6/PL7; open-bag additive `planCustomization{dayPlans, daySequence}`, absent = nil = default coach plan = byte-identical to current → golden zero-change; no schema bump). Four writer methods: `applyCustomDayPlan` / `removeCustomDayPlan` / `applyCustomDaySequence` / `removeCustomDaySequence`. **User decides WHAT exercises / order / day-sequence; engine still decides load/reps/progression/verdict** (decision-first preserved — custom exercises become `userPinned` slots that still pass `prescribe()`). Rollback = remove (default template is a deterministic pure function, no snapshot needed). Raw `planCustomization` is validated through the clean view before reaching the engine (§8: raw never enters engines directly). Engine/system contract: system-logic §8.2.
 
 Coach-action adopt, dismiss, and the swap/volume undos all flow through this single writer; undo is a single-step reverse write (no separate undo stack). The dismiss intent has a writer-level reverse (`removeCoachActionDismissal`) but no surfaced user undo — it is a one-way throttle signal. Engine contract: system-logic §6.4a.
 
