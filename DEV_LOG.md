@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-06-23 · 升营销版本 0.1.0 → 0.2.0 (build 7)
+
+**用户目标**：以后版本号要升营销版本（不只 build 号）；并把这条规矩**现在就套到 build 7**——它带着自定义训练计划这个大功能，正好作为 0.2.0 发布（还没上传，改成本低）。
+
+**做了什么**：`MARKETING_VERSION` 0.1.0 → 0.2.0（4 个 config：app + widget × Debug/Release）；`CURRENT_PROJECT_VERSION` 保持 7（build 号仍按 Apple 要求每次上传递增）。即这版是 **0.2.0 (7)**。
+
+**新标准（已记记忆）**：以后 bump 版本号要升营销版本，不再把它冻在 0.1.0；build 号继续每次上传 +1。
+
+**证据**：xcodebuild BUILD SUCCEEDED；4 config 确认 MARKETING=0.2.0、build=7。
+
+**风险与下一步**：纯版本号、零代码。**下一步需你**：Xcode archive → 上传 **0.2.0 (7)** 到 TestFlight 集中验收。
+
+---
+
 ## 2026-06-23 · 升 build 号 0.1.0 (6) → (7)（为新 TestFlight）
 
 **用户目标**：升级版本号，准备把累积的工作上一版新 TestFlight。
