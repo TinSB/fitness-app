@@ -67,6 +67,13 @@ public enum CoachActionWriteError: Error, Equatable {
     case emptyKey   // 空 weekStartISO / actionKey
 }
 
+public enum PlanCustomizationWriteError: Error, Equatable {
+    case emptyDayCode
+    case emptyExerciseList        // 自定义当日清单不得为空（空=应走 remove 回退默认）
+    case emptyExerciseId
+    case emptyDaySequence
+}
+
 public struct CanonicalSessionWriter {
     private let store: AppDataStore
     private let gate: AppDataWriteGate
@@ -244,6 +251,94 @@ public struct CanonicalSessionWriter {
             storage["exerciseSubstitutions"] = .object(subs)
             return try AppData(decoding: .object(storage))
         }
+    }
+
+    // MARK: - FR-PL6/PL7 切片S5：自定义训练计划写入（open-bag planCustomization，无 schema bump）
+    // 全部走唯一 performGatedMutation（load→gate→backup→atomic→honest）。回滚 = remove（默认模板是
+    // 确定性纯函数，无需快照即可重建，比 FR-PL4 更简单）。**分层**：exerciseId 合法性 / 同族 / 场景
+    // 白名单 / 日序是否默认排列，由持有目录的 app 层在调用前校验（同 applyExerciseSubstitution）；
+    // 本层只做结构守卫 + open-bag 写入，不依赖 RedeTrainingDecision。
+
+    /// 已批准写入类别：采纳/更新某训练日的自定义动作清单（FR-PL6）。open-bag 合并写
+    /// planCustomization.dayPlans[dayCode] = 有序动作清单，其余顶层键 + 其他 dayCode 原样保留。
+    @discardableResult
+    public func applyCustomDayPlan(dayCode: String, exercises: [CustomExerciseItem]) throws -> AppData {
+        guard !dayCode.isEmpty else { throw PlanCustomizationWriteError.emptyDayCode }
+        guard !exercises.isEmpty else { throw PlanCustomizationWriteError.emptyExerciseList }
+        guard exercises.allSatisfy({ !$0.exerciseId.isEmpty }) else { throw PlanCustomizationWriteError.emptyExerciseId }
+        return try performGatedMutation { current in
+            var storage = current.storage
+            var custom = storage["planCustomization"]?.asObject ?? [:]
+            var dayPlans = custom["dayPlans"]?.asObject ?? [:]
+            dayPlans[dayCode] = .object(["exercises": .array(exercises.map(Self.encodeCustomItem))])
+            custom["dayPlans"] = .object(dayPlans)
+            storage["planCustomization"] = .object(custom)
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
+    /// 已批准写入类别：移除某训练日自定义（FR-PL6「恢复默认」= 删该 dayCode 覆盖 → 引擎重算默认）。
+    /// 删 dayPlans[dayCode]；无则幂等。其他 dayCode 原样保留；删后若整个自定义全空则一并清掉容器
+    /// （与 getter「全空≡缺容器≡nil」语义闭环，避免残留空容器误导未来 raw 消费方，审查 MAJOR）。
+    @discardableResult
+    public func removeCustomDayPlan(dayCode: String) throws -> AppData {
+        guard !dayCode.isEmpty else { throw PlanCustomizationWriteError.emptyDayCode }
+        return try performGatedMutation { current in
+            var storage = current.storage
+            guard var custom = storage["planCustomization"]?.asObject,
+                  var dayPlans = custom["dayPlans"]?.asObject else { return current } // 幂等
+            dayPlans[dayCode] = nil
+            custom["dayPlans"] = .object(dayPlans)
+            storage["planCustomization"] = Self.cleanedCustomization(custom)
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
+    /// 已批准写入类别：采纳自定义日序（FR-PL7②）。写 planCustomization.daySequence。
+    @discardableResult
+    public func applyCustomDaySequence(_ sequence: [String]) throws -> AppData {
+        guard !sequence.isEmpty, sequence.allSatisfy({ !$0.isEmpty }) else {
+            throw PlanCustomizationWriteError.emptyDaySequence
+        }
+        return try performGatedMutation { current in
+            var storage = current.storage
+            var custom = storage["planCustomization"]?.asObject ?? [:]
+            custom["daySequence"] = .array(sequence.map(JSONValue.string))
+            storage["planCustomization"] = .object(custom)
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
+    /// 已批准写入类别：移除自定义日序（FR-PL7② 恢复默认轮转）。删 daySequence 键；无则幂等。
+    /// 删后若整个自定义全空则一并清掉容器（同 removeCustomDayPlan，与 getter 语义闭环）。
+    @discardableResult
+    public func removeCustomDaySequence() throws -> AppData {
+        return try performGatedMutation { current in
+            var storage = current.storage
+            guard var custom = storage["planCustomization"]?.asObject else { return current } // 幂等
+            custom["daySequence"] = nil
+            storage["planCustomization"] = Self.cleanedCustomization(custom)
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
+    /// 写回 planCustomization 容器，但若它全空（无 dayPlans 或 dayPlans 空、且无 daySequence）则返回
+    /// nil → 调用处 `storage[...] = nil` 删整个容器（与 AppData.planCustomization getter「全空→nil」闭环）。
+    private static func cleanedCustomization(_ custom: [String: JSONValue]) -> JSONValue? {
+        let noDayPlans = custom["dayPlans"]?.asObject?.isEmpty ?? true
+        let noSequence = custom["daySequence"]?.asArray?.isEmpty ?? true
+        return (noDayPlans && noSequence) ? nil : .object(custom)
+    }
+
+    /// CustomExerciseItem → JSONValue（只写非 nil 可选字段，保持 open-bag 干净；缺=引擎默认）。
+    private static func encodeCustomItem(_ item: CustomExerciseItem) -> JSONValue {
+        var o: [String: JSONValue] = ["exerciseId": .string(item.exerciseId)]
+        if let v = item.sets { o["sets"] = .int(Int64(v)) }
+        if let v = item.repMin { o["repMin"] = .int(Int64(v)) }
+        if let v = item.repMax { o["repMax"] = .int(Int64(v)) }
+        if let v = item.rest { o["rest"] = .int(Int64(v)) }
+        if item.crossFamily { o["crossFamily"] = .bool(true) }
+        return .object(o)
     }
 
     // MARK: - FR-T5 切片5：补量意图 + dismiss 写入（schema 11 coachAdjustments / coachState）
