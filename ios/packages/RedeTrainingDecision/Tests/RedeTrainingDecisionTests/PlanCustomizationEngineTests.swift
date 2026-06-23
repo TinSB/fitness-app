@@ -109,6 +109,23 @@ final class PlanCustomizationEngineTests: XCTestCase {
         XCTAssertEqual(pushDay.patternCodes, ["horizontal-press", "fly"], "投影 pattern 来自自定义动作")
     }
 
+    func testDefaultDayExerciseIdsMatchesEnginePlan() throws {
+        // 编辑器起点：0 历史 ppl → 今日 push-a；helper 应与 plan() 默认选材同一批 id（同 slotCandidates 口径）。
+        let baseline = try plan(pplJSON)
+        XCTAssertEqual(baseline.dayCode, "push-a")
+        let helperIds = TodayPrescriptionEngine.defaultDayExerciseIds(dayCode: "push-a", equipmentScenario: nil)
+        XCTAssertEqual(helperIds, baseline.exercises.map(\.exerciseId), "defaultDayExerciseIds 与 plan() 默认选材一致（共享 slotCandidates）")
+    }
+
+    func testDefaultDayExerciseIdsMatchesPlanWithScenario() throws {
+        // 有器械白名单时（home-dumbbell）触发 slotCandidates 的器械/kind 软化路径——helper 与 plan() 仍同口径。
+        let json = #"{"schemaVersion": 8, "userProfile": {"equipmentScenario": "home-dumbbell"}, "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 6}}"#
+        let baseline = try plan(json)
+        XCTAssertEqual(baseline.dayCode, "push-a")
+        let helperIds = TodayPrescriptionEngine.defaultDayExerciseIds(dayCode: "push-a", equipmentScenario: "home-dumbbell")
+        XCTAssertEqual(helperIds, baseline.exercises.map(\.exerciseId), "有场景白名单时 helper 与 plan() 仍一致（锁器械软化路径）")
+    }
+
     func testProjectionDefaultUnchanged() throws {
         let custom = PlanWeekProjection.weeks(splitType: "push-pull-legs", daysPerWeek: 6, completedSessionCount: 0, weeks: 1, customization: .empty)
         let plain = PlanWeekProjection.weeks(splitType: "push-pull-legs", daysPerWeek: 6, completedSessionCount: 0, weeks: 1)

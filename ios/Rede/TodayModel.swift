@@ -93,7 +93,9 @@ struct TodayModel {
             mesocycleEnabled: appData.mesocycle.enabled,
             blockLengthWeeks: appData.mesocycle.blockLengthWeeks,
             // FR-T5：换动作前瞻覆盖（schema 11；空表 = 零行为变化，未采纳前恒空）
-            substitutions: appData.exerciseSubstitutions
+            substitutions: appData.exerciseSubstitutions,
+            // FR-PL6/PL7：用户自定义计划覆盖（缺 = .empty = 逐字段等价于现状、零回归）
+            customization: PlanCustomizationBridge.input(from: appData.planCustomization)
         )
 
         // FR-T5 教练动作（切片6b）：摊平裁决信号 + 处方到顶 reason + 落库 dismiss/采纳态 → 引擎产卡。

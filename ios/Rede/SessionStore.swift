@@ -227,7 +227,8 @@ final class SessionStore {
         return PlanWeekProjection.weeks(
             splitType: input.program.splitType,
             daysPerWeek: daysPerWeek,
-            completedSessionCount: input.sessions.count
+            completedSessionCount: input.sessions.count,
+            customization: PlanCustomizationBridge.input(from: appData.planCustomization) // FR-PL6/PL7
         )
     }
 
@@ -551,6 +552,66 @@ final class SessionStore {
     @discardableResult
     func removeExerciseSubstitution(originalId: String) async -> Bool {
         await performCoachWrite { _ = try $0.removeExerciseSubstitution(originalId: originalId) }
+    }
+
+    // MARK: - FR-PL6/PL7 自定义训练计划写入（计划编辑器；错误进 planSaveErrorText 隔离于计划页）
+
+    /// 计划编辑写入的统一 gated 包装（同 performCoachWrite，但用 planSaveErrorText = 计划页错误面）：
+    /// isSaving 互斥 + 后台唯一写闸（读→改→安检→备份→原子写）+ 成功后重载今日/计划派生；失败如实报。
+    @discardableResult
+    private func performPlanWrite(_ mutate: @escaping @Sendable (CanonicalSessionWriter) throws -> Void) async -> Bool {
+        guard !isSaving else { return false }
+        isSaving = true
+        planSaveErrorText = nil
+        defer { isSaving = false }
+        let fileURL = TodayModel.canonicalFileURL()
+        let result: Result<Void, Error> = await Task.detached(priority: .userInitiated) {
+            do {
+                try FileManager.default.createDirectory(
+                    at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true
+                )
+                let writer = CanonicalSessionWriter(
+                    store: JSONFileAppDataStore(fileURL: fileURL), gate: DataHealthGate()
+                )
+                try mutate(writer)
+                return .success(())
+            } catch {
+                return .failure(error)
+            }
+        }.value
+        switch result {
+        case .success:
+            await loadToday() // 仅刷新今日页（todayOutcome）；**计划页 projection 需调用方在成功后
+                              // 显式 PlanTabView.reload()**（同 applyFrequencyAdjustment 调用方合同，审查 MAJOR-1）。
+            return true
+        case .failure(let error):
+            planSaveErrorText = String(describing: error)
+            return false
+        }
+    }
+
+    /// FR-PL6 采纳/更新某训练日自定义动作清单。
+    @discardableResult
+    func applyCustomDayPlan(dayCode: String, exercises: [CustomExerciseItem]) async -> Bool {
+        await performPlanWrite { _ = try $0.applyCustomDayPlan(dayCode: dayCode, exercises: exercises) }
+    }
+
+    /// FR-PL6「恢复默认」：移除某训练日自定义 → 引擎重算默认。
+    @discardableResult
+    func removeCustomDayPlan(dayCode: String) async -> Bool {
+        await performPlanWrite { _ = try $0.removeCustomDayPlan(dayCode: dayCode) }
+    }
+
+    /// FR-PL7② 采纳自定义日序。
+    @discardableResult
+    func applyCustomDaySequence(_ sequence: [String]) async -> Bool {
+        await performPlanWrite { _ = try $0.applyCustomDaySequence(sequence) }
+    }
+
+    /// FR-PL7② 恢复默认日序。
+    @discardableResult
+    func removeCustomDaySequence() async -> Bool {
+        await performPlanWrite { _ = try $0.removeCustomDaySequence() }
     }
 
     /// 补量采纳：记录本周已承认补量（**不改处方、不加训练**）→ 引擎本周抑制补量卡（诚实语义）。
