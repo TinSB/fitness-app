@@ -16,6 +16,7 @@
 		BB00000000000000000001A4 /* RedeTrainingDecision in Frameworks */ = {isa = PBXBuildFile; productRef = BB00000000000000000001B4 /* RedeTrainingDecision */; };
 		DD00000000000000000000A1 /* RedeNotifications in Frameworks */ = {isa = PBXBuildFile; productRef = DD00000000000000000000B1 /* RedeNotifications */; };
 		BB00000000000000000001D1 /* TodayModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000001D2 /* TodayModel.swift */; };
+		BB0000000000000000000F01 /* PlanCustomizationBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F02 /* PlanCustomizationBridge.swift */; };
 		BB00000000000000000001E1 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000001E2 /* SessionStore.swift */; };
 		CA00000000000000000000B1 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A1 /* RootTabView.swift */; };
 		CA00000000000000000000B2 /* TodayTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A2 /* TodayTabView.swift */; };
@@ -67,6 +68,7 @@
 		AA00000000000000000000E6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B500000000000000000000F5 /* Rede.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Rede.entitlements; sourceTree = "<group>"; };
 		BB00000000000000000001D2 /* TodayModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayModel.swift; sourceTree = "<group>"; };
+		BB0000000000000000000F02 /* PlanCustomizationBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanCustomizationBridge.swift; sourceTree = "<group>"; };
 		BB00000000000000000001E2 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A1 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A2 /* TodayTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayTabView.swift; sourceTree = "<group>"; };
@@ -142,6 +144,7 @@
 				CA00000000000000000000A1 /* RootTabView.swift */,
 				CA00000000000000000000A2 /* TodayTabView.swift */,
 				BB00000000000000000001D2 /* TodayModel.swift */,
+				BB0000000000000000000F02 /* PlanCustomizationBridge.swift */,
 				BB00000000000000000001E2 /* SessionStore.swift */,
 				CC00000000000000000001A2 /* ProgressModel.swift */,
 				CC00000000000000000001C2 /* OnboardingView.swift */,
@@ -293,6 +296,7 @@
 				CA00000000000000000000B1 /* RootTabView.swift in Sources */,
 				CA00000000000000000000B2 /* TodayTabView.swift in Sources */,
 				BB00000000000000000001D1 /* TodayModel.swift in Sources */,
+				BB0000000000000000000F01 /* PlanCustomizationBridge.swift in Sources */,
 				BB00000000000000000001E1 /* SessionStore.swift in Sources */,
 				CC00000000000000000001A1 /* ProgressModel.swift in Sources */,
 				CC00000000000000000001C1 /* OnboardingView.swift in Sources */,

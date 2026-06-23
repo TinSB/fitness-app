@@ -99,6 +99,47 @@ public enum TodayPrescriptionEngine {
     /// 非可处方 loadType / 越场景白名单 → 优雅丢弃（不替换、不崩）；有效则建 userPinned 槽。组数/次数/
     /// 休息：用户覆盖优先，否则取该 pattern 默认槽参数（无则通用默认）；力量目标对复合主项做强度塑形
     /// （仅塑形用户未覆盖的字段）。引擎仍据此算重量/进阶/裁决（决策在前不破坏）。
+    /// 槽位候选过滤（plan() 选材与 defaultDayExerciseIds 共用的唯一口径——抽函数杜绝分叉）：
+    /// 器械偏好 ∩ 白名单（空则软化）、accessory-kind 在无固定器械场景软化、pattern 命中、可处方
+    /// loadType、未弃用、未在本日用过。去顺序化由调用方按 (rank,id) 取。
+    static func slotCandidates(slot: Slot, catalog: ExerciseCatalog, allowed: Set<String>?, usedIds: Set<String>) -> [ExerciseCatalogEntry] {
+        let slotEquipment: Set<String>? = slot.equipment.flatMap { pref in
+            guard let allowed else { return pref }
+            let usable = pref.intersection(allowed)
+            return usable.isEmpty ? nil : usable
+        }
+        let slotKind = slot.kind.flatMap { kind in
+            (kind == "accessory" && allowed != nil
+                && allowed!.isDisjoint(with: EquipmentRegistry.machineClasses)) ? nil : kind
+        }
+        return catalog.entries.filter { entry in
+            !entry.deprecated
+                && EquipmentRegistry.prescribableLoadTypes.contains(entry.loadType)
+                && entry.movementPattern == slot.pattern
+                && (slotKind == nil || entry.kind == slotKind)
+                && (slotEquipment == nil || slotEquipment!.contains(entry.equipment))
+                && (allowed == nil || allowed!.contains(entry.equipment))
+                && !usedIds.contains(entry.id)
+        }
+    }
+
+    /// FR-PL6 计划编辑器用：某训练日的**默认动作 id 清单**（编辑起点）。按默认模板槽逐槽取
+    /// 点名/(rank,id) 最小（不含 sticky/换动作/自定义——纯模板默认，编辑器以此为"教练给的计划"起点）。
+    /// 与 plan() 共用 slotCandidates，口径一致（consistency 测试锁定）。
+    public static func defaultDayExerciseIds(dayCode: String, equipmentScenario: String?, catalog: ExerciseCatalog = .minimal) -> [String] {
+        let allowed = EquipmentAccess.allowed(for: equipmentScenario)
+        var usedIds: Set<String> = []
+        var ids: [String] = []
+        for slot in slots(dayCode: dayCode) {
+            let cands = slotCandidates(slot: slot, catalog: catalog, allowed: allowed, usedIds: usedIds)
+            let pinned = slot.preferredId.flatMap { id in cands.first { $0.id == id } }
+            guard let pick = pinned ?? cands.min(by: { ($0.rank, $0.id) < ($1.rank, $1.id) }) else { continue }
+            usedIds.insert(pick.id)
+            ids.append(pick.id)
+        }
+        return ids
+    }
+
     private static func customSlots(
         specs: [PlanCustomizationInput.ExerciseSpec],
         baseSlots: [Slot],
@@ -312,34 +353,8 @@ public enum TodayPrescriptionEngine {
         let lastActual = lastActualByPattern(sessions: input.sessions, catalog: catalog)
 
         for slot in daySlots {
-            // 槽位器械偏好按类集合匹配；与白名单求交，交集空 = 偏好软化
-            //（单元素集行为与旧单值严格等价）
-            let slotEquipment: Set<String>? = slot.equipment.flatMap { pref in
-                guard let allowed else { return pref }
-                let usable = pref.intersection(allowed)
-                return usable.isEmpty ? nil : usable
-            }
-            // kind 只软化 "accessory"（辅助容量槽默认住在固定器械上）；
-            // "compound" 永不软化——动作性质约束（如深蹲主槽必须复合）与器械
-            // 可得性无关。软化键 = 白名单 ∩ 注册表 machine 类（不再拴字符串
-            // "machine"——P1 拆 plate-loaded/selectorized 后零改动）。
-            let slotKind = slot.kind.flatMap { kind in
-                (kind == "accessory" && allowed != nil
-                    && allowed!.isDisjoint(with: EquipmentRegistry.machineClasses)) ? nil : kind
-            }
-            // 内容系统 P0（2026-06-11）：匹配去顺序化——(rank, id) 升序取首，
-            // 文件顺序不再是合同；deprecated 条目不参与匹配（id 永生只为历史解析）
-            let candidates = catalog.entries.filter { entry in
-                !entry.deprecated
-                    // §6.1：非 external 负重语义未获引擎支持，禁入处方
-                    //（assisted 直接走现瀑布会方向反转——安全红线）
-                    && EquipmentRegistry.prescribableLoadTypes.contains(entry.loadType)
-                    && entry.movementPattern == slot.pattern
-                    && (slotKind == nil || entry.kind == slotKind)
-                    && (slotEquipment == nil || slotEquipment!.contains(entry.equipment))
-                    && (allowed == nil || allowed!.contains(entry.equipment))
-                    && !usedIds.contains(entry.id)
-            }
+            // 候选过滤抽成共享函数 slotCandidates（plan() 与 defaultDayExerciseIds 共用，杜绝口径分叉）。
+            let candidates = slotCandidates(slot: slot, catalog: catalog, allowed: allowed, usedIds: usedIds)
             // 选材优先级：① sticky（用户上次实际做的，须仍合法）→ ② 槽位点名 preferredId
             //（模板指定主项，如 legs-B 硬拉、pull-B 宽握下拉；须通过器械白名单等候选过滤，
             // 否则优雅回退）→ ③ rank 最小默认。点名让 B 日主项精确，不再受「同 pattern 取 rank 最小」限制。
