@@ -50,6 +50,9 @@ public enum TodayPrescriptionEngine {
         /// 点名主项（模板指定具体动作 id，如 legs-B 硬拉、pull-B 宽握下拉）：通过候选过滤则优先选它，
         /// 否则优雅回退 rank 最小（器械受限时不会卡空）。sticky（用户换动作）仍高于点名。
         var preferredId: String? = nil
+        /// 用户自定义计划槽（FR-PL6）：true 时 preferredId = 用户显式选择，优先级**最高**（高于 sticky/
+        /// FR-T5 覆盖），放不下则如实 unfilled（绝不替换成别的动作）。默认 false = 现状逻辑（golden 零变化）。
+        var userPinned: Bool = false
     }
 
     /// 力量目标塑形（owner 拍板：增肌默认 + 力量两套）：只重塑**显式复合主项**——降到 3-6 次、
@@ -81,6 +84,64 @@ public enum TodayPrescriptionEngine {
             return ["push-a", "pull-a", "legs-a", "push-b", "pull-b", "legs-b"]
         }
         return ["upper", "lower"]
+    }
+
+    /// FR-PL7② 自定义日序：override 须为默认日序的**排列**（同集合、同长度、仅顺序变）才采用；否则
+    /// （nil/空/含未知 dayCode/集合不等）回退默认——优雅降级不崩。只重排已有训练日类型，不造新日。
+    static func resolvedDaySequence(splitType: String?, override: [String]?) -> [String] {
+        let base = daySequence(splitType: splitType)
+        guard let override, !override.isEmpty else { return base }
+        guard override.count == base.count, Set(override) == Set(base) else { return base }
+        return override
+    }
+
+    /// FR-PL6 把用户自定义动作清单转成「钉死 exerciseId 的有序槽位」。逐动作：catalog 查不到 / 已弃用 /
+    /// 非可处方 loadType / 越场景白名单 → 优雅丢弃（不替换、不崩）；有效则建 userPinned 槽。组数/次数/
+    /// 休息：用户覆盖优先，否则取该 pattern 默认槽参数（无则通用默认）；力量目标对复合主项做强度塑形
+    /// （仅塑形用户未覆盖的字段）。引擎仍据此算重量/进阶/裁决（决策在前不破坏）。
+    private static func customSlots(
+        specs: [PlanCustomizationInput.ExerciseSpec],
+        baseSlots: [Slot],
+        catalog: ExerciseCatalog,
+        allowed: Set<String>?,
+        isStrength: Bool
+    ) -> [Slot] {
+        var seenIds: Set<String> = []
+        return specs.compactMap { spec in
+            // 优雅丢弃：catalog 查不到 / 弃用 / 非可处方 loadType / 越场景白名单 / **同动作重复**（只保首次，
+            // 防第二个静默变 unfilled + patternCounts 膨胀污染默认槽 sticky，审查 MAJOR-1）。
+            guard let ex = catalog.entry(id: spec.exerciseId), !ex.deprecated,
+                  EquipmentRegistry.prescribableLoadTypes.contains(ex.loadType),
+                  allowed == nil || allowed!.contains(ex.equipment),
+                  seenIds.insert(ex.id).inserted
+            else { return nil }
+            let base = baseSlots.first { $0.pattern == ex.movementPattern }
+            var repMin = spec.repMin ?? base?.repMin ?? 8
+            var repMax = spec.repMax ?? base?.repMax ?? 12
+            var rest = spec.rest ?? base?.rest ?? 90
+            // rir：baseSlots 故意传**未塑形**槽（targetRir 均为默认 2.0）；力量塑形对复合主项在下方单独
+            // 置 1.0（孤立/二级保 2.0）。即"自定义槽自己做强度塑形"，不复用 defaultSlots 的已塑形值。
+            var rir = base?.targetRir ?? 2.0
+            if isStrength && ex.kind == "compound" {
+                if spec.repMin == nil { repMin = 3 }
+                if spec.repMax == nil { repMax = 6 }
+                if spec.rest == nil { rest = max(rest, 180) }
+                rir = 1.0
+            }
+            if repMin > repMax { repMax = repMin }   // 兜底保证区间有效（clean view 已校验，此处防御）
+            return Slot(
+                pattern: ex.movementPattern,
+                kind: ex.kind,
+                equipment: nil,                       // 不收窄器械；preferredId + userPinned 精确钉死本动作
+                sets: max(1, spec.sets ?? base?.sets ?? 3),
+                repMin: max(1, repMin),
+                repMax: max(1, repMax),
+                rest: max(0, rest),
+                targetRir: rir,
+                preferredId: ex.id,
+                userPinned: true
+            )
+        }
     }
 
     static func slots(dayCode: String) -> [Slot] {
@@ -204,7 +265,8 @@ public enum TodayPrescriptionEngine {
         catalog: ExerciseCatalog = .minimal,
         mesocycleEnabled: Bool = false,
         blockLengthWeeks: Int = Mesocycle.defaultBlockLengthWeeks,
-        substitutions: [String: String] = [:]
+        substitutions: [String: String] = [:],
+        customization: PlanCustomizationInput = .empty
     ) -> TodayPrescription? {
         guard verdict.call != .rest else { return nil }
 
@@ -216,7 +278,9 @@ public enum TodayPrescriptionEngine {
                 .map { Mesocycle.phase(blockStartISO: $0, todayISO: input.todayISO, blockLengthWeeks: blockLengthWeeks).modulation }
             : nil
 
-        let sequence = daySequence(splitType: input.program.splitType)
+        // FR-PL7② 自定义日序：override 须为默认日序的排列，否则回退默认（resolvedDaySequence 内守卫）。
+        // 默认（override=nil）逐字节等价于现状。
+        let sequence = resolvedDaySequence(splitType: input.program.splitType, override: customization.daySequence)
         let dayCode = sequence[input.sessions.count % sequence.count]
 
         // FR-EQ1（2026-06-11）：场景白名单硬过滤候选；槽位 equipment/machine-kind
@@ -233,7 +297,17 @@ public enum TodayPrescriptionEngine {
         // 进阶/冷启动/毕业经今日页可达（辅助引体不再每次靠手动换）。
         // 力量目标：复合主项走 3-6 次 / RIR1 / 长休息；增肌（默认/general）不变。
         let isStrength = (input.program.primaryGoal ?? "").lowercased() == "strength"
-        let daySlots = isStrength ? slots(dayCode: dayCode).map(strengthShaped) : slots(dayCode: dayCode)
+        // FR-PL6 当日动作覆盖：有有效自定义清单 → 用之（钉死动作、保序）；否则默认模板（现状逐字节不变）。
+        // 自定义清单经 catalog/场景/可处方过滤后若全空 → 回退默认（优雅降级，绝不出空处方）。
+        let defaultSlots = isStrength ? slots(dayCode: dayCode).map(strengthShaped) : slots(dayCode: dayCode)
+        let daySlots: [Slot]
+        if let specs = customization.dayPlans[dayCode], !specs.isEmpty {
+            let custom = customSlots(specs: specs, baseSlots: slots(dayCode: dayCode),
+                                     catalog: catalog, allowed: allowed, isStrength: isStrength)
+            daySlots = custom.isEmpty ? defaultSlots : custom
+        } else {
+            daySlots = defaultSlots
+        }
         let patternCounts = daySlots.reduce(into: [String: Int]()) { $0[$1.pattern, default: 0] += 1 }
         let lastActual = lastActualByPattern(sessions: input.sessions, catalog: catalog)
 
@@ -269,21 +343,32 @@ public enum TodayPrescriptionEngine {
             // 选材优先级：① sticky（用户上次实际做的，须仍合法）→ ② 槽位点名 preferredId
             //（模板指定主项，如 legs-B 硬拉、pull-B 宽握下拉；须通过器械白名单等候选过滤，
             // 否则优雅回退）→ ③ rank 最小默认。点名让 B 日主项精确，不再受「同 pattern 取 rank 最小」限制。
-            let stickyPick = patternCounts[slot.pattern] == 1
-                ? lastActual[slot.pattern].flatMap { pref in candidates.first { $0.id == pref } }
-                : nil
             let pinnedPick = slot.preferredId.flatMap { id in candidates.first { $0.id == id } }
-            guard let basePick = stickyPick ?? pinnedPick ?? candidates.min(by: { ($0.rank, $0.id) < ($1.rank, $1.id) })
-            else {
-                dayReasons.append(.slotUnfilled(pattern: slot.pattern))
-                continue
+            let entry: ExerciseCatalogEntry
+            if slot.userPinned {
+                // FR-PL6 自定义槽：用户显式选择优先级最高（高于 sticky / FR-T5 覆盖）；放不下
+                //（已用过 / 被场景过滤）则如实 unfilled，绝不替换成别的动作（用户选择是最终的）。
+                guard let pick = pinnedPick else {
+                    dayReasons.append(.slotUnfilled(pattern: slot.pattern))
+                    continue
+                }
+                entry = pick
+            } else {
+                let stickyPick = patternCounts[slot.pattern] == 1
+                    ? lastActual[slot.pattern].flatMap { pref in candidates.first { $0.id == pref } }
+                    : nil
+                guard let basePick = stickyPick ?? pinnedPick ?? candidates.min(by: { ($0.rank, $0.id) < ($1.rank, $1.id) })
+                else {
+                    dayReasons.append(.slotUnfilled(pattern: slot.pattern))
+                    continue
+                }
+                // 换动作覆盖（FR-T5，优先级最高 > sticky/pinned/rank）：用户显式「以后把 X 换成 Y」。
+                // 仅当目标仍是本槽合法候选（同 pattern + 过 FR-EQ1 白名单/槽位过滤 + 未在本日用过，
+                // 即在 candidates 内）才生效，否则优雅回退原选择（不卡空、不破坏 pattern 覆盖）。
+                // substitutions 为空（schema≤10 或无覆盖）= 完全无行为变化（code-regression-guard）。
+                entry = substitutions[basePick.id]
+                    .flatMap { target in candidates.first { $0.id == target } } ?? basePick
             }
-            // 换动作覆盖（FR-T5，优先级最高 > sticky/pinned/rank）：用户显式「以后把 X 换成 Y」。
-            // 仅当目标仍是本槽合法候选（同 pattern + 过 FR-EQ1 白名单/槽位过滤 + 未在本日用过，
-            // 即在 candidates 内）才生效，否则优雅回退原选择（不卡空、不破坏 pattern 覆盖）。
-            // substitutions 为空（schema≤10 或无覆盖）= 完全无行为变化（code-regression-guard）。
-            let entry = substitutions[basePick.id]
-                .flatMap { target in candidates.first { $0.id == target } } ?? basePick
             usedIds.insert(entry.id)
             exercises.append(prescribe(entry: entry, slot: slot, input: input, verdict: verdict, catalog: catalog, phase: phase))
         }
