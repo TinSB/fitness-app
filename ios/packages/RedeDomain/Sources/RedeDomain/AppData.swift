@@ -100,6 +100,38 @@ public struct AppData: Equatable, Sendable {
         }
         return out
     }
+
+    /// FR-PL6/PL7 用户自定义训练计划（open-bag 加性，缺=nil；不 seed、无 schema bump）。
+    /// 每日动作覆盖（有序=训练顺序）+ 可选自定义日序。本层只做**结构**防御读（缺容器/脏 item 跳过、
+    /// 空清单的日丢弃、全空→nil）；**合法性**（exerciseId∈catalog、数值范围、日序须为默认日序排列）
+    /// 由 RedeDataHealth/app 层 clean view 校验并优雅降级（Master §8：raw 不直接进引擎）。
+    public var planCustomization: PlanCustomization? {
+        guard let obj = storage["planCustomization"]?.asObject else { return nil }
+        var dayPlans: [String: CustomDayPlan] = [:]
+        if let dp = obj["dayPlans"]?.asObject {
+            for (dayCode, value) in dp {
+                guard !dayCode.isEmpty, let arr = value.asObject?["exercises"]?.asArray else { continue }
+                let items: [CustomExerciseItem] = arr.compactMap { element in
+                    guard let o = element.asObject,
+                          let id = o["exerciseId"]?.asString, !id.isEmpty else { return nil }
+                    return CustomExerciseItem(
+                        exerciseId: id,
+                        sets: o["sets"]?.asInt,
+                        repMin: o["repMin"]?.asInt,
+                        repMax: o["repMax"]?.asInt,
+                        rest: o["rest"]?.asInt,
+                        crossFamily: o["crossFamily"]?.asBool ?? false
+                    )
+                }
+                if !items.isEmpty { dayPlans[dayCode] = CustomDayPlan(exercises: items) }
+            }
+        }
+        let rawSequence = obj["daySequence"]?.asArray?.compactMap { $0.asString }
+        let daySequence = (rawSequence?.isEmpty == false) ? rawSequence : nil
+        // 全空（无任何当日覆盖且无自定义日序）→ 视为无自定义（与缺容器同义）。
+        if dayPlans.isEmpty && daySequence == nil { return nil }
+        return PlanCustomization(dayPlans: dayPlans, daySequence: daySequence)
+    }
 }
 
 /// 顶层 `mesocycle` 的类型化只读视图（不存"当前第几周"——相位永远从 blockStartISO + 今日现算）。
@@ -113,6 +145,48 @@ public struct PlanAdjustmentRecord: Equatable, Sendable {
         self.kind = kind
         self.fromDaysPerWeek = fromDaysPerWeek
         self.toDaysPerWeek = toDaysPerWeek
+    }
+}
+
+/// FR-PL6/PL7 用户自定义训练计划的域层只读镜像（plain 字段、不跨包依赖引擎/目录）。
+/// 用户决定「练哪个动作、什么顺序、训练日先后」；引擎仍决定「多重/几次/进阶/裁决」（决策在前不破坏）。
+/// 取代旧的单一引擎模板硬编码的"不可改"——但默认 nil = 完全沿用引擎模板（零行为回归）。
+public struct CustomExerciseItem: Equatable, Sendable {
+    public let exerciseId: String
+    public let sets: Int?         // nil = 用引擎默认槽位组数
+    public let repMin: Int?       // nil = 用引擎默认次数下限
+    public let repMax: Int?       // nil = 用引擎默认次数上限
+    public let rest: Int?         // nil = 用引擎默认休息
+    public let crossFamily: Bool  // 跨族换动作标记（FR-PL6：跨族需用户确认；留痕供护栏/审计）。
+    // 注（审查 MINOR）：false 不落盘、读时缺=false——消费方只能感知 true；若将来需区分
+    // 「明确设 false」与「从未设」，改 Bool? 并同步 encodeCustomItem。当前 true-only 留痕足够。
+
+    public init(exerciseId: String, sets: Int? = nil, repMin: Int? = nil,
+                repMax: Int? = nil, rest: Int? = nil, crossFamily: Bool = false) {
+        self.exerciseId = exerciseId
+        self.sets = sets
+        self.repMin = repMin
+        self.repMax = repMax
+        self.rest = rest
+        self.crossFamily = crossFamily
+    }
+}
+
+public struct CustomDayPlan: Equatable, Sendable {
+    public let exercises: [CustomExerciseItem]   // 有序：数组顺序 = 训练顺序（FR-PL7①）
+
+    public init(exercises: [CustomExerciseItem]) {
+        self.exercises = exercises
+    }
+}
+
+public struct PlanCustomization: Equatable, Sendable {
+    public let dayPlans: [String: CustomDayPlan]   // dayCode → 当日动作覆盖（FR-PL6）
+    public let daySequence: [String]?              // 自定义日序（FR-PL7②）；nil = 引擎默认日序
+
+    public init(dayPlans: [String: CustomDayPlan], daySequence: [String]?) {
+        self.dayPlans = dayPlans
+        self.daySequence = daySequence
     }
 }
 
