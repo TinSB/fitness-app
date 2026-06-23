@@ -13,6 +13,10 @@ extension RedeStrings {
                       : "Adjust what you train this day and the order; loads & progression stay coach-driven"
     }
     public var planEditAddExercise: String { locale == .zh ? "添加动作" : "Add exercise" }
+    /// 添加选择器空态（该日同类动作都已加入）。
+    public var planEditAddNoneLeft: String {
+        locale == .zh ? "这天该练的同类动作都已加入" : "All matching exercises for this day are already added"
+    }
     public var planEditSwap: String { locale == .zh ? "换动作" : "Swap" }
     public var planEditRemove: String { locale == .zh ? "移除" : "Remove" }
     public var planEditMoveUp: String { locale == .zh ? "上移" : "Move up" }

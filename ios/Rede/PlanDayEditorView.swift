@@ -21,6 +21,7 @@ struct PlanDayEditorView: View {
     @State private var scenario: String?
     @State private var impact: PlanCustomizationImpact.Summary?
     @State private var swapTarget: String?            // 正在换的动作 id（驱动候选 sheet）
+    @State private var showAddPicker = false          // FR-PL6 S9b 添加动作选择器
     @State private var loaded = false
     @State private var impactTask: Task<Void, Never>? // 取消上一次影响计算，防乱序覆盖（审查 MINOR）
 
@@ -39,8 +40,18 @@ struct PlanDayEditorView: View {
 
                 exerciseList
 
-                // 「添加新动作」需完整动作选择器（按场景/肌群过滤）——留作 S9b；本片支持
-                // 重排 + 换动作（同族替换=改这天练什么）+ 移除 + 恢复默认，已覆盖核心编辑。
+                // FR-PL6 S9b：添加同 pattern 族动作（按器械场景过滤、排除已用；引擎仍算负荷/进阶）。
+                Button { showAddPicker = true } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus.circle").font(.redeCaption).foregroundStyle(Color.redeEmber2)
+                        Text(s.planEditAddExercise).font(.redeCallout).foregroundStyle(Color.redeEmber2)
+                        Spacer()
+                    }
+                    .frame(minHeight: RedeShape.controlHeight).contentShape(Rectangle())
+                }
+                .buttonStyle(.redePressable)
+                .disabled(sessionStore.isSaving || !loaded) // 载入前 scenario 仍 nil，禁点防短暂未过滤候选（审查 MINOR）
+                .accessibilityLabel(s.planEditAddExercise)
 
                 impactSection
 
@@ -60,10 +71,15 @@ struct PlanDayEditorView: View {
         .presentationBackground(Color.redeBase)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
-        .task { if !loaded { await load() } }
+        .task {
+            if !loaded { await load() }
+            // 截图/UI 验证钩子（同 PlanTabView -autoOpenPlanEditor 先例）：-autoOpenAddPicker 自动弹添加选择器。
+            if CommandLine.arguments.contains("-autoOpenAddPicker") { showAddPicker = true }
+        }
         .sheet(item: Binding(get: { swapTarget.map(SwapPick.init) }, set: { swapTarget = $0?.id })) { pick in
             swapSheet(for: pick.id)
         }
+        .sheet(isPresented: $showAddPicker) { addSheet }
     }
 
     // MARK: 动作清单（开放行：名 + 上移/下移/换/移除）
@@ -178,6 +194,43 @@ struct PlanDayEditorView: View {
         .presentationDragIndicator(.visible)
     }
 
+    // MARK: 添加动作 sheet（S9b：同 pattern 族候选；守器械白名单；排除已用）
+
+    @ViewBuilder
+    private var addSheet: some View {
+        let candidates = TodayPrescriptionEngine.addCandidates(
+            dayCode: dayCode, currentIds: exerciseIds, equipmentScenario: scenario
+        )
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(s.planEditAddExercise).font(.redeHeadline).foregroundStyle(Color.redeT1)
+                    .padding(.bottom, 8)
+                if candidates.isEmpty {
+                    Text(s.planEditAddNoneLeft).font(.redeBody).foregroundStyle(Color.redeT3)
+                } else {
+                    // 选完即从列表消失（candidates 随 exerciseIds 重算）→ sheet 不关，可连加多个。
+                    ForEach(Array(candidates.enumerated()), id: \.element) { i, cand in
+                        if i > 0 { Rectangle().fill(Color.redeHair2).frame(height: 1) }
+                        Button { add(cand) } label: {
+                            HStack {
+                                Text(localeStore.exerciseName(cand)).font(.redeBody).foregroundStyle(Color.redeT1)
+                                Spacer()
+                                Image(systemName: "plus.circle").font(.redeCaption).foregroundStyle(Color.redeEmber2)
+                            }
+                            .frame(minHeight: RedeShape.controlHeight).contentShape(Rectangle())
+                        }
+                        .buttonStyle(.redePressableRow)
+                        .accessibilityLabel(s.planEditAddExercise + " " + localeStore.exerciseName(cand))
+                    }
+                }
+            }
+            .padding(RedeSpace.page).frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .presentationBackground(Color.redeBase)
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+
     // MARK: 行为
 
     private func load() async {
@@ -204,6 +257,12 @@ struct PlanDayEditorView: View {
     private func remove(_ id: String) {
         exerciseIds.removeAll { $0 == id }
         recomputeImpact()
+    }
+
+    private func add(_ id: String) {
+        guard !exerciseIds.contains(id) else { return } // addCandidates 已排除已用；双保险防重复
+        exerciseIds.append(id)
+        recomputeImpact() // sheet 保持打开（candidates 重算 → 已加项消失），可连加多个
     }
 
     private func swap(_ id: String, to newId: String) {

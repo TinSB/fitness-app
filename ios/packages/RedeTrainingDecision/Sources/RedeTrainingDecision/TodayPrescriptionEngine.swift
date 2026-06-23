@@ -158,6 +158,26 @@ public enum TodayPrescriptionEngine {
         return ids
     }
 
+    /// FR-PL6 S9b 添加动作：该训练日**已有 pattern 族**里、当前清单未含的可处方候选 id（按 pattern→rank→id 排序）。
+    /// 守器械白名单（FR-EQ1，同 plan 选材口径）。只在已有 pattern 族内增（不造新 pattern 槽——后置；
+    /// 跨族换走 swap）。空清单时仍按该 dayCode 的默认 pattern 集给候选（让删空的日能重新加动作）。
+    public static func addCandidates(dayCode: String, currentIds: [String], equipmentScenario: String?, catalog: ExerciseCatalog = .minimal) -> [String] {
+        let allowed = EquipmentAccess.allowed(for: equipmentScenario)
+        let dayPatterns = Set(slots(dayCode: dayCode).map(\.pattern))
+        guard !dayPatterns.isEmpty else { return [] }
+        let used = Set(currentIds)
+        return catalog.entries
+            .filter { e in
+                !e.deprecated
+                    && EquipmentRegistry.prescribableLoadTypes.contains(e.loadType)
+                    && dayPatterns.contains(e.movementPattern)
+                    && (allowed == nil || allowed!.contains(e.equipment))
+                    && !used.contains(e.id)
+            }
+            .sorted { ($0.movementPattern, $0.rank, $0.id) < ($1.movementPattern, $1.rank, $1.id) }
+            .map(\.id)
+    }
+
     private static func customSlots(
         specs: [PlanCustomizationInput.ExerciseSpec],
         baseSlots: [Slot],
