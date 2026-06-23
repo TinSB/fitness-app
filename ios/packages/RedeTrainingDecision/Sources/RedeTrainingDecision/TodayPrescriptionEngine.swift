@@ -86,9 +86,27 @@ public enum TodayPrescriptionEngine {
         return ["upper", "lower"]
     }
 
+    /// FR-PL7② 日序编辑器用（public seam，同 defaultDayExerciseIds 先例）：某分化的**默认训练日轮转序**
+    /// （编辑起点 = 教练给的日序；恢复默认的目标）。纯模板默认，不含自定义覆盖。
+    public static func defaultDaySequence(splitType: String?) -> [String] {
+        daySequence(splitType: splitType)
+    }
+
+    /// FR-PL7② 护栏预览用（public seam）：给定（可能自定义的）日序 override 与已完成场次，算**下一个训练日**。
+    /// 轮转锚定「已完成场次数 % 序列长度」（非日历）——重排日序后下一个训练日会跳变，故编辑器须诚实预览。
+    /// override 非默认日序排列时回退默认（resolvedDaySequence 内守卫）。空序列 → nil。
+    public static func nextDayCode(splitType: String?, daySequenceOverride: [String]?, completedSessionCount: Int) -> String? {
+        let seq = resolvedDaySequence(splitType: splitType, override: daySequenceOverride)
+        guard !seq.isEmpty else { return nil }
+        // 防御：负数取模在 Swift 返回负值会越界崩溃。生产调用恒传 sessions.count(≥0)，但 public seam 须守契约（优雅降级不崩，审查 MINOR）。
+        let count = max(0, completedSessionCount)
+        return seq[count % seq.count]
+    }
+
     /// FR-PL7② 自定义日序：override 须为默认日序的**排列**（同集合、同长度、仅顺序变）才采用；否则
     /// （nil/空/含未知 dayCode/集合不等）回退默认——优雅降级不崩。只重排已有训练日类型，不造新日。
-    static func resolvedDaySequence(splitType: String?, override: [String]?) -> [String] {
+    /// public：编辑器 seed 当前有效日序（自定义优先、否则默认）共用此口径，杜绝与引擎分叉。
+    public static func resolvedDaySequence(splitType: String?, override: [String]?) -> [String] {
         let base = daySequence(splitType: splitType)
         guard let override, !override.isEmpty else { return base }
         guard override.count == base.count, Set(override) == Set(base) else { return base }

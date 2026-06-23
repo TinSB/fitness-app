@@ -42,4 +42,21 @@ extension RedeStrings {
     public var planEditImpactOk: String {
         locale == .zh ? "肌群每周频率没有明显下降" : "No notable drop in weekly muscle frequency"
     }
+
+    // MARK: FR-PL7② 训练日顺序编辑器（切片 S10）
+
+    /// 计划页「调整训练日顺序」入口。
+    public var planSeqEditEntry: String { locale == .zh ? "调整训练日顺序" : "Reorder training days" }
+    /// 入口行无障碍提示（与 dayScheduleRow 的 planEditDayHint 对齐）。
+    public var planSeqEditEntryHint: String { locale == .zh ? "调整训练日的先后顺序" : "Reorder your training days" }
+    /// 顺序编辑器标题。
+    public var planSeqEditTitle: String { locale == .zh ? "训练日顺序" : "Training day order" }
+    public var planSeqEditSubtitle: String {
+        locale == .zh ? "调整训练日的先后；轮转按已完成场次推进，所以下一个训练日可能跟着变"
+                      : "Reorder your training days; rotation advances by sessions completed, so the next day may change"
+    }
+    /// 护栏预览：重排后下一个训练日将变为 X（诚实告知，不阻止）。day 为已本地化训练日名。
+    public func planSeqNextDay(_ day: String) -> String {
+        locale == .zh ? "下一个训练日将变为：\(day)" : "Next training day will be: \(day)"
+    }
 }
