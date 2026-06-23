@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-06-23 · 升 build 号 0.1.0 (6) → (7)（为新 TestFlight）
+
+**用户目标**：升级版本号，准备把累积的工作上一版新 TestFlight。
+
+**做了什么**：`CURRENT_PROJECT_VERSION` 6 → 7（4 个 config：app + widget × Debug/Release）；`MARKETING_VERSION` 保持 0.1.0（沿用本仓惯例——每次 TestFlight 上传升 build 号、营销版本暂不动，见 #580/#587）。build 6（#588）是上一个已上传的 build，之后合并的全部工作（FR-T5 修数据 #589、FR-PR7 e1RM #590、FR-EX2 动作详情内容 #591-594/598/599、动作库 123→165 #595-597、自定义训练计划 #600-607）都没再升 build，要上新 TestFlight 必须有更高的唯一 build 号。
+
+**证据**：xcodebuild BUILD SUCCEEDED（确认 pbxproj 改后工程仍正常解析/编译）；4 个 config 已确认全部 = 7、MARKETING 仍 4×0.1.0。
+
+**风险与下一步**：纯版本号、零代码逻辑。**下一步需你**：在 Xcode 用付费 team（47K95GV3X5）archive → 上传 build 7 到 TestFlight，按之前的真机验收清单集中过一遍（动作库/FR-EX2 内容/自定义计划全套）。若你其实想升的是营销版本（0.1.0 → 0.2.0 标记一个"版本"），告诉我，我再调。
+
+---
+
 ## 2026-06-23 · 文档维护：CHANGELOG 补登记（6-18 → 6-23 断档）
 
 **用户目标**：保持每个 PR 可追溯——CHANGELOG 自 2026-06-18 起没跟进，缺了约 30 个已合并 PR。
