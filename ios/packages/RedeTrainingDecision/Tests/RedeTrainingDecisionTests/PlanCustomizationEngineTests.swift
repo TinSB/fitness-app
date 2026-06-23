@@ -186,6 +186,40 @@ final class PlanCustomizationEngineTests: XCTestCase {
                        "override==默认序 → 返回默认（current==override 但 ==默认，故应判未自定义）")
     }
 
+    // MARK: S9b 添加动作候选（同 pattern 族、守器械白名单、排除已用）
+
+    func testAddCandidatesAreInDayPatternFamiliesAndExcludeUsed() {
+        // push-a 默认含 cable-fly（fly 族）。把它放进 currentIds → 候选里不再出现它，但仍出现同族其它（如 db-fly）。
+        let cands = TodayPrescriptionEngine.addCandidates(dayCode: "push-a", currentIds: ["cable-fly"], equipmentScenario: nil)
+        XCTAssertFalse(cands.contains("cable-fly"), "已在清单的动作不再作为候选")
+        XCTAssertFalse(cands.isEmpty, "push-a 已有 pattern 族应有可加候选")
+        // 候选的 movementPattern 必须都属于 push-a 的默认 pattern 集（不跨族、不造新 pattern 槽）。
+        // 动态取 slots（@testable）而非硬编码——slots 定义改了测试联动保护（审查 MINOR）。
+        let dayPatterns = Set(TodayPrescriptionEngine.slots(dayCode: "push-a").map(\.pattern))
+        for id in cands {
+            if let p = ExerciseCatalog.minimal.entry(id: id)?.movementPattern {
+                XCTAssertTrue(dayPatterns.contains(p), "\(id) 的 pattern \(p) 应属 push-a 族")
+            }
+        }
+    }
+
+    func testAddCandidatesRespectEquipmentWhitelist() {
+        // 家用哑铃场景：候选不得含需要器械（machine/cable）的动作（FR-EQ1）。
+        let cands = TodayPrescriptionEngine.addCandidates(dayCode: "push-a", currentIds: [], equipmentScenario: "home-dumbbell")
+        for id in cands {
+            if let e = ExerciseCatalog.minimal.entry(id: id) {
+                XCTAssertNotEqual(e.equipment, "cable", "\(id) 器械 cable 不应进家用哑铃候选")
+                XCTAssertNotEqual(e.equipment, "machine", "\(id) 器械 machine 不应进家用哑铃候选")
+            }
+        }
+    }
+
+    func testAddCandidatesEmptyDayStillOffersDayFamilies() {
+        // 删空的日仍能按该 dayCode 的默认 pattern 集拿到候选（让用户重新加）。
+        let cands = TodayPrescriptionEngine.addCandidates(dayCode: "push-a", currentIds: [], equipmentScenario: nil)
+        XCTAssertFalse(cands.isEmpty, "空清单仍按默认 pattern 族给候选")
+    }
+
     func testDuplicateExerciseInCustomDayKeepsFirstOnly() throws {
         // 同动作放两次 → 只保首次（不静默丢第二槽，审查 MAJOR-1）
         let custom = PlanCustomizationInput(dayPlans: ["push-a": [
