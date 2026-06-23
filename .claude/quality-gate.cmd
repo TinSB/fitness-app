@@ -38,6 +38,7 @@ check_budget "TodayTabView.swift" 1      # hero 判断牌
 check_budget "TrainTabView.swift" 2      # hero 仪表 + 小结 PR 牌（异屏）
 check_budget "ProgressTabView.swift" 0   # 公理样板屏：零卡
 check_budget "PlanTabView.swift" 0       # 空态开放式
+check_budget "PlanDayEditorView.swift" 0 # 编辑器 sheet：全开放行 + hairline，零卡
 check_budget "SettingsSheet.swift" 2     # 设备铭牌 + 单题编辑屏题卡（异屏）
 check_budget "OnboardingView.swift" 2    # 题卡⇄结果卡（互斥）
 

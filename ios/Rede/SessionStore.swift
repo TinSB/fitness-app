@@ -285,6 +285,65 @@ final class SessionStore {
         return appData.mesocycle.enabled
     }
 
+    // MARK: - FR-PL6 计划编辑器上下文 / 影响（计划编辑器只读派生）
+
+    /// 编辑器起点：某训练日当前的动作清单（自定义优先，否则默认模板）+ 是否已自定义 + 器械场景。
+    struct DayEditorContext: Equatable {
+        let dayCode: String
+        let currentExerciseIds: [String]
+        let isCustomized: Bool
+        let equipmentScenario: String?
+    }
+
+    static func loadDayEditorContext(dayCode: String, now: Date = Date()) -> DayEditorContext? {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load() else { return nil }
+        let cleanView = CleanAppDataViewBuilder.build(from: appData)
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "en_US_POSIX"); fmt.timeZone = .current; fmt.dateFormat = "yyyy-MM-dd"
+        guard let input = try? CleanTrainingDecisionInput.make(from: cleanView, todayISO: fmt.string(from: now)) else { return nil }
+        let scenario = input.profile.equipmentScenario
+        if let day = appData.planCustomization?.dayPlans[dayCode], !day.exercises.isEmpty {
+            return DayEditorContext(dayCode: dayCode, currentExerciseIds: day.exercises.map(\.exerciseId),
+                                    isCustomized: true, equipmentScenario: scenario)
+        }
+        let defaults = TodayPrescriptionEngine.defaultDayExerciseIds(dayCode: dayCode, equipmentScenario: scenario)
+        return DayEditorContext(dayCode: dayCode, currentExerciseIds: defaults, isCustomized: false, equipmentScenario: scenario)
+    }
+
+    /// FR-PL6.1 改动影响：把本 dayCode 换成 proposedIds 后，算这一周肌群频率前后 delta（护栏数据）。
+    /// 用 PlanWeekProjection 取本周日序（public；resolvedDaySequence 为包内 internal），逐日解析 ids
+    ///（自定义优先、否则 defaultDayExerciseIds）喂 PlanCustomizationImpact。unreadable/缺天数 → nil。
+    static func computeDayEditImpact(dayCode: String, proposedIds: [String], now: Date = Date()) -> PlanCustomizationImpact.Summary? {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load() else { return nil }
+        let cleanView = CleanAppDataViewBuilder.build(from: appData)
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "en_US_POSIX"); fmt.timeZone = .current; fmt.dateFormat = "yyyy-MM-dd"
+        guard let input = try? CleanTrainingDecisionInput.make(from: cleanView, todayISO: fmt.string(from: now)),
+              let daysPerWeek = input.program.daysPerWeek else { return nil }
+        let scenario = input.profile.equipmentScenario
+        let custom = appData.planCustomization
+        var beforePlans: [String: [String]] = [:]
+        for (dc, dp) in (custom?.dayPlans ?? [:]) { beforePlans[dc] = dp.exercises.map(\.exerciseId) }
+        var afterPlans = beforePlans
+        afterPlans[dayCode] = proposedIds
+        func resolve(_ dc: String, _ plans: [String: [String]]) -> [String] {
+            if let ids = plans[dc], !ids.isEmpty { return ids }
+            return TodayPrescriptionEngine.defaultDayExerciseIds(dayCode: dc, equipmentScenario: scenario)
+        }
+        // 本周日序（与今日页/计划页同源），customization 走 bridge 以应用自定义日序。
+        let weekDays = PlanWeekProjection.weeks(
+            splitType: input.program.splitType, daysPerWeek: daysPerWeek,
+            completedSessionCount: input.sessions.count, weeks: 1,
+            customization: PlanCustomizationBridge.input(from: custom)
+        ).first ?? []
+        guard !weekDays.isEmpty else { return nil }
+        let weekBefore = weekDays.map { resolve($0.dayCode, beforePlans) }
+        let weekAfter = weekDays.map { resolve($0.dayCode, afterPlans) }
+        return PlanCustomizationImpact.compute(weekBefore: weekBefore, weekAfter: weekAfter)
+    }
+
     // MARK: - FR-NT1/2 通知偏好 + 授权
 
     /// 读当前通知偏好（设置开关初值；缺=关）。
