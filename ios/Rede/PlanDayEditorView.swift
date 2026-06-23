@@ -81,10 +81,11 @@ struct PlanDayEditorView: View {
                             Text(localeStore.exerciseName(id))
                                 .font(.redeBody).foregroundStyle(Color.redeT1)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                            iconButton("chevron.up", s.planEditMoveUp, enabled: idx > 0) { move(idx, by: -1) }
-                            iconButton("chevron.down", s.planEditMoveDown, enabled: idx < exerciseIds.count - 1) { move(idx, by: 1) }
-                            iconButton("arrow.left.arrow.right", s.planEditSwap) { swapTarget = id }
-                            iconButton("minus.circle", s.planEditRemove) { remove(id) }
+                            // label 含动作名，VoiceOver 能分辨在操作哪个动作（审查 MINOR，与顺序编辑器一致）。
+                            iconButton("chevron.up", s.planEditMoveUp + " " + localeStore.exerciseName(id), enabled: idx > 0) { move(idx, by: -1) }
+                            iconButton("chevron.down", s.planEditMoveDown + " " + localeStore.exerciseName(id), enabled: idx < exerciseIds.count - 1) { move(idx, by: 1) }
+                            iconButton("arrow.left.arrow.right", s.planEditSwap + " " + localeStore.exerciseName(id)) { swapTarget = id }
+                            iconButton("minus.circle", s.planEditRemove + " " + localeStore.exerciseName(id)) { remove(id) }
                         }
                         .frame(minHeight: RedeShape.controlHeight)
                     }

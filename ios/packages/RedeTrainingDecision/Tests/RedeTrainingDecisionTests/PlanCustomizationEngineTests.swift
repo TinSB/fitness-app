@@ -134,6 +134,58 @@ final class PlanCustomizationEngineTests: XCTestCase {
         XCTAssertEqual(custom.first?.map(\.patternCodes), plain.first?.map(\.patternCodes), "patternCodes 也零变化")
     }
 
+    // MARK: S10 日序编辑器 public seam（默认序 / 下一个训练日预览）
+
+    func testDefaultDaySequenceMatchesEngineRotation() {
+        XCTAssertEqual(TodayPrescriptionEngine.defaultDaySequence(splitType: "push-pull-legs"),
+                       ["push-a", "pull-a", "legs-a", "push-b", "pull-b", "legs-b"], "默认日序=引擎轮转序")
+        XCTAssertEqual(TodayPrescriptionEngine.defaultDaySequence(splitType: "full-body"),
+                       ["full-a", "full-b", "full-c"])
+        // 其余两个分化分支（不同序列长度=独立轮转边界，审查 MINOR）：ppl-ul(5) / upper-lower·nil(2)。
+        XCTAssertEqual(TodayPrescriptionEngine.defaultDaySequence(splitType: "ppl-ul"),
+                       ["push-a", "pull-a", "legs-a", "upper", "lower"])
+        XCTAssertEqual(TodayPrescriptionEngine.defaultDaySequence(splitType: nil), ["upper", "lower"])
+    }
+
+    func testNextDayCodeAcrossSplitLengths() {
+        // ppl-ul 长度 5：完成 5 场 → 轮转回头到首日 push-a。
+        XCTAssertEqual(TodayPrescriptionEngine.nextDayCode(splitType: "ppl-ul", daySequenceOverride: nil, completedSessionCount: 5), "push-a")
+        // nil(上下肢)长度 2：完成 2 场 → 回 upper。
+        XCTAssertEqual(TodayPrescriptionEngine.nextDayCode(splitType: nil, daySequenceOverride: nil, completedSessionCount: 2), "upper")
+        // 防御：负 completedSessionCount 不崩、按 0 处理（取首日）。
+        XCTAssertEqual(TodayPrescriptionEngine.nextDayCode(splitType: "push-pull-legs", daySequenceOverride: nil, completedSessionCount: -3), "push-a")
+    }
+
+    func testNextDayCodeAnchorsToCompletedSessions() {
+        // 0 历史 → 下一个=首日 push-a；完成 1 场 → pull-a；完成 6 场 → 回 push-a（轮转）。
+        XCTAssertEqual(TodayPrescriptionEngine.nextDayCode(splitType: "push-pull-legs", daySequenceOverride: nil, completedSessionCount: 0), "push-a")
+        XCTAssertEqual(TodayPrescriptionEngine.nextDayCode(splitType: "push-pull-legs", daySequenceOverride: nil, completedSessionCount: 1), "pull-a")
+        XCTAssertEqual(TodayPrescriptionEngine.nextDayCode(splitType: "push-pull-legs", daySequenceOverride: nil, completedSessionCount: 6), "push-a")
+    }
+
+    func testNextDayCodeReflectsProposedReorder() {
+        // 把 pull-a 提到首 → 0 历史时下一个训练日预览=pull-a（编辑器护栏「下一个训练日将变为 X」）。
+        let proposed = ["pull-a", "push-a", "legs-a", "push-b", "pull-b", "legs-b"]
+        XCTAssertEqual(TodayPrescriptionEngine.nextDayCode(splitType: "push-pull-legs", daySequenceOverride: proposed, completedSessionCount: 0), "pull-a")
+    }
+
+    func testNextDayCodeInvalidOverrideFallsBackToDefault() {
+        // 非排列（缺项）→ 回退默认轮转，预览仍诚实（不崩、不用半截 override）。
+        XCTAssertEqual(TodayPrescriptionEngine.nextDayCode(splitType: "push-pull-legs", daySequenceOverride: ["pull-a", "push-a"], completedSessionCount: 0), "push-a")
+    }
+
+    func testResolvedDaySequencePublicSeedCurrentOrder() {
+        // 编辑器 seed：合法排列 override → 返回它（用户当前自定义顺序）；非法 → 默认。
+        let valid = ["legs-a", "push-a", "pull-a", "push-b", "pull-b", "legs-b"]
+        XCTAssertEqual(TodayPrescriptionEngine.resolvedDaySequence(splitType: "push-pull-legs", override: valid), valid)
+        XCTAssertEqual(TodayPrescriptionEngine.resolvedDaySequence(splitType: "push-pull-legs", override: ["bogus"]),
+                       TodayPrescriptionEngine.defaultDaySequence(splitType: "push-pull-legs"))
+        // override 恰等于默认序：守卫放行、原样返回（== 默认）。SessionStore.isCustomized 据此再比 ≠默认 判非自定义（审查 MAJOR 触发路径）。
+        let def = TodayPrescriptionEngine.defaultDaySequence(splitType: "push-pull-legs")
+        XCTAssertEqual(TodayPrescriptionEngine.resolvedDaySequence(splitType: "push-pull-legs", override: def), def,
+                       "override==默认序 → 返回默认（current==override 但 ==默认，故应判未自定义）")
+    }
+
     func testDuplicateExerciseInCustomDayKeepsFirstOnly() throws {
         // 同动作放两次 → 只保首次（不静默丢第二槽，审查 MAJOR-1）
         let custom = PlanCustomizationInput(dayPlans: ["push-a": [

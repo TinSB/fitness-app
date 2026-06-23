@@ -25,6 +25,8 @@ struct PlanTabView: View {
     @State private var selectPulse = 0
     /// FR-PL6：正在编辑的训练日（非 nil = 弹出编辑器 sheet）。
     @State private var editingDay: PlanEditTarget?
+    /// FR-PL7②：是否打开训练日顺序编辑器 sheet。
+    @State private var showSequenceEditor = false
 
     private var s: RedeStrings { localeStore.strings }
 
@@ -79,6 +81,10 @@ struct PlanTabView: View {
                         weekScheduleSection
                             .padding(.horizontal, RedeSpace.page)
                             .padding(.top, cycle != nil ? 8 : 4)
+                        // FR-PL7②：调整训练日先后顺序入口（开放行下钻顺序编辑器）。
+                        daySequenceEntryRow
+                            .padding(.horizontal, RedeSpace.page)
+                            .padding(.top, 8)
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
@@ -138,15 +144,22 @@ struct PlanTabView: View {
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: sessionStore.planSaveErrorText)
         .task {
             await reload()
-            // 截图/UI 验证钩子（同 RootTabView -autoStartSession 先例）：simctl launch ... -initialTab plan -autoOpenPlanEditor push-a
+            // 截图/UI 验证钩子（同 RootTabView -autoStartSession 先例）：
+            // simctl launch ... -initialTab plan -autoOpenPlanEditor push-a | -autoOpenDaySequenceEditor
             let args = CommandLine.arguments
             if let i = args.firstIndex(of: "-autoOpenPlanEditor"), args.indices.contains(i + 1) {
                 editingDay = PlanEditTarget(dayCode: args[i + 1])
+            } else if args.contains("-autoOpenDaySequenceEditor") {
+                showSequenceEditor = true
             }
         }
         // FR-PL6：训练日编辑器（增删换/重排/预览/采纳·恢复默认）；采纳后 reload 刷新排期。
         .sheet(item: $editingDay) { target in
             PlanDayEditorView(dayCode: target.dayCode, onApplied: { Task { await reload() } })
+        }
+        // FR-PL7②：训练日顺序编辑器；采纳后 reload 刷新排期。
+        .sheet(isPresented: $showSequenceEditor) {
+            PlanDaySequenceEditorView(onApplied: { Task { await reload() } })
         }
     }
 
@@ -315,6 +328,23 @@ struct PlanTabView: View {
                 }
             }
         }
+    }
+
+    /// FR-PL7②：训练日顺序编辑入口（开放行，点开顺序编辑器 sheet）。
+    private var daySequenceEntryRow: some View {
+        Button { showSequenceEditor = true } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "arrow.up.arrow.down").font(.redeCaption).foregroundStyle(Color.redeT3)
+                Text(s.planSeqEditEntry).font(.redeSubhead).foregroundStyle(Color.redeT1)
+                Spacer()
+                Image(systemName: "chevron.right").font(.redeCaption).foregroundStyle(Color.redeT4)
+            }
+            .frame(minHeight: RedeShape.controlHeight)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.redePressableRow)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint(s.planSeqEditEntryHint)
     }
 
     private func dayScheduleRow(_ day: PlanDayProjection) -> some View {

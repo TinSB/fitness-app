@@ -344,6 +344,37 @@ final class SessionStore {
         return PlanCustomizationImpact.compute(weekBefore: weekBefore, weekAfter: weekAfter)
     }
 
+    // MARK: - FR-PL7② 训练日顺序编辑器上下文（切片 S10）
+
+    /// 顺序编辑器起点：当前有效训练日序（自定义优先、否则默认）+ 是否已自定义日序 + 分化 + 已完成场次。
+    /// completedSessionCount 供编辑器实时算「下一个训练日将变为 X」（轮转锚定完成场次）。
+    struct DaySequenceContext: Equatable {
+        let dayCodes: [String]          // 当前顺序（编辑器 seed）
+        let isCustomized: Bool          // 是否已存在自定义日序（控制「恢复默认」是否显示）
+        let splitType: String?          // 预览 nextDayCode 用
+        let completedSessionCount: Int  // 预览 nextDayCode 用（轮转锚点）
+    }
+
+    static func loadDaySequenceContext(now: Date = Date()) -> DaySequenceContext? {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load() else { return nil }
+        let cleanView = CleanAppDataViewBuilder.build(from: appData)
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "en_US_POSIX"); fmt.timeZone = .current; fmt.dateFormat = "yyyy-MM-dd"
+        guard let input = try? CleanTrainingDecisionInput.make(from: cleanView, todayISO: fmt.string(from: now)) else { return nil }
+        let split = input.program.splitType
+        let override = appData.planCustomization?.daySequence
+        // 当前有效序与引擎同口径（resolvedDaySequence：合法排列用 override，否则默认）→ 编辑器永不与排期分叉。
+        let current = TodayPrescriptionEngine.resolvedDaySequence(splitType: split, override: override)
+        guard !current.isEmpty else { return nil }
+        // isCustomized：存了合法排列 override（== 当前有效序）且**顺序确实异于默认**才算已自定义。
+        // 脏 override 当未自定义；override 恰等于默认序也当未自定义（否则「恢复默认」会在已是默认时误显示=no-op 入口，审查 MAJOR）。
+        let isCustomized = override != nil && current == override
+            && current != TodayPrescriptionEngine.defaultDaySequence(splitType: split)
+        return DaySequenceContext(dayCodes: current, isCustomized: isCustomized,
+                                  splitType: split, completedSessionCount: input.sessions.count)
+    }
+
     // MARK: - FR-NT1/2 通知偏好 + 授权
 
     /// 读当前通知偏好（设置开关初值；缺=关）。

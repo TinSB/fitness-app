@@ -18,6 +18,7 @@
 		BB00000000000000000001D1 /* TodayModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000001D2 /* TodayModel.swift */; };
 		BB0000000000000000000F01 /* PlanCustomizationBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F02 /* PlanCustomizationBridge.swift */; };
 		BB0000000000000000000F03 /* PlanDayEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F04 /* PlanDayEditorView.swift */; };
+		BB0000000000000000000F05 /* PlanDaySequenceEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F06 /* PlanDaySequenceEditorView.swift */; };
 		BB00000000000000000001E1 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000001E2 /* SessionStore.swift */; };
 		CA00000000000000000000B1 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A1 /* RootTabView.swift */; };
 		CA00000000000000000000B2 /* TodayTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A2 /* TodayTabView.swift */; };
@@ -71,6 +72,7 @@
 		BB00000000000000000001D2 /* TodayModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayModel.swift; sourceTree = "<group>"; };
 		BB0000000000000000000F02 /* PlanCustomizationBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanCustomizationBridge.swift; sourceTree = "<group>"; };
 		BB0000000000000000000F04 /* PlanDayEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanDayEditorView.swift; sourceTree = "<group>"; };
+		BB0000000000000000000F06 /* PlanDaySequenceEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanDaySequenceEditorView.swift; sourceTree = "<group>"; };
 		BB00000000000000000001E2 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A1 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A2 /* TodayTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayTabView.swift; sourceTree = "<group>"; };
@@ -148,6 +150,7 @@
 				BB00000000000000000001D2 /* TodayModel.swift */,
 				BB0000000000000000000F02 /* PlanCustomizationBridge.swift */,
 				BB0000000000000000000F04 /* PlanDayEditorView.swift */,
+				BB0000000000000000000F06 /* PlanDaySequenceEditorView.swift */,
 				BB00000000000000000001E2 /* SessionStore.swift */,
 				CC00000000000000000001A2 /* ProgressModel.swift */,
 				CC00000000000000000001C2 /* OnboardingView.swift */,
@@ -301,6 +304,7 @@
 				BB00000000000000000001D1 /* TodayModel.swift in Sources */,
 				BB0000000000000000000F01 /* PlanCustomizationBridge.swift in Sources */,
 				BB0000000000000000000F03 /* PlanDayEditorView.swift in Sources */,
+				BB0000000000000000000F05 /* PlanDaySequenceEditorView.swift in Sources */,
 				BB00000000000000000001E1 /* SessionStore.swift in Sources */,
 				CC00000000000000000001A1 /* ProgressModel.swift in Sources */,
 				CC00000000000000000001C1 /* OnboardingView.swift in Sources */,
