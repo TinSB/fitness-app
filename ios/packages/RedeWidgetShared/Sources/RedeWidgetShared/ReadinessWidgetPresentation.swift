@@ -33,14 +33,18 @@ public enum ReadinessWidgetPresentation {
     public static let maxRows = 3
 
     /// Map a snapshot (or its absence) to the view state. `now` is injected for a
-    /// deterministic freshness footnote.
-    public static func viewState(from snapshot: ReadinessWidgetSnapshot?, now: Date) -> ReadinessWidgetViewState {
+    /// deterministic freshness footnote. `fallbackLocale`（如系统语言码）给 widget 端合成的
+    /// 文案（空态 + 新鲜度脚注）选语言；有快照时用快照自带的 locale。
+    public static func viewState(
+        from snapshot: ReadinessWidgetSnapshot?, now: Date, fallbackLocale: String? = nil
+    ) -> ReadinessWidgetViewState {
+        let zh = isZh(snapshot?.locale ?? fallbackLocale)
         guard let snapshot else {
             return ReadinessWidgetViewState(
-                headline: "今日准备度",
-                advice: "暂无今日概览",
+                headline: zh ? "今日准备度" : "Today's readiness",
+                advice: zh ? "暂无今日概览" : "No overview yet",
                 rows: [],
-                footnote: "打开 Rede 今日页生成",
+                footnote: zh ? "打开 Rede 今日页生成" : "Open Rede's Today tab",
                 isPlaceholder: true
             )
         }
@@ -48,17 +52,20 @@ public enum ReadinessWidgetPresentation {
             headline: snapshot.headline,
             advice: snapshot.advice,
             rows: Array(snapshot.rows.prefix(maxRows)),
-            footnote: footnote(generatedAtIso: snapshot.generatedAtIso, now: now),
+            footnote: footnote(generatedAtIso: snapshot.generatedAtIso, now: now, zh: zh),
             isPlaceholder: false
         )
     }
 
-    /// `今日更新` when the snapshot was generated on `now`'s UTC day, else
-    /// `更新于 <YYYY-MM-DD>`. Pure string compare of UTC-day prefixes — no fragile
-    /// re-parse of the stored instant.
-    static func footnote(generatedAtIso: String, now: Date) -> String {
+    /// nil / 非 "zh" 前缀的语言码处理：有前缀 "zh" → 中文；nil → 默认中文（保留无 locale 信息时的历史默认）。
+    static func isZh(_ locale: String?) -> Bool { locale?.hasPrefix("zh") ?? true }
+
+    /// `今日更新` / `Updated today`（快照生成于 `now` 的 UTC 日），否则 `更新于 <日期>` / `Updated <日期>`。
+    /// 纯 UTC 日前缀比较，不重解析时刻。
+    static func footnote(generatedAtIso: String, now: Date, zh: Bool) -> String {
         let isoDay = String(generatedAtIso.prefix(10))
-        return isoDay == utcDayString(now) ? "今日更新" : "更新于 \(isoDay)"
+        if isoDay == utcDayString(now) { return zh ? "今日更新" : "Updated today" }
+        return zh ? "更新于 \(isoDay)" : "Updated \(isoDay)"
     }
 
     static func utcDayString(_ date: Date) -> String {

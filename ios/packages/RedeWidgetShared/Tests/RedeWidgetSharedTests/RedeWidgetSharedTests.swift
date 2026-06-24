@@ -86,6 +86,35 @@ final class RedeWidgetSharedTests: XCTestCase {
         XCTAssertEqual(vs.footnote, "更新于 2020-01-02")
     }
 
+    // MARK: 双语（FR-WD1 中英混杂修复）
+
+    func testPlaceholderEnglishViaFallbackLocale() {
+        let vs = ReadinessWidgetPresentation.viewState(from: nil, now: now, fallbackLocale: "en")
+        XCTAssertTrue(vs.isPlaceholder)
+        XCTAssertEqual(vs.headline, "Today's readiness")
+        XCTAssertEqual(vs.advice, "No overview yet")
+        XCTAssertEqual(vs.footnote, "Open Rede's Today tab")
+    }
+
+    func testFootnoteEnglishFromSnapshotLocale() {
+        let today = ReadinessWidgetPresentation.viewState(
+            from: ReadinessWidgetSnapshot(generatedAtIso: "2023-11-14T01:00:00.000Z",
+                headline: "Readiness · Moderate", advice: "Proceed", rows: [], locale: "en"), now: now)
+        XCTAssertEqual(today.footnote, "Updated today")
+        let dated = ReadinessWidgetPresentation.viewState(
+            from: ReadinessWidgetSnapshot(generatedAtIso: "2020-01-02T00:00:00.000Z",
+                headline: "x", advice: "y", rows: [], locale: "en"), now: now)
+        XCTAssertEqual(dated.footnote, "Updated 2020-01-02")
+    }
+
+    func testSnapshotLocaleWinsOverFallback() {
+        // 快照自带 locale 优先于系统 fallback（已生成的快照跟它生成时的语言）。
+        let vs = ReadinessWidgetPresentation.viewState(
+            from: ReadinessWidgetSnapshot(generatedAtIso: "2020-01-02T00:00:00.000Z",
+                headline: "x", advice: "y", rows: [], locale: "zh"), now: now, fallbackLocale: "en")
+        XCTAssertEqual(vs.footnote, "更新于 2020-01-02")
+    }
+
     func testFakeStoreWriteThenRead() throws {
         let fake = FakeWidgetSnapshotStore()
         XCTAssertNil(fake.read())

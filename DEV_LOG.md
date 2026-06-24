@@ -6,6 +6,24 @@
 
 ---
 
+## 2026-06-24 · 上架前修复 批D：Widget 中英混杂（全库审计发现）
+
+**用户目标**：上架前修掉小组件的中英混杂——英文系统用户在「添加小组件」画廊、空态、新鲜度脚注看到硬编码中文，与 App 已是 zh/en 双语的定位不符。
+
+**做了什么（widget extension 不链接 RedeL10n，故就近双语）**：
+- **快照携带 locale**：`ReadinessWidgetSnapshot` 加可选 `locale` 字段（旧快照无此键→解码 nil、不 bump schema），主 App 写快照时记下用户语言。
+- **空态 + 新鲜度脚注双语**：`ReadinessWidgetPresentation.viewState` 加 `fallbackLocale` 参数——有快照用快照自带 locale、无快照（首装/画廊预览）退回系统语言；空态文案（今日准备度/暂无概览/打开 Rede 生成）和脚注（今日更新/更新于 X）按语言出 zh 或 en。
+- **画廊名/说明双语**：widget 的 `configurationDisplayName`/`description` 按系统语言出（`WidgetLocale` 就近双语）。
+- 内容文案（headline/advice）本就由主 App 经 RedeL10n 写进快照，无需改。
+
+**怎么做对的**：RedeWidgetShared 包测试加 3 条双语用例（en 空态、en 脚注今日/历史、快照 locale 优先于系统 fallback）；旧 2 参 viewState 调用经默认参数仍编译、zh 行为不变（向后兼容）。
+
+**证据**：质量门禁 PASS（8 包 swift test 含 widget 包新双语测试 + xcodebuild 含 widget extension 编译）。
+
+**风险与下一步**：纯 l10n、加性、默认 zh 行为不变。**至此审计的代码/配置类问题 A–D 全部修完**；只剩 **批 E（HealthKit FR-PR8）**——你已选"这版实现"，等你定范围（只读体重 vs 读体重+写训练回 Apple 健康）我即开工。**HealthKit「声明能力但无代码」是上架最后一块硬阻断**。
+
+---
+
 ## 2026-06-24 · 上架前修复 批C：训练引擎 2 个真 bug（全库审计发现，TDD）
 
 **用户目标**：上架前修掉审计查出的 2 个训练引擎处方 bug（影响自重训练用户的进阶正确性 + 数据干净）。

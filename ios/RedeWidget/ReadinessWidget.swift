@@ -29,7 +29,7 @@ struct ReadinessWidgetProvider: TimelineProvider {
 
     func placeholder(in context: Context) -> ReadinessWidgetEntry {
         let now = Date()
-        return ReadinessWidgetEntry(date: now, viewState: ReadinessWidgetPresentation.viewState(from: nil, now: now))
+        return ReadinessWidgetEntry(date: now, viewState: ReadinessWidgetPresentation.viewState(from: nil, now: now, fallbackLocale: WidgetLocale.code))
     }
 
     func getSnapshot(in context: Context, completion: @escaping (ReadinessWidgetEntry) -> Void) {
@@ -50,7 +50,7 @@ struct ReadinessWidgetProvider: TimelineProvider {
         let now = Date()
         return ReadinessWidgetEntry(
             date: now,
-            viewState: ReadinessWidgetPresentation.viewState(from: store.read(), now: now)
+            viewState: ReadinessWidgetPresentation.viewState(from: store.read(), now: now, fallbackLocale: WidgetLocale.code)
         )
     }
 }
@@ -89,6 +89,18 @@ struct ReadinessWidgetEntryView: View {
     }
 }
 
+/// Widget extension 不链接 RedeL10n——这里按系统语言给 widget 自带文案（空态/脚注/画廊名）选语言。
+/// 内容文案（headline/advice）已由主 App 经 RedeL10n 写进快照、本处不管。
+enum WidgetLocale {
+    static var code: String? { Locale.current.language.languageCode?.identifier }
+    static var isZh: Bool { code?.hasPrefix("zh") ?? true }
+    static var galleryName: String { isZh ? "今日准备度" : "Today's readiness" }
+    static var galleryDescription: String {
+        isZh ? "查看今日训练准备度与下一次训练概览（只读 · 本机）。"
+             : "See today's training readiness and your next session at a glance (read-only · on-device)."
+    }
+}
+
 struct ReadinessWidget: Widget {
     let kind = "RedeReadinessWidget"
 
@@ -96,8 +108,8 @@ struct ReadinessWidget: Widget {
         StaticConfiguration(kind: kind, provider: ReadinessWidgetProvider()) { entry in
             ReadinessWidgetEntryView(entry: entry)
         }
-        .configurationDisplayName("今日准备度")
-        .description("查看今日训练准备度与下一次训练概览（只读 · 本机）。")
+        .configurationDisplayName(WidgetLocale.galleryName)
+        .description(WidgetLocale.galleryDescription)
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

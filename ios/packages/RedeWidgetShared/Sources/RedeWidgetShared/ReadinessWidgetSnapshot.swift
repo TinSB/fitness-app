@@ -37,19 +37,25 @@ public struct ReadinessWidgetSnapshot: Codable, Equatable, Sendable {
     public let headline: String
     public let advice: String
     public let rows: [ReadinessWidgetRow]
+    /// 写快照时用户的语言（如 "zh"/"en"）。供 widget 端给**非快照携带**的文案（空态/新鲜度脚注）
+    /// 选语言——这些文案在 widget 端合成、不在 headline/advice 里。可选：旧快照无此键 → 解码为 nil
+    /// （additive、不 bump schema），widget 退回系统语言。
+    public let locale: String?
 
     public init(
         schemaVersion: Int = ReadinessWidgetSnapshot.currentSchemaVersion,
         generatedAtIso: String,
         headline: String,
         advice: String,
-        rows: [ReadinessWidgetRow]
+        rows: [ReadinessWidgetRow],
+        locale: String? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.generatedAtIso = generatedAtIso
         self.headline = headline
         self.advice = advice
         self.rows = rows
+        self.locale = locale
     }
 }
 
