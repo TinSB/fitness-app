@@ -1,2 +1,5 @@
 /* HealthKit 只读体重授权弹窗文案（FR-PR8 范围 A）。中文系统用户看这条。 */
 "NSHealthShareUsageDescription" = "Rede 仅在你授权后从 Apple 健康只读取你最近的体重记录，用于在本机展示；不影响训练建议、不会上传。";
+
+/* HealthKit 写入用途串：仅为通过 App Store 校验（带 HealthKit 权限即被要求），Rede 实际从不写入，故文案如实声明不写入。 */
+"NSHealthUpdateUsageDescription" = "Rede 不向 Apple 健康写入任何数据；仅在你授权后只读取最近体重用于本机展示。";

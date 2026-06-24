@@ -6,7 +6,22 @@
 
 ---
 
-## 2026-06-24 · HealthKit 授权弹窗文案双语化（FR-PR8 打磨）
+## 2026-06-24 · 修复 App Store 上传被拒（HealthKit 缺写入用途串，错误码 90683）
+
+**用户目标**：把 0.2.0 (7) 传上 TestFlight 公测。Xcode Archive 后 **Distribute 上传被 Apple 拒绝**，弹窗错误码 `90683`："Missing purpose string in Info.plist … should contain a NSHealthUpdateUsageDescription key"。
+
+**根因**：之前上架审计时我**删掉了** `NSHealthUpdateUsageDescription`（理由"只读体重、不写入就不需要写入用途串"）——这个判断对 Apple 的上传校验是**错的**。只要 app 带 HealthKit 权限（entitlement），Apple 的静态校验就**强制要求两条用途串都在**（读 `NSHealthShareUsageDescription` + 写 `NSHealthUpdateUsageDescription`），不管 app 实际写不写。所以删掉写入串 = 上传必被拒。
+
+**做了什么**：把 `NSHealthUpdateUsageDescription` 加回 `Info.plist`（Base）+ `en.lproj`/`zh-Hans.lproj` 两个 `InfoPlist.strings`（双语）。文案如实声明 **Rede 从不向健康写入数据、只读取体重用于本机展示**——这条串实际**永远不会弹给用户看**（我们从不请求写权限），它只为通过校验、且被审核员看到时也诚实。**未动 entitlement**（HealthKit 能力不变，无需任何签名动作）；不是写入功能、不碰引擎/canonical 数据。
+
+**怎么证明修好了**：`xcodebuild` 出 `Rede.app` 后**解包核对 Info.plist**——`NSHealthShareUsageDescription` 和 `NSHealthUpdateUsageDescription` **两条都在**了（正是 90683 点名要的那条），版本 0.2.0 (7)、MinimumOSVersion 17.0 不变；en/zh 两个 InfoPlist.strings 也都带上了写入串。质量门禁 PASS（9 包 + xcodebuild）。
+
+**你下一步**：在 Xcode 里**重新 Archive 0.2.0 (7) 再 Distribute** 一次（失败的那次没占用 build 号，7 还能用；万一 ASC 提示 build 重复就升到 8）。这次应能通过 90683 校验。传上去后真机/TestFlight 验收，把结果告诉我。
+
+**风险/残留**：低。纯 Info.plist 文案改动，不影响任何代码路径。
+
+---
+
 
 **用户目标**：HealthKit 连接时的系统授权弹窗 `NSHealthShareUsageDescription` 之前只有中文，英文系统用户看不懂。加双语，让英文用户也看到英文说明。
 

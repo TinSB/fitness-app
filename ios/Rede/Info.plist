@@ -31,6 +31,8 @@
 	<true/>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Rede 仅在你授权后从 Apple 健康只读取你最近的体重记录，用于在本机展示；不影响训练建议、不会上传。</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Rede 不向 Apple 健康写入任何数据；仅在你授权后只读取最近体重用于本机展示。</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
