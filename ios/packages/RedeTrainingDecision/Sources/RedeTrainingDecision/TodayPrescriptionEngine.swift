@@ -611,7 +611,9 @@ public enum TodayPrescriptionEngine {
         let change: ChangeDirection
         let reason: PrescriptionReason
         if let last {
-            let lastReps = last.repsAtTop
+            // 自重/弹力带进阶用**最高组次数**：重量恒 0，按重量取的 repsAtTop 会退化成顺序依赖的某一组
+            //（首/末），导致跨次进阶不一致、到顶漏触发（审计 MAJOR）。最高组才是"有没有余力进阶"的真信号。
+            let lastReps = last.maxReps
             if lastReps >= bodyweightRepCeiling {
                 targetReps = bodyweightRepCeiling
                 change = .hold
