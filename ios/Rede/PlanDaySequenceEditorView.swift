@@ -116,6 +116,9 @@ struct PlanDaySequenceEditorView: View {
                 radius: isDragging ? 8 : 0, y: isDragging ? 4 : 0)  // 阴影=抬起感（不缩放，遵动效守卫）
         .offset(y: isDragging ? dragOffset : 0)
         .zIndex(isDragging ? 1 : 0)
+        // 被拖的行：禁掉它自身的隐式动画——它靠 offset 实时跟手（瞬时移动）。若同时吃 move 的
+        // spring，槽位动画会和偏移补偿打架，在交换瞬间「抽动」。让位的其他行不进此分支、仍走 spring 平滑滑动。
+        .transaction { txn in if isDragging { txn.animation = nil } }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(s.trainingDayName(code))
         // VoiceOver 用户无法用拖动手势（系统会拦截），用自定义动作等价重排。
@@ -143,7 +146,7 @@ struct PlanDaySequenceEditorView: View {
                 // 向下越过半行：逐槽下移（from→from+2 落到 from+1），每移一槽补偿一个行高。
                 while dragOffset > rowHeight * 0.5,
                       let from = dayCodes.firstIndex(of: code), from < dayCodes.count - 1 {
-                    withAnimation(.spring(response: 0.26, dampingFraction: 0.82)) {
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
                         dayCodes.move(fromOffsets: IndexSet(integer: from), toOffset: from + 2)
                     }
                     consumedShift += rowHeight; dragOffset -= rowHeight; movePulse += 1
@@ -151,15 +154,18 @@ struct PlanDaySequenceEditorView: View {
                 // 向上越过半行：逐槽上移（from→from-1）。
                 while dragOffset < -rowHeight * 0.5,
                       let from = dayCodes.firstIndex(of: code), from > 0 {
-                    withAnimation(.spring(response: 0.26, dampingFraction: 0.82)) {
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
                         dayCodes.move(fromOffsets: IndexSet(integer: from), toOffset: from - 1)
                     }
                     consumedShift -= rowHeight; dragOffset += rowHeight; movePulse += 1
                 }
             }
             .onEnded { _ in
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) { dragOffset = 0 }
-                draggingCode = nil; consumedShift = 0
+                // 落位：偏移归零 + 清拖动态全放进同一 withAnimation，被拖行平滑 spring 入位。
+                // （若 draggingCode 在动画外提前置 nil，isDragging 立刻变 false → offset 瞬时跳 0、丢掉回弹。）
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.85)) {
+                    dragOffset = 0; draggingCode = nil; consumedShift = 0
+                }
             }
     }
 
