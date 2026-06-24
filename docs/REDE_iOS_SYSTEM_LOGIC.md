@@ -1088,7 +1088,7 @@ Plan：
 
 **编辑器 UI（FR-PL6/PL7①）。** 计划页排期行 → `PlanDayEditorView` sheet：动作开放行，每行**上移/下移**（同日重排=FR-PL7①）、**同族换**（`ExerciseReplacementEngine.candidates` 守器械白名单 FR-EQ1）、**移除**；**添加**（`TodayPrescriptionEngine.addCandidates`：该日已有 pattern 族内、未用、守白名单的候选，按 pattern→rank→id；不造新 pattern 槽）。编辑器起点 = `defaultDayExerciseIds`（与 plan() 共用 `slotCandidates` 口径，consistency 测试锁定）。
 
-**日序编辑器 UI（FR-PL7②）。** 计划页「调整训练日顺序」入口 → `PlanDaySequenceEditorView` sheet：整周训练日上移/下移（只重排不增删，保 A/B 分化与肌群 2×/周）；起点 = `resolvedDaySequence`（自定义优先否则默认）；实时预览 `nextDayCode`「下一个训练日将变为 X」——**轮转锚定已完成场次（非日历），重排会使下一个训练日跳变，故须诚实预览**（开放决策#1 落地）。`isCustomized` 须 override 合法排列 **且 ≠ 默认序**（否则「恢复默认」会在已是默认时误显示成 no-op 入口）。
+**日序编辑器 UI（FR-PL7②）。** 计划页「调整训练日顺序」入口 → `PlanDaySequenceEditorView` sheet：整周训练日**长按拖动重排**（2026-06-24 实机反馈：旧的上移/下移箭头手感笨，改为长按抬起+拖动，半行死区逐槽落位、阴影抬起、拖动手柄示意；VoiceOver 用户无法拖动，等价重排走每行 `accessibilityActions` 的上移/下移自定义动作——边界用 if 条件不用 `.disabled()`）；只重排不增删，保 A/B 分化与肌群 2×/周；起点 = `resolvedDaySequence`（自定义优先否则默认）；实时预览 `nextDayCode`「下一个训练日将变为 X」——**轮转锚定已完成场次（非日历），重排会使下一个训练日跳变，故须诚实预览**（开放决策#1 落地）。`isCustomized` 须 override 合法排列 **且 ≠ 默认序**（否则「恢复默认」会在已是默认时误显示成 no-op 入口）。
 
 **改动预览与护栏（FR-PL6.1）。** `PlanCustomizationImpact.compute` 算采纳前后**肌群每周频率 delta**（按 `primaryMuscle` 统计每肌群出现在几个训练日 = 次/周）→ `droppedBelowTwice`（从 ≥2× 跌到 <2× 的肌群 = 核心护栏，也即 A/B 分化破坏度量）。**诚实限制**：基于 primaryMuscle 单值近似（贡献权重 P0 未落地），是「频率级」护栏非「容量精算」。**护栏 = 中性提示不强制**（采纳按钮始终可点；唯一例外=跨族换需 inline 确认），§5.4/§7.3 不羞辱不施压。
 
