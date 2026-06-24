@@ -6,6 +6,21 @@
 
 ---
 
+## 2026-06-24 · HealthKit 体重导入 S1：RedeHealthKit 包地基（FR-PR8 范围 A）
+
+**用户目标**：上架最后一块——实现 HealthKit（owner 选范围 **A：只读体重导入展示**），解除"声明了 HealthKit 能力但无代码"的上架阻断。本片建地基（新包），尚无界面、休眠零行为变化。
+
+**做了什么（复刻 RedeNotifications 边界范式，架构强制 HealthKit 只准在 RedeHealthKit 包内 §220）**：
+- 新建 **RedeHealthKit 包**：① 纯层（host 可单测）`BodyWeightSample{kg,dateISO}` + 协议 seam `BodyWeightReading`（授权 / 读最新）；② 平台适配 `#if os(iOS)` `HKBodyWeightReader`——唯一 import HealthKit，`HKHealthStore` 请求 **bodyMass 只读**授权（toShare 空、不写）+ 查最新一条样本，host test 自动排除。
+- 注册进 app target（pbxproj 包引用，链接但**未使用**=休眠）+ 加进质量门禁 & CI 的 EXPECTED_PACKAGES（第 9 个包）。
+- 4 个 host 测试（值类型 + 协议 seam：已授权返回样本 / 未授权 nil / 已连接无数据 nil）。
+
+**怎么做对的**：复用既有 iOS-only 适配器范式（同 UN 通知适配器，纯层 host 测、适配层真机/TestFlight 验）；只读、不写 canonical、不影响引擎（Master §211/220 红线）；质量门禁 PASS（9 包 + xcodebuild 链接新包、iOS 适配器编译过）。
+
+**风险与下一步**：休眠新包、零行为变化。下一步 **S2**（app 接线 + 设置页「Apple 健康」区：值先行连接 → 显示最新体重 + 来源标注）；**S3**（Info.plist 读体重权限串改只体重双语 + 删写回串、规格写回 FR-PR8——红线，owner 需在 Xcode 重确认签名/能力）。**注**：CI 配置（rede-ci.yml 包列表）本片有改动（加新包，加性、属标准包登记）。
+
+---
+
 ## 2026-06-24 · 上架前修复 批D：Widget 中英混杂（全库审计发现）
 
 **用户目标**：上架前修掉小组件的中英混杂——英文系统用户在「添加小组件」画廊、空态、新鲜度脚注看到硬编码中文，与 App 已是 zh/en 双语的定位不符。
