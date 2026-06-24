@@ -1,2 +1,5 @@
 /* HealthKit 只读体重授权弹窗文案（FR-PR8 范围 A）。英文系统用户看这条。 */
 "NSHealthShareUsageDescription" = "Rede reads only your latest body weight from Apple Health, for on-device display — it never affects training suggestions and never leaves your device.";
+
+/* HealthKit 写入用途串：仅为通过 App Store 校验（带 HealthKit 权限即被要求），Rede 实际从不写入，故文案如实声明不写入。 */
+"NSHealthUpdateUsageDescription" = "Rede does not write any data to Apple Health; with your permission it only reads your latest body weight, for on-device display.";
