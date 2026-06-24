@@ -1109,6 +1109,8 @@ Account/sync/cloud settings 不进入第一版干净实现,不得做成无能力
 
 分享系统是 Rede 的商业化增长回路,负责把训练成果、肌群等级、PR、均衡发展和可执行计划转化为用户愿意主动传播的隐私安全资产。它不是第一版社交网络,也不是公开排行榜。第一版干净实现的 S0 边界是本地生成分享卡、调用 iOS Share Sheet、附带通用 App Store / landing link;账号、云端个人页、公开 feed、归因链接、远程模板库和好友关系都属于后续 Master-approved implementation slice。
 
+> **实现状态（2026-06-24，#611 切片 S0）**：本节为目标契约;已落地 = **训练总结卡 + PR/里程碑卡**两类（§9.2 中 Muscle Level / Level Up / Balance Improvement 三卡依赖未实现的 MLE §6.5，deferred）。隐私过滤（§9.3，SH2）落地方式 = **类型层结构性缺失**：`ShareSnapshot`(RedeLocalSnapshot) 只声明允许字段、禁止字段不存在;精确时长经 `ShareDurationBand` 有损分桶成区间。渲染 = app 层 `ShareCardView`(竖版 4:5) + `ImageRenderer`→UIImage,经 `SharePrivacyFilter` 唯一构造入口;触发 = 训练完成小结「分享」→ 预览 → `UIActivityViewController`(§9.4)。S0 不写 canonical、不联网、无埋点(§9.8 本地事件 deferred,守 FR-DT3)。下载 link = App Store(`ShareLinks.appStoreURL`,上架前回退搜索提示)。
+
 ### 9.1 产品目标
 
 分享系统必须同时服务四个目标:
