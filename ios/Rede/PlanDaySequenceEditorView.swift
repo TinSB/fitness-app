@@ -76,11 +76,11 @@ struct PlanDaySequenceEditorView: View {
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .task { if !loaded { await load() } }
-        .sensoryFeedback(.impact, trigger: liftPulse)     // 长按抬起 = 拿起一行
+        .sensoryFeedback(.impact, trigger: liftPulse)     // 抓起一行 = 轻震
         .sensoryFeedback(.selection, trigger: movePulse)  // 每跨一槽 = 轻 tick
     }
 
-    // MARK: 训练日清单（开放行：名 + 拖动手柄；长按拖动重排，上下移留作无障碍动作）
+    // MARK: 训练日清单（开放行：名 + 拖动手柄；拖动重排，上下移留作无障碍动作）
 
     private var dayList: some View {
         VStack(spacing: 0) {
@@ -97,9 +97,13 @@ struct PlanDaySequenceEditorView: View {
                 .font(.redeBody).foregroundStyle(Color.redeT1)
                 .lineLimit(1)   // 行高固定（拖动步距用），训练日名都很短；大字号下截断而非撑破步距数学
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Image(systemName: "line.3.horizontal")    // 拖动手柄：示意此行可长按拖动
+            Image(systemName: "line.3.horizontal")    // 拖动手柄：抓住这里即可拖动重排
                 .font(.redeCaption).foregroundStyle(Color.redeT3)
-                .frame(width: 30, height: rowHeight)
+                .frame(width: 44, height: rowHeight)   // 44pt 触控区，好抓
+                .contentShape(Rectangle())
+                // 手势只挂手柄：拖手柄=重排；拖行内别处/面板别处=系统照常滚动 + 下滑关闭面板
+                // （审查 MAJOR：挂整行的 highPriorityGesture 会吞掉 sheet 下滑关闭手势）。
+                .highPriorityGesture(reorderGesture(code: code))
                 .accessibilityHidden(true)            // 装饰；重排无障碍走下面的 accessibilityActions
         }
         .frame(height: rowHeight)
@@ -112,7 +116,6 @@ struct PlanDaySequenceEditorView: View {
                 radius: isDragging ? 8 : 0, y: isDragging ? 4 : 0)  // 阴影=抬起感（不缩放，遵动效守卫）
         .offset(y: isDragging ? dragOffset : 0)
         .zIndex(isDragging ? 1 : 0)
-        .gesture(reorderGesture(code: code))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(s.trainingDayName(code))
         // VoiceOver 用户无法用拖动手势（系统会拦截），用自定义动作等价重排。
@@ -125,23 +128,22 @@ struct PlanDaySequenceEditorView: View {
         .disabled(sessionStore.isSaving)
     }
 
-    /// 长按 0.22s 抬起 → 拖动。每当拖过「半个行高」就实时把该行挪一槽，并补偿偏移让它黏在手指下。
-    /// 用 while 逐槽消化（兜住快速拖动跨多格，不一次跳两格）；半行死区做迟滞，避免在槽边界来回抖。
+    /// 拖动重排——**碰到手柄就能拖，无长按延迟**（实机反馈长按手感差：要先按住、手指一早动就识别失败）。
+    /// 手势只挂在右侧手柄上（见 dayRow）：拖手柄=重排，面板下滑关闭/滚动不受影响。
+    /// 每拖过「半个行高」就实时把该行挪一槽并补偿偏移让它黏在手指下；while 逐槽兜住快速拖动不跳格，
+    /// 半行死区做迟滞防抖。minimumDistance 6 让纯点击不误抬起（要真拖一点才抓起）。
     /// 注：VoiceOver 开启时系统会拦截此手势，重排走 accessibilityActions（已知降级，非 bug）。
     private func reorderGesture(code: String) -> some Gesture {
-        LongPressGesture(minimumDuration: 0.22)
-            .sequenced(before: DragGesture(minimumDistance: 0))
-            .onChanged { value in
-                guard case .second(true, let drag) = value else { return }
-                if draggingCode != code {                 // 刚抬起
+        DragGesture(minimumDistance: 6)
+            .onChanged { drag in
+                if draggingCode != code {                 // 第一次移动即抓起
                     draggingCode = code; consumedShift = 0; dragOffset = 0; liftPulse += 1
                 }
-                guard let drag else { return }
                 dragOffset = drag.translation.height - consumedShift
                 // 向下越过半行：逐槽下移（from→from+2 落到 from+1），每移一槽补偿一个行高。
                 while dragOffset > rowHeight * 0.5,
                       let from = dayCodes.firstIndex(of: code), from < dayCodes.count - 1 {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.85)) {
+                    withAnimation(.spring(response: 0.26, dampingFraction: 0.82)) {
                         dayCodes.move(fromOffsets: IndexSet(integer: from), toOffset: from + 2)
                     }
                     consumedShift += rowHeight; dragOffset -= rowHeight; movePulse += 1
@@ -149,14 +151,14 @@ struct PlanDaySequenceEditorView: View {
                 // 向上越过半行：逐槽上移（from→from-1）。
                 while dragOffset < -rowHeight * 0.5,
                       let from = dayCodes.firstIndex(of: code), from > 0 {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.85)) {
+                    withAnimation(.spring(response: 0.26, dampingFraction: 0.82)) {
                         dayCodes.move(fromOffsets: IndexSet(integer: from), toOffset: from - 1)
                     }
                     consumedShift -= rowHeight; dragOffset += rowHeight; movePulse += 1
                 }
             }
             .onEnded { _ in
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) { dragOffset = 0 }
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) { dragOffset = 0 }
                 draggingCode = nil; consumedShift = 0
             }
     }
