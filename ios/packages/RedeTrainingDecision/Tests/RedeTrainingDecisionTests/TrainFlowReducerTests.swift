@@ -137,6 +137,33 @@ final class TrainFlowReducerTests: XCTestCase {
         XCTAssertEqual(state.currentRecommendation?.targetWeightKg, 25, "疼痛回退一档 = 选重机 5kg")
     }
 
+    // 换到纯自重/弹力带动作时重量必须归 0——否则原动作负重（如 30kg）随 PlannedSet 落进
+    // observations、被 CompletedSessionBuilder 写成"自重 30kg"脏历史，污染下次自重处方（审计 MAJOR）。
+    func testReplaceToBodyweightZeroesWeight() {
+        let cat = ExerciseCatalog(catalogVersion: "test", entries: [
+            ExerciseCatalogEntry(id: "db-press", movementPattern: "horizontal-press", primaryMuscle: "chest",
+                equipment: "dumbbell", kind: "compound", substitutionGroups: ["g"], startWeightKg: 20, rank: 0),
+            ExerciseCatalogEntry(id: "bw-pushup", movementPattern: "horizontal-press", primaryMuscle: "chest",
+                equipment: "bodyweight", kind: "compound", substitutionGroups: ["g"], startWeightKg: 0,
+                loadType: "bodyweight", rank: 10),
+        ])
+        let presc = TodayPrescription(dayCode: "push-a", exercises: [
+            ExercisePrescriptionPlan(
+                exerciseId: "db-press", sets: 3, restSeconds: 60, repLowerBound: 8, repUpperBound: 12,
+                targetReps: 10, targetWeightKg: 30, targetRir: 2, previousWeightKg: nil,
+                previousTopReps: nil, nextProjectedWeightKg: 32.5, progressionStepKg: 2.5,
+                change: .start, reason: .firstExposure
+            ),
+        ], dayReasons: [])
+        var state = TrainFlowState(prescription: presc, catalog: cat)
+        XCTAssertTrue(state.replacementCandidates.contains("bw-pushup"))
+        state.replaceCurrentExercise(with: "bw-pushup")
+        XCTAssertEqual(state.currentExercise?.loadType, "bodyweight")
+        for set in state.currentExercise?.sets ?? [] {
+            XCTAssertEqual(set.targetWeightKg, 0, "换到自重后每组重量必须归 0（修前沿用原 30kg → 脏自重历史）")
+        }
+    }
+
     // 疼痛登记：当前组事实留痕 + 下一组建议自动保守（引擎安全瀑布）
     func testPainReportFlowsIntoNextRecommendation() throws {
         var state = try makeState()

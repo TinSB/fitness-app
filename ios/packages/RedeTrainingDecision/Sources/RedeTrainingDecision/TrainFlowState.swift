@@ -282,6 +282,12 @@ public struct TrainFlowState: Equatable, Sendable {
             newSets = exercise.sets.map {
                 PlannedSet(index: $0.index, targetWeightKg: defaultLoad, targetReps: $0.targetReps, targetRir: $0.targetRir)
             }
+        } else if newLoadType == "bodyweight" || newLoadType == "band" {
+            // 换到纯自重/弹力带：无重量轴，每组重量必须归 0——否则原动作负重（如 80kg）会随 PlannedSet
+            // 落进 observations、被 CompletedSessionBuilder 写成"自重 80kg"脏历史，污染下次自重处方（审计 MAJOR）。
+            newSets = exercise.sets.map {
+                PlannedSet(index: $0.index, targetWeightKg: 0, targetReps: $0.targetReps, targetRir: $0.targetRir)
+            }
         } else {
             newSets = exercise.sets
         }

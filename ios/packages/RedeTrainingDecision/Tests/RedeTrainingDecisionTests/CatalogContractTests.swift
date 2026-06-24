@@ -244,6 +244,19 @@ final class CatalogContractTests: XCTestCase {
         let ceiling = try plan(history: threeSessions(25))
         XCTAssertEqual(ceiling.targetReps, 25)
         XCTAssertEqual(ceiling.reason, .bodyweightCeilingReached)
+
+        // 多组不同次数：进阶须基于**最高组**，而非按重量取的"顶组"——自重全 0 时顶组退化成
+        // 某一组（首/末，顺序依赖），用它进阶会跨次不一致 / 漏触发到顶（审计 MAJOR）。
+        func sixDayMultiSet(_ reps: [Int]) -> String {
+            let setsJson = reps.map { #"{"weight":0,"reps":\#($0),"rir":2}"# }.joined(separator: ",")
+            return ["2026-06-04", "2026-06-05", "2026-06-06", "2026-06-07", "2026-06-08", "2026-06-09"].enumerated().map { i, d in
+                #"{"id":"m\#(i)","date":"\#(d)","completed":true,"exercises":[{"exerciseId":"t-pushup","sets":[\#(setsJson)]}]}"#
+            }.joined(separator: ",")
+        }
+        let multiUp = try plan(history: sixDayMultiSet([10, 10, 12]))
+        XCTAssertEqual(multiUp.targetReps, 14, "基于最高组 12 进阶 +2（修前按重量取顶组退化成首组 10 → 错得 12）")
+        let multiCeiling = try plan(history: sixDayMultiSet([20, 25, 20]))
+        XCTAssertEqual(multiCeiling.reason, .bodyweightCeilingReached, "最高组 25 即到顶（修前顶组退化成 20 → 漏触发）")
     }
 
     /// 自重组内：重量恒 0，不被减重瀑布吃成 stepKg；疼痛安全信号仍在。
