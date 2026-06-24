@@ -65,6 +65,8 @@ struct TodayTabView: View {
         .task {
             sessionStore.coachSaveErrorText = nil // 进页清教练写错误（新视图干净起步；隔离于全局 saveErrorText）
             if sessionStore.todayOutcome == nil { await sessionStore.loadToday() }
+            // 截图/UI 验证钩子（同 -autoOpenSharePreview 先例）：自动打开设置页（看 Apple 健康区等）。
+            if CommandLine.arguments.contains("-autoOpenSettings") { showSettings = true }
         }
         .alert(s.resumeSessionTitle, isPresented: Binding(
             get: { sessionStore.pendingDraft != nil },
