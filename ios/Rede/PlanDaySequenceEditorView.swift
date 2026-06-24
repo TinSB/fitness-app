@@ -20,13 +20,15 @@ struct PlanDaySequenceEditorView: View {
     @State private var completedSessionCount = 0
     @State private var loaded = false
 
-    // 长按拖动重排状态（替代旧的上移/下移箭头，实机手感更好；上下移保留为无障碍动作）。
-    @State private var draggingCode: String?           // 正在拖动的训练日
-    @State private var dragOffset: CGFloat = 0          // 拖动行相对其当前槽位的视觉偏移
-    @State private var consumedShift: CGFloat = 0       // 已通过整槽移动「消费」的偏移（让手指黏住行）
-    @State private var liftPulse = 0                    // 长按抬起触感脉冲
-    @State private var movePulse = 0                    // 每跨一槽的轻触感脉冲
-    private let rowHeight: CGFloat = RedeShape.controlHeight  // 固定行高 = 拖动每槽步距（取模/round 用）
+    // 拖动重排状态（防抖架构：拖动期间**不改数组**，被拖行纯靠偏移跟手、其他行平滑让位，
+    // 只在松手落定一次顺序——杜绝"边拖边改数组导致被拖行槽位被父级动画、和跟手偏移打架"的抽动）。
+    @State private var draggingCode: String?            // 正在拖动的训练日（nil=没在拖）
+    @State private var dragStartIndex: Int?             // 抓起时的原始下标（拖动期间数组不变，故恒定）
+    @State private var dragTranslation: CGFloat = 0     // 手指竖向位移 = 被拖行 offset（瞬时跟手，不进 withAnimation）
+    @State private var dropTargetIndex = 0              // 当前落点下标（在 withAnimation 里更新 → 让位行平滑开槽）
+    @State private var liftPulse = 0                    // 抓起触感脉冲
+    @State private var movePulse = 0                    // 每跨一行的轻触感脉冲
+    private let rowHeight: CGFloat = RedeShape.controlHeight  // 固定行高 = 落点取整步距
 
     private var s: RedeStrings { localeStore.strings }
 
@@ -92,6 +94,8 @@ struct PlanDaySequenceEditorView: View {
 
     private func dayRow(idx: Int, code: String) -> some View {
         let isDragging = draggingCode == code
+        // 被拖行：偏移=跟手位移（瞬时）。其他行：偏移=让位空位（被拖行跨过它时让出一个行高，平滑）。
+        let yOffset = isDragging ? dragTranslation : gapOffset(forIndex: idx)
         return HStack(spacing: 12) {
             Text(s.trainingDayName(code))
                 .font(.redeBody).foregroundStyle(Color.redeT1)
@@ -114,11 +118,8 @@ struct PlanDaySequenceEditorView: View {
         .contentShape(Rectangle())
         .shadow(color: Color.black.opacity(isDragging ? 0.32 : 0),
                 radius: isDragging ? 8 : 0, y: isDragging ? 4 : 0)  // 阴影=抬起感（不缩放，遵动效守卫）
-        .offset(y: isDragging ? dragOffset : 0)
+        .offset(y: yOffset)
         .zIndex(isDragging ? 1 : 0)
-        // 被拖的行：禁掉它自身的隐式动画——它靠 offset 实时跟手（瞬时移动）。若同时吃 move 的
-        // spring，槽位动画会和偏移补偿打架，在交换瞬间「抽动」。让位的其他行不进此分支、仍走 spring 平滑滑动。
-        .transaction { txn in if isDragging { txn.animation = nil } }
         .accessibilityElement(children: .combine)
         .accessibilityLabel(s.trainingDayName(code))
         // VoiceOver 用户无法用拖动手势（系统会拦截），用自定义动作等价重排。
@@ -131,40 +132,58 @@ struct PlanDaySequenceEditorView: View {
         .disabled(sessionStore.isSaving)
     }
 
-    /// 拖动重排——**碰到手柄就能拖，无长按延迟**（实机反馈长按手感差：要先按住、手指一早动就识别失败）。
-    /// 手势只挂在右侧手柄上（见 dayRow）：拖手柄=重排，面板下滑关闭/滚动不受影响。
-    /// 每拖过「半个行高」就实时把该行挪一槽并补偿偏移让它黏在手指下；while 逐槽兜住快速拖动不跳格，
-    /// 半行死区做迟滞防抖。minimumDistance 6 让纯点击不误抬起（要真拖一点才抓起）。
+    /// 落点下标 = 起点 + 位移四舍五入到行，夹在 [0, count-1]。
+    private func targetIndex(start: Int) -> Int {
+        max(0, min(dayCodes.count - 1, start + Int((dragTranslation / rowHeight).rounded())))
+    }
+
+    /// 让位偏移：被拖行从 start 移到 dropTargetIndex，给被它跨过的行让出一个行高的空位。
+    /// 关键——这些偏移恰好等于"落定后该行的最终槽位与当前槽位之差"，故松手提交时这些行视觉零位移、无缝。
+    private func gapOffset(forIndex i: Int) -> CGFloat {
+        guard let start = dragStartIndex, i != start else { return 0 }  // 被拖行自身不让位（调用方已按 isDragging 排除，这里再兜一层）
+        let target = dropTargetIndex
+        if start < target {            // 向下拖：(start, target] 的行上移一格让位
+            return (i > start && i <= target) ? -rowHeight : 0
+        } else if start > target {     // 向上拖：[target, start) 的行下移一格让位
+            return (i >= target && i < start) ? rowHeight : 0
+        }
+        return 0
+    }
+
+    /// 拖动重排——碰到手柄就能拖（无长按）。**拖动期间不改 dayCodes**：被拖行靠 dragTranslation 瞬时跟手
+    /// （不进 withAnimation → 没有任何动画能和它打架 → 不抽动）；让位行的 gapOffset 由 dropTargetIndex 在
+    /// withAnimation 里更新 → 平滑开槽。只在松手把顺序落定一次（被拖行 spring 入位，让位行已就位、零位移）。
+    /// 手势只挂右侧手柄（见 dayRow）：拖手柄=重排，面板下滑关闭/滚动不受影响。
     /// 注：VoiceOver 开启时系统会拦截此手势，重排走 accessibilityActions（已知降级，非 bug）。
     private func reorderGesture(code: String) -> some Gesture {
         DragGesture(minimumDistance: 6)
             .onChanged { drag in
                 if draggingCode != code {                 // 第一次移动即抓起
-                    draggingCode = code; consumedShift = 0; dragOffset = 0; liftPulse += 1
+                    draggingCode = code
+                    dragStartIndex = dayCodes.firstIndex(of: code)
+                    dropTargetIndex = dragStartIndex ?? 0
+                    dragTranslation = 0
+                    liftPulse += 1
                 }
-                dragOffset = drag.translation.height - consumedShift
-                // 向下越过半行：逐槽下移（from→from+2 落到 from+1），每移一槽补偿一个行高。
-                while dragOffset > rowHeight * 0.5,
-                      let from = dayCodes.firstIndex(of: code), from < dayCodes.count - 1 {
-                    withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
-                        dayCodes.move(fromOffsets: IndexSet(integer: from), toOffset: from + 2)
-                    }
-                    consumedShift += rowHeight; dragOffset -= rowHeight; movePulse += 1
-                }
-                // 向上越过半行：逐槽上移（from→from-1）。
-                while dragOffset < -rowHeight * 0.5,
-                      let from = dayCodes.firstIndex(of: code), from > 0 {
-                    withAnimation(.spring(response: 0.25, dampingFraction: 0.9)) {
-                        dayCodes.move(fromOffsets: IndexSet(integer: from), toOffset: from - 1)
-                    }
-                    consumedShift -= rowHeight; dragOffset += rowHeight; movePulse += 1
+                dragTranslation = drag.translation.height  // 瞬时跟手（不在 withAnimation 里）
+                guard let start = dragStartIndex else { return }
+                let t = targetIndex(start: start)
+                if t != dropTargetIndex {                   // 跨过一行：让位行平滑开槽 + 轻 tick
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.9)) { dropTargetIndex = t }
+                    movePulse += 1
                 }
             }
             .onEnded { _ in
-                // 落位：偏移归零 + 清拖动态全放进同一 withAnimation，被拖行平滑 spring 入位。
-                // （若 draggingCode 在动画外提前置 nil，isDragging 立刻变 false → offset 瞬时跳 0、丢掉回弹。）
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.85)) {
-                    dragOffset = 0; draggingCode = nil; consumedShift = 0
+                // 落定：把顺序提交 + 清拖动态，全放进同一 withAnimation——被拖行从松手位 spring 入最终槽，
+                // 让位行因 gapOffset 已等于最终位移而视觉不动，整体无缝。
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                    if let start = dragStartIndex, start != dropTargetIndex {
+                        dayCodes.move(fromOffsets: IndexSet(integer: start),
+                                      toOffset: dropTargetIndex > start ? dropTargetIndex + 1 : dropTargetIndex)
+                    }
+                    draggingCode = nil
+                    dragStartIndex = nil
+                    dragTranslation = 0
                 }
             }
     }
