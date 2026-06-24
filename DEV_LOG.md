@@ -6,6 +6,23 @@
 
 ---
 
+## 2026-06-24 · HealthKit 体重导入 S3：规格写回（FR-PR8 范围 A 收口）
+
+**用户目标**：HealthKit 范围 A 代码已落地（S1+S2），按宪法「规格写回 = 完成的一部分」把现状回写 canonical 规格，FR-PR8 范围 A 收口。**纯文档。**
+
+**做了什么**：
+- **PRD FR-PR8**：FF → 🟡 R1 部分（范围 A 只读体重已实现：RedeHealthKit 包 + 设置页连接/最新体重/来源标注；纯展示不写 canonical/不进训练/不影响处方；导入训练 + 写回 HKWorkout deferred；真机待 TestFlight）。
+- **架构**：RedeHealthKit「Not created」→「Created（FR-PR8 范围 A 只读体重，display-only）」；外部依赖清单 HealthKit/UserNotifications 两行「not yet created」改为已创建现状（顺手修 RedeNotifications 的同款过时断言）。
+- **系统逻辑**：包数 8 → **9**（RedeHealthKit 移出"未重建"列表，剩 RedeBackup/RedeUIKit 2 个）；RedeHealthKit 包职责行补只读体重契约。
+
+**怎么做对的**：契约正文写目标，现状/状态用带 PR 号的标记（沿用本仓惯例）；范围 A 是 read-live-display（不落 storage），故架构既有的「HealthKit body-weight append 到 derived storage」写类别本片不启用、仍为未来更全版本的预留。
+
+**风险与下一步**：纯文档。**HealthKit FR-PR8 范围 A 至此代码 + 规格全闭环**；上架硬阻断（含 HealthKit）已全部解除。
+- **遗留（已甩独立任务，非阻断）**：HealthKit 系统授权弹窗的 `NSHealthShareUsageDescription` 目前是中文单语——英文系统用户会看到中文。正解 = 加 en.lproj/zh-Hans.lproj InfoPlist.strings（PBXVariantGroup）。审计验证确认**单语 usage 串不构成 App Store 硬拒审**，故作打磨项后续做。
+- **下一步（需你）**：archive **0.2.0 (7)** 上 TestFlight/App Store——含审计修复 A–D + 自定义计划 + 分享卡 + HealthKit 只读体重。真机验收清单：HealthKit 连接 + 体重显示、各审计修复点、自定义计划/分享卡交互。
+
+---
+
 ## 2026-06-24 · HealthKit 体重导入 S2：app 接线 + 设置页展示（FR-PR8 范围 A）
 
 **用户目标**：让 HealthKit 体重导入**用户可见、可用**——设置页连接 Apple 健康、显示最新体重。这一片让 HealthKit entitlement **真正被使用**（读 bodyMass），解除「声明能力但无代码」的上架阻断核心。

@@ -125,7 +125,7 @@ These are reserved future boundaries (named here so logic lands in the right pla
 
 | Package | Intended responsibility | Status |
 |---|---|---|
-| `RedeHealthKit` | Approved HealthKit adapters and pure mapping seams. | Not created. No HealthKit code exists yet. |
+| `RedeHealthKit` | Approved HealthKit adapters and pure mapping seams. | Created (FR-PR8 scope A, #617). Read-only body-weight (`BodyWeightReading` seam + `#if os(iOS)` `HKBodyWeightReader` reading `bodyMass`). Display-only — never canonical, never engine truth. Workout import / HKWorkout write deferred. |
 | `RedeBackup` | Backup/export. | Not created. Does not authorize backup/export implementation. |
 | `RedeUIKit` | Shared UI framework. | Not created. Does not authorize a shared UI framework migration. |
 
@@ -217,8 +217,8 @@ HealthKit imports, widget snapshots, local snapshots, UI receipts, and future pl
 Allowed platform integrations:
 
 - `FileManager` for local JSON persistence and sanctioned backups.
-- HealthKit, when added, only inside `RedeHealthKit` (not yet created; no HealthKit code exists today).
-- UserNotifications, when added, only inside `RedeNotifications` (not yet created; no notification code exists today).
+- HealthKit only inside `RedeHealthKit` (created, FR-PR8 scope A: read-only body-weight `HKBodyWeightReader` behind the `BodyWeightReading` seam; display-only, never engine truth).
+- UserNotifications only inside `RedeNotifications` (created, FR-NT1/2: local rest/weekly reminders behind `NotificationScheduling`).
 - WidgetKit only inside the widget target and `RedeWidgetShared` adapter.
 - App Groups only for the read-only widget snapshot handoff.
 
