@@ -29,6 +29,8 @@ struct SettingsSheet: View {
     @State private var notifPermissionDenied = false
     /// 通知开关操作进行中（授权/写盘）：串行化 + 禁用开关，防"开→快切关"竞态致磁盘/UI 不一致（审查 MAJOR-2）。
     @State private var isNotifBusy = false
+    @State private var health = HealthModel()  // FR-PR8：Apple 健康只读体重展示
+    @State private var healthBusy = false
     /// 行内单题编辑（方向 A 拍板 2026-06-10：改哪题进哪题，退役整流重跑）。
     @State private var editing: PlateQuestion?
     /// 最近一次保存的变更收据（铭牌下方替换提示行）。
@@ -82,6 +84,8 @@ struct SettingsSheet: View {
                     EngraveDivider().padding(.top, RedeSpace.section)
                     notificationsSection
                     EngraveDivider().padding(.top, RedeSpace.section)
+                    healthSection
+                    EngraveDivider().padding(.top, RedeSpace.section)
                     backgroundPlate
                     EngraveDivider().padding(.top, RedeSpace.section)
                     backplateInfo
@@ -105,6 +109,43 @@ struct SettingsSheet: View {
             notifRestEndOn = notif.restEnd
             notifWeeklyOn = notif.weekly
             notifPermissionDenied = false
+            await health.loadSilently() // 静默尝试读（不弹框）：之前授权过则直接显示体重
+        }
+    }
+
+    // MARK: - FR-PR8 Apple 健康（只读体重展示）
+
+    private var healthSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Overline(text: s.healthSectionTitle).padding(.top, 18)
+            switch health.state {
+            case .weight(let sample):
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(s.healthWeightLine(weight: "\(s.formatKg(sample.kg)) \(s.unitLabel)", dateISO: sample.dateISO))
+                        .font(.redeBody).foregroundStyle(Color.redeT1).monospacedDigit()
+                    Text(s.healthSourceLabel).font(.redeCaption).foregroundStyle(Color.redeT4)
+                }
+            case .noData:
+                Text(s.healthNoData).font(.redeCaption).foregroundStyle(Color.redeT3)
+                    .fixedSize(horizontal: false, vertical: true)
+            case .unavailable:
+                Text(s.healthUnavailable).font(.redeCaption).foregroundStyle(Color.redeT3)
+            case .notConnected, .connecting:
+                Button {
+                    guard !healthBusy else { return }
+                    healthBusy = true
+                    Task { await health.connect(); healthBusy = false }
+                } label: {
+                    Text(health.state == .connecting ? s.healthConnecting : s.healthConnectAction)
+                        .font(.redeBody).foregroundStyle(Color.redeEmber2)
+                        .frame(minHeight: RedeShape.controlHeight, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.redePressable)
+                .disabled(healthBusy)
+            }
+            Text(s.healthSectionNote).font(.redeCaption).foregroundStyle(Color.redeT4)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

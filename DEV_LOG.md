@@ -6,6 +6,25 @@
 
 ---
 
+## 2026-06-24 · HealthKit 体重导入 S2：app 接线 + 设置页展示（FR-PR8 范围 A）
+
+**用户目标**：让 HealthKit 体重导入**用户可见、可用**——设置页连接 Apple 健康、显示最新体重。这一片让 HealthKit entitlement **真正被使用**（读 bodyMass），解除「声明能力但无代码」的上架阻断核心。
+
+**做了什么**：
+- **HealthModel（app @MainActor @Observable）**：经 `RedeHealthKit.BodyWeightReading`（默认 `HKBodyWeightReader`）做值先行授权 + 读最新体重；状态机 未连接/连接中/不支持/无数据/有体重。纯展示——**不写 canonical、不进训练历史、不影响处方**（§211/220 红线）。
+- **设置页「Apple 健康」区**：进页静默尝试读（不弹框，之前授权过则直接显示体重）；未连接 → 「连接 Apple 健康」按钮（点击才请求只读授权，值先行）；有体重 → 显示「72.5 kg · 日期」+「来源：Apple 健康」标注；无数据/未授权/不支持 → 各自诚实提示；区块脚注「只读本机展示、不影响训练、不上传」。
+- 双语文案 `HealthKitCopy`；`HealthModel.swift` 注册进 app target。
+
+**怎么做对的**：HealthKit 只经协议触达、类型不出 RedeHealthKit 包；授权值先行（不在启动弹框）；HealthKit 隐私下「授权后无法查询是否授予读」→ 读不到时诚实合并提示「无记录或未授权」，不假装。质量门禁 PASS（9 包 + xcodebuild 链接+使用新包）。
+
+**审查**：独立 code-reviewer 一轮 → 修 1 BLOCKER + 2 MAJOR（本片内修，不拖到 S3）：① **删 Info.plist `NSHealthUpdateUsageDescription`（写回 HKWorkout 串）**——范围 A 不写、留着会被 App Review 以"声明能力无实现"驳回（B-1）；② 读体重串 `NSHealthShareUsageDescription` 措辞从"体重与训练记录"改为**仅体重**（M-2，越权声明不诚实）；③ `loadSilently` 加双重 `state==.notConnected` 守护，防与用户点「连接」并发覆盖状态（M-1）。关键澄清：改 Info.plist **usage 串不动 entitlement**（HealthKit 能力自 #507 就在、本片只是让它被使用）→ **无需你做任何签名动作**。
+
+**证据**：质量门禁 PASS（含审查修复后）；模拟器实测设置页打开 + 渲染（单位/语言/周期/通知齐）；**Apple 健康区在通知区之下、simctl 无法滚动故未截到该区像素**——但与已验证的通知区同套原语且门禁编译过。**真机 HealthKit 读取（需真实健康数据 + 系统授权框）靠 TestFlight 验**。加截图钩子 `-autoOpenSettings`。
+
+**风险与下一步**：纯展示、不碰 canonical/引擎；entitlement 未改动、无签名动作。Info.plist 已在本片修正（不再拖 S3）。下一步 **S3** 收口（非红线）：Info.plist 健康权限串**双语化**（en.lproj/InfoPlist.strings，英文用户授权框不再看中文）+ 规格写回 FR-PR8（架构 RedeHealthKit 已创建、PRD FR-PR8 状态）。**HealthKit「声明能力但无代码」阻断到本片已解除**（entitlement 已被只读体重代码真实使用）。
+
+---
+
 ## 2026-06-24 · HealthKit 体重导入 S1：RedeHealthKit 包地基（FR-PR8 范围 A）
 
 **用户目标**：上架最后一块——实现 HealthKit（owner 选范围 **A：只读体重导入展示**），解除"声明了 HealthKit 能力但无代码"的上架阻断。本片建地基（新包），尚无界面、休眠零行为变化。
