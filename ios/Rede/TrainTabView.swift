@@ -1,6 +1,7 @@
 import SwiftUI
 import RedeL10n
 import RedeTrainingDecision
+import RedeLocalSnapshot
 
 // Train — 按 rede-app.html #s-train 复原（M0-2 静态稿 → M3-2 全交互）。
 // 视觉合同沿用静态稿；状态转移全在 TrainFlowState（包内有测试），本层只渲染 +
@@ -55,6 +56,7 @@ struct TrainTabView: View {
     @State private var showMoreSheet = false
     @State private var showSwapSheet = false
     @State private var painToastVisible = false
+    @State private var sharePreview: SharePreviewItem?   // FR-SH1：训练总结分享卡预览
 
     private var s: RedeStrings { localeStore.strings }
     private var flow: TrainFlowState? { sessionStore.flow }
@@ -1139,12 +1141,33 @@ struct TrainTabView: View {
             })
             .disabled(sessionStore.isSaving)
             .opacity(sessionStore.isSaving ? 0.5 : 1)
+
+            // FR-SH1：分享成绩（生成带 Rede 品牌的成就卡 → 系统分享）。次级文字动作，不与"保存完成"争主操作。
+            if let summary, let plan = flow?.prescription {
+                Button {
+                    sharePreview = SharePreviewItem(snapshots: SessionShareSnapshotBuilder.build(
+                        summary: summary, plan: plan))
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "square.and.arrow.up").font(.redeCaption)
+                        Text(s.shareCardShareAction)
+                    }
+                    .font(.redeCallout).foregroundStyle(Color.redeT3)
+                    .frame(minHeight: RedeShape.controlHeight, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.redePressable)
+                .disabled(sessionStore.isSaving)
+            }
             Spacer()
         }
         .padding(20)
-        .presentationDetents([.height(380)])
+        .presentationDetents([.height(440)])
         .presentationBackground(Color.redeBase)
         .interactiveDismissDisabled(true)
+        .sheet(item: $sharePreview) { item in
+            ShareCardPreviewView(snapshots: item.snapshots)
+        }
         .sensoryFeedback(.impact(weight: .heavy), trigger: prPulse) // 破 PR = 全程最重一击
         .sensoryFeedback(.success, trigger: summaryDonePulse)        // 普通完成 = .success（末组让给小结）
         .onAppear {

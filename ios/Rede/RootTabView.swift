@@ -15,6 +15,8 @@ struct RootTabView: View {
     @State private var sessionStore = SessionStore()
     /// M5-1b 首启引导：nil = 未检查（避免首帧闪烁误判）。
     @State private var showOnboarding: Bool?
+    /// 截图钩子 -autoOpenSharePreview：用样本数据弹分享卡预览（仅测试脚手架）。
+    @State private var sharePreviewSample: SharePreviewItem?
 
     // 截图/UI 验证钩子: simctl launch ... -initialTab train|progress|plan [-locale zh|en]
     init() {
@@ -113,6 +115,13 @@ struct RootTabView: View {
             } else {
                 showOnboarding = await Task.detached { SessionStore.needsOnboarding() }.value
             }
+            // 截图钩子：用样本分享卡数据直接弹预览（验证卡片渲染，不必跑完整训练流）。
+            if args.contains("-autoOpenSharePreview") {
+                sharePreviewSample = SharePreviewItem(snapshots: ShareCardSample.snapshots)
+            }
+        }
+        .sheet(item: $sharePreviewSample) { item in
+            ShareCardPreviewView(snapshots: item.snapshots)
         }
         // 截图/UI 验证钩子（仅测试脚手架）:
         // -autoStartSession 直接载入今日并开训；
