@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		AA00000000000000000000E2 /* RedeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E1 /* RedeApp.swift */; };
 		AA00000000000000000000E7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E6 /* Assets.xcassets */; };
+		BB0000000000000000000F0B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F0C /* PrivacyInfo.xcprivacy */; };
+		BB0000000000000000000F0D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F0E /* PrivacyInfo.xcprivacy */; };
 		AA0000000000000000000117 /* RedeL10n in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000107 /* RedeL10n */; };
 		BB00000000000000000001A1 /* RedeDomain in Frameworks */ = {isa = PBXBuildFile; productRef = BB00000000000000000001B1 /* RedeDomain */; };
 		BB00000000000000000001A2 /* RedeDataHealth in Frameworks */ = {isa = PBXBuildFile; productRef = BB00000000000000000001B2 /* RedeDataHealth */; };
@@ -70,6 +72,8 @@
 		AA00000000000000000000E1 /* RedeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeApp.swift; sourceTree = "<group>"; };
 		AA00000000000000000000E5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA00000000000000000000E6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BB0000000000000000000F0C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		BB0000000000000000000F0E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		B500000000000000000000F5 /* Rede.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Rede.entitlements; sourceTree = "<group>"; };
 		BB00000000000000000001D2 /* TodayModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayModel.swift; sourceTree = "<group>"; };
 		BB0000000000000000000F02 /* PlanCustomizationBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanCustomizationBridge.swift; sourceTree = "<group>"; };
@@ -166,6 +170,7 @@
 				AA00000000000000000000E6 /* Assets.xcassets */,
 				AA00000000000000000000E5 /* Info.plist */,
 				B500000000000000000000F5 /* Rede.entitlements */,
+				BB0000000000000000000F0C /* PrivacyInfo.xcprivacy */,
 			);
 			path = Rede;
 			sourceTree = "<group>";
@@ -177,6 +182,7 @@
 				EE00000000000000000000A5 /* ReadinessWidget.swift */,
 				EE00000000000000000000A7 /* Info.plist */,
 				EE00000000000000000000A8 /* RedeWidget.entitlements */,
+				BB0000000000000000000F0E /* PrivacyInfo.xcprivacy */,
 			);
 			path = RedeWidget;
 			sourceTree = "<group>";
@@ -283,6 +289,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA00000000000000000000E7 /* Assets.xcassets in Resources */,
+				BB0000000000000000000F0B /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -290,6 +297,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BB0000000000000000000F0D /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -479,7 +487,7 @@
 				INFOPLIST_FILE = Rede/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = NO;
 				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -507,7 +515,7 @@
 				INFOPLIST_FILE = Rede/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = NO;
 				INFOPLIST_KEY_UILaunchScreen_Generation = NO;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -530,7 +538,7 @@
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = RedeWidget/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -557,7 +565,7 @@
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = RedeWidget/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
