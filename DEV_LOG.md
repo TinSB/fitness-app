@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-06-24 · HealthKit 授权弹窗文案双语化（FR-PR8 打磨）
+
+**用户目标**：HealthKit 连接时的系统授权弹窗 `NSHealthShareUsageDescription` 之前只有中文，英文系统用户看不懂。加双语，让英文用户也看到英文说明。
+
+**做了什么**：新建 `ios/Rede/en.lproj/InfoPlist.strings` + `ios/Rede/zh-Hans.lproj/InfoPlist.strings`，各放一条本地化的 `NSHealthShareUsageDescription`（英文/中文）；pbxproj 加 `zh-Hans` 到 knownRegions、新建 `InfoPlist.strings` PBXVariantGroup（en + zh-Hans）并挂进 Rede app target 的 Resources + group；Info.plist 里的原中文串保留作 Base/fallback。**未动 entitlement**（HealthKit 能力已就位）。
+
+**怎么做对的**：pbxproj 变体组是易改坏的活——改完先单独 `xcodebuild` 验证工程能解析（BUILD SUCCEEDED），再**解包 Rede.app 核对** en.lproj/zh-Hans.lproj 两个 InfoPlist.strings 都进了包、内容正确（en 英文、zh 中文）。质量门禁 PASS（9 包 + xcodebuild）。
+
+**风险与下一步**：纯本地化、加性、不动代码逻辑/entitlement。HealthKit 范围 A 的收尾打磨到此完成。真机授权弹窗语言待 TestFlight 顺手确认（切英文系统看弹窗）。
+
+---
+
 ## 2026-06-24 · HealthKit 体重导入 S3：规格写回（FR-PR8 范围 A 收口）
 
 **用户目标**：HealthKit 范围 A 代码已落地（S1+S2），按宪法「规格写回 = 完成的一部分」把现状回写 canonical 规格，FR-PR8 范围 A 收口。**纯文档。**

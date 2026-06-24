@@ -1,0 +1,2 @@
+/* HealthKit 只读体重授权弹窗文案（FR-PR8 范围 A）。英文系统用户看这条。 */
+"NSHealthShareUsageDescription" = "Rede reads only your latest body weight from Apple Health, for on-device display — it never affects training suggestions and never leaves your device.";
