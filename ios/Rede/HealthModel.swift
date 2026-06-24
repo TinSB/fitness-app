@@ -24,9 +24,13 @@ final class HealthModel {
 
     /// 进设置页静默尝试读（不弹授权框）：之前授权过 → 直接显示体重；否则停在未连接、由用户主动连接。
     func loadSilently() async {
-        if let sample = await reader.latestBodyWeight() {
-            state = .weight(sample)
-        }
+        // 仅在未连接态做静默读：用户已点「连接」（.connecting）后，静默读的迟到结果不得覆盖 connect()
+        //（防并发状态竞争，审查 M-1）。
+        guard state == .notConnected else { return }
+        let sample = await reader.latestBodyWeight()
+        // await 期间用户可能已点连接 → 再次确认仍在未连接态才写，避免覆盖 connect 的 .connecting/.weight。
+        guard state == .notConnected else { return }
+        if let sample { state = .weight(sample) }
         // 读不到不改 state（保持 .notConnected）——不在静默路径误判 noData/弹框。
     }
 

@@ -17,9 +17,11 @@
 
 **怎么做对的**：HealthKit 只经协议触达、类型不出 RedeHealthKit 包；授权值先行（不在启动弹框）；HealthKit 隐私下「授权后无法查询是否授予读」→ 读不到时诚实合并提示「无记录或未授权」，不假装。质量门禁 PASS（9 包 + xcodebuild 链接+使用新包）。
 
-**证据**：质量门禁 PASS；模拟器实测设置页打开 + 渲染（单位/语言/周期/通知齐）；**Apple 健康区在通知区之下、simctl 无法滚动故未截到该区像素**——但与已验证的通知区同套原语（Overline + 行 + 脚注）且门禁编译过。**真机 HealthKit 读取（需真实健康数据 + 系统授权框）靠 TestFlight 验**（同通知"送达不可 host 验"先例）。加截图钩子 `-autoOpenSettings`。
+**审查**：独立 code-reviewer 一轮 → 修 1 BLOCKER + 2 MAJOR（本片内修，不拖到 S3）：① **删 Info.plist `NSHealthUpdateUsageDescription`（写回 HKWorkout 串）**——范围 A 不写、留着会被 App Review 以"声明能力无实现"驳回（B-1）；② 读体重串 `NSHealthShareUsageDescription` 措辞从"体重与训练记录"改为**仅体重**（M-2，越权声明不诚实）；③ `loadSilently` 加双重 `state==.notConnected` 守护，防与用户点「连接」并发覆盖状态（M-1）。关键澄清：改 Info.plist **usage 串不动 entitlement**（HealthKit 能力自 #507 就在、本片只是让它被使用）→ **无需你做任何签名动作**。
 
-**风险与下一步**：纯展示、不碰 canonical/引擎。下一步 **S3**（Info.plist：读体重权限串改成只体重双语、**删写回 HKWorkout 串**（范围 A 不写）；规格写回 FR-PR8）——**红线**：改 Info.plist 健康权限，你需在 Xcode 用付费 team 重新确认描述文件含 HealthKit 能力。
+**证据**：质量门禁 PASS（含审查修复后）；模拟器实测设置页打开 + 渲染（单位/语言/周期/通知齐）；**Apple 健康区在通知区之下、simctl 无法滚动故未截到该区像素**——但与已验证的通知区同套原语且门禁编译过。**真机 HealthKit 读取（需真实健康数据 + 系统授权框）靠 TestFlight 验**。加截图钩子 `-autoOpenSettings`。
+
+**风险与下一步**：纯展示、不碰 canonical/引擎；entitlement 未改动、无签名动作。Info.plist 已在本片修正（不再拖 S3）。下一步 **S3** 收口（非红线）：Info.plist 健康权限串**双语化**（en.lproj/InfoPlist.strings，英文用户授权框不再看中文）+ 规格写回 FR-PR8（架构 RedeHealthKit 已创建、PRD FR-PR8 状态）。**HealthKit「声明能力但无代码」阻断到本片已解除**（entitlement 已被只读体重代码真实使用）。
 
 ---
 
