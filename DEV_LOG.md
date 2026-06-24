@@ -6,6 +6,25 @@
 
 ---
 
+## 2026-06-24 · 上架前修复 批A：3 个 App Store 配置阻断（全库审计发现）
+
+**用户目标**：准备首次上 Apple App Store 公开发布前，全库审计 + 修掉上架阻断。本批修 3 个**配置类**阻断（多 agent 审计 + 对抗验证查出）。
+
+**做了什么（全在真实构建产物验证）**：
+- **部署目标 iOS 26.0 → 17.0**：4 个生效 build config 之前是 26.0（几乎肯定是 Xcode「推荐设置」误接受），等于把 App 锁死在极少数 iOS 26 设备——发布级事故。改回 17.0（与 8 个 Swift 包一致）。构建产物 MinimumOSVersion 确认=17.0。
+- **主 App 版本号修正**：Info.plist 把 CFBundleShortVersionString 硬编码成 0.1.0、没引用 `$(MARKETING_VERSION)`，导致上次升营销版本（#610）对主 App **根本没生效**（会以 0.1.0 上架）。改成 `$(MARKETING_VERSION)`（同 widget）。构建产物版本号确认=**0.2.0**。
+- **加 PrivacyInfo.xcprivacy 隐私清单（Apple 2024-05 起强制，缺则上传 ASC 直接被拒）**：app 清单声明唯一 required-reason API = UserDefaults（理由码 CA92.1）；widget 清单无 required-reason API（最小）。两者 NSPrivacyTracking=false、采集类型为空（FR-DT3 不追踪不采集属实）。已登记 pbxproj Resources，构建产物里 app + widget 包内都确认含 PrivacyInfo。
+
+**怎么做对的**：iOS 17 目标下全门禁 PASS（无 26-only API）；版本/部署目标/隐私清单三项均**解出真实 .app/.appex 包逐一核对**，不是只看编译过。
+
+**审计还查出（本批未含，后续批次）**：HealthKit entitlement 声明但无代码（owner 拍板**这版实现 HealthKit**，单独立项 FR-PR8，不删 entitlement）；数据写竞态 + 引擎 2 个 bug + app 今日页转圈/进展页竞态 + widget 中英混杂（批 B/C/D）。
+
+**证据**：质量门禁 PASS（8 包 + xcodebuild）；模拟器构建产物核对（app/widget PrivacyInfo 打包、版本 0.2.0、MinOS 17.0、CA92.1 声明）。
+
+**风险与下一步**：纯配置、无代码逻辑改动。**注**：部署目标回 17 + 隐私清单是上架硬门槛，已扫清；但 HealthKit「声明未用能力」仍是阻断，需 FR-PR8 实现后才能真正上架。下一步批 B（数据/并发 MAJOR）。
+
+---
+
 ## 2026-06-24 · 本地分享卡 S0（训练总结卡 + PR 卡，FR-SH1）
 
 **用户目标**：把"练完/破 PR"做成带 Rede 品牌的成就卡 → 一键系统分享，接住已有自然热度做获客（公测前的高杠杆功能，owner 在"先做什么再公测"评分里选了这个）。
