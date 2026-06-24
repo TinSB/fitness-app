@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-06-24 · 版本号 build 7 → 8（为带上拖动改动的新一版上传）
+
+**用户目标**：把刚做的训练日拖动重排（#622）送上设备验收。它在 main 上，但不在你手机当前那版里（那版只有 90683 修复）。
+
+**做了什么**：build 号 `CURRENT_PROJECT_VERSION` 7 → 8（app + widget × Debug/Release 四处）；营销版本 `MARKETING_VERSION` 仍 0.2.0（还在 0.2.0 公测周期，没正式上架）。原因：build 7 已经成功传上 TestFlight（你已在手机上装过），App Store Connect 要求每次上传 build 号唯一且递增，所以下一版必须 ≥ 8，否则会被「build 重复」挡回。
+
+**证据**：`xcodebuild` BUILD SUCCEEDED；解包 Rede.app 确认版本 0.2.0 (8)。
+
+**你下一步**：Xcode 重新 Archive **0.2.0 (8)** → Distribute 上传 → TestFlight 处理完在手机 TestFlight 里点更新，就能验拖动重排了。
+
+---
+
 ## 2026-06-24 · 训练日顺序：上移/下移箭头 → 长按拖动重排（实机 UX 打磨）
 
 **用户目标**：实机测试后反馈「训练日顺序调节 UX 逻辑不够好」。问清楚后定位到痛点 = **上移/下移箭头太笨**，想直接拖动排序。
