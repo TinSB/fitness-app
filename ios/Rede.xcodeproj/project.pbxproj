@@ -25,6 +25,7 @@
 		BB0000000000000000000F07 /* ShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F08 /* ShareCard.swift */; };
 		BB0000000000000000000F09 /* ShareCardPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F0A /* ShareCardPreviewView.swift */; };
 		BB0000000000000000000F11 /* HealthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F12 /* HealthModel.swift */; };
+		BB0000000000000000000F23 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F20 /* InfoPlist.strings */; };
 		BB00000000000000000001E1 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000001E2 /* SessionStore.swift */; };
 		CA00000000000000000000B1 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A1 /* RootTabView.swift */; };
 		CA00000000000000000000B2 /* TodayTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A2 /* TodayTabView.swift */; };
@@ -84,6 +85,8 @@
 		BB0000000000000000000F08 /* ShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCard.swift; sourceTree = "<group>"; };
 		BB0000000000000000000F0A /* ShareCardPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCardPreviewView.swift; sourceTree = "<group>"; };
 		BB0000000000000000000F12 /* HealthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthModel.swift; sourceTree = "<group>"; };
+		BB0000000000000000000F21 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		BB0000000000000000000F22 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		BB00000000000000000001E2 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A1 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A2 /* TodayTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayTabView.swift; sourceTree = "<group>"; };
@@ -176,6 +179,7 @@
 				AA00000000000000000000E5 /* Info.plist */,
 				B500000000000000000000F5 /* Rede.entitlements */,
 				BB0000000000000000000F0C /* PrivacyInfo.xcprivacy */,
+				BB0000000000000000000F20 /* InfoPlist.strings */,
 			);
 			path = Rede;
 			sourceTree = "<group>";
@@ -267,6 +271,7 @@
 			knownRegions = (
 				en,
 				Base,
+				"zh-Hans",
 			);
 			mainGroup = AA00000000000000000000A2;
 			packageReferences = (
@@ -297,6 +302,7 @@
 			files = (
 				AA00000000000000000000E7 /* Assets.xcassets in Resources */,
 				BB0000000000000000000F0B /* PrivacyInfo.xcprivacy in Resources */,
+				BB0000000000000000000F23 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -356,6 +362,18 @@
 			targetProxy = EE00000000000000000000E2 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		BB0000000000000000000F20 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BB0000000000000000000F21 /* en */,
+				BB0000000000000000000F22 /* zh-Hans */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		AA00000000000000000000C3 /* Debug */ = {
