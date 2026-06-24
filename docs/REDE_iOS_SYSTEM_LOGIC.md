@@ -19,7 +19,7 @@ iOS 原生账号、云同步、CRDT/watchOS 的已拍板方向保留在 `docs/RE
 
 legacy/reference inventory 处置状态(2026-06-09 M1-0 起):
 
-- **旧包退役 + 干净重建**:9 个旧 IronPath/PWA 时代 Swift 包(`RedeDomain`、`RedeDataHealth`、`RedePersistence`、`RedeHealthKit`、`RedeTrainingDecision`、`RedeBackup`、`RedeUIKit`、`RedeLocalSnapshot`、`RedeNotifications`)于 M1-0 整体移出编译面,旧实现参考走 git 历史(tag `legacy-parity-final`),其 PWA parity golden 测试随旧包退役。**随后 5 个名字以干净包重建并现役**(M1-1 起,带全新测试):`RedeDomain`、`RedeDataHealth`、`RedePersistence`、`RedeTrainingDecision`、`RedeLocalSnapshot`——它们是 §6/§8 描述的"已实现"引擎的承载包,当前在 `ios/packages/` 中、在 CI 测试面内(连同一直在树的 `RedeWidgetShared`、`RedeL10n`,共 7 个;FR-NT1/2 批准后新建 `RedeNotifications`(本地通知 policy + #if os(iOS) adapter),现共 **8 个**在 CI 测试面内)。**未重建、当前不存在**的 3 个:`RedeHealthKit`、`RedeBackup`、`RedeUIKit`(目标包名,待未来 amend 后才创建)。
+- **旧包退役 + 干净重建**:9 个旧 IronPath/PWA 时代 Swift 包(`RedeDomain`、`RedeDataHealth`、`RedePersistence`、`RedeHealthKit`、`RedeTrainingDecision`、`RedeBackup`、`RedeUIKit`、`RedeLocalSnapshot`、`RedeNotifications`)于 M1-0 整体移出编译面,旧实现参考走 git 历史(tag `legacy-parity-final`),其 PWA parity golden 测试随旧包退役。**随后 5 个名字以干净包重建并现役**(M1-1 起,带全新测试):`RedeDomain`、`RedeDataHealth`、`RedePersistence`、`RedeTrainingDecision`、`RedeLocalSnapshot`——它们是 §6/§8 描述的"已实现"引擎的承载包,当前在 `ios/packages/` 中、在 CI 测试面内(连同一直在树的 `RedeWidgetShared`、`RedeL10n`,共 7 个;FR-NT1/2 批准后新建 `RedeNotifications`(本地通知 policy + #if os(iOS) adapter);FR-PR8 范围 A 批准后新建 `RedeHealthKit`(只读体重 policy seam + #if os(iOS) HKBodyWeightReader),现共 **9 个**在 CI 测试面内)。**未重建、当前不存在**的 2 个:`RedeBackup`、`RedeUIKit`(目标包名,待未来 amend 后才创建)。
 - **仍在树内的 legacy/参考材料**:`ios/packages/RedeL10n` 内的 legacy Terms/Formatters parity 文件(与 M0-3 新代码并存,待后续 slice 清退)、`ios/RedeWidget`(旧 widget,仅参考)、`ios/ParityFixtures`(冻结参考输入;RedeL10n parity 测试仍在消费,并保留为未来老数据迁移的验收素材——是否做迁移为待定产品决策,新模型按开门设计:open-bag + 沿用 legacy 字段词汇表)。`ios/Rede` 自 M0-1 起已是 clean shell,不再属于 legacy。
 - **通用规则不变**:legacy 材料可以帮助理解曾经的命名、测试和局部算法,但不得作为“已完成实现”的证明,也不得被整包搬运。任何复用都必须进入明确 rewrite slice,先审查输入输出、source-of-truth 和测试合同。
 
@@ -70,7 +70,7 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 | `RedeTrainingDecision` | readiness、scheduler、progression、coach actions、insights。 |
 | `RedePersistence` | local JSON store 和 canonical write orchestration。 |
 | `RedeLocalSnapshot` | Focus/session projection 派生快照；不得触碰 canonical AppData。 |
-| `RedeHealthKit` | 已批准 HealthKit adapters。 |
+| `RedeHealthKit` | 已批准 HealthKit adapters（FR-PR8 范围 A：只读体重 `BodyWeightReading` seam + #if os(iOS) `HKBodyWeightReader`；纯展示，不写 canonical、不进引擎）。 |
 | `RedeNotifications` | 本地通知 policy + adapter。 |
 | `RedeWidgetShared` | widget snapshot model + read-only App Group handoff。 |
 | `RedeL10n` | 术语与格式化。 |
