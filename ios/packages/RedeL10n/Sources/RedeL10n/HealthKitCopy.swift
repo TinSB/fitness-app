@@ -9,11 +9,6 @@ extension RedeStrings {
     public var healthConnecting: String { locale == .zh ? "连接中…" : "Connecting…" }
     /// 体重来源标注（展示在导入的体重旁，明示来源）。
     public var healthSourceLabel: String { locale == .zh ? "来源：Apple 健康" : "Source: Apple Health" }
-    /// 区块说明：只读、本机、不影响训练。
-    public var healthSectionNote: String {
-        locale == .zh ? "只读你的最新体重用于本机展示，不影响训练建议、不上传。"
-                      : "Reads your latest weight for on-device display only — never affects training or leaves the device."
-    }
     /// 已连接但读不到体重（无记录 或 未授予读取）。
     public var healthNoData: String {
         locale == .zh ? "Apple 健康暂无体重记录，或未授予读取权限。"

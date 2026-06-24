@@ -144,8 +144,6 @@ struct SettingsSheet: View {
                 .buttonStyle(.redePressable)
                 .disabled(healthBusy)
             }
-            Text(s.healthSectionNote).font(.redeCaption).foregroundStyle(Color.redeT4)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
