@@ -20,6 +20,14 @@ struct PlanDaySequenceEditorView: View {
     @State private var completedSessionCount = 0
     @State private var loaded = false
 
+    // 长按拖动重排状态（替代旧的上移/下移箭头，实机手感更好；上下移保留为无障碍动作）。
+    @State private var draggingCode: String?           // 正在拖动的训练日
+    @State private var dragOffset: CGFloat = 0          // 拖动行相对其当前槽位的视觉偏移
+    @State private var consumedShift: CGFloat = 0       // 已通过整槽移动「消费」的偏移（让手指黏住行）
+    @State private var liftPulse = 0                    // 长按抬起触感脉冲
+    @State private var movePulse = 0                    // 每跨一槽的轻触感脉冲
+    private let rowHeight: CGFloat = RedeShape.controlHeight  // 固定行高 = 拖动每槽步距（取模/round 用）
+
     private var s: RedeStrings { localeStore.strings }
 
     /// 护栏预览：当前工作副本下的下一个训练日（纯引擎计算，无磁盘——随重排实时变）。
@@ -68,40 +76,89 @@ struct PlanDaySequenceEditorView: View {
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .task { if !loaded { await load() } }
+        .sensoryFeedback(.impact, trigger: liftPulse)     // 长按抬起 = 拿起一行
+        .sensoryFeedback(.selection, trigger: movePulse)  // 每跨一槽 = 轻 tick
     }
 
-    // MARK: 训练日清单（开放行：名 + 上移/下移）
+    // MARK: 训练日清单（开放行：名 + 拖动手柄；长按拖动重排，上下移留作无障碍动作）
 
     private var dayList: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(spacing: 0) {
             ForEach(Array(dayCodes.enumerated()), id: \.element) { idx, code in
-                VStack(spacing: 0) {
-                    if idx > 0 { Rectangle().fill(Color.redeHair2).frame(height: 1) }
-                    HStack(spacing: 12) {
-                        Text(s.trainingDayName(code))
-                            .font(.redeBody).foregroundStyle(Color.redeT1)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        // label 含训练日名，VoiceOver 能分辨在移动哪一天（审查 MINOR）。
-                        iconButton("chevron.up", s.planEditMoveUp + " " + s.trainingDayName(code), enabled: idx > 0) { move(idx, by: -1) }
-                        iconButton("chevron.down", s.planEditMoveDown + " " + s.trainingDayName(code), enabled: idx < dayCodes.count - 1) { move(idx, by: 1) }
-                    }
-                    .frame(minHeight: RedeShape.controlHeight)
-                }
+                dayRow(idx: idx, code: code)
             }
         }
     }
 
-    private func iconButton(_ icon: String, _ label: String, enabled: Bool = true, _ action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: icon)
-                .font(.redeCaption)
-                .foregroundStyle(enabled ? Color.redeT3 : Color.redeT4.opacity(0.4))
-                .frame(width: 30, height: RedeShape.controlHeight)
-                .contentShape(Rectangle())
+    private func dayRow(idx: Int, code: String) -> some View {
+        let isDragging = draggingCode == code
+        return HStack(spacing: 12) {
+            Text(s.trainingDayName(code))
+                .font(.redeBody).foregroundStyle(Color.redeT1)
+                .lineLimit(1)   // 行高固定（拖动步距用），训练日名都很短；大字号下截断而非撑破步距数学
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Image(systemName: "line.3.horizontal")    // 拖动手柄：示意此行可长按拖动
+                .font(.redeCaption).foregroundStyle(Color.redeT3)
+                .frame(width: 30, height: rowHeight)
+                .accessibilityHidden(true)            // 装饰；重排无障碍走下面的 accessibilityActions
         }
-        .buttonStyle(.redePressable)
-        .disabled(!enabled || sessionStore.isSaving)
-        .accessibilityLabel(label)
+        .frame(height: rowHeight)
+        .background(isDragging ? Color.redeBase : Color.clear)  // 抬起时不透明，盖住相邻行与发丝线
+        .overlay(alignment: .top) {
+            if idx > 0 && !isDragging { Rectangle().fill(Color.redeHair2).frame(height: 1) }
+        }
+        .contentShape(Rectangle())
+        .shadow(color: Color.black.opacity(isDragging ? 0.32 : 0),
+                radius: isDragging ? 8 : 0, y: isDragging ? 4 : 0)  // 阴影=抬起感（不缩放，遵动效守卫）
+        .offset(y: isDragging ? dragOffset : 0)
+        .zIndex(isDragging ? 1 : 0)
+        .gesture(reorderGesture(code: code))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(s.trainingDayName(code))
+        // VoiceOver 用户无法用拖动手势（系统会拦截），用自定义动作等价重排。
+        // 边界用 if 条件而非 .disabled()——后者在 accessibilityActions 内不抑制动作，
+        // 会留下「点了没反应」的死动作（审查共识 BLOCKER）。按 code 实时定位，不依赖捕获的 idx。
+        .accessibilityActions {
+            if idx > 0 { Button(s.planEditMoveUp) { move(code: code, by: -1) } }
+            if idx < dayCodes.count - 1 { Button(s.planEditMoveDown) { move(code: code, by: 1) } }
+        }
+        .disabled(sessionStore.isSaving)
+    }
+
+    /// 长按 0.22s 抬起 → 拖动。每当拖过「半个行高」就实时把该行挪一槽，并补偿偏移让它黏在手指下。
+    /// 用 while 逐槽消化（兜住快速拖动跨多格，不一次跳两格）；半行死区做迟滞，避免在槽边界来回抖。
+    /// 注：VoiceOver 开启时系统会拦截此手势，重排走 accessibilityActions（已知降级，非 bug）。
+    private func reorderGesture(code: String) -> some Gesture {
+        LongPressGesture(minimumDuration: 0.22)
+            .sequenced(before: DragGesture(minimumDistance: 0))
+            .onChanged { value in
+                guard case .second(true, let drag) = value else { return }
+                if draggingCode != code {                 // 刚抬起
+                    draggingCode = code; consumedShift = 0; dragOffset = 0; liftPulse += 1
+                }
+                guard let drag else { return }
+                dragOffset = drag.translation.height - consumedShift
+                // 向下越过半行：逐槽下移（from→from+2 落到 from+1），每移一槽补偿一个行高。
+                while dragOffset > rowHeight * 0.5,
+                      let from = dayCodes.firstIndex(of: code), from < dayCodes.count - 1 {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.85)) {
+                        dayCodes.move(fromOffsets: IndexSet(integer: from), toOffset: from + 2)
+                    }
+                    consumedShift += rowHeight; dragOffset -= rowHeight; movePulse += 1
+                }
+                // 向上越过半行：逐槽上移（from→from-1）。
+                while dragOffset < -rowHeight * 0.5,
+                      let from = dayCodes.firstIndex(of: code), from > 0 {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.85)) {
+                        dayCodes.move(fromOffsets: IndexSet(integer: from), toOffset: from - 1)
+                    }
+                    consumedShift -= rowHeight; dragOffset += rowHeight; movePulse += 1
+                }
+            }
+            .onEnded { _ in
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) { dragOffset = 0 }
+                draggingCode = nil; consumedShift = 0
+            }
     }
 
     // MARK: 采纳 / 恢复默认 / 取消
@@ -137,9 +194,11 @@ struct PlanDaySequenceEditorView: View {
         loaded = true
     }
 
-    private func move(_ idx: Int, by delta: Int) {
+    /// 无障碍重排：按 code 实时定位当前行再单步 swap（不依赖捕获的 idx，避免拖动期间陈旧）。
+    private func move(code: String, by delta: Int) {
+        guard let idx = dayCodes.firstIndex(of: code) else { return }
         let target = idx + delta
-        guard dayCodes.indices.contains(idx), dayCodes.indices.contains(target) else { return }
+        guard dayCodes.indices.contains(target) else { return }
         dayCodes.swapAt(idx, target)
     }
 

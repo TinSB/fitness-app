@@ -56,8 +56,8 @@ extension RedeStrings {
     /// 顺序编辑器标题。
     public var planSeqEditTitle: String { locale == .zh ? "训练日顺序" : "Training day order" }
     public var planSeqEditSubtitle: String {
-        locale == .zh ? "调整训练日的先后；轮转按已完成场次推进，所以下一个训练日可能跟着变"
-                      : "Reorder your training days; rotation advances by sessions completed, so the next day may change"
+        locale == .zh ? "长按一行拖动来调整训练日先后；轮转按已完成场次推进，所以下一个训练日可能跟着变"
+                      : "Touch and hold a row to drag and reorder; rotation advances by sessions completed, so the next day may change"
     }
     /// 护栏预览：重排后下一个训练日将变为 X（诚实告知，不阻止）。day 为已本地化训练日名。
     public func planSeqNextDay(_ day: String) -> String {
