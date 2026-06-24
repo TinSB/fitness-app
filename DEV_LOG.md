@@ -6,6 +6,25 @@
 
 ---
 
+## 2026-06-24 · 上架前修复 批B：数据完整性 / 并发 MAJOR（全库审计发现）
+
+**用户目标**：上架前把全库审计查出的数据/并发真实 MAJOR 修掉（这些不是上架硬阻断，但涉及"丢训练记录""今日页卡死"等真实风险，上架前一并修）。
+
+**做了什么**：
+- **写竞态（最重要）**：`SessionStore` 加 `@MainActor`，让所有写路径的 `isSaving` 互斥锁 guard-then-set 由主 actor 保证原子——杜绝快速连点并发 load-modify-write **丢训练记录**。13 个纯只读静态 loader 标 `nonisolated`，磁盘读仍在 `Task.detached` off-main 跑、不阻塞主线程。
+- **草稿乱序覆盖**：`persistDraft` 加任务取消（`draftTask?.cancel()` + 写前查 `isCancelled`），快速连打组不再被旧草稿写盖回；`endSession` 删草稿前先取消（防孤儿草稿误弹"恢复训练"）。
+- **今日页无限转圈**：`TodayModel` 两处坏数据 `return nil` → `return .unreadable`——数据读不懂时给**诚实错误**而非永久 loading。
+- **进展页竞态**：`.onAppear{ Task{} }` → `.task{}`，自动取消+重跑，去掉多次进出页并发 Task 用过期数据覆盖的竞态。
+- **错误跨域污染**：新增 `settingsSaveErrorText`，设置类写（通知/单位语言/周期/设置内改档案）失败路由到它，不再串到训练小结的 `saveErrorText`。
+
+**审查**：独立 code-reviewer 一轮 → 修 2 MAJOR + 1 MINOR：`endSession` 漏取消 draftTask（孤儿草稿，M-1）；设置子编辑屏的 `completeOnboarding` 错误仍写训练字段而显示读设置字段、错位（M-2，已移错误到设置字段）；草稿 cancel 协作式语义注释更诚实 + 写前查取消（N-1）。复审验收通过。
+
+**证据**：质量门禁 PASS（8 包 swift test + xcodebuild；`@MainActor` 改动无任何调用点 isolation 报错——调用方本就在主 actor）。
+
+**风险与下一步**：纯并发/状态正确性，无 schema/引擎逻辑改动、默认行为不变。下一步批 C（引擎 2 个 bug：自重多组进阶 + 组内换自重未清零重量）。
+
+---
+
 ## 2026-06-24 · 上架前修复 批A：3 个 App Store 配置阻断（全库审计发现）
 
 **用户目标**：准备首次上 Apple App Store 公开发布前，全库审计 + 修掉上架阻断。本批修 3 个**配置类**阻断（多 agent 审计 + 对抗验证查出）。

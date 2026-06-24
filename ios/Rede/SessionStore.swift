@@ -45,6 +45,11 @@ private enum DraftFile {
     }
 }
 
+/// @MainActor：所有写路径（performGatedMutation/performCoachWrite/performPlanWrite/
+/// completeAndPersistSession 等）的 `isSaving` 互斥锁 guard-then-set 由主 actor 保证原子，
+/// 杜绝连点并发 load-modify-write 丢更新（审计 MAJOR）。纯只读静态 loader 标 nonisolated，
+/// 仍可在 Task.detached 里 off-main 跑（磁盘读不阻塞主线程）。
+@MainActor
 @Observable
 final class SessionStore {
     var todayOutcome: TodayModel.LoadOutcome?
@@ -70,11 +75,16 @@ final class SessionStore {
     /// FR-PL3/4 计划调整写入（采纳/回滚）失败的如实呈现，同样与全局 saveErrorText 隔离——
     /// 计划页调整面只读它，不抢显训练/设置/教练写失败（复刻教练隔离修复，防跨面错误污染）。
     var planSaveErrorText: String?
+    /// 设置类写入（通知偏好/单位语言/周期开关）失败的如实呈现，与训练 saveErrorText 隔离——
+    /// 设置页只读它，杜绝设置写失败错配到训练小结/引导语境（审计 MAJOR：跨域错误污染）。
+    var settingsSaveErrorText: String?
     /// FR-PL3：本次 app 会话内「暂不」了频率提案（会话级、不落库——存活于切 tab，重启后清。
     /// 建议仍有效故重启可再提，但同一会话内不再反复弹，避免每次进计划页都催）。
     var planProposalSnoozed = false
     /// 保存进行中（防双击双写；MainActor 上同步置位）。
     var isSaving = false
+    /// 草稿写任务句柄：每次 persistDraft 取消上一次未完成的写，防乱序覆盖（审计 MAJOR）。
+    private var draftTask: Task<Void, Never>?
 
     var todayModel: TodayModel? {
         if case .ready(let model)? = todayOutcome { return model }
@@ -130,7 +140,7 @@ final class SessionStore {
     /// widget 文案语言/单位解析：取持久化偏好，缺失回退系统语言 / kg（同 LocaleStore 启动口径）。
     /// 取舍（审查 M-2）：widget 跟「已落盘」的语言，不跟内存 LocaleStore 里未保存的临时切换——
     /// 设置里改语言会经写闸落盘，下次今日加载即同步 widget，无长期分叉。
-    private static func resolveWidgetStrings() -> RedeStrings {
+    nonisolated private static func resolveWidgetStrings() -> RedeStrings {
         let prefs = loadPreferences()
         var locale = RedeLocale.resolve(fromLanguageCode: Locale.current.language.languageCode?.identifier)
         if let raw = prefs.locale, let persisted = RedeLocale(rawValue: raw) { locale = persisted }
@@ -140,7 +150,7 @@ final class SessionStore {
     // MARK: - M5-2 偏好与档案（FR-SE1/SE2/SE3）
 
     /// 启动时读取持久化偏好（只读，不经写闸）；unreadable/缺失 → nil（渲染层默认兜底）。
-    static func loadPreferences() -> (unit: String?, locale: String?) {
+    nonisolated static func loadPreferences() -> (unit: String?, locale: String?) {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         guard let appData = try? store.load() else { return (nil, nil) }
         return (appData.userProfile.unitSystem, appData.userProfile.locale)
@@ -154,7 +164,7 @@ final class SessionStore {
         let trainingLevel: String?
     }
 
-    static func loadProfileSnapshot() -> ProfileSnapshot? {
+    nonisolated static func loadProfileSnapshot() -> ProfileSnapshot? {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         guard let appData = try? store.load() else { return nil }
         let profile = appData.userProfile
@@ -175,7 +185,7 @@ final class SessionStore {
         let equipment: String?
     }
 
-    static func loadTemplateFacts() -> TemplateFacts? {
+    nonisolated static func loadTemplateFacts() -> TemplateFacts? {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         guard let appData = try? store.load() else { return nil }
         let template = appData.programTemplate
@@ -193,7 +203,7 @@ final class SessionStore {
 
     /// 计划页周期条状态（FR-PL2 S5）：仅周期化开启且有真历史锚点时返回，否则 nil（退诚实占位）。
     /// 走与今日页处方同一 clean pipeline + 同一锚点 → 周期条与处方相位永远一致。
-    static func loadCycleState(now: Date = Date()) -> MesocycleCycleState? {
+    nonisolated static func loadCycleState(now: Date = Date()) -> MesocycleCycleState? {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         guard let appData = try? store.load(), appData.mesocycle.enabled else { return nil }
         let formatter = DateFormatter()
@@ -214,7 +224,7 @@ final class SessionStore {
     /// 计划页周排期投影（FR-PL2）：本周/下周训练日 + 模式构成，只读派生。与今日页处方走同一
     /// clean pipeline + 同一轮转口径（input.program/sessions）→ 第一天 == 今日页此刻训练日，永不分叉。
     /// unreadable/缺失 → 空（计划页退回诚实占位）。
-    static func loadPlanProjection(now: Date = Date()) -> [[PlanDayProjection]] {
+    nonisolated static func loadPlanProjection(now: Date = Date()) -> [[PlanDayProjection]] {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         guard let appData = try? store.load() else { return [] }
         let formatter = DateFormatter()
@@ -247,7 +257,7 @@ final class SessionStore {
 
     /// 计划页调整状态（FR-PL3 提案 + FR-PL4 可撤）。走与处方同一 clean pipeline。
     /// unreadable/缺 daysPerWeek → 仍如实报已采纳记录（理论必有 daysPerWeek，防御保留撤销入口）。
-    static func loadPlanAdjustmentState(now: Date = Date()) -> PlanAdjustmentState {
+    nonisolated static func loadPlanAdjustmentState(now: Date = Date()) -> PlanAdjustmentState {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         guard let appData = try? store.load() else { return .none }
         let activeTo = appData.planAdjustment?.toDaysPerWeek
@@ -279,7 +289,7 @@ final class SessionStore {
     }
 
     /// 周期化开关当前持久态（设置页开关初值）；unreadable/缺失 → false（默认关）。
-    static func loadMesocycleEnabled() -> Bool {
+    nonisolated static func loadMesocycleEnabled() -> Bool {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         guard let appData = try? store.load() else { return false }
         return appData.mesocycle.enabled
@@ -295,7 +305,7 @@ final class SessionStore {
         let equipmentScenario: String?
     }
 
-    static func loadDayEditorContext(dayCode: String, now: Date = Date()) -> DayEditorContext? {
+    nonisolated static func loadDayEditorContext(dayCode: String, now: Date = Date()) -> DayEditorContext? {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         guard let appData = try? store.load() else { return nil }
         let cleanView = CleanAppDataViewBuilder.build(from: appData)
@@ -314,7 +324,7 @@ final class SessionStore {
     /// FR-PL6.1 改动影响：把本 dayCode 换成 proposedIds 后，算这一周肌群频率前后 delta（护栏数据）。
     /// 用 PlanWeekProjection 取本周日序（public；resolvedDaySequence 为包内 internal），逐日解析 ids
     ///（自定义优先、否则 defaultDayExerciseIds）喂 PlanCustomizationImpact。unreadable/缺天数 → nil。
-    static func computeDayEditImpact(dayCode: String, proposedIds: [String], now: Date = Date()) -> PlanCustomizationImpact.Summary? {
+    nonisolated static func computeDayEditImpact(dayCode: String, proposedIds: [String], now: Date = Date()) -> PlanCustomizationImpact.Summary? {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         guard let appData = try? store.load() else { return nil }
         let cleanView = CleanAppDataViewBuilder.build(from: appData)
@@ -355,7 +365,7 @@ final class SessionStore {
         let completedSessionCount: Int  // 预览 nextDayCode 用（轮转锚点）
     }
 
-    static func loadDaySequenceContext(now: Date = Date()) -> DaySequenceContext? {
+    nonisolated static func loadDaySequenceContext(now: Date = Date()) -> DaySequenceContext? {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         guard let appData = try? store.load() else { return nil }
         let cleanView = CleanAppDataViewBuilder.build(from: appData)
@@ -378,7 +388,7 @@ final class SessionStore {
     // MARK: - FR-NT1/2 通知偏好 + 授权
 
     /// 读当前通知偏好（设置开关初值；缺=关）。
-    static func loadNotificationPreferences() -> (restEnd: Bool, weekly: Bool) {
+    nonisolated static func loadNotificationPreferences() -> (restEnd: Bool, weekly: Bool) {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         guard let appData = try? store.load() else { return (false, false) }
         return (appData.notificationRestEndEnabled, appData.notificationWeeklyEnabled)
@@ -448,12 +458,12 @@ final class SessionStore {
             refreshNotificationCache()
             return true
         case .failure(let error):
-            saveErrorText = String(describing: error)
+            settingsSaveErrorText = String(describing: error)
             return false
         }
     }
 
-    /// 偏好写入（FR-SE1/SE3 持久化）：经写闸 scalar edit；失败如实置 saveErrorText。
+    /// 偏好写入（FR-SE1/SE3 持久化）：经写闸 scalar edit；失败如实置 settingsSaveErrorText。
     /// isSaving 互斥沿写闸单调用方合同（审查 MAJOR-1：防快速连点并发 load-modify-write 丢更新）。
     @discardableResult
     func savePreferences(unitSystem: String?, locale: String?) async -> Bool {
@@ -481,12 +491,12 @@ final class SessionStore {
             refreshNotificationCache() // 改语言后同步通知文案语言缓存（审查 MINOR-1）
             return true
         case .failure(let error):
-            saveErrorText = String(describing: error)
+            settingsSaveErrorText = String(describing: error)
             return false
         }
     }
 
-    /// 周期化开关写入（FR-PL2 enablement）：经写闸 scalar edit；失败如实置 saveErrorText。
+    /// 周期化开关写入（FR-PL2 enablement）：经写闸 scalar edit；失败如实置 settingsSaveErrorText。
     /// isSaving 互斥沿写闸单调用方合同（防快速连点并发 load-modify-write 丢更新，同 savePreferences）。
     @discardableResult
     func saveMesocycleEnabled(_ enabled: Bool) async -> Bool {
@@ -513,7 +523,7 @@ final class SessionStore {
         case .success:
             return true
         case .failure(let error):
-            saveErrorText = String(describing: error)
+            settingsSaveErrorText = String(describing: error)
             return false
         }
     }
@@ -721,7 +731,7 @@ final class SessionStore {
     /// 是否需要首启引导。铁律：unreadable ≠ 新用户——文件在但读不懂时绝不进引导
     /// （引导完成会写盘，可能覆盖既有记录）。仅当合法空文档（文件缺失或
     /// 无模板、无历史、无背景）时为 true。
-    static func needsOnboarding() -> Bool {
+    nonisolated static func needsOnboarding() -> Bool {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         do {
             guard let existing = try store.load() else { return true } // 文件缺失 = 合法首启
@@ -918,7 +928,14 @@ final class SessionStore {
             events: flow.events,
             catalogVersion: ExerciseCatalog.minimal.catalogVersion
         )
-        Task.detached(priority: .utility) { DraftFile.save(draft) }
+        // 取消上一次未完成的草稿写再派新写：快速连续打组会派多个并发写，乱序完成会把旧草稿盖回去
+        //（杀进程重开恢复到错误中点，审计 MAJOR）。cancel 是协作式——故在写前查 isCancelled 跳过被取代的写
+        //（已开始的 .atomic 写不会半截，最坏只是少写一帧旧草稿）。同 PlanDayEditorView impactTask 模式。
+        draftTask?.cancel()
+        draftTask = Task.detached(priority: .utility) {
+            guard !Task.isCancelled else { return }
+            DraftFile.save(draft)
+        }
     }
 
     /// FR-EQ1：当前档案的器械白名单（nil = 不过滤）。
@@ -954,6 +971,10 @@ final class SessionStore {
         saveErrorText = nil
         restCountdown.clear()
         cancelRestNotification() // FR-NT1：放弃/收尾时清掉待发的休息提醒，避免训练已结束还弹（审查 MAJOR-1）
+        // 先取消未完成的草稿写再删文件：否则排队中的 save 可能在 clear 之后落地，留孤儿草稿
+        // → 下次启动误弹「恢复训练」（审查 M-1）。
+        draftTask?.cancel()
+        draftTask = nil
         DraftFile.clear()
     }
 
