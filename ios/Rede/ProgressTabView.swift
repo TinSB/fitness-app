@@ -60,14 +60,12 @@ struct ProgressTabView: View {
         .background(Color.redeBase)
         .sensoryFeedback(.selection, trigger: scale)             // 尺度切换 = 轻选择确认
         .sensoryFeedback(.selection, trigger: historyOpenPulse)  // 点历史行进详情 = 轻选择（仅开启时）
-        .onAppear { reload() }
+        // .task 自动在视图消失时取消、重现时重跑——杜绝 .onAppear{Task{}} 的无结构化并发
+        //（多次进出页并发 Task 乱序完成会用过期数据覆盖 outcome，审计 MAJOR）。
+        .task { outcome = await ProgressModel.loadOutcomeAsync() }
         .sheet(item: $detailRecord) { record in
             historyDetailSheet(record)
         }
-    }
-
-    private func reload() {
-        Task { outcome = await ProgressModel.loadOutcomeAsync() }
     }
 
     // MARK: - 三态

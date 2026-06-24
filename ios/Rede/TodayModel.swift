@@ -67,7 +67,7 @@ struct TodayModel {
             } else if let empty = try? AppData(decoding: .object(["schemaVersion": .int(Int64(SchemaVersion.current))])) {
                 appData = empty // 文件缺失 = 合法首启
             } else {
-                return nil
+                return .unreadable // 连默认空文档都构造不出 = 异常，如实降级（不返回 nil 让今日页无限转圈，审计 MAJOR）
             }
         } catch {
             // unreadable：用户数据在但读不懂——如实降级，绝不渲染成新用户。
@@ -82,7 +82,7 @@ struct TodayModel {
 
         let cleanView = CleanAppDataViewBuilder.build(from: appData)
         guard let input = try? CleanTrainingDecisionInput.make(from: cleanView, todayISO: todayISO) else {
-            return nil
+            return .unreadable // 数据在但 clean 视图构不出 = 读不懂，如实降级（不返回 nil 让今日页无限转圈，审计 MAJOR）
         }
         let verdict = TodayVerdictEngine.evaluate(input)
         // 周期化引擎 S4：从落库配置读 enabled + blockLengthWeeks 喂引擎（默认 false = 零行为回归）；

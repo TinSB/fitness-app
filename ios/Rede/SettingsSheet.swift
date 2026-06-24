@@ -65,7 +65,7 @@ struct SettingsSheet: View {
     private var sheetContent: some View {
         VStack(spacing: 0) {
             header
-            if let errorText = sessionStore.saveErrorText {
+            if let errorText = sessionStore.settingsSaveErrorText {
                 Text(errorText)
                     .font(.redeCaption)
                     .foregroundStyle(Color.redeRisk)
@@ -97,8 +97,8 @@ struct SettingsSheet: View {
         .sensoryFeedback(.selection, trigger: store.unit)
         .sensoryFeedback(.selection, trigger: store.locale)
         .task {
-            // 审查 MAJOR-2（M5-2）：清掉历史保存错误——本页只显示「设置期间」的写入错误。
-            sessionStore.saveErrorText = nil
+            // 审查 MAJOR-2（M5-2）：清掉历史保存错误——本页只显示「设置期间」的写入错误（设置专属字段，隔离于训练 saveErrorText）。
+            sessionStore.settingsSaveErrorText = nil
             profile = await Task.detached { SessionStore.loadProfileSnapshot() }.value
             mesocycleOn = await Task.detached { SessionStore.loadMesocycleEnabled() }.value
             let notif = await Task.detached { SessionStore.loadNotificationPreferences() }.value
@@ -509,7 +509,7 @@ struct PlateQuestionEditView: View {
                             .font(.redeCallout)
                             .foregroundStyle(Color.redeRisk)
                             .padding(.top, 12)
-                        if let detail = sessionStore.saveErrorText {
+                        if let detail = sessionStore.settingsSaveErrorText {
                             Text(detail)
                                 .font(.redeCaption)
                                 .foregroundStyle(Color.redeT4)
@@ -590,6 +590,10 @@ struct PlateQuestionEditView: View {
                 onSaved(receipt, fresh)
                 dismiss()
             } else {
+                // completeOnboarding 失败写的是训练 saveErrorText（与引导流共用）；本子编辑屏属设置语境，
+                // 把错误移到 settingsSaveErrorText 并清训练字段——错误只在设置页显示、不污染训练小结（审查 M-2）。
+                sessionStore.settingsSaveErrorText = sessionStore.saveErrorText
+                sessionStore.saveErrorText = nil
                 failed = true
             }
         }
