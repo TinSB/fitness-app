@@ -126,7 +126,8 @@ final class SessionStore {
                 headline: strings.widgetHeadline(call: call, dayName: dayName, hasPlan: hasPlan),
                 advice: strings.widgetAdvice(call: call, reasonCode: reason, dayName: dayName,
                                              gapDays: gapDays, consecutiveDays: consecutiveDays, hasPlan: hasPlan),
-                rows: []
+                rows: [],
+                locale: strings.locale.rawValue // widget 端给空态/脚注选语言（FR-WD1 中英混杂修复）
             )
             do {
                 try AppGroupWidgetSnapshotStore().write(snapshot)
