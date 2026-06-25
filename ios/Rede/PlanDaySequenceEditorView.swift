@@ -132,9 +132,16 @@ struct PlanDaySequenceEditorView: View {
         .disabled(sessionStore.isSaving)
     }
 
-    /// 落点下标 = 起点 + 位移四舍五入到行，夹在 [0, count-1]。
+    /// 落点下标，**带迟滞死区**（关键）：只在手指越过"半行 + 余量"才翻到下一槽、越回"半行 − 余量"才翻回，
+    /// 边界附近留一条死区→手指停在两行交界处轻微抖动也不会让落点来回翻（否则让位行会反复上下＝抽动）。
+    /// 以当前 dropTargetIndex 为锚做迟滞；while 兜住快速拖动跨多槽。
     private func targetIndex(start: Int) -> Int {
-        max(0, min(dayCodes.count - 1, start + Int((dragTranslation / rowHeight).rounded())))
+        let p = dragTranslation / rowHeight       // 从起点起的行数（带符号）
+        var rel = dropTargetIndex - start         // 当前相对落点
+        let m = 0.2                               // 迟滞余量：交界 ±0.2 行内不翻
+        while p > Double(rel) + 0.5 + m { rel += 1 }
+        while p < Double(rel) - 0.5 - m { rel -= 1 }
+        return max(0, min(dayCodes.count - 1, start + rel))
     }
 
     /// 让位偏移：被拖行从 start 移到 dropTargetIndex，给被它跨过的行让出一个行高的空位。
@@ -156,7 +163,10 @@ struct PlanDaySequenceEditorView: View {
     /// 手势只挂右侧手柄（见 dayRow）：拖手柄=重排，面板下滑关闭/滚动不受影响。
     /// 注：VoiceOver 开启时系统会拦截此手势，重排走 accessibilityActions（已知降级，非 bug）。
     private func reorderGesture(code: String) -> some Gesture {
-        DragGesture(minimumDistance: 6)
+        // coordinateSpace: .global ——关键：手势挂在"会被 .offset 跟着移动的手柄"上，若用默认 .local
+        // 坐标，行一移、测量基准跟着移 → translation 自己跟自己较劲、来回抖（停着不动也抖）。
+        // 用屏幕绝对坐标测位移，基准不动，translation 稳定。
+        DragGesture(minimumDistance: 6, coordinateSpace: .global)
             .onChanged { drag in
                 if draggingCode != code {                 // 第一次移动即抓起
                     draggingCode = code
