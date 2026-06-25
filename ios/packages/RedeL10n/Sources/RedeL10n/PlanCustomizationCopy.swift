@@ -9,8 +9,8 @@ extension RedeStrings {
     /// 编辑器标题。
     public var planEditTitle: String { locale == .zh ? "编辑训练日" : "Edit training day" }
     public var planEditSubtitle: String {
-        locale == .zh ? "调整这天练哪些动作和顺序；重量与进阶仍由系统判断"
-                      : "Adjust what you train this day and the order; loads & progression stay coach-driven"
+        locale == .zh ? "调整这天练哪些动作和顺序（长按一行拖动重排）；重量与进阶仍由系统判断"
+                      : "Adjust what you train this day and the order (touch and hold a row, then drag); loads & progression stay coach-driven"
     }
     public var planEditAddExercise: String { locale == .zh ? "添加动作" : "Add exercise" }
     /// 添加选择器空态（该日同类动作都已加入）。
@@ -56,8 +56,8 @@ extension RedeStrings {
     /// 顺序编辑器标题。
     public var planSeqEditTitle: String { locale == .zh ? "训练日顺序" : "Training day order" }
     public var planSeqEditSubtitle: String {
-        locale == .zh ? "拖动每行右侧的手柄来调整训练日先后；轮转按已完成场次推进，所以下一个训练日可能跟着变"
-                      : "Drag the handle on each row to reorder your training days; rotation advances by sessions completed, so the next day may change"
+        locale == .zh ? "长按一行拖动来调整训练日先后；轮转按已完成场次推进，所以下一个训练日可能跟着变"
+                      : "Touch and hold a row, then drag to reorder; rotation advances by sessions completed, so the next day may change"
     }
     /// 护栏预览：重排后下一个训练日将变为 X（诚实告知，不阻止）。day 为已本地化训练日名。
     public func planSeqNextDay(_ day: String) -> String {
