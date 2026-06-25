@@ -82,7 +82,7 @@ struct PlanDaySequenceEditorView: View {
         .sensoryFeedback(.selection, trigger: movePulse)  // 每跨一槽 = 轻 tick
     }
 
-    // MARK: 训练日清单（开放行：名 + 拖动手柄；拖动重排，上下移留作无障碍动作）
+    // MARK: 训练日清单（开放行：整行长按拖动重排；上下移留作无障碍动作）
 
     private var dayList: some View {
         VStack(spacing: 0) {
@@ -96,21 +96,11 @@ struct PlanDaySequenceEditorView: View {
         let isDragging = draggingCode == code
         // 被拖行：偏移=跟手位移（瞬时）。其他行：偏移=让位空位（被拖行跨过它时让出一个行高，平滑）。
         let yOffset = isDragging ? dragTranslation : gapOffset(forIndex: idx)
-        return HStack(spacing: 12) {
-            Text(s.trainingDayName(code))
-                .font(.redeBody).foregroundStyle(Color.redeT1)
-                .lineLimit(1)   // 行高固定（拖动步距用），训练日名都很短；大字号下截断而非撑破步距数学
-                .frame(maxWidth: .infinity, alignment: .leading)
-            Image(systemName: "line.3.horizontal")    // 拖动手柄：抓住这里即可拖动重排
-                .font(.redeCaption).foregroundStyle(Color.redeT3)
-                .frame(width: 44, height: rowHeight)   // 44pt 触控区，好抓
-                .contentShape(Rectangle())
-                // 手势只挂手柄：拖手柄=重排；拖行内别处/面板别处=系统照常滚动 + 下滑关闭面板
-                // （审查 MAJOR：挂整行的 highPriorityGesture 会吞掉 sheet 下滑关闭手势）。
-                .highPriorityGesture(reorderGesture(code: code))
-                .accessibilityHidden(true)            // 装饰；重排无障碍走下面的 accessibilityActions
-        }
-        .frame(height: rowHeight)
+        return Text(s.trainingDayName(code))
+            .font(.redeBody).foregroundStyle(Color.redeT1)
+            .lineLimit(1)   // 行高固定（拖动步距用），训练日名都很短；大字号下截断而非撑破步距数学
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: rowHeight)
         .background(isDragging ? Color.redeBase : Color.clear)  // 抬起时不透明，盖住相邻行与发丝线
         .overlay(alignment: .top) {
             if idx > 0 && !isDragging { Rectangle().fill(Color.redeHair2).frame(height: 1) }
@@ -120,6 +110,7 @@ struct PlanDaySequenceEditorView: View {
                 radius: isDragging ? 8 : 0, y: isDragging ? 4 : 0)  // 阴影=抬起感（不缩放，遵动效守卫）
         .offset(y: yOffset)
         .zIndex(isDragging ? 1 : 0)
+        .gesture(reorderGesture(code: code))   // 长按整行拖动重排（见手势注释）
         .accessibilityElement(children: .combine)
         .accessibilityLabel(s.trainingDayName(code))
         // VoiceOver 用户无法用拖动手势（系统会拦截），用自定义动作等价重排。
@@ -157,25 +148,25 @@ struct PlanDaySequenceEditorView: View {
         return 0
     }
 
-    /// 拖动重排——碰到手柄就能拖（无长按）。**拖动期间不改 dayCodes**：被拖行靠 dragTranslation 瞬时跟手
-    /// （不进 withAnimation → 没有任何动画能和它打架 → 不抽动）；让位行的 gapOffset 由 dropTargetIndex 在
-    /// withAnimation 里更新 → 平滑开槽。只在松手把顺序落定一次（被拖行 spring 入位，让位行已就位、零位移）。
-    /// 手势只挂右侧手柄（见 dayRow）：拖手柄=重排，面板下滑关闭/滚动不受影响。
+    /// 整行长按 0.2s 抬起 → 拖动重排。**长按是必需的**：整行可拖时，要靠"先按住"来和"快速滑动=滚动/
+    /// 下滑关面板"区分（否则一拖就被当成滚动/关闭）。**拖动期间不改 dayCodes**：被拖行靠 dragTranslation 瞬时
+    /// 跟手（不进 withAnimation → 没动画能和它打架 → 不抽）；`coordinateSpace: .global` 让位移用屏幕绝对坐标、
+    /// 基准不随行移动（否则自激抖）；让位行 gapOffset 在 withAnimation 里平滑开槽；松手提交一次（无缝落位）。
     /// 注：VoiceOver 开启时系统会拦截此手势，重排走 accessibilityActions（已知降级，非 bug）。
     private func reorderGesture(code: String) -> some Gesture {
-        // coordinateSpace: .global ——关键：手势挂在"会被 .offset 跟着移动的手柄"上，若用默认 .local
-        // 坐标，行一移、测量基准跟着移 → translation 自己跟自己较劲、来回抖（停着不动也抖）。
-        // 用屏幕绝对坐标测位移，基准不动，translation 稳定。
-        DragGesture(minimumDistance: 6, coordinateSpace: .global)
-            .onChanged { drag in
-                if draggingCode != code {                 // 第一次移动即抓起
+        LongPressGesture(minimumDuration: 0.2)
+            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .global))
+            .onChanged { value in
+                guard case .second(true, let drag) = value else { return }
+                if draggingCode != code {                 // 长按抬起瞬间：抓起
                     draggingCode = code
                     dragStartIndex = dayCodes.firstIndex(of: code)
                     dropTargetIndex = dragStartIndex ?? 0
                     dragTranslation = 0
                     liftPulse += 1
                 }
-                dragTranslation = drag.translation.height  // 瞬时跟手（不在 withAnimation 里）
+                guard let drag else { return }            // 已抬起、还没拖
+                dragTranslation = drag.translation.height
                 guard let start = dragStartIndex else { return }
                 let t = targetIndex(start: start)
                 if t != dropTargetIndex {                   // 跨过一行：让位行平滑开槽 + 轻 tick
@@ -184,7 +175,7 @@ struct PlanDaySequenceEditorView: View {
                 }
             }
             .onEnded { _ in
-                // 落定：把顺序提交 + 清拖动态，全放进同一 withAnimation——被拖行从松手位 spring 入最终槽，
+                // 落定：提交顺序 + 清拖动态全放进同一 withAnimation——被拖行从松手位 spring 入最终槽，
                 // 让位行因 gapOffset 已等于最终位移而视觉不动，整体无缝。
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
                     if let start = dragStartIndex, start != dropTargetIndex {
