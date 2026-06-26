@@ -178,6 +178,27 @@ public enum TodayPrescriptionEngine {
             .map(\.id)
     }
 
+    /// FR-TR6 换动作：返回**引擎真会接受**的替代候选——即该动作所在槽的 `slotCandidates`（同 pattern +
+    /// **守该槽 equipment 偏好**〔如 lower 日复合深蹲槽=machineClasses〕+ 守场景白名单 + 排除已用）。
+    /// 关键：`addCandidates`/`ExerciseReplacementEngine.candidates` 只看全局 allowed、**漏了槽 equipment 偏好**，
+    /// 会列出引擎换不成的动作（如槽要 machine 却列了杠铃深蹲），用户点了悄无声息回退、像「没实现」。
+    /// 槽匹配：取 pattern 相同且 equipment 偏好能容纳本动作器械的第一个槽（精确到本动作真正所在的槽）。
+    /// read-only、不碰 plan()（golden 零回归）。自定义日按默认槽近似（保守，honest-check 仍兜底）。
+    public static func swapCandidates(for exerciseId: String, dayCode: String, currentIds: [String],
+                                      equipmentScenario: String?, catalog: ExerciseCatalog = .minimal) -> [String] {
+        guard let entry = catalog.entry(id: exerciseId) else { return [] }
+        let allowed = EquipmentAccess.allowed(for: equipmentScenario)
+        let daySlots = slots(dayCode: dayCode)
+        let slot = daySlots.first { $0.pattern == entry.movementPattern
+                                    && ($0.equipment == nil || $0.equipment!.contains(entry.equipment)) }
+            ?? daySlots.first { $0.pattern == entry.movementPattern }
+        guard let slot else { return [] }
+        let used = Set(currentIds).subtracting([exerciseId])   // 排除被换的自己，保留其他已用
+        return slotCandidates(slot: slot, catalog: catalog, allowed: allowed, usedIds: used)
+            .filter { $0.id != exerciseId }
+            .map(\.id)
+    }
+
     private static func customSlots(
         specs: [PlanCustomizationInput.ExerciseSpec],
         baseSlots: [Slot],
