@@ -82,6 +82,23 @@ public struct AppData: Equatable, Sendable {
         return obj.compactMapValues { $0.asString }
     }
 
+    /// FR-TR6「只换这次」临时换动作（open-bag 加性，缺=空；不 bump schema、不 seed）：
+    /// originalId → {actualId, dateISO}。只对 dateISO == 当天有效，次日由 app 层按今日过滤后自动失效。
+    /// 缺容器/缺字段/空串跳过（防御读）。空 = 无临时覆盖（旧库天然空，零行为回归）。
+    public var oneTimeSubstitutions: [String: OneTimeSubstitution] {
+        guard let obj = storage["oneTimeSubstitutions"]?.asObject else { return [:] }
+        var out: [String: OneTimeSubstitution] = [:]
+        for (originalId, value) in obj {
+            guard !originalId.isEmpty,
+                  let o = value.asObject,
+                  let actualId = o["actualId"]?.asString, !actualId.isEmpty,
+                  let dateISO = o["dateISO"]?.asString, !dateISO.isEmpty
+            else { continue }
+            out[originalId] = OneTimeSubstitution(actualId: actualId, dateISO: dateISO)
+        }
+        return out
+    }
+
     /// FR-T5 已采纳补量的 ISO 周集合（schema 11）。缺容器/内层 → 空（防御读，审查 M-1）。
     public var volumeBoostWeeks: [String] {
         guard let arr = storage["coachAdjustments"]?.asObject?["volumeBoosts"]?.asArray else { return [] }
@@ -187,6 +204,17 @@ public struct PlanCustomization: Equatable, Sendable {
     public init(dayPlans: [String: CustomDayPlan], daySequence: [String]?) {
         self.dayPlans = dayPlans
         self.daySequence = daySequence
+    }
+}
+
+/// FR-TR6「只换这次」临时换动作（open-bag，date-scoped）：把某动作只在 `dateISO` 当天换成 `actualId`。
+public struct OneTimeSubstitution: Equatable, Sendable {
+    public let actualId: String   // 当天临时换成的动作 id
+    public let dateISO: String    // 生效日期（yyyy-MM-dd）；只对当天有效，次日自动失效
+
+    public init(actualId: String, dateISO: String) {
+        self.actualId = actualId
+        self.dateISO = dateISO
     }
 }
 

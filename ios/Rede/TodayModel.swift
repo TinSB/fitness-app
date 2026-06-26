@@ -26,6 +26,9 @@ struct TodayModel {
     /// FR-T5 换动作覆盖（切片6c）：originalId→actualId 落库真相。UI 据此在处方行显「已换·撤销」微标、
     /// detail sheet 露撤销入口（读落库 map = 真相、不缓存 @State，抗教练卡 reload 消失）。
     let substitutions: [String: String]
+    /// FR-TR6「只换这次」今天有效的临时换动作（originalId→actualId，已按今日过滤）。
+    /// UI 据此把微标显成「今天临时换」并把撤销路由到 remove-one-time（区别于永久换）。
+    let oneTimeSubstitutions: [String: String]
 
     /// Rail「上次」节点：首个处方动作最近一次实绩（重量×次数 + 日期）。
     struct RailLast {
@@ -85,6 +88,13 @@ struct TodayModel {
             return .unreadable // 数据在但 clean 视图构不出 = 读不懂，如实降级（不返回 nil 让今日页无限转圈，审计 MAJOR）
         }
         let verdict = TodayVerdictEngine.evaluate(input)
+        // FR-TR6「只换这次」：只取今天有效的临时换动作（dateISO==今天；次日对不上→自动失效）。
+        let oneTimeToday = appData.oneTimeSubstitutions
+            .filter { $0.value.dateISO == todayISO }
+            .mapValues { $0.actualId }
+        // 喂引擎的有效替换 = 永久替换 + 今天的临时替换（临时优先）。**合并在 app 层做、引擎不区分二者**
+        // → 引擎零改动、golden 零回归；临时项只今天混入、不落进永久表。
+        let effectiveSubs = appData.exerciseSubstitutions.merging(oneTimeToday) { _, oneTime in oneTime }
         // 周期化引擎 S4：从落库配置读 enabled + blockLengthWeeks 喂引擎（默认 false = 零行为回归）；
         // 与计划页周期条（loadCycleState）读同一份 mesocycle 配置 → 两页相位永不分叉（审查 MAJOR-1）。
         // 锚点仍由引擎从真历史现算（FR-PL1 诚实，不读存储 blockStartISO）。
@@ -92,8 +102,8 @@ struct TodayModel {
             input: input, verdict: verdict,
             mesocycleEnabled: appData.mesocycle.enabled,
             blockLengthWeeks: appData.mesocycle.blockLengthWeeks,
-            // FR-T5：换动作前瞻覆盖（schema 11；空表 = 零行为变化，未采纳前恒空）
-            substitutions: appData.exerciseSubstitutions,
+            // FR-T5 永久换 + FR-TR6 今天的临时换（已合并；空表 = 零行为变化）
+            substitutions: effectiveSubs,
             // FR-PL6/PL7：用户自定义计划覆盖（缺 = .empty = 逐字段等价于现状、零回归）
             customization: PlanCustomizationBridge.input(from: appData.planCustomization)
         )
@@ -125,7 +135,8 @@ struct TodayModel {
         ))
         return .ready(TodayModel(
             verdict: verdict, prescription: prescription, cleanView: cleanView, now: now,
-            coachActions: coachActions, substitutions: appData.exerciseSubstitutions
+            coachActions: coachActions, substitutions: appData.exerciseSubstitutions,
+            oneTimeSubstitutions: oneTimeToday
         ))
     }
 }

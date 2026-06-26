@@ -18,6 +18,8 @@ struct TodayTabView: View {
     @State private var showSettings = false
     /// FR-EX2：点开的动作详情目标（nil = 未打开）。
     @State private var detailTarget: ExerciseDetailTarget?
+    /// FR-TR6：点了某替代动作后，先弹「只换这次 / 以后都换」二选一，选完才写（携带写所需信息）。
+    @State private var pendingSwap: PendingSwap?
     /// FR-T5 切片6c：采纳后的撤销条（瞬态，挂今日页根 overlay，独立于教练卡生命周期——
     /// 抗"写后 reload 卡消失"导致撤销入口蒸发）。约 5s 自动淡出。
     @State private var undoBanner: UndoBanner?
@@ -67,6 +69,10 @@ struct TodayTabView: View {
             if sessionStore.todayOutcome == nil { await sessionStore.loadToday() }
             // 截图/UI 验证钩子（同 -autoOpenSharePreview 先例）：自动打开设置页（看 Apple 健康区等）。
             if CommandLine.arguments.contains("-autoOpenSettings") { showSettings = true }
+            // FR-TR6 验证钩子：自动给首个处方动作打开换动作（swapIntent）detail，便于点替代项验「只换这次/以后都换」。
+            if CommandLine.arguments.contains("-autoOpenSwap"), let first = model?.prescription?.exercises.first {
+                detailTarget = ExerciseDetailTarget(id: first.exerciseId, swapIntent: true)
+            }
         }
         .alert(s.resumeSessionTitle, isPresented: Binding(
             get: { sessionStore.pendingDraft != nil },
@@ -356,9 +362,12 @@ struct TodayTabView: View {
                         Text(localeStore.exerciseName(ex.exerciseId))
                             .font(.redeSubhead)
                             .foregroundStyle(Color.redeT1)
-                        // 切片6c：该动作是某到顶动作的替代 → 「已换」微标（长存、读落库 map）；点行进 detail 可换回。
+                        // 切片6c：该动作是某到顶动作的替代 → 微标（长存、读落库 map）；点行进 detail 可换回。
+                        // FR-TR6：永久替代显「已换」；今天临时替代显「今天换」（提示次日自动恢复）。
                         if swapOriginalId(for: ex.exerciseId) != nil {
                             Overline(text: s.exerciseSwappedBadge, color: .redeEmber2)
+                        } else if oneTimeOriginalId(for: ex.exerciseId) != nil {
+                            Overline(text: s.exerciseSwappedOnceBadge, color: .redeEmber2)
                         }
                     }
                     Text(s.exerciseMetaLine(sets: ex.sets, restSeconds: ex.restSeconds, rir: ex.targetRir))
@@ -642,6 +651,7 @@ struct TodayTabView: View {
         let ok: Bool
         switch banner.kind {
         case .swap(let originalId): ok = await sessionStore.removeExerciseSubstitution(originalId: originalId)
+        case .swapOneTime(let originalId): ok = await sessionStore.removeOneTimeSubstitution(originalId: originalId)
         case .volume(let week): ok = await sessionStore.removeVolumeBoost(weekStartISO: week)
         }
         // 撤销写失败保留撤销条（错误面已如实呈现），用户可再试——尤其补量撤销无持久兜底入口（审查 MAJOR）。
@@ -651,9 +661,14 @@ struct TodayTabView: View {
         }
     }
 
-    /// 该动作当前是哪个到顶动作的替代（actualId→originalId 反查落库覆盖 map）；非替代返回 nil。
+    /// 该动作当前是哪个到顶动作的**永久**替代（actualId→originalId 反查落库覆盖 map）；非替代返回 nil。
     private func swapOriginalId(for exerciseId: String) -> String? {
         model?.substitutions.first { $0.value == exerciseId }?.key
+    }
+
+    /// 该动作当前是哪个动作的**今天临时**替代（FR-TR6「只换这次」）；非临时替代返回 nil。
+    private func oneTimeOriginalId(for exerciseId: String) -> String? {
+        model?.oneTimeSubstitutions.first { $0.value == exerciseId }?.key
     }
 
     // MARK: - 动作详情（FR-EX2；只读元数据 + 同族替代，主界面不堆元数据）
@@ -667,6 +682,7 @@ struct TodayTabView: View {
     private struct UndoBanner: Identifiable {
         enum Kind {
             case swap(originalId: String)
+            case swapOneTime(originalId: String)   // FR-TR6「只换这次」：撤销路由到 removeOneTimeSubstitution
             case volume(weekStartISO: String)
         }
         let id = UUID()
@@ -674,11 +690,52 @@ struct TodayTabView: View {
         let text: String
     }
 
+    /// FR-TR6 待定换动作：点了替代项、等用户在「只换这次/以后都换」二选一时携带写入所需信息。
+    private struct PendingSwap: Identifiable {
+        let id = UUID()
+        let rootOriginal: String    // 覆盖写在的根 originalId（root-collapse 后）
+        let altId: String           // 换成的替代动作
+        let altName: String         // 替代动作显示名（toast 用）
+        let fromExerciseId: String  // 被换走的当前展示动作（诚实校验：换后处方是否真换出）
+    }
+
+    /// FR-TR6 执行换动作：oneTime=true→只换今天（次日自动恢复）；false→以后都换（永久）。诚实：换后若处方
+    /// 仍含被换动作（替代非本槽合法候选、plan() 优雅回退）→ 清掉死覆盖、不假报；否则给撤销条。
+    private func applySwap(_ swap: PendingSwap, oneTime: Bool) async {
+        let ok: Bool
+        if oneTime {
+            ok = await sessionStore.applyOneTimeSubstitution(originalId: swap.rootOriginal, actualId: swap.altId)
+        } else {
+            // 「以后都换」覆盖同 key 的「只换这次」：先清临时项，否则临时优先会遮蔽刚写的永久项、
+            // 诚实校验误判把永久项又删掉（审查 MAJOR-2）。仅当确有临时项才清，避免多一次空写盘。
+            if model?.oneTimeSubstitutions[swap.rootOriginal] != nil {
+                _ = await sessionStore.removeOneTimeSubstitution(originalId: swap.rootOriginal)
+            }
+            ok = await sessionStore.applyExerciseSubstitution(originalId: swap.rootOriginal, actualId: swap.altId)
+        }
+        guard ok else { return }
+        detailTarget = nil
+        // model 为 nil（无法确认）时默认 false：倾向**保留**刚写盘的覆盖、不误删（审查 MAJOR）。
+        let stillHasOriginal = model?.prescription?.exercises.contains { $0.exerciseId == swap.fromExerciseId } ?? false
+        if stillHasOriginal {
+            if oneTime { _ = await sessionStore.removeOneTimeSubstitution(originalId: swap.rootOriginal) }
+            else { _ = await sessionStore.removeExerciseSubstitution(originalId: swap.rootOriginal) }
+        } else {
+            commitPulse += 1
+            undoBanner = UndoBanner(
+                kind: oneTime ? .swapOneTime(originalId: swap.rootOriginal) : .swap(originalId: swap.rootOriginal),
+                text: oneTime ? s.swapOnceAdoptedToast(exerciseName: swap.altName) : s.swapAdoptedToast(exerciseName: swap.altName)
+            )
+        }
+    }
+
     private func exerciseDetailSheet(_ target: ExerciseDetailTarget) -> some View {
         let exerciseId = target.id
         let entry = ExerciseCatalog.minimal.entry(id: exerciseId)
         // 该动作若是某到顶动作的替代 → 顶部露「换回原动作」撤销入口（持久，与即时 toast 互补）。
+        // 永久替代走 removeExerciseSubstitution；FR-TR6 今天临时替代走 removeOneTimeSubstitution（文案标明明天自动恢复）。
         let revertOriginalId = swapOriginalId(for: exerciseId)
+        let oneTimeRevertOriginalId = oneTimeOriginalId(for: exerciseId)
         return ScrollView {
             VStack(alignment: .leading, spacing: RedeSpace.section) {
                 Text(localeStore.exerciseName(exerciseId))
@@ -690,6 +747,12 @@ struct TodayTabView: View {
                     adoptCTA(s.swapRevertHint(originalName: localeStore.exerciseName(originalId))) {
                         Task {
                             if await sessionStore.removeExerciseSubstitution(originalId: originalId) { detailTarget = nil }
+                        }
+                    }
+                } else if let originalId = oneTimeRevertOriginalId {
+                    adoptCTA(s.swapOnceRevertHint(originalName: localeStore.exerciseName(originalId))) {
+                        Task {
+                            if await sessionStore.removeOneTimeSubstitution(originalId: originalId) { detailTarget = nil }
                         }
                     }
                 }
@@ -746,27 +809,14 @@ struct TodayTabView: View {
                         } else if target.swapIntent {
                             ForEach(alts, id: \.self) { altId in
                                 Button {
-                                    // root-collapse：若当前动作本身是某动作的替代，覆盖写在**根 originalId** 上，
-                                    // 不建 B→C 链（避免 A→B、B→C 两条 key 语义错位；撤销也回到根，审查 MINOR）。
-                                    let rootOriginal = swapOriginalId(for: exerciseId) ?? exerciseId
-                                    Task {
-                                        if await sessionStore.applyExerciseSubstitution(originalId: rootOriginal, actualId: altId) {
-                                            detailTarget = nil
-                                            // 诚实：仅当 plan() 真把当前动作换出处方才报「已换成」+ 给撤销；若该替代非此槽
-                                            // 合法候选、plan() 优雅回退（处方没变），清掉这条死覆盖、绝不假报成功（审查 MINOR/诚实红线）。
-                                            // model 为 nil（无法确认）时默认 false：倾向**保留**刚写盘的覆盖、不误删（审查 MAJOR）。
-                                            let stillHasOriginal = model?.prescription?.exercises.contains { $0.exerciseId == exerciseId } ?? false
-                                            if stillHasOriginal {
-                                                _ = await sessionStore.removeExerciseSubstitution(originalId: rootOriginal)
-                                            } else {
-                                                commitPulse += 1
-                                                undoBanner = UndoBanner(
-                                                    kind: .swap(originalId: rootOriginal),
-                                                    text: s.swapAdoptedToast(exerciseName: localeStore.exerciseName(altId))
-                                                )
-                                            }
-                                        }
-                                    }
+                                    // root-collapse：若当前动作本身是某动作的（永久或临时）替代，覆盖写在**根 originalId** 上，
+                                    // 不建 B→C 链（避免 key 语义错位；撤销也回到根，审查 MINOR）。
+                                    let rootOriginal = swapOriginalId(for: exerciseId) ?? oneTimeOriginalId(for: exerciseId) ?? exerciseId
+                                    // FR-TR6：先弹「只换这次 / 以后都换」二选一（见 .confirmationDialog），选完才写。
+                                    pendingSwap = PendingSwap(
+                                        rootOriginal: rootOriginal, altId: altId,
+                                        altName: localeStore.exerciseName(altId), fromExerciseId: exerciseId
+                                    )
                                 } label: {
                                     HStack {
                                         Text(localeStore.exerciseName(altId))
@@ -812,6 +862,19 @@ struct TodayTabView: View {
         .presentationBackground(Color.redeBase)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
+        // FR-TR6：点替代项后弹「只换这次 / 以后都换」二选一，选完才写。
+        .confirmationDialog(
+            s.swapScopeTitle,
+            isPresented: Binding(get: { pendingSwap != nil }, set: { if !$0 { pendingSwap = nil } }),
+            titleVisibility: .visible,
+            presenting: pendingSwap
+        ) { swap in
+            Button(s.swapScopeOnce) { Task { await applySwap(swap, oneTime: true) } }
+            Button(s.swapScopeAlways) { Task { await applySwap(swap, oneTime: false) } }
+            Button(s.commonCancel, role: .cancel) { }
+        } message: { swap in
+            Text(s.swapScopeMessage(exerciseName: swap.altName))
+        }
     }
 
     private func detailRow(_ label: String, _ value: String) -> some View {
