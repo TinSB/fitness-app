@@ -29,6 +29,8 @@ struct TodayModel {
     /// FR-TR6「只换这次」今天有效的临时换动作（originalId→actualId，已按今日过滤）。
     /// UI 据此把微标显成「今天临时换」并把撤销路由到 remove-one-time（区别于永久换）。
     let oneTimeSubstitutions: [String: String]
+    /// 器械场景（commercial-gym/home-dumbbell/minimal/nil）：换动作候选过滤用，与引擎同口径。
+    let equipmentScenario: String?
 
     /// Rail「上次」节点：首个处方动作最近一次实绩（重量×次数 + 日期）。
     struct RailLast {
@@ -136,7 +138,8 @@ struct TodayModel {
         return .ready(TodayModel(
             verdict: verdict, prescription: prescription, cleanView: cleanView, now: now,
             coachActions: coachActions, substitutions: appData.exerciseSubstitutions,
-            oneTimeSubstitutions: oneTimeToday
+            oneTimeSubstitutions: oneTimeToday,
+            equipmentScenario: input.profile.equipmentScenario
         ))
     }
 }

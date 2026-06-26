@@ -897,14 +897,18 @@ struct TodayTabView: View {
         }
     }
 
-    /// 同族替代动作（共享任一 substitutionGroup、非自身、未退役）；信息性参考，列前几个。
+    /// 替代动作候选——用 `swapCandidates`：**只列引擎真会接受的**（同 pattern + 守该槽 equipment 偏好 +
+    /// 守场景 + 排除已用）。否则会列出引擎换不成的动作（如 lower 日复合深蹲槽要 machine 却列了杠铃/哑铃深蹲），
+    /// 用户点了悄无声息回退、看着像「没实现」。确保点了就换得成。
     private func alternatives(for entry: ExerciseCatalogEntry) -> [String] {
-        let groups = Set(entry.substitutionGroups)
-        return ExerciseCatalog.minimal.entries
-            .filter { $0.id != entry.id && !$0.deprecated && !Set($0.substitutionGroups).isDisjoint(with: groups) }
-            .sorted { $0.rank < $1.rank }   // 显式 rank 序（审查 Minor-2）：前 6 偏主项/主流器械，不依赖 entries 隐式有序
-            .prefix(6)
-            .map(\.id)
+        guard let dayCode = model?.prescription?.dayCode else { return [] }
+        let currentIds = model?.prescription?.exercises.map(\.exerciseId) ?? []
+        return TodayPrescriptionEngine.swapCandidates(
+            for: entry.id, dayCode: dayCode, currentIds: currentIds,
+            equipmentScenario: model?.equipmentScenario
+        )
+        .prefix(6)
+        .map { $0 }
     }
 
 }
