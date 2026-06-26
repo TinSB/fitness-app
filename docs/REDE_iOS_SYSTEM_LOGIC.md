@@ -94,9 +94,12 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 - Program config scalar edit。
 - History set correction。
 - Saved-session exercise replacement（换动作前瞻覆盖，FR-T5）。
+- One-time exercise replacement（FR-TR6「只换这次」，2026-06-26）。
 - Coach-action dismiss intent（暂不处理，喂降频计数，FR-T5）。
 - Coach-action volume-boost intent（补量承认，频率维度；不加训练不改处方，FR-T5）。
 - Notification preference edit（FR-NT1/2 通知开关；open-bag 加性、缺=关、无 schema bump）。
+
+> **FR-TR6「只换这次」临时换动作（2026-06-26）。** 点替代项后二选一：「以后都换」= 永久（写 `exerciseSubstitutions`，FR-T5 原路径）；「只换这次」= 临时（写 `oneTimeSubstitutions[原]={换成,dateISO}`，**只今天有效、次日自动失效**）。两表均 open-bag 加性、**无 schema bump**。**引擎零改动**是关键：在 app 层（`TodayModel`）把「永久 + 今天的临时（按 todayISO 过滤）」**合并成一张 substitutions 表再喂 `plan()`（临时优先）**，引擎不区分二者 → golden 零回归；临时项只今天混入、绝不落进永久表。写闸 `applyOneTimeSubstitution` 顺手清掉非今天的陈旧项（容器永远只留当天，自动 GC）。撤销同 FR-T5（单步即时反向写 `removeOneTimeSubstitution`）。诚实：换后若 `plan()` 因替代非本槽合法候选优雅回退（处方没变），honest-check 清掉死覆盖、不假报成功（同 FR-T5）。UI：处方行微标「今天换」（vs 永久「已换」）、detail sheet 撤销入口文案标明次日自动恢复。
 
 > 本地通知（FR-NT1 休息结束 + FR-NT2 每周）由 `RedeNotifications` 纯策略 + `#if os(iOS)` UNUserNotificationCenter 适配器调度：**派生临时、绝不落 canonical**（只把开关偏好当只读输入）；无 remote push（Master §9）；策略产 typed code、文案归 RedeL10n（§7.3 中性、禁断签/羞辱/施压）。FR-NT1 在休息生命周期 schedule/cancel（rest-begin 排、rest-finished/收尾/放弃取消）；FR-NT2 固定 2 条（周一上午「新周」/周四傍晚「保持节奏」，UNCalendarTrigger repeats，幂等重注册，可关）。授权价值先行（首次开开关时请求），被拒不影响核心功能。阶梯外的频率/时间为 MVP 起步值待校准；按 daysPerWeek 缩放 + 用户自选时间后置。
 >

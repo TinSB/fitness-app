@@ -253,6 +253,39 @@ public struct CanonicalSessionWriter {
         }
     }
 
+    /// 已批准写入类别：FR-TR6「只换这次」临时换动作。写入 oneTimeSubstitutions[originalId] =
+    /// {actualId, dateISO}，**并顺手清掉所有非本次 dateISO 的陈旧项**（只今天有效 → 容器永远只留当天，
+    /// 自动 GC、不无限增长）。open-bag 加性、其他顶层键原样保留。catalog/同族合法性由 app 层调用前校验
+    /// （同 applyExerciseSubstitution 分层口径）；本层只做结构守卫 + 写入。
+    @discardableResult
+    public func applyOneTimeSubstitution(originalId: String, actualId: String, dateISO: String) throws -> AppData {
+        guard !originalId.isEmpty, !actualId.isEmpty else { throw CoachActionWriteError.emptyExerciseId }
+        guard originalId != actualId else { throw CoachActionWriteError.substitutionToSelf(originalId) }
+        guard !dateISO.isEmpty else { throw CoachActionWriteError.emptyKey }
+        return try performGatedMutation { current in
+            var storage = current.storage
+            var subs = storage["oneTimeSubstitutions"]?.asObject ?? [:]
+            subs = subs.filter { $0.value.asObject?["dateISO"]?.asString == dateISO }  // 只留当天，清陈旧
+            subs[originalId] = .object(["actualId": .string(actualId), "dateISO": .string(dateISO)])
+            storage["oneTimeSubstitutions"] = .object(subs)
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
+    /// 已批准写入类别：撤销「只换这次」临时换动作（单步即时）。删 oneTimeSubstitutions[originalId]；
+    /// 不存在则幂等无变化。走全套 gate（含写前备份）。结构守卫：id 非空（与 apply 对称）。
+    @discardableResult
+    public func removeOneTimeSubstitution(originalId: String) throws -> AppData {
+        guard !originalId.isEmpty else { throw CoachActionWriteError.emptyExerciseId }
+        return try performGatedMutation { current in
+            var storage = current.storage
+            var subs = storage["oneTimeSubstitutions"]?.asObject ?? [:]
+            subs[originalId] = nil
+            storage["oneTimeSubstitutions"] = .object(subs)
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
     // MARK: - FR-PL6/PL7 切片S5：自定义训练计划写入（open-bag planCustomization，无 schema bump）
     // 全部走唯一 performGatedMutation（load→gate→backup→atomic→honest）。回滚 = remove（默认模板是
     // 确定性纯函数，无需快照即可重建，比 FR-PL4 更简单）。**分层**：exerciseId 合法性 / 同族 / 场景

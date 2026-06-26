@@ -655,6 +655,24 @@ final class SessionStore {
         await performCoachWrite { _ = try $0.removeExerciseSubstitution(originalId: originalId) }
     }
 
+    /// FR-TR6「只换这次」：把 originalId 只在**今天**临时换成 actualId（带今日日期落库；次日自动失效）。
+    /// 写时顺手清掉非今天的陈旧临时项（写闸内）。catalog/同族合法性由调用方（换动作 UI）已校验。
+    @discardableResult
+    func applyOneTimeSubstitution(originalId: String, actualId: String) async -> Bool {
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "en_US_POSIX"); fmt.timeZone = .current; fmt.dateFormat = "yyyy-MM-dd"
+        let todayISO = fmt.string(from: Date())
+        return await performCoachWrite {
+            _ = try $0.applyOneTimeSubstitution(originalId: originalId, actualId: actualId, dateISO: todayISO)
+        }
+    }
+
+    /// 「只换这次」撤销（单步即时）：移除该动作的临时覆盖，回到引擎默认/永久覆盖。
+    @discardableResult
+    func removeOneTimeSubstitution(originalId: String) async -> Bool {
+        await performCoachWrite { _ = try $0.removeOneTimeSubstitution(originalId: originalId) }
+    }
+
     // MARK: - FR-PL6/PL7 自定义训练计划写入（计划编辑器；错误进 planSaveErrorText 隔离于计划页）
 
     /// 计划编辑写入的统一 gated 包装（同 performCoachWrite，但用 planSaveErrorText = 计划页错误面）：

@@ -82,6 +82,33 @@ extension RedeStrings {
         t2c("已换成 \(exerciseName)", "Swapped to \(exerciseName)")
     }
 
+    // MARK: FR-TR6「只换这次」临时换动作
+
+    /// 处方行「今天换」微标（该动作是今天的临时替代；次日自动恢复）。
+    public var exerciseSwappedOnceBadge: String { t2c("今天换", "Today") }
+    /// 点替代项后的二选一对话框标题。
+    public var swapScopeTitle: String { t2c("换这个动作", "Swap this exercise") }
+    /// 二选一对话框正文：换成 X，问范围。
+    public func swapScopeMessage(exerciseName: String) -> String {
+        t2c("换成 \(exerciseName)——只换今天这次，还是以后都换？",
+            "Swap to \(exerciseName) — just for today, or always?")
+    }
+    /// 选项：只换这次（今天有效，明天自动恢复原动作）。
+    public var swapScopeOnce: String { t2c("只换这次（今天）", "Just this time (today)") }
+    /// 选项：以后都换（永久替代，直到手动换回）。
+    public var swapScopeAlways: String { t2c("以后都换", "Swap from now on") }
+    /// 「只换这次」采纳后撤销条正文（诚实标明次日自动恢复）。
+    public func swapOnceAdoptedToast(exerciseName: String) -> String {
+        t2c("今天临时换成 \(exerciseName)（明天自动恢复）", "Swapped to \(exerciseName) for today")
+    }
+    /// detail sheet 撤销入口：当前动作是今天临时替代了哪个原动作。
+    public func swapOnceRevertHint(originalName: String) -> String {
+        t2c("今天临时替代了 \(originalName)　可换回（明天也会自动恢复）",
+            "Replaced \(originalName) for today · restore")
+    }
+    /// 通用「取消」按钮（对话框等共用）。
+    public var commonCancel: String { t2c("取消", "Cancel") }
+
     /// 补量采纳后撤销条正文。**诚实红线**：只说"本周不再提醒"，不暗示已加训练/已补量。
     public var volumeAckToast: String { t2c("本周不再提醒补量", "No more nudges this week") }
 
