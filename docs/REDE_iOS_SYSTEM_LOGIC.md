@@ -165,7 +165,9 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 ### 6.0.1a 分化模板系统（天数→模式→日序列 · 循证频率映射，2026-06-16 owner 拍板）
 
-> 目标契约：每肌群尽量 **2×/周**（Schoenfeld 频率 meta：容量等值下 2× 优于 1×；RP 容量地标 10-20 组/肌群·周）。`OnboardingPlanInit.template(for:)` 按天数选 `splitType`，`TodayPrescriptionEngine.daySequence(splitType:)` 把 splitType 映成**日序列**（轮转长度=序列长，`dayCode = 序列[已练场数 % 序列长]`）。
+> 目标契约：每肌群尽量 **2×/周**（Schoenfeld 频率 meta：容量等值下 2× 优于 1×；RP 容量地标 10-20 组/肌群·周）。`OnboardingPlanInit.template(for:)` 按天数选 `splitType`，`TodayPrescriptionEngine.daySequence(splitType:)` 把 splitType 映成**日序列**（轮转长度=序列长，`dayCode = 序列[(已练场数 + rotationOffset) % 序列长]`）。
+
+> **FR-TR7「今天换一天练」临时训练日覆盖（2026-06-27）。** 今日页可临时把今天的训练日换成本分化的另一天（动机：整组器械满/整个部位还酸/当天没心情练腿——循证：弹性周期化 FDUP，当天自选先做哪个 session 不损增益、提升坚持度）。二选一：① **只换今天**（默认）= 写 date-scoped `oneTimeDayOverride{dayCode,dateISO}`，引擎 `plan()` 今天用它（`dayCodeOverride ?? 轮转`，非法成员回退轮转）；② **以后都按这个顺序** = 打开顺序编辑器永久重排（不在今日页猜意图）。**「明天补回被跳过的日」靠 `rotationOffset`**：临时换天那场**完成时**（`appendCompletedSession` 同一原子写内，若覆盖 dateISO==该场 date）`rotationOffset −1` + 清覆盖，抵消本场对「场次数 % 长度」轮转的推进 → 被跳过的日下一场自动排第一。**关键性质**：offset 只在完成时消费（没练就不动轮转、撤销只清覆盖）；`count+offset = 非临时换天场次数 ≥ 0`（不越界）；默认 `dayCodeOverride=nil / rotationOffset=0` 逐字节等价现状（golden 零回归）。两字段均 open-bag 加性、无 schema bump。临时换天不改序列/不动每周频率，故**不触发** A/B 频率护栏。
 
 | 天数 | splitType | 日序列 | 每肌群频率 |
 |---|---|---|---|

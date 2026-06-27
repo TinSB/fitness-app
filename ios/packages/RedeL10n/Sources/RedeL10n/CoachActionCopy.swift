@@ -109,6 +109,27 @@ extension RedeStrings {
     /// 通用「取消」按钮（对话框等共用）。
     public var commonCancel: String { t2c("取消", "Cancel") }
 
+    // MARK: FR-TR7「今天换一天练」临时训练日覆盖
+
+    /// 今日页入口：临时换今天练哪个训练日。
+    public var swapDayEntry: String { t2c("今天换一天练", "Switch today's session") }
+    /// 选训练日对话框标题。
+    public var swapDayPickerTitle: String { t2c("今天换练哪天？", "Switch today's session?") }
+    /// 选了某天后的二选一：只换今天（被跳过的 displaced 日顺延到下次）。day/displaced 为已本地化训练日名。
+    public func swapDayScopeOnce(displaced: String) -> String {
+        t2c("只换今天 · \(displaced)顺延到下次", "Just today · \(displaced) moves to next session")
+    }
+    /// 选了某天后的二选一：以后都按这个顺序（打开顺序编辑器永久重排）。
+    public var swapDayScopeAlways: String { t2c("以后都按这个顺序", "Change my rotation order") }
+    /// 临时换天后撤销条正文（明示明天补回被跳过的那天）。chosen/displaced 为已本地化训练日名。
+    public func swapDayAdoptedToast(chosen: String, displaced: String) -> String {
+        t2c("已临时换为\(chosen) · 明天补回\(displaced)", "Switched to \(chosen) today · \(displaced) next time")
+    }
+    /// 今日页头标：今天临时换成了某训练日（提示次日恢复）。day 为已本地化训练日名。
+    public func dayOverrideHeader(day: String) -> String {
+        t2c("今天临时换为：\(day)", "Today (swapped): \(day)")
+    }
+
     /// 补量采纳后撤销条正文。**诚实红线**：只说"本周不再提醒"，不暗示已加训练/已补量。
     public var volumeAckToast: String { t2c("本周不再提醒补量", "No more nudges this week") }
 

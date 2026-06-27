@@ -366,7 +366,9 @@ public enum TodayPrescriptionEngine {
         mesocycleEnabled: Bool = false,
         blockLengthWeeks: Int = Mesocycle.defaultBlockLengthWeeks,
         substitutions: [String: String] = [:],
-        customization: PlanCustomizationInput = .empty
+        customization: PlanCustomizationInput = .empty,
+        dayCodeOverride: String? = nil,
+        rotationOffset: Int = 0
     ) -> TodayPrescription? {
         guard verdict.call != .rest else { return nil }
 
@@ -381,7 +383,11 @@ public enum TodayPrescriptionEngine {
         // FR-PL7② 自定义日序：override 须为默认日序的排列，否则回退默认（resolvedDaySequence 内守卫）。
         // 默认（override=nil）逐字节等价于现状。
         let sequence = resolvedDaySequence(splitType: input.program.splitType, override: customization.daySequence)
-        let dayCode = sequence[input.sessions.count % sequence.count]
+        // 轮转 = 序列[(场次数 + 偏移) % 长度]。FR-TR7 临时换天那场完成时偏移 −1 抵消推进 → 跳过的日下一场补回。
+        // 默认 rotationOffset=0 逐字节等价现状（golden 零回归）。
+        let rotated = sequence[((input.sessions.count + rotationOffset) % sequence.count + sequence.count) % sequence.count]
+        // FR-TR7「今天换一天练」：今日临时覆盖优先（须为本日序合法成员，否则回退轮转）。默认 nil = 现状。
+        let dayCode = dayCodeOverride.flatMap { sequence.contains($0) ? $0 : nil } ?? rotated
 
         // FR-EQ1（2026-06-11）：场景白名单硬过滤候选；槽位 equipment/machine-kind
         // 偏好与白名单冲突时软化（保 pattern 在可用器械里匹配），槽位无解=如实 unfilled。

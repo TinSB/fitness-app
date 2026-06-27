@@ -673,6 +673,22 @@ final class SessionStore {
         await performCoachWrite { _ = try $0.removeOneTimeSubstitution(originalId: originalId) }
     }
 
+    /// FR-TR7「今天换一天练」：把今天的训练日临时改为 dayCode（带今日日期）。轮转偏移的 −1 抵消在这场训练
+    /// **完成时**由写闸消费（appendCompletedSession）——所以没练就不会动轮转，撤销也只需清覆盖。
+    @discardableResult
+    func applyOneTimeDayOverride(dayCode: String) async -> Bool {
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "en_US_POSIX"); fmt.timeZone = .current; fmt.dateFormat = "yyyy-MM-dd"
+        let todayISO = fmt.string(from: Date())
+        return await performCoachWrite { _ = try $0.applyOneTimeDayOverride(dayCode: dayCode, dateISO: todayISO) }
+    }
+
+    /// 「今天换一天练」撤销（单步即时，仅在该场训练完成前有意义）：清掉今天的临时训练日覆盖，回到轮转默认。
+    @discardableResult
+    func removeOneTimeDayOverride() async -> Bool {
+        await performCoachWrite { _ = try $0.removeOneTimeDayOverride() }
+    }
+
     // MARK: - FR-PL6/PL7 自定义训练计划写入（计划编辑器；错误进 planSaveErrorText 隔离于计划页）
 
     /// 计划编辑写入的统一 gated 包装（同 performCoachWrite，但用 planSaveErrorText = 计划页错误面）：
