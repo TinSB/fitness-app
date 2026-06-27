@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-06-27 · 版本号 0.2.2 (11) → 0.2.3 (12)
+
+**用户目标**：升版本号。
+
+**做了什么**：按 owner 标准（升版本号=升营销版本+build）把 `MARKETING_VERSION` 0.2.2 → **0.2.3**、`CURRENT_PROJECT_VERSION` 11 → **12**（app + widget × Debug/Release 四处）。0.2.3 在 0.2.2 基础上加了「换一天练/换动作弹窗品牌化」（去掉 iOS 原生 action sheet）。仍未上传过（10/11/12 都是模拟器迭代）。
+
+**证据**：xcodebuild BUILD SUCCEEDED；解包 Rede.app 确认 **0.2.3 (12)**。
+
+**你下一步**：Xcode Archive **0.2.3 (12)** → Distribute 上传 TestFlight（无需签名改动）。这版含 build 7 之后的全部改动。
+
+---
+
 ## 2026-06-27 · 换一天练/换动作的弹窗改成品牌设计（去掉 iOS 原生 action sheet）
 
 **用户目标**：「换一天练的 UI/UX 为什么用 Apple 原生弹窗，必须是我们自己的品牌设计。」
