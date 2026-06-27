@@ -441,3 +441,127 @@ struct ScreenHeader: View {
         .padding(.top, 8)
     }
 }
+
+// MARK: - 品牌选择面板（替代 iOS 原生 confirmationDialog / actionSheet）
+//
+// 为什么有它：原生 action sheet 走系统字体+系统毛玻璃，跟 Rede「锻面/刻线」品牌语言不搭。
+// 凡是「给我几个选项点一个」的决策（换一天练选日、单次/永久、换动作单次/永久）统一用这块品牌
+// 底板：redeBase 底 + 拖拽条 + Overline 标题 + 44pt 动作行 + 发丝分隔 + ember 强调首要项 +
+// redePressableRow 手感。沿用 TrainTabView 跳过/换动作面板已有的房屋样式，不再散落原生弹窗。
+
+/// 一个可点选项：title 必填；subtitle 给后果说明（次行 redeT3）；emphasis=true 用 ember 强调首要项；
+/// role=.destructive 用 redeRisk。点击执行 action（关闭由调用方在 action 里负责）。
+struct RedeChoiceOption: Identifiable {
+    let id = UUID()
+    var title: String
+    var subtitle: String? = nil
+    var icon: String? = nil          // 前导 SF Symbol（nil = 无）
+    var emphasis: Bool = false       // ember 强调（首要选项）
+    var role: ButtonRole? = nil      // .destructive → redeRisk
+    var action: () -> Void
+}
+
+/// 品牌选择面板：Overline 标题 + 可选说明 + 一列动作行 + 可选取消行。
+/// 用法：`.sheet(isPresented:/item:) { RedeChoiceSheet(title:..., options:[...], cancelLabel: s.commonCancel) { 关闭 } }`
+/// 自带 sheet 房屋样式（redeBase 背景 / 拖拽条 / 按内容估高的固定档），调用方只管给数据。
+struct RedeChoiceSheet: View {
+    let title: String
+    var message: String? = nil
+    let options: [RedeChoiceOption]
+    var cancelLabel: String? = nil
+    let onCancel: () -> Void   // 必填：cancelLabel 有值却忘了关闭逻辑是无声陷阱，故不给默认空实现
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Overline(text: title).padding(.top, 18)
+            if let message {
+                Text(message)
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 10)
+            }
+            VStack(spacing: 0) {
+                // 按位置取 id（不用 element.id）：选项数组每次 body 重算都新建、UUID 会变，
+                // 用 UUID 做 diff 会让 ForEach 每次父刷新都重建行；面板内选项不重排，位置即稳定 id。
+                ForEach(Array(options.enumerated()), id: \.offset) { idx, opt in
+                    optionRow(opt, divider: idx < options.count - 1)
+                }
+            }
+            .padding(.top, 14)
+            if let cancelLabel {
+                EngraveDivider().padding(.vertical, 10)
+                Button(action: onCancel) {
+                    Text(cancelLabel)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT3)
+                        .frame(maxWidth: .infinity, minHeight: RedeShape.controlHeight)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.redePressableRow)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, RedeSpace.page)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .presentationDetents([.height(estimatedHeight)])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(Color.redeBase)
+    }
+
+    // 按内容估高（房屋无「贴合内容」detent，沿用 moreSheet 固定档做法）：标题/说明/各行/取消 + 余量。
+    // 留 dynamic type 余头并封顶，避免极端字号或多日序列把 sheet 顶穿。
+    private var estimatedHeight: CGFloat {
+        var h: CGFloat = 18 + 22                 // 顶距 + Overline
+        if message != nil { h += 46 }
+        h += 14
+        for opt in options { h += opt.subtitle != nil ? 64 : 48 }
+        if cancelLabel != nil { h += 20 + RedeShape.controlHeight }  // 刻线分隔 + 取消行
+        h += 30                                  // 底部呼吸
+        return min(max(h, 200), 560)
+    }
+
+    private func optionRow(_ opt: RedeChoiceOption, divider: Bool) -> some View {
+        Button(action: opt.action) {
+            VStack(spacing: 0) {
+                HStack(spacing: 12) {
+                    if let icon = opt.icon {
+                        Image(systemName: icon)
+                            .font(.system(size: 15))
+                            .foregroundStyle(tint(opt))
+                            .frame(width: 22)
+                            .accessibilityHidden(true)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(opt.title)
+                            .font(.redeBody)
+                            .foregroundStyle(tint(opt))
+                        if let subtitle = opt.subtitle {
+                            Text(subtitle)
+                                .font(.redeCaption)
+                                .foregroundStyle(Color.redeT3)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Color.redeT4)
+                        .accessibilityHidden(true)  // 装饰性 affordance；行 Button 已承载动作
+                }
+                .frame(minHeight: RedeShape.controlHeight)
+                .padding(.vertical, opt.subtitle != nil ? 6 : 0)
+                if divider {
+                    Rectangle().fill(Color.redeHair2).frame(height: 1)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.redePressableRow)
+    }
+
+    private func tint(_ opt: RedeChoiceOption) -> Color {
+        if opt.role == .destructive { return .redeRisk }
+        return opt.emphasis ? .redeEmber2 : .redeT2
+    }
+}
