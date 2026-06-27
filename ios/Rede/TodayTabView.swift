@@ -24,6 +24,8 @@ struct TodayTabView: View {
     @State private var showDayPicker = false
     @State private var pendingDayOverride: String?
     @State private var showSequenceEditor = false
+    /// 永久分支信号：在「换一天练」面板关闭**之后**再开顺序编辑器（onDismiss 接力，避免同批次 dismiss+present 的竞争）。
+    @State private var pendingSequenceEditor = false
     /// FR-T5 切片6c：采纳后的撤销条（瞬态，挂今日页根 overlay，独立于教练卡生命周期——
     /// 抗"写后 reload 卡消失"导致撤销入口蒸发）。约 5s 自动淡出。
     @State private var undoBanner: UndoBanner?
@@ -107,25 +109,14 @@ struct TodayTabView: View {
         .sheet(item: $detailTarget) { target in
             exerciseDetailSheet(target)
         }
-        // FR-TR7「今天换一天练」①选训练日：列出本分化里今天没在练的其它训练日。
-        .confirmationDialog(s.swapDayPickerTitle, isPresented: $showDayPicker, titleVisibility: .visible) {
-            ForEach((model?.daySequence ?? []).filter { $0 != model?.prescription?.dayCode }, id: \.self) { day in
-                Button(s.trainingDayName(day)) { pendingDayOverride = day }
-            }
-            Button(s.commonCancel, role: .cancel) { }
-        }
-        // FR-TR7 ②选了某天后：只换今天 / 以后都按这个顺序（永久 → 打开顺序编辑器）。
-        .confirmationDialog(
-            s.swapDayPickerTitle,
-            isPresented: Binding(get: { pendingDayOverride != nil }, set: { if !$0 { pendingDayOverride = nil } }),
-            titleVisibility: .visible,
-            presenting: pendingDayOverride
-        ) { day in
-            Button(s.swapDayScopeOnce(displaced: s.trainingDayName(model?.scheduledDayCode ?? ""))) {
-                Task { await applyDayOverride(day) }
-            }
-            Button(s.swapDayScopeAlways) { pendingDayOverride = nil; showSequenceEditor = true }  // 显式清待定，不靠隐式联动（审查 MINOR-1）
-            Button(s.commonCancel, role: .cancel) { }
+        // FR-TR7「今天换一天练」品牌选择面板（替代原生 confirmationDialog）：①选训练日 ②单次/永久。
+        // 同一 sheet 内就地切两步（pendingDayOverride 决定显哪步），关闭时清待定项防下次直接跳到②步。
+        .sheet(isPresented: $showDayPicker, onDismiss: {
+            pendingDayOverride = nil
+            // 永久分支接力：等本面板真正关掉后再开顺序编辑器（present-after-dismiss，零竞争、无人造延迟）。
+            if pendingSequenceEditor { pendingSequenceEditor = false; showSequenceEditor = true }
+        }) {
+            daySwitchSheet
         }
         // FR-TR7 永久分支：打开训练日顺序编辑器让用户看着完整序列自己拖（不在今日页猜意图）。
         .sheet(isPresented: $showSequenceEditor) {
@@ -390,6 +381,40 @@ struct TodayTabView: View {
                 .font(.redeCaption)
                 .foregroundStyle(Color.redeT3)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// FR-TR7「今天换一天练」品牌面板：同一 sheet 内分两步——pendingDayOverride==nil 选训练日，
+    /// 选了某天后切到单次/永久。选项点击负责关闭/推进，避免两层原生弹窗的视觉与品牌断裂。
+    @ViewBuilder private var daySwitchSheet: some View {
+        if let day = pendingDayOverride {
+            // ②单次/永久：首要项=只换今天（ember），次要项=永久（打开顺序编辑器让用户看着完整序列拖）。
+            RedeChoiceSheet(
+                title: s.swapDayPickerTitle,
+                options: [
+                    RedeChoiceOption(
+                        title: s.swapDayScopeOnce(displaced: s.trainingDayName(model?.scheduledDayCode ?? "")),
+                        emphasis: true,
+                        action: { showDayPicker = false; Task { await applyDayOverride(day) } }
+                    ),
+                    RedeChoiceOption(
+                        title: s.swapDayScopeAlways,
+                        action: { pendingSequenceEditor = true; showDayPicker = false }  // onDismiss 接力开编辑器 + 清待定项
+                    ),
+                ],
+                cancelLabel: s.commonCancel,
+                onCancel: { showDayPicker = false }
+            )
+        } else {
+            // ①选训练日：列本分化里今天没在练的其它训练日；点一项进入②步（就地切，不另弹层）。
+            RedeChoiceSheet(
+                title: s.swapDayPickerTitle,
+                options: (model?.daySequence ?? [])
+                    .filter { $0 != model?.prescription?.dayCode }
+                    .map { day in RedeChoiceOption(title: s.trainingDayName(day), action: { pendingDayOverride = day }) },
+                cancelLabel: s.commonCancel,
+                onCancel: { showDayPicker = false }
+            )
         }
     }
 
@@ -926,18 +951,21 @@ struct TodayTabView: View {
         .presentationBackground(Color.redeBase)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
-        // FR-TR6：点替代项后弹「只换这次 / 以后都换」二选一，选完才写。
-        .confirmationDialog(
-            s.swapScopeTitle,
-            isPresented: Binding(get: { pendingSwap != nil }, set: { if !$0 { pendingSwap = nil } }),
-            titleVisibility: .visible,
-            presenting: pendingSwap
-        ) { swap in
-            Button(s.swapScopeOnce) { Task { await applySwap(swap, oneTime: true) } }
-            Button(s.swapScopeAlways) { Task { await applySwap(swap, oneTime: false) } }
-            Button(s.commonCancel, role: .cancel) { }
-        } message: { swap in
-            Text(s.swapScopeMessage(exerciseName: swap.altName))
+        // FR-TR6：点替代项后弹「只换这次 / 以后都换」品牌面板（替代原生 confirmationDialog），选完才写。
+        // 嵌在动作详情 sheet 之上（保留动作上下文，同原 action sheet 浮于其上的口径）。
+        .sheet(item: $pendingSwap) { swap in
+            RedeChoiceSheet(
+                title: s.swapScopeTitle,
+                message: s.swapScopeMessage(exerciseName: swap.altName),
+                options: [
+                    RedeChoiceOption(title: s.swapScopeOnce, emphasis: true,
+                                     action: { pendingSwap = nil; Task { await applySwap(swap, oneTime: true) } }),
+                    RedeChoiceOption(title: s.swapScopeAlways,
+                                     action: { pendingSwap = nil; Task { await applySwap(swap, oneTime: false) } }),
+                ],
+                cancelLabel: s.commonCancel,
+                onCancel: { pendingSwap = nil }
+            )
         }
     }
 
