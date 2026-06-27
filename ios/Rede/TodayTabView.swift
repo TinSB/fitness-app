@@ -20,6 +20,10 @@ struct TodayTabView: View {
     @State private var detailTarget: ExerciseDetailTarget?
     /// FR-TR6：点了某替代动作后，先弹「只换这次 / 以后都换」二选一，选完才写（携带写所需信息）。
     @State private var pendingSwap: PendingSwap?
+    /// FR-TR7「今天换一天练」：①选训练日的对话框 ②选了某天后的单次/永久二选一 ③永久分支打开顺序编辑器。
+    @State private var showDayPicker = false
+    @State private var pendingDayOverride: String?
+    @State private var showSequenceEditor = false
     /// FR-T5 切片6c：采纳后的撤销条（瞬态，挂今日页根 overlay，独立于教练卡生命周期——
     /// 抗"写后 reload 卡消失"导致撤销入口蒸发）。约 5s 自动淡出。
     @State private var undoBanner: UndoBanner?
@@ -73,6 +77,8 @@ struct TodayTabView: View {
             if CommandLine.arguments.contains("-autoOpenSwap"), let first = model?.prescription?.exercises.first {
                 detailTarget = ExerciseDetailTarget(id: first.exerciseId, swapIntent: true)
             }
+            // FR-TR7 验证钩子：自动弹「今天换一天练」选训练日对话框。
+            if CommandLine.arguments.contains("-autoOpenDaySwap") { showDayPicker = true }
         }
         .alert(s.resumeSessionTitle, isPresented: Binding(
             get: { sessionStore.pendingDraft != nil },
@@ -100,6 +106,30 @@ struct TodayTabView: View {
         }
         .sheet(item: $detailTarget) { target in
             exerciseDetailSheet(target)
+        }
+        // FR-TR7「今天换一天练」①选训练日：列出本分化里今天没在练的其它训练日。
+        .confirmationDialog(s.swapDayPickerTitle, isPresented: $showDayPicker, titleVisibility: .visible) {
+            ForEach((model?.daySequence ?? []).filter { $0 != model?.prescription?.dayCode }, id: \.self) { day in
+                Button(s.trainingDayName(day)) { pendingDayOverride = day }
+            }
+            Button(s.commonCancel, role: .cancel) { }
+        }
+        // FR-TR7 ②选了某天后：只换今天 / 以后都按这个顺序（永久 → 打开顺序编辑器）。
+        .confirmationDialog(
+            s.swapDayPickerTitle,
+            isPresented: Binding(get: { pendingDayOverride != nil }, set: { if !$0 { pendingDayOverride = nil } }),
+            titleVisibility: .visible,
+            presenting: pendingDayOverride
+        ) { day in
+            Button(s.swapDayScopeOnce(displaced: s.trainingDayName(model?.scheduledDayCode ?? ""))) {
+                Task { await applyDayOverride(day) }
+            }
+            Button(s.swapDayScopeAlways) { pendingDayOverride = nil; showSequenceEditor = true }  // 显式清待定，不靠隐式联动（审查 MINOR-1）
+            Button(s.commonCancel, role: .cancel) { }
+        }
+        // FR-TR7 永久分支：打开训练日顺序编辑器让用户看着完整序列自己拖（不在今日页猜意图）。
+        .sheet(isPresented: $showSequenceEditor) {
+            PlanDaySequenceEditorView(onApplied: { Task { await sessionStore.loadToday() } })
         }
     }
 
@@ -329,17 +359,49 @@ struct TodayTabView: View {
         }
     }
 
-    // 训练日判断行：「推力 A · N 个动作」+ 依据句（顶部，不再用大字号 hero）
+    /// FR-TR7：今天的处方日 ≠ 轮转本该练的日 = 今天临时换过了。
+    private var isDayOverridden: Bool {
+        guard let sched = model?.scheduledDayCode, let today = model?.prescription?.dayCode else { return false }
+        return sched != today
+    }
+
+    // 训练日判断行：「推力 A · N 个动作」+「今天换一天练」入口 + 依据句（顶部，不再用大字号 hero）
     private func verdictLine(count: Int) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            // iOS 26：Text `+` 拼接已弃用，改字符串插值嵌两段各自带色的 Text（两色一行不变）。
-            Text("\(Text(dayName).foregroundStyle(Color.redeT1))\(Text(s.verdictExerciseCount(count)).foregroundStyle(Color.redeT3))")
-                .font(.redeSubhead)
-                .monospacedDigit()
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                // iOS 26：Text `+` 拼接已弃用，改字符串插值嵌两段各自带色的 Text（两色一行不变）。
+                Text("\(Text(dayName).foregroundStyle(Color.redeT1))\(Text(s.verdictExerciseCount(count)).foregroundStyle(Color.redeT3))")
+                    .font(.redeSubhead)
+                    .monospacedDigit()
+                Spacer(minLength: 8)
+                // FR-TR7「今天换一天练」入口：仅多于 1 个训练日的分化才有意义；正训练中不给换（避免改了正在练的）。
+                if (model?.daySequence.count ?? 0) > 1, sessionStore.flow == nil {
+                    Button(s.swapDayEntry) { showDayPicker = true }
+                        .font(.redeCaption).foregroundStyle(Color.redeEmber2)
+                        .buttonStyle(.redePressable)
+                }
+            }
+            // 今天临时换过 → 头标提示（次日自动恢复，撤销走浮条）。
+            if isDayOverridden {
+                Text(s.dayOverrideHeader(day: dayName))
+                    .font(.redeCaption).foregroundStyle(Color.redeEmber2)
+            }
             Text(s.receiptConclusion(call: callCode, reasonCode: reasonCode))
                 .font(.redeCaption)
                 .foregroundStyle(Color.redeT3)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// FR-TR7 执行「只换今天」：写临时训练日覆盖 + 撤销浮条（明示明天补回被跳过的那天）。
+    private func applyDayOverride(_ dayCode: String) async {
+        let displaced = s.trainingDayName(model?.scheduledDayCode ?? "")
+        if await sessionStore.applyOneTimeDayOverride(dayCode: dayCode) {
+            commitPulse += 1
+            undoBanner = UndoBanner(
+                kind: .dayOverride,
+                text: s.swapDayAdoptedToast(chosen: s.trainingDayName(dayCode), displaced: displaced)
+            )
         }
     }
 
@@ -652,6 +714,7 @@ struct TodayTabView: View {
         switch banner.kind {
         case .swap(let originalId): ok = await sessionStore.removeExerciseSubstitution(originalId: originalId)
         case .swapOneTime(let originalId): ok = await sessionStore.removeOneTimeSubstitution(originalId: originalId)
+        case .dayOverride: ok = await sessionStore.removeOneTimeDayOverride()
         case .volume(let week): ok = await sessionStore.removeVolumeBoost(weekStartISO: week)
         }
         // 撤销写失败保留撤销条（错误面已如实呈现），用户可再试——尤其补量撤销无持久兜底入口（审查 MAJOR）。
@@ -683,6 +746,7 @@ struct TodayTabView: View {
         enum Kind {
             case swap(originalId: String)
             case swapOneTime(originalId: String)   // FR-TR6「只换这次」：撤销路由到 removeOneTimeSubstitution
+            case dayOverride                        // FR-TR7「今天换一天练」：撤销路由到 removeOneTimeDayOverride
             case volume(weekStartISO: String)
         }
         let id = UUID()

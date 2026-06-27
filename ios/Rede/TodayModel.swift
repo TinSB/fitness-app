@@ -31,6 +31,11 @@ struct TodayModel {
     let oneTimeSubstitutions: [String: String]
     /// 器械场景（commercial-gym/home-dumbbell/minimal/nil）：换动作候选过滤用，与引擎同口径。
     let equipmentScenario: String?
+    /// FR-TR7 本分化的训练日序（如 ["upper","lower"]）：今日页「换一天练」选择器列这些。
+    let daySequence: [String]
+    /// FR-TR7 今日按轮转**本该**练的训练日（不含临时覆盖）；与 prescription.dayCode 不同 = 今天临时换过了，
+    /// 被跳过的就是它（撤销浮条「明天补回 X」、今日页「今天临时换为…」据此判断）。
+    let scheduledDayCode: String?
 
     /// Rail「上次」节点：首个处方动作最近一次实绩（重量×次数 + 日期）。
     struct RailLast {
@@ -97,6 +102,13 @@ struct TodayModel {
         // 喂引擎的有效替换 = 永久替换 + 今天的临时替换（临时优先）。**合并在 app 层做、引擎不区分二者**
         // → 引擎零改动、golden 零回归；临时项只今天混入、不落进永久表。
         let effectiveSubs = appData.exerciseSubstitutions.merging(oneTimeToday) { _, oneTime in oneTime }
+        // FR-TR7「今天换一天练」：本分化日序 + 今日轮转默认（含 rotationOffset）+ 今日临时覆盖（dateISO==今天且合法成员）。
+        let daySequence = TodayPrescriptionEngine.resolvedDaySequence(
+            splitType: input.program.splitType, override: appData.planCustomization?.daySequence)
+        let scheduledDayCode: String? = daySequence.isEmpty ? nil
+            : daySequence[((input.sessions.count + appData.rotationOffset) % daySequence.count + daySequence.count) % daySequence.count]
+        let dayCodeOverride: String? = appData.oneTimeDayOverride
+            .flatMap { $0.dateISO == todayISO && daySequence.contains($0.dayCode) ? $0.dayCode : nil }
         // 周期化引擎 S4：从落库配置读 enabled + blockLengthWeeks 喂引擎（默认 false = 零行为回归）；
         // 与计划页周期条（loadCycleState）读同一份 mesocycle 配置 → 两页相位永不分叉（审查 MAJOR-1）。
         // 锚点仍由引擎从真历史现算（FR-PL1 诚实，不读存储 blockStartISO）。
@@ -107,7 +119,10 @@ struct TodayModel {
             // FR-T5 永久换 + FR-TR6 今天的临时换（已合并；空表 = 零行为变化）
             substitutions: effectiveSubs,
             // FR-PL6/PL7：用户自定义计划覆盖（缺 = .empty = 逐字段等价于现状、零回归）
-            customization: PlanCustomizationBridge.input(from: appData.planCustomization)
+            customization: PlanCustomizationBridge.input(from: appData.planCustomization),
+            // FR-TR7 今天换一天练：今日临时覆盖训练日 + 轮转偏移（默认 nil/0 = 现状、golden 零回归）
+            dayCodeOverride: dayCodeOverride,
+            rotationOffset: appData.rotationOffset
         )
 
         // FR-T5 教练动作（切片6b）：摊平裁决信号 + 处方到顶 reason + 落库 dismiss/采纳态 → 引擎产卡。
@@ -139,7 +154,9 @@ struct TodayModel {
             verdict: verdict, prescription: prescription, cleanView: cleanView, now: now,
             coachActions: coachActions, substitutions: appData.exerciseSubstitutions,
             oneTimeSubstitutions: oneTimeToday,
-            equipmentScenario: input.profile.equipmentScenario
+            equipmentScenario: input.profile.equipmentScenario,
+            daySequence: daySequence,
+            scheduledDayCode: scheduledDayCode
         ))
     }
 }

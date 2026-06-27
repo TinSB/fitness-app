@@ -97,6 +97,15 @@ public struct CanonicalSessionWriter {
             var history = storage["history"]?.asArray ?? []
             history.append(.object(session.storage))
             storage["history"] = .array(history)
+            // FR-TR7：若这场是在「今天换一天练」的临时覆盖日完成的 → 消费它——rotationOffset −1（抵消本场对
+            // 「今天=序列[场次数%长度]」轮转的推进，使被跳过的训练日下一场补回）+ 清掉当天覆盖。非覆盖日不动。
+            if let ov = storage["oneTimeDayOverride"]?.asObject,
+               let ovDate = ov["dateISO"]?.asString, !ovDate.isEmpty,
+               ovDate == session.date {
+                let offset = (storage["rotationOffset"]?.asInt ?? 0) - 1
+                storage["rotationOffset"] = .int(Int64(offset))
+                storage["oneTimeDayOverride"] = nil
+            }
             return try AppData(decoding: .object(storage))
         }
     }
@@ -282,6 +291,29 @@ public struct CanonicalSessionWriter {
             var subs = storage["oneTimeSubstitutions"]?.asObject ?? [:]
             subs[originalId] = nil
             storage["oneTimeSubstitutions"] = .object(subs)
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
+    /// 已批准写入类别：FR-TR7「今天换一天练」临时训练日覆盖。写 oneTimeDayOverride={dayCode,dateISO}（覆盖前一条，
+    /// 始终只一条）。dayCode 是否本日序合法成员由 app/引擎层校验（引擎对非法 override 回退轮转）；本层只结构守卫。
+    /// rotationOffset 的 −1 抵消在**这场训练完成时**由 appendCompletedSession 消费（不在此处，避免没练就改了轮转）。
+    @discardableResult
+    public func applyOneTimeDayOverride(dayCode: String, dateISO: String) throws -> AppData {
+        guard !dayCode.isEmpty, !dateISO.isEmpty else { throw CoachActionWriteError.emptyKey }
+        return try performGatedMutation { current in
+            var storage = current.storage
+            storage["oneTimeDayOverride"] = .object(["dayCode": .string(dayCode), "dateISO": .string(dateISO)])
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
+    /// 已批准写入类别：撤销「今天换一天练」（单步即时，仅在该场训练**完成前**有意义——未消费 offset，故只需清覆盖）。
+    @discardableResult
+    public func removeOneTimeDayOverride() throws -> AppData {
+        return try performGatedMutation { current in
+            var storage = current.storage
+            storage["oneTimeDayOverride"] = nil
             return try AppData(decoding: .object(storage))
         }
     }

@@ -99,6 +99,23 @@ public struct AppData: Equatable, Sendable {
         return out
     }
 
+    /// FR-TR7「今天换一天练」临时训练日覆盖（open-bag 加性，缺=nil；不 bump schema）：
+    /// {dayCode, dateISO}。只对 dateISO == 当天有效，今天的处方用该 dayCode 而非轮转默认；次日 app 层按今日过滤后失效。
+    /// 缺容器/缺字段/空串 → nil（防御读）。
+    public var oneTimeDayOverride: OneTimeDayOverride? {
+        guard let o = storage["oneTimeDayOverride"]?.asObject,
+              let dayCode = o["dayCode"]?.asString, !dayCode.isEmpty,
+              let dateISO = o["dateISO"]?.asString, !dateISO.isEmpty
+        else { return nil }
+        return OneTimeDayOverride(dayCode: dayCode, dateISO: dateISO)
+    }
+
+    /// FR-TR7 轮转场次偏移（open-bag 加性，缺=0；不 bump schema）：临时换天那次完成时 −1，抵消该场次对
+    /// 「今天=序列[场次数%长度]」轮转的推进，使被跳过的训练日下一场自动补回。缺/非整数 → 0（零行为回归）。
+    public var rotationOffset: Int {
+        storage["rotationOffset"]?.asInt ?? 0
+    }
+
     /// FR-T5 已采纳补量的 ISO 周集合（schema 11）。缺容器/内层 → 空（防御读，审查 M-1）。
     public var volumeBoostWeeks: [String] {
         guard let arr = storage["coachAdjustments"]?.asObject?["volumeBoosts"]?.asArray else { return [] }
@@ -214,6 +231,17 @@ public struct OneTimeSubstitution: Equatable, Sendable {
 
     public init(actualId: String, dateISO: String) {
         self.actualId = actualId
+        self.dateISO = dateISO
+    }
+}
+
+/// FR-TR7「今天换一天练」临时训练日覆盖（open-bag，date-scoped）：`dateISO` 当天的训练日改为 `dayCode`。
+public struct OneTimeDayOverride: Equatable, Sendable {
+    public let dayCode: String    // 当天临时改练的训练日 code（须为本分化日序的成员）
+    public let dateISO: String    // 生效日期（yyyy-MM-dd）；只对当天有效，次日自动失效
+
+    public init(dayCode: String, dateISO: String) {
+        self.dayCode = dayCode
         self.dateISO = dateISO
     }
 }
