@@ -6,6 +6,12 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 > Backfill note (2026-06-23): the 2026-06-20 → 2026-06-23 sections below were backfilled in one pass — the log fell behind after 2026-06-18 (FR-NT + FR-PL3 slices 1/2). Covers FR-PL3/4 completion, the build bumps, the UX-polish program, notification fixes, FR-T5/FR-PR7 R1 wrap-up, the FR-EX2 exercise-detail content waves, the action-library expansion (123 → 165), and the FR-PL6/PL7 user-customizable-plan feature. Facts sourced from `DEV_LOG.md` + `git log` + PR titles; tighter than live entries.
 
+## 2026-07-01
+
+- **🎉 Rede Strength 1.0 approved & live on the App Store**: Apple review completed (submitted 2026-06-27 16:33 PT, approved in ~4 days, first submission, zero rejections). Store version 1.0 = build 12 (0.2.3). Store URL: https://apps.apple.com/app/rede-strength/id6780301633 (auto-release; up to 24h for worldwide storefront propagation). Listing shipped bilingual (en-US + zh-Hans): name/subtitle/keywords/description/promo text, Health & Fitness category, privacy questionnaire "Data Not Collected", privacy-policy URL both locales, 4+ rating, free.
+
+- **Share card now carries the real App Store link**: `ShareLinks.appStoreURL` (ShareCard.swift) filled with the Apple-provided URL — the pre-launch TODO agreed when FR-SH1 shipped (#611/#612). Share text = tagline + store link instead of the "Find Rede on the App Store" fallback; the rendered card poster keeps the neutral download hint. App-layer constant only, no engine/persistence impact.
+
 ## 2026-06-27
 
 - **Version bump 0.2.2 (11) → 0.2.3 (12)**: per the owner's version policy (bump marketing + build together), `MARKETING_VERSION` 0.2.2 → 0.2.3 and `CURRENT_PROJECT_VERSION` 11 → 12 across all 4 configs. 0.2.3 adds the brand-styled choice sheets (native `confirmationDialog` removed from the swap flows) on top of 0.2.2. Still not uploaded (10/11/12 were sim iterations). `xcodebuild` BUILD SUCCEEDED; bundle reports 0.2.3 (12). Owner re-archives 0.2.3 (12) → Distribute.

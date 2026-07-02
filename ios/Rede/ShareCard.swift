@@ -8,12 +8,12 @@ import RedeTrainingDecision
 // 全本地、不联网、不写 canonical（§9.6 S0）。卡视图纯数据驱动（不读 environment）→ 可离屏 ImageRenderer。
 // 整面板 0 卡公理不约束本文件（分享卡是离屏海报、非屏内 tab；复用 ForgedGrain/RegMark/主题 token 保品牌一致）。
 
-// MARK: - 下载链接（owner 选 App Store；App 未上架前 URL 不存在 → 卡片/文案回退到"搜索 Rede"）
+// MARK: - 下载链接（owner 选 App Store；2026-06-27 1.0 过审上架，链接已接真）
 
 enum ShareLinks {
-    /// App Store 链接。**App 上架后**填数字 App ID：URL(string: "https://apps.apple.com/app/id<APPID>")。
-    /// 在此之前为 nil——分享文案回退到 shareCardDownloadHint（"App Store 搜索 Rede"），卡片不挂死链。
-    static let appStoreURL: URL? = nil
+    /// App Store 链接（Rede Strength · Apple ID 6780301633，1.0 过审邮件 2026-06-27 提供）。
+    /// 分享文案 = tagline + 此链接；若未来某市场不可用，卡片仍有 shareCardDownloadHint 兜底文案。
+    static let appStoreURL: URL? = URL(string: "https://apps.apple.com/app/rede-strength/id6780301633")
 }
 
 /// FR-SH1：分享卡预览的 Identifiable 载体（[ShareSnapshot] 本身非 Identifiable）。
