@@ -16,6 +16,24 @@ extension RedeStrings {
         formatKg((value * 2).rounded() / 2)
     }
 
+    /// 体量显示（周/单次总吨位，Task 2b 2026-07-04）：千分位分组（36,210；千以下
+    /// 无分隔）。lb 换算行为与 formatKg 同一口径（0.5 lb 步进，改 formatKg 时同步）。
+    /// 小数上限 2 位（loadFactor 权重可出 .25/.75，同时收敛浮点噪音）。仅体量用——
+    /// 处方重量仍走 formatKg（多处消费，防布局回归）。
+    public func formatVolumeKg(_ value: Double) -> String {
+        let display = unit == .lb ? ((value * 2.204_622_621_8 * 2).rounded() / 2) : value
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.numberStyle = .decimal
+        formatter.usesGroupingSeparator = true  // POSIX locale 默认关分组，须显式开
+        formatter.groupingSeparator = ","
+        formatter.groupingSize = 3
+        formatter.decimalSeparator = "."
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 2
+        return formatter.string(from: NSNumber(value: display)) ?? formatKg(value)
+    }
+
     // MARK: - 空态（FR-ON4）
 
     public var progressEmptyTitle: String {
@@ -41,10 +59,12 @@ extension RedeStrings {
             ? "顶组 \(lift) \(kg) \(unitLabel) × \(reps) · 估算 1RM \(e1rmKg) \(unitLabel)"
             : "Top set \(lift) \(kg) \(unitLabel) × \(reps) · est 1RM \(e1rmKg) \(unitLabel)"
     }
+    // 图例通俗化（Task 2b）：「铁火线/ember」是内部设计词，用户读不懂——图例
+    // 直接说颜色（橙色/orange，即 redeEmber 高亮柱）。
     public func sessionCaptionPR(_ liftName: String) -> String {
         locale == .zh
-            ? "\(liftName)　唯一的铁火线标出新纪录"
-            : "\(liftName) · single ember marks the PR"
+            ? "\(liftName)　橙色标出新纪录"
+            : "\(liftName) · orange marks the PR"
     }
     public var sessionCaptionNoPR: String {
         locale == .zh ? "这场每个动作的量都记下了" : "Every lift this session, logged"
@@ -93,7 +113,7 @@ extension RedeStrings {
         locale == .zh ? "周训练量" : "Weekly volume"
     }
     public var weekCaptionCurrent: String {
-        locale == .zh ? "唯一的铁火线标出本周" : "Single ember marks this week"
+        locale == .zh ? "橙色标出本周" : "Orange marks this week"
     }
     /// 周柱标签 "6/8"（周一日期）。
     public func weekBarLabel(fromISO iso: String) -> String { shortDate(fromISO: iso) }
@@ -133,7 +153,7 @@ extension RedeStrings {
         locale == .zh ? "e1RM 趋势 · \(liftName)" : "e1RM trend · \(liftName)"
     }
     public var cycleCaptionPeak: String {
-        locale == .zh ? "唯一的铁火线标出最高点" : "Single ember marks the peak"
+        locale == .zh ? "橙色标出最高点" : "Orange marks the peak"
     }
 
     // MARK: - 历史（FR-PR1）
