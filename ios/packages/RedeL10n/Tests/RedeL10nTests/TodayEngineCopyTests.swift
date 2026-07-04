@@ -74,8 +74,11 @@ final class TodayEngineCopyTests: XCTestCase {
         XCTAssertEqual(zh.railValue(weightKg: 60, reps: 5), "60×5")
         XCTAssertEqual(zh.railValue(weightKg: nil, reps: nil), "—")
         XCTAssertEqual(zh.thenLine("绳索夹胸"), "接 绳索夹胸")
-        XCTAssertEqual(en.signalLine(gapDays: 2, sessionsLast7: 2, planned: 4), "2d since last · 2/4 sessions this week")
+        XCTAssertEqual(en.signalLine(gapDays: 2, sessionsLast7: 2, planned: 4), "2d since last · 2/4 sessions in the past 7 days")
+        XCTAssertEqual(zh.signalLine(gapDays: 2, sessionsLast7: 2, planned: 4), "距上次 2 天 · 近 7 天 2/4 练")
         XCTAssertEqual(zh.signalLine(gapDays: nil, sessionsLast7: 0, planned: 6), "暂无训练记录")
+        // 防回潮：signalLine 数据源是滚动 7 天（sessionsLast7），英文不得再说 this week
+        XCTAssertFalse(en.signalLine(gapDays: 5, sessionsLast7: 3, planned: 4).contains("this week"))
         XCTAssertEqual(en.changeLine(exerciseName: "Bench press", change: "increase", fromKg: "60", toKg: "62.5"), "Bench press 60→62.5 kg · moving up")
     }
 

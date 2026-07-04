@@ -6,6 +6,10 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 > Backfill note (2026-06-23): the 2026-06-20 → 2026-06-23 sections below were backfilled in one pass — the log fell behind after 2026-06-18 (FR-NT + FR-PL3 slices 1/2). Covers FR-PL3/4 completion, the build bumps, the UX-polish program, notification fixes, FR-T5/FR-PR7 R1 wrap-up, the FR-EX2 exercise-detail content waves, the action-library expansion (123 → 165), and the FR-PL6/PL7 user-customizable-plan feature. Facts sourced from `DEV_LOG.md` + `git log` + PR titles; tighter than live entries.
 
+## 2026-07-03
+
+- **Fix EN today-page signal line week wording ("this week" → "in the past 7 days")**: `TodayEngineCopy.signalLine` renders `sessionsLast7` (rolling 7-day count) but the EN string said "sessions this week" — misleading whenever the rolling window crosses an ISO week boundary (post-launch audit MAJOR #1; zh 「近 7 天」 was already correct and is untouched). Now reads `"\(gapDays)d since last · X/Y sessions in the past 7 days"` ("past" avoids colliding with "since last"). TDD: golden updated + zh-unchanged assertion + anti-regression assertion (EN signalLine must never contain "this week"). Audited all other EN "this week" strings — notifications (calendar weekday reminders), progress page (ISO-week aggregation), volume-boost card (`weekStartISO`), deload (program week) are genuinely weekly, left as-is. Copy-only, no data-path impact. Quality gate PASS; independent review clean; sim screenshots (en/zh) archived.
+
 ## 2026-07-01
 
 - **🎉 Rede Strength 1.0 approved & live on the App Store**: Apple review completed (submitted 2026-06-27 16:33 PT, approved in ~4 days, first submission, zero rejections). Store version 1.0 = build 12 (0.2.3). Store URL: https://apps.apple.com/app/rede-strength/id6780301633 (auto-release; up to 24h for worldwide storefront propagation). Listing shipped bilingual (en-US + zh-Hans): name/subtitle/keywords/description/promo text, Health & Fitness category, privacy questionnaire "Data Not Collected", privacy-policy URL both locales, 4+ rating, free.

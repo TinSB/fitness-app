@@ -190,9 +190,10 @@ extension RedeStrings {
         guard let gapDays else {
             return t2("暂无训练记录", "No training history yet")
         }
+        // 口径=滚动 7 天（sessionsLast7），非 ISO 周——英文不得写 this week（2026-07-03 审查修复）
         return t2(
             "距上次 \(gapDays) 天 · 近 7 天 \(sessionsLast7)/\(planned) 练",
-            "\(gapDays)d since last · \(sessionsLast7)/\(planned) sessions this week"
+            "\(gapDays)d since last · \(sessionsLast7)/\(planned) sessions in the past 7 days"
         )
     }
 
