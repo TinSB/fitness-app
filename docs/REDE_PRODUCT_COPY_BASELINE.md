@@ -155,6 +155,7 @@ Avoid:
 - **英文同源不同形:** 英文按本语言习惯——**行尾不收句点**（对标 Apple：`Train today` 而非 `Train today.`）；两个独立句之间可保留单个句点并正常大写第二句（`Train today. First session, starting light`）；**禁** em-dash 挂解释性补语（`Eased from 60 — last set hit failure` → `Eased from 60, last set hit failure`），但短同位语标签的 em-dash 可留（`5 days a week — built for strength`）。
 - **双语原生（重申 §3.1，落到 UI）:** 中英各按本语言习惯写、不互译。中文不加字距、不用 `您` 类敬语；英文可用大写 + letterspacing 的仪表标签（overline）。同一意图、两种母语表达。
 - **置信度不显示（决定）:** 数据可信度 / 置信度是**引擎内部量，不作 UI 读数显示**（取消「置信度高 / 中等」一类标签）。它通过**行为**表达：低可信 → 判断更保守、计划改动更小、新用户走「正在校准」；可落地的数据缺口（如缺 RIR）折进**它发生的地方**（训练时提示补记），不在 Progress 挂置信度标签。Pro 相关价值改述为「在坏数据带偏计划前提醒你」，不出现「置信度」字样。
+- **周口径措辞（2026-07-04，审查修复批次拍板）:** 文案里的「周」必须与数据口径一字不差——① 数据是**滚动 7 天**（如今日页 sessionsLast7）双语写「近 7 天 / in the past 7 days」，禁写「本周 / this week」；② 数据是 **ISO 日历周**（weekStartISO 聚合、周一/周四提醒、补量按周抑制）才可写「本周 / this week」；③ **进行中的日历周**不得与完整上周下对比结论——只报中性「本周至今 / so far this week」，周收口（下周一）恢复对比；④ **滚动排期分块**（PlanWeekProjection 从下一场起按每周场数分块）用顺序词「接下来 / 再往后 · Coming up / After that」，禁用日历周字面。各点均有 RedeL10n 防回潮测试锁定。
 
 ### 3.5 去 AI 味三铁律 (2026-06-15，owner 拍板)
 
