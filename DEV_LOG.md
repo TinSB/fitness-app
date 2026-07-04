@@ -6,6 +6,22 @@
 
 ---
 
+## 2026-07-04 · 审查修复批次 Task 3：Dynamic Type 支持（审查 MAJOR #2，待 owner 过目截图后合并）
+
+**用户目标**：修审查 MAJOR #2——全套字体 token 固定字号，系统「文字大小」调到最大 App 纹丝不动，视力不好的用户没法用（NFR-7 MVP 基础项）。
+
+**做了什么**：八个字体 token（redeDisplay 54pt → redeOverline 11pt）各自锚定语义相近的系统 text style（largeTitle/title1/title3/headline/body/callout/caption1/caption2），用 UIFontMetrics 把**尺寸数值**按用户档位缩放后仍走 Font.system。两个实现要点：① 原计划的 `Font.system(relativeTo:)` API 在 SDK 里不存在（编译证实），SwiftUI 只有自定义字体有这参数；② 不用 UIFont 包装——全库 6 处加粗派生和多处等宽数字修饰会失效，缩放数值的方案全保住。RedeTracking 字距常量有意不动（品牌雕刻感、非可读性参数）。默认档 scaledValue 恒等、逐点不变。**没加任何缩字兜底**：XXXL 七屏实拍零截断（交接件预警的训练页 54pt 大重量，实际只渲染重量数字 ≤6 字符，不写用不到的防御分支）。
+
+**你能看到什么**：系统设置里把文字调大（最大常用档 XXXL），Rede 五个页面的文字全部跟着放大、排版不破；默认字号的用户看到的和以前逐点一样。
+
+**证据**：全量门禁 PASS（含 ForgedCard 预算回归卡）；两档 × 五屏 × 中英抽样共 14 张对比实拍全部入档（docs/工作记录/2026-07-04-task3-*.png）——XXXL 下今日处方行右列自动换行、进展长句换行、计划模式清单换行，全部优雅降级零截断；独立 code-reviewer 审查。**规格写回**：PRD NFR-7 状态更新（常用档已实现 + AX 档/即时换档留 FF 的如实边界）。
+
+**风险与如实边界**：运行中改系统字号需重进页面/重启生效（computed var 在 body 求值时读档位，MVP 基线取舍，已写进代码注释）；AX 超大档（XXXL 以上的辅助功能档）未逐屏验收，留 FF——**下一批 AX 适配的已知输入（审查留痕）**：title 类 text style 在 AX 档增长比 body 类平缓（Apple 有意设计），headline/subhead/body 三 token 到 AX5 可能出现「标题不再明显大于正文」的层级挤压，届时要专门验证层级顺序而非只看放没放大；另 scaledValue 不感知局部 environment 字号覆盖（当前无此用法，注释已留痕）。**本 PR 按交接件不自动合并**，附两档截图等 owner 过目拍板。
+
+**下一步**：批次收口（DEV_LOG 总结 + 规格写回清单 + RUN_RECEIPT）；Task 6/7 follow-up 列给 owner 决定。
+
+---
+
 ## 2026-07-04 · 审查修复批次 Task 5：恢复训练弹窗品牌化（全 App 原生弹窗收口）
 
 **用户目标**：审查确认项——「杀 App 后重开」的恢复训练提示还是 iOS 原生白色 alert，与全 App 品牌深色面板断裂（#634 已把换天/换动作三处收了，这是最后一处）。

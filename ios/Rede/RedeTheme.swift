@@ -48,15 +48,27 @@ extension Color {
 }
 
 // 字阶(rede-app.html type scale)。tracking = em × size;行高用 lineSpacing 逐处贴齐。
+// Dynamic Type（NFR-7，Task 3 2026-07-04）：每档锚定语义相近的系统 text style，用
+// UIFontMetrics 缩放**尺寸数值**后仍走 Font.system——保住 .weight()/.monospacedDigit()
+// 等既有派生用法（Font(UIFont) 包装会让这些修饰符失效）。默认档 scaledValue 恒等、
+// 逐点不变。RedeTracking 常量保持固定——tracking 是品牌雕刻感、非可读性参数，不随
+// 档位缩放（有意取舍，防过度工程）。档位读取发生在 body 求值时（computed var）；
+// 运行中改系统字号在重进页面/重启后生效——MVP 基线的如实边界。另两条已知边界
+// （审查留痕 2026-07-04）：① scaledValue 读进程级全局档位，不感知某子树用
+// .environment(\.sizeCategory) 的局部覆盖（当前全库无此用法）；② 勿把 .redeX
+// 缓存进 let 常量复用——会固化取值时的档位，请始终在 view body 里直接引用。
 extension Font {
-    static let redeDisplay = Font.system(size: 54, weight: .bold)     // lh 1, -0.02em
-    static let redeTitle = Font.system(size: 29, weight: .bold)       // lh 1, -0.01em
-    static let redeHeadline = Font.system(size: 22, weight: .semibold) // lh 1.3, -0.01em
-    static let redeSubhead = Font.system(size: 16, weight: .semibold)  // lh 1.25
-    static let redeBody = Font.system(size: 14, weight: .regular)      // 450≈regular, lh 1.45
-    static let redeCallout = Font.system(size: 13, weight: .regular)   // lh 1.4
-    static let redeCaption = Font.system(size: 12, weight: .regular)
-    static let redeOverline = Font.system(size: 11, weight: .medium)   // +0.18em uppercase
+    private static func redeScaled(_ base: CGFloat, _ style: UIFont.TextStyle) -> CGFloat {
+        UIFontMetrics(forTextStyle: style).scaledValue(for: base)
+    }
+    static var redeDisplay: Font { .system(size: redeScaled(54, .largeTitle), weight: .bold) }     // lh 1, -0.02em
+    static var redeTitle: Font { .system(size: redeScaled(29, .title1), weight: .bold) }           // lh 1, -0.01em
+    static var redeHeadline: Font { .system(size: redeScaled(22, .title3), weight: .semibold) }    // lh 1.3, -0.01em
+    static var redeSubhead: Font { .system(size: redeScaled(16, .headline), weight: .semibold) }   // lh 1.25
+    static var redeBody: Font { .system(size: redeScaled(14, .body), weight: .regular) }           // 450≈regular, lh 1.45
+    static var redeCallout: Font { .system(size: redeScaled(13, .callout), weight: .regular) }     // lh 1.4
+    static var redeCaption: Font { .system(size: redeScaled(12, .caption1), weight: .regular) }
+    static var redeOverline: Font { .system(size: redeScaled(11, .caption2), weight: .medium) }    // +0.18em uppercase
 }
 
 enum RedeSpace {
