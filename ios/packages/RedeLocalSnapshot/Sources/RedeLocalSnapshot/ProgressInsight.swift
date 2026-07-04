@@ -68,12 +68,17 @@ public enum WeeklyComparison: Equatable, Sendable {
     case firstWeek
     /// 有更早历史，但严格上一周缺席或无有效吨位（跳周/休整）——不硬比。
     case previousWeekMissing
+    /// 最新一周还在进行中（today 仍落在该 ISO 周内，含周日当天）——只报
+    /// 「本周至今」事实，不与完整上周硬比（周中天然显负增长，2026-07-03
+    /// 审查 MAJOR #3）。周一起该周收口，恢复 vsPreviousWeek。
+    case currentWeekInProgress
 }
 
 public enum WeeklyInsight {
     public static func compare(
         latest: ProgressSnapshot.WeeklyVolume,
-        weeks: [ProgressSnapshot.WeeklyVolume]
+        weeks: [ProgressSnapshot.WeeklyVolume],
+        todayISO: String
     ) -> WeeklyComparison {
         let hasEarlierWeeks = weeks.contains { $0.weekStartISO < latest.weekStartISO }
         guard let latestStart = SnapshotDayMath.dayNumber(of: latest.weekStartISO) else {
@@ -83,6 +88,11 @@ public enum WeeklyInsight {
         guard let previous = weeks.first(where: { $0.weekStartISO == previousStartISO }),
               previous.totalVolumeKg > 0
         else { return hasEarlierWeeks ? .previousWeekMissing : .firstWeek }
+        // 进行中抢占只压 vsPreviousWeek（唯一会下错误结论的 case）；firstWeek /
+        // previousWeekMissing 文案本就中性如实，不改道。todayISO 解析失败回退对比（不吞数据）。
+        if let today = SnapshotDayMath.dayNumber(of: todayISO), today <= latestStart + 6 {
+            return .currentWeekInProgress
+        }
         let delta = (latest.totalVolumeKg - previous.totalVolumeKg) / previous.totalVolumeKg * 100
         return .vsPreviousWeek(deltaPercent: Int(delta.rounded()))
     }

@@ -93,10 +93,10 @@ final class ProgressInsightTests: XCTestCase {
     }
 
     func testAdjacentWeeksCompare() {
-        // 2026-06-08 的上一个 ISO 周 = 2026-06-01
+        // 2026-06-08 的上一个 ISO 周 = 2026-06-01；今天已过该周（2026-06-20）→ 正常对比
         let comparison = WeeklyInsight.compare(latest: week("2026-06-08", 5500), weeks: [
             week("2026-06-08", 5500), week("2026-06-01", 5000),
-        ])
+        ], todayISO: "2026-06-20")
         XCTAssertEqual(comparison, .vsPreviousWeek(deltaPercent: 10))
     }
 
@@ -104,27 +104,90 @@ final class ProgressInsightTests: XCTestCase {
         // 上一个 ISO 周（2026-06-01）无数据（隔周训练）→ 不硬比，但不是「第一周」
         let comparison = WeeklyInsight.compare(latest: week("2026-06-08", 5500), weeks: [
             week("2026-06-08", 5500), week("2026-05-25", 5000),
-        ])
+        ], todayISO: "2026-06-20")
         XCTAssertEqual(comparison, .previousWeekMissing)
     }
 
     func testFirstWeekHasNoComparison() {
-        let comparison = WeeklyInsight.compare(latest: week("2026-06-08", 5500), weeks: [week("2026-06-08", 5500)])
+        let comparison = WeeklyInsight.compare(
+            latest: week("2026-06-08", 5500), weeks: [week("2026-06-08", 5500)], todayISO: "2026-06-20"
+        )
         XCTAssertEqual(comparison, .firstWeek)
     }
 
     func testDeltaPercentIsRoundedToInteger() {
         let comparison = WeeklyInsight.compare(latest: week("2026-06-08", 5125), weeks: [
             week("2026-06-08", 5125), week("2026-06-01", 4500),
-        ])
+        ], todayISO: "2026-06-20")
         XCTAssertEqual(comparison, .vsPreviousWeek(deltaPercent: 14)) // 13.88… → 14
     }
 
     func testZeroPreviousVolumeMeansNoComparison() {
         let comparison = WeeklyInsight.compare(latest: week("2026-06-08", 5500), weeks: [
             week("2026-06-08", 5500), week("2026-06-01", 0),
-        ])
+        ], todayISO: "2026-06-20")
         XCTAssertEqual(comparison, .previousWeekMissing)
+    }
+
+    // MARK: - 周中失真保守修复（2026-07-03 审查 MAJOR #3）：进行中的周不下「较上周」结论
+
+    func testInProgressWeekSuppressesComparison() {
+        // 今天=周五（2026-06-12，属 2026-06-08 周）本周量还没走完，
+        // 硬比完整上周天然负增长——必须压掉结论句，改进行中中性 case
+        let comparison = WeeklyInsight.compare(latest: week("2026-06-08", 3200), weeks: [
+            week("2026-06-08", 3200), week("2026-06-01", 5000),
+        ], todayISO: "2026-06-12")
+        XCTAssertEqual(comparison, .currentWeekInProgress)
+    }
+
+    func testSundayStillCountsAsInProgress() {
+        // 判定规则拍板（写进测试锁死）：周日当天仍算进行中（当天还可能练），
+        // 下周一起才允许对比
+        let comparison = WeeklyInsight.compare(latest: week("2026-06-08", 3200), weeks: [
+            week("2026-06-08", 3200), week("2026-06-01", 5000),
+        ], todayISO: "2026-06-14")
+        XCTAssertEqual(comparison, .currentWeekInProgress)
+    }
+
+    func testMondayAfterWeekClosesRestoresComparison() {
+        // 今天=下周一（2026-06-15）→ 上一自然周已收口，恢复正常对比（−36%）
+        let comparison = WeeklyInsight.compare(latest: week("2026-06-08", 3200), weeks: [
+            week("2026-06-08", 3200), week("2026-06-01", 5000),
+        ], todayISO: "2026-06-15")
+        XCTAssertEqual(comparison, .vsPreviousWeek(deltaPercent: -36))
+    }
+
+    func testInProgressFirstWeekStaysFirstWeek() {
+        // 第一周即使进行中也走 firstWeek——该文案本就中性无结论，不需要抢占
+        let comparison = WeeklyInsight.compare(
+            latest: week("2026-06-08", 2000), weeks: [week("2026-06-08", 2000)], todayISO: "2026-06-10"
+        )
+        XCTAssertEqual(comparison, .firstWeek)
+    }
+
+    func testInProgressGapWeekStaysGap() {
+        // 上周缺席 + 本周进行中 → 仍走 gap（「上周没练，暂无对比」本就如实）
+        let comparison = WeeklyInsight.compare(latest: week("2026-06-08", 3200), weeks: [
+            week("2026-06-08", 3200), week("2026-05-25", 5000),
+        ], todayISO: "2026-06-10")
+        XCTAssertEqual(comparison, .previousWeekMissing)
+    }
+
+    func testFutureDatedLatestWeekStaysNeutral() {
+        // 防御留痕（有意不设下界 today >= latestStart）：设备时钟回调/脏数据把
+        // latest 周推到「未来」时，宁可中性「进行中」也不对异常数据下 ±N% 结论
+        let comparison = WeeklyInsight.compare(latest: week("2026-06-08", 3200), weeks: [
+            week("2026-06-08", 3200), week("2026-06-01", 5000),
+        ], todayISO: "2026-06-03")
+        XCTAssertEqual(comparison, .currentWeekInProgress)
+    }
+
+    func testUnparseableTodayFallsBackToComparison() {
+        // 防御：todayISO 解析失败 → 回退旧行为（正常对比），不吞数据
+        let comparison = WeeklyInsight.compare(latest: week("2026-06-08", 5500), weeks: [
+            week("2026-06-08", 5500), week("2026-06-01", 5000),
+        ], todayISO: "not-a-date")
+        XCTAssertEqual(comparison, .vsPreviousWeek(deltaPercent: 10))
     }
 
     // MARK: - §6.2 相对带宽 + 关键动作复合优先（2026-06-11）

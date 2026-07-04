@@ -289,6 +289,9 @@ struct ProgressTabView: View {
         case .vsPreviousWeek(let delta)?:
             verdictCode = delta > 0 ? "up" : (delta < 0 ? "down" : "level")
             sub = s.weekSubCompared(deltaPercent: delta, sets: latest.setCount, volumeKg: s.formatKg(latest.totalVolumeKg))
+        case .currentWeekInProgress?:
+            verdictCode = "inProgress"
+            sub = s.weekSubInProgress(sets: latest.setCount, volumeKg: s.formatKg(latest.totalVolumeKg))
         case .previousWeekMissing?:
             verdictCode = "gap"
             sub = s.weekSubGapWeek(sets: latest.setCount, volumeKg: s.formatKg(latest.totalVolumeKg))

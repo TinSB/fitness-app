@@ -43,6 +43,27 @@ final class ProgressEngineCopyTests: XCTestCase {
                        "12 sets · 4100 kg this week. No sessions last week to compare")
     }
 
+    // 周中失真保守修复（2026-07-03 审查 MAJOR #3）：进行中的周只报事实、不下结论
+    func testInProgressWeekLinesAreNeutral() {
+        XCTAssertEqual(zh.weekVerdict("inProgress"), "本周进行中")
+        XCTAssertEqual(en.weekVerdict("inProgress"), "Week in progress")
+        XCTAssertEqual(zh.weekSubInProgress(sets: 6, volumeKg: "3200"),
+                       "本周至今 6 组 · 3200 kg　周结束后显现对比")
+        XCTAssertEqual(en.weekSubInProgress(sets: 6, volumeKg: "3200"),
+                       "6 sets · 3200 kg so far this week. Comparison appears when the week ends")
+        // 防回潮：进行中文案不得携带任何对上周的结论
+        for line in [zh.weekSubInProgress(sets: 6, volumeKg: "3200"),
+                     zh.weekVerdict("inProgress")] {
+            XCTAssertFalse(line.contains("较上周"))
+            XCTAssertFalse(line.contains("%"))
+        }
+        for line in [en.weekSubInProgress(sets: 6, volumeKg: "3200"),
+                     en.weekVerdict("inProgress")] {
+            XCTAssertFalse(line.contains("vs last week"))
+            XCTAssertFalse(line.contains("%"))
+        }
+    }
+
     func testSuspectLinesAreBehavioral() {
         let line = zh.suspectWeightLine(dateISO: "2026-06-03", lift: "卧推", setIndex: 1, kg: "227")
         XCTAssertTrue(line.contains("可能记错了"))
@@ -74,6 +95,7 @@ final class ProgressEngineCopyTests: XCTestCase {
                 strings.weekSubCompared(deltaPercent: 12, sets: 18, volumeKg: "5500"),
                 strings.weekSubFirstWeek(sets: 18, volumeKg: "5500"),
                 strings.weekSubGapWeek(sets: 18, volumeKg: "5500"),
+                strings.weekSubInProgress(sets: 18, volumeKg: "5500"),
                 strings.cycleCaptionPeak, strings.cycleChartTitleFor("卧推"),
                 strings.historyTitle, strings.historyRowMeta(sets: 18, volumeKg: "5500"),
                 strings.historyDetailSets, strings.dataQualityTitle,
@@ -81,7 +103,7 @@ final class ProgressEngineCopyTests: XCTestCase {
                 strings.suspectRepsLine(dateISO: "2026-06-03", lift: "卧推", setIndex: 1, reps: 80),
                 strings.droppedRecordsLine(2),
             ]
-            for code in ["up", "down", "level", "first", "gap"] {
+            for code in ["up", "down", "level", "first", "gap", "inProgress"] {
                 lines.append(strings.weekVerdict(code))
             }
             for call in ["up", "down", "flat", "calibrating"] {
