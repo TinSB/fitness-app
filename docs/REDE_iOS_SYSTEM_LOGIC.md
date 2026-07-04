@@ -1075,7 +1075,7 @@ Plan：
 **频率提案合同（FR-PL3）。**
 - **依从信号（纯派生）**：`WeeklyAdherence.recentWeeklySessionCounts(sessionDatesISO:, todayISO:, timeZone:, maxWeeks:)` 把 clean 历史摊平成「最近若干**完整周**每周完成场次」。三条公平红线：① **排除进行中的本周**（半周完成数会低估、误判落后）；② **起点不早于首训周**（开训前的空周是「还没开始」、不计 0）；③ **中间空周计 0**（练过又停正是「持续落后」要捕捉的信号）。周锚点复用 `WeekAnchor.isoWeekStart`（与 §6.4a 按周抑制同源、不分叉）。
 - **提案引擎（纯函数、零文案）**：`PlanAdjustmentEngine.frequencyProposal(plannedDaysPerWeek:, recentWeeklySessionCounts:)` → `PlanAdjustmentProposal(kind:.reduceFrequency, reasonCode:"belowPlanSustained", from, to)` 或 nil。**保守守门（起步值，待真机校准）**：planned > 下限 2、数据 ≥ 4 完整周、近况中位数 ≤ planned−1、`to = max(2, 中位数)` 且 to < planned。
-- **预览**：用 `PlanWeekProjection.weeks(daysPerWeek: to, weeks:1)` 现算「调整后本周训练日」答「影响哪几天」；提案前完整排期就在计划页同屏，故不重复列 before。
+- **预览**：用 `PlanWeekProjection.weeks(daysPerWeek: to, weeks:1)` 现算「调整后」的下一块训练日预览答「影响哪几天」（投影按每周场数分块、非日历周，UI 小标即「调整后 / After the change」，2026-07-04 Task 4 措辞修正）；提案前完整排期就在计划页同屏，故不重复列 before。
 
 **采纳 / 回滚合同（FR-PL3/4）。**
 - **采纳**：经唯一写闸 `CanonicalSessionWriter.applyFrequencyAdjustment(from:to:)` 把 `programTemplate.daysPerWeek` 改成 to（= 已有的「程序配置编辑」写类别）**+ 落 open-bag 回滚记录** `planAdjustment{kind, fromDaysPerWeek, toDaysPerWeek}`（记原值供回滚）。**纯加性、不改 schema**（current=11 不变）。

@@ -146,9 +146,11 @@ public struct RedeStrings: Sendable {
         }
     }
 
-    // MARK: - Plan 周排期（FR-PL2：本周/下周训练日 + 模式构成，只读派生投影）
-    public var planScheduleThisWeek: String { t("本周", "This week") }
-    public var planScheduleNextWeek: String { t("下周", "Next week") }
+    // MARK: - Plan 周排期（FR-PL2：训练日 + 模式构成，只读派生投影）
+    // 标签语义（Task 4 2026-07-04）：PlanWeekProjection 从下一场起按每周场数分块，
+    // 不是日历周——标签用顺序词，不用「本周/下周」字面（周中已练满会误读）。
+    public var planScheduleThisWeek: String { t("接下来", "Coming up") }
+    public var planScheduleNextWeek: String { t("再往后", "After that") }
     /// 单训练日动作数："6 个动作" / "6 exercises"。
     public func planDayExercises(_ count: Int) -> String {
         t("\(count) 个动作", count == 1 ? "1 exercise" : "\(count) exercises")

@@ -23,8 +23,10 @@ extension RedeStrings {
         t2p("每周 \(from) 次 → 每周 \(to) 次", "\(from) days/wk → \(to) days/wk")
     }
 
-    /// 调整后本周训练日小标（其后接训练日名列表，答「影响哪几天」）。
-    public var planAdjustAfterLabel: String { t2p("调整后本周", "After · this week") }
+    /// 调整后训练日小标（其后接训练日名列表，答「影响哪几天」）。
+    /// 同 Task 4 口径：列表是调整后的下一块训练日预览（PlanWeekProjection 投影、
+    /// 非日历周；频率不整除轮转序列时构成随游标滚动，故不说「每周」）。
+    public var planAdjustAfterLabel: String { t2p("调整后", "After the change") }
 
     /// 采纳主 CTA（动词引导）。
     public var planAdjustAdopt: String { t2p("调整计划", "Adjust plan") }

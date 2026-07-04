@@ -83,6 +83,25 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertEqual(en.planBackToToday, "Back to today")
     }
 
+    // Task 4（2026-07-03 审查 MINOR）：PlanWeekProjection 是「从下一场起按每周场数
+    // 分块」的滚动排期、不是日历周——区块标签不得再用「本周/下周」字面，防止
+    // 本周已练满的用户误读「这周还有 4 场」。planAdjustAfterLabel 同根因（同投影）。
+    func testPlanScheduleLabelsAreSequenceNotCalendar() {
+        XCTAssertEqual(zh.planScheduleThisWeek, "接下来")
+        XCTAssertEqual(en.planScheduleThisWeek, "Coming up")
+        XCTAssertEqual(zh.planScheduleNextWeek, "再往后")
+        XCTAssertEqual(en.planScheduleNextWeek, "After that")
+        XCTAssertEqual(zh.planAdjustAfterLabel, "调整后")
+        XCTAssertEqual(en.planAdjustAfterLabel, "After the change")
+        // 防回潮：计划页排期标签不得出现日历周字面
+        for line in [zh.planScheduleThisWeek, zh.planScheduleNextWeek, zh.planAdjustAfterLabel] {
+            XCTAssertFalse(line.contains("本周") || line.contains("下周"), line)
+        }
+        for line in [en.planScheduleThisWeek, en.planScheduleNextWeek, en.planAdjustAfterLabel] {
+            XCTAssertFalse(line.lowercased().contains("this week") || line.lowercased().contains("next week"), line)
+        }
+    }
+
     func testZhEnDifferWhereExpected() {
         // 抽样:双语不是同一份表(允许 lb/RIR 等术语两边一致)
         XCTAssertNotEqual(zh.todayVerdict, en.todayVerdict)
@@ -118,8 +137,10 @@ final class RedeStringsTests: XCTestCase {
             zh.startTraining, zh.trainLogSet, zh.trainFinish, zh.trainHold185,
             zh.todayWhyThisCall, zh.todayHideReason, zh.controlApply, zh.controlHold, zh.controlSwap,
             zh.settingsTitle, zh.settingsLanguage, zh.settingsDone,
+            zh.planScheduleThisWeek, zh.planScheduleNextWeek, zh.planAdjustAfterLabel,
             en.startTraining, en.trainLogSet, en.trainFinish, en.trainHold185,
             en.todayWhyThisCall, en.todayHideReason,
+            en.planScheduleThisWeek, en.planScheduleNextWeek, en.planAdjustAfterLabel,
         ]
         for phrase in shortPhrases {
             XCTAssertFalse(phrase.hasSuffix("。") || phrase.hasSuffix("."), "短语不应收句号: \(phrase)")

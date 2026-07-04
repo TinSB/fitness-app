@@ -251,7 +251,7 @@ final class SessionStore {
     struct PlanAdjustmentState: Equatable {
         var proposal: PlanAdjustmentProposal?     // 待采纳（nil = 无）
         var activeTo: Int?                          // 已采纳记录的现频率（非 nil = 可撤）
-        var proposedWeekDays: [PlanDayProjection]   // 提案后本周训练日（预览，答「影响哪几天」）
+        var proposedWeekDays: [PlanDayProjection]   // 提案后下一块训练日（预览，答「影响哪几天」；投影非日历周）
 
         static let none = PlanAdjustmentState(proposal: nil, activeTo: nil, proposedWeekDays: [])
     }
