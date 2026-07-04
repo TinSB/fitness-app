@@ -6,6 +6,22 @@
 
 ---
 
+## 2026-07-03 · 审查修复批次 Task 1：英文今日页周口径修复（MAJOR #1）
+
+**用户目标**：按审查修复批次交接件（docs/工作记录/2026-07-03-审查修复批次-执行prompt.md）修掉审查 MAJOR #1——英文今日页信号行把「滚动 7 天」口径错写成 "this week"。
+
+**做了什么**：`TodayEngineCopy.signalLine` 英文串从 `"…sessions this week"` 改为 `"…sessions in the past 7 days"`（引擎参数就叫 sessionsLast7，中文「近 7 天 X/Y 练」一直是对的、一字未动）。选 "past" 而非 "last" 是避免和前半句 "since last" 撞词。先写失败测试再修：golden 更新 + 新增中文不变断言 + 防回潮断言（英文 signalLine 永不含 "this week"）。全库 grep 过其余 12 处英文 "this week"：通知（周一/周四日历周提醒）、进展页（ISO 周聚合）、补量卡（weekStartISO）、deload（program 周）口径都是真的周，全部不动。
+
+**你能看到什么**：英文模式今日页右上信号行现在写 "0d since last · 1/6 sessions in the past 7 days"——数字和文字口径终于一致；中文完全不变。
+
+**证据**：RedeL10n 94 测试 0 失败；全量质量门禁 PASS（9 包 + ForgedCard 预算 + xcodebuild）；独立 code-reviewer 审查「无问题可合并」；模拟器实拍中英各一张（docs/工作记录/2026-07-03-task1-*.png）。
+
+**风险**：纯文案，零数据接触。`todayReceiptLine`（"Pressing volume is capped this week"）无 UI 消费方、属遗留示例串，未动；`planAdjustAfterLabel`（"After · this week"）是计划投影口径，归 Task 4 一并核对。
+
+**下一步**：批次 Task 2（进展页周中对比失真）。
+
+---
+
 ## 2026-07-03 · 上架后全项目审查（只读，功能/UI/UX/代码全维度）
 
 **用户目标**：owner 要求「审查当前项目，从功能 UI UX 等等不限」。
