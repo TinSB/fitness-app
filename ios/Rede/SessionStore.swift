@@ -847,9 +847,11 @@ final class SessionStore {
         flow = restored
         sessionStartedAt = draft.startedAt
         // 跨进程恢复不留旧 deadline（FR-TR9 最小恢复）：若恢复到休息态，按计划秒数
-        // 重新计时；否则清空。
+        // 重新计时；否则清空。重排休息提醒与 apply(.logSet) 路径对齐（批次 Task 6
+        // 2026-07-04：此前恢复后锁屏收不到休息结束提醒）；偏好关闭时策略层返回 nil 不排。
         if restored.phase == .resting {
             restCountdown.begin(seconds: restored.restSecondsPlanned)
+            scheduleRestNotification(restSecondsPlanned: restored.restSecondsPlanned)
         } else {
             restCountdown.clear()
         }
@@ -858,6 +860,10 @@ final class SessionStore {
     func discardPendingDraft() {
         pendingDraft = nil
         DraftFile.clear()
+        // 放弃 = 训练废弃，旧进程在休息开始时排的 rest-end 提醒必然过期——撤掉，
+        // 防「已放弃还弹休息结束」（Task 6 审查捞出的姊妹缺口）。「暂不」分支有意
+        // 不撤：draft 仍在、用户可能随即恢复，语义归 owner 后续拍板。
+        cancelRestNotification()
     }
 
     /// 事件包装：转移 + 即时 draft 留存（每个动作后都可恢复）。
