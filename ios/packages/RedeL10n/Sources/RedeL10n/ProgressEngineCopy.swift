@@ -52,13 +52,15 @@ extension RedeStrings {
 
     // MARK: - Week 尺度（周训练量，FR-PR3）
 
-    /// code: up / down / level / first / gap（gap = 有历史但上周缺席，≠ 第一周）。
+    /// code: up / down / level / first / gap（gap = 有历史但上周缺席，≠ 第一周）
+    /// / inProgress（本周未收口，只报事实不下结论——2026-07-03 审查 MAJOR #3）。
     public func weekVerdict(_ code: String) -> String {
         switch code {
         case "up": return locale == .zh ? "本周量上行" : "Volume is up this week"
         case "down": return locale == .zh ? "本周收着练" : "A lighter week"
         case "level": return locale == .zh ? "本周持平" : "Holding level this week"
         case "gap": return locale == .zh ? "本周回到训练" : "Back to lifting this week"
+        case "inProgress": return locale == .zh ? "本周进行中" : "Week in progress"
         default: return locale == .zh ? "第一周开账" : "Week one on the books"
         }
     }
@@ -79,6 +81,13 @@ extension RedeStrings {
         locale == .zh
             ? "本周 \(sets) 组 · \(volumeKg) \(unitLabel)　上周没练，暂无对比"
             : "\(sets) sets · \(volumeKg) \(unitLabel) this week. No sessions last week to compare"
+    }
+    /// 进行中的周只报「本周至今」事实（无 ±N%、无较上周结论）——周收口后由
+    /// weekSubCompared 接管。
+    public func weekSubInProgress(sets: Int, volumeKg: String) -> String {
+        locale == .zh
+            ? "本周至今 \(sets) 组 · \(volumeKg) \(unitLabel)　周结束后显现对比"
+            : "\(sets) sets · \(volumeKg) \(unitLabel) so far this week. Comparison appears when the week ends"
     }
     public var weekChartTitleByWeek: String {
         locale == .zh ? "周训练量" : "Weekly volume"

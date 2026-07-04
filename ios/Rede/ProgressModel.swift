@@ -123,7 +123,7 @@ struct ProgressModel {
             keyTrend: keyTrend,
             trendAssessment: keyTrend.map(TrendInsight.assess),
             weeklyComparison: snapshot.weeklyVolume.first.map {
-                WeeklyInsight.compare(latest: $0, weeks: snapshot.weeklyVolume)
+                WeeklyInsight.compare(latest: $0, weeks: snapshot.weeklyVolume, todayISO: todayISO)
             },
             continuity: continuity,
             milestones: milestones
