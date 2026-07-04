@@ -1095,7 +1095,7 @@ struct TrainTabView: View {
                 .foregroundStyle(Color.redeT3)
 
             HStack(spacing: 20) {
-                summaryStat(value: s.formatKg(summary?.totalVolumeKg ?? 0), label: s.summaryVolume)
+                summaryStat(value: s.formatVolumeKg(summary?.totalVolumeKg ?? 0), label: s.summaryVolume)
                 summaryStat(value: "\(summary?.completedSetCount ?? 0)", label: s.summarySets)
             }
             .padding(.top, 4)

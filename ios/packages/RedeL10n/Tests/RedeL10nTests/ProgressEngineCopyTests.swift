@@ -64,6 +64,44 @@ final class ProgressEngineCopyTests: XCTestCase {
         }
     }
 
+    // Task 2b（2026-07-03 审查 MINOR）：体量千分位，仅体量口径——处方重量 formatKg 不动
+    func testVolumeFormatterGroupsThousands() {
+        XCTAssertEqual(zh.formatVolumeKg(36210), "36,210")
+        XCTAssertEqual(zh.formatVolumeKg(21325), "21,325")
+        XCTAssertEqual(zh.formatVolumeKg(999), "999")          // 千以下无分隔
+        XCTAssertEqual(zh.formatVolumeKg(1000), "1,000")
+        XCTAssertEqual(zh.formatVolumeKg(5500.5), "5,500.5")   // kg 半公斤小数保留
+        XCTAssertEqual(en.formatVolumeKg(1234567), "1,234,567")
+        // lb 模式沿用 formatKg 同一转换单点（0.5 lb 步进小数兼容）
+        let lb = RedeStrings(locale: .en, unit: .lb)
+        XCTAssertEqual(lb.formatVolumeKg(1000), "2,204.5")
+        // 负数不得错位逗号（审查修复：符号位不参与分组计数；体量域恒非负，纯防御）
+        XCTAssertEqual(zh.formatVolumeKg(-100), "-100")
+        XCTAssertEqual(zh.formatVolumeKg(-123456), "-123,456")
+        // loadFactor 权重下体量可出 .25/.75（quarter）小数，保留两位不四舍五入到一位
+        XCTAssertEqual(zh.formatVolumeKg(243.75), "243.75")
+        XCTAssertEqual(zh.formatVolumeKg(21325.650000000001), "21,325.65")  // 浮点噪音收敛
+        // 处方重量口径逐字符不变
+        XCTAssertEqual(zh.formatKg(36210), "36210")
+    }
+
+    // Task 2b：图例去内部术语「铁火线/ember」，改通俗色彩措辞
+    func testLegendsUsePlainColorWording() {
+        XCTAssertEqual(zh.weekCaptionCurrent, "橙色标出本周")
+        XCTAssertEqual(en.weekCaptionCurrent, "Orange marks this week")
+        XCTAssertEqual(zh.cycleCaptionPeak, "橙色标出最高点")
+        XCTAssertEqual(en.cycleCaptionPeak, "Orange marks the peak")
+        XCTAssertEqual(zh.sessionCaptionPR("卧推"), "卧推　橙色标出新纪录")
+        XCTAssertEqual(en.sessionCaptionPR("Bench press"), "Bench press · orange marks the PR")
+        // 防回潮：图例不再出现内部术语
+        for line in [zh.weekCaptionCurrent, zh.cycleCaptionPeak, zh.sessionCaptionPR("卧推")] {
+            XCTAssertFalse(line.contains("铁火线"))
+        }
+        for line in [en.weekCaptionCurrent, en.cycleCaptionPeak, en.sessionCaptionPR("Bench")] {
+            XCTAssertFalse(line.lowercased().contains("ember"))
+        }
+    }
+
     func testSuspectLinesAreBehavioral() {
         let line = zh.suspectWeightLine(dateISO: "2026-06-03", lift: "卧推", setIndex: 1, kg: "227")
         XCTAssertTrue(line.contains("可能记错了"))

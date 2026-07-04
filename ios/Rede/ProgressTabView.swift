@@ -229,7 +229,7 @@ struct ProgressTabView: View {
              fraction: CGFloat(item.volume / maxVolume),
              tag: isPR ? s.historyPRBadge : nil,
              ember: isPR,
-             a11y: s.a11yChartBar(name, "\(s.formatKg(item.volume)) \(s.unitLabel)", pr: isPR))
+             a11y: s.a11yChartBar(name, "\(s.formatVolumeKg(item.volume)) \(s.unitLabel)", pr: isPR))
         }
 
         let verdict: String
@@ -241,7 +241,7 @@ struct ProgressTabView: View {
             verdict = s.sessionVerdictDone
             caption = s.sessionCaptionNoPR
         }
-        var sub = s.historyRowMeta(sets: latest.setCount, volumeKg: s.formatKg(latest.totalVolumeKg))
+        var sub = s.historyRowMeta(sets: latest.setCount, volumeKg: s.formatVolumeKg(latest.totalVolumeKg))
         if let top = latest.topSet,
            let e1rm = model.snapshot.exerciseTrends
                .first(where: { $0.exerciseId == top.exerciseId })?
@@ -280,7 +280,7 @@ struct ProgressTabView: View {
                     fraction: CGFloat(week.totalVolumeKg / maxVolume),
                     tag: tag,
                     ember: isCurrent,
-                    a11y: s.a11yChartBar(label, s.historyRowMeta(sets: week.setCount, volumeKg: s.formatKg(week.totalVolumeKg))))
+                    a11y: s.a11yChartBar(label, s.historyRowMeta(sets: week.setCount, volumeKg: s.formatVolumeKg(week.totalVolumeKg))))
         }
 
         let verdictCode: String
@@ -288,16 +288,16 @@ struct ProgressTabView: View {
         switch model.weeklyComparison {
         case .vsPreviousWeek(let delta)?:
             verdictCode = delta > 0 ? "up" : (delta < 0 ? "down" : "level")
-            sub = s.weekSubCompared(deltaPercent: delta, sets: latest.setCount, volumeKg: s.formatKg(latest.totalVolumeKg))
+            sub = s.weekSubCompared(deltaPercent: delta, sets: latest.setCount, volumeKg: s.formatVolumeKg(latest.totalVolumeKg))
         case .currentWeekInProgress?:
             verdictCode = "inProgress"
-            sub = s.weekSubInProgress(sets: latest.setCount, volumeKg: s.formatKg(latest.totalVolumeKg))
+            sub = s.weekSubInProgress(sets: latest.setCount, volumeKg: s.formatVolumeKg(latest.totalVolumeKg))
         case .previousWeekMissing?:
             verdictCode = "gap"
-            sub = s.weekSubGapWeek(sets: latest.setCount, volumeKg: s.formatKg(latest.totalVolumeKg))
+            sub = s.weekSubGapWeek(sets: latest.setCount, volumeKg: s.formatVolumeKg(latest.totalVolumeKg))
         default:
             verdictCode = "first"
-            sub = s.weekSubFirstWeek(sets: latest.setCount, volumeKg: s.formatKg(latest.totalVolumeKg))
+            sub = s.weekSubFirstWeek(sets: latest.setCount, volumeKg: s.formatVolumeKg(latest.totalVolumeKg))
         }
 
         return ScaleView(
@@ -570,7 +570,7 @@ struct ProgressTabView: View {
                                 .foregroundStyle(Color.redeEmber2)
                         }
                         Spacer()
-                        Text(s.historyRowMeta(sets: entry.setCount, volumeKg: s.formatKg(entry.totalVolumeKg)))
+                        Text(s.historyRowMeta(sets: entry.setCount, volumeKg: s.formatVolumeKg(entry.totalVolumeKg)))
                             .font(.redeBody)
                             .monospacedDigit()
                             .foregroundStyle(Color.redeT3)
