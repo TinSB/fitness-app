@@ -81,24 +81,44 @@ struct TodayTabView: View {
             }
             // FR-TR7 验证钩子：自动弹「今天换一天练」选训练日对话框。
             if CommandLine.arguments.contains("-autoOpenDaySwap") { showDayPicker = true }
+            // Task 5 验证钩子：恢复面板三动作各走一遍真实闭包（simctl 无法点击 UI）。
+            // 用法：存在当日 draft 时 `-autoResumeAction resume|discard|later`。
+            if let idx = CommandLine.arguments.firstIndex(of: "-autoResumeAction"),
+               CommandLine.arguments.indices.contains(idx + 1), sessionStore.pendingDraft != nil {
+                switch CommandLine.arguments[idx + 1] {
+                case "resume": sessionStore.restorePendingDraft(); onStartTraining()
+                case "discard": sessionStore.discardPendingDraft()
+                default: sessionStore.pendingDraft = nil
+                }
+            }
         }
-        .alert(s.resumeSessionTitle, isPresented: Binding(
+        .sheet(isPresented: Binding(
             get: { sessionStore.pendingDraft != nil },
-            // 系统 Cancel/滑走 = 稍后再说：清提示但保留 draft 文件，下次启动再问
+            // 滑走 = 稍后再说：清提示但保留 draft 文件，下次启动再问（原 alert 同语义）
             set: { if !$0 { sessionStore.pendingDraft = nil } }
         )) {
-            Button(s.resumeSessionContinue) {
-                sessionStore.restorePendingDraft()
-                onStartTraining()
-            }
-            Button(s.resumeSessionDiscard, role: .destructive) {
-                sessionStore.discardPendingDraft()
-            }
-            // 显式取消（=稍后再说）：不给的话 SwiftUI 注入系统 Cancel，跟随设备
-            // 语言而非 app 内语言；动作留空，binding set(false) 负责清提示留 draft
-            Button(s.resumeSessionLater, role: .cancel) {}
-        } message: {
-            Text(s.resumeSessionMessage)
+            // FR-TR9 恢复面板品牌化（Task 5 2026-07-04）：全 App 最后一处原生 action
+            // 弹窗收口。三选一与原 alert 逐一等价（恢复接续 flow / 丢弃清 draft /
+            // 暂不留 draft 下次启动再问）；销毁行 redeRisk 且不与主操作相邻（中间
+            // 隔「稍后再说」防误触）；restore/discard 内部清 pendingDraft，binding
+            // 自动收面板，行内无需显式 dismiss。
+            RedeChoiceSheet(
+                title: s.resumeSessionTitle,
+                message: s.resumeSessionMessage,
+                options: [
+                    RedeChoiceOption(title: s.resumeSessionContinue, emphasis: true, action: {
+                        sessionStore.restorePendingDraft()
+                        onStartTraining()
+                    }),
+                    RedeChoiceOption(title: s.resumeSessionLater, action: {
+                        sessionStore.pendingDraft = nil
+                    }),
+                    RedeChoiceOption(title: s.resumeSessionDiscard, role: .destructive, action: {
+                        sessionStore.discardPendingDraft()
+                    }),
+                ],
+                onCancel: {}  // 无独立取消行：「稍后再说」已是显式行，滑走同义
+            )
         }
         .sheet(isPresented: $showSettings) {
             // 工艺重做（2026-06-10）：内容超半屏，补 .large 档 + 拖拽指示条
