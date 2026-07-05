@@ -502,6 +502,14 @@ struct TodayTabView: View {
         }
     }
 
+    /// 行级「首练」徽标是否整列隐藏。与顶部副标题「首次训练，全部动作从轻起步」
+    /// 同源（TodayEngineCopy case ("train","noHistoryCalibration")）：只有那句总括真的在
+    /// 屏上时徽标才冗余。不用「处方全 .start」判定——老用户换入全新动作组合时处方
+    /// 也全是 .start，但顶部无总括句，那时逐行徽标是准确且必要的信息（审查 MAJOR）。
+    private var firstBadgeRedundant: Bool {
+        callCode == "train" && reasonCode == "noHistoryCalibration"
+    }
+
     private func targetSummary(_ ex: ExercisePrescriptionPlan) -> String {
         // §8 显示吸附：目标重量先落「器械×显示单位」真实梯子，再格式化（禁裸换算）。
         s.targetLine(loadType: ex.loadType,
@@ -535,7 +543,11 @@ struct TodayTabView: View {
             case "hold":
                 Text(s.holdShort).font(.redeCaption).foregroundStyle(Color.redeT4)
             default:
-                Text(s.firstTimeShort).font(.redeCaption).foregroundStyle(Color.redeT4)
+                // 顶部副标题总括「全部动作从轻起步」时逐行「首练」×N 纯重复，整列隐藏；
+                // 其余场景（如换入个别新动作）徽标保留区分价值。
+                if !firstBadgeRedundant {
+                    Text(s.firstTimeShort).font(.redeCaption).foregroundStyle(Color.redeT4)
+                }
             }
         }
     }
