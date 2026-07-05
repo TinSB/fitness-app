@@ -213,13 +213,17 @@ struct ProgressTabView: View {
         }
     }
 
+    /// 柱图窗口容量（单次/周尺度同窗）。柱数不足时 barChart 补透明幽灵槽——
+    /// 均分布局下唯一柱会独占全图宽渲染成一整块色块（T4 2026-07-05）。
+    private static let barChartWindow = 5
+
     private func sessionScale(_ model: ProgressModel) -> ScaleView {
         let latest = model.snapshot.history[0]
         let record = model.statsRecords.first { $0.id == latest.sessionId }
         let volumes: [(id: String, volume: Double)] = (record?.exercises ?? []).map { exercise in
             (exercise.exerciseId, exercise.sets.reduce(0) { $0 + $1.weightKg * Double($1.reps) })
         }
-        let shown = Array(volumes.prefix(5))
+        let shown = Array(volumes.prefix(Self.barChartWindow))
         let maxVolume = max(shown.map(\.volume).max() ?? 1, 1)
         let prSet = Set(latest.prExerciseIds)
         let bars = shown.map { item -> (label: String, fraction: CGFloat, tag: String?, ember: Bool, a11y: String) in
@@ -264,7 +268,7 @@ struct ProgressTabView: View {
     private func weekScale(_ model: ProgressModel) -> ScaleView {
         let weeks = model.snapshot.weeklyVolume // 新→旧
         let latest = weeks[0]
-        let shown = Array(weeks.prefix(5)).reversed() // 旧→新（左→右）
+        let shown = Array(weeks.prefix(Self.barChartWindow)).reversed() // 旧→新（左→右）
         let maxVolume = max(shown.map(\.totalVolumeKg).max() ?? 1, 1)
 
         var deltaPercent: Int?
@@ -452,6 +456,14 @@ struct ProgressTabView: View {
                 // 每根柱合成一条读数（标签·原始值[·PR]），替代不可读的归一化柱形
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(bar.a11y)
+            }
+            // 幽灵槽：柱数不足窗口时按满窗均分补透明占位（真柱靠左、宽度恒定），
+            // 单柱不再独占全图宽（T4）。装饰性留白，无障碍不朗读。
+            ForEach(0..<max(0, Self.barChartWindow - bars.count), id: \.self) { _ in
+                Color.clear
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 1)
+                    .accessibilityHidden(true)
             }
         }
         .frame(height: 120 + (hasTag ? 27 : 0), alignment: .bottom)
