@@ -45,7 +45,12 @@ struct ShareCardModel: Equatable {
         let valueText: String    // 如 "102.5 kg × 5"
         let estimatedBadge: String?
     }
-    struct Stat: Equatable { let value: String; let label: String }
+    struct Stat: Equatable {
+        let value: String
+        let label: String
+        /// 数值行内的小字号单位段（如时长档「min/分」）；nil = 纯数字列。
+        var unit: String? = nil
+    }
 
     /// 从隐私过滤后的 ShareSnapshot 构造（动作/模式/训练日名经 LocaleStore 本地化，重量经 LoadDisplay 吸附口径）。
     @MainActor
@@ -57,7 +62,8 @@ struct ShareCardModel: Equatable {
             let stats = [
                 Stat(value: "\(w.exerciseCount)", label: s.shareCardStatExercises),
                 Stat(value: "\(w.setCount)", label: s.shareCardStatSets),
-                Stat(value: s.shareCardDurationBand(bandLabel(w.durationBand)), label: s.shareCardStatDuration),
+                Stat(value: s.shareCardDurationBandValue(bandLabel(w.durationBand)),
+                     label: s.shareCardStatDuration, unit: s.shareCardDurationUnit),
             ]
             let patternText = w.patterns.map(s.movementPatternLabel).joined(separator: " · ")
             return ShareCardModel(
@@ -164,10 +170,21 @@ struct ShareCardView: View {
                 ForEach(Array(w.stats.enumerated()), id: \.offset) { i, stat in
                     if i > 0 { Rectangle().fill(Color.redeHair).frame(width: 1, height: 40) }
                     VStack(alignment: .leading, spacing: 3) {
-                        Text(stat.value).font(.system(size: 30, weight: .bold)).monospacedDigit().foregroundStyle(Color.redeT1)
+                        // 数值行「大数字 + 小单位」两段字号；lineLimit(1) 锁单行——
+                        // 时长档（"60–90"）在等分列宽下曾破成三行（T5）。
+                        HStack(alignment: .firstTextBaseline, spacing: 3) {
+                            Text(stat.value).font(.system(size: 30, weight: .bold)).monospacedDigit().foregroundStyle(Color.redeT1)
+                            if let unit = stat.unit {
+                                Text(unit).font(.system(size: 13, weight: .medium)).foregroundStyle(Color.redeT3)
+                            }
+                        }
+                        .lineLimit(1)
                         Overline(text: stat.label, color: .redeT4)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    // 带单位的列（时长档「60–90 min」）按内容取宽，纯数字列均分剩余——
+                    // 等分列宽下时长值必破行/截断，数字一律不缩放（T5）。
+                    .frame(maxWidth: stat.unit == nil ? .infinity : nil, alignment: .leading)
+                    .fixedSize(horizontal: stat.unit != nil, vertical: false)
                     .padding(.leading, i > 0 ? 14 : 0)
                 }
             }
