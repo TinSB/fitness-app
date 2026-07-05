@@ -15,16 +15,20 @@ extension RedeStrings {
     public var shareCardStatSets: String { locale == .zh ? "组" : "Sets" }
     public var shareCardStatDuration: String { locale == .zh ? "时长" : "Duration" }
 
-    /// 时长区间显示名（有损档，不报精确时间）。
-    public func shareCardDurationBand(_ band: ShareDurationBandLabel) -> String {
+    /// 时长区间数值段（有损档，不报精确时间）。不含单位——卡面三列 stat 同构
+    /// 「大数字 + 小字号单位」，完整串在 30pt 等分列宽下必破行（T5 2026-07-05）。
+    public func shareCardDurationBandValue(_ band: ShareDurationBandLabel) -> String {
         switch band {
-        case .under30: return locale == .zh ? "<30 分" : "<30 min"
-        case .m30to45: return locale == .zh ? "30–45 分" : "30–45 min"
-        case .m45to60: return locale == .zh ? "45–60 分" : "45–60 min"
-        case .m60to90: return locale == .zh ? "60–90 分" : "60–90 min"
-        case .over90:  return locale == .zh ? ">90 分" : ">90 min"
+        case .under30: return "<30"
+        case .m30to45: return "30–45"
+        case .m45to60: return "45–60"
+        case .m60to90: return "60–90"
+        case .over90:  return ">90"
         }
     }
+
+    /// 时长单位段（与数值段配对渲染，小字号）。
+    public var shareCardDurationUnit: String { locale == .zh ? "分" : "min" }
 
     /// 品牌标语（卡片页脚；中性、点出"决策在前"定位）。
     public var shareCardTagline: String {
