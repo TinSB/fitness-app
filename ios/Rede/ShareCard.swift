@@ -90,7 +90,8 @@ struct ShareCardModel: Equatable {
         }
     }
 
-    private static func bandLabel(_ b: ShareDurationBand) -> ShareDurationBandLabel {
+    /// 跨包枚举映射（RedeL10n 不依赖 RedeLocalSnapshot）。T1 练完态 meta 行复用（internal）。
+    static func bandLabel(_ b: ShareDurationBand) -> ShareDurationBandLabel {
         switch b {
         case .under30: return .under30
         case .m30to45: return .m30to45

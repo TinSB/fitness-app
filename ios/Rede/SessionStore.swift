@@ -202,6 +202,32 @@ final class SessionStore {
         )
     }
 
+    /// 练完态当日总结的 canonical 补充事实（T1 2026-07-05）：训练日码与时长不在
+    /// clean 链内（cleanView/snapshot 均不带），从 canonical 直读今天最后一条已完成
+    /// session（同 loadTemplateFacts 只读不经写闸）。缺失/不可读 → nil（总结块相应字段不显示）。
+    struct TodayCompletedFacts {
+        let dayCode: String?
+        let durationMinutes: Int?
+    }
+
+    nonisolated static func loadTodayCompletedFacts(now: Date = Date()) -> TodayCompletedFacts? {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load() else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        let todayISO = formatter.string(from: now)
+        guard let session = appData.history.last(where: { $0.completed == true && $0.date == todayISO }) else {
+            return nil
+        }
+        // templateId 是 legacy key 词汇表字段、类型层未提升（storage 开门设计）——此处按 key 直读。
+        return TodayCompletedFacts(
+            dayCode: session.storage["templateId"]?.asString,
+            durationMinutes: session.durationMin.map { Int($0.rounded()) }
+        )
+    }
+
     /// 计划页周期条状态（FR-PL2 S5）：仅周期化开启且有真历史锚点时返回，否则 nil（退诚实占位）。
     /// 走与今日页处方同一 clean pipeline + 同一锚点 → 周期条与处方相位永远一致。
     nonisolated static func loadCycleState(now: Date = Date()) -> MesocycleCycleState? {

@@ -106,4 +106,15 @@ final class TodayEngineCopyTests: XCTestCase {
         XCTAssertEqual(zh.changeLineBodyweight(exerciseName: "弹力带侧平举", change: "hold", reps: 25, atCeiling: true, isBand: true), "弹力带侧平举 ×25 · 到顶　换更重的带子")
         XCTAssertEqual(en.changeLineBodyweight(exerciseName: "Band lateral raise", change: "hold", reps: 25, atCeiling: true, isBand: true), "Band lateral raise ×25 · at ceiling, size up the band")
     }
+
+    // T1 练完态当日总结（2026-07-05）：区头 / 体量标签 / 分享入口锚句。
+    // 动作·组·时长标签复用 shareCardStat*（同词同义）；PR 徽章复用 shareCardPRBadge。
+    func testTodayDoneSummaryAnchors() {
+        XCTAssertEqual(zh.todayDoneSummaryHeader, "今天这场")
+        XCTAssertEqual(en.todayDoneSummaryHeader, "Today's session")
+        XCTAssertEqual(zh.todayDoneVolumeLabel, "总量")
+        XCTAssertEqual(en.todayDoneVolumeLabel, "Volume")
+        XCTAssertEqual(zh.todayDoneShareAction, "分享这场训练")
+        XCTAssertEqual(en.todayDoneShareAction, "Share this workout")
+    }
 }
