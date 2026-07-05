@@ -153,6 +153,8 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 **阈值地位**：14 天/21 天/连续 3 天/RIR 0.5/默认 6 是 MVP 起步值,非经验校准结果;由 RedeTrainingDecision 的 goldens 锁定——调阈值 = 调产品行为,必须显式改 golden 留痕,待 TestFlight 真实反馈后校准。
 
+**练完态当日总结（FR-T6，2026-07-05 #652）。** 裁决为 `rest/alreadyTrainedToday`（引擎唯一产出路径 gap==0）时，今日页在两行裁决句下渲染当日总结块：数据从**已落盘**历史派生（`TodayCompletedDigestBuilder`，RedeLocalSnapshot 纯函数）——组数/总量取 snapshot 链（与进展页同口径、可疑组已清洗）、动作数取完成落盘数（与训练小结当场卡的处方数口径有意不同）、训练日码与时长档从 canonical 直读补给（clean 链不带这两项，`SessionStore.loadTodayCompletedFacts` 只读）。分享快照全部经 `SharePrivacyFilter`（结构性缺失继承）；最新场非今天 / record 缺失 → nil 退回两行字；时长缺失不编时长档（训练总结卡不出、PR 卡保留）。视图加载绑 `.task(id: isCompletedToday)` 响应练完态翻转（一次性 .task 会错过「视图不重建、状态翻转」路径，实拍验证留痕）。
+
 ### 6.0.1 今日处方引擎（TodayPrescription · M2-2 已实现）
 
 **入口合同**：吃 `CleanTrainingDecisionInput` + M2-1 的 `TodayVerdict`（处方不重复判断练不练）；rest 裁决 → 无处方。纯函数、无 clock/IO、输出永不写回 AppData。
@@ -1015,6 +1017,8 @@ Train 只有专注训练态。必须服务于：
 - 大型动作浏览。
 - 与训练中低摩擦无关的按钮。
 
+**快改入口教学提示两条消失线（T6 2026-07-05 #650）。** 「点重量可调整…」教学行显示条件 = 未用过快改入口（`@AppStorage hasUsedQuickAdjust`，用过永久消失）**且** 清洗后累计完成场数 < 3（与 CoachActionEngine `totalSessionCount` 同口径复用、不另设持久化计数器）——练三场都没点说明不需要教，说明书不永久驻留界面。「按计划目标开始」（firstSetWhy）为 why 行首组分支的多态状态信息（完成组后切 nextSetWhy），非教学文案、有意保留。
+
 ### 7.1 休息倒计时运行时合同
 
 休息倒计时的「时间流逝」归 **app 层**（沿用 §核心纯净：引擎无时钟）。`TrainFlowState` 只存 `restSeconds` 计划值；倒计时锚点是 `SessionStore.restCountdown: RestCountdown`。
@@ -1075,7 +1079,7 @@ Plan：
 **频率提案合同（FR-PL3）。**
 - **依从信号（纯派生）**：`WeeklyAdherence.recentWeeklySessionCounts(sessionDatesISO:, todayISO:, timeZone:, maxWeeks:)` 把 clean 历史摊平成「最近若干**完整周**每周完成场次」。三条公平红线：① **排除进行中的本周**（半周完成数会低估、误判落后）；② **起点不早于首训周**（开训前的空周是「还没开始」、不计 0）；③ **中间空周计 0**（练过又停正是「持续落后」要捕捉的信号）。周锚点复用 `WeekAnchor.isoWeekStart`（与 §6.4a 按周抑制同源、不分叉）。
 - **提案引擎（纯函数、零文案）**：`PlanAdjustmentEngine.frequencyProposal(plannedDaysPerWeek:, recentWeeklySessionCounts:)` → `PlanAdjustmentProposal(kind:.reduceFrequency, reasonCode:"belowPlanSustained", from, to)` 或 nil。**保守守门（起步值，待真机校准）**：planned > 下限 2、数据 ≥ 4 完整周、近况中位数 ≤ planned−1、`to = max(2, 中位数)` 且 to < planned。
-- **预览**：用 `PlanWeekProjection.weeks(daysPerWeek: to, weeks:1)` 现算「调整后」的下一块训练日预览答「影响哪几天」（投影按每周场数分块、非日历周，UI 小标即「调整后 / After the change」，2026-07-04 Task 4 措辞修正）；提案前完整排期就在计划页同屏，故不重复列 before。
+- **预览**：用 `PlanWeekProjection.weeks(daysPerWeek: to, weeks:1)` 现算「调整后」的下一块训练日预览答「影响哪几天」（投影按每周场数分块、非日历周，UI 小标即「调整后 / After the change」，2026-07-04 Task 4 措辞修正）；提案前排期就在计划页同屏（2026-07-05 #651 起为折叠形态：分段 dayCode 序列 + 「训练日构成」每类型一次展开，`PlanScheduleDigestBuilder` 纯函数按首现去重、投影语义未动——类型行构成仍同屏可查），故不重复列 before。
 
 **采纳 / 回滚合同（FR-PL3/4）。**
 - **采纳**：经唯一写闸 `CanonicalSessionWriter.applyFrequencyAdjustment(from:to:)` 把 `programTemplate.daysPerWeek` 改成 to（= 已有的「程序配置编辑」写类别）**+ 落 open-bag 回滚记录** `planAdjustment{kind, fromDaysPerWeek, toDaysPerWeek}`（记原值供回滚）。**纯加性、不改 schema**（current=11 不变）。
