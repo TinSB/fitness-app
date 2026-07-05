@@ -315,16 +315,32 @@ struct PlanTabView: View {
     // MARK: - 本周/下周排期（FR-PL2；0 卡，纯文本行；训练日名 + 动作数 + 模式构成）
 
     private var weekScheduleSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            ForEach(Array(projection.enumerated()), id: \.offset) { weekIdx, week in
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(weekIdx == 0 ? s.planScheduleThisWeek : s.planScheduleNextWeek)
+        // T2 排期折叠（2026-07-05）：逐日渲染会让同一训练日类型的构成随周×天逐字
+        // 重复（上/下肢 4 天 = 8 行里重复 4 遍）。折叠为「分段序列 + 类型一次展开」：
+        // 先后顺序看序列行（保「接下来/再往后」分段语义），构成与下钻编辑（FR-PL6）
+        // 看类型行。digest 为包内纯函数（PlanScheduleDigestBuilder，含单测）。
+        let digest = PlanScheduleDigestBuilder.digest(from: projection)
+        return VStack(alignment: .leading, spacing: 16) {
+            ForEach(Array(digest.segments.enumerated()), id: \.offset) { segIdx, seg in
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(segIdx == 0 ? s.planScheduleThisWeek : s.planScheduleNextWeek)
                         .font(.redeOverline)
                         .tracking(RedeTracking.overline)
                         .foregroundStyle(Color.redeT3)
-                    ForEach(Array(week.enumerated()), id: \.offset) { _, day in
-                        dayScheduleRow(day)
-                    }
+                    Text(seg.map(s.trainingDayName).joined(separator: " · "))
+                        .font(.redeCallout)
+                        .foregroundStyle(Color.redeT2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .accessibilityElement(children: .combine)
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                Text(s.planDayTypesHeader)
+                    .font(.redeOverline)
+                    .tracking(RedeTracking.overline)
+                    .foregroundStyle(Color.redeT3)
+                ForEach(digest.dayTypes, id: \.dayCode) { day in
+                    dayScheduleRow(day)
                 }
             }
         }
