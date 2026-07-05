@@ -328,6 +328,15 @@ extension RedeStrings {
         t2("\(exerciseName) · 辅助毕业，开始自重", "\(exerciseName) · graduated to unassisted")
     }
 
+    // MARK: - 练完态当日总结（T1 2026-07-05：FR-SH3 完成后轻量分享入口延续到今日页）
+
+    /// 总结块区头（overline）。
+    public var todayDoneSummaryHeader: String { t2("今天这场", "Today's session") }
+    /// 总量标签（overline；数值走 formatVolumeKg 千分位 + 单位）。
+    public var todayDoneVolumeLabel: String { t2("总量", "Volume") }
+    /// 轻量分享入口（打开分享卡预览；FR-SH3 绝不自动弹出）。
+    public var todayDoneShareAction: String { t2("分享这场训练", "Share this workout") }
+
     private func t2(_ zh: String, _ en: String) -> String {
         locale == .zh ? zh : en
     }

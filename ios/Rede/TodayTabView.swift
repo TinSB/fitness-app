@@ -1,5 +1,6 @@
 import SwiftUI
 import RedeL10n
+import RedeLocalSnapshot
 import RedeTrainingDecision
 
 // Today — 按 rede-app.html #s-today 复原。
@@ -32,6 +33,10 @@ struct TodayTabView: View {
     /// 触感脉冲（采纳/撤销=成功确认，暂不/展开折叠=轻选择）：成功分支自增触发 .sensoryFeedback。
     @State private var commitPulse = 0
     @State private var selectPulse = 0
+    /// T1 练完态当日总结（rest/alreadyTrainedToday 时从已落盘历史派生；nil = 数据缺退回两行字）。
+    @State private var completedDigest: TodayCompletedDigest?
+    /// T1 练完态分享入口打开的预览（复用训练小结同款载体与预览视图）。
+    @State private var sharePreview: SharePreviewItem?
 
     private var model: TodayModel? { sessionStore.todayModel }
 
@@ -125,6 +130,16 @@ struct TodayTabView: View {
             SettingsSheet(store: localeStore)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+        }
+        // T1 练完态分享入口 → 分享卡预览（与训练小结同一预览视图与隐私链）
+        .sheet(item: $sharePreview) { item in
+            ShareCardPreviewView(snapshots: item.snapshots)
+        }
+        // T1：练完态出现（含视图挂着时训练在后台钩子/别处完成的 false→true 翻转）即派生总结；
+        // 离开练完态清空。绑 id 而非一次性 .task——一次性版本会错过「视图不重建、状态翻转」路径
+        //（-autoCompleteSession 实拍暴露：完成后 digest 不加载）。
+        .task(id: isCompletedToday) {
+            if isCompletedToday { await loadCompletedDigest() } else { completedDigest = nil }
         }
         .sheet(item: $detailTarget) { target in
             exerciseDetailSheet(target)
@@ -354,6 +369,14 @@ struct TodayTabView: View {
                 restBlock
                     .padding(.horizontal, RedeSpace.page)
                     .padding(.top, 18)
+
+                // T1 练完态当日总结（FR-SH3 完成后轻量入口延续到今日页）：只在
+                // 「今天已练完」态显示（其他 rest 态无当天场）；数据缺失退回上面两行字。
+                if let digest = completedDigest {
+                    completedSummaryBlock(digest)
+                        .padding(.horizontal, RedeSpace.page)
+                        .padding(.top, 24)
+                }
             }
         }
     }
@@ -557,6 +580,104 @@ struct TodayTabView: View {
         return Text(s.dailySummaryLine(totalSets: totalSets, exerciseCount: exercises.count))
             .font(.redeCaption).monospacedDigit()
             .foregroundStyle(Color.redeT4)
+    }
+
+    // MARK: - T1 练完态当日总结
+
+    /// 练完态判定：与裁决文案 case ("rest","alreadyTrainedToday") 同源（其他 rest 态无当天场）。
+    private var isCompletedToday: Bool {
+        callCode == "rest" && reasonCode == "alreadyTrainedToday"
+    }
+
+    /// 从已落盘历史派生总结（snapshot 链与进度页同口径；dayCode/时长从 canonical 补）。
+    /// 任何一环缺失 → digest nil，页面保持原两行字（诚实兜底、不编数据）。
+    private func loadCompletedDigest() async {
+        guard isCompletedToday else { return }
+        let outcome = await ProgressModel.loadOutcomeAsync()
+        guard case let .ready(pm) = outcome, let latest = pm.snapshot.history.first else { return }
+        let record = pm.statsRecords.first { $0.id == latest.sessionId }
+        let facts = await Task.detached { SessionStore.loadTodayCompletedFacts() }.value
+        let todayISO = Self.isoDay(model?.now ?? Date())
+        // patterns 同训练小结口径（SessionShareSnapshotBuilder）：catalog 查动作模式
+        let catalog = ExerciseCatalog.minimal
+        let patterns = (record?.exercises ?? []).compactMap { catalog.entry(id: $0.exerciseId)?.movementPattern }
+        completedDigest = TodayCompletedDigestBuilder.digest(
+            latest: latest, record: record, todayISO: todayISO,
+            dayCode: facts?.dayCode, durationMinutes: facts?.durationMinutes, patterns: patterns)
+    }
+
+    private static func isoDay(_ date: Date) -> String {
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        fmt.timeZone = .current
+        fmt.dateFormat = "yyyy-MM-dd"
+        return fmt.string(from: date)
+    }
+
+    /// 总结块（surface 原语，非 ForgedCard——今日页 0 铭牌现状不动）：
+    /// 区头 + 训练日名 → 总量大数字 → 动作·组·时长 meta 行 → 分享入口（有可分享内容时）。
+    private func completedSummaryBlock(_ digest: TodayCompletedDigest) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Overline(text: s.todayDoneSummaryHeader, color: .redeT3)
+                if digest.prCount > 0 {
+                    Text(s.shareCardPRBadge)
+                        .font(.redeOverline).tracking(RedeTracking.overline)
+                        .foregroundStyle(Color.redeEmber2)
+                }
+                Spacer()
+                if let day = digest.dayCode {
+                    Text(s.trainingDayName(day))
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeEmber2)
+                }
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(s.formatVolumeKg(digest.totalVolumeKg))
+                    .font(.redeTitle).tracking(RedeTracking.title).monospacedDigit()
+                    .foregroundStyle(Color.redeT1)
+                Text("\(s.unitLabel) · \(s.todayDoneVolumeLabel)")
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT3)
+            }
+            Text(metaLine(digest))
+                .font(.redeCallout).monospacedDigit()
+                .foregroundStyle(Color.redeT2)
+            if !digest.shareSnapshots.isEmpty {
+                Button {
+                    sharePreview = SharePreviewItem(snapshots: digest.shareSnapshots)
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "square.and.arrow.up").font(.redeCaption)
+                        Text(s.todayDoneShareAction)
+                        Spacer()
+                        Image(systemName: "chevron.right").font(.redeCaption).foregroundStyle(Color.redeT4)
+                    }
+                    .font(.redeCallout)
+                    .foregroundStyle(Color.redeEmber2)
+                    .frame(minHeight: RedeShape.controlHeight)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.redePressableRow)
+            }
+        }
+        .padding(RedeSpace.card)
+        .background(RoundedRectangle(cornerRadius: RedeShape.cardRadius).fill(Color.redeSurface))
+        .overlay(RoundedRectangle(cornerRadius: RedeShape.cardRadius).stroke(Color.redeHair, lineWidth: 1))
+        .accessibilityElement(children: .combine)
+    }
+
+    /// 「5 动作 · 22 组 · 60–90 分」——时长档缺失时省略该段（不编数据）。
+    private func metaLine(_ digest: TodayCompletedDigest) -> String {
+        var parts = [
+            "\(digest.exerciseCount) \(s.shareCardStatExercises)",
+            "\(digest.setCount) \(s.shareCardStatSets)",
+        ]
+        if let band = digest.durationBand {
+            let label = ShareCardModel.bandLabel(band)
+            parts.append("\(s.shareCardDurationBandValue(label)) \(s.shareCardDurationUnit)")
+        }
+        return parts.joined(separator: " · ")
     }
 
     // 仅 rest/light/deload 等无动作清单态调用（isUnreadable 已被 unreadableBlock 独占，审查 [2]）
