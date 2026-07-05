@@ -151,6 +151,8 @@ public struct RedeStrings: Sendable {
     // 不是日历周——标签用顺序词，不用「本周/下周」字面（周中已练满会误读）。
     public var planScheduleThisWeek: String { t("接下来", "Coming up") }
     public var planScheduleNextWeek: String { t("再往后", "After that") }
+    /// 排期折叠（T2 2026-07-05）：训练日类型区区头——每类构成只展开一次，先后顺序看序列行。
+    public var planDayTypesHeader: String { t("训练日构成", "Day types") }
     /// 单训练日动作数："6 个动作" / "6 exercises"。
     public func planDayExercises(_ count: Int) -> String {
         t("\(count) 个动作", count == 1 ? "1 exercise" : "\(count) exercises")

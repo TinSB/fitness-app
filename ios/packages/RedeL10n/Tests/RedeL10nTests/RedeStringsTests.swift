@@ -102,6 +102,12 @@ final class RedeStringsTests: XCTestCase {
         }
     }
 
+    // T2 排期折叠（2026-07-05）：类型区区头——构成只展开一次，序列另行紧凑表达。
+    func testPlanDayTypesHeader() {
+        XCTAssertEqual(zh.planDayTypesHeader, "训练日构成")
+        XCTAssertEqual(en.planDayTypesHeader, "Day types")
+    }
+
     func testZhEnDifferWhereExpected() {
         // 抽样:双语不是同一份表(允许 lb/RIR 等术语两边一致)
         XCTAssertNotEqual(zh.todayVerdict, en.todayVerdict)
