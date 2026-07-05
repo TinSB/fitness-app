@@ -59,6 +59,12 @@ struct TrainTabView: View {
     @State private var sharePreview: SharePreviewItem?   // FR-SH1：训练总结分享卡预览
 
     private var s: RedeStrings { localeStore.strings }
+
+    /// 清洗后累计完成场数（教学提示的场数上限判定）。与 CoachActionEngine 的
+    /// totalSessionCount 同口径复用（TodayModel.swift）——不另设持久化计数器，避免
+    /// 与真实场数漂移。两类偏差同向保守（多教不少教）：nil = 未加载按 0；被数据
+    /// 质量清洗丢弃的场不计入。
+    private var completedSessionCount: Int { sessionStore.todayModel?.cleanView.sessions.count ?? 0 }
     private var flow: TrainFlowState? { sessionStore.flow }
 
     var body: some View {
@@ -240,7 +246,10 @@ struct TrainTabView: View {
                 .padding(.top, 6)
             }
 
-            if !hasUsedQuickAdjust && !showAdjust {
+            // 快改入口教学提示两条消失线（T6 2026-07-05）：① 用过即永久消失（既有
+            // AppStorage）② 累计 ≥3 场后不再教——练了三场都没点说明不需要，说明书
+            // 不该永久驻留界面。场数取清洗后历史（进行中场未落盘不计，0/1/2 场时教）。
+            if !hasUsedQuickAdjust && !showAdjust && completedSessionCount < 3 {
                 Text(currentIsAssisted ? s.adjustDiscoverHintAssisted : (currentIsBodyweightPlus ? s.adjustDiscoverHintBodyweightPlus : (currentIsRepBased ? s.adjustDiscoverHintBodyweight : s.adjustDiscoverHint)))
                     .font(.redeCaption)
                     .foregroundStyle(Color.redeT4)
