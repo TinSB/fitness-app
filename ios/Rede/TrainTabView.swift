@@ -400,8 +400,10 @@ struct TrainTabView: View {
                 SteelButton(title: sessionStore.restIsPaused ? s.restResume : s.restPause,
                             isOn: sessionStore.restIsPaused,
                             action: { sessionStore.toggleRestPause(); actionPulse += 1 })
+                // 并排语境收回内容宽（M1 审查 MAJOR）：默认全宽会把两个次级钢按钮挤成
+                // 窄方块；主次由 ember 缘表达，不靠宽度悬殊。
                 EmbButton(icon: "forward.fill", title: s.restNextSet, iconSize: 13, fontSize: 14,
-                          action: { finishRest() })
+                          hug: true, action: { finishRest() })
             }
             .padding(.top, 4)
         }

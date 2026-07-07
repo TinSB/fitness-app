@@ -184,15 +184,20 @@ extension ButtonStyle where Self == RedePressableStyle {
     static var redePressableRow: RedePressableStyle { RedePressableStyle(scale: 1, dim: 0.6) }
 }
 
-// MARK: - 主操作按钮(.emb: 锻面底 + ember 左缘 2px,非全宽左锚)
+// MARK: - 主操作按钮(.emb: 锻面底 + ember 左缘,默认全宽)
 
 struct EmbButton: View {
     let icon: String?
     let title: String
     var iconSize: CGFloat = 16
-    var fontSize: CGFloat = 15
+    var fontSize: CGFloat = 16
+    /// 与其他控件并排的语境收回内容宽（唯一现用点：训练页休息条）；页面主 CTA 默认全宽。
+    var hug: Bool = false
     let action: () -> Void
 
+    // M1 提权（2026-07-06 去 AI 感中期批次）：主 CTA 曾 hug 半宽 + redeBtn 底与面板
+    // 明度几乎无差，读作次级按钮。提权限 Ember 公理内（锻面 + ember 左缘，禁 ember
+    // 填充）：默认全宽 + 底提亮一档（redeRaised）+ hair 轮廓 + 50pt + 3px 缘 + 16pt 字。
     var body: some View {
         Button(action: action) {
             HStack(spacing: 7) {
@@ -204,11 +209,16 @@ struct EmbButton: View {
             .font(.system(size: fontSize, weight: .semibold))
             .foregroundStyle(Color.redeT1)
             .padding(.horizontal, 18)
-            .frame(minHeight: RedeShape.controlHeight)
-            .background(Color.redeBtn)
+            .frame(minHeight: 50)
+            .frame(maxWidth: hug ? nil : .infinity)
+            .background(Color.redeRaised)
             .clipShape(RoundedRectangle(cornerRadius: RedeShape.buttonRadius))
+            .overlay(
+                RoundedRectangle(cornerRadius: RedeShape.buttonRadius)
+                    .stroke(Color.redeHair, lineWidth: 1)
+            )
             .overlay(alignment: .leading) {
-                Rectangle().fill(Color.redeEmber).frame(width: 2)
+                Rectangle().fill(Color.redeEmber).frame(width: 3)
             }
             .clipShape(RoundedRectangle(cornerRadius: RedeShape.buttonRadius))
         }
