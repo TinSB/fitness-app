@@ -66,4 +66,21 @@ final class MuscleGroupMappingTests: XCTestCase {
             XCTAssertNil(MuscleGroupMapping.group(forCatalogMuscle: muscle), "排除项被意外映射: \(muscle)")
         }
     }
+
+    func testPrimaryGroupForExerciseId() {
+        // B1 胶水帮手：动作 → 主肌群契约归属（e1RM 只挂主肌群，拍板③）
+        XCTAssertEqual(MuscleGroupMapping.primaryGroup(forExerciseId: "bench-press"), .chest)
+        // deadlift 目录 primaryMuscle=glutes（主髋伸口径）——锚目录真相，非里程碑 linked 表
+        XCTAssertEqual(MuscleGroupMapping.primaryGroup(forExerciseId: "deadlift"), .glutes)
+        // 不在目录的动作 → nil 如实排除
+        XCTAssertNil(MuscleGroupMapping.primaryGroup(forExerciseId: "not-a-real-exercise"))
+        // 目录全量防御：每个动作要么有主肌群归属、要么主肌群是已知排除项
+        for entry in ExerciseCatalog.minimal.entries {
+            let group = MuscleGroupMapping.primaryGroup(forExerciseId: entry.id)
+            if group == nil {
+                XCTAssertEqual(entry.primaryMuscle, "forearm",
+                               "非 forearm 主肌群动作缺归属: \(entry.id) → \(entry.primaryMuscle)")
+            }
+        }
+    }
 }

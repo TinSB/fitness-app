@@ -40,4 +40,13 @@ public enum MuscleGroupMapping {
         default: return nil
         }
     }
+
+    /// 动作 → 主肌群契约归属（B1 胶水帮手）：e1RM 性能信号只挂主肌群
+    ///（批次 B 拍板③：副贡献动作的 e1RM 不代表该肌群可比强度）。
+    /// nil = 动作不在目录 / 主肌群无契约归宿（forearm），如实排除。
+    public static func primaryGroup(forExerciseId exerciseId: String,
+                                    catalog: ExerciseCatalog = .minimal) -> MuscleGroupID? {
+        guard let entry = catalog.entry(id: exerciseId) else { return nil }
+        return group(forCatalogMuscle: entry.primaryMuscle)
+    }
 }
