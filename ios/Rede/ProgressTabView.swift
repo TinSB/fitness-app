@@ -17,6 +17,9 @@ private enum ScaleKind: Hashable {
 }
 
 struct ProgressTabView: View {
+    /// M2 空态承接（§12.5）：空态主按钮回今日开训（跨 tab；由 RootTabView 切 selection）。
+    var onGoToday: () -> Void = {}
+
     @Environment(LocaleStore.self) private var localeStore
     @State private var scale: ScaleKind = {
         // 验证脚手架（沿 -initialTab 先例）：截图脚本预设尺度，不影响真实用户
@@ -98,6 +101,22 @@ struct ProgressTabView: View {
             .padding(.horizontal, RedeSpace.page)
             .padding(.top, RedeSpace.section)
 
+            // M2 空态结构预告（§12.5）：示意柱勾出「数据会长成什么样」——纯装饰、
+            // 明确非数据（redeNeu 低透明、无标签无数值、a11y 隐藏）；柱下一行 caption
+            // 说明防「骨架屏/加载失败」误读（审查 MAJOR）。空屏变「预告 + 承接」。
+            VStack(alignment: .leading, spacing: 10) {
+                emptyStatePreviewBars
+                Text(s.progressEmptyPreviewHint)
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT4)
+            }
+            .padding(.horizontal, RedeSpace.page)
+            .padding(.top, RedeSpace.section)
+
+            EmbButton(icon: "arrow.left", title: s.trainEmptyAction, action: onGoToday)
+                .padding(.horizontal, RedeSpace.page)
+                .padding(.top, RedeSpace.section)
+
             // 历史为空但存在坏数据时仍要诚实提示（如整库损坏后部分丢弃）
             if model.quality.hasFindings {
                 dataQualitySection(model.quality)
@@ -105,6 +124,21 @@ struct ProgressTabView: View {
                     .padding(.top, RedeSpace.section)
             }
         }
+    }
+
+    /// 空态示意柱：五槽错落（固定比例，确定性），同真柱几何但一律中性灰、显著降透明。
+    private var emptyStatePreviewBars: some View {
+        HStack(alignment: .bottom, spacing: 11) {
+            ForEach(Array([0.35, 0.55, 0.45, 0.7, 0.6].enumerated()), id: \.offset) { _, fraction in
+                UnevenRoundedRectangle(topLeadingRadius: 3, topTrailingRadius: 3)
+                    .fill(Color.redeNeu.opacity(0.35))
+                    .frame(height: max(8, fraction * 96))
+                    .frame(maxWidth: .infinity)
+            }
+        }
+        .frame(height: 96, alignment: .bottom)
+        .frame(maxWidth: .infinity)
+        .accessibilityHidden(true)
     }
 
     // MARK: - 真数据内容

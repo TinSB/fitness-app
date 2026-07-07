@@ -45,6 +45,11 @@ extension RedeStrings {
             : "Finish your first session. Data builds from here"
     }
 
+    /// M2 空态示意柱下的说明（caption 级）：消除「加载失败/骨架屏」误读——示意柱是预告非数据。
+    public var progressEmptyPreviewHint: String {
+        locale == .zh ? "数据会长这样" : "Your data will look like this"
+    }
+
     // MARK: - Session 尺度（最近一场）
 
     public func sessionVerdictPR(_ liftName: String) -> String {

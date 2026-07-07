@@ -102,6 +102,29 @@ final class RedeStringsTests: XCTestCase {
         }
     }
 
+    // M2 空态修正（2026-07-06）：计划页无模板兜底态的腐烂承诺清除——FR-PL2/3/4
+    // 均已上线，「计划视图还在路上/将在后续版本加入」对 1.0 用户是假话。
+    // 防回潮：兜底文案禁再出现「后续版本 / 还在路上 / later version / on its way」。
+    func testPlanEmptyCopyIsHonest() {
+        XCTAssertEqual(zh.planEmptyHeadline, "还没有训练计划")
+        XCTAssertEqual(en.planEmptyHeadline, "No plan yet")
+        XCTAssertEqual(zh.planEmptyNote, "排期与调整建议会出现在这里　先从今日页开始")
+        XCTAssertEqual(en.planEmptyNote, "Your schedule and adjustments will land here. Start from Today")
+        for line in [zh.planEmptyHeadline, zh.planEmptyNote] {
+            XCTAssertFalse(line.contains("后续版本") || line.contains("还在路上"), line)
+        }
+        for line in [en.planEmptyHeadline, en.planEmptyNote] {
+            let l = line.lowercased()
+            XCTAssertFalse(l.contains("later version") || l.contains("on its way"), line)
+        }
+        // planScheduleNote 同类风险点（#642 已清过一次腐烂承诺），防御性纳入（审查 NIT）
+        XCTAssertFalse(zh.planScheduleNote.contains("后续版本") || zh.planScheduleNote.contains("还在路上"))
+        XCTAssertFalse(en.planScheduleNote.lowercased().contains("later version") || en.planScheduleNote.lowercased().contains("on its way"))
+        // 示意柱说明锚句（审查 MAJOR：无说明字易误读为骨架屏/加载失败）
+        XCTAssertEqual(zh.progressEmptyPreviewHint, "数据会长这样")
+        XCTAssertEqual(en.progressEmptyPreviewHint, "Your data will look like this")
+    }
+
     // T2 排期折叠（2026-07-05）：类型区区头——构成只展开一次，序列另行紧凑表达。
     func testPlanDayTypesHeader() {
         XCTAssertEqual(zh.planDayTypesHeader, "训练日构成")

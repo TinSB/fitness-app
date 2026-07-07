@@ -121,12 +121,14 @@ public struct RedeStrings: Sendable {
     public func planTemplateLine(splitName: String, days: Int) -> String {
         t("\(splitName) · 每周 \(days) 天", "\(splitName) · \(days) days a week")
     }
+    // M2（2026-07-06）：腐烂承诺清除——FR-PL2/3/4 全部已上线，「还在路上/后续版本」
+    // 对 1.0 用户是假话。本兜底态仅无模板（引导前/数据不可读）可达，措辞改为如实预告。
     public var planEmptyHeadline: String {
-        t("计划视图还在路上", "The plan view is on its way")
+        t("还没有训练计划", "No plan yet")
     }
     public var planEmptyNote: String {
-        t("周期结构、调整建议和回滚将在后续版本加入　现在每天的安排看今日页",
-          "Cycle structure, adjustment previews, and rollback arrive in a later version. For now, Today carries each day's call")
+        t("排期与调整建议会出现在这里　先从今日页开始",
+          "Your schedule and adjustments will land here. Start from Today")
     }
 
     // MARK: - Plan 周期条（FR-PL2 S5：仅周期化开启且有真历史时显示；按引擎相位 rawValue 取标签）
