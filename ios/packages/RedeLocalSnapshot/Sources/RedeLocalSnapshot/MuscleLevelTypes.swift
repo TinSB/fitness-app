@@ -255,6 +255,25 @@ public struct MuscleLevelModelConfig: Sendable {
     public let levelCurveLinear: Double
     public let levelCurveQuadratic: Double
 
+    // MARK: V1 组装参数（MLE-3；§6.5.4 tier 区间 + trend 平滑 + balance）
+    /// trend：近 N 周均 vs 前 N 周均，超 ±阈值才改向（单次波动不动，§6.5.3 平滑要求）。
+    public let trendWindowWeeks: Int
+    public let trendDeltaThreshold: Double
+    /// balance：已解锁肌群 < 门槛 → nil 如实；cv 达 scale → 0 分。
+    public let balanceMinUnlockedMuscles: Int
+    public let balanceCvScale: Double
+    /// tier 区间上界（§6.5.4 表 V1 起点；elite = advanced 上界之上）。
+    public let tierBeginnerMaxLevel: Int
+    public let tierNovicePlusMaxLevel: Int
+    public let tierIntermediateMaxLevel: Int
+    public let tierAdvancedMaxLevel: Int
+    /// balance 低于此值 tier 下调一档（契约「必须可被 balanceScore 下调」）。
+    public let tierBalanceDowngradeBelow: Double
+    /// decision：level 低于解锁中位数此距离 → prioritize（弱项补足信号）。
+    public let priorityLevelGapBelowMedian: Int
+    /// e1RM 严格进步判定比率（>此值才算 rising，供 tier 进步信号；≈2% 防噪音）。
+    public let e1rmRisingMinRatio: Double
+
     public static let v1 = MuscleLevelModelConfig(
         modelVersion: "mle-v1",
         recentWindowWeeks: 6,
@@ -282,6 +301,17 @@ public struct MuscleLevelModelConfig: Sendable {
         coverageScoreMax: 5,
         consistencyScoreMax: 5,
         levelCurveLinear: 1.0,
-        levelCurveQuadratic: 0.2
+        levelCurveQuadratic: 0.2,
+        trendWindowWeeks: 3,
+        trendDeltaThreshold: 0.15,
+        balanceMinUnlockedMuscles: 3,
+        balanceCvScale: 1.0,
+        tierBeginnerMaxLevel: 5,
+        tierNovicePlusMaxLevel: 8,
+        tierIntermediateMaxLevel: 12,
+        tierAdvancedMaxLevel: 16,
+        tierBalanceDowngradeBelow: 40,
+        priorityLevelGapBelowMedian: 3,
+        e1rmRisingMinRatio: 1.02
     )
 }
