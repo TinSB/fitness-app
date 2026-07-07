@@ -212,8 +212,10 @@ public enum MuscleLevelEstimator {
         let ratio = recent / baseline
         let score = config.performanceBaseScore
             + (ratio - 1) * 10 * config.performancePerTenPercentGain
-        evidence.append(MuscleLevelEvidence(code: ratio >= 1 ? "e1rmHolding" : "e1rmDeclining",
-                                            muscleId: muscleId))
+        // 三分（MLE-3 审查 N2）：rising=严格进步（供 tier 进步信号）；holding=持平不退。
+        let code = ratio > config.e1rmRisingMinRatio ? "e1rmRising"
+            : (ratio >= 1 ? "e1rmHolding" : "e1rmDeclining")
+        evidence.append(MuscleLevelEvidence(code: code, muscleId: muscleId))
         return min(max(score, 0), config.performanceScoreMax)
     }
 }
