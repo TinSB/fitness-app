@@ -458,7 +458,7 @@ public struct SupportAllocationDecision: Equatable, Sendable {
 
 ### 6.5 肌群发展等级模型
 
-Rede 保留用户可理解、可分享、可用于训练决策的肌群等级系统。等级不是用户手填标签,不是绝对力量排行榜,也不是 LLM 主观判断;等级由 `RedeTrainingDecision` 内的本地纯函数派生模型估计,服务 Progress、Plan、CoachAction 和 Share / Growth System。
+Rede 保留用户可理解、可分享、可用于训练决策的肌群等级系统。等级不是用户手填标签,不是绝对力量排行榜,也不是 LLM 主观判断;等级由本地纯函数派生模型估计(V1 落包拍板见 §6.5.1),服务 Progress、Plan、CoachAction 和 Share / Growth System。
 
 等级系统的工程目标:
 
@@ -471,7 +471,11 @@ Rede 保留用户可理解、可分享、可用于训练决策的肌群等级系
 
 #### 6.5.1 模块边界
 
-等级系统属于 `RedeTrainingDecision`,不是新 package、不是 persistence 层、不是 app view model 逻辑。
+等级系统不是新 package、不是 persistence 层、不是 app view model 逻辑。V1 落包拍板(2026-07-07 批次 A,替代本节旧「属于 RedeTrainingDecision」单包措辞):
+
+- **引擎纯函数落 `RedeLocalSnapshot`**(MuscleLevelTypes / MuscleVolumeAggregator / MuscleLevelEstimator / MuscleProfileAssembler / MuscleMilestoneCatalog):该包 Foundation-only 零依赖(Master §5 硬合同),widget 与主 app 共享,等级最终要进 App Group 快照供 widget 展示,放这里避免跨包搬运。
+- **目录→肌群翻译层留 `RedeTrainingDecision`**(MuscleGroupMapping,口径见 §6.5.2):它要读 ExerciseCatalog,而 RedeLocalSnapshot 禁止依赖目录包。
+- 两包各持一份同值 `MuscleGroupID` 枚举(Master §5 禁跨包依赖),双侧文件锚句互指 + rawValue 契约测试防漂移;跨包传递用 rawValue 字符串。
 
 目标文件/符号边界:
 
@@ -523,6 +527,11 @@ public struct MuscleLevelEstimatorInput: Equatable, Sendable {
 - `MusclePriorityPreference`: 用户目标偏好,只能影响目标权重,不能手动改等级。
 - `selfReportedTrainingBackground`: 用户在 onboarding/profile 里选择的训练背景,只能作为冷启动 prior,真实训练记录足够后必须被模型证据覆盖。
 - `strengthMilestoneCatalog`: 公认动作重量突破目录,例如卧推 100kg / 225lb、深蹲 140kg / 315lb、硬拉 180kg / 405lb;目录用于 milestone 和 level floor,不是外部权威排名。
+
+V1 贡献口径拍板(2026-07-07 批次 A):
+
+- **17→10 肌群归并映射**(MuscleGroupMapping,唯一翻译点):front/side/rear delt→shoulders;traps/upper-back→back;lower-back→core;adductors→glutes(独立审查修正:内收肌功能上随髋伸训练,归 glutes 比 quads 更不误导);**forearm 无归宿如实排除**(返回 nil,不硬塞)。目录其余 9 个肌群与 MuscleGroupID 同名直通。
+- **fractional 计数**: primary 1.0 / secondary 0.5(Pelland 2025 meta 最优拟合,EVIDENCE_LEDGER E-03)。同动作多块肌肉归并后撞同一 MuscleGroupID 桶时取 max 权重,不累加。
 
 缺少关键输入时必须降级:
 
@@ -629,7 +638,7 @@ public struct MuscleLevelEstimate: Equatable, Sendable {
 public struct MuscleDevelopmentProfile: Equatable, Sendable {
     public let estimates: [MuscleLevelEstimate]
     public let overallTier: TrainingTier
-    public let balanceScore: Double
+    public let balanceScore: Double?   // nil = 解锁肌群 <3,样本不足不装均衡(2026-07-07 批次 A 拍板)
     public let strongestMuscleIds: [MuscleGroupID]
     public let priorityMuscleIds: [MuscleGroupID]
     public let strengthMilestones: [StrengthMilestoneAchievement]
@@ -670,6 +679,13 @@ public struct MuscleDevelopmentProfile: Equatable, Sendable {
 - `peakLevel`: 由历史已确认 `currentLevel` 派生;没有持久化前可在 projection 内从历史窗口重算,未来若要做长期成就账本必须先定义独立写入合同。
 - `overallTier`: 由多个肌群等级、训练一致性、关键动作 milestone、balanceScore、confidence 和 safety limitation 推导;不能由用户 profile 的 trainingLevel 直接决定。
 
+V1 计分/曲线锚(2026-07-07 批次 A,全部集中在 `MuscleLevelModelConfig.v1`,modelVersion `mle-v1`):
+
+- 等级阈值曲线 `T(n) = n + 0.2n²`(前快后慢,Lv.20 = 100 分);`level(forScore:)` bottom 桶 floor 恒 0,防低分区进度回跳。
+- V1 只实打两个子分数: exposureScore(满分 60,有效组数 × 频率折减 `min(记录周数/6, 1)`,防单周暴量刷级)+ performanceScore(base 15,e1RM 每 +10% 加 7.5,满分 30;新用户无基线 = base 15 + noBaselineWindow limitation,停练出窗 = 0 + noRecentWindow)。其余六个子分数 V1 恒 0 占位,breakdown 结构已按 §6.5.7 全量落型。
+- 校准解锁: 3 次相关训练**或** 8 个有效工作组(§6.5.6 minimumCalibration 的「或」口径)。
+- milestone floor 抬底命中时 `levelProgress` 置 0 并打 `milestoneFloorApplied` evidence——曲线级进度对抬底后等级无意义,如实归零而非展示假进度。
+
 等级降级规则:
 
 - 单次训练差、单周少练、一次跳过,不得直接降级。
@@ -695,6 +711,8 @@ public struct MuscleDevelopmentProfile: Equatable, Sendable {
 | `elite` | 极高训练发展水平 | Lv.16+ 肌群广泛存在,多个核心动作达到高阶 milestone,且长期一致性高。V1 只可作为展示,不得默认增加训练风险。 |
 
 这些 level range 是 V1 起点,必须由 `MuscleLevelModelConfig` 集中管理。`overallTier` 必须可以被 balanceScore 和 safety/recovery 限制下调:例如卧推很强但背/腿长期缺口大,可显示“水平推已进入中级 milestone,整体仍在进阶初期”。
+
+V1 tier 实现口径(2026-07-07 批次 A): 已解锁肌群**中位等级**落界 5/8/12/16(config 集中),等级输入用 milestone floor 抬底后值;无强度进步信号(e1rmRising evidence、milestoneScore>0、milestone tierCandidate 达成三者皆无)时封顶 novicePlus;balanceScore<40 下调一档;**中位置信**(偶数取低侧保守)为 low 或无已解锁肌群时兜底 calibrating——用中位而非「任一 high」,防单个专项肌群绕过安全网。
 
 #### 6.5.5 公认重量里程碑与级别突破
 
@@ -730,6 +748,14 @@ V1 起始 milestone 示例:
 - 如果 milestone 和日常训练覆盖冲突,UI 必须解释为“力量突破已达成,但整体发展仍需补足”,不能强行美化。
 - milestone 不替代体重相对强度。V1 不做复杂体重/性别/年龄排名;未来如引入相对强度或 public benchmark,必须是 optional reference,并写清隐私与公平性边界。
 
+V1 实现拍板(2026-07-07 批次 A MLE-4,`MuscleMilestoneCatalog`,catalogVersion `mle-milestones-v1`):
+
+- **落包**: 与引擎同置 `RedeLocalSnapshot`(§6.5.1 落包拍板的延伸,替代本节上文「集中定义在 RedeTrainingDecision」措辞);与既有 FR-PR7 简化版 `StrengthMilestoneCatalog` 并存不替换——简化版继续服务进度页里程碑区,契约版带 linkedMuscles/levelFloor/tierCandidate 服务等级抬底与 tier 信号。
+- 上表九条即 V1 全量目录,id/双梯阈值/linkedMuscles/floor/tierCandidate 由全表契约测试锁死。
+- **floor 只抬已解锁肌群**: 校准中不因一次达标出等级(冷启动灰屏语义优先)。
+- **「不能直接拉到同一级」与「不能强行美化」的实现口径**: floor 是 max 抬底不是赋值;且 **balanceScore 用未抬底曲线级**——milestone 是强度成就不是训练覆盖证据,同一 floor 套满 linked muscles 会把「只练卧推」美化成「完美均衡」。tier/中位吃 floor、balance 不吃,语义拆分。
+- **estimated 达标同样触发 floor 与 tier 信号**: confidence rule V1 = actual→high、estimated→medium;e1RM 的「high-confidence」门槛由调用方喂数前把关(批次 B 接线注意事项),目录判定层不重复设卡。同一里程碑 actual 已达不再出估算条目(估算不冒充实测);lb 梯独立比较(102kg≈224.9lb 不过 225lb 档),同 FR-PR7 口径。
+
 #### 6.5.6 计算 pipeline
 
 `MuscleLevelEstimator` 的标准 pipeline:
@@ -758,6 +784,12 @@ V1 起始 milestone 示例:
 - `highConfidence`: 至少 12 次相关训练、36 个有效工作组、覆盖 2 个以上动作族且关键动作 identity 稳定。
 
 这些阈值是 V1 模型常量,必须集中定义、带 `modelVersion`,并由 fixtures 覆盖;不得散落在 UI 或多个 engine 文件里。
+
+V1 组装口径拍板(2026-07-07 批次 A MLE-3):
+
+- **trend 日历锚定**: 窗口从 nowISO 回数 3 个 ISO 周,缺周记 0——不按「有数据的周」漂移,detraining 才可达(停练本身就是信号)。数据不足(校准中或不满窗)= stable,不出 detraining 恐吓。
+- `balanceScore` 公式: 已解锁肌群等级变异系数 cv 反向映射 `(1 - min(cv,1)) × 100`;解锁 <3 块时为 nil(样本不足不装均衡)——输出合同该字段为 `Double?`(§6.5.3 已同步)。
+- `peakLevel`: max 单调;previousLevels/previousPeaks/previousTier 由调用方提供(禁写 canonical,存储合同批次 B 定)。首次解锁不算 breakthrough(从校准中到出等级是「亮相」不是「升级」)。
 
 #### 6.5.7 分数构成
 
