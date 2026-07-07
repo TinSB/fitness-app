@@ -233,6 +233,28 @@ public struct MuscleLevelModelConfig: Sendable {
     public let highConfidenceMinMovementFamilies: Int
     public let levelRange: ClosedRange<Int>
 
+    // MARK: V1 计分锚点（MLE-2；Pelland 效率分档见 EVIDENCE_LEDGER MLE-SCI-2）
+    /// 效率折算：≤tier1 全效；(tier1, tier2] ×tier2Rate；>tier2 ×tier3Rate。
+    public let effectiveSetsTier1Cap: Double
+    public let effectiveSetsTier2Cap: Double
+    public let effectiveSetsTier2Rate: Double
+    public let effectiveSetsTier3Rate: Double
+    /// exposure：近窗有记录周的周均有效组达此值拿满 exposureScoreMax。
+    public let exposureFullScoreWeeklyEffectiveSets: Double
+    public let exposureScoreMax: Double
+    /// performance：比率 1.0 = base 分；每 +10% 进步 +perTenPercentGain；封顶 max。
+    public let performanceBaseScore: Double
+    public let performancePerTenPercentGain: Double
+    public let performanceScoreMax: Double
+    public let performanceMinPoints: Int
+    /// coverage/consistency（V1 低权）：满足动作族数得满 coverage；触及周比例 × consistencyMax。
+    public let coverageFullScoreFamilies: Int
+    public let coverageScoreMax: Double
+    public let consistencyScoreMax: Double
+    /// 等级阈值曲线 T(n) = a·n + b·n²（增量线性递增 ≈ 前快后慢；T(20)=100）。
+    public let levelCurveLinear: Double
+    public let levelCurveQuadratic: Double
+
     public static let v1 = MuscleLevelModelConfig(
         modelVersion: "mle-v1",
         recentWindowWeeks: 6,
@@ -245,6 +267,21 @@ public struct MuscleLevelModelConfig: Sendable {
         highConfidenceMinSessions: 12,
         highConfidenceMinSets: 36,
         highConfidenceMinMovementFamilies: 3,
-        levelRange: 1...20
+        levelRange: 1...20,
+        effectiveSetsTier1Cap: 10,
+        effectiveSetsTier2Cap: 18,
+        effectiveSetsTier2Rate: 0.7,
+        effectiveSetsTier3Rate: 0.5,
+        exposureFullScoreWeeklyEffectiveSets: 15,
+        exposureScoreMax: 60,
+        performanceBaseScore: 15,
+        performancePerTenPercentGain: 7.5,
+        performanceScoreMax: 30,
+        performanceMinPoints: 2,
+        coverageFullScoreFamilies: 2,
+        coverageScoreMax: 5,
+        consistencyScoreMax: 5,
+        levelCurveLinear: 1.0,
+        levelCurveQuadratic: 0.2
     )
 }
