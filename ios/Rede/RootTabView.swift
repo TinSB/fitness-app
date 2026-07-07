@@ -62,7 +62,8 @@ struct RootTabView: View {
                 case .train:
                     TrainTabView(onGoToday: { selection = .today })
                 case .progress:
-                    ProgressTabView()
+                    // M2 空态承接：空态主按钮回今日（与 Train/Plan 空态同口径）
+                    ProgressTabView(onGoToday: { selection = .today })
                 case .plan:
                     // FR-PL1：占位页动作 = 回今日（每天的安排由今日页给出）
                     PlanTabView(onGoToday: { selection = .today })
