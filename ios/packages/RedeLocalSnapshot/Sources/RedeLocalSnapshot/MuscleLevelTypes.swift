@@ -1,0 +1,250 @@
+// MuscleLevelTypes — MLE 契约输出类型骨架（MLE-0 2026-07-07，系统逻辑 §6.5.3 落包）。
+//
+// 等级输出是 read-only projection：纯派生、不写 canonical（§6.5.12）、同输入必同输出、
+// 必须本地可审计复算（§6.5.14 禁 LLM 判定）。本文件只有类型与常量，估计逻辑在
+// MLE-1~3 逐片落地。
+//
+// 架构决策（收口规格写回项）：契约 §6.5.1 原文「等级系统属于 RedeTrainingDecision」，
+// 实现落 RedeLocalSnapshot——估计器消费 snapshot 层输入（statsRecords/e1RM 趋势）且
+// 输出为展示投影，与本包既有职责（ProgressSnapshot/分享快照）同域；收口时回写 §6.5.1。
+//
+// MuscleGroupID 与 RedeTrainingDecision.MuscleGroupID 是**两份同值枚举**：本包
+// Foundation-only 零依赖是 Master §5 硬合同（与 canonical 强制解耦），禁跨包
+// re-export（D1 审查指路 2026-07-07）。两侧测试各自锚同一组 rawValue 字面量防漂移。
+//
+// 契约有意偏离（收口规格写回）：`MuscleDevelopmentProfile.balanceScore` 契约为
+// Double，实现为 Double?——少于 3 个已解锁肌群时均衡度在统计上无意义，nil 如实
+// 优于编一个数（「不给用户看编造数据」红线在输出层的执行）。
+
+import Foundation
+
+/// MLE 契约 10 值肌群（§6.5.3；与 RedeTrainingDecision 同值副本，见文件头）。
+public enum MuscleGroupID: String, CaseIterable, Equatable, Sendable, Codable {
+    case chest, back, quads, hamstrings, glutes
+    case shoulders, biceps, triceps, calves, core
+}
+
+public enum MuscleLevelTrend: String, CaseIterable, Equatable, Sendable {
+    case rising, stable, declining, detraining, calibrating
+}
+
+/// 给计划引擎的动作语义（非 UI 文案，§6.5.3）。
+public enum MuscleDevelopmentDecision: String, CaseIterable, Equatable, Sendable {
+    case prioritize, maintain, reduce, recover, insufficientData
+}
+
+public enum TrainingTier: String, CaseIterable, Equatable, Sendable {
+    case calibrating, beginner, novicePlus, intermediate, advanced, elite
+}
+
+/// 估计置信（引擎内部量：UI 不作读数显示，走行为表达——Copy Baseline §3.4 红线）。
+public enum EstimateConfidence: String, CaseIterable, Equatable, Sendable {
+    case low, medium, high
+}
+
+public enum LevelBreakthroughKind: String, CaseIterable, Equatable, Sendable {
+    case muscleLevel, trainingTier, strengthMilestone, balanceMilestone, consistencyMilestone
+}
+
+public enum StrengthMilestoneAchievementMethod: String, CaseIterable, Equatable, Sendable {
+    case actualCompletedSet, estimatedOneRepMax
+}
+
+/// 等级依据条目（零文案：引擎产 code，UI 层翻译——同 reasonCode 模式）。
+public struct MuscleLevelEvidence: Equatable, Sendable {
+    public let code: String
+    public let muscleId: MuscleGroupID?
+    public init(code: String, muscleId: MuscleGroupID? = nil) {
+        self.code = code
+        self.muscleId = muscleId
+    }
+}
+
+/// 不确定性说明条目（历史不足/器械未校准/缺权重等，§6.5.3）。
+public struct MuscleLevelLimitation: Equatable, Sendable {
+    public let code: String
+    public init(code: String) { self.code = code }
+}
+
+/// §6.5.7 八子分数（V1 权重规则模型在 MLE-2；结构完整先行，四项恒零留位）。
+public struct MuscleLevelScoreBreakdown: Equatable, Sendable {
+    public let exposureScore: Double
+    public let performanceScore: Double
+    public let milestoneScore: Double
+    public let progressionScore: Double
+    public let coverageScore: Double
+    public let consistencyScore: Double
+    public let recoveryPenalty: Double
+    public let goalAdjustment: Double
+
+    public var total: Double {
+        exposureScore + performanceScore + milestoneScore + progressionScore
+            + coverageScore + consistencyScore - recoveryPenalty + goalAdjustment
+    }
+
+    public init(exposureScore: Double, performanceScore: Double, milestoneScore: Double,
+                progressionScore: Double, coverageScore: Double, consistencyScore: Double,
+                recoveryPenalty: Double, goalAdjustment: Double) {
+        self.exposureScore = exposureScore
+        self.performanceScore = performanceScore
+        self.milestoneScore = milestoneScore
+        self.progressionScore = progressionScore
+        self.coverageScore = coverageScore
+        self.consistencyScore = consistencyScore
+        self.recoveryPenalty = recoveryPenalty
+        self.goalAdjustment = goalAdjustment
+    }
+}
+
+/// 公认重量突破（契约版；MLE-4 扩既有 FR-PR7 catalog 时消费）。
+public struct StrengthMilestoneAchievement: Equatable, Sendable {
+    public let milestoneId: String
+    public let exerciseId: String
+    public let displayName: String
+    public let thresholdKg: Double
+    public let thresholdLb: Double?
+    public let achievedBy: StrengthMilestoneAchievementMethod
+    public let sourceSetId: String?
+    public let achievedAtIso: String
+    public let linkedMuscleIds: [MuscleGroupID]
+    public let levelFloor: Int?
+    public let tierFloor: TrainingTier?
+    public let confidence: EstimateConfidence
+
+    public init(milestoneId: String, exerciseId: String, displayName: String,
+                thresholdKg: Double, thresholdLb: Double?,
+                achievedBy: StrengthMilestoneAchievementMethod, sourceSetId: String?,
+                achievedAtIso: String, linkedMuscleIds: [MuscleGroupID],
+                levelFloor: Int?, tierFloor: TrainingTier?, confidence: EstimateConfidence) {
+        self.milestoneId = milestoneId
+        self.exerciseId = exerciseId
+        self.displayName = displayName
+        self.thresholdKg = thresholdKg
+        self.thresholdLb = thresholdLb
+        self.achievedBy = achievedBy
+        self.sourceSetId = sourceSetId
+        self.achievedAtIso = achievedAtIso
+        self.linkedMuscleIds = linkedMuscleIds
+        self.levelFloor = levelFloor
+        self.tierFloor = tierFloor
+        self.confidence = confidence
+    }
+}
+
+public struct LevelBreakthrough: Equatable, Sendable {
+    public let kind: LevelBreakthroughKind
+    public let targetId: String
+    public let fromLevel: Int?
+    public let toLevel: Int?
+    public let fromTier: TrainingTier?
+    public let toTier: TrainingTier?
+    public let evidence: [MuscleLevelEvidence]
+    public let achievedAtIso: String
+
+    public init(kind: LevelBreakthroughKind, targetId: String, fromLevel: Int?, toLevel: Int?,
+                fromTier: TrainingTier?, toTier: TrainingTier?,
+                evidence: [MuscleLevelEvidence], achievedAtIso: String) {
+        self.kind = kind
+        self.targetId = targetId
+        self.fromLevel = fromLevel
+        self.toLevel = toLevel
+        self.fromTier = fromTier
+        self.toTier = toTier
+        self.evidence = evidence
+        self.achievedAtIso = achievedAtIso
+    }
+}
+
+/// 单肌群等级估计（§6.5.3 输出语义：peakLevel 单调、levelProgress 0...1、trend 需平滑）。
+public struct MuscleLevelEstimate: Equatable, Sendable {
+    public let muscleId: MuscleGroupID
+    public let currentLevel: Int
+    public let peakLevel: Int
+    public let levelProgress: Double
+    public let trend: MuscleLevelTrend
+    public let confidence: EstimateConfidence
+    public let decision: MuscleDevelopmentDecision
+    public let score: MuscleLevelScoreBreakdown
+    public let evidence: [MuscleLevelEvidence]
+    public let limitations: [MuscleLevelLimitation]
+
+    public init(muscleId: MuscleGroupID, currentLevel: Int, peakLevel: Int, levelProgress: Double,
+                trend: MuscleLevelTrend, confidence: EstimateConfidence,
+                decision: MuscleDevelopmentDecision, score: MuscleLevelScoreBreakdown,
+                evidence: [MuscleLevelEvidence], limitations: [MuscleLevelLimitation]) {
+        self.muscleId = muscleId
+        self.currentLevel = currentLevel
+        self.peakLevel = peakLevel
+        self.levelProgress = levelProgress
+        self.trend = trend
+        self.confidence = confidence
+        self.decision = decision
+        self.score = score
+        self.evidence = evidence
+        self.limitations = limitations
+    }
+}
+
+/// 全身发展档案（read-only projection 根类型）。
+public struct MuscleDevelopmentProfile: Equatable, Sendable {
+    public let estimates: [MuscleLevelEstimate]
+    public let overallTier: TrainingTier
+    /// 契约偏离（见文件头）：<3 已解锁肌群时 nil 如实，不编均衡度。
+    public let balanceScore: Double?
+    public let strongestMuscleIds: [MuscleGroupID]
+    public let priorityMuscleIds: [MuscleGroupID]
+    public let strengthMilestones: [StrengthMilestoneAchievement]
+    public let breakthroughs: [LevelBreakthrough]
+    public let generatedAtIso: String
+    public let modelVersion: String
+
+    public init(estimates: [MuscleLevelEstimate], overallTier: TrainingTier, balanceScore: Double?,
+                strongestMuscleIds: [MuscleGroupID], priorityMuscleIds: [MuscleGroupID],
+                strengthMilestones: [StrengthMilestoneAchievement], breakthroughs: [LevelBreakthrough],
+                generatedAtIso: String, modelVersion: String) {
+        self.estimates = estimates
+        self.overallTier = overallTier
+        self.balanceScore = balanceScore
+        self.strongestMuscleIds = strongestMuscleIds
+        self.priorityMuscleIds = priorityMuscleIds
+        self.strengthMilestones = strengthMilestones
+        self.breakthroughs = breakthroughs
+        self.generatedAtIso = generatedAtIso
+        self.modelVersion = modelVersion
+    }
+}
+
+/// V1 模型常量（§6.5.6 起点值照录，待真实数据校准；变更必须递增 modelVersion + 更新 goldens）。
+public struct MuscleLevelModelConfig: Sendable {
+    public let modelVersion: String
+    public let recentWindowWeeks: Int
+    public let baselineWindowWeeks: Int
+    /// 每肌群独立解锁门槛（满足其一）：≥N 次训练触及 或 ≥M 有效组。
+    public let calibrationMinSessions: Int
+    public let calibrationMinEffectiveSets: Int
+    public let mediumConfidenceMinSessions: Int
+    public let mediumConfidenceMinSets: Int
+    /// medium 第三维（§6.5.6）：覆盖 ≥2 个动作族。
+    public let mediumConfidenceMinMovementFamilies: Int
+    public let highConfidenceMinSessions: Int
+    public let highConfidenceMinSets: Int
+    /// high 第三维（§6.5.6）：覆盖 2 个以上动作族（≥3）。第四维「关键动作 identity
+    /// 稳定」是布尔判定非数值阈值，不进 Config——由 MLE-2 置信逻辑直接判，非漏配。
+    public let highConfidenceMinMovementFamilies: Int
+    public let levelRange: ClosedRange<Int>
+
+    public static let v1 = MuscleLevelModelConfig(
+        modelVersion: "mle-v1",
+        recentWindowWeeks: 6,
+        baselineWindowWeeks: 24,
+        calibrationMinSessions: 3,
+        calibrationMinEffectiveSets: 8,
+        mediumConfidenceMinSessions: 6,
+        mediumConfidenceMinSets: 18,
+        mediumConfidenceMinMovementFamilies: 2,
+        highConfidenceMinSessions: 12,
+        highConfidenceMinSets: 36,
+        highConfidenceMinMovementFamilies: 3,
+        levelRange: 1...20
+    )
+}
