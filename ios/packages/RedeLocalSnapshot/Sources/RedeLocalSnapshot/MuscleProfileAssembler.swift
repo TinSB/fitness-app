@@ -128,11 +128,16 @@ public enum MuscleProfileAssembler {
         previousPeaks: [MuscleGroupID: Int],
         previousTier: TrainingTier?,
         generatedAtIso: String,
-        config: MuscleLevelModelConfig
+        config: MuscleLevelModelConfig,
+        milestones: [StrengthMilestoneAchievement] = []
     ) -> MuscleDevelopmentProfile {
+        // 里程碑 level floor（MLE-4）：linked 肌群等级抬底（仅已解锁——校准中不因
+        // 一次达标出等级）；tierCandidate 达成并入 tier 进步信号（契约 §6.5.5）。
+        let milestoneFloors = MuscleMilestoneCatalog.levelFloors(from: milestones)
         let ordered = computations.sorted { $0.muscleId.rawValue < $1.muscleId.rawValue }
         let unlocked = ordered.filter { !$0.isCalibrating }
-        let unlockedLevels = unlocked.map(\.level)
+        // 中位/tier 看抬底后等级（floor 是强度等级语义的一部分）；balance 例外见下。
+        let unlockedLevels = unlocked.map { flooredLevel(of: $0, floors: milestoneFloors) }
         let median = medianOf(unlockedLevels)
 
         var estimates: [MuscleLevelEstimate] = []
@@ -140,35 +145,47 @@ public enum MuscleProfileAssembler {
             let weekly = observations[comp.muscleId]?.weeklyFractionalSets ?? [:]
             let trendValue = trend(weeklySets: weekly, isCalibrating: comp.isCalibrating,
                                    nowISO: generatedAtIso, config: config)
+            let floored = flooredLevel(of: comp, floors: milestoneFloors)
             // V1 四支：reduce（超量回调）依赖 MRV 超量判定，留白后置（审查 O3）。
             let decision: MuscleDevelopmentDecision
             if comp.isCalibrating {
                 decision = .insufficientData
             } else if trendValue == .detraining {
                 decision = .recover
-            } else if Double(comp.level) < median - Double(config.priorityLevelGapBelowMedian) {
+            } else if Double(floored) < median - Double(config.priorityLevelGapBelowMedian) {
                 decision = .prioritize
             } else {
                 decision = .maintain
             }
+            // 抬底命中：曲线级 progress 对抬底后等级无意义（是旧等级到下一级的进度），
+            // 置 0 并打 evidence 标记，下游可解释「为何 Lv 高但进度从零起步」（审查 M1）。
+            let floorApplied = floored > comp.level
+            var evidence = comp.evidence
+            if floorApplied {
+                evidence.append(MuscleLevelEvidence(code: "milestoneFloorApplied", muscleId: comp.muscleId))
+            }
             estimates.append(MuscleLevelEstimate(
                 muscleId: comp.muscleId,
-                currentLevel: comp.level,
-                peakLevel: peakLevel(current: comp.level, previousPeak: previousPeaks[comp.muscleId]),
-                levelProgress: comp.progress,
+                currentLevel: floored,
+                peakLevel: peakLevel(current: floored, previousPeak: previousPeaks[comp.muscleId]),
+                levelProgress: floorApplied ? 0 : comp.progress,
                 trend: trendValue,
                 confidence: comp.confidence,
                 decision: decision,
                 score: comp.breakdown,
-                evidence: comp.evidence,
+                evidence: evidence,
                 limitations: comp.limitations))
         }
 
-        let balance = balanceScore(unlockedLevels: unlockedLevels, config: config)
+        // balance 用未抬底的曲线级：milestone 是强度成就、不是训练覆盖证据——同一 floor
+        // 套满 linked muscles 会压平方差把「只练卧推」美化成「完美均衡」，违契约
+        // §6.5.5「不能强行美化」（审查 M2）。tier/中位吃 floor、balance 不吃，语义拆分。
+        let balance = balanceScore(unlockedLevels: unlocked.map(\.level), config: config)
         // 严格进步信号（审查 MODERATE：holding=「没退步」≠契约「稳定 e1RM 进步」）
         let progressSignal = unlocked.contains { comp in
             comp.evidence.contains { $0.code == "e1rmRising" } || comp.breakdown.milestoneScore > 0
-        }
+        } || milestones.contains { $0.tierFloor != nil }
+        // ↑ 里程碑 tierCandidate 达成同为进步信号（§6.5.5，MLE-4）
         // 中位置信（审查 MAJOR：「任一 high 即 high」可被单个专项肌群绕过 calibrating
         // 安全网）——与 tier 的中位等级同口径，偶数取低侧保守。
         let medianConfidence = medianConfidenceOf(unlocked.map(\.confidence))
@@ -177,9 +194,13 @@ public enum MuscleProfileAssembler {
             dominantConfidence: medianConfidence, balanceScore: balance, config: config)
 
         var currentLevels: [MuscleGroupID: Int] = [:]
-        for comp in unlocked { currentLevels[comp.muscleId] = comp.level }
+        for comp in unlocked {
+            currentLevels[comp.muscleId] = flooredLevel(of: comp, floors: milestoneFloors)
+        }
         let maxLevel = unlockedLevels.max() ?? Int.min
-        let strongest: [MuscleGroupID] = unlocked.filter { $0.level == maxLevel }.map { $0.muscleId }
+        let strongest: [MuscleGroupID] = unlocked.filter {
+            flooredLevel(of: $0, floors: milestoneFloors) == maxLevel
+        }.map { $0.muscleId }
         let priority: [MuscleGroupID] = estimates.filter { $0.decision == .prioritize }.map { $0.muscleId }
 
         return MuscleDevelopmentProfile(
@@ -188,7 +209,7 @@ public enum MuscleProfileAssembler {
             balanceScore: balance,
             strongestMuscleIds: strongest,
             priorityMuscleIds: priority,
-            strengthMilestones: [],   // MLE-4 接入
+            strengthMilestones: milestones,
             breakthroughs: breakthroughs(
                 currentLevels: currentLevels, previousLevels: previousLevels,
                 currentTier: tierValue, previousTier: previousTier, atIso: generatedAtIso),
@@ -197,6 +218,12 @@ public enum MuscleProfileAssembler {
     }
 
     // MARK: - private
+
+    /// 抬底后等级：milestone floor 只作用于已解锁肌群（校准中不因一次达标出等级）。
+    /// 唯一 floor 落点——中位/tier/estimate/strongest 全走这里，防各消费点漂移（审查 m7）。
+    private static func flooredLevel(of comp: MuscleLevelComputation, floors: [MuscleGroupID: Int]) -> Int {
+        comp.isCalibrating ? comp.level : max(comp.level, floors[comp.muscleId] ?? comp.level)
+    }
 
     private static func medianOf(_ values: [Int]) -> Double {
         guard !values.isEmpty else { return 0 }
