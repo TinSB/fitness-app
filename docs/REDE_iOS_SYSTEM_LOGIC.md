@@ -676,7 +676,7 @@ public struct MuscleDevelopmentProfile: Equatable, Sendable {
 - `developmentScore`: `0...100` 的模型分数,不直接暴露给普通用户。
 - `currentLevel`: 由 `developmentScore` 经每肌群校准阈值映射。
 - `levelProgress`: 当前分数到下一等级阈值的比例。
-- `peakLevel`: 由历史已确认 `currentLevel` 派生;没有持久化前可在 projection 内从历史窗口重算,未来若要做长期成就账本必须先定义独立写入合同。
+- `peakLevel`: 由历史已确认 `currentLevel` 派生。**写入合同已定义（2026-07-07 批次 B2）**: `MuscleLevelMemory`(RedeLocalSnapshot) derived-only JSON(canonical 同目录 muscle-level-memory.json,schema 版本化、未知版本拒读、decode 失败=如实「无记忆」从零校准、atomic 写);只记已解锁肌群;写侧 peaks 逐键 max 合并(并发竞写/回退校准两场景峰值都不丢);levels/tier 快照语义最后写者胜。绝不读写 canonical。
 - `overallTier`: 由多个肌群等级、训练一致性、关键动作 milestone、balanceScore、confidence 和 safety limitation 推导;不能由用户 profile 的 trainingLevel 直接决定。
 
 V1 计分/曲线锚(2026-07-07 批次 A,全部集中在 `MuscleLevelModelConfig.v1`,modelVersion `mle-v1`):
@@ -839,6 +839,8 @@ V1 组装口径拍板(2026-07-07 批次 A MLE-3):
 3. 前 2-4 次训练以校准为主,展示“正在校准肌群等级”。
 4. 有低置信结果时可显示等级,但必须带 confidence 和 limitation。
 5. Progress 可以显示“数据还少,先用接下来几次训练提高判断准确度”。
+
+V1 实现口径(2026-07-07 批次 B3): 全员校准 = 区块一句校准文案(两拍全角空格,不列 10 行灰——空态克制);部分解锁 = 解锁行亮 + 其余折叠一行「其余 N 个肌群正在校准」;逐肌群独立解锁(有的出等级有的校准中)。confidence 的 limitation 表达 = 展开依据行人话(shortHistory→「训练数据还不够」等),不出读数标签(§3.4)。
 6. Plan 在 low confidence 下只做轻微补足建议,不做大幅计划重排。
 7. 用户自报高级但历史证据不足时,显示“按你的背景先保守校准”,不得直接开启高级训练决策。
 
@@ -859,8 +861,8 @@ V1 组装口径拍板(2026-07-07 批次 A MLE-3):
 
 | 消费方 | 读取内容 | 不允许 |
 |---|---|---|
-| Progress | `currentLevel`、`peakLevel`、trend、confidence、evidence、limitations、balanceScore | 展示原始敏感数据或羞辱式弱项文案。 |
-| PlanAdjustment | `decision`、priorityMuscleIds、recoverMuscleIds、goal gap。**注意分层**：读这些等级语义的**肌群级均衡建议**（补足/维持/减少，FR-PL5）**依赖未落地的 MLE/贡献权重，未落地**；已落地的是**频率维度**提案（FR-PL3/4，§8.1）——只吃周计划天数 + 依从历史，**不读肌群等级**，与今日页频率补量同源（§6.5.2 红线）。两者接进**同一**提案/预览/采纳/回滚框架（`PlanAdjustmentEngine` 增源，MLE 落地后零返工）。 | 只因 level 低就机械加训练量；无贡献权重时凭空给肌群级建议。 |
+| Progress | `currentLevel`、`peakLevel`、trend、confidence、evidence、limitations、balanceScore。**已落地（2026-07-07 批次 B3，FR-PR6）**：进度页 Development 块——校准/解锁/折叠三态、依据展开（evidence/limitation 人话）、tier+均衡行；confidence 只作行为表达（§3.4）。 | 展示原始敏感数据或羞辱式弱项文案。 |
+| PlanAdjustment | `decision`、priorityMuscleIds、recoverMuscleIds、goal gap。**注意分层（2026-07-07 批次 B 更新）**：肌群级均衡建议（FR-PL5）**已落地展示级**——Development 块 decision 语义行（·正在补足 / ·先找回节奏），不是可采纳提案；**提案式**（预览/采纳/回滚接进 `PlanAdjustmentEngine` 增源）**仍后置**——采纳动作在处方引擎无「肌群偏好」消费点之前是假开关（违诚实红线），批次 C 一并考虑消费链。已落地的频率维度提案（FR-PL3/4，§8.1）不读肌群等级，两线并行不悖。 | 只因 level 低就机械加训练量；把展示级建议冒充可采纳提案。 |
 | Scheduler | 肌群优先级、恢复限制、覆盖缺口 | 忽略 safety lock 或 recovery signal。 |
 | CoachAction | 可执行建议和解释。**肌群级**建议（例如“本周多补 2-4 组水平拉”——带肌群名与组数）依赖等级模型/贡献权重,属未来能力,**未落地**;已落地的 §6.4a 教练动作引擎只做**频率维度**补量（“本周还差 N 次”,无肌群无组数,§6.5.2 红线）、换动作、修数据 | 生成无法执行、不可回滚或强迫用户的建议;无贡献权重时凭空猜肌群（§6.5.2）。 |
 | Share / Growth | 脱敏后的 Muscle Level / Level Up / Balance projection | 读取 raw AppData、HealthKit 原始值或私人 notes。 |
@@ -888,6 +890,13 @@ V1 组装口径拍板(2026-07-07 批次 A MLE-3):
 - “整体均衡度 76”
 - “本月背部升级 Lv.8 -> Lv.9”
 
+V1 实现收敛(2026-07-07 批次 B3,对上表示例样式的三处拍板,交接件同步留痕):
+
+- **maintain 不出语义标签**(上表「维持即可」示例不落地): 多数肌群常态即 maintain,全员贴标签=标签噪音(去 AI 感批次同类清理先例);等级本身就是维持的表达。标签只给 prioritize(·正在补足)与 recover。
+- **recover 按 trend 拆两条**: detraining(只是没练)=「先找回节奏」;「恢复优先」保留给未来 pain/safety 喂数接入后——V1 recover 全部由 detraining 触发,不得让用户误读成伤病/超量信号。
+- **里程碑徽标不在 Development 块重复渲染**: 同页 FR-PR7 区块已是里程碑面;milestone floor 影响由展开依据行(milestoneFloorApplied=「力量突破抬升了等级起点」)表达;floor 命中时 levelProgress 置 0(「刚进入此级」如实从零,不显示旧曲线假进度)。
+- 解释入口实现 = 点肌群行展开 evidence/limitation 人话(九个引擎 code 全量映射,漏配即依据行静默丢失——L10n 侧全量锚测试锁死);均衡度行简化为「均衡度 76」(同行已有「整体级别」前缀)。
+
 必须同时提供解释入口:
 
 - 为什么是这个等级。
@@ -906,6 +915,8 @@ V1 组装口径拍板(2026-07-07 批次 A MLE-3):
 - “卧推 100kg 所以你全身都是高级。”
 
 #### 6.5.12 与分享系统的连接
+
+V1 落地状态(2026-07-07 批次 B5): **Muscle Level 卡已上线**——`ShareSnapshot.Content.muscleLevel` + `SharePrivacyFilter.muscleLevel` 唯一构造入口(等级降序/截断 6/balance 取整钳 0-100/tier 校准中不出卡);入口=Development 块「分享发展画像」(仅有已解锁肌群时出现,§9.4 用户主动触发)。对下方契约 projection 的 V1 收敛(交接件拍板②留痕): **confidenceLabel 结构性缺失**(字段不存在于卡类型,比契约 String? nil 更硬——§3.4 置信度零读数);levelProgress/safeEvidenceSummary/milestoneBadge V1 不进卡(版面克制,里程碑面归 PR 卡);trend 只映射 rising/declining 箭头(detraining 无箭头=不编信号)。Level Up / Balance Improvement 卡推后(依赖跨次数据节奏,观察真实使用后加)。
 
 分享系统只消费脱敏 projection:
 
@@ -949,6 +960,8 @@ Level Up Card 触发条件:
 #### 6.5.13 Rewrite Parity Slices
 
 等级系统必须按可验收 rewrite slice 实现。每片先定义目标行为、输入输出、fixtures、Swift tests 和 UI 验收,再写 runtime;旧代码只作为参考,不作为完成证明。
+
+实际排片对照(2026-07-07 批次 A #659-#666 + 批次 B #667-#671 收口): 下表 MLE-0/1 → 批次 A 的 D1+MLE-0~3(类型/config/映射/聚合/计分/组装,PR #660-#664);MLE-4(目录)→ 批次 A MLE-4(#665,契约版 MuscleMilestoneCatalog 与 FR-PR7 简化版并存);MLE-3(贡献 snapshot)→ 降维——目录已有 primary/secondary 字段,无需独立 snapshot 层;MLE-5(Progress 接入)→ 批次 B B1 喂数(#668)+B2 记忆(#669)+B3 UI(#670);MLE-2(tier 统一)→ 并入批次 A MLE-3 组装(TrainingTierProjector 语义由 assembler 实现,无独立类型;旧 AutoTrainingLevel 未再接新消费方,自报背景在设置页已改「自报背景」标签区分);MLE-6(Plan/CoachAction)→ **部分落地**(展示级 decision 语义行,提案式批次 C);MLE-7(Share)→ 批次 B B5(#671,仅 Muscle Level 卡);MLE-8(校准精修)→ 待真机数据(下表原文保留)。
 
 | Slice | 内容 | 验收 |
 |---|---|---|
@@ -1150,7 +1163,7 @@ Account/sync/cloud settings 不进入第一版干净实现,不得做成无能力
 
 分享系统是 Rede 的商业化增长回路,负责把训练成果、肌群等级、PR、均衡发展和可执行计划转化为用户愿意主动传播的隐私安全资产。它不是第一版社交网络,也不是公开排行榜。第一版干净实现的 S0 边界是本地生成分享卡、调用 iOS Share Sheet、附带通用 App Store / landing link;账号、云端个人页、公开 feed、归因链接、远程模板库和好友关系都属于后续 Master-approved implementation slice。
 
-> **实现状态（2026-06-24，#611 切片 S0）**：本节为目标契约;已落地 = **训练总结卡 + PR/里程碑卡**两类（§9.2 中 Muscle Level / Level Up / Balance Improvement 三卡依赖未实现的 MLE §6.5，deferred）。隐私过滤（§9.3，SH2）落地方式 = **类型层结构性缺失**：`ShareSnapshot`(RedeLocalSnapshot) 只声明允许字段、禁止字段不存在;精确时长经 `ShareDurationBand` 有损分桶成区间。渲染 = app 层 `ShareCardView`(竖版 4:5) + `ImageRenderer`→UIImage,经 `SharePrivacyFilter` 唯一构造入口;触发 = 训练完成小结「分享」→ 预览 → `UIActivityViewController`(§9.4)。S0 不写 canonical、不联网、无埋点(§9.8 本地事件 deferred,守 FR-DT3)。下载 link = App Store(`ShareLinks.appStoreURL`,上架前回退搜索提示)。
+> **实现状态（2026-07-07 更新，#611 S0 + #671 批次 B5）**：本节为目标契约;已落地 = **训练总结卡 + PR/里程碑卡 + Muscle Level 发展画像卡**三类（入口分别为练完态小结/同预览/Progress Development 块「分享发展画像」;Level Up / Balance Improvement 两卡依赖跨次数据节奏，推后观察真实使用）。隐私过滤（§9.3，SH2）落地方式 = **类型层结构性缺失**：`ShareSnapshot`(RedeLocalSnapshot) 只声明允许字段、禁止字段不存在;精确时长经 `ShareDurationBand` 有损分桶成区间。渲染 = app 层 `ShareCardView`(竖版 4:5) + `ImageRenderer`→UIImage,经 `SharePrivacyFilter` 唯一构造入口;触发 = 训练完成小结「分享」→ 预览 → `UIActivityViewController`(§9.4)。S0 不写 canonical、不联网、无埋点(§9.8 本地事件 deferred,守 FR-DT3)。下载 link = App Store(`ShareLinks.appStoreURL`,上架前回退搜索提示)。
 
 ### 9.1 产品目标
 
@@ -1166,7 +1179,7 @@ Account/sync/cloud settings 不进入第一版干净实现,不得做成无能力
 | 资产 | 触发时机 | 默认内容 | 增长价值 | 隐私默认 |
 |---|---|---|---|---|
 | Workout Summary Card | 完成训练后 | 训练类型、完成动作数、总组数、训练时长区间、当日亮点 | 高频、低门槛、让用户形成分享习惯 | 隐藏健身房、精确时间、疼痛、notes、RIR 细节 |
-| Muscle Level Card | Progress 中肌群等级稳定后 | 肌群 Lv、趋势、置信度、均衡度、下一步方向 | Rede 差异化最高,适合身份表达和复访 | 不显示原始重量和身体数据 |
+| Muscle Level Card ✅#671 | Progress 中肌群等级解锁后（Development 块入口） | 肌群 Lv、趋势、整体级别、均衡度（置信度**不进卡**——结构性缺失,§3.4;「下一步方向」V1 不进卡） | Rede 差异化最高,适合身份表达和复访 | 不显示原始重量和身体数据 |
 | Level Up Card | 某肌群升级时 | `Back Lv.8 -> Lv.9`、升级原因摘要、近期训练一致性 | 强成就感,最适合 Story/Reels/短视频封面 | 不显示完整训练记录 |
 | PR / e1RM Card | PR 或 e1RM 置信提升时 | 动作、PR/e1RM 摘要、进步幅度、置信度 | 美国力量训练用户容易理解 | 重量默认可见但可隐藏 |
 | Balance Improvement Card | 推/拉、上下肢或肌群均衡度改善时 | 均衡度变化、补足方向、计划执行度 | 比单纯晒重量更专业,降低羞辱感 | 不显示低等级羞辱式文案 |
