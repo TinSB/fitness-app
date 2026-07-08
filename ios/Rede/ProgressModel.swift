@@ -51,6 +51,13 @@ struct ProgressModel {
         await Task.detached(priority: .userInitiated) { loadOutcome(now: now) }.value
     }
 
+    /// MLE 记忆落点（B2）：canonical 同目录的 derived-only JSON（不进 App Group——
+    /// widget 暂不显示等级；禁写 canonical 红线由类型隔离保证：store 只认 MuscleLevelMemory）。
+    static func muscleLevelMemoryFileURL() -> URL {
+        TodayModel.canonicalFileURL().deletingLastPathComponent()
+            .appendingPathComponent("muscle-level-memory.json")
+    }
+
     static func loadOutcome(now: Date = Date()) -> LoadOutcome? {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         let appData: AppData
@@ -149,10 +156,23 @@ struct ProgressModel {
                     muscleRaw: group.rawValue, dateISO: point.dateISO, e1RmKg: point.e1RmKg))
             }
         }
+        // MLE 跨次记忆（B2）：peak 只升不降 / breakthrough 对比 / previousTier 的持久侧。
+        // derived-only（canonical 同目录、非 gated、坏文件=如实从零校准）；内容变才写，
+        // 写失败静默不阻断渲染（同 widget 快照 best-effort 教义）。
+        let memoryStore = MuscleLevelMemoryStore(fileURL: muscleLevelMemoryFileURL())
+        let previousMemory = memoryStore.load()
         let muscleProfile = MuscleProfileComposer.compose(MuscleProfileComposer.Input(
             rows: contributionRows, touches: touchRows, e1rmRows: e1rmRows,
             bestActualKgByExercise: bestByExercise, bestE1RmKgByExercise: estByExercise,
-            unitSystem: cleanView.profile.unitSystem, nowISO: todayISO))
+            unitSystem: cleanView.profile.unitSystem,
+            previousLevels: previousMemory?.levels ?? [:],
+            previousPeaks: previousMemory?.peaks ?? [:],
+            previousTierRaw: previousMemory?.tierRaw,
+            nowISO: todayISO))
+        let nextMemory = MuscleLevelMemory.extract(from: muscleProfile, atIso: todayISO)
+        if MuscleLevelMemory.shouldPersist(previous: previousMemory, next: nextMemory) {
+            try? memoryStore.saveReconciling(nextMemory)   // 写前 peaks max 合并（并发竞写对策）
+        }
         return .ready(ProgressModel(
             snapshot: snapshot,
             quality: quality,
