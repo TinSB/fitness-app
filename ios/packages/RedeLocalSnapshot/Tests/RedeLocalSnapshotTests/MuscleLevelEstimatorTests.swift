@@ -9,7 +9,7 @@ import XCTest
 @testable import RedeLocalSnapshot
 
 final class MuscleLevelEstimatorTests: XCTestCase {
-    private let config = MuscleLevelModelConfig.v1
+    private let config = MuscleLevelModelConfig.current
 
     /// 便捷：constructObservations——近窗每周 sets 相同的簡化观察。
     private func observations(
@@ -137,9 +137,9 @@ final class MuscleLevelEstimatorTests: XCTestCase {
         XCTAssertFalse(spike.isCalibrating)
         XCTAssertLessThanOrEqual(spike.breakdown.exposureScore, 10.0)
         XCTAssertLessThanOrEqual(spike.level, 6)
-        // 周均 raw 18 组（折算 15.6 有效 ≥ 满分锚 15）持续 6 周：exposure 拿满
+        // 周均 raw 27 组（折算 20.1 有效 ≥ v2 满分锚 20）持续 6 周：exposure 拿满
         let sustained = MuscleLevelEstimator.compute(
-            observations: observations(weeklySets: [18, 18, 18, 18, 18, 18], sessions: 18), config: config)
+            observations: observations(weeklySets: [27, 27, 27, 27, 27, 27], sessions: 18), config: config)
         XCTAssertEqual(sustained.breakdown.exposureScore, config.exposureScoreMax, accuracy: 0.001)
         XCTAssertGreaterThan(sustained.level, spike.level)
     }
@@ -175,13 +175,14 @@ final class MuscleLevelEstimatorTests: XCTestCase {
         XCTAssertEqual(c.breakdown.performanceScore, config.performanceScoreMax)
     }
 
-    func testNewUserWithoutBaselineGetsNeutralBase() {
-        // 近窗有点、基线窗空（新用户）：中性 base 分 + noBaselineWindow（不按追踪时长扣分）
+    func testNewUserWithoutBaselineGetsNoBaselineScore() {
+        // 近窗有点、基线窗空（新用户）：mle-v2 = performanceNoBaselineScore（0，
+        // 强度维度零证据；保守表达由置信封顶承担）+ noBaselineWindow 如实
         let points: [(String, Double)] = [("2026-06-22", 90), ("2026-07-06", 95)]
         let c = MuscleLevelEstimator.compute(
             observations: observations(weeklySets: [10, 10, 10], sessions: 6, e1rm: points),
             config: config, nowISO: "2026-07-07")
-        XCTAssertEqual(c.breakdown.performanceScore, config.performanceBaseScore)
+        XCTAssertEqual(c.breakdown.performanceScore, config.performanceNoBaselineScore)
         XCTAssertTrue(c.limitations.contains(MuscleLevelLimitation(code: "noBaselineWindow")))
     }
 
@@ -224,14 +225,17 @@ final class MuscleLevelEstimatorTests: XCTestCase {
         XCTAssertEqual(sparse.breakdown.consistencyScore, config.consistencyScoreMax * 2 / 6, accuracy: 0.001)
     }
 
-    func testScoringConfigV1Anchors() {
+    func testScoringConfigCurrentAnchors() {
+        // mle-v2 全量锚（MLE-8 首轮校准 2026-07-08）：改任何常数必须来这里对账
+        XCTAssertEqual(config.modelVersion, "mle-v2")
         XCTAssertEqual(config.effectiveSetsTier1Cap, 10)
         XCTAssertEqual(config.effectiveSetsTier2Cap, 18)
         XCTAssertEqual(config.effectiveSetsTier2Rate, 0.7)
         XCTAssertEqual(config.effectiveSetsTier3Rate, 0.5)
-        XCTAssertEqual(config.exposureFullScoreWeeklyEffectiveSets, 15)
+        XCTAssertEqual(config.exposureFullScoreWeeklyEffectiveSets, 20)   // v2: 15→20
         XCTAssertEqual(config.exposureScoreMax, 60)
         XCTAssertEqual(config.performanceBaseScore, 15)
+        XCTAssertEqual(config.performanceNoBaselineScore, 0)              // v2 新增
         XCTAssertEqual(config.performancePerTenPercentGain, 7.5)
         XCTAssertEqual(config.performanceScoreMax, 30)
         XCTAssertEqual(config.performanceMinPoints, 2)
@@ -240,9 +244,70 @@ final class MuscleLevelEstimatorTests: XCTestCase {
         XCTAssertEqual(config.consistencyScoreMax, 5)
         XCTAssertEqual(config.levelCurveLinear, 1.0)
         XCTAssertEqual(config.levelCurveQuadratic, 0.2)
+        XCTAssertEqual(config.lowConfidenceLevelCap, 5)                   // v2 新增
+        XCTAssertEqual(config.mediumConfidenceLevelCap, 10)               // v2 新增
     }
 
     // MARK: 确定性
+
+    // MARK: MLE-8 校准精修（mle-v2，2026-07-08 owner 真机 E3 反馈「3 场 Lv.9 太快」）
+
+    func testNoBaselinePerformanceIsZeroInV2() {
+        // v2 反转 v1 拍板：无基线=强度维度零证据=0 分（v1 的 base 15 白送是
+        // 「3 场 Lv.9-12」三因素之一）；limitation 仍如实标 noBaselineWindow
+        let obs = observations(weeklySets: [12, 12], sessions: 3,
+                               e1rm: [("2026-07-01", 80), ("2026-07-06", 82)])
+        let result = MuscleLevelEstimator.compute(observations: obs, config: config, nowISO: "2026-07-07")
+        XCTAssertEqual(result.breakdown.performanceScore, 0)
+        XCTAssertTrue(result.limitations.contains { $0.code == "noBaselineWindow" })
+    }
+
+    func testLowConfidenceLevelCapAppliesWithEvidence() {
+        // 3 场/2 周高容量：分数够更高，但 low confidence 封顶 Lv.5（§3.4 行为表达）；
+        // progress 顶格 1（分数已超、等数据解锁——不是「刚进入此级」）+ 专用 evidence
+        let obs = observations(weeklySets: [24, 24], sessions: 3, families: 2)
+        let result = MuscleLevelEstimator.compute(observations: obs, config: config, nowISO: "2026-07-07")
+        XCTAssertEqual(result.confidence, .low)
+        XCTAssertEqual(result.level, config.lowConfidenceLevelCap)
+        XCTAssertEqual(result.progress, 1)
+        XCTAssertTrue(result.evidence.contains { $0.code == "confidenceLevelCapApplied" })
+        XCTAssertGreaterThan(result.curveLevel, result.level)   // 原始曲线级保留（balance 用）
+    }
+
+    func testMediumConfidenceLevelCap() {
+        // 6 周稳定（medium）：封顶 Lv.10——「进阶初期→中级门口」的可信上限
+        let obs = observations(weeklySets: [20, 20, 20, 20, 20, 20], sessions: 8, families: 2)
+        let result = MuscleLevelEstimator.compute(observations: obs, config: config, nowISO: "2026-07-07")
+        XCTAssertEqual(result.confidence, .medium)
+        XCTAssertEqual(result.level, config.mediumConfidenceLevelCap)
+        XCTAssertTrue(result.evidence.contains { $0.code == "confidenceLevelCapApplied" })
+    }
+
+    func testHighConfidenceHasNoCap() {
+        // high（12 场/36 组/3 族）：分数说话，cap 放开；未触 cap 时无该 evidence
+        let obs = observations(weeklySets: [26, 26, 26, 26, 26, 26], sessions: 12, families: 3,
+                               e1rm: [("2026-01-12", 80), ("2026-07-06", 88)])
+        let result = MuscleLevelEstimator.compute(observations: obs, config: config, nowISO: "2026-07-07")
+        XCTAssertEqual(result.confidence, .high)
+        XCTAssertGreaterThan(result.level, config.mediumConfidenceLevelCap)
+        XCTAssertFalse(result.evidence.contains { $0.code == "confidenceLevelCapApplied" })
+    }
+
+    func testCapNotAppliedWhenScoreAlreadyBelow() {
+        // 分数本来低于 cap：正常曲线级 + 正常 progress（cap 只封不抬、不出假 evidence）
+        let obs = observations(weeklySets: [3, 3], sessions: 3, families: 1)
+        let result = MuscleLevelEstimator.compute(observations: obs, config: config, nowISO: "2026-07-07")
+        XCTAssertLessThan(result.level, config.lowConfidenceLevelCap)
+        XCTAssertLessThan(result.progress, 1)
+        XCTAssertFalse(result.evidence.contains { $0.code == "confidenceLevelCapApplied" })
+    }
+
+    func testRealDeviceScenarioThreeSessionsLandsAtCap() {
+        // 真机复现锚：3 场 upper/2 ISO 周（back 一场 ~12 raw）在 v1 = Lv.9-12 → v2 = Lv.5
+        let obs = observations(weeklySets: [12, 24], sessions: 3, families: 2)
+        let result = MuscleLevelEstimator.compute(observations: obs, config: config, nowISO: "2026-07-07")
+        XCTAssertEqual(result.level, 5)
+    }
 
     func testDeterministicOutput() {
         let obs = observations(weeklySets: [8, 10, 12], sessions: 7,

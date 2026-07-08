@@ -679,11 +679,12 @@ public struct MuscleDevelopmentProfile: Equatable, Sendable {
 - `peakLevel`: 由历史已确认 `currentLevel` 派生。**写入合同已定义（2026-07-07 批次 B2）**: `MuscleLevelMemory`(RedeLocalSnapshot) derived-only JSON(canonical 同目录 muscle-level-memory.json,schema 版本化、未知版本拒读、decode 失败=如实「无记忆」从零校准、atomic 写);只记已解锁肌群;写侧 peaks 逐键 max 合并(并发竞写/回退校准两场景峰值都不丢);levels/tier 快照语义最后写者胜。绝不读写 canonical。
 - `overallTier`: 由多个肌群等级、训练一致性、关键动作 milestone、balanceScore、confidence 和 safety limitation 推导;不能由用户 profile 的 trainingLevel 直接决定。
 
-V1 计分/曲线锚(2026-07-07 批次 A,全部集中在 `MuscleLevelModelConfig.v1`,modelVersion `mle-v1`):
+现役计分/曲线锚(全部集中在 `MuscleLevelModelConfig.current`;**mle-v2** = MLE-8 首轮校准 2026-07-08——owner 真机 E3 反馈「3 场 Lv.9 太快」,三项收紧):
 
-- 等级阈值曲线 `T(n) = n + 0.2n²`(前快后慢,Lv.20 = 100 分);`level(forScore:)` bottom 桶 floor 恒 0,防低分区进度回跳。
-- V1 只实打两个子分数: exposureScore(满分 60,有效组数 × 频率折减 `min(记录周数/6, 1)`,防单周暴量刷级)+ performanceScore(base 15,e1RM 每 +10% 加 7.5,满分 30;新用户无基线 = base 15 + noBaselineWindow limitation,停练出窗 = 0 + noRecentWindow)。其余六个子分数 V1 恒 0 占位,breakdown 结构已按 §6.5.7 全量落型。
-- 校准解锁: 3 次相关训练**或** 8 个有效工作组(§6.5.6 minimumCalibration 的「或」口径)。
+- 等级阈值曲线 `T(n) = n + 0.2n²`(前快后慢,Lv.20 = 100 分);`level(forScore:)` bottom 桶 floor 恒 0,防低分区进度回跳。(曲线 v2 未动)
+- 两个实打子分数: exposureScore(满分 60,有效组数 × 频率折减 `min(记录周数/6, 1)`,防单周暴量刷级;**满分锚 v2: 周均 15 → 20 有效组**——每周两练的扎实量才拿满)+ performanceScore(base 15,e1RM 每 +10% 加 7.5,满分 30;**新用户无基线 v2: base 15 → 0**——强度维度零证据不给分,推翻 v1「中性 base」拍板,此 0 非罚分、新用户保守表达由置信封顶承担;停练出窗 = 0 + noRecentWindow)。其余六个子分数恒 0 占位,breakdown 结构已按 §6.5.7 全量落型。
+- **置信等级封顶(v2 新增,§3.4「低可信→判断更保守」的等级面)**: low 封 Lv.5(beginner 顶)、medium 封 Lv.10、high 放开;命中时 progress 顶格 1(分数已超、等数据解锁,非「刚进入此级」)+ `confidenceLevelCapApplied` evidence 供依据行解释(「数据量还撑不起更高等级」)。**milestone floor 在组装层后应用、胜过封顶**——实测成就(如卧推 100kg)不被数据量保守压制(有意排序,测试锁定)。校准后观感锚: 3 场 ≈ Lv.5、6 周稳定 ≈ Lv.10、12 周高置信高容量起分数说话。
+- 校准解锁: 3 次相关训练**或** 8 个有效工作组(§6.5.6 minimumCalibration 的「或」口径,v2 未动)。
 - milestone floor 抬底命中时 `levelProgress` 置 0 并打 `milestoneFloorApplied` evidence——曲线级进度对抬底后等级无意义,如实归零而非展示假进度。
 
 等级降级规则:

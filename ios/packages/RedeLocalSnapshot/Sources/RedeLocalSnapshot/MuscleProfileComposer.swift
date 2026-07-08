@@ -72,7 +72,7 @@ public enum MuscleProfileComposer {
         }
     }
 
-    public static func compose(_ input: Input, config: MuscleLevelModelConfig = .v1) -> MuscleDevelopmentProfile {
+    public static func compose(_ input: Input, config: MuscleLevelModelConfig = .current) -> MuscleDevelopmentProfile {
         let weekly = MuscleVolumeAggregator.weeklyFractionalSets(rows: input.rows)
         // 触达/性能行按肌群分桶：rawValue 解析失败（持久层脏键/未来新增值）如实丢弃不崩。
         var sessionsByMuscle: [MuscleGroupID: Set<String>] = [:]

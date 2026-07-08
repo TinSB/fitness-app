@@ -177,10 +177,10 @@ public enum MuscleProfileAssembler {
                 limitations: comp.limitations))
         }
 
-        // balance 用未抬底的曲线级：milestone 是强度成就、不是训练覆盖证据——同一 floor
-        // 套满 linked muscles 会压平方差把「只练卧推」美化成「完美均衡」，违契约
-        // §6.5.5「不能强行美化」（审查 M2）。tier/中位吃 floor、balance 不吃，语义拆分。
-        let balance = balanceScore(unlockedLevels: unlocked.map(\.level), config: config)
+        // balance 一律用修饰前曲线级（floor 不吃、cap 也不吃，mle-v2 统一）：floor 向上
+        // 拉平（「只练卧推」美化成完美均衡，审查 M2）、cap 向下压平（新用户全 Lv.5 方差
+        // 归零假均衡，v2 实拍抓获）——两个方向都违「不能强行美化」。tier/中位吃修饰级。
+        let balance = balanceScore(unlockedLevels: unlocked.map(\.curveLevel), config: config)
         // 严格进步信号（审查 MODERATE：holding=「没退步」≠契约「稳定 e1RM 进步」）
         let progressSignal = unlocked.contains { comp in
             comp.evidence.contains { $0.code == "e1rmRising" } || comp.breakdown.milestoneScore > 0

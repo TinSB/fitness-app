@@ -37,10 +37,11 @@ final class MuscleLevelTypesTests: XCTestCase {
         XCTAssertEqual(EstimateConfidence.allCases.map(\.rawValue), ["low", "medium", "high"])
     }
 
-    // §6.5.6 起点值照录（V1 模型常量，待真实数据校准——集中 Config 便于 modelVersion 纪律）。
-    func testModelConfigV1Anchors() {
-        let c = MuscleLevelModelConfig.v1
-        XCTAssertEqual(c.modelVersion, "mle-v1")
+    // 现役模型常量锚（mle-v2 = MLE-8 首轮校准 2026-07-08；计分/曲线/封顶锚在
+    // MuscleLevelEstimatorTests.testScoringConfigCurrentAnchors，此处锁窗口/校准/置信维度）。
+    func testModelConfigCurrentAnchors() {
+        let c = MuscleLevelModelConfig.current
+        XCTAssertEqual(c.modelVersion, "mle-v2")
         XCTAssertEqual(c.recentWindowWeeks, 6)
         XCTAssertEqual(c.baselineWindowWeeks, 24)
         XCTAssertEqual(c.calibrationMinSessions, 3)
@@ -98,19 +99,19 @@ final class MuscleLevelTypesTests: XCTestCase {
             estimates: [estimate], overallTier: .beginner, balanceScore: nil,
             strongestMuscleIds: [.chest], priorityMuscleIds: [],
             strengthMilestones: [], breakthroughs: [],
-            generatedAtIso: "2026-07-07", modelVersion: MuscleLevelModelConfig.v1.modelVersion)
+            generatedAtIso: "2026-07-07", modelVersion: MuscleLevelModelConfig.current.modelVersion)
         // 两次独立构造字段全同 → 相等；改一个字段 → 不等（真区分度，非重言式）
         let profileTwin = MuscleDevelopmentProfile(
             estimates: [estimate], overallTier: .beginner, balanceScore: nil,
             strongestMuscleIds: [.chest], priorityMuscleIds: [],
             strengthMilestones: [], breakthroughs: [],
-            generatedAtIso: "2026-07-07", modelVersion: MuscleLevelModelConfig.v1.modelVersion)
+            generatedAtIso: "2026-07-07", modelVersion: MuscleLevelModelConfig.current.modelVersion)
         XCTAssertEqual(profile, profileTwin)
         let profileOtherTier = MuscleDevelopmentProfile(
             estimates: [estimate], overallTier: .intermediate, balanceScore: nil,
             strongestMuscleIds: [.chest], priorityMuscleIds: [],
             strengthMilestones: [], breakthroughs: [],
-            generatedAtIso: "2026-07-07", modelVersion: MuscleLevelModelConfig.v1.modelVersion)
+            generatedAtIso: "2026-07-07", modelVersion: MuscleLevelModelConfig.current.modelVersion)
         XCTAssertNotEqual(profile, profileOtherTier)
         XCTAssertEqual(profile.estimates.first?.muscleId, .chest)
     }

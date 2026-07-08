@@ -100,7 +100,7 @@ final class MuscleMilestoneCatalogTests: XCTestCase {
         isCalibrating: Bool = false
     ) -> MuscleLevelComputation {
         MuscleLevelComputation(
-            muscleId: muscle, isCalibrating: isCalibrating, level: level,
+            muscleId: muscle, isCalibrating: isCalibrating, level: level, curveLevel: level,
             progress: progress, confidence: .medium,
             breakdown: MuscleLevelScoreBreakdown(
                 exposureScore: 30, performanceScore: 15, milestoneScore: 0, progressionScore: 0,
@@ -130,7 +130,7 @@ final class MuscleMilestoneCatalogTests: XCTestCase {
         return MuscleProfileAssembler.assemble(
             computations: comps, observations: makeObservations([.chest, .back, .quads]),
             previousLevels: [:], previousPeaks: [:], previousTier: nil,
-            generatedAtIso: "2026-07-08", config: .v1, milestones: milestones)
+            generatedAtIso: "2026-07-08", config: .current, milestones: milestones)
     }
 
     func testAssembleAppliesMilestoneFloorAndSignal() {

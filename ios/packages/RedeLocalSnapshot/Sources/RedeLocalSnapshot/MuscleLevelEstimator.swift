@@ -46,6 +46,10 @@ public struct MuscleLevelComputation: Equatable, Sendable {
     public let muscleId: MuscleGroupID
     public let isCalibrating: Bool
     public let level: Int
+    /// 修饰前曲线级（置信封顶/milestone floor 都不吃）：balance 的唯一输入——
+    /// cap 把「全压到 5」的方差归零当均衡=假均衡（mle-v2 实拍抓获），与 floor
+    /// 「不能强行美化」同款语义，balance 一律看原始曲线级。
+    public let curveLevel: Int
     public let progress: Double
     public let confidence: EstimateConfidence
     public let breakdown: MuscleLevelScoreBreakdown
@@ -145,7 +149,8 @@ public enum MuscleLevelEstimator {
             limitations.append(MuscleLevelLimitation(code: "shortHistory"))
             return MuscleLevelComputation(
                 muscleId: observations.muscleId, isCalibrating: true,
-                level: config.levelRange.lowerBound, progress: 0,
+                level: config.levelRange.lowerBound, curveLevel: config.levelRange.lowerBound,
+                progress: 0,
                 confidence: .low, breakdown: breakdown,
                 evidence: evidence, limitations: limitations)
         }
@@ -164,10 +169,26 @@ public enum MuscleLevelEstimator {
             confidence = .low
         }
 
-        let (level, progress) = level(forScore: breakdown.total, config: config)
+        let (curveLevel, curveProgress) = level(forScore: breakdown.total, config: config)
+        // 置信等级封顶（mle-v2，§3.4 行为表达）：数据量撑不起的高等级不出——low 封
+        // beginner 顶、medium 封 intermediate 门口、high 放开。命中时 progress 顶格 1
+        //（分数已超、等数据解锁——非「刚进入此级」）+ 专用 evidence 供依据行解释；
+        // milestone floor 在组装层后应用，实测成就胜过数据量保守（有意排序）。
+        let cap: Int
+        switch confidence {
+        case .high: cap = config.levelRange.upperBound
+        case .medium: cap = config.mediumConfidenceLevelCap
+        case .low: cap = config.lowConfidenceLevelCap
+        }
+        let capped = min(curveLevel, cap)
+        if capped < curveLevel {
+            evidence.append(MuscleLevelEvidence(code: "confidenceLevelCapApplied",
+                                                muscleId: observations.muscleId))
+        }
         return MuscleLevelComputation(
             muscleId: observations.muscleId, isCalibrating: false,
-            level: level, progress: progress,
+            level: capped, curveLevel: curveLevel,
+            progress: capped < curveLevel ? 1 : curveProgress,
             confidence: confidence, breakdown: breakdown,
             evidence: evidence, limitations: limitations)
     }
@@ -202,12 +223,13 @@ public enum MuscleLevelEstimator {
             return 0
         }
         guard let baseline = baselinePeak, baseline > 0 else {
-            // 新用户：近窗在练、基线窗尚未积累——「自己 vs 自己」无变化视作维持，
-            // 给中性 base 分而非 0（0 = 按被追踪时长扣分 15%，与 balanceScore nil
-            // 的「数据不足不编也不罚」原则冲突；审查 MODERATE，收口规格写回）。
+            // 新用户：近窗在练、基线窗尚未积累。mle-v2 反转 v1 的「中性 base 15」拍板
+            //（owner 真机 E3：base 白送是「3 场 Lv.9-12」三因素之一）——强度维度零证据
+            // = 0 分；这不是罚分：新用户的保守等级表达由置信封顶承担（compute 尾部），
+            // 语义与 balanceScore nil「不编也不罚」重新对齐。
             _ = recent
             limitations.append(MuscleLevelLimitation(code: "noBaselineWindow"))
-            return config.performanceBaseScore
+            return config.performanceNoBaselineScore
         }
         let ratio = recent / baseline
         let score = config.performanceBaseScore
