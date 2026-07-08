@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-07-08 · Build 16 archive：mle-v2 校准进包（1.1 build 16）
+
+**用户目标**：owner 拍板「再 archive 一个 build 16」——MLE-8 校准精修（mle-v2）进 TestFlight 复验观感。
+
+**做了什么**：CURRENT_PROJECT_VERSION 15 → **16**（app + widget 4 处，MARKETING 1.1 不动）；基于 #675 命令行 archive，先核 pbxproj 再打包。
+
+**证据**：ARCHIVE SUCCEEDED；PlistBuddy 实证 app/widget 均 **1.1 (16)**；落 Organizer 标准目录（Archives/2026-07-08/Rede-1.1-16.xcarchive）。PR #676。
+
+**下一步**：owner 上传 ASC → TestFlight；真机复验一件事——新账号练 3 场「发展」区块应全线 Lv.5、依据行出现「数据量还撑不起更高等级」。
+
+---
+
 ## 2026-07-08 · MLE-8 校准精修（mle-v2）：真机「3 场 Lv.9 太快」→ 3 场 Lv.5
 
 **用户目标**：owner 真机确认「Lv.9 确实太快了，开 MLE-8 精修吧」——等级曲线观感校准（批次 B 收口时标记的第一优先残留项）。
