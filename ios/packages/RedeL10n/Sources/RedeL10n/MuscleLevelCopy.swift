@@ -29,7 +29,7 @@ public enum MuscleDecisionLabel: String, CaseIterable, Equatable, Sendable {
 }
 
 /// evidence/limitation code 的人话翻译键（引擎 code 字符串 → 依据行；app 层映射）。
-/// 九个 code 与引擎产出全集一一对应（审查 M4：漏配=依据行静默丢失，测试全量锁）。
+/// 十个 code 与引擎产出全集一一对应（mle-v2 增 confidenceLevelCapApplied；漏配=依据行静默丢失，测试全量锁）。
 public enum MuscleEvidenceLabel: String, CaseIterable, Equatable, Sendable {
     case exposureRecentSets
     case e1rmRising, e1rmHolding, e1rmDeclining
