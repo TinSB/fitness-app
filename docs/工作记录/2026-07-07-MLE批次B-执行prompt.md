@@ -41,6 +41,13 @@ ProgressModel 挂 `muscleProfile` 字段（Development UI 的唯一读点）。
 **测试锚**：decode 失败/缺文件=空记忆不崩；peak max 单调跨次生效（种子两轮：升→降，peak 保留）；breakthrough 首解锁不触发、真升级触发；写失败静默不阻断渲染。
 
 ### B3 Development 块 UI 解封（FR-PR6 + FR-PL5 展示级）
+> **执行中收敛（2026-07-07；独立审查 M1/M2 对照本段原稿后同步改写，收口写回 §6.5.11）**：
+> ① maintain **不出**语义标签——多数行全贴「维持即可」=标签噪音（去 AI 感批次刚清理过同类重复），等级本身就是维持的表达；标签只给 prioritize 与 recover。
+> ② recover 按 trend 拆两条：detraining（只是没练）=「先找回节奏」；「恢复优先」留给未来 pain/safety 喂数接入——避免误读成伤病信号。
+> ③ Development 块**不重复渲染里程碑徽标**——同页下方 FR-PR7 区块已是里程碑面，MLE floor 影响由展开依据行（milestoneFloorApplied）表达；删>加。
+> ④ 校准态收敛为「全员校准=一句文案；部分解锁=解锁行亮 + 其余折叠一行」——不列 10 行灰（空态克制）。
+
+原稿（供对照）：
 ProgressTabView 新 Development 区块（0 卡公理：RoundedRectangle 面）：
 - 校准态：灰阶行 +「正在校准肌群等级 · 再练 N 场解锁」（§6.5.9 #3）；逐肌群独立解锁（有的亮有的灰）。
 - 解锁态：肌群名 + Lv.N + 进度条 + decision 语义行（prioritize=·正在补足 / maintain 强项=·维持即可 / recover=·恢复优先；insufficientData 不出语义行）+ trend 箭头。

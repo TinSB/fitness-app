@@ -324,7 +324,7 @@ struct SettingsSheet: View {
                     plateDivider
                     plateRow(s.onbEquipLabel, profile?.equipmentScenario.map { s.onbEquipOption($0).title }, question: .equipment)
                     plateDivider
-                    plateRow(s.onbLevelLabel, profile?.trainingLevel.map { s.onbLevelOption($0).title }, question: .level)
+                    plateRow(s.settingsSelfReportedBackgroundLabel, profile?.trainingLevel.map { s.onbLevelOption($0).title }, question: .level)  // 自报输入≠系统等级（FR-PR6 上线后区分，§6.5.14）
                 }
                 .padding(.vertical, 5)
                 .padding(.horizontal, 16)
