@@ -31,6 +31,13 @@ public enum TodayPrescriptionEngine {
     private static let bodyweightRepFloor = 8
     private static let bodyweightRepStep = 2
     private static let lightMultiplier = 0.9
+    // 回归协议（2026-07-08，owner 真机 E3）：重启线 21 天 = MLE detraining 窗同源；
+    // 深回退线 42 天 = MLE 强度失窗（recentWindowWeeks 6 周）同源。写闸清 offset
+    // 残值用同阈值（跨包重复常数，dayNumber 孪生同款纪律，CanonicalSessionWriter 互指）。
+    static let comebackRestartGapDays = 21
+    static let comebackDeepGapDays = 42
+    private static let comebackRestartMultiplier = 0.85
+    private static let comebackDeepMultiplier = 0.75
     private static let deloadMultiplier = 0.8
 
     /// 槽位 = 生成规则：按 pattern（可选 kind/equipment 收窄）在 catalog
@@ -383,11 +390,18 @@ public enum TodayPrescriptionEngine {
         // FR-PL7② 自定义日序：override 须为默认日序的排列，否则回退默认（resolvedDaySequence 内守卫）。
         // 默认（override=nil）逐字节等价于现状。
         let sequence = resolvedDaySequence(splitType: input.program.splitType, override: customization.daySequence)
-        // 轮转 = 序列[(场次数 + 偏移) % 长度]。FR-TR7 临时换天那场完成时偏移 −1 抵消推进 → 跳过的日下一场补回。
-        // 默认 rotationOffset=0 逐字节等价现状（golden 零回归）。
-        let rotated = sequence[((input.sessions.count + rotationOffset) % sequence.count + sequence.count) % sequence.count]
+        // 轮转 = 序列[(自最近重启点的场次数 + 偏移) % 长度]。FR-TR7 临时换天那场完成时偏移 −1
+        // 抵消推进 → 跳过的日下一场补回。回归协议（2026-07-08）：重启点 = 与前一场日期差
+        // ≥comebackRestartGapDays 的场——其后轮换重新计数（无状态：每次从历史扫描；
+        // 无重启点 = 场次数全量，逐字节等价现状，golden 零回归）。
+        let sinceRestart = sessionsSinceLastRestartPoint(sessions: input.sessions)
+        let rotated = sequence[((sinceRestart + rotationOffset) % sequence.count + sequence.count) % sequence.count]
+        // 今天本身停练 ≥重启线：无论旧指针在哪，回序列头重启（三周指针已无上下文意义）。
+        let restartToday = (verdict.longGapDays ?? 0) >= comebackRestartGapDays
         // FR-TR7「今天换一天练」：今日临时覆盖优先（须为本日序合法成员，否则回退轮转）。默认 nil = 现状。
-        let dayCode = dayCodeOverride.flatMap { sequence.contains($0) ? $0 : nil } ?? rotated
+        // 优先级：用户显式换天 > 回归重启 > 轮转（决策在用户）。
+        let dayCode = dayCodeOverride.flatMap { sequence.contains($0) ? $0 : nil }
+            ?? (restartToday ? sequence[0] : rotated)
 
         // FR-EQ1（2026-06-11）：场景白名单硬过滤候选；槽位 equipment/machine-kind
         // 偏好与白名单冲突时软化（保 pattern 在可用器械里匹配），槽位无解=如实 unfilled。
@@ -458,6 +472,9 @@ public enum TodayPrescriptionEngine {
         case .deload: dayReasons.append(.verdictDeloadReduced)
         case .train, .rest: break
         }
+        if restartToday, dayCodeOverride == nil {
+            dayReasons.append(.comebackCycleRestart)   // 循环已重启（回归协议）
+        }
 
         return TodayPrescription(dayCode: dayCode, exercises: exercises, dayReasons: dayReasons)
     }
@@ -527,8 +544,11 @@ public enum TodayPrescriptionEngine {
                 targetReps = slot.repMin
                 change = .ease
                 reason = .belowRepFloor
-            } else if last.minReps >= slot.repMax, last.minRir.map({ $0 >= progressMinMeanRir }) ?? true {
+            } else if last.minReps >= slot.repMax, last.minRir.map({ $0 >= progressMinMeanRir }) ?? true,
+                      verdict.longGapDays == nil {
                 // 无上限：精英重量的 +一档 是合法递增，有意不设 cap。
+                // 回归压制（2026-07-08）：停练 ≥14 天时本分支不进——上上次的满分不是
+                // 今天加重的依据，持平回场（叠加 light 分档回退），渐进从这场重启。
                 baseWeight = LoadGrid.nextRungKg(last.topWeightKg, equipment: equip, unit: unit, up: true)
                 targetReps = slot.repMin
                 change = .increase
@@ -567,7 +587,7 @@ public enum TodayPrescriptionEngine {
         }
         switch verdict.call {
         case .light:
-            weight = modulated(base: weight, multiplier: lightMultiplier, equipment: equip, unit: unit)
+            weight = modulated(base: weight, multiplier: comebackAwareLightMultiplier(verdict: verdict), equipment: equip, unit: unit)
         case .deload:
             weight = modulated(base: weight, multiplier: deloadMultiplier, equipment: equip, unit: unit)
             sets = max(2, sets - 1)
@@ -725,7 +745,9 @@ public enum TodayPrescriptionEngine {
                 targetReps = slot.repMin
                 change = .ease
                 reason = .belowRepFloor
-            } else if last.minReps >= slot.repMax, last.minRir.map({ $0 >= progressMinMeanRir }) ?? true {
+            } else if last.minReps >= slot.repMax, last.minRir.map({ $0 >= progressMinMeanRir }) ?? true,
+                      verdict.longGapDays == nil {
+                // 回归压制（2026-07-08 审查 S1）：减辅助=变难，与收据句「重量先回落」矛盾
                 let nextAssist = last.topWeightKg - step     // 变强 → 减辅助一档
                 if nextAssist < step {
                     // 减到最小一片以下 = 不再需要辅助 → 自动毕业换自重孪生
@@ -849,7 +871,9 @@ public enum TodayPrescriptionEngine {
                     change = .ease
                     reason = easeReason
                 }
-            } else if last.minReps >= slot.repMax, last.minRir.map({ $0 >= progressMinMeanRir }) ?? true {
+            } else if last.minReps >= slot.repMax, last.minRir.map({ $0 >= progressMinMeanRir }) ?? true,
+                      verdict.longGapDays == nil {
+                // 回归压制（2026-07-08 审查 S1）：同 external——停练回来不加负重
                 baseLoad = last.topWeightKg + step   // 变强 → 加负重一档（无上限）
                 targetReps = slot.repMin
                 change = .increase
@@ -880,7 +904,7 @@ public enum TodayPrescriptionEngine {
         }
         switch verdict.call {
         case .light:
-            weight = modulated(base: weight, multiplier: lightMultiplier, equipment: "barbell", unit: unit)
+            weight = modulated(base: weight, multiplier: comebackAwareLightMultiplier(verdict: verdict), equipment: "barbell", unit: unit)
         case .deload:
             weight = modulated(base: weight, multiplier: deloadMultiplier, equipment: "barbell", unit: unit)
             sets = max(2, sets - 1)
@@ -951,6 +975,29 @@ public enum TodayPrescriptionEngine {
             }
         }
         return result
+    }
+
+    /// 回归协议：light 乘数按停练时长分档（14-20 ×0.9 / 21-41 ×0.85 / ≥42 ×0.75——
+    /// 4 周停练力量降约 5-10%、8 周约 15%，取保守侧；非回归 light 保持 ×0.9）。
+    private static func comebackAwareLightMultiplier(verdict: TodayVerdict) -> Double {
+        guard let gap = verdict.longGapDays else { return lightMultiplier }
+        if gap >= comebackDeepGapDays { return comebackDeepMultiplier }
+        if gap >= comebackRestartGapDays { return comebackRestartMultiplier }
+        return lightMultiplier
+    }
+
+    /// 回归协议：自最近重启点（与前一场日期差 ≥ 重启线的场）以来的场次数。
+    /// 无重启点 = 全量场次数（现状等价）。日期不可解析的场保守计入全量。
+    private static func sessionsSinceLastRestartPoint(sessions: [CleanTrainingSession]) -> Int {
+        let days = sessions.compactMap { TrainingDay.dayNumber(fromISO: $0.date) }.sorted()
+        guard days.count > 1 else { return sessions.count }
+        var lastRestartIndex = 0
+        for index in 1..<days.count where days[index] - days[index - 1] >= comebackRestartGapDays {
+            lastRestartIndex = index
+        }
+        // 解析失败的场不进 days——按全量口径补回差额，保守不虚减
+        let unparsed = sessions.count - days.count
+        return days.count - lastRestartIndex + unparsed
     }
 
     private static func lastPerformance(

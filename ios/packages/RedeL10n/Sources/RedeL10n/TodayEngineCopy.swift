@@ -149,13 +149,20 @@ extension RedeStrings {
         }
     }
 
-    /// 收据结论句。
-    public func receiptConclusion(call: String, reasonCode: String) -> String {
+    /// 收据结论句。gapDays 供回归分档（默认 nil = 既有调用不变）。
+    public func receiptConclusion(call: String, reasonCode: String, gapDays: Int? = nil) -> String {
         switch (call, reasonCode) {
         case ("train", "noHistoryCalibration"):
             return t2("首次训练，全部动作从轻起步", "First session, every lift starts light")
         case ("train", _):
             return t2("按计划推进，照上次表现微调", "On plan, tuned to your last session")
+        case ("light", "longGapReentry"):
+            // 回归协议（2026-07-08）：告别通用「降一档」——回归场景说人话。
+            // ≥21 天：循环已重启+重量回落；14-20 天：先找回感觉（两拍全角空格，§3.4）
+            let days = gapDays.map(String.init) ?? "—"
+            return (gapDays ?? 0) >= 21
+                ? t2("停练 \(days) 天　循环从头开始，重量先回落", "\(days) days away. Cycle restarts from day one, weights eased back")
+                : t2("停练 \(days) 天　这场先找回感觉", "\(days) days away. This one is about finding your groove")
         case ("light", _):
             return t2("今天整体降一档", "Everything one notch lighter today")
         case ("rest", _):
@@ -181,7 +188,7 @@ extension RedeStrings {
     /// Widget 短理由：有处方走收据结论句（与今日页判断行同句）；无处方（休息等）走判断句。
     public func widgetAdvice(call: String, reasonCode: String, dayName: String, gapDays: Int?, consecutiveDays: Int?, hasPlan: Bool) -> String {
         hasPlan
-            ? receiptConclusion(call: call, reasonCode: reasonCode)
+            ? receiptConclusion(call: call, reasonCode: reasonCode, gapDays: gapDays)
             : verdictHeadline(call: call, reasonCode: reasonCode, dayName: dayName, gapDays: gapDays, consecutiveDays: consecutiveDays)
     }
 

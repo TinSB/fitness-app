@@ -11,6 +11,7 @@
 // 实例、串行调用）。并发的 load-modify-write 会丢更新；引入异步调用路径前必须
 // 先给本层加隔离（actor/队列）并修订此合同。
 
+import Foundation
 import RedeDomain
 
 public protocol AppDataWriteGate {
@@ -94,6 +95,10 @@ public struct CanonicalSessionWriter {
                 throw CanonicalWriteError.duplicateSessionId(sessionId)
             }
             var storage = current.storage
+            // 回归协议（审查 M3）：快照本次写之前的偏移——重启清零只清「历史残值」，
+            // 不吞同一次写内 FR-TR7 刚产生的换天补偿（重启日用户换天，被跳过的
+            // 序列头下一场仍要补回）。
+            let offsetBeforeThisWrite = storage["rotationOffset"]?.asInt ?? 0
             var history = storage["history"]?.asArray ?? []
             history.append(.object(session.storage))
             storage["history"] = .array(history)
@@ -106,8 +111,36 @@ public struct CanonicalSessionWriter {
                 storage["rotationOffset"] = .int(Int64(offset))
                 storage["oneTimeDayOverride"] = nil
             }
+            // 回归协议（2026-07-08）：本场与已有历史最后一场日期差 ≥21 天 = 重启场——
+            // 引擎轮换自重启点无状态重新计数（扫描历史），此处清 rotationOffset 残值
+            //（FR-TR7 换天累计的旧偏移在「从头开始」语义下应归零）。阈值与引擎
+            // TodayPrescriptionEngine.comebackRestartGapDays 同值（跨包重复常数，
+            // dayNumber 孪生同款纪律）。日期解析失败保守不动（不误清用户偏移）。
+            if let sessionDate = session.date,
+               let lastDate = current.history.compactMap({ $0.date }).max(),
+               let gapDays = Self.daysBetween(lastDate, sessionDate), gapDays >= 21 {
+                // 只清写前残值：新值 = 本次写内新增量（TR7 的 0 或 -1），残值部分归零。
+                // 注：history 为 raw 层（date 未经 Clean 校验）——脏日期解析失败时
+                // daysBetween=nil 保守不清（失败方向安全，审查 m4 留痕）。
+                let currentOffset = storage["rotationOffset"]?.asInt ?? 0
+                let freshDelta = currentOffset - offsetBeforeThisWrite
+                if freshDelta != currentOffset {
+                    storage["rotationOffset"] = .int(Int64(freshDelta))
+                }
+            }
             return try AppData(decoding: .object(storage))
         }
+    }
+
+    /// 回归协议：两个 yyyy-MM-dd 本地日的天数差（b - a）。解析失败 = nil（调用方保守不动）。
+    private static func daysBetween(_ a: String, _ b: String) -> Int? {
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        fmt.timeZone = TimeZone(identifier: "UTC")
+        fmt.dateFormat = "yyyy-MM-dd"
+        guard let da = fmt.date(from: String(a.prefix(10))),
+              let db = fmt.date(from: String(b.prefix(10))) else { return nil }
+        return Int(db.timeIntervalSince(da) / 86_400)
     }
 
     /// 已批准写入类别：引导答案 + 首版模板（M5-1）。

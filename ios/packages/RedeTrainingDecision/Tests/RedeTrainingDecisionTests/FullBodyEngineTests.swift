@@ -1,5 +1,7 @@
 // 全身模式（2-3 天，循证频率映射 2026-06-16）：full-body → full-a/b/c 三变式轮换，
 // 每日覆盖全身（股四/后链/胸/背/肩/臂），三变式主项互不相同。每肌群 2-3×/周由「每次都练全身」达成。
+// 回归协议（2026-07-08）：todayISO 拉近种子历史（原 2026-06-16 距最后一场 ≥21 天，
+// 无意触发停练重启改变轮换指针——本测试意图是轮换/点名，非回归场景）。
 
 import XCTest
 @testable import RedeTrainingDecision
@@ -15,7 +17,7 @@ final class FullBodyEngineTests: XCTestCase {
             #"{"id":"h\#(i)","date":"2026-05-2\#(i)","completed":true,"exercises":[]}"#
         }.joined(separator: ",")
         let json = #"{"schemaVersion":8,"history":[\#(sessions)],"programTemplate":{"splitType":"full-body","daysPerWeek":3}}"#
-        let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-16")
+        let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-05-25")
         return try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input)))
     }
 
