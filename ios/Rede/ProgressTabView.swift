@@ -32,6 +32,8 @@ struct ProgressTabView: View {
     }()
     @State private var outcome: ProgressModel.LoadOutcome?
     @State private var detailRecord: SnapshotSessionRecord?
+    /// MLE 分享卡预览（B5：Development 块入口 → 现算 projection → 预览 sheet）。
+    @State private var muscleSharePreview: SharePreviewItem?
     /// FR-PR6 解锁行展开态（依据解释入口，§6.5.11「必须同时提供解释入口」）。
     @State private var expandedMuscles: Set<String> = {
         // 截图钩子（沿 -progressScale 先例）：预展开全部肌群行验证依据行渲染
@@ -75,6 +77,9 @@ struct ProgressTabView: View {
         .task { outcome = await ProgressModel.loadOutcomeAsync() }
         .sheet(item: $detailRecord) { record in
             historyDetailSheet(record)
+        }
+        .sheet(item: $muscleSharePreview) { item in
+            ShareCardPreviewView(snapshots: item.snapshots)
         }
     }
 
@@ -629,8 +634,45 @@ struct ProgressTabView: View {
                         .foregroundStyle(Color.redeT3)
                         .padding(.top, 2)
                 }
+
+                // 分享入口（B5）：沿 Development 块行样式（ember2 + chevron 披露），非练完态按钮复刻（审查 m2 措辞校准）
+                Button {
+                    muscleSharePreview = SharePreviewItem(
+                        snapshots: [Self.muscleLevelShareSnapshot(from: profile)])
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "square.and.arrow.up").font(.redeCaption)
+                        Text(s.developmentShareAction)
+                        Spacer()
+                        Image(systemName: "chevron.right").font(.redeCaption).foregroundStyle(Color.redeT4)
+                    }
+                    .font(.redeCallout)
+                    .foregroundStyle(Color.redeEmber2)
+                    .frame(minHeight: RedeShape.controlHeight)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
             }
         }
+    }
+
+    /// Development 块 → 分享快照（组合层：只传已解锁行；tier 校准中不出卡——
+    /// 「还没有整体级别」不是可分享成绩；隐私守门在 SharePrivacyFilter）。
+    static func muscleLevelShareSnapshot(from profile: MuscleDevelopmentProfile) -> ShareSnapshot {
+        let rows = profile.estimates
+            .filter { $0.decision != .insufficientData }
+            .map { ShareSnapshot.MuscleLevel.MuscleRow(
+                muscleRaw: $0.muscleId.rawValue, level: $0.currentLevel,
+                trendRaw: $0.trend.rawValue) }
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        fmt.timeZone = .current
+        fmt.dateFormat = "yyyy-MM-dd"
+        return SharePrivacyFilter.muscleLevel(
+            generatedDateISO: fmt.string(from: Date()),
+            tierRaw: profile.overallTier == .calibrating ? nil : profile.overallTier.rawValue,
+            balanceScore: profile.balanceScore,
+            muscles: rows)
     }
 
     private func developmentRow(_ estimate: MuscleLevelEstimate) -> some View {

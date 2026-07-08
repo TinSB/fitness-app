@@ -6,6 +6,8 @@ extension RedeStrings {
     public var shareCardWorkoutTitle: String { locale == .zh ? "训练完成" : "Workout done" }
     /// PR / 里程碑卡标题。
     public var shareCardPRTitle: String { locale == .zh ? "个人纪录" : "Personal record" }
+    /// 肌群发展画像卡标题（MLE B5）。
+    public var shareCardMuscleLevelTitle: String { locale == .zh ? "发展画像" : "Development" }
     /// 破纪录微标（训练总结卡上）。
     public var shareCardPRBadge: String { locale == .zh ? "刷新纪录" : "New PR" }
     /// e1RM 估算微标（诚实标注，非实测）。

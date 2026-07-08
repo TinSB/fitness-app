@@ -31,6 +31,19 @@ struct ShareCardModel: Equatable {
     enum Kind: Equatable {
         case workout(Workout)
         case pr(PR)
+        case muscleLevel(MuscleLevelCard)
+    }
+    /// 肌群发展画像卡（MLE B5）：tier/balance nil = 不显（校准中/解锁不足，不编数）。
+    struct MuscleLevelCard: Equatable {
+        let title: String
+        let tierText: String?
+        let balanceLine: String?
+        let rows: [MuscleLevelRow]
+    }
+    struct MuscleLevelRow: Equatable {
+        let name: String
+        let levelText: String
+        let trendSymbol: String?   // SFSymbol 名；nil = 无箭头
     }
     struct Workout: Equatable {
         let title: String
@@ -73,6 +86,24 @@ struct ShareCardModel: Equatable {
                     dayName: w.dayCode.map(s.trainingDayName),
                     stats: stats, patternText: patternText,
                     prBadge: w.hadPR ? s.shareCardPRBadge : nil))
+            )
+        case let .muscleLevel(m):
+            // 镜像枚举本地化（MuscleLevelCopy 同包复用）；未知 rawValue 如实回落原码
+            let tierText = m.tierRaw.flatMap(TrainingTierLabel.init(rawValue:)).map(s.trainingTierName)
+            let rows = m.muscles.map { row in
+                MuscleLevelRow(
+                    name: MuscleGroupLabel(rawValue: row.muscleRaw).map(s.muscleGroupName) ?? row.muscleRaw,
+                    levelText: s.developmentLevel(row.level),
+                    trendSymbol: row.trendRaw == "rising" ? "arrow.up.right"
+                        : (row.trendRaw == "declining" ? "arrow.down.right" : nil))
+            }
+            return ShareCardModel(
+                dateText: date, tagline: s.shareCardTagline, downloadHint: s.shareCardDownloadHint,
+                kind: .muscleLevel(.init(
+                    title: s.shareCardMuscleLevelTitle,
+                    tierText: tierText,
+                    balanceLine: m.balanceScore.map(s.developmentBalanceLine),
+                    rows: rows))
             )
         case let .personalRecord(pr):
             // 按当前单位偏好格式化：实测吸附到器械×单位真实梯；估算（e1RM）不吸附（LoadDisplay 契约）。
@@ -152,6 +183,38 @@ struct ShareCardView: View {
         switch model.kind {
         case let .workout(w): workoutContent(w)
         case let .pr(pr): prContent(pr)
+        case let .muscleLevel(m): muscleLevelContent(m)
+        }
+    }
+
+    private func muscleLevelContent(_ m: ShareCardModel.MuscleLevelCard) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 6) {
+                Overline(text: model.dateText, color: .redeT3)
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Text(m.title).font(.system(size: 30, weight: .bold)).foregroundStyle(Color.redeT1)
+                    if let tier = m.tierText {
+                        Text(tier).font(.system(size: 17, weight: .semibold)).foregroundStyle(Color.redeEmber2)
+                    }
+                }
+            }
+            VStack(alignment: .leading, spacing: 9) {
+                ForEach(Array(m.rows.enumerated()), id: \.offset) { _, row in
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(row.name).font(.system(size: 15)).foregroundStyle(Color.redeT1)
+                        Text(row.levelText).font(.system(size: 15, weight: .bold)).monospacedDigit()
+                            .foregroundStyle(Color.redeEmber2)
+                        if let symbol = row.trendSymbol {
+                            Image(systemName: symbol).font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(symbol == "arrow.up.right" ? Color.redeEmber2 : Color.redeT3)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                }
+            }
+            if let balance = m.balanceLine {
+                Text(balance).font(.system(size: 13)).foregroundStyle(Color.redeT3)
+            }
         }
     }
 
