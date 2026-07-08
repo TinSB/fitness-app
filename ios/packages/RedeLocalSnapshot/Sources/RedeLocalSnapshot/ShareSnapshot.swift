@@ -34,6 +34,7 @@ public struct ShareSnapshot: Equatable, Sendable {
     public enum Content: Equatable, Sendable {
         case workoutSummary(WorkoutSummary)
         case personalRecord(PersonalRecord)
+        case muscleLevel(MuscleLevel)
     }
 
     /// 训练总结卡：训练分类 + 完成动作/组数 + 时长区间 + 动作模式 + 是否破 PR。
@@ -52,6 +53,32 @@ public struct ShareSnapshot: Equatable, Sendable {
             self.durationBand = durationBand
             self.patterns = patterns
             self.hadPR = hadPR
+        }
+    }
+
+    /// 肌群发展画像卡（MLE B5，§6.5.12 允许字段的 V1 收敛）：整体级别 + 均衡度 +
+    /// 已解锁肌群等级列表（rawValue 码，UI 本地化）。契约 projection 的
+    /// confidenceLabel **结构性缺失**（Copy Baseline §3.4 置信度零 UI 读数——比
+    /// 契约的 String? nil 更硬）；levelProgress/safeEvidenceSummary/milestoneBadge
+    /// V1 不进卡（版面克制 + 里程碑面归 PR 卡，收口写回 §6.5.12）。
+    public struct MuscleLevel: Equatable, Sendable {
+        public struct MuscleRow: Equatable, Sendable {
+            public let muscleRaw: String       // MuscleGroupID rawValue（UI 本地化为名）
+            public let level: Int              // 已解锁等级（≥1）
+            public let trendRaw: String        // MuscleLevelTrend rawValue（UI 映射箭头）
+            public init(muscleRaw: String, level: Int, trendRaw: String) {
+                self.muscleRaw = muscleRaw
+                self.level = level
+                self.trendRaw = trendRaw
+            }
+        }
+        public let tierRaw: String?            // TrainingTier rawValue；nil = 不显整体级别
+        public let balanceScore: Int?          // 0-100 取整；nil = 解锁不足不显（不编数）
+        public let muscles: [MuscleRow]        // 等级降序、至多 6（版面）
+        public init(tierRaw: String?, balanceScore: Int?, muscles: [MuscleRow]) {
+            self.tierRaw = tierRaw
+            self.balanceScore = balanceScore
+            self.muscles = muscles
         }
     }
 
@@ -107,6 +134,24 @@ public enum SharePrivacyFilter {
                 reps: max(0, reps),
                 isEstimated: isEstimated
             ))
+        )
+    }
+
+    /// 肌群发展画像卡（MLE B5）。调用方只传**已解锁**肌群（校准中不进卡——占位级
+    /// 不是可分享成绩）；此处再做等级降序（同级按 muscleRaw 稳定）+ 截断 6 + 钳制。
+    public static func muscleLevel(
+        generatedDateISO: String, tierRaw: String?, balanceScore: Double?,
+        muscles: [ShareSnapshot.MuscleLevel.MuscleRow]
+    ) -> ShareSnapshot {
+        let ordered = muscles
+            .filter { $0.level >= 1 }
+            .sorted { $0.level != $1.level ? $0.level > $1.level : $0.muscleRaw < $1.muscleRaw }
+            .prefix(6)
+        let balance = balanceScore.map { Int(min(max($0, 0), 100).rounded()) }
+        return ShareSnapshot(
+            generatedDateISO: generatedDateISO,
+            content: .muscleLevel(.init(tierRaw: tierRaw, balanceScore: balance,
+                                        muscles: Array(ordered)))
         )
     }
 }

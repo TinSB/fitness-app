@@ -10,7 +10,13 @@ struct ShareCardPreviewView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(LocaleStore.self) private var localeStore
-    @State private var index = 0
+    @State private var index: Int = {
+        // 截图钩子（沿 -progressScale 先例）：预选卡页验证非首卡渲染，不影响真实用户
+        let args = ProcessInfo.processInfo.arguments
+        guard let i = args.firstIndex(of: "-sharePreviewIndex"),
+              args.indices.contains(i + 1), let value = Int(args[i + 1]) else { return 0 }
+        return max(0, value)
+    }()
     @State private var activityImage: ShareImage?
 
     private var s: RedeStrings { localeStore.strings }
@@ -68,6 +74,7 @@ struct ShareCardPreviewView: View {
         switch snap.content {
         case .workoutSummary: return s.shareCardWorkoutTitle
         case .personalRecord: return s.shareCardPRTitle
+        case .muscleLevel: return s.shareCardMuscleLevelTitle
         }
     }
 
@@ -107,5 +114,15 @@ enum ShareCardSample {
         SharePrivacyFilter.personalRecord(
             generatedDateISO: "2026-06-24", exerciseId: "bench-press", weightKg: 102.5, reps: 5,
             isEstimated: false),
+        SharePrivacyFilter.muscleLevel(
+            generatedDateISO: "2026-06-24", tierRaw: "intermediate", balanceScore: 76,
+            muscles: [
+                .init(muscleRaw: "chest", level: 12, trendRaw: "rising"),
+                .init(muscleRaw: "back", level: 11, trendRaw: "stable"),
+                .init(muscleRaw: "quads", level: 10, trendRaw: "rising"),
+                .init(muscleRaw: "shoulders", level: 9, trendRaw: "stable"),
+                .init(muscleRaw: "glutes", level: 9, trendRaw: "stable"),
+                .init(muscleRaw: "hamstrings", level: 8, trendRaw: "declining"),
+            ]),
     ]
 }

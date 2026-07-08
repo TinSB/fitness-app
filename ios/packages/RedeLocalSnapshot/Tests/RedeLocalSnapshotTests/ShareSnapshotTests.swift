@@ -102,4 +102,62 @@ final class ShareSnapshotTests: XCTestCase {
             XCTAssertFalse(names.contains(forbidden), "WorkoutSummary 不应含敏感字段 \(forbidden)")
         }
     }
+
+    // MARK: - Muscle Level 卡（MLE B5，§6.5.12 V1 收敛 + §6.5.14 share privacy 锚）
+
+    func testMuscleLevelCardSortsCapsAndClamps() {
+        // 等级降序、同级 muscleRaw 稳定、截断 6、level<1 剔除、balance 取整钳 0-100
+        let rows: [ShareSnapshot.MuscleLevel.MuscleRow] = [
+            .init(muscleRaw: "quads", level: 9, trendRaw: "stable"),
+            .init(muscleRaw: "chest", level: 12, trendRaw: "rising"),
+            .init(muscleRaw: "back", level: 12, trendRaw: "stable"),
+            .init(muscleRaw: "core", level: 0, trendRaw: "stable"),      // 非法：剔除
+            .init(muscleRaw: "glutes", level: 8, trendRaw: "stable"),
+            .init(muscleRaw: "biceps", level: 7, trendRaw: "declining"),
+            .init(muscleRaw: "triceps", level: 6, trendRaw: "stable"),
+            .init(muscleRaw: "calves", level: 5, trendRaw: "stable"),    // 第 7 名：截断
+        ]
+        let snapshot = SharePrivacyFilter.muscleLevel(
+            generatedDateISO: "2026-07-07", tierRaw: "intermediate",
+            balanceScore: 76.4, muscles: rows)
+        guard case .muscleLevel(let card) = snapshot.content else { return XCTFail("content kind") }
+        XCTAssertEqual(card.muscles.count, 6)
+        XCTAssertEqual(card.muscles.map(\.muscleRaw), ["back", "chest", "quads", "glutes", "biceps", "triceps"])
+        XCTAssertEqual(card.balanceScore, 76)
+        XCTAssertEqual(card.tierRaw, "intermediate")
+        XCTAssertFalse(card.muscles.contains { $0.muscleRaw == "core" })
+        // 钳制真实边界（审查 m1：76.4 只验四舍五入，不验 min/max）
+        func clamped(_ raw: Double) -> Int? {
+            guard case .muscleLevel(let c) = SharePrivacyFilter.muscleLevel(
+                generatedDateISO: "2026-07-07", tierRaw: nil, balanceScore: raw, muscles: []).content
+            else { return nil }
+            return c.balanceScore
+        }
+        XCTAssertEqual(clamped(145.6), 100)
+        XCTAssertEqual(clamped(-12.0), 0)
+    }
+
+    func testMuscleLevelCardHonestNils() {
+        // tier/balance nil 如实传递（校准中不显整体级别、解锁不足不编均衡数）
+        let snapshot = SharePrivacyFilter.muscleLevel(
+            generatedDateISO: "2026-07-07", tierRaw: nil, balanceScore: nil, muscles: [])
+        guard case .muscleLevel(let card) = snapshot.content else { return XCTFail("content kind") }
+        XCTAssertNil(card.tierRaw)
+        XCTAssertNil(card.balanceScore)
+        XCTAssertTrue(card.muscles.isEmpty)
+    }
+
+    func testNoForbiddenFieldsInMuscleLevelCard() {
+        // §6.5.12 禁用集 + §3.4：置信度也在结构性缺失之列（比契约 String? nil 更硬）
+        let card = ShareSnapshot.MuscleLevel(
+            tierRaw: "intermediate", balanceScore: 76,
+            muscles: [.init(muscleRaw: "chest", level: 12, trendRaw: "rising")])
+        let cardFields = Set(Mirror(reflecting: card).children.compactMap { $0.label?.lowercased() })
+        let rowFields = Set(Mirror(reflecting: card.muscles[0]).children.compactMap { $0.label?.lowercased() })
+        for forbidden in ["bodyweight", "weightkg", "rir", "pain", "location", "gym", "timestamp",
+                          "confidence", "confidencelabel", "evidence", "notes", "healthkit"] {
+            XCTAssertFalse(cardFields.contains(forbidden), "MuscleLevel 不应含 \(forbidden)")
+            XCTAssertFalse(rowFields.contains(forbidden), "MuscleRow 不应含 \(forbidden)")
+        }
+    }
 }

@@ -128,6 +128,9 @@ extension RedeStrings {
         }
     }
 
+    /// Development 块分享入口（MLE B5，FR-SH3 入口延续样式）。
+    public var developmentShareAction: String { tML("分享发展画像", "Share development") }
+
     /// 解锁行 a11y：肌群 + 等级 + 可选语义。
     public func developmentRowA11y(muscle: String, level: Int, decision: String?) -> String {
         let base = tML("\(muscle)，等级 \(level)", "\(muscle), level \(level)")
