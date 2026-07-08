@@ -100,7 +100,7 @@ final class MuscleProfileComposerTests: XCTestCase {
         let chest = p.estimates.first { $0.muscleId == .chest }
         XCTAssertTrue(chest?.evidence.contains { $0.code == "e1rmRising" } ?? false)
         XCTAssertGreaterThan(chest?.score.performanceScore ?? 0,
-                             MuscleLevelModelConfig.v1.performanceBaseScore - 0.001)
+                             MuscleLevelModelConfig.current.performanceBaseScore - 0.001)
     }
 
     func testMilestoneFloorAppliesEndToEnd() {
@@ -141,6 +141,28 @@ final class MuscleProfileComposerTests: XCTestCase {
         let p = compose(rows: seed.rows, touches: seed.touches)
         let ids = p.estimates.map(\.muscleId.rawValue)
         XCTAssertEqual(ids, ids.sorted())                           // 注意事项②：消费方免排序
+    }
+
+    func testBalanceScoreIgnoresConfidenceCap() {
+        // mle-v2 实拍抓获：cap 把多块肌群全压到 Lv.5 → 方差归零 → 均衡度 100 假均衡。
+        // balance 一律用修饰前曲线级：三块肌群曲线级明显不同（不同暴露量）时，
+        // 即使显示级被 cap 压平，均衡分也不得是 100。
+        var rows: [MuscleVolumeAggregator.ContributionRow] = []
+        var touches: [MuscleTouchRow] = []
+        for (index, monday) in mondays.enumerated() {
+            rows.append(.init(dateISO: monday, muscleRaw: "chest", weight: 1.0, setCount: 24))
+            rows.append(.init(dateISO: monday, muscleRaw: "back", weight: 1.0, setCount: 10))
+            rows.append(.init(dateISO: monday, muscleRaw: "quads", weight: 1.0, setCount: 4))
+            for muscle in ["chest", "back", "quads"] {
+                touches.append(.init(muscleRaw: muscle, sessionId: "s\(index)", familyId: "f-\(muscle)"))
+            }
+        }
+        let p = compose(rows: rows, touches: touches)
+        let levels = Set(p.estimates.filter { $0.decision != .insufficientData }.map(\.currentLevel))
+        // premise 先断言（审查 M1：if 静默跳过=常数漂移后测试空转）——三块必须被压平
+        XCTAssertEqual(levels.count, 1, "premise: cap 未把三肌群压到同一显示级，种子需重调")
+        XCTAssertNotEqual(p.balanceScore, 100)   // 均衡分不得跟着装满
+        XCTAssertNotNil(p.balanceScore)
     }
 
     func testAggregationIntegrityNonEmptyRowsNonEmptyProfileSignal() {

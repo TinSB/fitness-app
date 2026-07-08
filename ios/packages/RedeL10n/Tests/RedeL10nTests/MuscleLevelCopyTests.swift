@@ -27,7 +27,7 @@ final class MuscleLevelCopyTests: XCTestCase {
         for decision in MuscleDecisionLabel.allCases {
             XCTAssertNotEqual(zh.muscleDecisionLabel(decision), en.muscleDecisionLabel(decision))
         }
-        XCTAssertEqual(MuscleEvidenceLabel.allCases.count, 9)
+        XCTAssertEqual(MuscleEvidenceLabel.allCases.count, 10)
         for evidence in MuscleEvidenceLabel.allCases {
             XCTAssertNotEqual(zh.muscleEvidenceLine(evidence), en.muscleEvidenceLine(evidence),
                               evidence.rawValue)
@@ -98,6 +98,6 @@ final class MuscleLevelCopyTests: XCTestCase {
         XCTAssertEqual(Set(MuscleEvidenceLabel.allCases.map(\.rawValue)),
                        ["exposureRecentSets", "e1rmRising", "e1rmHolding", "e1rmDeclining",
                         "noBaselineWindow", "noRecentWindow", "shortHistory",
-                        "noStrengthSignal", "milestoneFloorApplied"])
+                        "noStrengthSignal", "milestoneFloorApplied", "confidenceLevelCapApplied"])
     }
 }

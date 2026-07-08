@@ -35,6 +35,7 @@ public enum MuscleEvidenceLabel: String, CaseIterable, Equatable, Sendable {
     case e1rmRising, e1rmHolding, e1rmDeclining
     case noBaselineWindow, noRecentWindow, shortHistory
     case noStrengthSignal, milestoneFloorApplied
+    case confidenceLevelCapApplied
 }
 
 extension RedeStrings {
@@ -125,6 +126,8 @@ extension RedeStrings {
         case .shortHistory: return tML("训练数据还不够", "Not enough training data yet")
         case .noStrengthSignal: return tML("暂无可比的强度数据", "No comparable strength data yet")
         case .milestoneFloorApplied: return tML("力量突破抬升了等级起点", "A strength milestone raised this level")
+        case .confidenceLevelCapApplied:
+            return tML("数据量还撑不起更高等级　继续练会解锁", "More training data unlocks higher levels")
         }
     }
 

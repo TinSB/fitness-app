@@ -8,15 +8,17 @@ import XCTest
 @testable import RedeLocalSnapshot
 
 final class MuscleProfileAssemblerTests: XCTestCase {
-    private let config = MuscleLevelModelConfig.v1
+    private let config = MuscleLevelModelConfig.current
 
     private func computation(
         _ muscle: MuscleGroupID, level: Int, calibrating: Bool = false,
         confidence: EstimateConfidence = .medium,
+        curveLevel: Int? = nil,
         evidence: [MuscleLevelEvidence] = []
     ) -> MuscleLevelComputation {
         MuscleLevelComputation(
             muscleId: muscle, isCalibrating: calibrating, level: level,
+            curveLevel: curveLevel ?? level,
             progress: 0.5, confidence: confidence,
             breakdown: MuscleLevelScoreBreakdown(
                 exposureScore: 30, performanceScore: 15, milestoneScore: 0, progressionScore: 0,
@@ -297,5 +299,28 @@ final class MuscleProfileAssemblerTests: XCTestCase {
         XCTAssertEqual(a, b)
         // estimates 顺序确定（按 muscleId rawValue 排序）
         XCTAssertEqual(a.estimates.map(\.muscleId.rawValue), a.estimates.map(\.muscleId.rawValue).sorted())
+    }
+
+    func testBalanceUsesCurveLevelNotDisplayLevel() {
+        // 审查 M1 直测：人为分离 level(显示级)=5 与 curveLevel=15/10/7——balance 必须
+        // 用后者（有方差），若误改回 .level（全 5 方差零）会得 100 而失败
+        let comps = [
+            computation(.chest, level: 5, curveLevel: 15),
+            computation(.back, level: 5, curveLevel: 10),
+            computation(.quads, level: 5, curveLevel: 7),
+        ]
+        let profile = MuscleProfileAssembler.assemble(
+            computations: comps, observations: [:],
+            previousLevels: [:], previousPeaks: [:], previousTier: nil,
+            generatedAtIso: "2026-07-08", config: .current)
+        XCTAssertNotNil(profile.balanceScore)
+        XCTAssertNotEqual(profile.balanceScore, 100)
+        // 对照组：curveLevel 也全等时才是真·满均衡
+        let flat = MuscleProfileAssembler.assemble(
+            computations: [computation(.chest, level: 5), computation(.back, level: 5),
+                           computation(.quads, level: 5)],
+            observations: [:], previousLevels: [:], previousPeaks: [:], previousTier: nil,
+            generatedAtIso: "2026-07-08", config: .current)
+        XCTAssertEqual(flat.balanceScore, 100)
     }
 }

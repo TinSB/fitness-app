@@ -214,7 +214,7 @@ public struct MuscleDevelopmentProfile: Equatable, Sendable {
     }
 }
 
-/// V1 模型常量（§6.5.6 起点值照录，待真实数据校准；变更必须递增 modelVersion + 更新 goldens）。
+/// 现役模型常量（modelVersion 为真版本；mle-v2 = MLE-8 首轮校准 2026-07-08，owner 真机 E3「3 场 Lv.9 太快」→ 无基线 0 分 + 暴露锚 20 + 置信封顶；变更必须递增 modelVersion + 更新 goldens）。
 public struct MuscleLevelModelConfig: Sendable {
     public let modelVersion: String
     public let recentWindowWeeks: Int
@@ -247,6 +247,10 @@ public struct MuscleLevelModelConfig: Sendable {
     public let performancePerTenPercentGain: Double
     public let performanceScoreMax: Double
     public let performanceMinPoints: Int
+    /// 无基线窗（新用户）时的 performance 分（mle-v2 = 0：强度维度零证据不给分——
+    /// 推翻 v1 的 base 15 中性假设，依据 owner 真机 E3 反馈「3 场 Lv.9 太快」；
+    /// 新用户等级的保守表达由置信封顶承担，此 0 分非罚分）。
+    public let performanceNoBaselineScore: Double
     /// coverage/consistency（V1 低权）：满足动作族数得满 coverage；触及周比例 × consistencyMax。
     public let coverageFullScoreFamilies: Int
     public let coverageScoreMax: Double
@@ -273,9 +277,14 @@ public struct MuscleLevelModelConfig: Sendable {
     public let priorityLevelGapBelowMedian: Int
     /// e1RM 严格进步判定比率（>此值才算 rising，供 tier 进步信号；≈2% 防噪音）。
     public let e1rmRisingMinRatio: Double
+    /// 置信等级封顶（mle-v2，§3.4 行为表达「低可信→判断更保守」的等级面）：
+    /// low 封 beginner 顶、medium 封 novicePlus→intermediate 门口、high 放开。
+    /// milestone floor 在组装层后应用，实测成就胜过数据量保守（有意排序）。
+    public let lowConfidenceLevelCap: Int
+    public let mediumConfidenceLevelCap: Int
 
-    public static let v1 = MuscleLevelModelConfig(
-        modelVersion: "mle-v1",
+    public static let current = MuscleLevelModelConfig(
+        modelVersion: "mle-v2",
         recentWindowWeeks: 6,
         baselineWindowWeeks: 24,
         calibrationMinSessions: 3,
@@ -291,12 +300,13 @@ public struct MuscleLevelModelConfig: Sendable {
         effectiveSetsTier2Cap: 18,
         effectiveSetsTier2Rate: 0.7,
         effectiveSetsTier3Rate: 0.5,
-        exposureFullScoreWeeklyEffectiveSets: 15,
+        exposureFullScoreWeeklyEffectiveSets: 20,
         exposureScoreMax: 60,
         performanceBaseScore: 15,
         performancePerTenPercentGain: 7.5,
         performanceScoreMax: 30,
         performanceMinPoints: 2,
+        performanceNoBaselineScore: 0,
         coverageFullScoreFamilies: 2,
         coverageScoreMax: 5,
         consistencyScoreMax: 5,
@@ -312,6 +322,8 @@ public struct MuscleLevelModelConfig: Sendable {
         tierAdvancedMaxLevel: 16,
         tierBalanceDowngradeBelow: 40,
         priorityLevelGapBelowMedian: 3,
-        e1rmRisingMinRatio: 1.02
+        e1rmRisingMinRatio: 1.02,
+        lowConfidenceLevelCap: 5,
+        mediumConfidenceLevelCap: 10
     )
 }
