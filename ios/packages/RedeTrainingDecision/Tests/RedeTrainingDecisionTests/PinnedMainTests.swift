@@ -1,6 +1,8 @@
 // 槽位点名主项（preferredId，2026-06-16）：解决「槽位按 rank 选、无法点名具体动作」的限制。
 // B 日按权威 §3 点名主项——legs-B 硬拉 + 保加利亚、pull-B 宽握下拉 + 俯身支撑划船——
 // 这些是同 pattern/器械下 rank 非最小、原本选不到的动作。点名须通过候选过滤，否则优雅回退。
+// 回归协议（2026-07-08）：todayISO 拉近种子历史（原 2026-06-16 距最后一场 ≥21 天，
+// 无意触发停练重启改变轮换指针——本测试意图是轮换/点名，非回归场景）。
 
 import XCTest
 @testable import RedeTrainingDecision
@@ -12,7 +14,7 @@ final class PinnedMainTests: XCTestCase {
             #"{"id":"h\#(i)","date":"2026-05-\#(String(format: "%02d", 10 + i))","completed":true,"exercises":[]}"#
         }.joined(separator: ",")
         let json = #"{"schemaVersion":8,"history":[\#(sessions)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":6}}"#
-        let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-16")
+        let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-05-16")
         return try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input)))
     }
 

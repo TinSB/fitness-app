@@ -420,7 +420,7 @@ struct TodayTabView: View {
                 Text(s.dayOverrideHeader(day: dayName))
                     .font(.redeCaption).foregroundStyle(Color.redeEmber2)
             }
-            Text(s.receiptConclusion(call: callCode, reasonCode: reasonCode))
+            Text(s.receiptConclusion(call: callCode, reasonCode: reasonCode, gapDays: gapDays))
                 .font(.redeCaption)
                 .foregroundStyle(Color.redeT3)
                 .fixedSize(horizontal: false, vertical: true)

@@ -48,6 +48,12 @@ public enum VerdictReason: Equatable, Sendable {
 }
 
 public struct TodayVerdict: Equatable, Sendable {
+    /// 回归协议（2026-07-08）：longGapReentry 携带的停练天数；非回归裁决 = nil。
+    public var longGapDays: Int? {
+        if case .longGapReentry(let days) = reason { return days }
+        return nil
+    }
+
     public let call: TodayCall
     public let reason: VerdictReason
     public let signals: [VerdictSignal]

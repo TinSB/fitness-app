@@ -1,5 +1,7 @@
 // 分化覆盖（审查 evidence gap 补齐 2026-06-16）：5 天 ppl-ul 端到端 5 位轮换 +
 // 受限器械（home-dumbbell）B 日优雅降级（不崩、不空、可能少几个槽）。
+// 回归协议（2026-07-08）：todayISO 拉近种子历史（原日期距最后一场 ≥21 天会触发
+// 停练重启改变轮换指针——本测试意图是分化轮换覆盖，非回归场景）。
 
 import XCTest
 @testable import RedeTrainingDecision
@@ -14,7 +16,7 @@ final class SplitCoverageTests: XCTestCase {
         // 写对天数才不会被迁移误重映，保住各自的轮换意图。
         let daysPerWeek = splitType == "push-pull-legs" ? 6 : 5
         let json = #"{"schemaVersion":8,"history":[\#(sessions)]\#(profile),"programTemplate":{"splitType":"\#(splitType)","daysPerWeek":\#(daysPerWeek)}}"#
-        let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-16")
+        let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-05-16")
         return try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input)))
     }
 

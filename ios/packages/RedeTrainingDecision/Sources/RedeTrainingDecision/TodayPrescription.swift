@@ -60,12 +60,14 @@ public enum PrescriptionReason: Equatable, Sendable, Codable {
 public enum DayPrescriptionReason: Equatable, Sendable, Codable {
     case verdictLightReduced
     case verdictDeloadReduced
+    case comebackCycleRestart
     case slotUnfilled(pattern: String)
 
     public var code: String {
         switch self {
         case .verdictLightReduced: return "verdictLightReduced"
         case .verdictDeloadReduced: return "verdictDeloadReduced"
+        case .comebackCycleRestart: return "comebackCycleRestart"
         case .slotUnfilled: return "slotUnfilled"
         }
     }

@@ -72,12 +72,12 @@ final class StickySwapTests: XCTestCase {
     /// wave-10：辅助双杠（triceps 族）经 sticky 可达后，到底毕业 → 自重双杠 dip（验证毕业
     /// 派生在新族也对）。3 场历史做辅助双杠、最小辅助 5 还满次有余力 → 今天 push-a 自动换 dip。
     func testAssistedDipGraduatesToBodyweightDip() throws {
-        // 一整轮 6 天（PPL×2）→ 今天轮回 push-a；日期早于今日近 7 天窗外 → 保持 train 裁决。
+        // 一整轮 6 天（PPL×2）→ 今天轮回 push-a；今天距最后一场 7 天（<14，train 裁决——回归协议 2026-07-08：gap≥14 会压制「毕业=变难」分支，本测试意图是锁毕业机制，故拉近日期）。
         let s = ["2026-05-25", "2026-05-26", "2026-05-27", "2026-05-28", "2026-05-29", "2026-05-30"].enumerated().map { i, d in
             #"{"id":"s\#(i)","date":"\#(d)","completed":true,"exercises":[{"exerciseId":"assisted-dip","sets":[{"weight":5,"reps":15,"rir":3}]}]}"#
         }.joined(separator: ",")
         let json = #"{"schemaVersion":8,"userProfile":{"trainingLevel":"intermediate"},"history":[\#(s)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":6}}"#
-        let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-13")
+        let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-06")
         let plan = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input)))
         XCTAssertEqual(plan.dayCode, "push-a")
         let dipPlan = try XCTUnwrap(plan.exercises.first { $0.exerciseId == "dip" })

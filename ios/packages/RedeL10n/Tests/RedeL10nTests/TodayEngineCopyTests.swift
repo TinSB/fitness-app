@@ -117,4 +117,17 @@ final class TodayEngineCopyTests: XCTestCase {
         XCTAssertEqual(zh.todayDoneShareAction, "分享这场训练")
         XCTAssertEqual(en.todayDoneShareAction, "Share this workout")
     }
+
+    func testComebackReceiptTiers() {
+        let zh = RedeStrings(locale: .zh)
+        let en = RedeStrings(locale: .en)
+        // ≥21：循环重启句；14-20：找回感觉句；非回归 light 保持通用句（默认参不破既有）
+        XCTAssertTrue(zh.receiptConclusion(call: "light", reasonCode: "longGapReentry", gapDays: 22).contains("循环从头开始"))
+        XCTAssertTrue(en.receiptConclusion(call: "light", reasonCode: "longGapReentry", gapDays: 22).contains("restarts"))
+        XCTAssertTrue(zh.receiptConclusion(call: "light", reasonCode: "longGapReentry", gapDays: 15).contains("找回感觉"))
+        XCTAssertEqual(zh.receiptConclusion(call: "light", reasonCode: "weeklyPlanReached"),
+                       "今天整体降一档")
+        // 无 gap 传入（防御）不崩且落 14-20 句
+        XCTAssertFalse(zh.receiptConclusion(call: "light", reasonCode: "longGapReentry").isEmpty)
+    }
 }
