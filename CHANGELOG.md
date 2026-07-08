@@ -8,6 +8,8 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 ## 2026-07-07
 
+- **Build 15 — MLE ships to TestFlight** (#673): `CURRENT_PROJECT_VERSION` 14 → 15 (app + widget, 4 sites; `MARKETING_VERSION` stays 1.1 — TestFlight iteration build). Archived from up-to-date main (#672) after the pbxproj-first check (build-13 lesson); product verified via PlistBuddy at 1.1 (15) for both app and widget extension. Owner uploads via Organizer.
+
 - **MLE batch B close-out — spec write-back + logs** (#672): system-logic updated in 7 places (peak persistence contract §6.5.4, cold-start render semantics §6.5.9, Progress-landed + FR-PL5 layering §6.5.10, three B3 convergences §6.5.11, Muscle Level card live + confidence structural-absence §6.5.12, contract-slice vs actual-batch mapping §6.5.13, share status note + card table §9.2); PRD FR-PR6 → implemented, FR-PL5 → partially landed (display-tier). DEV_LOG battle report; level-curve pacing flagged as calibration-pending (3 sessions → Lv.9-10 reads fast; MLE-8 refinement after real-device data).
 
 - **MLE-B5: Development share card — third card kind** (#671): `ShareSnapshot.Content.muscleLevel` + `SharePrivacyFilter.muscleLevel` factory (level-desc sort / cap 6 / balance clamp 0-100 / calibrating tier → nil); privacy via structural absence — confidence doesn't exist on the card type (harder than the contract's `String?` nil, per §3.4); card face reuses the 360×450 offscreen pipeline (REDE mark + tier + ≤6 muscle rows + trend arrows + balance); entry on the Development block (unlocked-only); `-sharePreviewIndex` screenshot hook. Review: zero MAJOR/MODERATE; clamp-boundary test + comment wording fixed in place. zh/en shots archived.

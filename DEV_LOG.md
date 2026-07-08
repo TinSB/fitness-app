@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-07-07 · Build 15 archive：MLE 全量进包（1.1 build 15）
+
+**用户目标**：owner 拍板「archive 一个 build 15」——MLE 批次 A+B（发展区块 + 发展画像分享卡）进 TestFlight。
+
+**做了什么**：CURRENT_PROJECT_VERSION 14 → **15**（app + widget 4 处，MARKETING 1.1 不动——TestFlight 迭代 build，上架新版本时再对齐）；基于最新 main（#672）命令行 archive——**先核 pbxproj 再打包**（build 13 落后事故的固定动作）。
+
+**证据**：ARCHIVE SUCCEEDED；产物 PlistBuddy 实证 app/widget 均 **1.1 (15)**；落 Organizer 标准目录（Archives/2026-07-07/Rede-1.1-15.xcarchive）。PR #673。
+
+**下一步**：owner 在 Xcode Organizer 上传 ASC → TestFlight；真机验收重点=**等级曲线观感**（3 场即 Lv.9-10，虚则开 MLE-8 精修）+ Development 块/分享卡手感 + 前批挂账（休息提醒端到端、Dynamic Type、widget 真机填充）。
+
+---
+
 ## 2026-07-07 · MLE 批次 B 收口：肌群等级全线上线（#667-#671）——进度页「发展」区块 + 发展画像分享卡，用户看得见了
 
 **批次战报**（交接件 docs/工作记录/2026-07-07-MLE批次B-执行prompt.md；owner 拍板「开批次 B 吧」+「keep」保持节奏）。五片全独立 PR、失败测试先行、全量门禁 + 独立 code-reviewer + 模拟器实拍；审查发现全部当场处置（B3 一片 4 MAJOR + 4 MODERATE 全清），零默默留着。
