@@ -228,8 +228,9 @@ public struct MuscleLevelModelConfig: Sendable {
     public let mediumConfidenceMinMovementFamilies: Int
     public let highConfidenceMinSessions: Int
     public let highConfidenceMinSets: Int
-    /// high 第三维（§6.5.6）：覆盖 2 个以上动作族（≥3）。第四维「关键动作 identity
-    /// 稳定」是布尔判定非数值阈值，不进 Config——由 MLE-2 置信逻辑直接判，非漏配。
+    /// high 第三维（§6.5.6）：覆盖 2 个以上动作族（≥3）。契约的第四维「关键动作
+    /// identity 稳定」**V1 未实现**（置信只判三维；原注释称「由 MLE-2 直接判」与
+    /// 代码不符——对账修正 2026-07-08，补齐列批次 C 拍板）。
     public let highConfidenceMinMovementFamilies: Int
     public let levelRange: ClosedRange<Int>
 
@@ -239,7 +240,7 @@ public struct MuscleLevelModelConfig: Sendable {
     public let effectiveSetsTier2Cap: Double
     public let effectiveSetsTier2Rate: Double
     public let effectiveSetsTier3Rate: Double
-    /// exposure：近窗有记录周的周均有效组达此值拿满 exposureScoreMax。
+    /// exposure：全史有记录周的周均有效组达此值拿满 exposureScoreMax（无近窗裁剪，对账注 2026-07-08）。
     public let exposureFullScoreWeeklyEffectiveSets: Double
     public let exposureScoreMax: Double
     /// performance：比率 1.0 = base 分；每 +10% 进步 +perTenPercentGain；封顶 max。

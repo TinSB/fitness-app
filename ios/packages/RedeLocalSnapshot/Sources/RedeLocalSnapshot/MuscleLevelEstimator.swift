@@ -113,7 +113,9 @@ public enum MuscleLevelEstimator {
         var evidence: [MuscleLevelEvidence] = []
         var limitations: [MuscleLevelLimitation] = []
 
-        // exposure：近窗有记录周的周均有效组 → 线性映射封顶
+        // exposure：全史有记录周的周均有效组 → 线性映射封顶（对账注 2026-07-08：无近窗
+        // 裁剪——长停练旧周量仍计入周均，等级下降现靠 performance→0 与 trend/decision；
+        // 是否加窗口衰减列批次 C 拍板，改行为须 modelVersion v3）
         let recordedWeeks = observations.weeklyFractionalSets.values.filter { $0 > 0 }
         let weeklyEffectiveAvg = recordedWeeks.isEmpty ? 0
             : recordedWeeks.map { effectiveSets(rawWeeklySets: $0, config: config) }
