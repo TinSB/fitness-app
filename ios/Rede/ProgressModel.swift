@@ -43,6 +43,9 @@ struct ProgressModel {
     let continuity: ContinuityCalendar.Month?
     /// FR-PR7 力量里程碑（杠铃大项配片阈值）：实测 isEstimated=false；估算更高档时追加 isEstimated=true。
     let milestones: [StrengthMilestone]
+    /// MLE 肌群发展画像（B1 接线；Development 块唯一读点）。全部计算在包内
+    /// MuscleProfileComposer（已测），此处只做目录翻译薄胶水。previous* 记忆接线=B2。
+    let muscleProfile: MuscleDevelopmentProfile
 
     static func loadOutcomeAsync(now: Date = Date()) async -> LoadOutcome? {
         await Task.detached(priority: .userInitiated) { loadOutcome(now: now) }.value
@@ -115,6 +118,41 @@ struct ProgressModel {
             eligibleExerciseIds: milestoneEligible,
             unitSystem: cleanView.profile.unitSystem
         )
+        // MLE 喂数胶水（B1）：目录翻译是唯一不可单测面，刻意最薄——逐动作调
+        // RedeTrainingDecision 翻译函数拼 rawValue 行类型，跨包不传枚举（Master §5）；
+        // 聚合/计分/组装全在 RedeLocalSnapshot.MuscleProfileComposer（包内已测）。
+        // statsRecords 口径（可疑组已剔）与 FR-PR7 里程碑同源同信（交接件拍板⑥）。
+        var contributionRows: [MuscleVolumeAggregator.ContributionRow] = []
+        var touchRows: [MuscleTouchRow] = []
+        for record in statsRecords {
+            for exercise in record.exercises {
+                let doneSets = exercise.sets.count
+                guard doneSets > 0 else { continue }
+                let family = catalog.entry(id: exercise.exerciseId)?.substitutionGroup ?? exercise.exerciseId
+                for contribution in MuscleContributionTable.contributions(
+                    exerciseId: exercise.exerciseId, catalog: catalog) {
+                    contributionRows.append(MuscleVolumeAggregator.ContributionRow(
+                        dateISO: record.dateISO, muscleRaw: contribution.muscle.rawValue,
+                        weight: contribution.weight, setCount: doneSets))
+                    touchRows.append(MuscleTouchRow(
+                        muscleRaw: contribution.muscle.rawValue, sessionId: record.id, familyId: family))
+                }
+            }
+        }
+        // e1RM 只挂主肌群（拍板③：副贡献动作的 e1RM 不代表该肌群可比强度）
+        var e1rmRows: [MuscleE1RMRow] = []
+        for trend in snapshot.exerciseTrends {
+            guard let group = MuscleGroupMapping.primaryGroup(
+                forExerciseId: trend.exerciseId, catalog: catalog) else { continue }
+            for point in trend.points {
+                e1rmRows.append(MuscleE1RMRow(
+                    muscleRaw: group.rawValue, dateISO: point.dateISO, e1RmKg: point.e1RmKg))
+            }
+        }
+        let muscleProfile = MuscleProfileComposer.compose(MuscleProfileComposer.Input(
+            rows: contributionRows, touches: touchRows, e1rmRows: e1rmRows,
+            bestActualKgByExercise: bestByExercise, bestE1RmKgByExercise: estByExercise,
+            unitSystem: cleanView.profile.unitSystem, nowISO: todayISO))
         return .ready(ProgressModel(
             snapshot: snapshot,
             quality: quality,
@@ -126,7 +164,8 @@ struct ProgressModel {
                 WeeklyInsight.compare(latest: $0, weeks: snapshot.weeklyVolume, todayISO: todayISO)
             },
             continuity: continuity,
-            milestones: milestones
+            milestones: milestones,
+            muscleProfile: muscleProfile
         ))
     }
 
