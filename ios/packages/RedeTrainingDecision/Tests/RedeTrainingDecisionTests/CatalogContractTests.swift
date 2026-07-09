@@ -31,6 +31,7 @@ final class CatalogContractTests: XCTestCase {
     private let knownKinds: Set<String> = ["compound", "isolation", "accessory"]
     private let knownMuscles: Set<String> = [
         "chest", "back", "shoulder", "front-delt", "side-delt", "rear-delt", "upper-back",
+        "lats",   // 子肌群钻取（2026-07-09）：back 系下拉/引体细化
         "biceps", "triceps", "forearm", "quads", "hamstrings", "glutes", "calves",
         "core", "lower-back", "traps",   // wave-5：耸肩主肌群
         "adductors",   // wave-17：髋内收机主肌群

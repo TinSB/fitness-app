@@ -28,7 +28,7 @@ public enum MuscleGroupMapping {
     public static func group(forCatalogMuscle muscle: String) -> MuscleGroupID? {
         switch muscle {
         case "chest": return .chest
-        case "back", "traps", "upper-back": return .back
+        case "back", "lats", "traps", "upper-back": return .back   // lats=目录细化新值（2026-07-09 子肌群钻取）
         case "quads": return .quads
         case "hamstrings": return .hamstrings
         case "glutes", "adductors": return .glutes

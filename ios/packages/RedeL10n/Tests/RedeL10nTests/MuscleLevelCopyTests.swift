@@ -100,4 +100,28 @@ final class MuscleLevelCopyTests: XCTestCase {
                         "noBaselineWindow", "noRecentWindow", "shortHistory",
                         "noStrengthSignal", "milestoneFloorApplied", "confidenceLevelCapApplied"])
     }
+
+    func testSubGroupCopyParityAndRedLines() {
+        // 钻取层新增文案四道红线（审查 M2）：parity/无句号破折号/禁用词/镜像锁
+        XCTAssertEqual(MuscleSubGroupLabel.allCases.count, 6)
+        XCTAssertEqual(Set(MuscleSubGroupLabel.allCases.map(\.rawValue)),
+                       ["lats", "upper-back", "traps", "front-delt", "side-delt", "rear-delt"])
+        var texts: [String] = [zh.muscleDetailSubTitle, en.muscleDetailSubTitle,
+                               zh.muscleDetailEvidenceTitle, en.muscleDetailEvidenceTitle,
+                               zh.muscleSubWeeklySets(4.5), en.muscleSubWeeklySets(4.5),
+                               zh.muscleSubWeeklySets(0), en.muscleSubWeeklySets(0)]
+        for sub in MuscleSubGroupLabel.allCases {
+            XCTAssertNotEqual(zh.muscleSubGroupName(sub), en.muscleSubGroupName(sub), sub.rawValue)
+            texts.append(zh.muscleSubGroupName(sub)); texts.append(en.muscleSubGroupName(sub))
+        }
+        let forbidden = ["置信度", "confidence", "弱", "weak", "差", "poor"]
+        for text in texts {
+            XCTAssertFalse(text.contains("。") || text.contains("——") || text.hasSuffix("."),
+                           "句号/破折号: \(text)")
+            for word in forbidden {
+                XCTAssertFalse(text.lowercased().contains(word.lowercased()),
+                               "禁用词「\(word)」: \(text)")
+            }
+        }
+    }
 }

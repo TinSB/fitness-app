@@ -28,6 +28,12 @@ public enum MuscleDecisionLabel: String, CaseIterable, Equatable, Sendable {
     case prioritize, recover
 }
 
+/// 子肌群细粒度值镜像（钻取层 2026-07-09：back/shoulders 的 children；app 层 rawValue 映射）。
+public enum MuscleSubGroupLabel: String, CaseIterable, Equatable, Sendable {
+    case lats, upperBack = "upper-back", traps
+    case frontDelt = "front-delt", sideDelt = "side-delt", rearDelt = "rear-delt"
+}
+
 /// evidence/limitation code 的人话翻译键（引擎 code 字符串 → 依据行；app 层映射）。
 /// 十个 code 与引擎产出全集一一对应（mle-v2 增 confidenceLevelCapApplied；漏配=依据行静默丢失，测试全量锁）。
 public enum MuscleEvidenceLabel: String, CaseIterable, Equatable, Sendable {
@@ -129,6 +135,31 @@ extension RedeStrings {
         case .confidenceLevelCapApplied:
             return tML("数据量还撑不起更高等级　继续练会解锁", "More training data unlocks higher levels")
         }
+    }
+
+    /// 子肌群显示名（钻取层）。
+    public func muscleSubGroupName(_ sub: MuscleSubGroupLabel) -> String {
+        switch sub {
+        case .lats: return tML("背阔", "Lats")
+        case .upperBack: return tML("上背", "Upper back")
+        case .traps: return tML("斜方", "Traps")
+        case .frontDelt: return tML("前束", "Front delts")
+        case .sideDelt: return tML("中束", "Side delts")
+        case .rearDelt: return tML("后束", "Rear delts")
+        }
+    }
+
+    /// 详情页子肌群区标题。
+    public var muscleDetailSubTitle: String { tML("部位构成", "Breakdown") }
+
+    /// 详情页依据区标题。
+    public var muscleDetailEvidenceTitle: String { tML("依据", "Reasoning") }
+
+    /// 子肌群周均组数行（详情页）。
+    public func muscleSubWeeklySets(_ sets: Double) -> String {
+        let rounded = (sets * 10).rounded() / 10
+        let text = rounded == rounded.rounded() ? String(Int(rounded)) : String(rounded)
+        return tML("每周 \(text) 组", "\(text) sets/week")
     }
 
     /// Development 块分享入口（MLE B5，FR-SH3 入口延续样式）。

@@ -203,7 +203,7 @@
     {
       "id": "lat-pulldown",
       "movementPattern": "vertical-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "lats",
       "secondaryMuscles": [
         "biceps"
       ],
@@ -241,7 +241,7 @@
     {
       "id": "seated-row",
       "movementPattern": "horizontal-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "upper-back",
       "secondaryMuscles": [
         "biceps",
         "rear-delt"
@@ -282,7 +282,7 @@
     {
       "id": "barbell-row",
       "movementPattern": "horizontal-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "upper-back",
       "secondaryMuscles": [
         "biceps",
         "rear-delt"
@@ -323,7 +323,7 @@
     {
       "id": "one-arm-db-row",
       "movementPattern": "horizontal-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "upper-back",
       "secondaryMuscles": [
         "biceps"
       ],
@@ -401,7 +401,7 @@
     {
       "id": "shoulder-press",
       "movementPattern": "vertical-press",
-      "primaryMuscle": "shoulder",
+      "primaryMuscle": "front-delt",
       "secondaryMuscles": [
         "triceps"
       ],
@@ -1036,7 +1036,7 @@
     {
       "id": "db-pullover",
       "movementPattern": "vertical-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "lats",
       "secondaryMuscles": [
         "chest"
       ],
@@ -1169,7 +1169,7 @@
     {
       "id": "chest-supported-db-row",
       "movementPattern": "horizontal-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "upper-back",
       "secondaryMuscles": [
         "biceps",
         "rear-delt"
@@ -1208,7 +1208,7 @@
     {
       "id": "overhead-press",
       "movementPattern": "vertical-press",
-      "primaryMuscle": "shoulder",
+      "primaryMuscle": "front-delt",
       "secondaryMuscles": [
         "triceps",
         "core"
@@ -1543,7 +1543,7 @@
     {
       "id": "straight-arm-pulldown",
       "movementPattern": "vertical-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "lats",
       "secondaryMuscles": [],
       "equipment": "cable",
       "kind": "isolation",
@@ -1579,7 +1579,7 @@
     {
       "id": "machine-shoulder-press",
       "movementPattern": "vertical-press",
-      "primaryMuscle": "shoulder",
+      "primaryMuscle": "front-delt",
       "secondaryMuscles": [
         "triceps"
       ],
@@ -1619,7 +1619,7 @@
     {
       "id": "machine-row",
       "movementPattern": "horizontal-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "upper-back",
       "secondaryMuscles": [
         "biceps",
         "rear-delt"
@@ -1676,7 +1676,7 @@
     {
       "id": "arnold-press",
       "movementPattern": "vertical-press",
-      "primaryMuscle": "shoulder",
+      "primaryMuscle": "front-delt",
       "secondaryMuscles": [
         "triceps",
         "front-delt"
@@ -1868,7 +1868,7 @@
     {
       "id": "pendlay-row",
       "movementPattern": "horizontal-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "upper-back",
       "secondaryMuscles": [
         "biceps",
         "rear-delt"
@@ -1907,7 +1907,7 @@
     {
       "id": "t-bar-row",
       "movementPattern": "horizontal-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "upper-back",
       "secondaryMuscles": [
         "biceps"
       ],
@@ -1963,7 +1963,7 @@
     {
       "id": "close-grip-pulldown",
       "movementPattern": "vertical-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "lats",
       "secondaryMuscles": [
         "biceps"
       ],
@@ -2116,7 +2116,7 @@
     {
       "id": "single-arm-cable-row",
       "movementPattern": "horizontal-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "upper-back",
       "secondaryMuscles": [
         "biceps",
         "rear-delt"
@@ -2179,7 +2179,7 @@
     {
       "id": "wide-grip-pulldown",
       "movementPattern": "vertical-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "lats",
       "secondaryMuscles": [
         "biceps"
       ],
@@ -2217,7 +2217,7 @@
     {
       "id": "landmine-press",
       "movementPattern": "vertical-press",
-      "primaryMuscle": "shoulder",
+      "primaryMuscle": "front-delt",
       "secondaryMuscles": [
         "triceps",
         "front-delt"
@@ -2238,7 +2238,7 @@
     {
       "id": "push-press",
       "movementPattern": "vertical-press",
-      "primaryMuscle": "shoulder",
+      "primaryMuscle": "front-delt",
       "secondaryMuscles": [
         "triceps",
         "quads",
@@ -2260,7 +2260,7 @@
     {
       "id": "meadows-row",
       "movementPattern": "horizontal-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "upper-back",
       "secondaryMuscles": [
         "biceps"
       ],
@@ -2507,7 +2507,7 @@
     {
       "id": "pull-up",
       "movementPattern": "vertical-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "lats",
       "secondaryMuscles": [
         "biceps"
       ],
@@ -2547,7 +2547,7 @@
     {
       "id": "inverted-row",
       "movementPattern": "horizontal-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "upper-back",
       "secondaryMuscles": [
         "biceps",
         "rear-delt"
@@ -2668,7 +2668,7 @@
     {
       "id": "hammer-row",
       "movementPattern": "horizontal-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "upper-back",
       "secondaryMuscles": [
         "biceps",
         "rear-delt"
@@ -2689,7 +2689,7 @@
     {
       "id": "hammer-pulldown",
       "movementPattern": "vertical-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "lats",
       "secondaryMuscles": [
         "biceps"
       ],
@@ -2709,7 +2709,7 @@
     {
       "id": "hammer-shoulder-press",
       "movementPattern": "vertical-press",
-      "primaryMuscle": "shoulder",
+      "primaryMuscle": "front-delt",
       "secondaryMuscles": [
         "triceps"
       ],
@@ -2812,7 +2812,7 @@
     {
       "id": "smith-overhead-press",
       "movementPattern": "vertical-press",
-      "primaryMuscle": "shoulder",
+      "primaryMuscle": "front-delt",
       "secondaryMuscles": [
         "triceps",
         "core"
@@ -2871,7 +2871,7 @@
     {
       "id": "assisted-pull-up",
       "movementPattern": "vertical-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "lats",
       "secondaryMuscles": [
         "biceps"
       ],
@@ -3027,7 +3027,7 @@
     {
       "id": "chin-up",
       "movementPattern": "vertical-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "lats",
       "secondaryMuscles": [
         "biceps"
       ],
@@ -3047,7 +3047,7 @@
     {
       "id": "weighted-pull-up",
       "movementPattern": "vertical-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "lats",
       "secondaryMuscles": [
         "biceps"
       ],
@@ -3183,7 +3183,7 @@
     {
       "id": "band-row",
       "movementPattern": "horizontal-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "upper-back",
       "secondaryMuscles": [
         "biceps"
       ],
@@ -3203,7 +3203,7 @@
     {
       "id": "band-lat-pulldown",
       "movementPattern": "vertical-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "lats",
       "secondaryMuscles": [
         "biceps"
       ],
@@ -3223,7 +3223,7 @@
     {
       "id": "band-overhead-press",
       "movementPattern": "vertical-press",
-      "primaryMuscle": "shoulder",
+      "primaryMuscle": "front-delt",
       "secondaryMuscles": [
         "triceps"
       ],
@@ -3284,7 +3284,7 @@
     {
       "id": "pike-push-up",
       "movementPattern": "vertical-press",
-      "primaryMuscle": "shoulder",
+      "primaryMuscle": "front-delt",
       "secondaryMuscles": [
         "triceps"
       ],
@@ -3378,7 +3378,7 @@
     {
       "id": "band-straight-arm-pulldown",
       "movementPattern": "vertical-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "lats",
       "secondaryMuscles": [],
       "equipment": "band",
       "kind": "isolation",
@@ -3959,7 +3959,7 @@
     {
       "id": "rack-pull",
       "movementPattern": "hinge",
-      "primaryMuscle": "back",
+      "primaryMuscle": "upper-back",
       "secondaryMuscles": [
         "glutes",
         "hamstrings",
@@ -4039,7 +4039,7 @@
     {
       "id": "seal-row",
       "movementPattern": "horizontal-pull",
-      "primaryMuscle": "back",
+      "primaryMuscle": "upper-back",
       "secondaryMuscles": [
         "biceps",
         "rear-delt"
