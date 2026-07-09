@@ -13,6 +13,12 @@ import RedeDataHealth
 /// DateFormatter——线程安全（可并发求值）、解析严格（拒绝 "2026-6-9"、
 /// "2026-13-40" 这类 DateFormatter 默认会宽容接受的输入）、无时区歧义。
 enum TrainingDay {
+    /// ISO 周一锚（纯算术，无 Foundation 日历）：day 0 = 1970-01-01 周四 →
+    /// weekStart = day − ((day + 3) mod 7)（每周循环模式 2026-07-08）。
+    static func isoWeekStartDay(of dayNumber: Int) -> Int {
+        dayNumber - (((dayNumber + 3) % 7) + 7) % 7
+    }
+
     static func dayNumber(fromISO iso: String) -> Int? {
         let s = String(iso.prefix(10))
         let parts = s.split(separator: "-", omittingEmptySubsequences: false)

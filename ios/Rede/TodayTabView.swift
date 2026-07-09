@@ -163,6 +163,10 @@ struct TodayTabView: View {
 
     private var callCode: String { model?.verdict.call.rawValue ?? "train" }
     private var reasonCode: String { model?.verdict.reason.code ?? "noHistoryCalibration" }
+    /// 日级处方理由码（顺延副句等；空处方 = 空集）。
+    private var dayReasonCodes: Set<String> {
+        Set(model?.prescription?.dayReasons.map(\.code) ?? [])
+    }
     private var firstExercise: ExercisePrescriptionPlan? { model?.prescription?.exercises.first }
 
     private var pillFill: Color {
@@ -420,6 +424,12 @@ struct TodayTabView: View {
                 Text(s.dayOverrideHeader(day: dayName))
                     .font(.redeCaption).foregroundStyle(Color.redeEmber2)
             }
+            // 顺延透明化（2026-07-08）：解释「上周的 X 顺延到今天」并指路换天
+            if dayReasonCodes.contains("carriedOverFromLastWeek") {
+                Text(s.carriedOverHeader(day: dayName))
+                    .font(.redeCaption).foregroundStyle(Color.redeT3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             Text(s.receiptConclusion(call: callCode, reasonCode: reasonCode, gapDays: gapDays))
                 .font(.redeCaption)
                 .foregroundStyle(Color.redeT3)
@@ -468,7 +478,9 @@ struct TodayTabView: View {
             commitPulse += 1
             undoBanner = UndoBanner(
                 kind: .dayOverride,
-                text: s.swapDayAdoptedToast(chosen: s.trainingDayName(dayCode), displaced: displaced)
+                text: (model?.weeklyCycleRestart ?? false)
+                    ? s.swapDayAdoptedToastWeekly(chosen: s.trainingDayName(dayCode))
+                    : s.swapDayAdoptedToast(chosen: s.trainingDayName(dayCode), displaced: displaced)
             )
         }
     }

@@ -36,6 +36,8 @@ struct TodayModel {
     /// FR-TR7 今日按轮转**本该**练的训练日（不含临时覆盖）；与 prescription.dayCode 不同 = 今天临时换过了，
     /// 被跳过的就是它（撤销浮条「明天补回 X」、今日页「今天临时换为…」据此判断）。
     let scheduledDayCode: String?
+    /// 每周循环模式（换天弹窗/撤销条文案分流：weekly 下不承诺「顺延补回」——审查 S1）。
+    let weeklyCycleRestart: Bool
 
     /// Rail「上次」节点：首个处方动作最近一次实绩（重量×次数 + 日期）。
     struct RailLast {
@@ -105,8 +107,13 @@ struct TodayModel {
         // FR-TR7「今天换一天练」：本分化日序 + 今日轮转默认（含 rotationOffset）+ 今日临时覆盖（dateISO==今天且合法成员）。
         let daySequence = TodayPrescriptionEngine.resolvedDaySequence(
             splitType: input.program.splitType, override: appData.planCustomization?.daySequence)
-        let scheduledDayCode: String? = daySequence.isEmpty ? nil
-            : daySequence[((input.sessions.count + appData.rotationOffset) % daySequence.count + daySequence.count) % daySequence.count]
+        // 「今天本来该练什么」与引擎单一真源（含回归重启/每周循环模式）——旧公式
+        // app 层复算曾在两种新模式下漂移，误显示「今天临时换为」（2026-07-08 实拍抓获）。
+        let scheduledDayCode = TodayPrescriptionEngine.scheduledTodayDayCode(
+            input: input, verdict: verdict,
+            customization: PlanCustomizationBridge.input(from: appData.planCustomization),
+            rotationOffset: appData.rotationOffset,
+            weeklyCycleRestart: appData.weeklyCycleRestart)
         let dayCodeOverride: String? = appData.oneTimeDayOverride
             .flatMap { $0.dateISO == todayISO && daySequence.contains($0.dayCode) ? $0.dayCode : nil }
         // 周期化引擎 S4：从落库配置读 enabled + blockLengthWeeks 喂引擎（默认 false = 零行为回归）；
@@ -122,7 +129,9 @@ struct TodayModel {
             customization: PlanCustomizationBridge.input(from: appData.planCustomization),
             // FR-TR7 今天换一天练：今日临时覆盖训练日 + 轮转偏移（默认 nil/0 = 现状、golden 零回归）
             dayCodeOverride: dayCodeOverride,
-            rotationOffset: appData.rotationOffset
+            rotationOffset: appData.rotationOffset,
+            // 每周循环模式（2026-07-08）：默认 false = 顺延（现状零回归）
+            weeklyCycleRestart: appData.weeklyCycleRestart
         )
 
         // FR-T5 教练动作（切片6b）：摊平裁决信号 + 处方到顶 reason + 落库 dismiss/采纳态 → 引擎产卡。
@@ -156,7 +165,8 @@ struct TodayModel {
             oneTimeSubstitutions: oneTimeToday,
             equipmentScenario: input.profile.equipmentScenario,
             daySequence: daySequence,
-            scheduledDayCode: scheduledDayCode
+            scheduledDayCode: scheduledDayCode,
+            weeklyCycleRestart: appData.weeklyCycleRestart
         ))
     }
 }

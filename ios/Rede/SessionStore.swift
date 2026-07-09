@@ -264,7 +264,7 @@ final class SessionStore {
         return PlanWeekProjection.weeks(
             splitType: input.program.splitType,
             daysPerWeek: daysPerWeek,
-            completedSessionCount: input.sessions.count,
+            completedSessionCount: projectionRotationBase(input: input, appData: appData),
             customization: PlanCustomizationBridge.input(from: appData.planCustomization) // FR-PL6/PL7
         )
     }
@@ -310,7 +310,7 @@ final class SessionStore {
         // 答「影响哪几天」。提案前的完整排期就在调整区下方，故不再重复列 before。
         let proposed = PlanWeekProjection.weeks(
             splitType: input.program.splitType, daysPerWeek: proposal.toDaysPerWeek,
-            completedSessionCount: input.sessions.count, weeks: 1
+            completedSessionCount: projectionRotationBase(input: input, appData: appData), weeks: 1
         ).first ?? []
         return PlanAdjustmentState(proposal: proposal, activeTo: nil, proposedWeekDays: proposed)
     }
@@ -320,6 +320,13 @@ final class SessionStore {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         guard let appData = try? store.load() else { return false }
         return appData.mesocycle.enabled
+    }
+
+    /// 每周循环模式当前持久态（设置页开关初值）；unreadable/缺失 → false（顺延默认）。
+    nonisolated static func loadWeeklyCycleRestart() -> Bool {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load() else { return false }
+        return appData.weeklyCycleRestart
     }
 
     // MARK: - FR-PL6 计划编辑器上下文 / 影响（计划编辑器只读派生）
@@ -372,7 +379,7 @@ final class SessionStore {
         // 本周日序（与今日页/计划页同源），customization 走 bridge 以应用自定义日序。
         let weekDays = PlanWeekProjection.weeks(
             splitType: input.program.splitType, daysPerWeek: daysPerWeek,
-            completedSessionCount: input.sessions.count, weeks: 1,
+            completedSessionCount: projectionRotationBase(input: input, appData: appData), weeks: 1,
             customization: PlanCustomizationBridge.input(from: custom)
         ).first ?? []
         guard !weekDays.isEmpty else { return nil }
@@ -409,7 +416,18 @@ final class SessionStore {
         let isCustomized = override != nil && current == override
             && current != TodayPrescriptionEngine.defaultDaySequence(splitType: split)
         return DaySequenceContext(dayCodes: current, isCustomized: isCustomized,
-                                  splitType: split, completedSessionCount: input.sessions.count)
+                                  splitType: split, completedSessionCount: projectionRotationBase(input: input, appData: appData))
+    }
+
+
+    /// 投影轮换基数（审查 S2 单一真源）：与今日页 dayCode 同源——含回归重启/weekly 模式。
+    nonisolated private static func projectionRotationBase(
+        input: CleanTrainingDecisionInput, appData: AppData
+    ) -> Int {
+        TodayPrescriptionEngine.rotationBase(
+            input: input, verdict: TodayVerdictEngine.evaluate(input),
+            rotationOffset: appData.rotationOffset,
+            weeklyCycleRestart: appData.weeklyCycleRestart)
     }
 
     // MARK: - FR-NT1/2 通知偏好 + 授权
@@ -541,6 +559,35 @@ final class SessionStore {
                     gate: DataHealthGate()
                 )
                 try writer.applyMesocyclePreference(enabled: enabled)
+                return .success(())
+            } catch {
+                return .failure(error)
+            }
+        }.value
+        switch result {
+        case .success:
+            return true
+        case .failure(let error):
+            settingsSaveErrorText = String(describing: error)
+            return false
+        }
+    }
+
+    func saveWeeklyCycleRestart(_ enabled: Bool) async -> Bool {
+        guard !isSaving else { return false }
+        isSaving = true
+        defer { isSaving = false }
+        let fileURL = TodayModel.canonicalFileURL()
+        let result: Result<Void, Error> = await Task.detached(priority: .userInitiated) {
+            do {
+                try FileManager.default.createDirectory(
+                    at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true
+                )
+                let writer = CanonicalSessionWriter(
+                    store: JSONFileAppDataStore(fileURL: fileURL),
+                    gate: DataHealthGate()
+                )
+                try writer.applyWeeklyCycleRestartPreference(enabled: enabled)
                 return .success(())
             } catch {
                 return .failure(error)
