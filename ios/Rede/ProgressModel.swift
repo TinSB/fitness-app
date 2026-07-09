@@ -46,6 +46,8 @@ struct ProgressModel {
     /// MLE 肌群发展画像（B1 接线；Development 块唯一读点）。全部计算在包内
     /// MuscleProfileComposer（已测），此处只做目录翻译薄胶水。previous* 记忆接线=B2。
     let muscleProfile: MuscleDevelopmentProfile
+    /// 子肌群等级（钻取层 2026-07-09；详情页读——back/shoulders 有值，其余空）。
+    let subLevelsByMuscle: [RedeLocalSnapshot.MuscleGroupID: [MuscleSubLevel]]
 
     static func loadOutcomeAsync(now: Date = Date()) async -> LoadOutcome? {
         await Task.detached(priority: .userInitiated) { loadOutcome(now: now) }.value
@@ -146,6 +148,23 @@ struct ProgressModel {
                 }
             }
         }
+        // 子肌群钻取（2026-07-09）：归并前的细粒度行（entry 原始 primary/secondary 值，
+        // 同 1.0/0.5 权重）——10 块层的归并是主动选择，子层按原始粒度直接聚合。
+        var fineRows: [MuscleVolumeAggregator.ContributionRow] = []
+        for record in statsRecords {
+            for exercise in record.exercises {
+                let doneSets = exercise.sets.count
+                guard doneSets > 0, let entry = catalog.entry(id: exercise.exerciseId) else { continue }
+                fineRows.append(MuscleVolumeAggregator.ContributionRow(
+                    dateISO: record.dateISO, muscleRaw: entry.primaryMuscle,
+                    weight: 1.0, setCount: doneSets))
+                for secondary in entry.secondaryMuscles {
+                    fineRows.append(MuscleVolumeAggregator.ContributionRow(
+                        dateISO: record.dateISO, muscleRaw: secondary,
+                        weight: 0.5, setCount: doneSets))
+                }
+            }
+        }
         // e1RM 只挂主肌群（拍板③：副贡献动作的 e1RM 不代表该肌群可比强度）
         var e1rmRows: [MuscleE1RMRow] = []
         for trend in snapshot.exerciseTrends {
@@ -169,6 +188,16 @@ struct ProgressModel {
             previousPeaks: previousMemory?.peaks ?? [:],
             previousTierRaw: previousMemory?.tierRaw,
             nowISO: todayISO))
+        // 子肌群等级：只算已解锁且有 children 的大块（back/shoulders）
+        var subLevelsByMuscle: [RedeLocalSnapshot.MuscleGroupID: [MuscleSubLevel]] = [:]
+        for estimate in muscleProfile.estimates where estimate.decision != .insufficientData {
+            guard MuscleSubLevelBuilder.children(of: estimate.muscleId) != nil else { continue }
+            subLevelsByMuscle[estimate.muscleId] = MuscleSubLevelBuilder.subLevels(
+                parent: estimate.muscleId, fineRows: fineRows,
+                parentPerformanceScore: estimate.score.performanceScore,
+                parentConfidence: estimate.confidence,
+                nowISO: todayISO, config: .current)
+        }
         let nextMemory = MuscleLevelMemory.extract(from: muscleProfile, atIso: todayISO)
         if MuscleLevelMemory.shouldPersist(previous: previousMemory, next: nextMemory) {
             try? memoryStore.saveReconciling(nextMemory)   // 写前 peaks max 合并（并发竞写对策）
@@ -185,7 +214,8 @@ struct ProgressModel {
             },
             continuity: continuity,
             milestones: milestones,
-            muscleProfile: muscleProfile
+            muscleProfile: muscleProfile,
+            subLevelsByMuscle: subLevelsByMuscle
         ))
     }
 

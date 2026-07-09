@@ -68,4 +68,16 @@ final class PlanCustomizationImpactTests: XCTestCase {
         XCTAssertTrue(r.droppedBelowTwice.contains("chest"))
         XCTAssertEqual(r.droppedBelowTwice, r.droppedBelowTwice.sorted(), "跌破列表升序")
     }
+
+    func testFineMuscleValuesMergeIntoBigGroupFrequency() {
+        // 归并回归锁（2026-07-09 目录细化后）：一天下拉（lats）+ 一天划船（upper-back）
+        // 必须合计成「背部 2×/周」——若误删归并，两个细分各 1× 会漏报跌破护栏
+        let r = PlanCustomizationImpact.compute(
+            weekBefore: [["lat-pulldown"], ["seated-row"]],
+            weekAfter: [["lat-pulldown"], []])
+        XCTAssertEqual(r.frequencyBefore["back"], 2)
+        XCTAssertNil(r.frequencyBefore["lats"])          // 细分值不作为频率键外漏
+        XCTAssertEqual(r.frequencyAfter["back"], 1)
+        XCTAssertEqual(r.droppedBelowTwice, ["back"])    // 2→1 跌破护栏正确报
+    }
 }

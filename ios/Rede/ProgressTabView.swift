@@ -34,12 +34,9 @@ struct ProgressTabView: View {
     @State private var detailRecord: SnapshotSessionRecord?
     /// MLE 分享卡预览（B5：Development 块入口 → 现算 projection → 预览 sheet）。
     @State private var muscleSharePreview: SharePreviewItem?
-    /// FR-PR6 解锁行展开态（依据解释入口，§6.5.11「必须同时提供解释入口」）。
-    @State private var expandedMuscles: Set<String> = {
-        // 截图钩子（沿 -progressScale 先例）：预展开全部肌群行验证依据行渲染
-        ProcessInfo.processInfo.arguments.contains("-expandAllMuscles")
-            ? Set(MuscleGroupLabel.allCases.map(\.rawValue)) : []
-    }()
+    /// FR-PR6 肌群详情页（钻取层 2026-07-09：行内展开升级为详情 sheet——
+    /// 子肌群等级/依据/未来趋势图的承载页；§6.5.11 解释入口）。
+    @State private var muscleDetail: MuscleDetailItem?
     /// 点历史行进详情的触感脉冲（单调自增）——不绑 detailRecord?.id：那是 .sheet(item:) 会回落 nil 的
     /// 呈现态，关 sheet 时 id→nil 会幽灵多震一次（审查确认）。只在「打开」自增 → 关闭不误触。
     @State private var historyOpenPulse = 0
@@ -80,6 +77,20 @@ struct ProgressTabView: View {
         }
         .sheet(item: $muscleSharePreview) { item in
             ShareCardPreviewView(snapshots: item.snapshots)
+        }
+        .sheet(item: $muscleDetail) { item in
+            MuscleDetailSheet(item: item)
+        }
+        .onChange(of: outcome != nil) {
+            // 截图钩子（沿 -progressScale 先例）：-openMuscleDetail <raw> 数据就绪后自动开详情
+            guard case .ready(let model) = outcome else { return }
+            let args = ProcessInfo.processInfo.arguments
+            if let idx = args.firstIndex(of: "-openMuscleDetail"), args.indices.contains(idx + 1),
+               let estimate = model.muscleProfile.estimates.first(where: { $0.muscleId.rawValue == args[idx + 1] }) {
+                muscleDetail = MuscleDetailItem(
+                    id: estimate.muscleId.rawValue, estimate: estimate,
+                    subLevels: model.subLevelsByMuscle[estimate.muscleId] ?? [])
+            }
         }
     }
 
@@ -215,7 +226,7 @@ struct ProgressTabView: View {
             // 不再是「编造数据」——头注的封印理由已消除。判断全部在包内，此层只渲染。
             RuleDivider()
 
-            developmentSection(model.muscleProfile)
+            developmentSection(model)
                 .padding(.horizontal, RedeSpace.page)
 
             // FR-PR7 力量里程碑（实测达成；杠铃配片阈值）——非空才显示，含前导分隔线。
@@ -589,7 +600,8 @@ struct ProgressTabView: View {
     // 面，floor 影响由展开依据行 milestoneFloorApplied 表达——同为执行中收敛）；
     // 点行展开 evidence/limitation 人话=解释入口。判断全在包内，此层只渲染。
 
-    private func developmentSection(_ profile: MuscleDevelopmentProfile) -> some View {
+    private func developmentSection(_ model: ProgressModel) -> some View {
+        let profile = model.muscleProfile
         let unlocked = profile.estimates
             .filter { $0.decision != .insufficientData }
             .sorted {
@@ -625,7 +637,7 @@ struct ProgressTabView: View {
                 .accessibilityElement(children: .combine)
 
                 ForEach(unlocked, id: \.muscleId.rawValue) { estimate in
-                    developmentRow(estimate)
+                    developmentRow(estimate, subLevels: model.subLevelsByMuscle[estimate.muscleId] ?? [])
                 }
 
                 if calibratingCount > 0 {
@@ -675,7 +687,7 @@ struct ProgressTabView: View {
             muscles: rows)
     }
 
-    private func developmentRow(_ estimate: MuscleLevelEstimate) -> some View {
+    private func developmentRow(_ estimate: MuscleLevelEstimate, subLevels: [MuscleSubLevel]) -> some View {
         let muscleRaw = estimate.muscleId.rawValue
         let name = MuscleGroupLabel(rawValue: muscleRaw).map(s.muscleGroupName) ?? muscleRaw
         let decisionLabel: String?
@@ -687,77 +699,51 @@ struct ProgressTabView: View {
                 ? s.muscleDecisionEaseBackIn : s.muscleDecisionLabel(.recover)
         default: decisionLabel = nil
         }
-        let expanded = expandedMuscles.contains(muscleRaw)
-        let evidenceLines = developmentEvidenceLines(estimate)
-        return VStack(alignment: .leading, spacing: 6) {
-            Button {
-                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.18)) {
-                    if expanded { expandedMuscles.remove(muscleRaw) } else { expandedMuscles.insert(muscleRaw) }
-                }
-            } label: {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(name)
-                        .font(.redeBody)
-                        .foregroundStyle(Color.redeT1)
-                    Text(s.developmentLevel(estimate.currentLevel))
-                        .font(.redeBody.weight(.semibold))
+        // 钻取层（2026-07-09）：行内展开退役，点行进详情 sheet（子肌群等级/依据/未来趋势图）
+        return Button {
+            muscleDetail = MuscleDetailItem(id: muscleRaw, estimate: estimate, subLevels: subLevels)
+        } label: {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(name)
+                    .font(.redeBody)
+                    .foregroundStyle(Color.redeT1)
+                Text(s.developmentLevel(estimate.currentLevel))
+                    .font(.redeBody.weight(.semibold))
+                    .foregroundStyle(Color.redeEmber2)
+                if estimate.trend == .rising {
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(Color.redeEmber2)
-                    if estimate.trend == .rising {
-                        Image(systemName: "arrow.up.right")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(Color.redeEmber2)
-                    } else if estimate.trend == .declining {
-                        Image(systemName: "arrow.down.right")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(Color.redeT3)
-                    }
-                    if let decisionLabel {
-                        Text("· \(decisionLabel)")
-                            .font(.redeCaption)
-                            .foregroundStyle(Color.redeT3)
-                    }
-                    Spacer(minLength: 12)
-                    // Lv 内进度（抬底命中时引擎已置 0——「刚进入此级」如实从零）
-                    Capsule()
-                        .fill(Color.redeT3.opacity(0.18))
-                        .frame(width: 64, height: 4)
-                        .overlay(alignment: .leading) {
-                            Capsule()
-                                .fill(Color.redeEmber)
-                                .frame(width: 64 * min(max(estimate.levelProgress, 0), 1), height: 4)
-                        }
+                } else if estimate.trend == .declining {
+                    Image(systemName: "arrow.down.right")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(Color.redeT3)
                 }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(s.developmentRowA11y(muscle: name, level: estimate.currentLevel,
-                                                     decision: decisionLabel))
-            .accessibilityHint(expanded ? "" : s.developmentExpandHint)
-
-            if expanded, !evidenceLines.isEmpty {
-                VStack(alignment: .leading, spacing: 3) {
-                    ForEach(evidenceLines, id: \.self) { line in
-                        Text(line)
-                            .font(.redeCaption)
-                            .foregroundStyle(Color.redeT3)
-                    }
+                if let decisionLabel {
+                    Text("· \(decisionLabel)")
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeT3)
                 }
-                .padding(.leading, 2)
-                .transition(reduceMotion ? .identity : .opacity)
+                Spacer(minLength: 12)
+                // Lv 内进度（抬底命中时引擎已置 0——「刚进入此级」如实从零）
+                Capsule()
+                    .fill(Color.redeT3.opacity(0.18))
+                    .frame(width: 64, height: 4)
+                    .overlay(alignment: .leading) {
+                        Capsule()
+                            .fill(Color.redeEmber)
+                            .frame(width: 64 * min(max(estimate.levelProgress, 0), 1), height: 4)
+                    }
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(Color.redeT4)
             }
+            .contentShape(Rectangle())
         }
-    }
-
-    /// evidence + limitation code → 人话依据行（未知 code 如实跳过；去重保序）。
-    private func developmentEvidenceLines(_ estimate: MuscleLevelEstimate) -> [String] {
-        var seen = Set<String>()
-        var lines: [String] = []
-        for code in estimate.evidence.map(\.code) + estimate.limitations.map(\.code) {
-            guard seen.insert(code).inserted,
-                  let label = MuscleEvidenceLabel(rawValue: code) else { continue }
-            lines.append(s.muscleEvidenceLine(label))
-        }
-        return lines
+        .buttonStyle(.plain)
+        .accessibilityLabel(s.developmentRowA11y(muscle: name, level: estimate.currentLevel,
+                                                 decision: decisionLabel))
+        .accessibilityHint(s.developmentExpandHint)
     }
 
     private func tierDisplayName(_ tier: TrainingTier) -> String {

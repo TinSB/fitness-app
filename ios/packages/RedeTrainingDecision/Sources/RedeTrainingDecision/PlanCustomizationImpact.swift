@@ -64,7 +64,11 @@ public enum PlanCustomizationImpact {
         for day in week {
             var musclesThisDay = Set<String>()
             for exerciseId in day {
-                if let m = catalog.entry(id: exerciseId)?.primaryMuscle, !m.isEmpty {
+                // 频率护栏面归并回 10 大块（2026-07-09 子肌群钻取后：目录 primaryMuscle
+                // 细化为 lats/upper-back/front-delt 等——编辑器「背部 2次/周」比拆开
+                // 更符合频率守卫语义；细粒度归钻取详情页）。无归宿值（forearm）保留原值。
+                if let raw = catalog.entry(id: exerciseId)?.primaryMuscle, !raw.isEmpty {
+                    let m = MuscleGroupMapping.group(forCatalogMuscle: raw)?.rawValue ?? raw
                     musclesThisDay.insert(m)
                 }
             }
