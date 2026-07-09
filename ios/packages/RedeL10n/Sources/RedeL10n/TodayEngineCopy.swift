@@ -149,6 +149,13 @@ extension RedeStrings {
         }
     }
 
+    /// 顺延透明化副句（2026-07-08）：新周 + 上周未练满 + 指针不在序列头——解释
+    /// 「为什么今天不是从头」并指路换天（决策在用户；两拍全角空格，§3.4）。
+    public func carriedOverHeader(day: String) -> String {
+        t2("上周的\(day)顺延到今天　想重新开一轮可以换一天练",
+           "Last week's \(day) carries over to today. Swap the day to start a fresh round")
+    }
+
     /// 收据结论句。gapDays 供回归分档（默认 nil = 既有调用不变）。
     public func receiptConclusion(call: String, reasonCode: String, gapDays: Int? = nil) -> String {
         switch (call, reasonCode) {

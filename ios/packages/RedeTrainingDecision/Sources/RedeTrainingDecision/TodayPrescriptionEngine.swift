@@ -99,8 +99,8 @@ public enum TodayPrescriptionEngine {
         daySequence(splitType: splitType)
     }
 
-    /// FR-PL7② 护栏预览用（public seam）：给定（可能自定义的）日序 override 与已完成场次，算**下一个训练日**。
-    /// 轮转锚定「已完成场次数 % 序列长度」（非日历）——重排日序后下一个训练日会跳变，故编辑器须诚实预览。
+    /// FR-PL7② 护栏预览用（public seam）：给定（可能自定义的）日序 override 与**轮换基数**，算下一个训练日。
+    /// 基数必须来自 rotationBase()（含回归重启/weekly 模式）——直接传总场次在两种新模式下会与今日页分叉（审查 S2）。
     /// override 非默认日序排列时回退默认（resolvedDaySequence 内守卫）。空序列 → nil。
     public static func nextDayCode(splitType: String?, daySequenceOverride: [String]?, completedSessionCount: Int) -> String? {
         let seq = resolvedDaySequence(splitType: splitType, override: daySequenceOverride)
@@ -375,7 +375,8 @@ public enum TodayPrescriptionEngine {
         substitutions: [String: String] = [:],
         customization: PlanCustomizationInput = .empty,
         dayCodeOverride: String? = nil,
-        rotationOffset: Int = 0
+        rotationOffset: Int = 0,
+        weeklyCycleRestart: Bool = false
     ) -> TodayPrescription? {
         guard verdict.call != .rest else { return nil }
 
@@ -394,14 +395,18 @@ public enum TodayPrescriptionEngine {
         // 抵消推进 → 跳过的日下一场补回。回归协议（2026-07-08）：重启点 = 与前一场日期差
         // ≥comebackRestartGapDays 的场——其后轮换重新计数（无状态：每次从历史扫描；
         // 无重启点 = 场次数全量，逐字节等价现状，golden 零回归）。
-        let sinceRestart = sessionsSinceLastRestartPoint(sessions: input.sessions)
-        let rotated = sequence[((sinceRestart + rotationOffset) % sequence.count + sequence.count) % sequence.count]
-        // 今天本身停练 ≥重启线：无论旧指针在哪，回序列头重启（三周指针已无上下文意义）。
+        // 轮换决策单一真源（含回归重启 + 每周循环模式）——app 层「今天本来该练什么」
+        // （换天头标/被顶掉日名）必须调同一函数，禁止旧公式复算（2026-07-08 实拍抓获
+        // app 层复算漂移：weekly/回归重启下误显示「今天临时换为」）。
+        let todayDay = TrainingDay.dayNumber(fromISO: input.todayISO)
         let restartToday = (verdict.longGapDays ?? 0) >= comebackRestartGapDays
+        let rotated = scheduledDayCode(
+            sequence: sequence, sessions: input.sessions, todayDay: todayDay,
+            rotationOffset: rotationOffset, weeklyCycleRestart: weeklyCycleRestart,
+            restartToday: restartToday)
         // FR-TR7「今天换一天练」：今日临时覆盖优先（须为本日序合法成员，否则回退轮转）。默认 nil = 现状。
         // 优先级：用户显式换天 > 回归重启 > 轮转（决策在用户）。
-        let dayCode = dayCodeOverride.flatMap { sequence.contains($0) ? $0 : nil }
-            ?? (restartToday ? sequence[0] : rotated)
+        let dayCode = dayCodeOverride.flatMap { sequence.contains($0) ? $0 : nil } ?? rotated
 
         // FR-EQ1（2026-06-11）：场景白名单硬过滤候选；槽位 equipment/machine-kind
         // 偏好与白名单冲突时软化（保 pattern 在可用器械里匹配），槽位无解=如实 unfilled。
@@ -474,6 +479,13 @@ public enum TodayPrescriptionEngine {
         }
         if restartToday, dayCodeOverride == nil {
             dayReasons.append(.comebackCycleRestart)   // 循环已重启（回归协议）
+        }
+        // 顺延透明化（2026-07-08）：默认模式下「新 ISO 周 + 上周未练满 + 指针不在
+        // 序列头」→ 打 carriedOverFromLastWeek，今日页副句解释「上周的 X 日顺延到
+        // 今天」并指路换天（决策仍在用户）。回归重启已另有专属语境，不叠加。
+        if !weeklyCycleRestart, !restartToday, dayCodeOverride == nil, dayCode != sequence[0],
+           let todayDay, isCarriedOverFromLastWeek(input: input, todayDay: todayDay) {
+            dayReasons.append(.carriedOverFromLastWeek)
         }
 
         return TodayPrescription(dayCode: dayCode, exercises: exercises, dayReasons: dayReasons)
@@ -975,6 +987,81 @@ public enum TodayPrescriptionEngine {
             }
         }
         return result
+    }
+
+    /// 「今天本来该练什么」单一真源（无用户覆盖时的轮换结果；含回归重启与每周
+    /// 循环模式）。app 层换天头标（isDayOverridden）与「被顶掉的日名」必须走这里，
+    /// 与 plan() 内部同一函数——禁止旧公式复算。
+    public static func scheduledTodayDayCode(
+        input: CleanTrainingDecisionInput,
+        verdict: TodayVerdict,
+        customization: PlanCustomizationInput = .empty,
+        rotationOffset: Int = 0,
+        weeklyCycleRestart: Bool = false
+    ) -> String? {
+        let sequence = resolvedDaySequence(splitType: input.program.splitType,
+                                           override: customization.daySequence)
+        guard !sequence.isEmpty else { return nil }
+        let restartToday = (verdict.longGapDays ?? 0) >= comebackRestartGapDays
+        return scheduledDayCode(
+            sequence: sequence, sessions: input.sessions,
+            todayDay: TrainingDay.dayNumber(fromISO: input.todayISO),
+            rotationOffset: rotationOffset, weeklyCycleRestart: weeklyCycleRestart,
+            restartToday: restartToday)
+    }
+
+    private static func scheduledDayCode(
+        sequence: [String], sessions: [CleanTrainingSession], todayDay: Int?,
+        rotationOffset: Int, weeklyCycleRestart: Bool, restartToday: Bool
+    ) -> String {
+        let base = rotationBase(sessions: sessions, todayDay: todayDay,
+                                rotationOffset: rotationOffset,
+                                weeklyCycleRestart: weeklyCycleRestart,
+                                restartToday: restartToday)
+        return sequence[(base % sequence.count + sequence.count) % sequence.count]
+    }
+
+    /// 轮换基数单一真源（今日页 dayCode、Plan 排期投影、日序编辑器预览、提案预览
+    /// 的共同 index 原料——审查 S2：投影曾用旧「总场次」公式与今日页分叉）。
+    /// weekly = 本 ISO 周完成场次（忽略 offset——换天补偿是顺延型概念）；
+    /// 顺延 = 自最近重启点场次 + offset；今天停练 ≥重启线 = 0（序列头）。
+    public static func rotationBase(
+        sessions: [CleanTrainingSession], todayDay: Int?,
+        rotationOffset: Int, weeklyCycleRestart: Bool, restartToday: Bool
+    ) -> Int {
+        if restartToday { return 0 }
+        if weeklyCycleRestart, let todayDay {
+            let weekStart = TrainingDay.isoWeekStartDay(of: todayDay)
+            return sessions.compactMap { TrainingDay.dayNumber(fromISO: $0.date) }
+                .filter { $0 >= weekStart && $0 <= todayDay }.count
+        }
+        return sessionsSinceLastRestartPoint(sessions: sessions) + rotationOffset
+    }
+
+    /// rotationBase 的便捷重载（app 层投影调用：verdict 内含回归重启判定）。
+    public static func rotationBase(
+        input: CleanTrainingDecisionInput, verdict: TodayVerdict,
+        rotationOffset: Int, weeklyCycleRestart: Bool
+    ) -> Int {
+        rotationBase(sessions: input.sessions,
+                     todayDay: TrainingDay.dayNumber(fromISO: input.todayISO),
+                     rotationOffset: rotationOffset,
+                     weeklyCycleRestart: weeklyCycleRestart,
+                     restartToday: (verdict.longGapDays ?? 0) >= comebackRestartGapDays)
+    }
+
+    /// 顺延透明化：今天在新 ISO 周、且上一 ISO 周完成场次 < 周计划 → 上周有漏。
+    /// 上周零场不算「顺延」（那是缺席语义，归回归协议/正常推进）。
+    private static func isCarriedOverFromLastWeek(input: CleanTrainingDecisionInput, todayDay: Int) -> Bool {
+        let weekStart = TrainingDay.isoWeekStartDay(of: todayDay)
+        let lastWeekStart = weekStart - 7
+        let days = input.sessions.compactMap { TrainingDay.dayNumber(fromISO: $0.date) }
+        let lastWeekCount = days.filter { $0 >= lastWeekStart && $0 < weekStart }.count
+        guard lastWeekCount > 0 else { return false }
+        let thisWeekCount = days.filter { $0 >= weekStart && $0 <= todayDay }.count
+        guard thisWeekCount == 0 else { return false }   // 本周已练过=正常推进，不再解释
+        let planned = input.program.daysPerWeek ?? input.profile.weeklyTrainingDays ?? 0
+        return planned > 0 && lastWeekCount < planned
     }
 
     /// 回归协议：light 乘数按停练时长分档（14-20 ×0.9 / 21-41 ×0.85 / ≥42 ×0.75——

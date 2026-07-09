@@ -107,8 +107,14 @@ public struct CanonicalSessionWriter {
             if let ov = storage["oneTimeDayOverride"]?.asObject,
                let ovDate = ov["dateISO"]?.asString, !ovDate.isEmpty,
                ovDate == session.date {
-                let offset = (storage["rotationOffset"]?.asInt ?? 0) - 1
-                storage["rotationOffset"] = .int(Int64(offset))
+                // 每周循环模式（2026-07-08）：weekly 下换天不产生跨场补偿（补偿是顺延型
+                // 概念——周重开心智里跳过的日子随周翻篇），只清当天覆盖。已知取舍：
+                // weekly 期间的换天在切回顺延模式后不追溯补偿（审查 m5 留痕）。
+                let weeklyMode = storage["programTemplate"]?.asObject?["weeklyCycleRestart"]?.asBool ?? false
+                if !weeklyMode {
+                    let offset = (storage["rotationOffset"]?.asInt ?? 0) - 1
+                    storage["rotationOffset"] = .int(Int64(offset))
+                }
                 storage["oneTimeDayOverride"] = nil
             }
             // 回归协议（2026-07-08）：本场与已有历史最后一场日期差 ≥21 天 = 重启场——
@@ -205,6 +211,20 @@ public struct CanonicalSessionWriter {
             meso["enabled"] = .bool(enabled)
             if meso["blockLengthWeeks"] == nil { meso["blockLengthWeeks"] = .int(4) }
             storage["mesocycle"] = .object(meso)
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
+    /// 已批准写入类别：每周循环模式开关 scalar edit（2026-07-08 owner 拍板）。
+    /// open-bag 合并 programTemplate：只写 weeklyCycleRestart，其余键原样保留。
+    /// true = 轮换每 ISO 周回序列头（日历型）；false/缺省 = 顺延（序列型，现状默认）。
+    @discardableResult
+    public func applyWeeklyCycleRestartPreference(enabled: Bool) throws -> AppData {
+        return try performGatedMutation { current in
+            var storage = current.storage
+            var program = storage["programTemplate"]?.asObject ?? [:]
+            program["weeklyCycleRestart"] = .bool(enabled)
+            storage["programTemplate"] = .object(program)
             return try AppData(decoding: .object(storage))
         }
     }

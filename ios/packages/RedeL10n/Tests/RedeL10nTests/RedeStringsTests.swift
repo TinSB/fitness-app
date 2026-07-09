@@ -10,6 +10,12 @@ final class RedeStringsTests: XCTestCase {
     private func allStrings(_ s: RedeStrings) -> [(String, String)] {
         [
             ("tabToday", s.tabToday), ("tabTrain", s.tabTrain), ("tabProgress", s.tabProgress), ("tabPlan", s.tabPlan),
+            // 每周循环模式（审查 m4：新增 key 进 parity 清单）
+            ("settingsWeeklyRestartLabel", s.settingsWeeklyRestartLabel),
+            ("settingsWeeklyRestartNote", s.settingsWeeklyRestartNote),
+            ("carriedOverHeader", s.carriedOverHeader(day: "腿 A")),
+            ("swapDayScopeOnceWeekly", s.swapDayScopeOnceWeekly),
+            ("swapDayAdoptedToastWeekly", s.swapDayAdoptedToastWeekly(chosen: "推 A")),
             ("todayTitle", s.todayTitle), ("todayDateLine", s.todayDateLine), ("todayReadyStatus", s.todayReadyStatus),
             ("todayVerdict", s.todayVerdict), ("todayStartHere", s.todayStartHere), ("todayLoadDetail", s.todayLoadDetail),
             ("todayThenIncline", s.todayThenIncline), ("todayThenCable", s.todayThenCable), ("startTraining", s.startTraining),
@@ -166,6 +172,8 @@ final class RedeStringsTests: XCTestCase {
             zh.startTraining, zh.trainLogSet, zh.trainFinish, zh.trainHold185,
             zh.todayWhyThisCall, zh.todayHideReason, zh.controlApply, zh.controlHold, zh.controlSwap,
             zh.settingsTitle, zh.settingsLanguage, zh.settingsDone,
+            zh.settingsWeeklyRestartLabel, zh.settingsWeeklyRestartNote, zh.carriedOverHeader(day: "腿 A"),
+            zh.swapDayScopeOnceWeekly, en.settingsWeeklyRestartLabel, en.carriedOverHeader(day: "Legs A"),
             zh.planScheduleThisWeek, zh.planScheduleNextWeek, zh.planAdjustAfterLabel,
             en.startTraining, en.trainLogSet, en.trainFinish, en.trainHold185,
             en.todayWhyThisCall, en.todayHideReason,

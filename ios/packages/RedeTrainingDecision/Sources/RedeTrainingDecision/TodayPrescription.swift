@@ -61,6 +61,7 @@ public enum DayPrescriptionReason: Equatable, Sendable, Codable {
     case verdictLightReduced
     case verdictDeloadReduced
     case comebackCycleRestart
+    case carriedOverFromLastWeek
     case slotUnfilled(pattern: String)
 
     public var code: String {
@@ -68,6 +69,7 @@ public enum DayPrescriptionReason: Equatable, Sendable, Codable {
         case .verdictLightReduced: return "verdictLightReduced"
         case .verdictDeloadReduced: return "verdictDeloadReduced"
         case .comebackCycleRestart: return "comebackCycleRestart"
+        case .carriedOverFromLastWeek: return "carriedOverFromLastWeek"
         case .slotUnfilled: return "slotUnfilled"
         }
     }

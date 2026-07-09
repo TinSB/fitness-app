@@ -186,6 +186,13 @@ public struct RedeStrings: Sendable {
     // 训练周期开关（FR-PL2 enablement）：诚实说明开/关各自行为，默认关 = opt-in。
     public var settingsPeriodizationOverline: String { t("训练周期", "Training cycle") }
     public var settingsPeriodizationLabel: String { t("计划周期化", "Planned periodization") }
+    // 每周循环模式（2026-07-08）：两种真实心智——序列型（顺延，默认）vs 日历型（每周重开）。
+    public var settingsWeeklyRestartLabel: String { t("每周重新开始循环", "Restart cycle each week") }
+    public var settingsWeeklyRestartNote: String {
+        t("开启后每到新的一周，训练循环从分化第一天重新开始　关闭则顺延，漏掉的训练日下次补上",
+          "On: each new week starts the split from day one. Off: the cycle carries over and missed days come up next")
+    }
+
     public var settingsPeriodizationNote: String {
         t("开启后按 4 周块自动安排过载与减载，计划页显示当前周期；关闭则只按你的身体反应逐次调整。安全规则（高量自动减载）始终生效。",
           "When on, training runs a 4-week block with built-in overload and deload weeks, and Plan shows your current cycle. When off, each session is tuned only to how you've been responding. The safety rule (auto-deload after heavy load) is always on.")

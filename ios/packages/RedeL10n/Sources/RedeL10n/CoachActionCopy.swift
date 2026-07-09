@@ -119,6 +119,13 @@ extension RedeStrings {
     public func swapDayScopeOnce(displaced: String) -> String {
         t2c("只换今天 · \(displaced)顺延到下次", "Just today · \(displaced) moves to next session")
     }
+    /// weekly 模式版「只换今天」：不承诺顺延补回（该模式换天不产生补偿——审查 S1 诚实红线）。
+    public var swapDayScopeOnceWeekly: String { t2c("只换今天", "Just today") }
+    /// weekly 模式版撤销条：不承诺明天补回。
+    public func swapDayAdoptedToastWeekly(chosen: String) -> String {
+        t2c("已临时换为\(chosen)", "Switched to \(chosen) today")
+    }
+
     /// 选了某天后的二选一：以后都按这个顺序（打开顺序编辑器永久重排）。
     public var swapDayScopeAlways: String { t2c("以后都按这个顺序", "Change my rotation order") }
     /// 临时换天后撤销条正文（明示明天补回被跳过的那天）。chosen/displaced 为已本地化训练日名。

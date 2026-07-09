@@ -21,6 +21,7 @@ struct SettingsSheet: View {
     @State private var profile: SessionStore.ProfileSnapshot?
     /// 周期化开关持久态（FR-PL2 enablement；默认关 = opt-in）。
     @State private var mesocycleOn = false
+    @State private var weeklyRestartOn = false
     /// FR-NT1 休息结束提醒开关（默认关 = opt-in；开启先请求系统授权）。
     @State private var notifRestEndOn = false
     /// FR-NT2 每周提醒持久态（切片3 仅加载保全、无 UI；切片4 接开关）。
@@ -105,6 +106,7 @@ struct SettingsSheet: View {
             sessionStore.settingsSaveErrorText = nil
             profile = await Task.detached { SessionStore.loadProfileSnapshot() }.value
             mesocycleOn = await Task.detached { SessionStore.loadMesocycleEnabled() }.value
+            weeklyRestartOn = await Task.detached { SessionStore.loadWeeklyCycleRestart() }.value
             let notif = await Task.detached { SessionStore.loadNotificationPreferences() }.value
             notifRestEndOn = notif.restEnd
             notifWeeklyOn = notif.weekly
@@ -244,8 +246,37 @@ struct SettingsSheet: View {
                 .font(.redeCaption)
                 .foregroundStyle(Color.redeT3)
                 .fixedSize(horizontal: false, vertical: true)
+
+            // 每周循环模式（2026-07-08 owner 拍板「两个都做，设置里切换」）：
+            // 默认关=顺延（序列型，漏的训练日下次补）；开=每周从分化第一天重开（日历型）。
+            HStack {
+                Text(s.settingsWeeklyRestartLabel)
+                    .font(.redeBody)
+                    .foregroundStyle(Color.redeT2)
+                Spacer()
+                SteelToggle(isOn: Binding(
+                    get: { weeklyRestartOn },
+                    set: { newValue in
+                        guard newValue != weeklyRestartOn else { return }
+                        weeklyRestartOn = newValue
+                        Task {
+                            if await sessionStore.saveWeeklyCycleRestart(newValue) {
+                                await sessionStore.loadToday()
+                            } else {
+                                weeklyRestartOn = !newValue   // 写失败回滚开关位（同 mesocycle）
+                            }
+                        }
+                    }
+                ))
+            }
+            .padding(.top, 14)
+            Text(s.settingsWeeklyRestartNote)
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT3)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .sensoryFeedback(.selection, trigger: mesocycleOn)
+        .sensoryFeedback(.selection, trigger: weeklyRestartOn)
     }
 
     // 通知（FR-NT1 休息结束 + FR-NT2 每周）：开启先请求系统授权（价值先行 opt-in），被拒回滚 + 指向系统设置。

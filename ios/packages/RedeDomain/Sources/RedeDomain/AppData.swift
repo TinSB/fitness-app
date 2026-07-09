@@ -116,6 +116,12 @@ public struct AppData: Equatable, Sendable {
         storage["rotationOffset"]?.asInt ?? 0
     }
 
+    /// 每周循环模式（2026-07-08）：true = 轮换每 ISO 周回序列头（日历型）；
+    /// false/缺省 = 顺延（序列型，默认）。open-bag 加性，无 schema bump。
+    public var weeklyCycleRestart: Bool {
+        storage["programTemplate"]?.asObject?["weeklyCycleRestart"]?.asBool ?? false
+    }
+
     /// FR-T5 已采纳补量的 ISO 周集合（schema 11）。缺容器/内层 → 空（防御读，审查 M-1）。
     public var volumeBoostWeeks: [String] {
         guard let arr = storage["coachAdjustments"]?.asObject?["volumeBoosts"]?.asArray else { return [] }
