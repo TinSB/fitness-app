@@ -1,5 +1,6 @@
 import Foundation
 import RedeDomain
+import RedeLocalSnapshot
 import RedeDataHealth
 import RedePersistence
 import RedeTrainingDecision
@@ -119,6 +120,15 @@ struct TodayModel {
         // 周期化引擎 S4：从落库配置读 enabled + blockLengthWeeks 喂引擎（默认 false = 零行为回归）；
         // 与计划页周期条（loadCycleState）读同一份 mesocycle 配置 → 两页相位永不分叉（审查 MAJOR-1）。
         // 锚点仍由引擎从真历史现算（FR-PL1 诚实，不读存储 blockStartISO）。
+        // 自动均衡（批次 E，owner 拍板「不要建议直接自动改」）：读 MLE 记忆里的
+        // 「正在补足」名单喂引擎（assembler 真 decision 单一真源——已排除 detraining；
+        // 今日页不复算 MLE）。已知滞后：名单在用户访问进度页后更新——弱肌群是周级
+        // 慢变量，可接受。旧文件缺字段 = 空 = 零行为变化。双包同名枚举经 rawValue 翻译。
+        let priorityRaws = MuscleLevelMemoryStore(fileURL: ProgressModel.muscleLevelMemoryFileURL())
+            .load()?.priorityMuscles ?? []
+        let priorityMuscles = Set(priorityRaws.compactMap {
+            RedeTrainingDecision.MuscleGroupID(rawValue: $0)
+        })
         let prescription = TodayPrescriptionEngine.plan(
             input: input, verdict: verdict,
             mesocycleEnabled: appData.mesocycle.enabled,
@@ -131,7 +141,8 @@ struct TodayModel {
             dayCodeOverride: dayCodeOverride,
             rotationOffset: appData.rotationOffset,
             // 每周循环模式（2026-07-08）：默认 false = 顺延（现状零回归）
-            weeklyCycleRestart: appData.weeklyCycleRestart
+            weeklyCycleRestart: appData.weeklyCycleRestart,
+            priorityMuscles: priorityMuscles
         )
 
         // FR-T5 教练动作（切片6b）：摊平裁决信号 + 处方到顶 reason + 落库 dismiss/采纳态 → 引擎产卡。

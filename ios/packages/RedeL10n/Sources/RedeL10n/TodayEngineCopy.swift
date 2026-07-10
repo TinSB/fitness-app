@@ -156,6 +156,14 @@ extension RedeStrings {
            "Last week's \(day) carries over to today. Swap the day to start a fresh round")
     }
 
+    /// 自动均衡依据行（批次 E 2026-07-10，owner 拍板「不要建议直接自动改」）：
+    /// 只进「查看依据」抽屉，无常驻小字；names 为已本地化肌群名。
+    public func musclePriorityBoostedLine(names: [String]) -> String {
+        let joined = names.joined(separator: locale == .zh ? "、" : ", ")
+        return t2("\(joined)正在补足　今天多安排了组数",
+                  "Building up \(joined). Extra sets added today")
+    }
+
     /// 收据结论句。gapDays 供回归分档（默认 nil = 既有调用不变）。
     public func receiptConclusion(call: String, reasonCode: String, gapDays: Int? = nil) -> String {
         switch (call, reasonCode) {

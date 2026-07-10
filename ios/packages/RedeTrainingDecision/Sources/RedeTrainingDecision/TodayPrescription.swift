@@ -63,6 +63,9 @@ public enum DayPrescriptionReason: Equatable, Sendable, Codable {
     case comebackCycleRestart
     case carriedOverFromLastWeek
     case slotUnfilled(pattern: String)
+    /// 自动均衡（批次 E 2026-07-10，owner 拍板「不要建议直接自动改」）：今日对
+    /// 正在补足的肌群多安排了组数——muscleRaws 为受益肌群（契约 rawValue，L10n 层译名）。
+    case musclePriorityBoosted(muscleRaws: [String])
 
     public var code: String {
         switch self {
@@ -71,6 +74,7 @@ public enum DayPrescriptionReason: Equatable, Sendable, Codable {
         case .comebackCycleRestart: return "comebackCycleRestart"
         case .carriedOverFromLastWeek: return "carriedOverFromLastWeek"
         case .slotUnfilled: return "slotUnfilled"
+        case .musclePriorityBoosted: return "musclePriorityBoosted"
         }
     }
 }
@@ -104,6 +108,18 @@ public struct ExercisePrescriptionPlan: Equatable, Sendable, Codable {
     /// 器械类（dumbbell/barbell/cable/…）：渲染层据此取「器械×单位真实梯子」吸附显示重量
     /// （§8 显示吸附契约）。默认 dumbbell 兼容旧 draft。
     public let equipment: String
+
+    /// 自动均衡（批次 E）：+1 组副本——**瞬时调制**，不落库不写回自定义槽
+    ///（planCustomization 的 sets 会被 customSlots 当新常数 → 渐进漂移红线）。
+    public func addingOneSet() -> ExercisePrescriptionPlan {
+        ExercisePrescriptionPlan(
+            exerciseId: exerciseId, sets: sets + 1, restSeconds: restSeconds,
+            repLowerBound: repLowerBound, repUpperBound: repUpperBound,
+            targetReps: targetReps, targetWeightKg: targetWeightKg, targetRir: targetRir,
+            previousWeightKg: previousWeightKg, previousTopReps: previousTopReps,
+            nextProjectedWeightKg: nextProjectedWeightKg, progressionStepKg: progressionStepKg,
+            change: change, reason: reason, loadType: loadType, equipment: equipment)
+    }
 
     public init(
         exerciseId: String, sets: Int, restSeconds: Int, repLowerBound: Int, repUpperBound: Int,

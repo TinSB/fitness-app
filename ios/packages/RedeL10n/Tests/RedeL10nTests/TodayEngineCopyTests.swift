@@ -130,4 +130,23 @@ final class TodayEngineCopyTests: XCTestCase {
         // 无 gap 传入（防御）不崩且落 14-20 句
         XCTAssertFalse(zh.receiptConclusion(call: "light", reasonCode: "longGapReentry").isEmpty)
     }
+
+    func testMusclePriorityBoostedLineRedLines() {
+        // 批次 E（审查 M4）：自动均衡依据行——双语 parity/禁词/无尾句号/多肌群连接
+        let zhLine = zh.musclePriorityBoostedLine(names: ["肱二头"])
+        let enLine = en.musclePriorityBoostedLine(names: ["Biceps"])
+        XCTAssertNotEqual(zhLine, enLine)
+        XCTAssertTrue(zhLine.contains("肱二头"))
+        XCTAssertTrue(en.musclePriorityBoostedLine(names: ["Biceps", "Back"]).contains("Biceps, Back"))
+        XCTAssertTrue(zh.musclePriorityBoostedLine(names: ["肱二头", "背部"]).contains("肱二头、背部"))
+        for text in [zhLine, enLine] {
+            XCTAssertFalse(text.contains("。") || text.contains("——") || text.hasSuffix("."),
+                           "句号/破折号: \(text)")
+            for banned in ["AI", "算法", "系统认为", "最佳", "algorithm", "model", "best",
+                           "置信度", "confidence", "弱", "weak", "差", "poor"] {
+                XCTAssertFalse(text.lowercased().contains(banned.lowercased()),
+                               "禁词「\(banned)」: \(text)")
+            }
+        }
+    }
 }

@@ -15,7 +15,8 @@ struct TodayTabView: View {
     @Environment(LocaleStore.self) private var localeStore
     @Environment(SessionStore.self) private var sessionStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var reasonExpanded = false
+    // 截图钩子（沿 -initialTab 先例）：-expandTodayReason 启动即展开依据抽屉
+    @State private var reasonExpanded = ProcessInfo.processInfo.arguments.contains("-expandTodayReason")
     @State private var showSettings = false
     /// FR-EX2：点开的动作详情目标（nil = 未打开）。
     @State private var detailTarget: ExerciseDetailTarget?
@@ -761,6 +762,22 @@ struct TodayTabView: View {
                     }
                 }
                 .padding(.top, 6)
+                // 自动均衡（批次 E，owner 拍板「不要建议直接自动改」「不要小字」）：
+                // 解释只放这里——用户主动点开才见；未知 rawValue 如实跳过
+                if let boostedRaws = model?.prescription?.dayReasons.compactMap({ reason -> [String]? in
+                    if case .musclePriorityBoosted(let raws) = reason { return raws }
+                    return nil
+                }).first {
+                    let names = boostedRaws.compactMap { raw in
+                        MuscleGroupLabel(rawValue: raw).map { s.muscleGroupName($0) }
+                    }
+                    if !names.isEmpty {
+                        Text(s.musclePriorityBoostedLine(names: names))
+                            .font(.redeCaption).foregroundStyle(Color.redeT3)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 8)
+                    }
+                }
             }
         }
     }

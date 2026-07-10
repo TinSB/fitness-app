@@ -376,7 +376,8 @@ public enum TodayPrescriptionEngine {
         customization: PlanCustomizationInput = .empty,
         dayCodeOverride: String? = nil,
         rotationOffset: Int = 0,
-        weeklyCycleRestart: Bool = false
+        weeklyCycleRestart: Bool = false,
+        priorityMuscles: Set<MuscleGroupID> = []
     ) -> TodayPrescription? {
         guard verdict.call != .rest else { return nil }
 
@@ -436,6 +437,9 @@ public enum TodayPrescriptionEngine {
         let patternCounts = daySlots.reduce(into: [String: Int]()) { $0[$1.pattern, default: 0] += 1 }
         let lastActual = lastActualByPattern(sessions: input.sessions, catalog: catalog)
 
+        /// 自动均衡每场加量预算（合计最多 +2 组——温和偏置，不是重写计划）。
+        var boostBudget = priorityMuscles.isEmpty ? 0 : 2
+        var boostedMuscleRaws: [String] = []
         for slot in daySlots {
             // 候选过滤抽成共享函数 slotCandidates（plan() 与 defaultDayExerciseIds 共用，杜绝口径分叉）。
             let candidates = slotCandidates(slot: slot, catalog: catalog, allowed: allowed, usedIds: usedIds)
@@ -469,7 +473,26 @@ public enum TodayPrescriptionEngine {
                     .flatMap { target in candidates.first { $0.id == target } } ?? basePick
             }
             usedIds.insert(entry.id)
-            exercises.append(prescribe(entry: entry, slot: slot, input: input, verdict: verdict, catalog: catalog, phase: phase))
+            var item = prescribe(entry: entry, slot: slot, input: input, verdict: verdict, catalog: catalog, phase: phase)
+            // 自动均衡（批次 E，owner 拍板「不要建议直接自动改计划」）：正在补足的肌群
+            // 为主的动作 +1 组。门控全让位——只 train 态（deload 本身 -1 组，无脑加只会
+            // 抵消=假让位；light/comeback 安全网优先）、周期相位平周（deload 周不加、
+            // overreach 周本身 +1 不叠）、每场加量合计封顶（防多动作同肌群失控）。
+            // 瞬时调制：不写回自定义槽（漂移红线，见 addingOneSet 注释）。
+            if boostBudget > 0, verdict.call == .train, (phase?.setDelta ?? 0) == 0,
+               let primary = MuscleGroupMapping.primaryGroup(forExerciseId: entry.id, catalog: catalog),
+               priorityMuscles.contains(primary) {
+                item = item.addingOneSet()
+                boostBudget -= 1
+                boostedMuscleRaws.append(primary.rawValue)
+            }
+            exercises.append(item)
+        }
+        if !boostedMuscleRaws.isEmpty {
+            // 依据行素材（「查看依据」抽屉内，无常驻小字）：去重保序
+            var seen = Set<String>()
+            let unique = boostedMuscleRaws.filter { seen.insert($0).inserted }
+            dayReasons.append(.musclePriorityBoosted(muscleRaws: unique))
         }
 
         switch verdict.call {

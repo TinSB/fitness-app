@@ -22,15 +22,20 @@ public struct MuscleLevelMemory: Codable, Equatable, Sendable {
     /// 已解锁肌群的峰值等级（max 单调的持久侧）。
     public let peaks: [String: Int]
     public let tierRaw: String?
+    /// 正在补足的肌群（批次 E 自动均衡的喂数面：assembler 真 decision——已排除
+    /// detraining/recover；今日页读此名单喂处方引擎加量）。optional：schema 1 加性
+    /// 字段，旧文件缺省 nil = 空（零迁移）。
+    public let priorityMuscles: [String]?
     public let updatedAtIso: String
 
     public init(schemaVersion: Int = MuscleLevelMemory.currentSchemaVersion,
                 levels: [String: Int], peaks: [String: Int],
-                tierRaw: String?, updatedAtIso: String) {
+                tierRaw: String?, priorityMuscles: [String]? = nil, updatedAtIso: String) {
         self.schemaVersion = schemaVersion
         self.levels = levels
         self.peaks = peaks
         self.tierRaw = tierRaw
+        self.priorityMuscles = priorityMuscles
         self.updatedAtIso = updatedAtIso
     }
 
@@ -44,7 +49,9 @@ public struct MuscleLevelMemory: Codable, Equatable, Sendable {
             peaks[estimate.muscleId.rawValue] = estimate.peakLevel
         }
         return MuscleLevelMemory(levels: levels, peaks: peaks,
-                                 tierRaw: profile.overallTier.rawValue, updatedAtIso: atIso)
+                                 tierRaw: profile.overallTier.rawValue,
+                                 priorityMuscles: profile.priorityMuscleIds.map(\.rawValue),
+                                 updatedAtIso: atIso)
     }
 
     /// 落盘判断（审查 m2：真实分支逻辑下沉包内可测）：内容变才写——updatedAtIso
@@ -54,6 +61,7 @@ public struct MuscleLevelMemory: Codable, Equatable, Sendable {
         return previous.levels != next.levels
             || previous.peaks != next.peaks
             || previous.tierRaw != next.tierRaw
+            || (previous.priorityMuscles ?? []) != (next.priorityMuscles ?? [])
     }
 
     /// peaks 写入合并（审查 M1/m3）：对盘上现值取 max、盘上有而本轮无的键保留。
@@ -68,7 +76,8 @@ public struct MuscleLevelMemory: Codable, Equatable, Sendable {
             mergedPeaks[muscle] = max(mergedPeaks[muscle] ?? diskPeak, diskPeak)
         }
         return MuscleLevelMemory(schemaVersion: schemaVersion, levels: levels,
-                                 peaks: mergedPeaks, tierRaw: tierRaw, updatedAtIso: updatedAtIso)
+                                 peaks: mergedPeaks, tierRaw: tierRaw,
+                                 priorityMuscles: priorityMuscles, updatedAtIso: updatedAtIso)
     }
 }
 
