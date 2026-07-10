@@ -6,6 +6,16 @@
 
 ---
 
+## 2026-07-09 · Archive 1.2 (build 19)：营销版本随包递增（owner 口径纠正）
+
+**用户目标**：owner 指出「版本号也要更新」——build 17/18 只动了 build 号、营销版本冻在 1.1，不符合既定口径（升版本 = MARKETING + build 一起升）。
+
+**做了什么**：MARKETING_VERSION 1.1→**1.2** + build →**19**（双 target 全 4 处）；重新 archive 成功（exit 0）；**build 17/18 两个未上传 archive 已删除作废**（避免多号混淆）；What's New 文案文件从「1.1 (build 16)」重定向为「1.2 (build 19)」（ASC 操作指引同步）。
+
+**证据**：PlistBuddy 实证 archive 内主 App 与 Widget 均 1.2/19；codesign 47K95GV3X5。路径 ~/Library/Developer/Xcode/Archives/2026-07-09/Rede-1.2-19.xcarchive——上传 ASC 由 owner 在 Organizer 完成。ASC 版本记录填 **1.2** 选 build **19**（商店现行 1.0；1.1 从未提交审核，直接跳过）。
+
+---
+
 ## 2026-07-09 · Archive build 18（1.1）：在 build 17 之上追加相对力量标准
 
 **用户目标**：owner 拍板「archive一个build 18」——把刚合并的相对体重力量标准（#683）带进 TestFlight。
