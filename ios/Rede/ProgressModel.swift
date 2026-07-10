@@ -1,6 +1,7 @@
 import Foundation
 import RedeDataHealth
 import RedeDomain
+import RedeHealthKit
 import RedeLocalSnapshot
 import RedePersistence
 import RedeTrainingDecision
@@ -50,7 +51,12 @@ struct ProgressModel {
     let subLevelsByMuscle: [RedeLocalSnapshot.MuscleGroupID: [MuscleSubLevel]]
 
     static func loadOutcomeAsync(now: Date = Date()) async -> LoadOutcome? {
-        await Task.detached(priority: .userInitiated) { loadOutcome(now: now) }.value
+        // 批次 D：HealthKit 体重静默读（async 边界在此；未授权/无数据返回 nil 不弹框），
+        // 取好值喂同步组装——组装层保持免并发可测。
+        let healthKitWeightKg = await HKBodyWeightReader().latestBodyWeight()?.kg
+        return await Task.detached(priority: .userInitiated) {
+            loadOutcome(now: now, healthKitWeightKg: healthKitWeightKg)
+        }.value
     }
 
     /// MLE 记忆落点（B2）：canonical 同目录的 derived-only JSON（不进 App Group——
@@ -60,7 +66,7 @@ struct ProgressModel {
             .appendingPathComponent("muscle-level-memory.json")
     }
 
-    static func loadOutcome(now: Date = Date()) -> LoadOutcome? {
+    static func loadOutcome(now: Date = Date(), healthKitWeightKg: Double? = nil) -> LoadOutcome? {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         let appData: AppData
         do {
@@ -180,10 +186,15 @@ struct ProgressModel {
         // 写失败静默不阻断渲染（同 widget 快照 best-effort 教义）。
         let memoryStore = MuscleLevelMemoryStore(fileURL: muscleLevelMemoryFileURL())
         let previousMemory = memoryStore.load()
+        // 批次 D 相对力量标准输入：体重 HealthKit 最新优先（调用侧 async 读好传入）
+        // → profile.weightKg 兜底 → nil 如实退化；性别只从档案读（设置页可填）。
+        let bodyweightKg = healthKitWeightKg ?? cleanView.profile.weightKg
         let muscleProfile = MuscleProfileComposer.compose(MuscleProfileComposer.Input(
             rows: contributionRows, touches: touchRows, e1rmRows: e1rmRows,
             bestActualKgByExercise: bestByExercise, bestE1RmKgByExercise: estByExercise,
             unitSystem: cleanView.profile.unitSystem,
+            sexRaw: cleanView.profile.sex,
+            bodyweightKg: bodyweightKg,
             previousLevels: previousMemory?.levels ?? [:],
             previousPeaks: previousMemory?.peaks ?? [:],
             previousTierRaw: previousMemory?.tierRaw,

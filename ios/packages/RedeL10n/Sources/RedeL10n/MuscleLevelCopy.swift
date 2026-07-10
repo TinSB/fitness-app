@@ -35,13 +35,14 @@ public enum MuscleSubGroupLabel: String, CaseIterable, Equatable, Sendable {
 }
 
 /// evidence/limitation code 的人话翻译键（引擎 code 字符串 → 依据行；app 层映射）。
-/// 十个 code 与引擎产出全集一一对应（mle-v2 增 confidenceLevelCapApplied；漏配=依据行静默丢失，测试全量锁）。
+/// 十一个 code 与引擎产出全集一一对应（批次 D 增 relativeStrengthApplied；漏配=依据行静默丢失，测试全量锁）。
 public enum MuscleEvidenceLabel: String, CaseIterable, Equatable, Sendable {
     case exposureRecentSets
     case e1rmRising, e1rmHolding, e1rmDeclining
     case noBaselineWindow, noRecentWindow, shortHistory
     case noStrengthSignal, milestoneFloorApplied
     case confidenceLevelCapApplied
+    case relativeStrengthApplied
 }
 
 extension RedeStrings {
@@ -134,6 +135,8 @@ extension RedeStrings {
         case .milestoneFloorApplied: return tML("力量突破抬升了等级起点", "A strength milestone raised this level")
         case .confidenceLevelCapApplied:
             return tML("数据量还撑不起更高等级　继续练会解锁", "More training data unlocks higher levels")
+        case .relativeStrengthApplied:
+            return tML("按体重的力量标准抬升了等级起点", "Bodyweight-relative strength raised this level")
         }
     }
 

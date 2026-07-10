@@ -14,12 +14,14 @@ final class CleanProfileProjectionTests: XCTestCase {
     }
 
     func testValidProfilePassesThrough() throws {
+        // sex 白名单化（批次 D 审查 m8）：样例值从随手的 "M" 改为契约值 "female"
+        //（写入口 applySexPreference 只写 male/female，历史无存量——"M" 非合法值）
         let view = try makeView(profileJSON: #"""
-        {"trainingLevel": "intermediate", "sex": "M", "age": 30,
+        {"trainingLevel": "intermediate", "sex": "female", "age": 30,
          "heightCm": 178, "weightKg": 74.5, "weeklyTrainingDays": 4}
         """#)
         XCTAssertEqual(view.profile.trainingLevel, "intermediate")
-        XCTAssertEqual(view.profile.sex, "M")
+        XCTAssertEqual(view.profile.sex, "female")
         XCTAssertEqual(view.profile.age, 30)
         XCTAssertEqual(view.profile.heightCm, 178)
         XCTAssertEqual(view.profile.weightKg, 74.5)
@@ -41,6 +43,14 @@ final class CleanProfileProjectionTests: XCTestCase {
             .profileFieldIgnored(field: "weightKg"),
             .profileFieldIgnored(field: "weeklyTrainingDays"),
         ]))
+    }
+
+    func testUnknownSexProjectsAsNilWithIssue() throws {
+        // 批次 D（审查 m8）：sex 与其他枚举字段同模式——未知值 nil 留痕，
+        // 相对力量标准如实退化
+        let view = try makeView(profileJSON: #"{"sex": "M"}"#)
+        XCTAssertNil(view.profile.sex)
+        XCTAssertEqual(view.issues, [.profileFieldIgnored(field: "sex")])
     }
 
     func testRangeEndpointsPassExactly() throws {

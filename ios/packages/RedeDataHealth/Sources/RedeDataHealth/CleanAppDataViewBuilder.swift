@@ -157,9 +157,17 @@ public enum CleanAppDataViewBuilder {
             unitSystem = nil
         }
 
+        // 性别只认 male/female（审查 m8：与其他枚举字段同模式；未知 → nil 留痕，
+        // 相对力量标准如实退化）
+        var sex = profile.sex
+        if let value = sex, !["male", "female"].contains(value) {
+            issues.append(.profileFieldIgnored(field: "sex"))
+            sex = nil
+        }
+
         return CleanProfile(
             trainingLevel: trainingLevel,
-            sex: profile.sex,
+            sex: sex,
             age: scalar(profile.age, 10...120, "age"),
             heightCm: scalar(profile.heightCm, 100...250, "heightCm"),
             weightKg: scalar(profile.weightKg, 20...400, "weightKg"),

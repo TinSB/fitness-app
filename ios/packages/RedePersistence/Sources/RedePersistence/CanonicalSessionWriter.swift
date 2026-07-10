@@ -60,6 +60,7 @@ public enum OnboardingWriteError: Error, Equatable {
 public enum PreferencesWriteError: Error, Equatable {
     case unknownUnit(String)
     case unknownLocale(String)
+    case unknownSex(String)
 }
 
 public enum CoachActionWriteError: Error, Equatable {
@@ -195,6 +196,24 @@ public struct CanonicalSessionWriter {
             var profile = storage["userProfile"]?.asObject ?? [:]
             if let unitSystem { profile["unitSystem"] = .string(unitSystem) }
             if let locale { profile["locale"] = .string(locale) }
+            storage["userProfile"] = .object(profile)
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
+    /// 已批准写入类别：性别 scalar edit（批次 D 2026-07-09，激活 UserProfile 休眠字段）。
+    /// open-bag 合并 userProfile：白名单 male/female；nil = 显式清除（移除键，「暂不设置」）。
+    /// sex 用途单一契约：只进 RelativeStrengthStandards 相对力量标准，
+    /// 不进处方/恢复/等级其他任何决策面（交接件 §3.3）。
+    @discardableResult
+    public func applySexPreference(sex: String?) throws -> AppData {
+        if let sex, !["male", "female"].contains(sex) {
+            throw PreferencesWriteError.unknownSex(sex)
+        }
+        return try performGatedMutation { current in
+            var storage = current.storage
+            var profile = storage["userProfile"]?.asObject ?? [:]
+            profile["sex"] = sex.map { .string($0) }
             storage["userProfile"] = .object(profile)
             return try AppData(decoding: .object(storage))
         }

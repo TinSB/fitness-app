@@ -60,4 +60,29 @@ final class PreferencesWriteTests: XCTestCase {
             XCTAssertEqual(error as? PreferencesWriteError, .unknownLocale("fr"))
         }
     }
+
+    // MARK: - applySexPreference（批次 D 2026-07-09：激活 UserProfile 休眠字段）
+
+    func testSexWriteReadbackAndExplicitClear() throws {
+        let existing = #"""
+        {"schemaVersion": 8, "futureKey": 1,
+         "userProfile": {"name": "样例", "unitSystem": "lb"}}
+        """#
+        try Data(existing.utf8).write(to: fileURL)
+        let written = try makeWriter().applySexPreference(sex: "female")
+        XCTAssertEqual(written.userProfile.sex, "female")
+        XCTAssertEqual(written.userProfile.unitSystem, "lb")     // open-bag 保全
+        XCTAssertEqual(written.storage["futureKey"]?.asInt, 1)
+        // nil = 显式清除（「暂不设置」——键移除，不留空串）
+        let cleared = try makeWriter().applySexPreference(sex: nil)
+        XCTAssertNil(cleared.userProfile.sex)
+        XCTAssertNil(cleared.storage["userProfile"]?.asObject?["sex"])
+        XCTAssertEqual(cleared.userProfile.name, "样例")
+    }
+
+    func testSexRejectsUnknownValue() {
+        XCTAssertThrowsError(try makeWriter().applySexPreference(sex: "other")) { error in
+            XCTAssertEqual(error as? PreferencesWriteError, .unknownSex("other"))
+        }
+    }
 }

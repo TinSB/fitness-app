@@ -112,6 +112,13 @@ struct SettingsSheet: View {
             notifWeeklyOn = notif.weekly
             notifPermissionDenied = false
             await health.loadSilently() // 静默尝试读（不弹框）：之前授权过则直接显示体重
+            // 截图钩子（沿 -autoOpenSettings 先例）：-editPlateQuestion <goal|days|equipment|level|sex>
+            // 直接打开单题编辑页；未知值忽略
+            let args = ProcessInfo.processInfo.arguments
+            if let idx = args.firstIndex(of: "-editPlateQuestion"), args.indices.contains(idx + 1),
+               let question = PlateQuestion(rawValue: args[idx + 1]) {
+                editing = question
+            }
         }
     }
 
@@ -356,6 +363,8 @@ struct SettingsSheet: View {
                     plateRow(s.onbEquipLabel, profile?.equipmentScenario.map { s.onbEquipOption($0).title }, question: .equipment)
                     plateDivider
                     plateRow(s.settingsSelfReportedBackgroundLabel, profile?.trainingLevel.map { s.onbLevelOption($0).title }, question: .level)  // 自报输入≠系统等级（FR-PR6 上线后区分，§6.5.14）
+                    plateDivider
+                    plateRow(s.settingsSexLabel, profile?.sex.map { s.settingsSexOption($0).title }, question: .sex)  // 可选（批次 D：仅相对力量标准用；未设显示 —）
                 }
                 .padding(.vertical, 5)
                 .padding(.horizontal, 16)
@@ -500,7 +509,7 @@ struct SettingsSheet: View {
 // MARK: - 行内单题编辑（方向 A 拍板 2026-06-10）
 
 enum PlateQuestion: String, Identifiable, Hashable {
-    case goal, days, equipment, level
+    case goal, days, equipment, level, sex
     var id: String { rawValue }
 }
 
@@ -520,6 +529,7 @@ struct PlateQuestionEditView: View {
     @State private var days: Int?
     @State private var equipment: String?
     @State private var level: String?
+    @State private var sexCode: String = "not-set"   // 批次 D：三值编码（male/female/not-set）
     @State private var saving = false
     @State private var failed = false
     @State private var selectionPulse = 0
@@ -533,12 +543,14 @@ struct PlateQuestionEditView: View {
         _days = State(initialValue: snapshot?.weeklyTrainingDays)
         _equipment = State(initialValue: snapshot?.equipmentScenario)
         _level = State(initialValue: snapshot?.trainingLevel)
+        _sexCode = State(initialValue: snapshot?.sex ?? "not-set")
     }
 
     private var s: RedeStrings { localeStore.strings }
 
     private var dirty: Bool {
-        goal != snapshot?.primaryGoal || days != snapshot?.weeklyTrainingDays
+        if question == .sex { return sexCode != (snapshot?.sex ?? "not-set") }
+        return goal != snapshot?.primaryGoal || days != snapshot?.weeklyTrainingDays
             || equipment != snapshot?.equipmentScenario || level != snapshot?.trainingLevel
     }
 
@@ -608,6 +620,7 @@ struct PlateQuestionEditView: View {
         case .days: s.onbDaysLabel
         case .equipment: s.onbEquipLabel
         case .level: s.onbLevelLabel
+        case .sex: s.settingsSexLabel
         }
     }
 
@@ -636,6 +649,14 @@ struct PlateQuestionEditView: View {
                 .padding(.top, 4)
             OnbOptionRows(codes: ["beginner", "intermediate", "advanced"],
                           selected: level, option: s.onbLevelOption) { level = $0; selectionPulse += 1 }
+        case .sex:
+            editTitle(s.settingsSexQuestion)
+            Text(s.settingsSexNote)
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT4)
+                .padding(.top, 4)
+            OnbOptionRows(codes: ["male", "female", "not-set"],
+                          selected: sexCode, option: s.settingsSexOption) { sexCode = $0; selectionPulse += 1 }
         }
     }
 
@@ -646,7 +667,26 @@ struct PlateQuestionEditView: View {
     }
 
     private func save() {
-        guard !saving, let goal, let days, let equipment, let level else { return }
+        guard !saving else { return }
+        if question == .sex {
+            // 单字段 scalar 写（applySexPreference），不走四答全量重写
+            saving = true
+            failed = false
+            Task {
+                let ok = await sessionStore.saveSex(sexCode == "not-set" ? nil : sexCode)
+                saving = false
+                if ok {
+                    let receipt = receiptLine()
+                    let fresh = await Task.detached { SessionStore.loadProfileSnapshot() }.value
+                    onSaved(receipt, fresh)
+                    dismiss()
+                } else {
+                    failed = true
+                }
+            }
+            return
+        }
+        guard let goal, let days, let equipment, let level else { return }
         saving = true
         failed = false
         Task {
@@ -671,6 +711,11 @@ struct PlateQuestionEditView: View {
 
     /// 变更收据：「频率 每周 5 天 → 每周 6 天」；分化随之变化时追加「上下分化 → 推拉腿」。
     private func receiptLine() -> String {
+        if question == .sex {
+            let oldTitle = snapshot?.sex.map { s.settingsSexOption($0).title }
+            let newTitle = s.settingsSexOption(sexCode).title
+            return "\(s.settingsSexLabel) \(oldTitle ?? "—") → \(newTitle)"
+        }
         var parts: [String] = []
         func add(_ label: String, _ oldValue: String?, _ newValue: String?) {
             if oldValue != newValue, let newValue {

@@ -133,7 +133,25 @@ public enum MuscleProfileAssembler {
     ) -> MuscleDevelopmentProfile {
         // 里程碑 level floor（MLE-4）：linked 肌群等级抬底（仅已解锁——校准中不因
         // 一次达标出等级）；tierCandidate 达成并入 tier 进步信号（契约 §6.5.5）。
-        let milestoneFloors = MuscleMilestoneCatalog.levelFloors(from: milestones)
+        // 批次 D：相对标准（rel- 前缀）与绝对锚分开算 floors——相对高档吃低置信护栏
+        //（审查 S2）后再与绝对锚合并 max；分开的两套还用于 evidence 来源分流。
+        let rawRelativeFloors = MuscleMilestoneCatalog.levelFloors(
+            from: milestones.filter { $0.milestoneId.hasPrefix("rel-") })
+        let absoluteOnlyFloors = MuscleMilestoneCatalog.levelFloors(
+            from: milestones.filter { !$0.milestoneId.hasPrefix("rel-") })
+        // 审查 S2 护栏：置信 low 时相对 floor 封在 intermediate 档（10）——3 场新人一次
+        // elite 测验（相对门槛比绝对 140kg 低得多）不应直接 Lv.19；「数据量撑不起时先给
+        // 中级起点，练出置信自动放开」。绝对锚不受此限（原有语义，天花板 16 且门槛硬）。
+        var relativeOnlyFloors: [MuscleGroupID: Int] = [:]
+        var milestoneFloors = absoluteOnlyFloors
+        for comp in computations {
+            guard var relative = rawRelativeFloors[comp.muscleId] else { continue }
+            if comp.confidence == .low {
+                relative = min(relative, RelativeStrengthStandards.Grade.intermediate.levelFloor)
+            }
+            relativeOnlyFloors[comp.muscleId] = relative
+            milestoneFloors[comp.muscleId] = max(milestoneFloors[comp.muscleId] ?? 0, relative)
+        }
         let ordered = computations.sorted { $0.muscleId.rawValue < $1.muscleId.rawValue }
         let unlocked = ordered.filter { !$0.isCalibrating }
         // 中位/tier 看抬底后等级（floor 是强度等级语义的一部分）；balance 例外见下。
@@ -162,7 +180,13 @@ public enum MuscleProfileAssembler {
             let floorApplied = floored > comp.level
             var evidence = comp.evidence
             if floorApplied {
-                evidence.append(MuscleLevelEvidence(code: "milestoneFloorApplied", muscleId: comp.muscleId))
+                // 来源分流：只有相对标准单独把 floor 抬到此高度（绝对锚没到）才打
+                // relativeStrengthApplied；两套同高时算绝对锚（传统里程碑语义优先）。
+                let relativeAlone = (relativeOnlyFloors[comp.muscleId] ?? 0) >= floored
+                    && (absoluteOnlyFloors[comp.muscleId] ?? 0) < floored
+                evidence.append(MuscleLevelEvidence(
+                    code: relativeAlone ? "relativeStrengthApplied" : "milestoneFloorApplied",
+                    muscleId: comp.muscleId))
             }
             estimates.append(MuscleLevelEstimate(
                 muscleId: comp.muscleId,

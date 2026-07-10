@@ -45,6 +45,8 @@ public enum MuscleProfileComposer {
         public let bestActualKgByExercise: [String: Double]
         public let bestE1RmKgByExercise: [String: Double]
         public let unitSystem: String?
+        public let sexRaw: String?           // 批次 D：仅相对力量标准用（nil=退化）
+        public let bodyweightKg: Double?     // 批次 D：app 层取好值（HealthKit→profile→nil）
         public let previousLevels: [String: Int]
         public let previousPeaks: [String: Int]
         public let previousTierRaw: String?
@@ -55,6 +57,8 @@ public enum MuscleProfileComposer {
                     bestActualKgByExercise: [String: Double],
                     bestE1RmKgByExercise: [String: Double],
                     unitSystem: String?,
+                    sexRaw: String? = nil,
+                    bodyweightKg: Double? = nil,
                     previousLevels: [String: Int] = [:],
                     previousPeaks: [String: Int] = [:],
                     previousTierRaw: String? = nil,
@@ -65,6 +69,8 @@ public enum MuscleProfileComposer {
             self.bestActualKgByExercise = bestActualKgByExercise
             self.bestE1RmKgByExercise = bestE1RmKgByExercise
             self.unitSystem = unitSystem
+            self.sexRaw = sexRaw
+            self.bodyweightKg = bodyweightKg
             self.previousLevels = previousLevels
             self.previousPeaks = previousPeaks
             self.previousTierRaw = previousTierRaw
@@ -105,6 +111,13 @@ public enum MuscleProfileComposer {
             bestActualKgByExercise: input.bestActualKgByExercise,
             bestE1RmKgByExercise: input.bestE1RmKgByExercise,
             unitSystem: input.unitSystem, atIso: input.nowISO)
+        // 批次 D：相对体重力量标准与绝对锚并存（性别/体重缺失如实返回空 = 退化到绝对锚）；
+        // floors 在 assembler 侧自动取 max，evidence 按 rel- 前缀分流来源。
+        let relative = RelativeStrengthStandards.achievements(
+            sex: input.sexRaw, bodyweightKg: input.bodyweightKg,
+            bestActualKgByExercise: input.bestActualKgByExercise,
+            bestE1RmKgByExercise: input.bestE1RmKgByExercise,
+            atIso: input.nowISO)
         return MuscleProfileAssembler.assemble(
             computations: computations,
             observations: observationsById,
@@ -113,7 +126,7 @@ public enum MuscleProfileComposer {
             previousTier: input.previousTierRaw.flatMap(TrainingTier.init(rawValue:)),
             generatedAtIso: input.nowISO,
             config: config,
-            milestones: milestones)
+            milestones: milestones + relative)
     }
 
     /// rawValue 键字典 → 类型键（持久层 B2 的字符串形态直通；非法键丢弃）。

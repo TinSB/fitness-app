@@ -751,7 +751,20 @@ V1 起始 milestone 示例:
 - milestone 可以给相关肌群 / movement family 设置 level floor,但不能直接把所有相关肌群拉到同一级。
 - milestone 可以触发 `TrainingTier` candidate,但 overall tier 必须同时看 balanceScore、训练一致性、数据质量和 safety limitation。
 - 如果 milestone 和日常训练覆盖冲突,UI 必须解释为“力量突破已达成,但整体发展仍需补足”,不能强行美化。
-- milestone 不替代体重相对强度。V1 不做复杂体重/性别/年龄排名;未来如引入相对强度或 public benchmark,必须是 optional reference,并写清隐私与公平性边界。
+- milestone 不替代体重相对强度——绝对锚管 kg/lb 心理里程碑与分享资产;体重相对强度另见下方「相对体重力量标准」(2026-07-09 批次 D 落地,替代本行早前「V1 不做」措辞)。public benchmark/年龄系数仍不做。
+
+**相对体重力量标准(2026-07-09 批次 D,`RelativeStrengthStandards`,standardsVersion `rel-standards-v1`)**:
+
+owner 拍板背景:绝对锚三缺口——60kg 以下无档(卧推 40kg 与 20kg 新手同级)、back/biceps 无低门槛路径(weighted-pullup floor 11/deadlift floor 14 门槛过高)、锚不按体重/性别调(女 60kg 推 60kg 含金量≈男推 100kg 拿不到档位)。
+
+- **口径**:相对比 = 全历史最好成绩(kg)÷ 当前体重(kg),无单位、不吃 unitSystem;按性别查五档表(beginner/novice/intermediate/advanced/elite)。五动作:bench-press/squat/deadlift/overhead-press/**barbell-row**(back/biceps 低门槛新覆盖);weighted-pull-up 不进表(「+X kg」与体重比语义冲突)。数值为 E1 专家判断锚(男 intermediate 卧推 1.0×体重等业界通识),全表契约测试锁死,调整须过 owner。
+- **档位→floor/tier**:2/6/10/16/19;intermediate/advanced/elite 出 tierCandidate(与绝对锚 bench-100→10/.intermediate 同格)。elite=19 非 20:满级留给「elite 档+持续训练量」。
+- **与绝对锚并存取 max**:两套 achievements 合并喂 assembler,floors 自动 max;绝对锚九条数值零改动。
+- **低置信护栏(审查 S2)**:肌群置信 low 时相对 floor 封 intermediate(10)——3 场新人一次相对 elite 测验不直接 Lv.19,「数据量撑不起时先给中级起点,练出置信自动放开」;绝对锚不受此限(门槛硬、天花板 16)。
+- **输入与退化**:性别 = `userProfile.sex`(male/female 白名单,写入口 `applySexPreference`,设置页训练背景铭牌可填/可清,「暂不设置」=移除键);体重 = HealthKit 最新 bodyMass(静默查询不弹框)→ `profile.weightKg` 兜底 → nil;**任一缺 = 相对标准整体不参与**(如实退化到绝对锚现状,不猜不用中间表)。体重合理区间 20-400kg 在引擎层再守一道(审查 S1:HealthKit 脏数据——秤错单位/家庭共享混数据——会经 peaks 只升不降永久污染记忆)。
+- **sex 用途单一契约**:只进相对力量标准,不进处方/恢复/等级其他任何决策面;CleanProfile 投影同白名单(未知值 nil 留痕)。
+- **evidence 分流**:相对锚单独把 floor 抬到生效高度时打 `relativeStrengthApplied`(「按体重的力量标准抬升了等级起点」);两套同高归 `milestoneFloorApplied`(传统里程碑语义优先)。
+- **时点简化(已知边界)**:当前体重 × 全历史最好成绩判档——减重后档位可能上浮,V1 接受(体重变化缓慢,力量标准业界口径本就用当前体重)。年龄系数、体重档分段表、分享卡素材不做(YAGNI,等真机反馈)。
 
 V1 实现拍板(2026-07-07 批次 A MLE-4,`MuscleMilestoneCatalog`,catalogVersion `mle-milestones-v1`):
 
