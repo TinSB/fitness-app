@@ -8,6 +8,10 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 ## 2026-07-09
 
+- **1.2 (build 19) archived — marketing version now bumps with every archive** (owner correction): 1.1→1.2 + build 19 both targets; unsent build 17/18 archives deleted; What's New doc retargeted to 1.2/19. Carries everything: mle-v2 calibration, comeback protocol, weekly cycle modes, muscle detail page, relative strength standards.
+
+## 2026-07-09
+
 - **Build 18 archived (1.1)**: bump 17→18 both targets; adds the bodyweight-relative strength standards batch (#683) on top of build 17's four features. PlistBuddy-verified 1.1/18; upload via Xcode Organizer (owner).
 
 ## 2026-07-09
