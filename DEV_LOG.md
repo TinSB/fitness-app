@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-07-10 · Archive 1.3 (build 20)：六件套齐全，进入真机验收阶段
+
+**用户目标**：owner 拍板走「先验收再见人」路径——「一步一步做，完成清单」。
+
+**做了什么**：①MARKETING 1.2→1.3 + build 19→20（双 target），archive 成功（exit 0）；build 19 未上传作废删除（自动均衡 #686 在它之后合并，19 不完整）。②What's New 文案重定向 1.3/20。③产出**真机集中验收清单**（docs/工作记录/2026-07-10-testflight-acceptance-checklist.md）——把 6 月底以来全部未真机验证的功能翻成「点这里→应看到这个」步骤。
+
+**证据**：PlistBuddy 实证主 App 与 Widget 均 1.3/20；codesign 47K95GV3X5。路径 ~/Library/Developer/Xcode/Archives/2026-07-10/Rede-1.3-20.xcarchive——owner 在 Organizer Distribute 上传，ASC 版本记录填 1.3 选 build 20。
+
+**下一步**：owner TestFlight 装 build 20 → 按清单过一遍 → 反馈驱动校准批次 → 过了提审商店（现行 1.0，用户一个月没拿到改进）。
+
+---
+
 ## 2026-07-10 · 自动均衡：弱肌群不再等你拍板，计划直接多给它安排
 
 **用户目标**：问「计划表还差什么」后 owner 两句拍板重定 FR-PL5 形态——「**不要是建议直接自动改计划**」「**不要有那种小字也**」。原「提案卡（预览→采纳→回滚）」方案作废。
