@@ -8,6 +8,10 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 ## 2026-07-10
 
+- **1.3 (build 20) archived — the full six-pack, entering device-acceptance phase**: 1.2(19) scrapped unsent (predates auto-balance); 1.3/20 carries mle-v2 calibration, comeback protocol, weekly cycle modes, muscle detail page, relative strength standards, and auto-balance. Device acceptance checklist authored (docs/工作记录/); store still ships 1.0 — submission planned once acceptance passes.
+
+## 2026-07-10
+
 - **Auto-balance — weak muscles get extra sets automatically, no proposal cards** (owner verdict: "don't suggest, just change the plan" + "no fine print either"): the prescription engine now consumes MLE's "building up" list — exercises targeting those muscles get +1 set on normal training days. Full yield discipline: light/deload/comeback days never boost (screenshot-verified), mesocycle overreach weeks don't stack, deload weeks aren't cancelled, and each session adds at most 2 sets total. The only explanation lives inside the tap-to-open reasoning drawer ("Building up Biceps. Extra sets added today") — zero persistent UI text. Feeds off the MLE memory single source (detraining muscles already excluded — they go through the comeback protocol instead), converges via natural negative feedback (extra volume → level catches up to median → list drops the muscle → boosting stops), and never writes back to plan customization (progression-drift red line). Review killed a false-positive phase-gate test (rewritten with an anti-vacuity assertion) and forced the PRD FR-PL5 rewrite from "proposal" to "automatic". FR-PL5 closed — the last piece of the plan tab.
 
 ## 2026-07-09
