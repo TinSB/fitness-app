@@ -8,6 +8,10 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 ## 2026-07-09
 
+- **Build 18 archived (1.1)**: bump 17→18 both targets; adds the bodyweight-relative strength standards batch (#683) on top of build 17's four features. PlistBuddy-verified 1.1/18; upload via Xcode Organizer (owner).
+
+## 2026-07-09
+
 - **Bodyweight-relative strength standards — a 60kg woman benching 36kg now ranks like the 100kg man benching 100kg** : owner confirmed levels should reflect actual ability and greenlit closing all three v1 gaps (no tiers below 60kg, no low-bar path for back/biceps, no bodyweight/sex adjustment). New RelativeStrengthStandards: best lift ÷ current bodyweight against five-grade tables (male/female × bench/squat/deadlift/OHP/**barbell row**), grade floors 2/6/10/16/19 aligned with absolute anchors, merged via max — absolute anchors untouched. Sex setting lands in Settings › Training background (male/female/not set, "only used for strength standards", single-purpose contract: never feeds prescriptions). Bodyweight: HealthKit latest (silent) → profile fallback → honest degradation. Review caught two serious issues, both fixed: dirty HealthKit weights (wrong-unit scales, family sharing) could permanently poison peak memory — 20-400kg plausibility guard in the tested engine layer; and a 3-session newcomer maxing one relative-elite single would jump straight to Lv.19 — low-confidence guard caps relative floors at intermediate (10) until confidence unlocks. New evidence line "Bodyweight-relative strength raised this level"; 15 new tests; simulator proof: female 60kg × 36kg bench → Chest Lv.10.
 
 ## 2026-07-09

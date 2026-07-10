@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-07-09 · Archive build 18（1.1）：在 build 17 之上追加相对力量标准
+
+**用户目标**：owner 拍板「archive一个build 18」——把刚合并的相对体重力量标准（#683）带进 TestFlight。
+
+**做了什么**：等 #683 auto-merge 落主干后 bump 17→18（双 target），命令行 archive 成功（exit 0）。
+
+**这版 vs build 17 新带的**：相对体重力量标准全量（按体重/性别五档等级地板、设置页性别行、「按体重的力量标准抬升了等级起点」依据行、HealthKit 脏体重防线、低置信护栏）。build 17 的四件（mle-v2 校准/回归协议/每周循环/肌群详情页）自然都在。
+
+**证据**：PlistBuddy 实证 archive 内主 App 与 Widget 均 CFBundleShortVersionString=1.1 / CFBundleVersion=18；codesign team 47K95GV3X5、bundle com.tinsab.rede。archive 路径 ~/Library/Developer/Xcode/Archives/2026-07-09/Rede-build18.xcarchive——上传 ASC 由 owner 在 Xcode Organizer 完成（惯例）。
+
+**真机验收清单（在 build 17 清单上追加）**：①设置 → 训练背景 → 性别行（填/清/收据）②填性别+有体重后进度页肌群详情看「按体重的力量标准」依据行 ③未填性别时确认一切照旧。
+
+---
+
 ## 2026-07-09 · 相对体重力量标准：同样的重量，60kg 的女生和 100kg 的男生不再一个待遇
 
 **用户目标**：owner 问「等级校准是按本身能力算的吧？同样刚用的人，卧推 100 公斤和 20 公斤的等级肯定不一样」——确认绝对里程碑已经在做这件事后，报告了三个 v1 边界（60kg 以下无档 / 背二头无低门槛路径 / 不按体重性别调），owner 拍板「123 你看着安排一下，制作。用专业的 prompt」。
