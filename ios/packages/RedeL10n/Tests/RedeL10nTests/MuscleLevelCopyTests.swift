@@ -27,7 +27,7 @@ final class MuscleLevelCopyTests: XCTestCase {
         for decision in MuscleDecisionLabel.allCases {
             XCTAssertNotEqual(zh.muscleDecisionLabel(decision), en.muscleDecisionLabel(decision))
         }
-        XCTAssertEqual(MuscleEvidenceLabel.allCases.count, 10)
+        XCTAssertEqual(MuscleEvidenceLabel.allCases.count, 11)
         for evidence in MuscleEvidenceLabel.allCases {
             XCTAssertNotEqual(zh.muscleEvidenceLine(evidence), en.muscleEvidenceLine(evidence),
                               evidence.rawValue)
@@ -94,11 +94,12 @@ final class MuscleLevelCopyTests: XCTestCase {
                         "shoulders", "biceps", "triceps", "calves", "core"])
         XCTAssertEqual(Set(TrainingTierLabel.allCases.map(\.rawValue)),
                        ["calibrating", "beginner", "novicePlus", "intermediate", "advanced", "elite"])
-        // 引擎产出 code 全集九个（漏配=依据行静默丢失，审查 M4 实锤过 exposureRecentSets）
+        // 引擎产出 code 全集十一个（漏配=依据行静默丢失，审查 M4 实锤过 exposureRecentSets）
         XCTAssertEqual(Set(MuscleEvidenceLabel.allCases.map(\.rawValue)),
                        ["exposureRecentSets", "e1rmRising", "e1rmHolding", "e1rmDeclining",
                         "noBaselineWindow", "noRecentWindow", "shortHistory",
-                        "noStrengthSignal", "milestoneFloorApplied", "confidenceLevelCapApplied"])
+                        "noStrengthSignal", "milestoneFloorApplied", "confidenceLevelCapApplied",
+                        "relativeStrengthApplied"])
     }
 
     func testSubGroupCopyParityAndRedLines() {
@@ -113,6 +114,30 @@ final class MuscleLevelCopyTests: XCTestCase {
         for sub in MuscleSubGroupLabel.allCases {
             XCTAssertNotEqual(zh.muscleSubGroupName(sub), en.muscleSubGroupName(sub), sub.rawValue)
             texts.append(zh.muscleSubGroupName(sub)); texts.append(en.muscleSubGroupName(sub))
+        }
+        let forbidden = ["置信度", "confidence", "弱", "weak", "差", "poor"]
+        for text in texts {
+            XCTAssertFalse(text.contains("。") || text.contains("——") || text.hasSuffix("."),
+                           "句号/破折号: \(text)")
+            for word in forbidden {
+                XCTAssertFalse(text.lowercased().contains(word.lowercased()),
+                               "禁用词「\(word)」: \(text)")
+            }
+        }
+    }
+
+    func testSettingsSexCopyParityAndRedLines() {
+        // 审查 M3：settingsSex* 手写函数不在 CaseIterable 自动扫描内，单独锁四道红线
+        var texts: [String] = [zh.settingsSexLabel, en.settingsSexLabel,
+                               zh.settingsSexQuestion, en.settingsSexQuestion,
+                               zh.settingsSexNote, en.settingsSexNote]
+        XCTAssertNotEqual(zh.settingsSexLabel, en.settingsSexLabel)
+        XCTAssertNotEqual(zh.settingsSexNote, en.settingsSexNote)
+        for code in ["male", "female", "not-set"] {
+            let zhPair = zh.settingsSexOption(code)
+            let enPair = en.settingsSexOption(code)
+            XCTAssertNotEqual(zhPair.title, enPair.title, code)
+            texts += [zhPair.title, zhPair.caption, enPair.title, enPair.caption]
         }
         let forbidden = ["置信度", "confidence", "弱", "weak", "差", "poor"]
         for text in texts {

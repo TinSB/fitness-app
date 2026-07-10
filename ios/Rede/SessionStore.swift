@@ -157,12 +157,13 @@ final class SessionStore {
         return (appData.userProfile.unitSystem, appData.userProfile.locale)
     }
 
-    /// 设置页展示用的档案快照（引导四答）。
+    /// 设置页展示用的档案快照（引导四答 + 可选性别）。
     struct ProfileSnapshot {
         let primaryGoal: String?
         let weeklyTrainingDays: Int?
         let equipmentScenario: String?
         let trainingLevel: String?
+        let sex: String?          // 批次 D：可选，仅相对力量标准用
     }
 
     nonisolated static func loadProfileSnapshot() -> ProfileSnapshot? {
@@ -173,7 +174,8 @@ final class SessionStore {
             primaryGoal: profile.primaryGoal,
             weeklyTrainingDays: profile.weeklyTrainingDays,
             equipmentScenario: profile.equipmentScenario,
-            trainingLevel: profile.trainingLevel
+            trainingLevel: profile.trainingLevel,
+            sex: profile.sex
         )
     }
 
@@ -588,6 +590,37 @@ final class SessionStore {
                     gate: DataHealthGate()
                 )
                 try writer.applyWeeklyCycleRestartPreference(enabled: enabled)
+                return .success(())
+            } catch {
+                return .failure(error)
+            }
+        }.value
+        switch result {
+        case .success:
+            return true
+        case .failure(let error):
+            settingsSaveErrorText = String(describing: error)
+            return false
+        }
+    }
+
+    /// 性别写入（批次 D 2026-07-09）：经写闸 scalar edit；nil = 显式清除（「暂不设置」）。
+    /// 只进相对力量标准，失败如实置 settingsSaveErrorText（同 saveWeeklyCycleRestart 模式）。
+    func saveSex(_ sex: String?) async -> Bool {
+        guard !isSaving else { return false }
+        isSaving = true
+        defer { isSaving = false }
+        let fileURL = TodayModel.canonicalFileURL()
+        let result: Result<Void, Error> = await Task.detached(priority: .userInitiated) {
+            do {
+                try FileManager.default.createDirectory(
+                    at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true
+                )
+                let writer = CanonicalSessionWriter(
+                    store: JSONFileAppDataStore(fileURL: fileURL),
+                    gate: DataHealthGate()
+                )
+                try writer.applySexPreference(sex: sex)
                 return .success(())
             } catch {
                 return .failure(error)

@@ -31,13 +31,16 @@ final class MuscleProfileComposerTests: XCTestCase {
                          e1rmRows: [MuscleE1RMRow] = [],
                          bestActual: [String: Double] = [:],
                          bestE1Rm: [String: Double] = [:],
+                         sexRaw: String? = nil,
+                         bodyweightKg: Double? = nil,
                          previousLevels: [String: Int] = [:],
                          previousPeaks: [String: Int] = [:],
                          previousTierRaw: String? = nil) -> MuscleDevelopmentProfile {
         MuscleProfileComposer.compose(MuscleProfileComposer.Input(
             rows: rows, touches: touches, e1rmRows: e1rmRows,
             bestActualKgByExercise: bestActual, bestE1RmKgByExercise: bestE1Rm,
-            unitSystem: "kg", previousLevels: previousLevels, previousPeaks: previousPeaks,
+            unitSystem: "kg", sexRaw: sexRaw, bodyweightKg: bodyweightKg,
+            previousLevels: previousLevels, previousPeaks: previousPeaks,
             previousTierRaw: previousTierRaw, nowISO: now))
     }
 
@@ -177,5 +180,96 @@ final class MuscleProfileComposerTests: XCTestCase {
         //（历史进了管线、只是量不够——绝不静默丢失）
         XCTAssertEqual(quads?.decision, .insufficientData)
         XCTAssertTrue(quads?.limitations.contains { $0.code == "shortHistory" } ?? false)
+    }
+
+    // MARK: - 批次 D：相对体重力量标准端到端
+
+    /// 弱种子（4 组/周）：解锁但曲线级低于 floor 10——抬底路径可真实触发
+    ///（chestSeed 8 组/周会把曲线级练满 10，floored > comp.level 恒 false）。
+    private func weakChestSeed() -> (rows: [MuscleVolumeAggregator.ContributionRow],
+                                     touches: [MuscleTouchRow]) {
+        var rows: [MuscleVolumeAggregator.ContributionRow] = []
+        var touches: [MuscleTouchRow] = []
+        for (index, monday) in mondays.enumerated() {
+            rows.append(.init(dateISO: monday, muscleRaw: "chest", weight: 1.0, setCount: 4))
+            touches.append(.init(muscleRaw: "chest", sessionId: "s\(index)",
+                                 familyId: index % 2 == 0 ? "horizontal-press" : "fly"))
+        }
+        return (rows, touches)
+    }
+
+    func testFemaleRelativeStandardRaisesFloorWithDistinctEvidence() {
+        // 交接件 §3.5.2 端到端：女 60kg 实测卧推 36（0.6×=intermediate）→ chest floor 10；
+        // 绝对锚（60kg 起步）全程未命中 → evidence 打 relativeStrengthApplied（非 milestone 版）
+        let seed = weakChestSeed()
+        let p = compose(rows: seed.rows, touches: seed.touches,
+                        bestActual: ["bench-press": 36],
+                        sexRaw: "female", bodyweightKg: 60)
+        let chest = try! XCTUnwrap(p.estimates.first { $0.muscleId == .chest })
+        XCTAssertEqual(chest.currentLevel, 10)
+        XCTAssertTrue(chest.evidence.contains { $0.code == "relativeStrengthApplied" })
+        XCTAssertFalse(chest.evidence.contains { $0.code == "milestoneFloorApplied" })
+        XCTAssertEqual(chest.levelProgress, 0)   // 抬底后 progress 置零口径沿用
+        // 相对成就进 strengthMilestones（rel- 前缀可辨）
+        XCTAssertTrue(p.strengthMilestones.contains { $0.milestoneId == "rel-bench-press-intermediate" })
+    }
+
+    func testAbsoluteAnchorKeepsMilestoneEvidenceWhenBothHit() {
+        // 两套同高（男 100kg 卧推 @100kg 体重：绝对 bench-100 floor 10 + 相对 1.0× floor 10）
+        // → evidence 归绝对锚（传统里程碑语义优先，不重复打两条）
+        let seed = weakChestSeed()
+        let p = compose(rows: seed.rows, touches: seed.touches,
+                        bestActual: ["bench-press": 100],
+                        sexRaw: "male", bodyweightKg: 100)
+        let chest = try! XCTUnwrap(p.estimates.first { $0.muscleId == .chest })
+        XCTAssertEqual(chest.currentLevel, 10)
+        XCTAssertTrue(chest.evidence.contains { $0.code == "milestoneFloorApplied" })
+        XCTAssertFalse(chest.evidence.contains { $0.code == "relativeStrengthApplied" })
+    }
+
+    func testNoSexKeepsLegacyBehaviorByteIdentical(){
+        // 回归锁（交接件 §3.5.4）：未设性别 → 相对条目零参与，绝对锚行为不变
+        let seed = chestSeed()
+        let withSex = compose(rows: seed.rows, touches: seed.touches,
+                              bestActual: ["bench-press": 36], sexRaw: nil, bodyweightKg: 60)
+        XCTAssertFalse(withSex.strengthMilestones.contains { $0.milestoneId.hasPrefix("rel-") })
+        let legacy = compose(rows: seed.rows, touches: seed.touches,
+                             bestActual: ["bench-press": 36])
+        // 审查 m6：Profile 是 Equatable——全等断言（比逐字段更强的回归锁）
+        XCTAssertEqual(withSex, legacy)
+    }
+
+    func testLowConfidenceCapsRelativeFloorAtIntermediate() {
+        // 审查 S2 护栏：3 场新人（置信 low）一次相对 elite 成绩（女 60 卧推 72=1.2×）
+        // → 相对 floor 封 intermediate 10，不直接 Lv.19；「数据量撑不起时先给中级起点」。
+        // 场景刻意只打穿相对锚（绝对锚 72kg 只过 60 档 floor 4——护栏不管绝对锚，
+        // 男 155 会把 bench-140 绝对档也打穿、floor 16 盖过护栏，测不到目标语义）
+        var rows: [MuscleVolumeAggregator.ContributionRow] = []
+        var touches: [MuscleTouchRow] = []
+        for (index, monday) in mondays.prefix(3).enumerated() {
+            rows.append(.init(dateISO: monday, muscleRaw: "chest", weight: 1.0, setCount: 3))
+            touches.append(.init(muscleRaw: "chest", sessionId: "s\(index)", familyId: "horizontal-press"))
+        }
+        let p = compose(rows: rows, touches: touches,
+                        bestActual: ["bench-press": 72],
+                        sexRaw: "female", bodyweightKg: 60)
+        let chest = try! XCTUnwrap(p.estimates.first { $0.muscleId == .chest })
+        guard chest.decision != .insufficientData else {
+            return XCTFail("种子应解锁 chest（3 场下限）")
+        }
+        XCTAssertEqual(chest.confidence, .low)
+        XCTAssertEqual(chest.currentLevel, 10)   // 封 intermediate，非 19
+        XCTAssertTrue(chest.evidence.contains { $0.code == "relativeStrengthApplied" })
+    }
+
+    func testMediumConfidenceReleasesHighRelativeFloor() {
+        // S2 对照：置信 medium（chestSeed 6 周 8 组双族）→ elite floor 19 放开
+        let seed = chestSeed()
+        let p = compose(rows: seed.rows, touches: seed.touches,
+                        bestActual: ["bench-press": 72],
+                        sexRaw: "female", bodyweightKg: 60)
+        let chest = try! XCTUnwrap(p.estimates.first { $0.muscleId == .chest })
+        XCTAssertNotEqual(chest.confidence, .low)
+        XCTAssertEqual(chest.currentLevel, 19)
     }
 }

@@ -171,6 +171,34 @@ extension RedeStrings {
     public var onbEditSave: String { locale == .zh ? "保存修改" : "Save changes" }
     public var onbEditCancel: String { locale == .zh ? "取消" : "Cancel" }
     /// 铭牌可点提示（替代退役的「修改回答」按钮）。
+    // MARK: - 设置 · 性别（批次 D：仅相对力量标准用；红线：无句号无破折号零羞辱）
+
+    public var settingsSexLabel: String { locale == .zh ? "性别" : "Sex" }
+    public var settingsSexQuestion: String { locale == .zh ? "你的性别" : "Your sex" }
+    /// 用途单一说明（两拍全角空格惯例）。
+    public var settingsSexNote: String {
+        locale == .zh
+            ? "仅用于力量标准对比　可随时更改"
+            : "Only used for strength standards. Change anytime"
+    }
+
+    public func settingsSexOption(_ code: String) -> (title: String, caption: String) {
+        switch code {
+        case "male":
+            return locale == .zh
+                ? ("男", "力量标准按男性表")
+                : ("Male", "Standards use the male table")
+        case "female":
+            return locale == .zh
+                ? ("女", "力量标准按女性表")
+                : ("Female", "Standards use the female table")
+        default: // not-set
+            return locale == .zh
+                ? ("暂不设置", "不参与力量标准对比")
+                : ("Not set", "Skips strength standards")
+        }
+    }
+
     public var settingsPlateHint: String {
         locale == .zh ? "点任意一行修改" : "Tap any row to change it"
     }
