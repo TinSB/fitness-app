@@ -138,4 +138,37 @@ final class MuscleLevelMemoryTests: XCTestCase {
         XCTAssertLessThan(chest?.currentLevel ?? 99, firstLevel)     // 等级如实回落
         XCTAssertEqual(chest?.peakLevel, firstLevel)                 // 峰值不消失（§6.5.4）
     }
+
+    // MARK: - 批次 E：priorityMuscles 喂数面
+
+    func testExtractCarriesPriorityMusclesAndPersistDetectsChange() {
+        // extract 带上 assembler 真 decision 的补足名单；名单变化触发落盘
+        let profile = seededProfile()
+        let memory = MuscleLevelMemory.extract(from: profile, atIso: "2026-07-07")
+        XCTAssertEqual(memory.priorityMuscles,
+                       profile.priorityMuscleIds.map(\.rawValue))
+        let base = MuscleLevelMemory(levels: ["chest": 8], peaks: ["chest": 8],
+                                     tierRaw: "novicePlus", priorityMuscles: ["biceps"],
+                                     updatedAtIso: "2026-07-01")
+        let listChanged = MuscleLevelMemory(levels: ["chest": 8], peaks: ["chest": 8],
+                                            tierRaw: "novicePlus", priorityMuscles: [],
+                                            updatedAtIso: "2026-07-07")
+        XCTAssertTrue(MuscleLevelMemory.shouldPersist(previous: base, next: listChanged))
+    }
+
+    func testLegacyFileWithoutPriorityFieldDecodesAsNil() throws {
+        // 旧文件（schema 1 无 priorityMuscles 键）→ nil = 空名单（零迁移向后兼容）
+        let legacy = #"{"schemaVersion": 1, "levels": {"chest": 8}, "peaks": {"chest": 9}, "tierRaw": "novicePlus", "updatedAtIso": "2026-07-01"}"#
+        let memory = try MuscleLevelMemoryCodec.decode(Data(legacy.utf8))
+        XCTAssertNil(memory.priorityMuscles)
+        XCTAssertEqual(memory.levels["chest"], 8)
+        // reconcilingPeaks 复制路径保留字段
+        let carried = MuscleLevelMemory(levels: [:], peaks: [:], tierRaw: nil,
+                                        priorityMuscles: ["back"], updatedAtIso: "2026-07-08")
+            .reconcilingPeaks(with: memory)
+        XCTAssertEqual(carried.priorityMuscles, ["back"])
+        // 非空名单 encode→decode 往返（审查 m6：extract 空对空断言之外的 codec 面实证）
+        let encoded = try MuscleLevelMemoryCodec.encode(carried)
+        XCTAssertEqual(try MuscleLevelMemoryCodec.decode(encoded).priorityMuscles, ["back"])
+    }
 }

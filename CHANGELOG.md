@@ -6,6 +6,10 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 > Backfill note (2026-06-23): the 2026-06-20 → 2026-06-23 sections below were backfilled in one pass — the log fell behind after 2026-06-18 (FR-NT + FR-PL3 slices 1/2). Covers FR-PL3/4 completion, the build bumps, the UX-polish program, notification fixes, FR-T5/FR-PR7 R1 wrap-up, the FR-EX2 exercise-detail content waves, the action-library expansion (123 → 165), and the FR-PL6/PL7 user-customizable-plan feature. Facts sourced from `DEV_LOG.md` + `git log` + PR titles; tighter than live entries.
 
+## 2026-07-10
+
+- **Auto-balance — weak muscles get extra sets automatically, no proposal cards** (owner verdict: "don't suggest, just change the plan" + "no fine print either"): the prescription engine now consumes MLE's "building up" list — exercises targeting those muscles get +1 set on normal training days. Full yield discipline: light/deload/comeback days never boost (screenshot-verified), mesocycle overreach weeks don't stack, deload weeks aren't cancelled, and each session adds at most 2 sets total. The only explanation lives inside the tap-to-open reasoning drawer ("Building up Biceps. Extra sets added today") — zero persistent UI text. Feeds off the MLE memory single source (detraining muscles already excluded — they go through the comeback protocol instead), converges via natural negative feedback (extra volume → level catches up to median → list drops the muscle → boosting stops), and never writes back to plan customization (progression-drift red line). Review killed a false-positive phase-gate test (rewritten with an anti-vacuity assertion) and forced the PRD FR-PL5 rewrite from "proposal" to "automatic". FR-PL5 closed — the last piece of the plan tab.
+
 ## 2026-07-09
 
 - **1.2 (build 19) archived — marketing version now bumps with every archive** (owner correction): 1.1→1.2 + build 19 both targets; unsent build 17/18 archives deleted; What's New doc retargeted to 1.2/19. Carries everything: mle-v2 calibration, comeback protocol, weekly cycle modes, muscle detail page, relative strength standards.
