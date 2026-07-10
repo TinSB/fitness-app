@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-07-09 · Archive build 17（1.1）：mle-v2 校准 + 回归协议 + 每周循环模式 + 肌群详情页
+
+**用户目标**：owner 拍板「build一下并且更新版本号」——TestFlight 验收自 build 16 以来的四件新东西。
+
+**做了什么**：版本 bump 16→17（主 App + Widget 双 target，MARKETING 保持 1.1——What's New 双语文案就是为这版写的）；命令行 archive 成功（exit 0）。
+
+**这版新带的**（vs build 16）：①mle-v2 等级校准（3 场≈Lv.5 观感锚、置信封顶、curveLevel 均衡——治「3 场 Lv.9 太快」）②回归协议 v1（停练 21/42 天重启线、负荷回退分档、语境文案——治「一个月没来还推旧循环」）③每周循环模式（顺延/重开双模式+设置切换）④肌群详情页（点背部看背阔/上背/斜方各自等级，目录 36 动作细化）。
+
+**证据**：PlistBuddy 实证 archive 内双 target CFBundleShortVersionString=1.1 / CFBundleVersion=17；codesign team 47K95GV3X5、bundle com.tinsab.rede。archive 路径 ~/Library/Developer/Xcode/Archives/2026-07-09/Rede-build17.xcarchive——**上传 ASC 由 owner 在 Xcode Organizer 完成**（惯例）。
+
+**真机验收清单**（TestFlight 装上后）：①新账号练 3 场看 Lv.5 节奏 ②停练场景的重启文案与负荷 ③设置「每周重新开始循环」开关+换天弹窗双模式文案 ④进度页点背部看部位构成三行 ⑤What's New 双语显示。
+
+---
+
 ## 2026-07-09 · 肌群详情页：点进背部，看到背阔 / 上背 / 斜方各自的等级
 
 **用户目标**：owner 反馈等级划分不够细——「希望用户能点进去看到更多详细信息，背阔这些都能有单独的等级」，同时自己担心「是不是要给每个动作都加标签」。讨论对齐后拍板：详情页承载（效果优先）+ 归属名单直接进。

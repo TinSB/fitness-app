@@ -8,6 +8,8 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 ## 2026-07-09
 
+- **Build 17 archived (1.1)**: version bump 16→17 both targets; carries mle-v2 level calibration, comeback protocol v1, weekly cycle modes, and the muscle detail page. PlistBuddy-verified 1.1/17 in the archive; upload to ASC via Xcode Organizer (owner).
+
 - **Muscle detail page — tap Back, see Lats / Upper back / Traps each with its own level** (#681): owner wanted drill-down granularity without slapping new tags on every exercise — and none were needed: the catalog already carries fine-grained values (delt heads, traps); the real work was refining 26 back-family exercises from a blanket "back" into lats (12 vertical pulls — "pulldowns build width") vs upper-back (14 rows + rack pull — "rows build thickness"), plus 10 presses from "shoulder" to front-delt. Zero data migration (history re-derives from catalog values). Two-tier structure: the 10-block overview stays byte-identical (same-destination mapping keeps big-block levels mathematically unchanged); tapping a muscle row now opens a detail sheet — big-block header, a Breakdown section (per-sub-muscle level + sets/week + progress bar), and the reasoning section (inline expansion retired; future trend charts land here). Sub-levels are volume-led (12 effective sets/week full-score anchor) and inherit the parent's strength score **only when trained** — review caught that unconditional inheritance would show "Traps Lv.6 · 0 sets/week" (fixed, exact Lv.1 lock). Sub-tier is display-only (never feeds tier/balance/decisions/memory/share). Plan editor's muscle-frequency guardrail re-merges to big blocks ("Back 2×/week", regression-locked). New copy passes all four red-line suites.
 
 ## 2026-07-08
