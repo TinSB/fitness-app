@@ -62,6 +62,24 @@ public struct UNUserNotificationCenterScheduler: NotificationScheduling {
         }
     }
 
+    public func replaceComeback(_ reminders: [ResolvedComebackReminder]) {
+        // 幂等 + 清场：先清全部 comeback ids（不止本批）——练后重排/关闭开关都干净，
+        // 不残留旧档（weekly 的"只清本批"教训在此升级为全集清理）。
+        center.removePendingNotificationRequests(withIdentifiers: ComebackReminderPolicy.managedComebackIds)
+        for reminder in reminders {
+            let content = UNMutableNotificationContent()
+            content.title = reminder.title
+            content.body = reminder.body
+            content.sound = .default
+            // 召回场景用户可能多日未开 App，.timeSensitive 沿每周提醒拍板（文案管语气、这管送达）。
+            content.interruptionLevel = .timeSensitive
+            let components = Calendar.current.dateComponents(
+                [.year, .month, .day, .hour, .minute], from: reminder.fireAt)
+            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+            center.add(UNNotificationRequest(identifier: reminder.id, content: content, trigger: trigger))
+        }
+    }
+
     public func cancelAll() {
         center.removeAllPendingNotificationRequests()
     }

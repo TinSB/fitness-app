@@ -8,6 +8,10 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 ## 2026-07-10
 
+- **Comeback reminders — the app now reaches out when you stop training** (FR-NT3, owner-picked next feature after all four tabs went green): three tiers at 5/12/21 days since your last session, fired at your personal median training hour. The 21-day tier shares its threshold with the comeback protocol — the notification's promise ("your cycle has been reset, first session back starts light") is exactly what the engine does when you open the app. Copy went through three owner-review rounds (AI-flavored → coach-direct → **Apple-style**: observational full sentences, your own data, zero pressure). One session cancels and reschedules everything; after all three fire, permanent silence until you train. Settings gains a "Comeback reminders" toggle, **on by default** (opt-out — authorized users benefit by default; unauthorized devices never see anything). Expired tiers skip, never fire late. Review caught a main-thread redundant engine run for the day-name projection (fixed: reads the today-page's already-computed result). Scheduling proven by on-device probe: exact fireAt for all tiers, expiry-skip verified in an unexpected real timezone case, day-name projection correct.
+
+## 2026-07-10
+
 - **1.3 (build 20) archived — the full six-pack, entering device-acceptance phase**: 1.2(19) scrapped unsent (predates auto-balance); 1.3/20 carries mle-v2 calibration, comeback protocol, weekly cycle modes, muscle detail page, relative strength standards, and auto-balance. Device acceptance checklist authored (docs/工作记录/); store still ships 1.0 — submission planned once acceptance passes.
 
 ## 2026-07-10

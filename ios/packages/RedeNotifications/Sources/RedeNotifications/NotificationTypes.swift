@@ -37,14 +37,18 @@ public struct WeeklyTrainingReminder: Equatable, Sendable {
 
 /// 通知偏好（只读输入）。真相在 canonical AppData（RedePersistence 写闸管理），本包不持久化。
 /// masterEnabled = 系统授权态镜像 + 用户总意愿；分项各自可关。
+/// comebackEnabled 缺省 true（批次 F 拍板 opt-out：已授权用户默认受益，未授权系统不投递）。
 public struct NotificationPreferences: Equatable, Sendable {
     public let masterEnabled: Bool
     public let restEndEnabled: Bool   // FR-NT1
     public let weeklyEnabled: Bool    // FR-NT2
-    public init(masterEnabled: Bool, restEndEnabled: Bool, weeklyEnabled: Bool) {
+    public let comebackEnabled: Bool  // FR-NT3 召回（批次 F 2026-07-10）
+    public init(masterEnabled: Bool, restEndEnabled: Bool, weeklyEnabled: Bool,
+                comebackEnabled: Bool = true) {
         self.masterEnabled = masterEnabled
         self.restEndEnabled = restEndEnabled
         self.weeklyEnabled = weeklyEnabled
+        self.comebackEnabled = comebackEnabled
     }
 }
 
@@ -66,6 +70,35 @@ public struct ResolvedWeeklyReminder: Equatable, Sendable {
     }
 }
 
+/// 召回提醒计划（FR-NT3，批次 F）。fireAt = 绝对本地时刻（一次性，非重复）；
+/// dayName 仅档 1 用（排程时轮换投影的下一训练日名，已本地化）。
+public struct ComebackReminder: Equatable, Sendable {
+    public let reminderId: String     // comeback-5d / comeback-12d / comeback-21d
+    public let fireAt: Date
+    public let messageCode: String    // comeback_5d / comeback_12d / comeback_21d
+    public let dayName: String?
+    public init(reminderId: String, fireAt: Date, messageCode: String, dayName: String?) {
+        self.reminderId = reminderId
+        self.fireAt = fireAt
+        self.messageCode = messageCode
+        self.dayName = dayName
+    }
+}
+
+/// 已渲染的召回提醒（平台调度入参，同 ResolvedWeeklyReminder 教义）。
+public struct ResolvedComebackReminder: Equatable, Sendable {
+    public let id: String
+    public let fireAt: Date
+    public let title: String
+    public let body: String
+    public init(id: String, fireAt: Date, title: String, body: String) {
+        self.id = id
+        self.fireAt = fireAt
+        self.title = title
+        self.body = body
+    }
+}
+
 /// 平台调度 seam（UNUserNotificationCenter 适配器实现；app 只见此协议）。
 /// 通知绝不碰 canonical——本协议只做平台侧调度/取消，幂等。**取已渲染文案**（title/body）：
 /// code→文案由 app 层用 RedeL10n 解析后传入，本包/适配器零文案、零 RedeL10n 依赖（边界干净 + Sendable）。
@@ -78,6 +111,8 @@ public protocol NotificationScheduling: Sendable {
     func cancelRest(id: String)
     /// 重注册每周提醒（FR-NT2，先清旧 weekly ids 再注册，幂等）。
     func replaceWeekly(_ reminders: [ResolvedWeeklyReminder])
+    /// 重注册召回提醒（FR-NT3，先清全部 comeback ids 再注册——关闭/练后重排都干净，幂等）。
+    func replaceComeback(_ reminders: [ResolvedComebackReminder])
     /// 清除全部待发通知（总开关关闭/登出场景）。
     func cancelAll()
 }

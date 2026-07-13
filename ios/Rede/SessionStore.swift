@@ -60,6 +60,7 @@ final class SessionStore {
     /// 通知偏好/语言缓存（rest-begin 不每次读盘）：loadToday + saveNotificationPreferences 后刷新。
     private var notifRestEndEnabled = false
     private var notifWeeklyEnabled = false
+    private var notifComebackEnabled = true   // FR-NT3 缺省开（opt-out 拍板）
     private var notifLocale: RedeLocale = .en
     /// 休息倒计时的墙钟锚点（owner 反馈 2026-06-15 修复）：剩余秒数曾放在 TrainTabView
     /// 的 @State，切 tab 时 RootTabView 用 switch 销毁视图树即归 0。移到会话层后跨切页
@@ -435,10 +436,21 @@ final class SessionStore {
     // MARK: - FR-NT1/2 通知偏好 + 授权
 
     /// 读当前通知偏好（设置开关初值；缺=关）。
-    nonisolated static func loadNotificationPreferences() -> (restEnd: Bool, weekly: Bool) {
+    nonisolated static func loadNotificationPreferences() -> (restEnd: Bool, weekly: Bool, comeback: Bool) {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
-        guard let appData = try? store.load() else { return (false, false) }
-        return (appData.notificationRestEndEnabled, appData.notificationWeeklyEnabled)
+        guard let appData = try? store.load() else { return (false, false, true) }
+        return (appData.notificationRestEndEnabled, appData.notificationWeeklyEnabled,
+                appData.notificationComebackEnabled)
+    }
+
+    /// FR-NT3 召回输入（批次 F，审查 M-1 瘦身）：只做一次轻量读盘取上次训练日 +
+    /// 全历史开始时刻（typicalHour 用）。下一训练日名不在此复算——今日引擎刚在
+    /// loadToday 里算过，直接读 todayOutcome.scheduledDayCode（单一真源 + 不进主线程重跑）。
+    nonisolated static func loadComebackInputs() -> (lastISO: String?, startISOs: [String]) {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load() else { return (nil, []) }
+        let sessions = appData.history.filter { $0.completed == true }
+        return (sessions.compactMap(\.date).max(), sessions.compactMap(\.startedAt))
     }
 
     /// 刷新通知缓存（rest-begin 调度用，避免每组读盘）：loadToday + 保存偏好后调用。
@@ -447,10 +459,12 @@ final class SessionStore {
         let prefs = SessionStore.loadNotificationPreferences()
         notifRestEndEnabled = prefs.restEnd
         notifWeeklyEnabled = prefs.weekly
+        notifComebackEnabled = prefs.comeback
         var locale = RedeLocale.resolve(fromLanguageCode: Locale.current.language.languageCode?.identifier)
         if let raw = SessionStore.loadPreferences().locale, let persisted = RedeLocale(rawValue: raw) { locale = persisted }
         notifLocale = locale
         syncWeeklyReminders()
+        syncComebackReminders()
     }
 
     /// FR-NT2：按偏好重注册每周提醒。先清掉"策略管理但当前不激活"的每周 id（含全关时清全部），
@@ -474,6 +488,33 @@ final class SessionStore {
         notificationScheduler.replaceWeekly(resolved)
     }
 
+    /// FR-NT3 召回提醒重排（批次 F）：练完/启动/偏好变更都经 refreshNotificationCache 到这。
+    /// 空计划（关/无历史/全过期）也调 replaceComeback([])——把旧 pending 清干净（幂等）。
+    private func syncComebackReminders() {
+        let prefs = NotificationPreferences(
+            masterEnabled: true, restEndEnabled: notifRestEndEnabled,
+            weeklyEnabled: notifWeeklyEnabled, comebackEnabled: notifComebackEnabled)
+        let inputs = SessionStore.loadComebackInputs()
+        // 日名取今日引擎现成结果（审查 M-1：不在主线程重跑整套裁决/处方）；
+        // 仅顺延模式给（weekly 模式 5 天后可能跨周重置、投影会过期——退化通用标题）；
+        // todayOutcome 未就绪（偏好保存早于进今日页）同样退化，安全。
+        var dayName: String? = nil
+        if case .ready(let model)? = todayOutcome, !model.weeklyCycleRestart,
+           let code = model.scheduledDayCode {
+            dayName = RedeStrings(locale: notifLocale).trainingDayName(code)
+        }
+        let reminders = ComebackReminderPolicy.comebackReminders(
+            preferences: prefs, lastSessionISO: inputs.lastISO,
+            sessionStartISOs: inputs.startISOs, nextDayName: dayName, now: Date())
+        let strings = RedeStrings(locale: notifLocale)
+        notificationScheduler.replaceComeback(reminders.map { reminder in
+            ResolvedComebackReminder(
+                id: reminder.reminderId, fireAt: reminder.fireAt,
+                title: strings.comebackTitle(code: reminder.messageCode, dayName: reminder.dayName),
+                body: strings.comebackBody(code: reminder.messageCode))
+        })
+    }
+
     /// 请求系统通知授权（价值先行：在用户首次开开关时调）。返回是否获授权。
     func requestNotificationAuthorization() async -> Bool {
         await notificationScheduler.requestAuthorization()
@@ -481,7 +522,8 @@ final class SessionStore {
 
     /// 通知偏好写入：经唯一写闸 open-bag scalar edit；成功后刷新缓存。失败如实置 saveErrorText。
     @discardableResult
-    func saveNotificationPreferences(restEndEnabled: Bool, weeklyEnabled: Bool) async -> Bool {
+    func saveNotificationPreferences(restEndEnabled: Bool, weeklyEnabled: Bool,
+                                     comebackEnabled: Bool) async -> Bool {
         guard !isSaving else { return false }
         isSaving = true
         defer { isSaving = false }
@@ -494,7 +536,9 @@ final class SessionStore {
                 let writer = CanonicalSessionWriter(
                     store: JSONFileAppDataStore(fileURL: fileURL), gate: DataHealthGate()
                 )
-                try writer.applyNotificationPreferences(restEndEnabled: restEndEnabled, weeklyEnabled: weeklyEnabled)
+                try writer.applyNotificationPreferences(
+                    restEndEnabled: restEndEnabled, weeklyEnabled: weeklyEnabled,
+                    comebackEnabled: comebackEnabled)
                 return .success(())
             } catch {
                 return .failure(error)

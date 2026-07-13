@@ -56,4 +56,28 @@ final class NotificationCopyTests: XCTestCase {
             for w in enForbidden { XCTAssertFalse(enText.contains(w), "每周英文禁词 \(w)") }
         }
     }
+
+    func testComebackCopyParityAndTone() {
+        // FR-NT3（批次 F，owner 三轮定稿 Apple 风格）：三档 parity + 档 1 日名插值 +
+        // 零施压红线（不出「你已经/别忘了/坚持」责备式）
+        for code in ["comeback_5d", "comeback_12d", "comeback_21d"] {
+            XCTAssertNotEqual(zh.comebackTitle(code: code, dayName: nil),
+                              en.comebackTitle(code: code, dayName: nil), code)
+            XCTAssertNotEqual(zh.comebackBody(code: code), en.comebackBody(code: code), code)
+        }
+        XCTAssertEqual(zh.comebackTitle(code: "comeback_5d", dayName: "推 A"), "该练推 A 了")
+        XCTAssertEqual(zh.comebackTitle(code: "comeback_5d", dayName: nil), "该训练了")
+        XCTAssertNotEqual(zh.notificationComebackLabel, en.notificationComebackLabel)
+        let all = ["comeback_5d", "comeback_12d", "comeback_21d"].flatMap {
+            [zh.comebackTitle(code: $0, dayName: "推 A"), zh.comebackBody(code: $0),
+             en.comebackTitle(code: $0, dayName: "Push A"), en.comebackBody(code: $0)]
+        }
+        for text in all {
+            for banned in ["你已经", "别忘了", "坚持", "加油", "断签", "偷懒", "逆袭", "streak",
+                           "don't forget", "you haven't", "lazy"] {
+                XCTAssertFalse(text.lowercased().contains(banned.lowercased()),
+                               "施压词「\(banned)」: \(text)")
+            }
+        }
+    }
 }

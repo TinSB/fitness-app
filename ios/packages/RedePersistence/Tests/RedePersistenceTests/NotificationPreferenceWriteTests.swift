@@ -34,6 +34,19 @@ final class NotificationPreferenceWriteTests: XCTestCase {
         let appData = try XCTUnwrap(try JSONFileAppDataStore(fileURL: fileURL).load())
         XCTAssertFalse(appData.notificationRestEndEnabled, "缺=关")
         XCTAssertFalse(appData.notificationWeeklyEnabled, "缺=关")
+        XCTAssertTrue(appData.notificationComebackEnabled, "FR-NT3 缺=开（批次 F opt-out 拍板）")
+    }
+
+    func testComebackWriteReadsBackAndDefaultsOn() throws {
+        // 显式关 → 落盘可回读 false；三参写全量覆盖
+        let off = try makeWriter().applyNotificationPreferences(
+            restEndEnabled: true, weeklyEnabled: false, comebackEnabled: false)
+        XCTAssertFalse(off.notificationComebackEnabled)
+        let onDisk = try XCTUnwrap(try JSONFileAppDataStore(fileURL: fileURL).load())
+        XCTAssertFalse(onDisk.notificationComebackEnabled)
+        // 两参调用（既有调用面）缺省写 true
+        let redo = try makeWriter().applyNotificationPreferences(restEndEnabled: true, weeklyEnabled: true)
+        XCTAssertTrue(redo.notificationComebackEnabled)
     }
 
     func testEnableOnEmptyStorePersistsAndReadsBack() throws {

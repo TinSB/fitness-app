@@ -26,6 +26,7 @@ struct SettingsSheet: View {
     @State private var notifRestEndOn = false
     /// FR-NT2 每周提醒持久态（切片3 仅加载保全、无 UI；切片4 接开关）。
     @State private var notifWeeklyOn = false
+    @State private var notifComebackOn = true
     /// 系统层拒绝授权时显示去 iOS 设置的提示。
     @State private var notifPermissionDenied = false
     /// 通知开关操作进行中（授权/写盘）：串行化 + 禁用开关，防"开→快切关"竞态致磁盘/UI 不一致（审查 MAJOR-2）。
@@ -110,6 +111,7 @@ struct SettingsSheet: View {
             let notif = await Task.detached { SessionStore.loadNotificationPreferences() }.value
             notifRestEndOn = notif.restEnd
             notifWeeklyOn = notif.weekly
+            notifComebackOn = notif.comeback
             notifPermissionDenied = false
             await health.loadSilently() // 静默尝试读（不弹框）：之前授权过则直接显示体重
             // 截图钩子（沿 -autoOpenSettings 先例）：-editPlateQuestion <goal|days|equipment|level|sex>
@@ -293,13 +295,19 @@ struct SettingsSheet: View {
                 .padding(.top, 18)
             notifToggleRow(
                 label: s.notificationRestEndLabel, isOn: { notifRestEndOn },
-                persist: { await sessionStore.saveNotificationPreferences(restEndEnabled: $0, weeklyEnabled: notifWeeklyOn) },
+                persist: { await sessionStore.saveNotificationPreferences(restEndEnabled: $0, weeklyEnabled: notifWeeklyOn, comebackEnabled: notifComebackOn) },
                 setLocal: { notifRestEndOn = $0 }
             )
             notifToggleRow(
                 label: s.notificationWeeklyLabel, isOn: { notifWeeklyOn },
-                persist: { await sessionStore.saveNotificationPreferences(restEndEnabled: notifRestEndOn, weeklyEnabled: $0) },
+                persist: { await sessionStore.saveNotificationPreferences(restEndEnabled: notifRestEndOn, weeklyEnabled: $0, comebackEnabled: notifComebackOn) },
                 setLocal: { notifWeeklyOn = $0 }
+            )
+            // FR-NT3 召回（批次 F）：缺省开——久未训练时按 5/12/21 天各提醒一次
+            notifToggleRow(
+                label: s.notificationComebackLabel, isOn: { notifComebackOn },
+                persist: { await sessionStore.saveNotificationPreferences(restEndEnabled: notifRestEndOn, weeklyEnabled: notifWeeklyOn, comebackEnabled: $0) },
+                setLocal: { notifComebackOn = $0 }
             )
             if notifPermissionDenied {
                 Text(s.notificationPermissionDeniedHint)
