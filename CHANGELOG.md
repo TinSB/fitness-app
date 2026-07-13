@@ -6,6 +6,10 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 > Backfill note (2026-06-23): the 2026-06-20 → 2026-06-23 sections below were backfilled in one pass — the log fell behind after 2026-06-18 (FR-NT + FR-PL3 slices 1/2). Covers FR-PL3/4 completion, the build bumps, the UX-polish program, notification fixes, FR-T5/FR-PR7 R1 wrap-up, the FR-EX2 exercise-detail content waves, the action-library expansion (123 → 165), and the FR-PL6/PL7 user-customizable-plan feature. Facts sourced from `DEV_LOG.md` + `git log` + PR titles; tighter than live entries.
 
+## 2026-07-12
+
+- **1.4 (build 21) archived — the full seven-pack, the ship-it build**: adds comeback reminders (#689) on top of build 20's six. PlistBuddy-verified 1.4/21 both targets; App Store submission planned once owner's 5-item device pass completes (store still ships 1.0).
+
 ## 2026-07-10
 
 - **Comeback reminders — the app now reaches out when you stop training** (FR-NT3, owner-picked next feature after all four tabs went green): three tiers at 5/12/21 days since your last session, fired at your personal median training hour. The 21-day tier shares its threshold with the comeback protocol — the notification's promise ("your cycle has been reset, first session back starts light") is exactly what the engine does when you open the app. Copy went through three owner-review rounds (AI-flavored → coach-direct → **Apple-style**: observational full sentences, your own data, zero pressure). One session cancels and reschedules everything; after all three fire, permanent silence until you train. Settings gains a "Comeback reminders" toggle, **on by default** (opt-out — authorized users benefit by default; unauthorized devices never see anything). Expired tiers skip, never fire late. Review caught a main-thread redundant engine run for the day-name projection (fixed: reads the today-page's already-computed result). Scheduling proven by on-device probe: exact fireAt for all tiers, expiry-skip verified in an unexpected real timezone case, day-name projection correct.

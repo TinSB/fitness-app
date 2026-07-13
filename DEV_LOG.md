@@ -6,6 +6,18 @@
 
 ---
 
+## 2026-07-12 · Archive 1.4 (build 21)：七件套齐全，出货前最后一包
+
+**用户目标**：owner 拍板「archive 1.4」——把召回通知（#689）带上，作为提审商店前的完整包。
+
+**做了什么**：MARKETING 1.3→1.4 + build 20→21（双 target）；archive 成功（exit 0）；What's New 文案重定向 1.4/21（追加召回通知条目）；验收清单加 F+ 组（召回通知真机项）。1.3(20) 本地 archive 保留（owner 若未上传则作废，已上传则 20 已消费——两种情况 21 都正确）。
+
+**证据**：PlistBuddy 实证主 App 与 Widget 均 1.4/21；codesign 47K95GV3X5。路径 ~/Library/Developer/Xcode/Archives/2026-07-12/Rede-1.4-21.xcarchive——owner 在 Organizer Distribute 上传，ASC 版本记录填 1.4 选 build 21。
+
+**下一步**：owner 真机过 5 项（安装 + G1 通知 banner + G3 widget + F+1 召回 + 手感）→ 提审商店 1.4（商店现行 1.0，一次审核补齐一个月迭代）→ 并行开增长面（官网更新 + 内容波素材）。
+
+---
+
 ## 2026-07-10 · 召回通知：停练的人，App 现在会去叫了
 
 **用户目标**：owner 选定「下一个板块=召回通知」——四 tab 功能全绿后，产品面最后的系统性空白是「用户停练了 App 只会安静地等」。文案 owner 三轮亲自打磨（第一版被批「AI 味太浓」→ 教练直陈版 → **Apple 风格版**定稿：观察式完整句、以用户数据说话、零施压）。
