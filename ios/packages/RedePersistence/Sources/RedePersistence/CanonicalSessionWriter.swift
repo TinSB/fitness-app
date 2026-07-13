@@ -251,12 +251,14 @@ public struct CanonicalSessionWriter {
     /// 已批准写入类别：通知偏好编辑（FR-NT1/2）。open-bag 加性 scalar edit——只动 notifications 容器、
     /// 其余顶层键原样保留；缺=关、无 seed、无 schema bump。授权态由系统持有、不落库（默认 off = opt-in）。
     @discardableResult
-    public func applyNotificationPreferences(restEndEnabled: Bool, weeklyEnabled: Bool) throws -> AppData {
+    public func applyNotificationPreferences(restEndEnabled: Bool, weeklyEnabled: Bool,
+                                              comebackEnabled: Bool = true) throws -> AppData {
         return try performGatedMutation { current in
             var storage = current.storage
             var notif = storage["notifications"]?.asObject ?? [:]
             notif["restEndEnabled"] = .bool(restEndEnabled)
             notif["weeklyEnabled"] = .bool(weeklyEnabled)
+            notif["comebackEnabled"] = .bool(comebackEnabled)   // FR-NT3（批次 F，缺省读侧 true）
             storage["notifications"] = .object(notif)
             return try AppData(decoding: .object(storage))
         }

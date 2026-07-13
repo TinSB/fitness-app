@@ -65,6 +65,11 @@ public struct AppData: Equatable, Sendable {
         storage["notifications"]?.asObject?["weeklyEnabled"]?.asBool ?? false
     }
 
+    /// FR-NT3 召回提醒（批次 F）。缺省 **true**（opt-out 拍板：已授权用户默认受益）。
+    public var notificationComebackEnabled: Bool {
+        storage["notifications"]?.asObject?["comebackEnabled"]?.asBool ?? true
+    }
+
     /// FR-PL3/4 已采纳的计划调整记录（open-bag 加性，缺=无；不 seed、无 schema bump）。
     /// 单条最近一次（无栈）；`fromDaysPerWeek` 供 FR-PL4 单步回滚恢复，UI 据此显示「可撤」。
     public var planAdjustment: PlanAdjustmentRecord? {
