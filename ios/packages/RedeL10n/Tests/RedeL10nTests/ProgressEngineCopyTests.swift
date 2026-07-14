@@ -90,6 +90,14 @@ final class ProgressEngineCopyTests: XCTestCase {
         XCTAssertEqual(en.cycleTrendTitle, "Top lifts · estimated 1RM")
     }
 
+    // 里程碑合并行（owner 拍板 2026-07-14）：实测+估算一行读全
+    func testMilestoneCombinedA11y() {
+        XCTAssertEqual(zh.milestoneCombinedA11y(lift: "深蹲", measured: "135 lb", estimated: "225 lb"),
+                       "深蹲 135 lb 已达成，估算 225 lb")
+        XCTAssertEqual(en.milestoneCombinedA11y(lift: "Squat", measured: "135 lb", estimated: "225 lb"),
+                       "Squat, 135 lb reached, estimated 225 lb")
+    }
+
     func testSuspectLinesAreBehavioral() {
         let line = zh.suspectWeightLine(dateISO: "2026-06-03", lift: "卧推", setIndex: 1, kg: "227")
         XCTAssertTrue(line.contains("可能记错了"))
