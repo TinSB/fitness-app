@@ -42,7 +42,7 @@ final class MuscleContributionTableTests: XCTestCase {
     func testSameContractMuscleMergesWithMaxNotSum() {
         // 真实撞桶案例（wave-18 共 7 个，审查复算证实）：shrug 族 4 个（primary traps→back
         // 撞 secondary upper-back→back）、rack-pull（primary back 撞 secondary traps→back）、
-        // arnold-press/landmine-press（primary shoulder→shoulders 撞 secondary front-delt）。
+        // 历史案例：arnold/landmine 曾 primary 撞 secondary front-delt（批次 G N6 已修——现 secondary 为 side-delt/chest，防回潮见 CatalogContractTests）。
         // 取 max 不叠加；1.0/0.5 两档下 max 结构性 ≤1.0——全目录扫描不变量对未来新增
         // 动作恒有效，sum 误改必转红。
         for entry in catalog.entries {

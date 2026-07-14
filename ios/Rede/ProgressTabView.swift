@@ -85,13 +85,19 @@ struct ProgressTabView: View {
             // 截图钩子（沿 -progressScale 先例）：-openMuscleDetail <raw> 数据就绪后自动开详情
             guard case .ready(let model) = outcome else { return }
             let args = ProcessInfo.processInfo.arguments
-            if let idx = args.firstIndex(of: "-openMuscleDetail"), args.indices.contains(idx + 1),
-               let estimate = model.muscleProfile.estimates.first(where: { $0.muscleId.rawValue == args[idx + 1] }) {
-                muscleDetail = MuscleDetailItem(
-                    id: estimate.muscleId.rawValue, estimate: estimate,
-                    subLevels: model.subLevelsByMuscle[estimate.muscleId] ?? [])
+            if let idx = args.firstIndex(of: "-openMuscleDetail"), args.indices.contains(idx + 1) {
+                openMuscleDetail(args[idx + 1], model: model)
             }
         }
+    }
+
+    /// 按 rawValue 打开肌群详情 sheet（热力图区块点击 + 截图钩子共用；未知值静默忽略）。
+    private func openMuscleDetail(_ raw: String, model: ProgressModel) {
+        guard let estimate = model.muscleProfile.estimates.first(where: { $0.muscleId.rawValue == raw })
+        else { return }
+        muscleDetail = MuscleDetailItem(
+            id: estimate.muscleId.rawValue, estimate: estimate,
+            subLevels: model.subLevelsByMuscle[estimate.muscleId] ?? [])
     }
 
     // MARK: - 三态
@@ -635,6 +641,19 @@ struct ProgressTabView: View {
                     }
                 }
                 .accessibilityElement(children: .combine)
+
+                // 人形肌群热力图（批次 G N1）：前/后钢板分区按等级着色，点区块进详情
+                // ——文字行的入口增强不替换（信息完整性）；校准中区块=描边态
+                MuscleHeatmapView(
+                    states: Dictionary(uniqueKeysWithValues: profile.estimates.map { estimate in
+                        (estimate.muscleId.rawValue,
+                         HeatmapMuscleState(level: estimate.decision == .insufficientData
+                             ? nil : estimate.currentLevel))
+                    }),
+                    onTap: { raw in openMuscleDetail(raw, model: model) }
+                )
+                .frame(height: 240)
+                .padding(.vertical, 4)
 
                 ForEach(unlocked, id: \.muscleId.rawValue) { estimate in
                     developmentRow(estimate, subLevels: model.subLevelsByMuscle[estimate.muscleId] ?? [])
