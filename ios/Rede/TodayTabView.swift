@@ -350,8 +350,16 @@ struct TodayTabView: View {
                     Button {
                         detailTarget = ExerciseDetailTarget(id: ex.exerciseId)
                     } label: {
-                        exerciseRow(ex, isCurrent: idx == activeExerciseIndex)
-                            .contentShape(Rectangle()) // 整行可点（含 Spacer 空白）+ 按压反馈覆盖全行
+                        // 批次 G N2：当前/下一个动作 = hero 层级（同列表内放大，无说明
+                        // 小字——放大本身就是焦点语言；owner 零小字红线）
+                        Group {
+                            if idx == activeExerciseIndex {
+                                heroExerciseCard(ex)
+                            } else {
+                                exerciseRow(ex)
+                            }
+                        }
+                        .contentShape(Rectangle()) // 整行可点（含 Spacer 空白）+ 按压反馈覆盖全行
                     }
                     .buttonStyle(.redePressableRow)
                     .accessibilityHint(s.exerciseDetailHint)
@@ -494,11 +502,58 @@ struct TodayTabView: View {
         return flow.exerciseIndex
     }
 
-    // 单动作行：名称 / 组数·休息·RIR / 目标 / 跟上次比
-    private func exerciseRow(_ ex: ExercisePrescriptionPlan, isCurrent: Bool) -> some View {
+    /// Hero 动作卡（批次 G N2）：当前/下一个动作的放大层级——动作名 headline、
+    /// 目标大字（monospaced 数字，练完态总结卡同款重量层级）、meta 副行、上次上下文。
+    /// 结构仍是列表条目（橙条加粗 + 同款 hairline 收尾），非独立卡片（整面板公理，
+    /// 不引入描边盒子不占 ForgedCard 预算）。点击行为与普通行一致。
+    private func heroExerciseCard(_ ex: ExercisePrescriptionPlan) -> some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .top, spacing: 12) {
+                Rectangle().fill(Color.redeEmber)
+                    .frame(width: 4)
+                    .padding(.vertical, 2)
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 6) {
+                        Text(localeStore.exerciseName(ex.exerciseId))
+                            .font(.redeHeadline)
+                            .tracking(RedeTracking.headline)
+                            .foregroundStyle(Color.redeT1)
+                        if swapOriginalId(for: ex.exerciseId) != nil {
+                            Overline(text: s.exerciseSwappedBadge, color: .redeEmber2)
+                        } else if oneTimeOriginalId(for: ex.exerciseId) != nil {
+                            Overline(text: s.exerciseSwappedOnceBadge, color: .redeEmber2)
+                        }
+                    }
+                    Text(targetSummary(ex))
+                        .font(.redeTitle).monospacedDigit()
+                        .tracking(RedeTracking.title)
+                        .foregroundStyle(Color.redeT1)
+                        .lineLimit(1).minimumScaleFactor(0.6)   // 大字号可访问性下收缩不截断
+                    HStack(spacing: 10) {
+                        Text(s.exerciseMetaLine(sets: ex.sets, restSeconds: ex.restSeconds, rir: ex.targetRir))
+                            .font(.redeCaption).monospacedDigit()
+                            .foregroundStyle(Color.redeT4)
+                        lastChangeView(ex)
+                    }
+                }
+                Spacer()
+                // chevron 垂直居中（与普通行/进展历史行同节奏——审查 NIT）
+                VStack { Spacer(); Image(systemName: "chevron.right")
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT4)
+                    .accessibilityHidden(true); Spacer() }
+            }
+            .padding(.vertical, 16)
+            Rectangle().fill(Color.redeHair2).frame(height: 1)
+        }
+    }
+
+    // 单动作行：名称 / 组数·休息·RIR / 目标 / 跟上次比。
+    // isCurrent 橙条已由 hero 卡取代（批次 G N2）——参数删除，普通行不再点亮。
+    private func exerciseRow(_ ex: ExercisePrescriptionPlan) -> some View {
         VStack(spacing: 0) {
             HStack(alignment: .top, spacing: 10) {
-                Rectangle().fill(isCurrent ? Color.redeEmber : Color.clear)
+                Rectangle().fill(Color.clear)
                     .frame(width: 3, height: 18)
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {

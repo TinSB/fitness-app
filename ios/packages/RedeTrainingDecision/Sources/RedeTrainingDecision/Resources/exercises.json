@@ -1677,10 +1677,7 @@
       "id": "arnold-press",
       "movementPattern": "vertical-press",
       "primaryMuscle": "front-delt",
-      "secondaryMuscles": [
-        "triceps",
-        "front-delt"
-      ],
+      "secondaryMuscles": ["triceps", "side-delt"],
       "equipment": "dumbbell",
       "kind": "compound",
       "substitutionGroups": [
@@ -2218,10 +2215,7 @@
       "id": "landmine-press",
       "movementPattern": "vertical-press",
       "primaryMuscle": "front-delt",
-      "secondaryMuscles": [
-        "triceps",
-        "front-delt"
-      ],
+      "secondaryMuscles": ["triceps", "chest"],
       "equipment": "plate-loaded",
       "kind": "compound",
       "substitutionGroups": [

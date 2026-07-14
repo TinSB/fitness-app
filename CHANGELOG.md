@@ -6,6 +6,10 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 > Backfill note (2026-06-23): the 2026-06-20 → 2026-06-23 sections below were backfilled in one pass — the log fell behind after 2026-06-18 (FR-NT + FR-PL3 slices 1/2). Covers FR-PL3/4 completion, the build bumps, the UX-polish program, notification fixes, FR-T5/FR-PR7 R1 wrap-up, the FR-EX2 exercise-detail content waves, the action-library expansion (123 → 165), and the FR-PL6/PL7 user-customizable-plan feature. Facts sourced from `DEV_LOG.md` + `git log` + PR titles; tighter than live entries.
 
+## 2026-07-13
+
+- **De-AI round two: muscle heatmap + hero exercise card + catalog dedup** (owner: "still not satisfied — keep going"): a nine-screen audit with rich seed data located the residual AI-feel — uniform text rows everywhere, zero graphic language. **N1**: the Development block gains front/back forged-steel-plate body figures — 10 muscle groups shaded across five ember opacity tiers by level, calibrating muscles drawn as etched outlines (unfilled, untappable — the detail sheet would render the placeholder Lv.1 as real, a fabricated-data red line caught independently by two review lenses), tap any plate to open that muscle's detail sheet. Hand-drawn SwiftUI paths, zero image assets. **N2**: today's next exercise becomes the page's hero — name at headline size, target "60 kg × 8" at scaled title size (review caught the initial fixed-30pt version inverting hierarchy at accessibility sizes), following the active exercise mid-workout. Still a list item, not a card. **N6**: arnold/landmine presses no longer double-count front delts (primary duplicated in secondary), with a catalog-wide contract test. Three-lens parallel review (correctness/design/regression) cleared 3 MAJOR + 5 MINOR + 5 NIT, all fixed in place.
+
 ## 2026-07-12
 
 - **1.4 (build 21) archived — the full seven-pack, the ship-it build**: adds comeback reminders (#689) on top of build 20's six. PlistBuddy-verified 1.4/21 both targets; App Store submission planned once owner's 5-item device pass completes (store still ships 1.0).

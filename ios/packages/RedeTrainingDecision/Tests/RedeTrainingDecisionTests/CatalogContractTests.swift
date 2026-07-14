@@ -370,4 +370,14 @@ final class CatalogContractTests: XCTestCase {
         }
         XCTAssertEqual(found, knownGaps, "覆盖矩阵变化——新增缺口必须先登记进内容系统文档的已知缺口清单")
     }
+
+    func testPrimaryNeverDuplicatedInSecondary() {
+        // 批次 G N6（2026-07-13 审计实锤 arnold/landmine）：primary 出现在 secondary
+        // 会污染**子肌群细粒度曝光**（fineRows 主次直加 1.5 倍）与详情页显示重复；
+        // 10 块 MLE 层因 contributions 同桶取 max 未受污染（审查 NIT 口径修正）
+        for entry in ExerciseCatalog.minimal.entries {
+            XCTAssertFalse(entry.secondaryMuscles.contains(entry.primaryMuscle),
+                           "\(entry.id): primary \(entry.primaryMuscle) duplicated in secondary")
+        }
+    }
 }
