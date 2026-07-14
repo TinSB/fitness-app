@@ -217,6 +217,12 @@ extension RedeStrings {
         }
         return locale == .zh ? "\(lift) \(value) 已达成" : "\(lift), \(value) reached"
     }
+    /// 实测+估算合并行 VoiceOver（owner 拍板合并行 2026-07-14）。
+    public func milestoneCombinedA11y(lift: String, measured: String, estimated: String) -> String {
+        locale == .zh
+            ? "\(lift) \(measured) 已达成，估算 \(estimated)"
+            : "\(lift), \(measured) reached, estimated \(estimated)"
+    }
 
     // MARK: - 数据质量（FR-PR4，行为化、零置信标签）
 

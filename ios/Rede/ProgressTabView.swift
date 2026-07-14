@@ -789,33 +789,79 @@ struct ProgressTabView: View {
 
     // MARK: - 力量里程碑（FR-PR7；card-free，0-card 预算；实测达成的杠铃配片阈值）
 
+    /// 同动作合并行（owner 拍板 2026-07-14）：实测与估算两条并成一行——「深蹲 135 lb ·
+    /// 估算 225 lb」，不再上下两行重复动作名。引擎契约保证估算仅在严格高于实测档时
+    /// 产出（StrengthMilestoneCatalog 头注），合并展示不损失信息。
+    private struct MilestoneRowItem {
+        let exerciseId: String
+        var measured: StrengthMilestone?
+        var estimated: StrengthMilestone?
+    }
+
+    private func milestoneRows(_ milestones: [StrengthMilestone]) -> [MilestoneRowItem] {
+        var order: [String] = []
+        var byExercise: [String: MilestoneRowItem] = [:]
+        for milestone in milestones {
+            if byExercise[milestone.exerciseId] == nil {
+                order.append(milestone.exerciseId)
+                byExercise[milestone.exerciseId] = MilestoneRowItem(exerciseId: milestone.exerciseId)
+            }
+            if milestone.isEstimated {
+                byExercise[milestone.exerciseId]?.estimated = milestone
+            } else {
+                byExercise[milestone.exerciseId]?.measured = milestone
+            }
+        }
+        return order.compactMap { byExercise[$0] }
+    }
+
     private func milestonesSection(_ model: ProgressModel) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Overline(text: s.milestonesTitle)
-            // id 用整条（Hashable）——同一动作可能既有实测又有估算两条，不能再用 exerciseId（会重复 id）。
-            ForEach(model.milestones, id: \.self) { milestone in
-                let value = "\(milestone.achievedThreshold) \(milestone.unitLabel)"
+            ForEach(milestoneRows(model.milestones), id: \.exerciseId) { row in
+                let name = localeStore.exerciseName(row.exerciseId)
+                let measuredValue = row.measured.map { "\($0.achievedThreshold) \($0.unitLabel)" }
+                let estimatedValue = row.estimated.map { "\($0.achievedThreshold) \($0.unitLabel)" }
                 HStack(spacing: 8) {
-                    Text(localeStore.exerciseName(milestone.exerciseId))
+                    Text(name)
                         .font(.redeBody)
                         .foregroundStyle(Color.redeT2)
-                    // 估算里程碑明确标「估算」中性微标——不冒充实测（FR-PR7 诚信红线）。
-                    if milestone.isEstimated {
+                    // 纯估算行保留「估算」前置微标——不冒充实测（FR-PR7 诚信红线）；
+                    // 实测+估算合并行的估算值自带「估算」前缀，不再重复微标。
+                    if measuredValue == nil {
                         Text(s.milestoneEstimatedBadge)
                             .font(.redeCaption)
                             .foregroundStyle(Color.redeT4)
                     }
                     Spacer()
-                    Text(value)
-                        .font(.redeCallout).monospacedDigit()
-                        // 实测 = ember 成就口音；估算 = 降一档中性，视觉上不与实测争辉。
-                        .foregroundStyle(milestone.isEstimated ? Color.redeT3 : Color.redeEmber2)
+                    // 实测 = ember 成就口音；估算 = 降一档中性，视觉上不与实测争辉。
+                    if let measuredValue {
+                        Text(measuredValue)
+                            .font(.redeCallout).monospacedDigit()
+                            .foregroundStyle(Color.redeEmber2)
+                    }
+                    if let estimatedValue {
+                        Text(measuredValue == nil
+                             ? estimatedValue
+                             : "· \(s.milestoneEstimatedBadge) \(estimatedValue)")
+                            .font(.redeCallout).monospacedDigit()
+                            .foregroundStyle(Color.redeT3)
+                    }
                 }
                 .padding(.vertical, 6)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(s.milestoneA11y(lift: localeStore.exerciseName(milestone.exerciseId), value: value, estimated: milestone.isEstimated))
+                .accessibilityLabel(milestoneRowA11y(name: name, measured: measuredValue,
+                                                     estimated: estimatedValue))
             }
         }
+    }
+
+    private func milestoneRowA11y(name: String, measured: String?, estimated: String?) -> String {
+        if let measured, let estimated {
+            return s.milestoneCombinedA11y(lift: name, measured: measured, estimated: estimated)
+        }
+        if let measured { return s.milestoneA11y(lift: name, value: measured) }
+        return s.milestoneA11y(lift: name, value: estimated ?? "", estimated: true)
     }
 
     // MARK: - 历史（FR-PR1；原型未画——保守样式：ov 标题 + 行 + 细分隔线）
