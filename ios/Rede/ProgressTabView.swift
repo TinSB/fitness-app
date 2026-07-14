@@ -642,8 +642,9 @@ struct ProgressTabView: View {
                 }
                 .accessibilityElement(children: .combine)
 
-                // 人形肌群热力图（批次 G N1）：前/后钢板分区按等级着色，点区块进详情
-                // ——文字行的入口增强不替换（信息完整性）；校准中区块=描边态
+                // 人形肌群热力图（批次 G N1，v2 造型：人体剪影+曲线板块）：前/后人形按
+                // 等级着色，点区块进详情——文字行的入口增强不替换（信息完整性）；
+                // 校准中区块=描边态不可点
                 MuscleHeatmapView(
                     states: Dictionary(uniqueKeysWithValues: profile.estimates.map { estimate in
                         (estimate.muscleId.rawValue,
