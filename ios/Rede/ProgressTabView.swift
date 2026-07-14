@@ -45,48 +45,58 @@ struct ProgressTabView: View {
     private var s: RedeStrings { localeStore.strings }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                ScreenHeader(title: s.progressTitle)
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    ScreenHeader(title: s.progressTitle)
 
-                switch outcome {
-                case nil:
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 80)
-                case .unreadable:
-                    unreadableState
-                case .ready(let model):
-                    if model.snapshot.history.isEmpty {
-                        emptyState(model)
-                    } else {
-                        content(model)
+                    switch outcome {
+                    case nil:
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 80)
+                    case .unreadable:
+                        unreadableState
+                    case .ready(let model):
+                        if model.snapshot.history.isEmpty {
+                            emptyState(model)
+                        } else {
+                            content(model)
+                        }
                     }
                 }
+                .padding(.bottom, RedeSpace.bottomBar)
             }
-            .padding(.bottom, RedeSpace.bottomBar)
-        }
-        .background(Color.redeBase)
-        .sensoryFeedback(.selection, trigger: scale)             // 尺度切换 = 轻选择确认
-        .sensoryFeedback(.selection, trigger: historyOpenPulse)  // 点历史行进详情 = 轻选择（仅开启时）
-        // .task 自动在视图消失时取消、重现时重跑——杜绝 .onAppear{Task{}} 的无结构化并发
-        //（多次进出页并发 Task 乱序完成会用过期数据覆盖 outcome，审计 MAJOR）。
-        .task { outcome = await ProgressModel.loadOutcomeAsync() }
-        .sheet(item: $detailRecord) { record in
-            historyDetailSheet(record)
-        }
-        .sheet(item: $muscleSharePreview) { item in
-            ShareCardPreviewView(snapshots: item.snapshots)
-        }
-        .sheet(item: $muscleDetail) { item in
-            MuscleDetailSheet(item: item)
-        }
-        .onChange(of: outcome != nil) {
-            // 截图钩子（沿 -progressScale 先例）：-openMuscleDetail <raw> 数据就绪后自动开详情
-            guard case .ready(let model) = outcome else { return }
-            let args = ProcessInfo.processInfo.arguments
-            if let idx = args.firstIndex(of: "-openMuscleDetail"), args.indices.contains(idx + 1) {
-                openMuscleDetail(args[idx + 1], model: model)
+            .background(Color.redeBase)
+            .sensoryFeedback(.selection, trigger: scale)             // 尺度切换 = 轻选择确认
+            .sensoryFeedback(.selection, trigger: historyOpenPulse)  // 点历史行进详情 = 轻选择（仅开启时）
+            // .task 自动在视图消失时取消、重现时重跑——杜绝 .onAppear{Task{}} 的无结构化并发
+            //（多次进出页并发 Task 乱序完成会用过期数据覆盖 outcome，审计 MAJOR）。
+            .task { outcome = await ProgressModel.loadOutcomeAsync() }
+            .sheet(item: $detailRecord) { record in
+                historyDetailSheet(record)
+            }
+            .sheet(item: $muscleSharePreview) { item in
+                ShareCardPreviewView(snapshots: item.snapshots)
+            }
+            .sheet(item: $muscleDetail) { item in
+                MuscleDetailSheet(item: item)
+            }
+            .onChange(of: outcome != nil) {
+                // 截图钩子（沿 -progressScale 先例）：-openMuscleDetail <raw> 数据就绪后自动开详情
+                guard case .ready(let model) = outcome else { return }
+                let args = ProcessInfo.processInfo.arguments
+                if let idx = args.firstIndex(of: "-openMuscleDetail"), args.indices.contains(idx + 1) {
+                    openMuscleDetail(args[idx + 1], model: model)
+                }
+                // 截图钩子：-progressScrollTo <锚点> 数据就绪后滚到区块（development/
+                // milestones/continuity/history——下折叠线区块无法交互滚动时的审计通道）
+                if let idx = args.firstIndex(of: "-progressScrollTo"), args.indices.contains(idx + 1) {
+                    let anchor = args[idx + 1]
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        proxy.scrollTo(anchor, anchor: .top)
+                    }
+                }
             }
         }
     }
@@ -162,7 +172,8 @@ struct ProgressTabView: View {
                 UnevenRoundedRectangle(topLeadingRadius: 3, topTrailingRadius: 3)
                     .fill(Color.redeNeu.opacity(0.35))
                     .frame(height: max(8, fraction * 96))
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: 40)          // 同真柱几何（柱宽上限，审计 2026-07-13）
+                    .frame(maxWidth: .infinity)   // 槽位仍均分、柱居中
             }
         }
         .frame(height: 96, alignment: .bottom)
@@ -208,18 +219,14 @@ struct ProgressTabView: View {
                         .padding(.horizontal, RedeSpace.page)
                         .padding(.top, RedeSpace.section)
                 } else {
+                    // 图例行退役（进度页审计 2026-07-13）：单序列图不配「橙色标出…」
+                    // 教学小字——当前柱的日期标签已橙、PR 已浮标，图自解释；柱的完整
+                    // 读数在每柱 accessibilityLabel 里。
                     VStack(alignment: .leading, spacing: 14) {
                         Overline(text: view.chartTitle)
                         if let bars = view.bars {
                             barChart(bars)
                         }
-                        HStack(spacing: 6) {
-                            Rectangle().fill(Color.redeEmber).frame(width: 11, height: 2)
-                            Text(view.caption)
-                                .font(.redeCaption)
-                                .foregroundStyle(Color.redeT3)
-                        }
-                        .padding(.top, -2)
                     }
                     .padding(.horizontal, RedeSpace.page)
                     .padding(.top, RedeSpace.section)
@@ -234,6 +241,7 @@ struct ProgressTabView: View {
 
             developmentSection(model)
                 .padding(.horizontal, RedeSpace.page)
+                .id("development")   // -progressScrollTo 锚点
 
             // FR-PR7 力量里程碑（实测达成；杠铃配片阈值）——非空才显示，含前导分隔线。
             if !model.milestones.isEmpty {
@@ -241,6 +249,7 @@ struct ProgressTabView: View {
 
                 milestonesSection(model)
                     .padding(.horizontal, RedeSpace.page)
+                    .id("milestones")   // -progressScrollTo 锚点
             }
 
             // 连续性段（含其前导分隔线）随 continuity 一同存在/消失，避免 nil 时双分隔线黏合（审查 MINOR-1）。
@@ -249,12 +258,14 @@ struct ProgressTabView: View {
 
                 continuitySection(month)
                     .padding(.horizontal, RedeSpace.page)
+                    .id("continuity")   // -progressScrollTo 锚点
             }
 
             RuleDivider()
 
             historySection(model)
                 .padding(.horizontal, RedeSpace.page)
+                .id("history")   // -progressScrollTo 锚点
 
             if model.quality.hasFindings {
                 dataQualitySection(model.quality)
@@ -272,7 +283,6 @@ struct ProgressTabView: View {
         let chartTitle: String
         let bars: [(label: String, fraction: CGFloat, tag: String?, ember: Bool, a11y: String)]?
         let trend: (values: [CGFloat], emberIndex: Int, emberLabel: String)?
-        let caption: String
     }
 
     private func scaleView(_ model: ProgressModel) -> ScaleView {
@@ -307,13 +317,10 @@ struct ProgressTabView: View {
         }
 
         let verdict: String
-        let caption: String
         if let firstPR = latest.prExerciseIds.first {
             verdict = s.sessionVerdictPR(localeStore.exerciseName(firstPR))
-            caption = s.sessionCaptionPR(localeStore.exerciseName(firstPR))
         } else {
             verdict = s.sessionVerdictDone
-            caption = s.sessionCaptionNoPR
         }
         var sub = s.historyRowMeta(sets: latest.setCount, volumeKg: s.formatVolumeKg(latest.totalVolumeKg))
         if let top = latest.topSet,
@@ -331,7 +338,7 @@ struct ProgressTabView: View {
         return ScaleView(
             verdict: verdict, sub: sub,
             chartTitle: s.sessionChartTitle,
-            bars: bars, trend: nil, caption: caption
+            bars: bars, trend: nil
         )
     }
 
@@ -378,8 +385,7 @@ struct ProgressTabView: View {
             verdict: s.weekVerdict(verdictCode),
             sub: sub,
             chartTitle: s.weekChartTitleByWeek,
-            bars: bars, trend: nil,
-            caption: s.weekCaptionCurrent
+            bars: bars, trend: nil
         )
     }
 
@@ -389,8 +395,7 @@ struct ProgressTabView: View {
             return ScaleView(
                 verdict: s.trendVerdict(call: "calibrating", liftName: ""),
                 sub: s.trendSub(call: "calibrating", sessions: 0, deltaKg: "0"),
-                chartTitle: s.cycleChartTitleFor("—"), bars: nil, trend: nil,
-                caption: s.cycleCaptionPeak
+                chartTitle: s.cycleChartTitleFor("—"), bars: nil, trend: nil
             )
         }
         let name = localeStore.exerciseName(key.exerciseId)
@@ -412,8 +417,7 @@ struct ProgressTabView: View {
             ),
             chartTitle: s.cycleChartTitleFor(name),
             bars: nil,
-            trend: nil,
-            caption: s.cycleCaptionPeak
+            trend: nil
         )
     }
 
@@ -450,24 +454,26 @@ struct ProgressTabView: View {
                 .sorted { $0.bestWeightKg > $1.bestWeightKg }
                 .prefix(6)
         )
-        return VStack(alignment: .leading, spacing: 0) {
-            // id 用 exerciseId（审查 [2]）：bestWeightKg 并列时 offset 会致行错位/闪烁
-            ForEach(trends, id: \.exerciseId) { trend in
-                trendRow(trend)
+        // 「估算 1RM」口径在标题声明一次（审计 2026-07-13）——替代每行重复副标
+        //（T2 排期折叠同款）；末行不画 hairline（下方就是 RuleDivider，防双线黏合）。
+        return VStack(alignment: .leading, spacing: 14) {
+            Overline(text: s.cycleTrendTitle)
+            VStack(alignment: .leading, spacing: 0) {
+                // id 用 exerciseId（审查 [2]）：bestWeightKg 并列时 offset 会致行错位/闪烁
+                ForEach(Array(trends.enumerated()), id: \.element.exerciseId) { index, trend in
+                    trendRow(trend, isLast: index == trends.count - 1)
+                }
             }
         }
     }
 
-    private func trendRow(_ trend: ProgressSnapshot.ExerciseTrend) -> some View {
+    private func trendRow(_ trend: ProgressSnapshot.ExerciseTrend, isLast: Bool) -> some View {
         let values = trend.points.map { CGFloat($0.e1RmKg) }
         let delta = trend.latestE1RmKg - (trend.points.first?.e1RmKg ?? trend.latestE1RmKg)
         return VStack(spacing: 0) {
             HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(localeStore.exerciseName(trend.exerciseId))
-                        .font(.redeSubhead).foregroundStyle(Color.redeT1)
-                    Text(s.estimated1RM).font(.redeCaption).foregroundStyle(Color.redeT4)
-                }
+                Text(localeStore.exerciseName(trend.exerciseId))
+                    .font(.redeSubhead).foregroundStyle(Color.redeT1)
                 Spacer()
                 MiniSparkline(values: values).frame(width: 80, height: 26)
                 VStack(alignment: .trailing, spacing: 3) {
@@ -476,10 +482,12 @@ struct ProgressTabView: View {
                     deltaLabel(delta)
                 }
             }
-            .padding(.vertical, 11)
-            // 折线图无语义；把整行合成一条可读元素（动作名·估算1RM·最新值·升降），折线静默
+            .padding(.vertical, 12)
+            // 折线图无语义；把整行合成一条可读元素（动作名·最新值·升降），折线静默
             .accessibilityElement(children: .combine)
-            Rectangle().fill(Color.redeHair2).frame(height: 1)
+            if !isLast {
+                Rectangle().fill(Color.redeHair2).frame(height: 1)
+            }
         }
     }
 
@@ -517,7 +525,9 @@ struct ProgressTabView: View {
                     UnevenRoundedRectangle(topLeadingRadius: 3, topTrailingRadius: 3)
                         .fill(bar.ember ? Color.redeEmber : Color.redeNeu)
                         .frame(height: max(8, bar.fraction * 96)) // 柱区高 96（hasTag 时容器额外预留 27pt 给浮标头位）
-                        .frame(maxWidth: .infinity)
+                        // 柱宽上限（审计 2026-07-13）：等分槽内居中、不再满槽填充——
+                        // 62pt 满宽砖块 → 柱形（Apple Health 柱:距比例口径）
+                        .frame(maxWidth: 40)
                     Overline(text: bar.label, color: bar.ember ? .redeEmber2 : .redeT4)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
@@ -656,8 +666,12 @@ struct ProgressTabView: View {
                 .frame(height: 240)
                 .padding(.vertical, 4)
 
-                ForEach(unlocked, id: \.muscleId.rawValue) { estimate in
-                    developmentRow(estimate, subLevels: model.subLevelsByMuscle[estimate.muscleId] ?? [])
+                // 行间距 0：行自身 44pt 命中高（HIG 最小命中区，审计 2026-07-13）——
+                // 密度与历史区行一致，不再靠 section 的 spacing 14 拉开
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(unlocked, id: \.muscleId.rawValue) { estimate in
+                        developmentRow(estimate, subLevels: model.subLevelsByMuscle[estimate.muscleId] ?? [])
+                    }
                 }
 
                 if calibratingCount > 0 {
@@ -746,8 +760,10 @@ struct ProgressTabView: View {
                 }
                 Spacer(minLength: 12)
                 // Lv 内进度（抬底命中时引擎已置 0——「刚进入此级」如实从零）
+                // 0.28：0 进度时空轨道仍可见（审计 2026-07-13——0.18 在 base 底上
+                // 近隐形，「刚进入此级」的行看着像坏了）
                 Capsule()
-                    .fill(Color.redeT3.opacity(0.18))
+                    .fill(Color.redeT3.opacity(0.28))
                     .frame(width: 64, height: 4)
                     .overlay(alignment: .leading) {
                         Capsule()
@@ -758,6 +774,7 @@ struct ProgressTabView: View {
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(Color.redeT4)
             }
+            .frame(minHeight: 44)   // HIG 最小命中区（审计 2026-07-13：原内容高 ~20pt）
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

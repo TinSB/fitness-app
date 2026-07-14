@@ -64,42 +64,30 @@ final class ProgressEngineCopyTests: XCTestCase {
         }
     }
 
-    // Task 2b（2026-07-03 审查 MINOR）：体量千分位，仅体量口径——处方重量 formatKg 不动
-    func testVolumeFormatterGroupsThousands() {
+    // Task 2b（2026-07-03）体量千分位；整数口径（进度页审计 2026-07-13，推翻小数保留）：
+    // 吨位是聚合值，五位数带 .5/.75 是噪音非精度——显示层四舍五入取整。处方重量 formatKg 不动。
+    func testVolumeFormatterGroupsThousandsAndRoundsToInteger() {
         XCTAssertEqual(zh.formatVolumeKg(36210), "36,210")
-        XCTAssertEqual(zh.formatVolumeKg(21325), "21,325")
         XCTAssertEqual(zh.formatVolumeKg(999), "999")          // 千以下无分隔
         XCTAssertEqual(zh.formatVolumeKg(1000), "1,000")
-        XCTAssertEqual(zh.formatVolumeKg(5500.5), "5,500.5")   // kg 半公斤小数保留
+        XCTAssertEqual(zh.formatVolumeKg(5500.5), "5,501")     // 取整（原口径保留 .5）
+        XCTAssertEqual(zh.formatVolumeKg(243.75), "244")       // loadFactor 小数一并取整
         XCTAssertEqual(en.formatVolumeKg(1234567), "1,234,567")
-        // lb 模式沿用 formatKg 同一转换单点（0.5 lb 步进小数兼容）
+        // lb 换算后取整（原口径 2,204.5）
         let lb = RedeStrings(locale: .en, unit: .lb)
-        XCTAssertEqual(lb.formatVolumeKg(1000), "2,204.5")
-        // 负数不得错位逗号（审查修复：符号位不参与分组计数；体量域恒非负，纯防御）
-        XCTAssertEqual(zh.formatVolumeKg(-100), "-100")
+        XCTAssertEqual(lb.formatVolumeKg(1000), "2,205")
+        XCTAssertEqual(lb.formatVolumeKg(9141.9), "20,154")    // 审计实例：20,150.5 类噪音消失
+        // 负数不得错位逗号（体量域恒非负，纯防御）
         XCTAssertEqual(zh.formatVolumeKg(-123456), "-123,456")
-        // loadFactor 权重下体量可出 .25/.75（quarter）小数，保留两位不四舍五入到一位
-        XCTAssertEqual(zh.formatVolumeKg(243.75), "243.75")
-        XCTAssertEqual(zh.formatVolumeKg(21325.650000000001), "21,325.65")  // 浮点噪音收敛
         // 处方重量口径逐字符不变
         XCTAssertEqual(zh.formatKg(36210), "36210")
     }
 
-    // Task 2b：图例去内部术语「铁火线/ember」，改通俗色彩措辞
-    func testLegendsUsePlainColorWording() {
-        XCTAssertEqual(zh.weekCaptionCurrent, "橙色标出本周")
-        XCTAssertEqual(en.weekCaptionCurrent, "Orange marks this week")
-        XCTAssertEqual(zh.cycleCaptionPeak, "橙色标出最高点")
-        XCTAssertEqual(en.cycleCaptionPeak, "Orange marks the peak")
-        XCTAssertEqual(zh.sessionCaptionPR("卧推"), "卧推　橙色标出新纪录")
-        XCTAssertEqual(en.sessionCaptionPR("Bench press"), "Bench press · orange marks the PR")
-        // 防回潮：图例不再出现内部术语
-        for line in [zh.weekCaptionCurrent, zh.cycleCaptionPeak, zh.sessionCaptionPR("卧推")] {
-            XCTAssertFalse(line.contains("铁火线"))
-        }
-        for line in [en.weekCaptionCurrent, en.cycleCaptionPeak, en.sessionCaptionPR("Bench")] {
-            XCTAssertFalse(line.lowercased().contains("ember"))
-        }
+    // 图例行退役（进度页审计 2026-07-13）：四条「橙色标出…」教学串随渲染删除；
+    // 周期清单改为标题一次性声明「估算 1RM」口径。
+    func testCycleTrendTitleDeclaresE1RMOnce() {
+        XCTAssertEqual(zh.cycleTrendTitle, "主项趋势 · 估算 1RM")
+        XCTAssertEqual(en.cycleTrendTitle, "Top lifts · estimated 1RM")
     }
 
     func testSuspectLinesAreBehavioral() {
@@ -126,15 +114,15 @@ final class ProgressEngineCopyTests: XCTestCase {
         for strings in [zh, en] {
             var lines: [String] = [
                 strings.progressEmptyTitle, strings.progressEmptySub,
-                strings.sessionVerdictDone, strings.sessionCaptionNoPR,
-                strings.sessionVerdictPR("卧推"), strings.sessionCaptionPR("卧推"),
+                strings.sessionVerdictDone,
+                strings.sessionVerdictPR("卧推"),
                 strings.sessionSubTopSet(lift: "卧推", kg: "62.5", reps: 6, e1rmKg: "75"),
-                strings.weekChartTitleByWeek, strings.weekCaptionCurrent,
+                strings.weekChartTitleByWeek, strings.cycleTrendTitle,
                 strings.weekSubCompared(deltaPercent: 12, sets: 18, volumeKg: "5500"),
                 strings.weekSubFirstWeek(sets: 18, volumeKg: "5500"),
                 strings.weekSubGapWeek(sets: 18, volumeKg: "5500"),
                 strings.weekSubInProgress(sets: 18, volumeKg: "5500"),
-                strings.cycleCaptionPeak, strings.cycleChartTitleFor("卧推"),
+                strings.cycleChartTitleFor("卧推"),
                 strings.historyTitle, strings.historyRowMeta(sets: 18, volumeKg: "5500"),
                 strings.historyDetailSets, strings.dataQualityTitle,
                 strings.suspectWeightLine(dateISO: "2026-06-03", lift: "卧推", setIndex: 1, kg: "227"),

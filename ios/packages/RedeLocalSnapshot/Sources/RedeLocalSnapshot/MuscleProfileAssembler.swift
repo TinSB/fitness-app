@@ -19,6 +19,8 @@ public enum MuscleProfileAssembler {
     /// prior 窗漂到很久以前、且 detraining 结构性不可达）——近/前 N 个**日历周**
     /// 缺周按 0 计，停练真实可测。prior 窗全零 = 历史不足，保守 stable
     ///（数据不够≠没变化的语义收口写回，O1）。
+    /// 窗口只含**已完成周**（进度页审计 2026-07-13）：进行中的本周若计入会按
+    /// 部分量/零量拉低 recent 均值——周一早上全员 declining 的系统性误报。
     public static func trend(
         weeklySets: [String: Double], isCalibrating: Bool, nowISO: String,
         config: MuscleLevelModelConfig
@@ -30,8 +32,8 @@ public enum MuscleProfileAssembler {
         func weekValue(_ weeksBack: Int) -> Double {
             weeklySets[SnapshotDayMath.isoString(fromDayNumber: anchorDay - 7 * weeksBack)] ?? 0
         }
-        let recentAvg = (0..<window).map(weekValue).reduce(0, +) / Double(window)
-        let priorAvg = (window..<(window * 2)).map(weekValue).reduce(0, +) / Double(window)
+        let recentAvg = (1...window).map(weekValue).reduce(0, +) / Double(window)
+        let priorAvg = ((window + 1)...(window * 2)).map(weekValue).reduce(0, +) / Double(window)
         if recentAvg <= 0, priorAvg > 0 { return .detraining }
         guard priorAvg > 0 else { return .stable }
         let delta = (recentAvg - priorAvg) / priorAvg

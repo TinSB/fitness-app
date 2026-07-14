@@ -54,7 +54,6 @@ extension RedeStrings {
     /// 短标签：保持 / 首练 / 估算 1RM。
     public var holdShort: String { t3("保持", "hold") }
     public var firstTimeShort: String { t3("首练", "first") }
-    public var estimated1RM: String { t3("估算 1RM", "est. 1RM") }
 
     /// 训练卡片升降标签（含箭头）；首练 / 未知 → nil（不显示）。
     public func trainChangeTag(_ change: String) -> String? {
