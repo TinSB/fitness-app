@@ -190,7 +190,7 @@ final class MuscleProfileAssemblerTests: XCTestCase {
         let p = MuscleProfileAssembler.assemble(
             computations: comps, observations: obs,
             previousLevels: [.chest: 8], previousPeaks: [.back: 12], previousTier: nil,
-            generatedAtIso: "2026-07-07", config: config)
+            generatedAtIso: "2026-07-15", config: config)
 
         XCTAssertEqual(p.estimates.count, 4)
         XCTAssertEqual(p.modelVersion, config.modelVersion)
@@ -223,7 +223,7 @@ final class MuscleProfileAssemblerTests: XCTestCase {
         ]
         let p = MuscleProfileAssembler.assemble(
             computations: comps, observations: obs, previousLevels: [:], previousPeaks: [:],
-            previousTier: nil, generatedAtIso: "2026-07-08", config: config)
+            previousTier: nil, generatedAtIso: "2026-07-15", config: config)
         XCTAssertEqual(p.overallTier, .calibrating)
     }
 
@@ -237,7 +237,7 @@ final class MuscleProfileAssemblerTests: XCTestCase {
             comps.map { ($0.muscleId, observations($0.muscleId, setsByWeek: [8, 8, 8, 8, 8, 8])) })
         let p = MuscleProfileAssembler.assemble(
             computations: comps, observations: obs, previousLevels: [:], previousPeaks: [:],
-            previousTier: nil, generatedAtIso: "2026-07-08", config: config)
+            previousTier: nil, generatedAtIso: "2026-07-15", config: config)
         XCTAssertEqual(p.estimates.first { $0.muscleId == .hamstrings }?.decision, .prioritize)
         XCTAssertEqual(p.priorityMuscleIds, [.hamstrings])
     }
@@ -301,10 +301,10 @@ final class MuscleProfileAssemblerTests: XCTestCase {
         ]
         let a = MuscleProfileAssembler.assemble(
             computations: comps, observations: obs, previousLevels: [:], previousPeaks: [:],
-            previousTier: nil, generatedAtIso: "2026-07-07", config: config)
+            previousTier: nil, generatedAtIso: "2026-07-15", config: config)
         let b = MuscleProfileAssembler.assemble(
             computations: comps, observations: obs, previousLevels: [:], previousPeaks: [:],
-            previousTier: nil, generatedAtIso: "2026-07-07", config: config)
+            previousTier: nil, generatedAtIso: "2026-07-15", config: config)
         XCTAssertEqual(a, b)
         // estimates 顺序确定（按 muscleId rawValue 排序）
         XCTAssertEqual(a.estimates.map(\.muscleId.rawValue), a.estimates.map(\.muscleId.rawValue).sorted())
@@ -321,7 +321,7 @@ final class MuscleProfileAssemblerTests: XCTestCase {
         let profile = MuscleProfileAssembler.assemble(
             computations: comps, observations: [:],
             previousLevels: [:], previousPeaks: [:], previousTier: nil,
-            generatedAtIso: "2026-07-08", config: .current)
+            generatedAtIso: "2026-07-15", config: .current)
         XCTAssertNotNil(profile.balanceScore)
         XCTAssertNotEqual(profile.balanceScore, 100)
         // 对照组：curveLevel 也全等时才是真·满均衡
@@ -329,7 +329,7 @@ final class MuscleProfileAssemblerTests: XCTestCase {
             computations: [computation(.chest, level: 5), computation(.back, level: 5),
                            computation(.quads, level: 5)],
             observations: [:], previousLevels: [:], previousPeaks: [:], previousTier: nil,
-            generatedAtIso: "2026-07-08", config: .current)
+            generatedAtIso: "2026-07-15", config: .current)
         XCTAssertEqual(flat.balanceScore, 100)
     }
 }
