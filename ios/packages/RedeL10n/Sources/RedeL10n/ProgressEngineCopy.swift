@@ -17,20 +17,18 @@ extension RedeStrings {
     }
 
     /// 体量显示（周/单次总吨位，Task 2b 2026-07-04）：千分位分组（36,210；千以下
-    /// 无分隔）。lb 换算行为与 formatKg 同一口径（0.5 lb 步进，改 formatKg 时同步）。
-    /// 小数上限 2 位（loadFactor 权重可出 .25/.75，同时收敛浮点噪音）。仅体量用——
-    /// 处方重量仍走 formatKg（多处消费，防布局回归）。
+    /// 无分隔）。**整数口径**（进度页审计 2026-07-13，推翻 Task 2b 的小数保留）：
+    /// 吨位是聚合值，五位数带 .5/.75 是数字噪音不是精度——显示层四舍五入取整。
+    /// 仅体量用——处方重量仍走 formatKg（多处消费，防布局回归）。
     public func formatVolumeKg(_ value: Double) -> String {
-        let display = unit == .lb ? ((value * 2.204_622_621_8 * 2).rounded() / 2) : value
+        let display = (unit == .lb ? value * 2.204_622_621_8 : value).rounded()
         let formatter = NumberFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.numberStyle = .decimal
         formatter.usesGroupingSeparator = true  // POSIX locale 默认关分组，须显式开
         formatter.groupingSeparator = ","
         formatter.groupingSize = 3
-        formatter.decimalSeparator = "."
-        formatter.minimumFractionDigits = 0
-        formatter.maximumFractionDigits = 2
+        formatter.maximumFractionDigits = 0
         return formatter.string(from: NSNumber(value: display)) ?? formatKg(value)
     }
 
@@ -42,7 +40,7 @@ extension RedeStrings {
     public var progressEmptySub: String {
         locale == .zh
             ? "完成第一场训练　数据从这里累积"
-            : "Finish your first session. Data builds from here"
+            : "Finish your first session. Data builds from here."
     }
 
     /// M2 空态示意柱下的说明（caption 级）：消除「加载失败/骨架屏」误读——示意柱是预告非数据。
@@ -64,16 +62,9 @@ extension RedeStrings {
             ? "顶组 \(lift) \(kg) \(unitLabel) × \(reps) · 估算 1RM \(e1rmKg) \(unitLabel)"
             : "Top set \(lift) \(kg) \(unitLabel) × \(reps) · est 1RM \(e1rmKg) \(unitLabel)"
     }
-    // 图例通俗化（Task 2b）：「铁火线/ember」是内部设计词，用户读不懂——图例
-    // 直接说颜色（橙色/orange，即 redeEmber 高亮柱）。
-    public func sessionCaptionPR(_ liftName: String) -> String {
-        locale == .zh
-            ? "\(liftName)　橙色标出新纪录"
-            : "\(liftName) · orange marks the PR"
-    }
-    public var sessionCaptionNoPR: String {
-        locale == .zh ? "这场每个动作的量都记下了" : "Every lift this session, logged"
-    }
+    // 图例行退役（进度页审计 2026-07-13）：「橙色标出本周/新纪录」解释显而易见的
+    // 事——柱标签已橙、PR 已浮标；单序列图不配图例（Apple 口径 + owner 反小字红线）。
+    // sessionCaptionPR/NoPR、weekCaptionCurrent、cycleCaptionPeak 四串随渲染一并删除。
 
     // MARK: - Week 尺度（周训练量，FR-PR3）
 
@@ -117,9 +108,6 @@ extension RedeStrings {
     public var weekChartTitleByWeek: String {
         locale == .zh ? "周训练量" : "Weekly volume"
     }
-    public var weekCaptionCurrent: String {
-        locale == .zh ? "橙色标出本周" : "Orange marks this week"
-    }
     /// 周柱标签 "6/8"（周一日期）。
     public func weekBarLabel(fromISO iso: String) -> String { shortDate(fromISO: iso) }
 
@@ -157,8 +145,10 @@ extension RedeStrings {
     public func cycleChartTitleFor(_ liftName: String) -> String {
         locale == .zh ? "e1RM 趋势 · \(liftName)" : "e1RM trend · \(liftName)"
     }
-    public var cycleCaptionPeak: String {
-        locale == .zh ? "橙色标出最高点" : "Orange marks the peak"
+    /// 周期趋势清单标题（进度页审计 2026-07-13）：「估算 1RM」列口径声明一次，
+    /// 替代每行重复的副标（T2 排期折叠同款「一次性化」手法）。
+    public var cycleTrendTitle: String {
+        locale == .zh ? "主项趋势 · 估算 1RM" : "Top lifts · estimated 1RM"
     }
 
     // MARK: - 历史（FR-PR1）

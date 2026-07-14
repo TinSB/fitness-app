@@ -38,31 +38,39 @@ final class MuscleProfileAssemblerTests: XCTestCase {
                            sessionsTouched: 6, movementFamiliesTouched: 2, e1rmPoints: [])
     }
 
-    // MARK: trend（近 3 周 vs 前 3 周，±15% 平滑）
+    // MARK: trend（近 3 个已完成周 vs 前 3 个已完成周，±15% 平滑）
+
+    func testInProgressWeekDoesNotPoisonTrend() {
+        // 周一效应修复（进度页审计 2026-07-13）：进行中的本周（尚无/少量记录）不计入
+        // 窗口——历史每周满额 + 本周刚开始 ≠ declining。修复前：周一早上全部肌群 ↘。
+        // nowISO 2026-07-13（周一，本周零记录）；数据周 6/1..7/6 恒定 9 组 → stable
+        XCTAssertEqual(MuscleProfileAssembler.trend(
+            weeklySets: weekly([9, 9, 9, 9, 9, 9]), isCalibrating: false, nowISO: "2026-07-13", config: config), .stable)
+    }
 
     func testTrendFiveStates() {
         // rising：前 3 周均 6 → 近 3 周均 9（+50%）
         XCTAssertEqual(MuscleProfileAssembler.trend(
-            weeklySets: weekly([6, 6, 6, 9, 9, 9]), isCalibrating: false, nowISO: "2026-07-08", config: config), .rising)
+            weeklySets: weekly([6, 6, 6, 9, 9, 9]), isCalibrating: false, nowISO: "2026-07-15", config: config), .rising)
         // declining：10 → 8（-20%）
         XCTAssertEqual(MuscleProfileAssembler.trend(
-            weeklySets: weekly([10, 10, 10, 8, 8, 8]), isCalibrating: false, nowISO: "2026-07-08", config: config), .declining)
+            weeklySets: weekly([10, 10, 10, 8, 8, 8]), isCalibrating: false, nowISO: "2026-07-15", config: config), .declining)
         // stable：10 → 11（+10% 在阈值内——单向小波动不改向）
         XCTAssertEqual(MuscleProfileAssembler.trend(
-            weeklySets: weekly([10, 10, 10, 11, 11, 11]), isCalibrating: false, nowISO: "2026-07-08", config: config), .stable)
+            weeklySets: weekly([10, 10, 10, 11, 11, 11]), isCalibrating: false, nowISO: "2026-07-15", config: config), .stable)
         // detraining：前有量、近 3 周全零
         XCTAssertEqual(MuscleProfileAssembler.trend(
-            weeklySets: weekly([8, 8, 8, 0, 0, 0]), isCalibrating: false, nowISO: "2026-07-08", config: config), .detraining)
+            weeklySets: weekly([8, 8, 8, 0, 0, 0]), isCalibrating: false, nowISO: "2026-07-15", config: config), .detraining)
         // calibrating 透传
         XCTAssertEqual(MuscleProfileAssembler.trend(
-            weeklySets: weekly([2]), isCalibrating: true, nowISO: "2026-07-08", config: config), .calibrating)
+            weeklySets: weekly([2]), isCalibrating: true, nowISO: "2026-07-15", config: config), .calibrating)
     }
 
     func testDetrainingWithMissingKeysRealAggregatorShape() {
         // 真实聚合器缺周不产 key（审查 M1 反例）：只有前 3 周有记录、近 3 周无 key → detraining
         let onlyEarly: [String: Double] = ["2026-06-01": 8, "2026-06-08": 8, "2026-06-15": 8]
         XCTAssertEqual(MuscleProfileAssembler.trend(
-            weeklySets: onlyEarly, isCalibrating: false, nowISO: "2026-07-08", config: config), .detraining)
+            weeklySets: onlyEarly, isCalibrating: false, nowISO: "2026-07-15", config: config), .detraining)
     }
 
     func testTrendWindowsAreCalendarAnchoredNotRecordAnchored() {
@@ -71,16 +79,16 @@ final class MuscleProfileAssemblerTests: XCTestCase {
         let gapped: [String: Double] = [
             "2026-05-18": 18, "2026-05-25": 18, "2026-06-01": 18,   // 5-8 周前（不在任何窗）
             "2026-06-22": 10, "2026-06-29": 10, "2026-07-06": 10,   // 近 3 周
-        ]  // prior 窗 = 06-01/06-08/06-15 → 18+0+0=6 均值；recent=10 → +67% rising
+        ]  // nowISO 7/15（本周排除）→ recent 窗=06-22/29/07-06=10；prior 窗=06-01/08/15 → 18+0+0=6 均值 → +67% rising
         XCTAssertEqual(MuscleProfileAssembler.trend(
-            weeklySets: gapped, isCalibrating: false, nowISO: "2026-07-08", config: config), .rising)
+            weeklySets: gapped, isCalibrating: false, nowISO: "2026-07-15", config: config), .rising)
     }
 
     func testNewUserInsufficientWeeksIsStable() {
         // 前窗全零（历史不足 6 周）→ 保守 stable（数据不足≠没变化，收口写回语义）
         let young: [String: Double] = ["2026-06-29": 6, "2026-07-06": 9]
         XCTAssertEqual(MuscleProfileAssembler.trend(
-            weeklySets: young, isCalibrating: false, nowISO: "2026-07-08", config: config), .stable)
+            weeklySets: young, isCalibrating: false, nowISO: "2026-07-15", config: config), .stable)
     }
 
     // MARK: peakLevel 单调
@@ -182,7 +190,7 @@ final class MuscleProfileAssemblerTests: XCTestCase {
         let p = MuscleProfileAssembler.assemble(
             computations: comps, observations: obs,
             previousLevels: [.chest: 8], previousPeaks: [.back: 12], previousTier: nil,
-            generatedAtIso: "2026-07-07", config: config)
+            generatedAtIso: "2026-07-15", config: config)
 
         XCTAssertEqual(p.estimates.count, 4)
         XCTAssertEqual(p.modelVersion, config.modelVersion)
@@ -215,7 +223,7 @@ final class MuscleProfileAssemblerTests: XCTestCase {
         ]
         let p = MuscleProfileAssembler.assemble(
             computations: comps, observations: obs, previousLevels: [:], previousPeaks: [:],
-            previousTier: nil, generatedAtIso: "2026-07-08", config: config)
+            previousTier: nil, generatedAtIso: "2026-07-15", config: config)
         XCTAssertEqual(p.overallTier, .calibrating)
     }
 
@@ -229,13 +237,14 @@ final class MuscleProfileAssemblerTests: XCTestCase {
             comps.map { ($0.muscleId, observations($0.muscleId, setsByWeek: [8, 8, 8, 8, 8, 8])) })
         let p = MuscleProfileAssembler.assemble(
             computations: comps, observations: obs, previousLevels: [:], previousPeaks: [:],
-            previousTier: nil, generatedAtIso: "2026-07-08", config: config)
+            previousTier: nil, generatedAtIso: "2026-07-15", config: config)
         XCTAssertEqual(p.estimates.first { $0.muscleId == .hamstrings }?.decision, .prioritize)
         XCTAssertEqual(p.priorityMuscleIds, [.hamstrings])
     }
 
     func testRecoverDecisionForDetrainedMuscle() {
         // 审查 M3：修复后的 detraining（近 3 周缺 key）→ decision recover
+        // （nowISO 7/15：窗口只看已完成周后，需 3 个完成的零周才 detraining——6/22/29、7/6）
         let comps = [
             computation(.chest, level: 8), computation(.back, level: 8), computation(.quads, level: 8),
         ]
@@ -249,7 +258,7 @@ final class MuscleProfileAssemblerTests: XCTestCase {
             sessionsTouched: 6, movementFamiliesTouched: 2, e1rmPoints: [])
         let p = MuscleProfileAssembler.assemble(
             computations: comps, observations: obs, previousLevels: [:], previousPeaks: [:],
-            previousTier: nil, generatedAtIso: "2026-07-08", config: config)
+            previousTier: nil, generatedAtIso: "2026-07-15", config: config)
         let chest = p.estimates.first { $0.muscleId == .chest }
         XCTAssertEqual(chest?.trend, .detraining)
         XCTAssertEqual(chest?.decision, .recover)
@@ -292,10 +301,10 @@ final class MuscleProfileAssemblerTests: XCTestCase {
         ]
         let a = MuscleProfileAssembler.assemble(
             computations: comps, observations: obs, previousLevels: [:], previousPeaks: [:],
-            previousTier: nil, generatedAtIso: "2026-07-07", config: config)
+            previousTier: nil, generatedAtIso: "2026-07-15", config: config)
         let b = MuscleProfileAssembler.assemble(
             computations: comps, observations: obs, previousLevels: [:], previousPeaks: [:],
-            previousTier: nil, generatedAtIso: "2026-07-07", config: config)
+            previousTier: nil, generatedAtIso: "2026-07-15", config: config)
         XCTAssertEqual(a, b)
         // estimates 顺序确定（按 muscleId rawValue 排序）
         XCTAssertEqual(a.estimates.map(\.muscleId.rawValue), a.estimates.map(\.muscleId.rawValue).sorted())
@@ -312,7 +321,7 @@ final class MuscleProfileAssemblerTests: XCTestCase {
         let profile = MuscleProfileAssembler.assemble(
             computations: comps, observations: [:],
             previousLevels: [:], previousPeaks: [:], previousTier: nil,
-            generatedAtIso: "2026-07-08", config: .current)
+            generatedAtIso: "2026-07-15", config: .current)
         XCTAssertNotNil(profile.balanceScore)
         XCTAssertNotEqual(profile.balanceScore, 100)
         // 对照组：curveLevel 也全等时才是真·满均衡
@@ -320,7 +329,7 @@ final class MuscleProfileAssemblerTests: XCTestCase {
             computations: [computation(.chest, level: 5), computation(.back, level: 5),
                            computation(.quads, level: 5)],
             observations: [:], previousLevels: [:], previousPeaks: [:], previousTier: nil,
-            generatedAtIso: "2026-07-08", config: .current)
+            generatedAtIso: "2026-07-15", config: .current)
         XCTAssertEqual(flat.balanceScore, 100)
     }
 }
