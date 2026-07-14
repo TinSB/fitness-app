@@ -124,6 +124,7 @@ struct MuscleHeatmapView: View {
 private func rpoly(_ corners: [(x: CGFloat, y: CGFloat, r: CGFloat)]) -> CGPath {
     let path = CGMutablePath()
     let n = corners.count
+    assert(n >= 3, "rpoly 至少 3 顶点——静默空板块=该肌群从人形上消失")
     guard n >= 3 else { return path }
     let pts = corners.map { CGPoint(x: $0.x, y: $0.y) }
 
