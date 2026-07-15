@@ -779,7 +779,7 @@ owner 拍板，细化 §1.3：
 
 ### 16.2 去信息冗余
 
-- **今日 Decision Receipt 的 Signal 上移**（澄清 §11.4）：四要素 Call·Signal·Change·Control 仍齐全，但 **Signal = 顶部常驻状态行**（`contextLine`：状态点 + 可训练 + 「距上次·近 7 天」），**展开的「查看依据」只留 Change + Control**——同一信号不在两处重复（owner 拍板 A）。§11.4「Decision Receipt 必用」仍满足（要素都在，只是 Signal 常驻顶部、非藏在折叠里）。
+- **今日 Decision Receipt 的 Signal 上移**（澄清 §11.4）：四要素 Call·Signal·Change·Control 仍齐全，但 **Signal = 顶部常驻状态行**（`contextLine`：状态点 + 可训练 + **周分段条 + 本周练 N 天**——#696 起，原「距上次·近 7 天」文字退役），**展开的「查看依据」只留 Change**（Control 宣示行 2026-07-14 退役，见 §13.2；Control 要素由真实按钮承担）。§11.4「Decision Receipt 必用」仍满足（要素都在：Signal 常驻顶部、Control 化为真实控件）。
 - **计划周期条**：当前相位已在节点下逐个标（当前周高亮），摘要行只留「第 N / M 周」、不重复相位。
 
 ### 16.3 空态主按钮纪律
