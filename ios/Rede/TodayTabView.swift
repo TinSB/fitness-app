@@ -36,6 +36,8 @@ struct TodayTabView: View {
     @State private var selectPulse = 0
     /// T1 练完态当日总结（rest/alreadyTrainedToday 时从已落盘历史派生；nil = 数据缺退回两行字）。
     @State private var completedDigest: TodayCompletedDigest?
+    /// N3b：近 5 场（含当场）总体量，旧→新——总结卡吨位行小折线用；<2 场不渲染（单点无意义）。
+    @State private var recentVolumes: [CGFloat] = []
     /// T1 练完态分享入口打开的预览（复用训练小结同款载体与预览视图）。
     @State private var sharePreview: SharePreviewItem?
 
@@ -140,7 +142,10 @@ struct TodayTabView: View {
         // 离开练完态清空。绑 id 而非一次性 .task——一次性版本会错过「视图不重建、状态翻转」路径
         //（-autoCompleteSession 实拍暴露：完成后 digest 不加载）。
         .task(id: isCompletedToday) {
-            if isCompletedToday { await loadCompletedDigest() } else { completedDigest = nil }
+            if isCompletedToday { await loadCompletedDigest() } else {
+                completedDigest = nil
+                recentVolumes = []
+            }
         }
         .sheet(item: $detailTarget) { target in
             exerciseDetailSheet(target)
@@ -202,22 +207,6 @@ struct TodayTabView: View {
             if case .consecutiveTrainingDays(let days) = signal { return days }
         }
         return nil
-    }
-
-    private var signalLineText: String {
-        guard let signals = model?.verdict.signals else { return s.signalLine(gapDays: nil, sessionsLast7: 0, planned: 0) }
-        var last7 = 0
-        var planned = 0
-        var hasHistory = false
-        for signal in signals {
-            switch signal {
-            case .sessionsInLast7Days(let count): last7 = count
-            case .plannedDaysPerWeek(let days): planned = days
-            case .daysSinceLastSession: hasHistory = true
-            default: break
-            }
-        }
-        return s.signalLine(gapDays: hasHistory ? gapDays : nil, sessionsLast7: last7, planned: planned)
     }
 
     private var changeLineText: String {
@@ -394,15 +383,57 @@ struct TodayTabView: View {
         }
     }
 
-    // 状态行：可以训练 + 本周训练次数（去大写微标签前的唯一头部口音 = 状态点）
+    // 状态行：可以训练 + 本周分段条（N3a，2026-07-14）。右侧从滚动 7 天的 signalLine 文字
+    // 换成日历周 7 格分段条 + 同口径计数——一屏之内只有一种周口径（引擎信号照旧，只动展示）。
     private var contextLine: some View {
         HStack(spacing: 7) {
             Circle().fill(pillFill).frame(width: 7, height: 7)
             Overline(text: isUnreadable ? s.dataUnreadableStatus : s.verdictStatus(call: callCode), color: pillText)
-            Spacer()
-            Text(signalLineText)
+            Spacer(minLength: 10)
+            if let statuses = weekStatuses {
+                weekStrip(statuses)
+            }
+        }
+    }
+
+    /// 本日历周 7 天训练状态（周一始，ISO 周——与 ContinuityCalendar 月历/周量图同口径）。
+    /// 从已在内存的 cleanView.sessions 日期派生（最轻路径：零 IO、不重跑引擎）；unreadable 时
+    /// model 为 nil → 不渲染分段条（诚实，不编数据）。
+    private var weekStatuses: [ContinuityCalendar.WeekDayStatus]? {
+        guard let model else { return nil }
+        return ContinuityCalendar.weekStatus(
+            todayISO: Self.isoDay(model.now),
+            trainedDatesISO: Set(model.cleanView.sessions.map(\.date)))
+    }
+
+    /// N3a 周分段条：月历 dayCell 的缩微语法（trained=ember 实心、today 未练=描边、
+    /// past/future 空=刻点同档——today 描边已锚定位置，少一档视觉层级更干净）。
+    /// 7×7pt 格 + 3pt 间距 = 整条 67pt；整条与计数合成一个 a11y 元素。
+    private func weekStrip(_ statuses: [ContinuityCalendar.WeekDayStatus]) -> some View {
+        let trainedCount = statuses.filter { $0 == .trained }.count
+        return HStack(spacing: 8) {
+            HStack(spacing: 3) {
+                ForEach(Array(statuses.enumerated()), id: \.offset) { _, status in
+                    weekStripCell(status)
+                }
+            }
+            Text(s.weekStripCount(trainedCount))
                 .font(.redeCaption).monospacedDigit()
                 .foregroundStyle(Color.redeT4)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(s.weekStripA11y(trainedCount))
+    }
+
+    @ViewBuilder
+    private func weekStripCell(_ status: ContinuityCalendar.WeekDayStatus) -> some View {
+        switch status {
+        case .trained:
+            Circle().fill(Color.redeEmber).frame(width: 7, height: 7)
+        case .today:
+            Circle().stroke(Color.redeT4, lineWidth: 1).frame(width: 7, height: 7)
+        case .past, .future:
+            Circle().fill(Color.redeEtch).frame(width: 3, height: 3).frame(width: 7, height: 7)
         }
     }
 
@@ -663,6 +694,8 @@ struct TodayTabView: View {
         guard isCompletedToday else { return }
         let outcome = await ProgressModel.loadOutcomeAsync()
         guard case let .ready(pm) = outcome, let latest = pm.snapshot.history.first else { return }
+        // N3b：同一 snapshot 顺手带出近 5 场总体量（history[0]=最新 → 反转成旧→新），不二次 IO。
+        recentVolumes = pm.snapshot.history.prefix(5).reversed().map { CGFloat($0.totalVolumeKg) }
         let record = pm.statsRecords.first { $0.id == latest.sessionId }
         let facts = await Task.detached { SessionStore.loadTodayCompletedFacts() }.value
         let todayISO = Self.isoDay(model?.now ?? Date())
@@ -700,13 +733,23 @@ struct TodayTabView: View {
                         .foregroundStyle(Color.redeEmber2)
                 }
             }
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                Text(s.formatVolumeKg(digest.totalVolumeKg))
-                    .font(.redeTitle).tracking(RedeTracking.title).monospacedDigit()
-                    .foregroundStyle(Color.redeT1)
-                Text("\(s.unitLabel) · \(s.todayDoneVolumeLabel)")
-                    .font(.redeCaption)
-                    .foregroundStyle(Color.redeT3)
+            HStack(spacing: 8) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(s.formatVolumeKg(digest.totalVolumeKg))
+                        .font(.redeTitle).tracking(RedeTracking.title).monospacedDigit()
+                        .foregroundStyle(Color.redeT1)
+                    Text("\(s.unitLabel) · \(s.todayDoneVolumeLabel)")
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeT3)
+                }
+                Spacer(minLength: 8)
+                // N3b：近 5 场总体量走势（几何同周期页 trendRow）；<2 场不渲染、a11y 隐藏
+                //（吨位数字已读，折线是同一事实的形状）。零新增文字。
+                if recentVolumes.count >= 2 {
+                    MiniSparkline(values: recentVolumes)
+                        .frame(width: 64, height: 22)
+                        .accessibilityHidden(true)
+                }
             }
             Text(metaLine(digest))
                 .font(.redeCallout).monospacedDigit()

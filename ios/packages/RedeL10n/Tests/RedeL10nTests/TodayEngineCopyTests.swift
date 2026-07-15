@@ -79,6 +79,13 @@ final class TodayEngineCopyTests: XCTestCase {
         XCTAssertEqual(zh.signalLine(gapDays: nil, sessionsLast7: 0, planned: 6), "暂无训练记录")
         // 防回潮：signalLine 数据源是滚动 7 天（sessionsLast7），英文不得再说 this week
         XCTAssertFalse(en.signalLine(gapDays: 5, sessionsLast7: 3, planned: 4).contains("this week"))
+        // N3a 周分段条计数：日历周口径可以说 this week；中西混排带空格；英文单复数分流
+        XCTAssertEqual(zh.weekStripCount(3), "本周 3 次")
+        XCTAssertEqual(en.weekStripCount(1), "1 session this week")
+        XCTAssertEqual(en.weekStripCount(3), "3 sessions this week")
+        XCTAssertEqual(zh.weekStripA11y(3), "本周已练 3 天")
+        XCTAssertEqual(en.weekStripA11y(1), "Trained 1 day this week")
+        XCTAssertEqual(en.weekStripA11y(2), "Trained 2 days this week")
         XCTAssertEqual(en.changeLine(exerciseName: "Bench press", change: "increase", fromKg: "60", toKg: "62.5"), "Bench press 60→62.5 kg · moving up")
     }
 

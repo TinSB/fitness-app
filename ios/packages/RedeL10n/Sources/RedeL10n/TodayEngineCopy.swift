@@ -219,6 +219,19 @@ extension RedeStrings {
         )
     }
 
+    /// 状态行周计数（N3a，2026-07-14）：与周分段条同口径 = 本日历周（周一始）训练天数。
+    /// 一屏一种周口径：状态行不再展示滚动 7 天的 signalLine（引擎信号照旧，只动展示）。
+    public func weekStripCount(_ count: Int) -> String {
+        if locale == .zh { return "本周 \(count) 次" }
+        return count == 1 ? "1 session this week" : "\(count) sessions this week"
+    }
+
+    /// 周分段条 VoiceOver 合成读法（整条 + 计数一个元素，格子本身隐藏）。
+    public func weekStripA11y(_ count: Int) -> String {
+        if locale == .zh { return "本周已练 \(count) 天" }
+        return count == 1 ? "Trained 1 day this week" : "Trained \(count) days this week"
+    }
+
     /// Change 行：首个动作的 previous→target。
     public func changeLine(exerciseName: String, change: String, fromKg: String?, toKg: String) -> String {
         switch change {

@@ -67,4 +67,40 @@ final class ContinuityCalendarTests: XCTestCase {
         XCTAssertNil(ContinuityCalendar.month(containing: "not-a-date", todayISO: "2026-06-01", trainedDatesISO: []))
         XCTAssertNil(ContinuityCalendar.month(containing: "2026-13-01", todayISO: "2026-06-01", trainedDatesISO: []))
     }
+
+    // MARK: - weekStatus（N3a 今日页状态行周分段条，2026-07-14）
+    // 锚定事实：2026-07-13 = 周一、2026-07-15 = 周三、2026-07-12 = 周日。
+
+    func testWeekStatusEmptyHistoryMidweek() {
+        // 空历史，今天=周三：周一周二 past、周三 today、其余 future。
+        let statuses = try! XCTUnwrap(ContinuityCalendar.weekStatus(todayISO: "2026-07-15", trainedDatesISO: []))
+        XCTAssertEqual(statuses, [.past, .past, .today, .future, .future, .future, .future])
+    }
+
+    func testWeekStatusTodayIsMonday() {
+        // 今天=周一（本周第一天）：首格 today、其余全 future。
+        let statuses = try! XCTUnwrap(ContinuityCalendar.weekStatus(todayISO: "2026-07-13", trainedDatesISO: []))
+        XCTAssertEqual(statuses, [.today, .future, .future, .future, .future, .future, .future])
+    }
+
+    func testWeekStatusTodayTrainedWinsOverToday() {
+        // 今天已练：today 格显 trained（训练优先，同 dayCell 语义）；周一也练过。
+        let statuses = try! XCTUnwrap(ContinuityCalendar.weekStatus(
+            todayISO: "2026-07-15", trainedDatesISO: ["2026-07-13", "2026-07-15"]
+        ))
+        XCTAssertEqual(statuses, [.trained, .past, .trained, .future, .future, .future, .future])
+    }
+
+    func testWeekStatusCrossWeekBoundaryIgnoresLastWeek() {
+        // 跨周边界：今天=周日（本周最后一天）；上周日（7-12）的训练不得混入本周条。
+        let statuses = try! XCTUnwrap(ContinuityCalendar.weekStatus(
+            todayISO: "2026-07-19", trainedDatesISO: ["2026-07-12", "2026-07-13"]
+        ))
+        XCTAssertEqual(statuses, [.trained, .past, .past, .past, .past, .past, .today])
+    }
+
+    func testWeekStatusInvalidTodayReturnsNil() {
+        XCTAssertNil(ContinuityCalendar.weekStatus(todayISO: "not-a-date", trainedDatesISO: []))
+        XCTAssertNil(ContinuityCalendar.weekStatus(todayISO: "2026-02-30", trainedDatesISO: []))
+    }
 }

@@ -64,6 +64,31 @@ public enum ContinuityCalendar {
         return Month(year: year, month: month, weeks: weeks, trainedCount: trainedCount)
     }
 
+    // MARK: - 本周分段条（N3a 今日页状态行，2026-07-14）
+
+    /// 周分段条一格的状态。`trained` 优先于 `today`（今天已练显实心，同 dayCell 训练优先语义）。
+    public enum WeekDayStatus: Equatable, Sendable {
+        case trained   // 该日有训练
+        case today     // 今天，尚未练
+        case past      // 已过去，无训练
+        case future    // 未来
+    }
+
+    /// `todayISO` 所在 ISO 周（周一起始）7 天的状态数组——与 `month(containing:)`/周量图同口径
+    /// （civil-days、yyyy-MM-dd 匹配、无 Calendar/时区）。`todayISO` 非法返回 nil。
+    public static func weekStatus(todayISO: String, trainedDatesISO: Set<String>) -> [WeekDayStatus]? {
+        guard let todayZ = SnapshotDayMath.dayNumber(of: todayISO),
+              let mondayISO = SnapshotDayMath.isoWeekStart(of: todayISO),
+              let mondayZ = SnapshotDayMath.dayNumber(of: mondayISO)
+        else { return nil }
+        return (0..<7).map { offset in
+            let z = mondayZ + offset
+            if trainedDatesISO.contains(SnapshotDayMath.isoString(fromDayNumber: z)) { return .trained }
+            if z == todayZ { return .today }
+            return z < todayZ ? .past : .future
+        }
+    }
+
     private static func pad2(_ v: Int) -> String { v < 10 ? "0\(v)" : "\(v)" }
     private static func pad4(_ v: Int) -> String {
         let s = String(v)
