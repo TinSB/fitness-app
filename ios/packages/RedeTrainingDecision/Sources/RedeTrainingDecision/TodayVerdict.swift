@@ -15,7 +15,10 @@ public enum TodayCall: String, Equatable, Sendable {
 public enum VerdictSignal: Equatable, Sendable {
     case noTrainingHistory
     case daysSinceLastSession(Int)
-    case sessionsInLast7Days(Int)
+    /// 本日历周（ISO 周一始）已训练的去重天数（周一..今天）。周口径迁移
+    ///（2026-07-15）：替代滚动 7 天的 sessionsInLast7Days——与分段条/WeeklyAdherence/
+    /// volumeBoost 抑制键同口径，单一真源、不留双信号。
+    case trainedDaysThisWeek(Int)
     case plannedDaysPerWeek(Int)
     case consecutiveTrainingDays(Int)
     case lastSessionMeanRir(Double)
@@ -28,7 +31,8 @@ public enum VerdictReason: Equatable, Sendable {
     case longGapReentry(days: Int)
     case consecutiveDaysNeedRest(days: Int)
     case sustainedLoadDeload(days: Int)
-    case weeklyPlanReached(sessions: Int, planned: Int)
+    /// 本日历周训练天数已达计划频次（days = trainedDaysThisWeek；诚实命名：单位是天不是场次）。
+    case weeklyPlanReached(days: Int, planned: Int)
     case lastSessionNearFailure(meanRir: Double)
     case normalProgression
 

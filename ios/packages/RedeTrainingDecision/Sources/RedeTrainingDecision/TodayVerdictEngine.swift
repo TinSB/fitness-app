@@ -82,8 +82,13 @@ public enum TodayVerdictEngine {
         } else {
             signals.append(.noTrainingHistory)
         }
-        let last7 = trainedDays.filter { $0 > today - 7 }.count
-        signals.append(.sessionsInLast7Days(last7))
+        // 本日历周（ISO 周一始）已训练天数：trainedDays 已去重并滤掉未来日期，
+        // 窗口即周一..今天。周口径迁移（2026-07-15）：滚动 7 天 → 日历周，与今日页
+        // 分段条 / WeeklyAdherence / volumeBoost 按周抑制键同源；周日练满 → 下周一
+        // 重新计 train（有意语义变化，行为锁测试守护）。
+        let weekStart = TrainingDay.isoWeekStartDay(of: today)
+        let trainedThisWeek = trainedDays.filter { $0 >= weekStart }.count
+        signals.append(.trainedDaysThisWeek(trainedThisWeek))
         signals.append(.plannedDaysPerWeek(planned))
 
         var consecutive = 0
@@ -115,8 +120,8 @@ public enum TodayVerdictEngine {
         if consecutive >= consecutiveRestDays {
             return TodayVerdict(call: .rest, reason: .consecutiveDaysNeedRest(days: consecutive), signals: signals)
         }
-        if last7 >= planned {
-            return TodayVerdict(call: .light, reason: .weeklyPlanReached(sessions: last7, planned: planned), signals: signals)
+        if trainedThisWeek >= planned {
+            return TodayVerdict(call: .light, reason: .weeklyPlanReached(days: trainedThisWeek, planned: planned), signals: signals)
         }
         if gap <= 1, let meanRir, meanRir <= nearFailureMeanRir {
             return TodayVerdict(call: .light, reason: .lastSessionNearFailure(meanRir: meanRir), signals: signals)

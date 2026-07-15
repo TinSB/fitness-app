@@ -79,13 +79,14 @@ final class TodayEngineCopyTests: XCTestCase {
         XCTAssertEqual(zh.weekStripCount(3), "本周练 3 天")
         XCTAssertEqual(en.weekStripCount(1), "1 day this week")
         XCTAssertEqual(en.weekStripCount(3), "3 days this week")
-        // 口径防回潮（审查 MAJOR）：滚动 7 天口径的文案禁说 this week/weekly——
-        // 状态行分段条是日历周，一屏一种周口径
-        XCTAssertFalse(en.verdictHeadline(call: "light", reasonCode: "weeklyPlanReached",
-                                          dayName: "Push A", gapDays: nil, consecutiveDays: nil)
+        // 口径合流（周口径迁移 2026-07-15）：weeklyPlanReached 已随引擎迁到日历周
+        //（trainedDaysThisWeek，周一始），文案回迁「本周/weekly」措辞——与分段条同口径。
+        // 正向断言防漂移（替代 #696 的反向防回潮断言，其前提已消失）。
+        XCTAssertTrue(en.verdictHeadline(call: "light", reasonCode: "weeklyPlanReached",
+                                         dayName: "Push A", gapDays: nil, consecutiveDays: nil)
             .lowercased().contains("week"))
-        XCTAssertFalse(zh.verdictHeadline(call: "light", reasonCode: "weeklyPlanReached",
-                                          dayName: "推 A", gapDays: nil, consecutiveDays: nil)
+        XCTAssertTrue(zh.verdictHeadline(call: "light", reasonCode: "weeklyPlanReached",
+                                         dayName: "推 A", gapDays: nil, consecutiveDays: nil)
             .contains("本周"))
         XCTAssertEqual(zh.weekStripA11y(3), "本周已练 3 天")
         XCTAssertEqual(en.weekStripA11y(1), "Trained 1 day this week")
