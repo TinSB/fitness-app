@@ -795,26 +795,13 @@ struct TodayTabView: View {
 
             if reasonExpanded {
                 // 「信号」已在顶部状态行（contextLine）一眼可见——依据里不再重复同一句（owner 拍板 A），
-                // 只留「变化 + 你的控制权」。Decision Receipt 的 Signal = 顶部状态行（上移、非删除）。
-                Grid(alignment: .topLeading, horizontalSpacing: 14, verticalSpacing: 8) {
-                    GridRow {
-                        Overline(text: s.receiptChange).padding(.top, 3)
-                        Text(changeLineText)
-                            .font(.redeCallout).monospacedDigit()
-                            .foregroundStyle(Color.redeT2)
-                    }
-                    GridRow {
-                        Overline(text: s.receiptControl).padding(.top, 3)
-                        // 整面板（2026-06-11）：去描边小框（A3 卡墙微缩版）——
-                        // 文字级 + 竖刻线分隔，刻度轨轨头 .rop 同款语法
-                        HStack(spacing: 12) {
-                            controlOp(s.controlApply)
-                            opTick
-                            controlOp(s.controlHold)
-                            opTick
-                            controlOp(s.controlSwap)
-                        }
-                    }
+                // 只留「变化」。「控制」宣示行已删（N4，2026-07-14）：控制权由真实按钮表达
+                // （换一天练 / 教练卡 / 动作行可点），静态能力清单 = 教学小字，owner 红线。
+                HStack(alignment: .top, spacing: 14) {
+                    Overline(text: s.receiptChange).padding(.top, 3)
+                    Text(changeLineText)
+                        .font(.redeCallout).monospacedDigit()
+                        .foregroundStyle(Color.redeT2)
                 }
                 .padding(.top, 6)
                 // 自动均衡（批次 E，owner 拍板「不要建议直接自动改」「不要小字」）：
@@ -835,17 +822,6 @@ struct TodayTabView: View {
                 }
             }
         }
-    }
-
-    private func controlOp(_ title: String) -> some View {
-        Text(title)
-            .font(.redeCaption)
-            .foregroundStyle(Color.redeT2)
-            .frame(minHeight: RedeShape.controlHeight)
-    }
-
-    private var opTick: some View {
-        Rectangle().fill(Color.redeEtch).frame(width: 1, height: 8)
     }
 
     // MARK: - 教练卡（FR-T5 切片6b；首个用户可见教练动作 — 只读卡 + 暂不处理）
