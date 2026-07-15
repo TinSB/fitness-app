@@ -996,36 +996,8 @@ struct ProgressTabView: View {
 // SnapshotSessionRecord 作 sheet(item:) 标识（id 即 session id）
 extension SnapshotSessionRecord: @retroactive Identifiable {}
 
-// 行内小折线（周期趋势清单）：单色线 + 余烬橙末点；单点退化为一个点。
-private struct MiniSparkline: View {
-    let values: [CGFloat]
-
-    var body: some View {
-        Canvas { context, size in
-            guard values.count >= 2 else {
-                let y = size.height / 2
-                context.fill(
-                    Path(ellipseIn: CGRect(x: size.width - 5, y: y - 2.5, width: 5, height: 5)),
-                    with: .color(.redeEmber)
-                )
-                return
-            }
-            let W = size.width, H = size.height
-            let maxV = values.max() ?? 1, minV = values.min() ?? 0
-            let span = max(maxV - minV, 1)
-            func xs(_ i: Int) -> CGFloat { 2 + CGFloat(i) * (W - 4) / CGFloat(values.count - 1) }
-            func ys(_ v: CGFloat) -> CGFloat { H - 3 - (v - minV) / span * (H - 6) }
-            var line = Path()
-            for (i, v) in values.enumerated() {
-                let p = CGPoint(x: xs(i), y: ys(v))
-                if i == 0 { line.move(to: p) } else { line.addLine(to: p) }
-            }
-            context.stroke(line, with: .color(.redeNeu), style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
-            let lx = xs(values.count - 1), ly = ys(values[values.count - 1])
-            context.fill(Path(ellipseIn: CGRect(x: lx - 2.5, y: ly - 2.5, width: 5, height: 5)), with: .color(.redeEmber))
-        }
-    }
-}
+// MiniSparkline 已提取到 RedeComponents.swift（N3b，2026-07-14）：周期趋势清单与今日页
+// 练完态总结卡两处共用。
 
 #Preview {
     ProgressTabView()

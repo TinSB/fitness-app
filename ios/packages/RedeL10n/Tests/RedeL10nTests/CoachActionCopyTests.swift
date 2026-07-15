@@ -46,6 +46,9 @@ final class CoachActionCopyTests: XCTestCase {
         // 频率维度：count = 本周还差几次，文案出现该次数。
         XCTAssertTrue(zh.coachCardBody(reasonCode: "belowWeeklyPlan", count: 2).contains("2"))
         XCTAssertTrue(en.coachCardBody(reasonCode: "belowWeeklyPlan", count: 2).contains("2"))
+        // 口径防回潮（N3 审查）：count 来源是滚动 7 天，文案禁说「本周/weekly plan」
+        XCTAssertFalse(zh.coachCardBody(reasonCode: "belowWeeklyPlan", count: 2).contains("本周"))
+        XCTAssertFalse(en.coachCardBody(reasonCode: "belowWeeklyPlan", count: 2).lowercased().contains("week"))
     }
 
     /// 英文按字母切词（去标点/数字），小写——词边界匹配，避免 "reset"/"offset"/"again" 等子串误判（审查 MINOR-1/NIT-2）。

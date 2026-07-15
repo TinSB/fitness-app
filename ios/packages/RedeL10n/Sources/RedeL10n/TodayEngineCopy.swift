@@ -130,7 +130,9 @@ extension RedeStrings {
             let days = gapDays.map(String.init) ?? "—"
             return t2("今天轻练　停训 \(days) 天，先回到状态", "Go light today. \(days) days off, ease back in first")
         case ("light", "weeklyPlanReached"):
-            return t2("今天轻练　本周量已够，留有余力", "Go light today. Weekly volume is in, keep some in reserve")
+            // 口径=滚动 7 天（引擎 sessionsLast7），措辞不得写「本周/weekly」——
+            // 状态行分段条是日历周，一屏一种周口径（N3 审查 MAJOR，同 signalLine 2026-07-03 先例）
+            return t2("今天轻练　近 7 天量已够，留有余力", "Go light today. Volume for the past 7 days is in, keep some in reserve")
         case ("light", "lastSessionNearFailure"):
             return t2("今天轻练　上次练到力竭，留出恢复", "Go light today. Last session hit failure, leave room to recover")
         case ("light", _):
@@ -207,16 +209,21 @@ extension RedeStrings {
             : verdictHeadline(call: call, reasonCode: reasonCode, dayName: dayName, gapDays: gapDays, consecutiveDays: consecutiveDays)
     }
 
-    /// Signal 行：可观察事实。
-    public func signalLine(gapDays: Int?, sessionsLast7: Int, planned: Int) -> String {
-        guard let gapDays else {
-            return t2("暂无训练记录", "No training history yet")
-        }
-        // 口径=滚动 7 天（sessionsLast7），非 ISO 周——英文不得写 this week（2026-07-03 审查修复）
-        return t2(
-            "距上次 \(gapDays) 天 · 近 7 天 \(sessionsLast7)/\(planned) 练",
-            "\(gapDays)d since last · \(sessionsLast7)/\(planned) sessions in the past 7 days"
-        )
+    // signalLine（滚动 7 天状态行文案）已退役（N3a 2026-07-14）：状态行展示改为
+    // 日历周分段条 + weekStripCount，该函数零消费者后删除（引擎 verdict.signals 不受影响）。
+
+    /// 状态行周计数（N3a，2026-07-14）：与周分段条同口径 = 本日历周（周一始）训练**天**数
+    ///（格子=天，数字=天；「次」会与同日多场分叉——N3 审查 NIT，与 a11y 串单位合流）。
+    /// 一屏一种周口径：状态行不再展示滚动 7 天口径（引擎信号照旧，只动展示）。
+    public func weekStripCount(_ count: Int) -> String {
+        if locale == .zh { return "本周练 \(count) 天" }
+        return count == 1 ? "1 day this week" : "\(count) days this week"
+    }
+
+    /// 周分段条 VoiceOver 合成读法（整条 + 计数一个元素，格子本身隐藏）。
+    public func weekStripA11y(_ count: Int) -> String {
+        if locale == .zh { return "本周已练 \(count) 天" }
+        return count == 1 ? "Trained 1 day this week" : "Trained \(count) days this week"
     }
 
     /// Change 行：首个动作的 previous→target。

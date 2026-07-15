@@ -74,12 +74,8 @@ public struct RedeStrings: Sendable {
     public var todayWhyThisCall: String { t("查看依据", "Why this call") }
     public var todayHideReason: String { t("收起依据", "Hide reason") }
     public var receiptChange: String { t("调整", "Change") }
-    public var receiptControl: String { t("控制", "Control") }
     public var todaySignalLine: String { t("上次肩推偏沉 · 睡眠 6.2h", "Last overhead felt heavy · sleep 6.2h") }
     public var todayChangeLine: String { t("肩推 95→85 lb · 卧推保持", "Overhead 95→85 lb · bench holds") }
-    public var controlApply: String { t("采纳", "Apply") }
-    public var controlHold: String { t("保持", "Hold") }
-    public var controlSwap: String { t("换动作", "Swap") }
     public var todayRailTitle: String { t("卧推 · 从上次到下次", "Bench · last to next") }
     public var railLastDate: String { t("6月5日", "Jun 5") }
     public var railToday: String { t("今天", "Today") }

@@ -8,6 +8,10 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 ## 2026-07-14
 
+- **Today tab graphic language, round two (N3+N4)**: the status line gains a seven-dot week strip (trained = ember fill, today = stroke, rest = etch ticks) with "trained N days this week" — derived by a new pure `ContinuityCalendar.weekStatus` (TDD, calendar-week aligned with the continuity calendar); the post-workout summary card hangs a five-session volume sparkline next to the tonnage figure (shared `MiniSparkline`, extracted from Progress); and the reasons drawer drops its static "apply · hold · swap" capability row — real buttons already express control. Three-lens review caught the batch's own red line half-enforced: the light-day headline "weekly volume is in" and the coach volume card "N short of your weekly plan" still ran on rolling-7-day data next to the calendar-week strip — both reworded to "past 7 days" with anti-regression tests; date normalization aligned with the calendar precedent; count unit unified to days. Dead `signalLine` formatter removed.
+
+## 2026-07-14
+
 - **Milestones: same-lift rows merged** (owner-approved audit follow-up): a lift with both a measured and an estimated milestone now renders as one row — "Squat 135 lb · est 225 lb" (measured in ember, estimate muted) instead of two stacked rows repeating the name. Estimate-only lifts keep the "est" badge. Display-side grouping only — the engine already guarantees an estimate is emitted only above the measured tier, so nothing is lost. Combined VoiceOver line added with zh/en tests.
 
 ## 2026-07-13
