@@ -83,9 +83,12 @@ public enum ContinuityCalendar {
         else { return nil }
         return (0..<7).map { offset in
             let z = mondayZ + offset
+            // future 判定优先（周口径审查 NIT 2026-07-15）：本周内晚于今天的脏记录
+            //（时钟漂移）不计 trained——与引擎 trainedDaysThisWeek 滤未来日同口径，
+            // 防「本周练 N 天」与教练卡计数同屏对不上账
+            if z > todayZ { return .future }
             if trainedDatesISO.contains(SnapshotDayMath.isoString(fromDayNumber: z)) { return .trained }
-            if z == todayZ { return .today }
-            return z < todayZ ? .past : .future
+            return z == todayZ ? .today : .past
         }
     }
 

@@ -145,7 +145,7 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 | 3 | 距上次训练 ≥14 天 | light | 回归保底,先轻后重。**回归协议 v1（2026-07-08）**: 14-20 天=轻练 ×0.9 循环不动;**≥21 天=重启**(循环回序列头+×0.85);**≥42 天=深回退**(×0.75)——阈值与 MLE detraining 窗(21 天)/强度失窗(42 天)同源;回归期渐进压制(上次打满也不加档/不减辅助/不加负重,external+assisted+bodyweight-plus 三类;bodyweight/band 次数进阶未压制——无负重伤害小,留观察);收据句分档专属文案(告别通用「降一档」)。 |
 | 4 | 21 天窗口训练日 ≥3×周计划频次且最长间隔 ≤2 天 | deload | 结构性超量;**优先级高于规则 5**——连练数周需要的是减载周,不只是歇一天 |
 | 5 | 连续 ≥3 天训练 | rest | 短窗口恢复 |
-| 6 | 近 7 天训练日 ≥ 周计划频次 | light | 本周量已到 |
+| 6 | **本日历周**（ISO 周一始，周一..今天）训练天数 ≥ 周计划频次 | light | 本周量已到。**周口径迁移（2026-07-15，owner 立项）**：原滚动 7 天窗改日历周——与今日页周分段条/教练补量卡/WeeklyAdherence 全线同口径（一屏一种周口径终态收口）；信号 `.sessionsInLast7Days` 退役 → `.trainedDaysThisWeek`。**有意行为变化**：周日练满 → 下周一重新计 train（原滚动窗会 light 到周中）；周初连续高频保护由规则 4/5 承担，无保护真空 |
 | 7 | 昨日（gap≤1）训练 RIR 均值 ≤0.5 | light | 上次练到力竭,降一档 |
 | 8 | 兜底 | train | 常规推进 |
 
@@ -444,11 +444,11 @@ public struct SupportAllocationDecision: Equatable, Sendable {
 今日页「教练动作」是把系统已知的可执行建议收敛成**每屏 ≤1 张**优先级最高的卡，用户可**采纳 / 暂不处理**，采纳可**单步撤销**。它是独立于 §6.4 support-allocation、也独立于 §6.5 等级模型的轻量 surface：当前实现只吃裁决信号 + 处方 reason + 数据质量计数，**不读肌群等级**（肌群级教练建议见 §6.5.10，依赖未落地的 MLE）。
 
 **引擎契约（`CoachActionEngine`，归 `RedeTrainingDecision`，纯函数、零文案、不落 engine output）**：
-- **输入（clean input contract，§8）**：app 组合层把信号摊平成 `CoachActionInput` primitives 注入——`call`（TodayCall 枚举）、`sessionsLast7`、`plannedDaysPerWeek`、`totalSessionCount`、`stalledExerciseIds`（当日处方里命中 4 个到顶/毕业 reason 的动作：自重到顶 / 弹力带到顶 / 辅助毕业 / 负重自重回退；**不含**有重量动作的次数到顶 `repCeilingReached`——那只是加重、非换动作场景）、`dataFindingCount`（§8.0.1 数据质量问题数）、本周锚点 `weekStartISO`、`dismissals`、`volumeBoostAdoptedThisWeek`。禁 raw AppData / 等级原始值进引擎。
+- **输入（clean input contract，§8）**：app 组合层把信号摊平成 `CoachActionInput` primitives 注入——`call`（TodayCall 枚举）、`trainedDaysThisWeek`（本日历周周一..今天去重训练天数；2026-07-15 周口径迁移，原 `sessionsLast7` 退役）、`plannedDaysPerWeek`、`totalSessionCount`、`stalledExerciseIds`（当日处方里命中 4 个到顶/毕业 reason 的动作：自重到顶 / 弹力带到顶 / 辅助毕业 / 负重自重回退；**不含**有重量动作的次数到顶 `repCeilingReached`——那只是加重、非换动作场景）、`dataFindingCount`（§8.0.1 数据质量问题数）、本周锚点 `weekStartISO`、`dismissals`、`volumeBoostAdoptedThisWeek`。禁 raw AppData / 等级原始值进引擎。
 - **输出**：优先级排序的 typed `CoachAction`（kind/reasonCode/exerciseId?/count?/actionKey）。**优先级 修数据 > 换动作 > 补量**（数据可信 > 动作 > 量）。UI 取首条渲染。
 - **三类动作与采纳语义**：
   - **换动作（exerciseSwap · ceilingReached）**：某自重/弹力带动作练到次数上限、或辅助毕业 / 负重自重回退（上列 4 个 reason；有重量动作 `repCeilingReached` 只加重、不触发）。采纳 = 弹**同族替代列表**（同 substitution group、非自身、非退役、按 rank）让用户选 → `applyExerciseSubstitution(originalId,actualId)` → 由 §6.0.1 plan() 消费覆盖（覆盖 > sticky > preferredId > rank）真正替换处方该槽；目标非该槽合法候选时 plan() 优雅回退、处方不变。
-  - **补量（volumeBoost · belowWeeklyPlan）= 频率维度**：`count = plannedDaysPerWeek − sessionsLast7`（本周还差几次）。**红线（§6.5.2）：无肌群名、无组数**——肌群级「补 N 组某肌群」依赖未落地的 MLE/贡献权重，属 §6.5.10 的未来能力，不在此引擎。采纳 = **仅承认**（记录本周已承认、引擎本周抑制本卡），**不加训练、不改处方**——文案与写入都不得宣称替用户加了训练（诚实红线）。守门（全满足才出）：活跃日（train/light，绝不 rest/deload）、非新用户（totalSessionCount>0）、计划有效（plannedDaysPerWeek>0）、本周已练落后且非负（0 ≤ sessionsLast7 < planned；下界防御非法负输入、不虚高 count）。
+  - **补量（volumeBoost · belowWeeklyPlan）= 频率维度**：`count = plannedDaysPerWeek − trainedDaysThisWeek`（本周还差几**天**，日历周口径——计数与按周抑制键 `volumeBoost:<weekStartISO>` 同源，2026-07-15 收口）。**红线（§6.5.2）：无肌群名、无组数**——肌群级「补 N 组某肌群」依赖未落地的 MLE/贡献权重，属 §6.5.10 的未来能力，不在此引擎。采纳 = **仅承认**（记录本周已承认、引擎本周抑制本卡），**不加训练、不改处方**——文案与写入都不得宣称替用户加了训练（诚实红线）。守门（全满足才出）：活跃日（train/light，绝不 rest/deload）、非新用户（totalSessionCount>0）、计划有效（plannedDaysPerWeek>0）、本周已练落后且非负（0 ≤ trainedDaysThisWeek < planned；下界防御非法负输入、不虚高 count）。
   - **修数据（dataReview · dataHasFindings）**：消费 §8.0.1 `DataQualityReport` 的问题计数，提示去进展页核对（只读导航）。
 - **降频（温和政策）**：换动作/修数据同 `actionKey` **累计 ≥2** 次暂不处理后不再出（累计总数，无"中间采纳则重置"逻辑——一旦累计达标即对该 key 持久抑制）；补量本周已采纳或本周已暂不处理（**≥1**）后本周不再出（补量按周窗口抑制、1 次即够；换动作/修数据按 actionKey 累计、取 ≥2 更宽容）。`actionKey` 由引擎产出（`dataReview` / `exerciseSwap:<id>` / `volumeBoost:<weekStartISO>`），UI 暂不处理即落库该 key、引擎下次据 `dismissals[key]` 降频——闭环，UI 不手拼 key。
 - **采纳 / 撤销写入**：采纳与撤销都走 §5 唯一写闸（写前 backup + atomic + 不 fake success）；撤销 = 单步即时反向写（`removeExerciseSubstitution` / `removeVolumeBoost`），不另起 undo 栈。换动作撤销有三入口：采纳后即时浮条（~5s）+ 处方行「已换」微标（读落库覆盖 map、长存）+ 动作详情页「换回原动作」；补量撤销仅采纳后即时浮条（采纳零可见后果，刻意不造常驻控件）。撤销写失败时浮条保留供重试（错误面如实呈现）；**已知限制**：补量浮条正常超时后无持久撤销入口（刻意接受——补量为轻操作；换动作有微标/详情页两条持久兜底）。「暂不处理」是单向降频信号：写闸层有反向口（`removeCoachActionDismissal`）但**不暴露 UI 撤销**，卡按降频策略自然再现。

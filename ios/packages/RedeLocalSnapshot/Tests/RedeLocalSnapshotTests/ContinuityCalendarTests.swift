@@ -103,4 +103,12 @@ final class ContinuityCalendarTests: XCTestCase {
         XCTAssertNil(ContinuityCalendar.weekStatus(todayISO: "not-a-date", trainedDatesISO: []))
         XCTAssertNil(ContinuityCalendar.weekStatus(todayISO: "2026-02-30", trainedDatesISO: []))
     }
+
+    func testWeekStatusFutureDirtyDataNotCountedAsTrained() {
+        // 时钟漂移脏数据：本周内晚于今天的记录不计 trained（与引擎滤未来日同口径）
+        let statuses = ContinuityCalendar.weekStatus(
+            todayISO: "2026-07-15",   // 周三
+            trainedDatesISO: ["2026-07-13", "2026-07-16"])   // 周一真练 + 周四脏未来
+        XCTAssertEqual(statuses, [.trained, .past, .today, .future, .future, .future, .future])
+    }
 }

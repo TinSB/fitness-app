@@ -5,9 +5,9 @@
 // 调用方传已解析的动作名/数值，本包不查目录、不算阈值。
 //
 // 红线（系统逻辑 §6.5.2 / §4.2）：
-//  - 不羞辱：补量只说「还差几次 / 有空补一次」，绝不「你落后了 / 练太少」。
+//  - 不羞辱：补量只说「还差几天 / 有空补一次」，绝不「你落后了 / 练太少」。
 //  - 禁词：算法名 / 「AI 判断」/ 「系统认为」/ 「最佳」一律不出现。
-//  - 补量是频率维度——禁出现具体肌群名或组数，count 只表「本周还差几次训练」。
+//  - 补量是频率维度——禁出现具体肌群名或组数，count 只表「本周还差几天」（日历周，2026-07-15）。
 
 import Foundation
 
@@ -28,7 +28,7 @@ extension RedeStrings {
     }
 
     /// 教练卡正文（信号 + 影响 + 决策）。count 语义随 reasonCode：dataHasFindings = 可疑条数；
-    /// belowWeeklyPlan = 本周还差几次；ceilingReached 不用 count（看动作名）。
+    /// belowWeeklyPlan = 本周还差几天（单位=天，与分段条合流）；ceilingReached 不用 count（看动作名）。
     public func coachCardBody(reasonCode: String, exerciseName: String = "", count: Int? = nil) -> String {
         switch reasonCode {
         case "dataHasFindings":
@@ -40,11 +40,14 @@ extension RedeStrings {
             return t2c("当前变体已经练满　换个更难的版本继续往上走",
                        "This variation is maxed out — a harder version keeps you moving up")
         case "belowWeeklyPlan":
-            // 口径=滚动 7 天（引擎 sessionsLast7），措辞不得写「本周」——状态行分段条
-            // 是日历周，一屏一种周口径（N3 审查 MINOR，与 weeklyPlanReached 同批收口）
+            // 口径=日历周（引擎 trainedDaysThisWeek；周口径迁移 2026-07-15）：计数口径与
+            // 「按周抑制键」终于同源，与状态行分段条同口径。单位=天（与 weekStripCount 合流，
+            // 「次」会与同日多场分叉——N3 审查 NIT 口径）；英文单复数分流。
             let n = count ?? 0
-            return t2c("近 7 天还差 \(n) 次就到计划　有空补一次就好",
-                       "\(n) short of your plan over the past 7 days — fit one in if you can")
+            let en = n == 1
+                ? "1 day short of your plan this week — fit one in if you can"
+                : "\(n) days short of your plan this week — fit one in if you can"
+            return t2c("本周还差 \(n) 天就到计划　有空补一次就好", en)
         default:
             return ""
         }

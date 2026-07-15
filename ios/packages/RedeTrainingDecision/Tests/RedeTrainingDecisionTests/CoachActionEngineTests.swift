@@ -5,12 +5,12 @@ import XCTest
 
 final class CoachActionEngineTests: XCTestCase {
     private func make(
-        call: TodayCall = .train, sessionsLast7: Int = 1, plannedDaysPerWeek: Int = 4,
+        call: TodayCall = .train, trainedDaysThisWeek: Int = 1, plannedDaysPerWeek: Int = 4,
         totalSessionCount: Int = 5, stalled: [String] = [], findings: Int = 0,
         weekStartISO: String = "2026-06-15", dismissals: [String: Int] = [:], adopted: Bool = false
     ) -> CoachActionInput {
         CoachActionInput(
-            call: call, sessionsLast7: sessionsLast7, plannedDaysPerWeek: plannedDaysPerWeek,
+            call: call, trainedDaysThisWeek: trainedDaysThisWeek, plannedDaysPerWeek: plannedDaysPerWeek,
             totalSessionCount: totalSessionCount, stalledExerciseIds: stalled, dataFindingCount: findings,
             weekStartISO: weekStartISO, dismissals: dismissals, volumeBoostAdoptedThisWeek: adopted
         )
@@ -29,46 +29,46 @@ final class CoachActionEngineTests: XCTestCase {
     }
 
     func testVolumeBoostFiresWhenBehindAndActive() throws {
-        let actions = CoachActionEngine.actions(input: make(call: .train, sessionsLast7: 1, plannedDaysPerWeek: 4))
+        let actions = CoachActionEngine.actions(input: make(call: .train, trainedDaysThisWeek: 1, plannedDaysPerWeek: 4))
         let boost = try XCTUnwrap(actions.first { $0.kind == .volumeBoost })
         XCTAssertEqual(boost.reasonCode, "belowWeeklyPlan")
-        XCTAssertEqual(boost.count, 3, "本周还差 4-1=3 次")
+        XCTAssertEqual(boost.count, 3, "本周还差 4-1=3 天（周口径迁移 2026-07-15：单位=天）")
     }
 
     func testVolumeBoostNotOnRestOrDeload() {
         for call in [TodayCall.rest, .deload] {
-            let actions = CoachActionEngine.actions(input: make(call: call, sessionsLast7: 0, plannedDaysPerWeek: 5))
+            let actions = CoachActionEngine.actions(input: make(call: call, trainedDaysThisWeek: 0, plannedDaysPerWeek: 5))
             XCTAssertFalse(actions.contains { $0.kind == .volumeBoost }, "\(call) 态绝不催补量")
         }
     }
 
     func testVolumeBoostNotForBrandNewUser() {
-        let actions = CoachActionEngine.actions(input: make(sessionsLast7: 0, plannedDaysPerWeek: 4, totalSessionCount: 0))
+        let actions = CoachActionEngine.actions(input: make(trainedDaysThisWeek: 0, plannedDaysPerWeek: 4, totalSessionCount: 0))
         XCTAssertFalse(actions.contains { $0.kind == .volumeBoost }, "全新用户（无历史）不催补量")
     }
 
     func testVolumeBoostNotWhenWeeklyPlanMet() {
-        let actions = CoachActionEngine.actions(input: make(sessionsLast7: 4, plannedDaysPerWeek: 4))
+        let actions = CoachActionEngine.actions(input: make(trainedDaysThisWeek: 4, plannedDaysPerWeek: 4))
         XCTAssertFalse(actions.contains { $0.kind == .volumeBoost }, "已达标不催")
-        let over = CoachActionEngine.actions(input: make(sessionsLast7: 5, plannedDaysPerWeek: 4))
+        let over = CoachActionEngine.actions(input: make(trainedDaysThisWeek: 5, plannedDaysPerWeek: 4))
         XCTAssertFalse(over.contains { $0.kind == .volumeBoost }, "超额也不催")
     }
 
     func testPriorityOrderDataThenSwapThenBoost() {
         let actions = CoachActionEngine.actions(input: make(
-            call: .train, sessionsLast7: 1, plannedDaysPerWeek: 4, stalled: ["pull-up"], findings: 2
+            call: .train, trainedDaysThisWeek: 1, plannedDaysPerWeek: 4, stalled: ["pull-up"], findings: 2
         ))
         XCTAssertEqual(actions.map(\.kind), [.dataReview, .exerciseSwap, .volumeBoost], "修数据>换动作>补量")
     }
 
-    // 防御非法负输入（审查 M-2）：负 last7 不催补量、不产虚高 count。
-    func testNegativeSessionsLast7DoesNotFireVolumeBoost() {
-        let actions = CoachActionEngine.actions(input: make(call: .train, sessionsLast7: -1, plannedDaysPerWeek: 4))
-        XCTAssertFalse(actions.contains { $0.kind == .volumeBoost }, "负 last7 被守门挡下，不产虚高 count")
+    // 防御非法负输入（审查 M-2）：负的本周天数不催补量、不产虚高 count。
+    func testNegativeTrainedDaysDoesNotFireVolumeBoost() {
+        let actions = CoachActionEngine.actions(input: make(call: .train, trainedDaysThisWeek: -1, plannedDaysPerWeek: 4))
+        XCTAssertFalse(actions.contains { $0.kind == .volumeBoost }, "负输入被守门挡下，不产虚高 count")
     }
 
     func testNoSignalsYieldsEmpty() {
-        let actions = CoachActionEngine.actions(input: make(sessionsLast7: 4, plannedDaysPerWeek: 4, stalled: [], findings: 0))
+        let actions = CoachActionEngine.actions(input: make(trainedDaysThisWeek: 4, plannedDaysPerWeek: 4, stalled: [], findings: 0))
         XCTAssertTrue(actions.isEmpty, "无信号 → 无卡")
     }
 
@@ -76,7 +76,7 @@ final class CoachActionEngineTests: XCTestCase {
 
     func testActionKeysAreStable() {
         let actions = CoachActionEngine.actions(input: make(
-            sessionsLast7: 1, plannedDaysPerWeek: 4, stalled: ["pull-up"], findings: 1, weekStartISO: "2026-06-15"
+            trainedDaysThisWeek: 1, plannedDaysPerWeek: 4, stalled: ["pull-up"], findings: 1, weekStartISO: "2026-06-15"
         ))
         XCTAssertEqual(actions.first { $0.kind == .dataReview }?.actionKey, "dataReview")
         XCTAssertEqual(actions.first { $0.kind == .exerciseSwap }?.actionKey, "exerciseSwap:pull-up")
@@ -98,10 +98,10 @@ final class CoachActionEngineTests: XCTestCase {
     }
 
     func testVolumeBoostSuppressedWhenAdoptedOrDismissedThisWeek() {
-        let adopted = CoachActionEngine.actions(input: make(sessionsLast7: 1, plannedDaysPerWeek: 4, adopted: true))
+        let adopted = CoachActionEngine.actions(input: make(trainedDaysThisWeek: 1, plannedDaysPerWeek: 4, adopted: true))
         XCTAssertFalse(adopted.contains { $0.kind == .volumeBoost }, "本周已采纳 → 不再出")
         let dismissed = CoachActionEngine.actions(input: make(
-            sessionsLast7: 1, plannedDaysPerWeek: 4, weekStartISO: "2026-06-15",
+            trainedDaysThisWeek: 1, plannedDaysPerWeek: 4, weekStartISO: "2026-06-15",
             dismissals: ["volumeBoost:2026-06-15": 1]
         ))
         XCTAssertFalse(dismissed.contains { $0.kind == .volumeBoost }, "本周已暂不处理（≥1）→ 本周不再出")
@@ -111,7 +111,7 @@ final class CoachActionEngineTests: XCTestCase {
     // 合同锁死：① 空串时仍正常出卡（无误抑制，安全降级宁可多弹一次）；② 对应空串 key 的 dismiss 仍生效抑制。
     func testVolumeBoostWithEmptyWeekStillFiresWhenNotDismissed() {
         let actions = CoachActionEngine.actions(input: make(
-            sessionsLast7: 1, plannedDaysPerWeek: 4, weekStartISO: "", dismissals: [:]
+            trainedDaysThisWeek: 1, plannedDaysPerWeek: 4, weekStartISO: "", dismissals: [:]
         ))
         let boost = actions.first { $0.kind == .volumeBoost }
         XCTAssertNotNil(boost, "空 weekStartISO 不误抑制")
@@ -120,7 +120,7 @@ final class CoachActionEngineTests: XCTestCase {
 
     func testVolumeBoostWithEmptyWeekSuppressedByMatchingDismiss() {
         let actions = CoachActionEngine.actions(input: make(
-            sessionsLast7: 1, plannedDaysPerWeek: 4, weekStartISO: "", dismissals: ["volumeBoost:": 1]
+            trainedDaysThisWeek: 1, plannedDaysPerWeek: 4, weekStartISO: "", dismissals: ["volumeBoost:": 1]
         ))
         XCTAssertFalse(actions.contains { $0.kind == .volumeBoost }, "空串 key 的 dismiss(≥1) 同样抑制本卡")
     }

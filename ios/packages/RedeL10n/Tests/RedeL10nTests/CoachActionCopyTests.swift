@@ -43,12 +43,17 @@ final class CoachActionCopyTests: XCTestCase {
     }
 
     func testVolumeBoostCountIsFrequencyOnly() {
-        // 频率维度：count = 本周还差几次，文案出现该次数。
+        // 频率维度：count = 本周还差几天，文案出现该天数。
         XCTAssertTrue(zh.coachCardBody(reasonCode: "belowWeeklyPlan", count: 2).contains("2"))
         XCTAssertTrue(en.coachCardBody(reasonCode: "belowWeeklyPlan", count: 2).contains("2"))
-        // 口径防回潮（N3 审查）：count 来源是滚动 7 天，文案禁说「本周/weekly plan」
-        XCTAssertFalse(zh.coachCardBody(reasonCode: "belowWeeklyPlan", count: 2).contains("本周"))
-        XCTAssertFalse(en.coachCardBody(reasonCode: "belowWeeklyPlan", count: 2).lowercased().contains("week"))
+        // 口径合流（周口径迁移 2026-07-15）：count 已随引擎迁到日历周（trainedDaysThisWeek），
+        // 文案回迁「本周/this week」——与分段条同口径。正向断言防漂移（替代 #696 反向断言）。
+        XCTAssertTrue(zh.coachCardBody(reasonCode: "belowWeeklyPlan", count: 2).contains("本周"))
+        XCTAssertTrue(en.coachCardBody(reasonCode: "belowWeeklyPlan", count: 2).lowercased().contains("this week"))
+        // 单位=天（与分段条 weekStripCount 合流；「次」会与同日多场分叉）；英文单复数分流。
+        XCTAssertTrue(zh.coachCardBody(reasonCode: "belowWeeklyPlan", count: 2).contains("2 天"))
+        XCTAssertTrue(en.coachCardBody(reasonCode: "belowWeeklyPlan", count: 2).contains("2 days"))
+        XCTAssertTrue(en.coachCardBody(reasonCode: "belowWeeklyPlan", count: 1).contains("1 day "))
     }
 
     /// 英文按字母切词（去标点/数字），小写——词边界匹配，避免 "reset"/"offset"/"again" 等子串误判（审查 MINOR-1/NIT-2）。

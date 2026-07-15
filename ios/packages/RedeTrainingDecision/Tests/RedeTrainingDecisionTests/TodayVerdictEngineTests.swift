@@ -85,15 +85,56 @@ final class TodayVerdictEngineTests: XCTestCase {
         XCTAssertEqual(result.reason, .sustainedLoadDeload(days: 21))
     }
 
-    // 瀑布 6：近 7 天达到计划频次 → 轻
+    // 瀑布 6：本日历周（周一始）训练天数达到计划频次 → 轻
+    // 周口径迁移（2026-07-15）：滚动 7 天 → 日历周；fixture 平移到同一日历周内
+    //（06-08 周一 / 06-10 周三 / 06-12 周五，今天 06-14 周日——case 语义不变）。
     func testLightWhenWeeklyPlanReached() throws {
         let result = try verdict(
-            historyDates: ["2026-06-03", "2026-06-05", "2026-06-07"],
-            today: "2026-06-09",
+            historyDates: ["2026-06-08", "2026-06-10", "2026-06-12"],
+            today: "2026-06-14",
             program: #"{"daysPerWeek": 3}"#
         )
         XCTAssertEqual(result.call, .light)
-        XCTAssertEqual(result.reason, .weeklyPlanReached(sessions: 3, planned: 3))
+        XCTAssertEqual(result.reason, .weeklyPlanReached(days: 3, planned: 3))
+        XCTAssertTrue(result.signals.contains(.trainedDaysThisWeek(3)))
+    }
+
+    // 行为变化锁（2026-07-15 周口径迁移，有意变化非回归）：上周三/五/日练满计划 3，
+    // 今天周一 = 新日历周（本周 0 天）→ train。滚动 7 天窗在这里会给 light（近 7 天
+    // 3 场），日历周语义下周一重置重新计——此测试防止有人无意改回滚动窗。
+    // 周初连续高频的保护由 consecutiveDaysNeedRest / sustainedLoad 承担，无保护真空。
+    func testMondayAfterFullPreviousWeekTrainsAgain() throws {
+        let result = try verdict(
+            historyDates: ["2026-06-03", "2026-06-05", "2026-06-07"],
+            today: "2026-06-08",
+            program: #"{"daysPerWeek": 3}"#
+        )
+        XCTAssertEqual(result.call, .train)
+        XCTAssertEqual(result.reason, .normalProgression)
+        XCTAssertTrue(result.signals.contains(.trainedDaysThisWeek(0)), "新周从 0 计，上周天数不跨周")
+    }
+
+    // 周中练满：周一/周二练满计划 2 → 周三轻练（weeklyPlanReached 在同一周内照常触发）
+    func testMidweekPlanReachedGoesLight() throws {
+        let result = try verdict(
+            historyDates: ["2026-06-08", "2026-06-09"],
+            today: "2026-06-10",
+            program: #"{"daysPerWeek": 2}"#
+        )
+        XCTAssertEqual(result.call, .light)
+        XCTAssertEqual(result.reason, .weeklyPlanReached(days: 2, planned: 2))
+    }
+
+    // 周中未满：周三只练了周一 1 天（计划 3）→ 正常推进，信号=本周 1 天
+    func testMidweekBelowPlanTrainsNormally() throws {
+        let result = try verdict(
+            historyDates: ["2026-06-08"],
+            today: "2026-06-10",
+            program: #"{"daysPerWeek": 3}"#
+        )
+        XCTAssertEqual(result.call, .train)
+        XCTAssertEqual(result.reason, .normalProgression)
+        XCTAssertTrue(result.signals.contains(.trainedDaysThisWeek(1)))
     }
 
     // 瀑布 7：昨天练到力竭（mean RIR ≤ 0.5）→ 轻
@@ -112,12 +153,13 @@ final class TodayVerdictEngineTests: XCTestCase {
     }
 
     // 计划频次回退链第二跳：program 缺失时用 profile.weeklyTrainingDays
+    //（fixture 同步平移到日历周内：06-08/10/12 同周，今天 06-14 周日）
     func testPlannedDaysFallsBackToProfile() throws {
-        let json = #"{"schemaVersion": 8, "userProfile": {"weeklyTrainingDays": 3}, "history": \#(TestSupport.historyJSON(dates: ["2026-06-03", "2026-06-05", "2026-06-07"]))}"#
-        let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-09")
+        let json = #"{"schemaVersion": 8, "userProfile": {"weeklyTrainingDays": 3}, "history": \#(TestSupport.historyJSON(dates: ["2026-06-08", "2026-06-10", "2026-06-12"]))}"#
+        let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-14")
         let result = TodayVerdictEngine.evaluate(input)
         XCTAssertTrue(result.signals.contains(.plannedDaysPerWeek(3)))
-        XCTAssertEqual(result.reason, .weeklyPlanReached(sessions: 3, planned: 3))
+        XCTAssertEqual(result.reason, .weeklyPlanReached(days: 3, planned: 3))
     }
 
     // 确定性：同输入两次求值结果完全相等

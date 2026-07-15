@@ -150,9 +150,11 @@ struct TodayModel {
         // 可疑组数（"看起来不对劲、去核对"）才触发卡；静默净化的丢弃/忽略不算（无可核对项）。
         // 注：此处为取 count 算了全量报告（进展页加载时会再算一次，不共享缓存）——健身数据量级小、可接受。
         let dataFindingCount = DataQualityComposer.report(cleanView: cleanView).suspectSets.count
-        var last7 = 0, planned = 0
+        // 周口径迁移（2026-07-15）：引擎信号已是日历周训练天数（周一始）——
+        // 与下方 weekStartISO 抑制键、状态行分段条同口径（同卡不再两种周口径）。
+        var trainedThisWeek = 0, planned = 0
         for signal in verdict.signals {
-            if case .sessionsInLast7Days(let n) = signal { last7 = n }
+            if case .trainedDaysThisWeek(let n) = signal { trainedThisWeek = n }
             if case .plannedDaysPerWeek(let n) = signal { planned = n }
         }
         let stalledIds = (prescription?.exercises ?? [])
@@ -161,7 +163,7 @@ struct TodayModel {
         let weekStartISO = WeekAnchor.isoWeekStart(now)
         let coachActions = CoachActionEngine.actions(input: CoachActionInput(
             call: verdict.call,
-            sessionsLast7: last7,
+            trainedDaysThisWeek: trainedThisWeek,
             plannedDaysPerWeek: planned,
             totalSessionCount: cleanView.sessions.count,
             stalledExerciseIds: stalledIds,

@@ -130,9 +130,9 @@ extension RedeStrings {
             let days = gapDays.map(String.init) ?? "—"
             return t2("今天轻练　停训 \(days) 天，先回到状态", "Go light today. \(days) days off, ease back in first")
         case ("light", "weeklyPlanReached"):
-            // 口径=滚动 7 天（引擎 sessionsLast7），措辞不得写「本周/weekly」——
-            // 状态行分段条是日历周，一屏一种周口径（N3 审查 MAJOR，同 signalLine 2026-07-03 先例）
-            return t2("今天轻练　近 7 天量已够，留有余力", "Go light today. Volume for the past 7 days is in, keep some in reserve")
+            // 口径=日历周（引擎 trainedDaysThisWeek，周一始；周口径迁移 2026-07-15）——
+            // 与状态行分段条同口径，「本周」名副其实（一屏一种周口径收口，删「近 7 天」临时桥）
+            return t2("今天轻练　本周量已够，留有余力", "Go light today. Weekly volume is in, keep some in reserve")
         case ("light", "lastSessionNearFailure"):
             return t2("今天轻练　上次练到力竭，留出恢复", "Go light today. Last session hit failure, leave room to recover")
         case ("light", _):

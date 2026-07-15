@@ -6,7 +6,8 @@
 //
 // 信号来源（app 层注入，不破包解耦）：
 //  - stalledExerciseIds：本日处方里命中到顶/毕业 reason 的动作（换动作 hint）。
-//  - sessionsLast7 / plannedDaysPerWeek / call / totalSessionCount：补量频率维度（来自 TodayVerdict）。
+//  - trainedDaysThisWeek / plannedDaysPerWeek / call / totalSessionCount：补量频率维度（来自 TodayVerdict；
+//    周口径迁移 2026-07-15：日历周训练天数，与 volumeBoost 按周抑制键同口径——同卡不再两种周口径）。
 //  - dataFindingCount：DataQualityReport 的问题数（修数据 hint）。
 //
 // v1 范围：换动作（到顶）+ 补量（频率，无肌群无组数）+ 修数据。肌群级补量依赖未实现的 MLE/贡献权重，
@@ -25,7 +26,7 @@ public struct CoachAction: Equatable, Sendable {
     public let kind: CoachActionKind
     public let reasonCode: String        // typed code（如 dataHasFindings / ceilingReached / belowWeeklyPlan）
     public let exerciseId: String?       // exerciseSwap：到顶的动作 id
-    public let count: Int?               // dataReview：可疑条数；volumeBoost：本周还差几次
+    public let count: Int?               // dataReview：可疑条数；volumeBoost：本周还差几天
     /// 降频/dismiss 标识键（引擎产出）：UI 点「暂不处理」即 dismiss 此 key；引擎据 dismissals[key] 降频。
     /// dataReview→"dataReview"；exerciseSwap→"exerciseSwap:<id>"；volumeBoost→"volumeBoost:<weekStartISO>"。
     public let actionKey: String
@@ -41,7 +42,7 @@ public struct CoachAction: Equatable, Sendable {
 /// 生成器输入（app 层把裁决/处方/数据质量摊平成 primitives 注入；clean input contract，§8）。
 public struct CoachActionInput: Equatable, Sendable {
     public let call: TodayCall           // TodayVerdict.call（用枚举，守门编译期穷举安全，审查 M-1）
-    public let sessionsLast7: Int
+    public let trainedDaysThisWeek: Int  // 本日历周（周一始）已训练天数（来自 .trainedDaysThisWeek 信号）
     public let plannedDaysPerWeek: Int
     public let totalSessionCount: Int    // 新用户守门（0 = 全新，不催补量）
     public let stalledExerciseIds: [String]  // 本日处方里到顶/毕业的动作（按出现序）
@@ -51,12 +52,12 @@ public struct CoachActionInput: Equatable, Sendable {
     public let dismissals: [String: Int]         // actionKey → 累计暂不处理次数（降频源）
     public let volumeBoostAdoptedThisWeek: Bool  // 本周是否已采纳补量（采纳后本周不再出）
     public init(
-        call: TodayCall, sessionsLast7: Int, plannedDaysPerWeek: Int, totalSessionCount: Int,
+        call: TodayCall, trainedDaysThisWeek: Int, plannedDaysPerWeek: Int, totalSessionCount: Int,
         stalledExerciseIds: [String], dataFindingCount: Int,
         weekStartISO: String = "", dismissals: [String: Int] = [:], volumeBoostAdoptedThisWeek: Bool = false
     ) {
         self.call = call
-        self.sessionsLast7 = sessionsLast7
+        self.trainedDaysThisWeek = trainedDaysThisWeek
         self.plannedDaysPerWeek = plannedDaysPerWeek
         self.totalSessionCount = totalSessionCount
         self.stalledExerciseIds = stalledExerciseIds
@@ -92,18 +93,18 @@ public enum CoachActionEngine {
         }
 
         // ③ 补量（频率，最低优先）：仅活跃日（train/light，绝不在 rest/deload 催量）、非新用户、
-        // 本周已练 < 计划时出。无肌群无组数（§6.5.2 红线）。count = 本周还差几次。
-        // 本周已采纳或已暂不处理（≥1）→ 本周不再出。
+        // 本周（日历周，与抑制键同口径）已练天数 < 计划时出。无肌群无组数（§6.5.2 红线）。
+        // count = 本周还差几天。本周已采纳或已暂不处理（≥1）→ 本周不再出。
         if [TodayCall.train, .light].contains(input.call),
            input.totalSessionCount > 0,
            input.plannedDaysPerWeek > 0,
-           input.sessionsLast7 >= 0,   // 防御非法负输入（审查 M-2）：负值不催、count 不虚高
-           input.sessionsLast7 < input.plannedDaysPerWeek {
+           input.trainedDaysThisWeek >= 0,   // 防御非法负输入（审查 M-2）：负值不催、count 不虚高
+           input.trainedDaysThisWeek < input.plannedDaysPerWeek {
             let key = "volumeBoost:\(input.weekStartISO)"
             if !input.volumeBoostAdoptedThisWeek, dismissed(key) < 1 {
                 out.append(CoachAction(
                     kind: .volumeBoost, reasonCode: "belowWeeklyPlan",
-                    count: input.plannedDaysPerWeek - input.sessionsLast7, actionKey: key
+                    count: input.plannedDaysPerWeek - input.trainedDaysThisWeek, actionKey: key
                 ))
             }
         }
