@@ -6,6 +6,16 @@
 
 ---
 
+## 2026-07-15 · Archive 1.6 (build 23)：build 22 已消费，重定向救场
+
+**背景**：owner 07-14 已把 1.5 (22) 上传 ASC（Organizer 实证 Uploaded to Apple）；07-15 又从 main 重打了一个**同号** 1.5 (22)——该包内容更新（含 #696/#697）但 build 22 已消费，上传必被 ASC 拒。按固化口径直接打 **1.6 (23)**。
+
+**做了什么**：MARKETING 1.5→1.6 + build 22→23（八处双 target）；archive exit 0（`Archives/2026-07-15/Rede-1.6-23.xcarchive`，PlistBuddy 实证 app+widget 均 1.6/23、签名 47K95GV3X5）；What's New 重定向 1.6/23（追加周节奏条/周一重置条目）；验收清单 0.x → 1.6-23 + 新增 J 组四条（分段条/sparkline/抽屉/周一行为）。
+
+**给 owner 的操作口径**：Organizer 选 **Rede-1.6-23（07-15）** Distribute；07-15 的 1.5(22) 作废勿传；07-14 已上传的 1.5(22) 在 TestFlight 可先测（内容到 #695，不含分段条/周口径）。
+
+---
+
 ## 2026-07-15 · N5 App 图标结案：渲了 8 个候选后确认保留现图标
 
 **用户目标**：三轮悬置的 N5。渲染了 4 方向 × 2 变体候选图（热力图人形/锻造 R/杠铃片/上行折线，docs/工作记录/2026-07-15-n5-icon-candidates.png 存档）后，owner 看现图标「其实也还好」。
