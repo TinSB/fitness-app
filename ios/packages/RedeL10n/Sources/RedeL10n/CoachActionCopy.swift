@@ -40,9 +40,11 @@ extension RedeStrings {
             return t2c("当前变体已经练满　换个更难的版本继续往上走",
                        "This variation is maxed out — a harder version keeps you moving up")
         case "belowWeeklyPlan":
+            // 口径=滚动 7 天（引擎 sessionsLast7），措辞不得写「本周」——状态行分段条
+            // 是日历周，一屏一种周口径（N3 审查 MINOR，与 weeklyPlanReached 同批收口）
             let n = count ?? 0
-            return t2c("本周还差 \(n) 次就到计划　有空补一次就好",
-                       "\(n) short of your weekly plan — fit one in if you can")
+            return t2c("近 7 天还差 \(n) 次就到计划　有空补一次就好",
+                       "\(n) short of your plan over the past 7 days — fit one in if you can")
         default:
             return ""
         }

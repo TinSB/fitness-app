@@ -403,7 +403,9 @@ struct TodayTabView: View {
         guard let model else { return nil }
         return ContinuityCalendar.weekStatus(
             todayISO: Self.isoDay(model.now),
-            trainedDatesISO: Set(model.cleanView.sessions.map(\.date)))
+            // prefix(10) 归一同月历先例（审查 MINOR：clean 层合法保留长 ISO 串，
+            // 引擎/月历全部归一消费——分段条不得独漏）
+            trainedDatesISO: Set(model.cleanView.sessions.map { String($0.date.prefix(10)) }))
     }
 
     /// N3a 周分段条：月历 dayCell 的缩微语法（trained=ember 实心、today 未练=描边、

@@ -74,15 +74,19 @@ final class TodayEngineCopyTests: XCTestCase {
         XCTAssertEqual(zh.railValue(weightKg: 60, reps: 5), "60×5")
         XCTAssertEqual(zh.railValue(weightKg: nil, reps: nil), "—")
         XCTAssertEqual(zh.thenLine("绳索夹胸"), "接 绳索夹胸")
-        XCTAssertEqual(en.signalLine(gapDays: 2, sessionsLast7: 2, planned: 4), "2d since last · 2/4 sessions in the past 7 days")
-        XCTAssertEqual(zh.signalLine(gapDays: 2, sessionsLast7: 2, planned: 4), "距上次 2 天 · 近 7 天 2/4 练")
-        XCTAssertEqual(zh.signalLine(gapDays: nil, sessionsLast7: 0, planned: 6), "暂无训练记录")
-        // 防回潮：signalLine 数据源是滚动 7 天（sessionsLast7），英文不得再说 this week
-        XCTAssertFalse(en.signalLine(gapDays: 5, sessionsLast7: 3, planned: 4).contains("this week"))
-        // N3a 周分段条计数：日历周口径可以说 this week；中西混排带空格；英文单复数分流
-        XCTAssertEqual(zh.weekStripCount(3), "本周 3 次")
-        XCTAssertEqual(en.weekStripCount(1), "1 session this week")
-        XCTAssertEqual(en.weekStripCount(3), "3 sessions this week")
+        // N3a 周分段条计数：日历周口径可以说 this week；单位=天（格子=天，「次」会与
+        // 同日多场分叉——审查 NIT，与 a11y 串合流）；中西混排带空格；英文单复数分流
+        XCTAssertEqual(zh.weekStripCount(3), "本周练 3 天")
+        XCTAssertEqual(en.weekStripCount(1), "1 day this week")
+        XCTAssertEqual(en.weekStripCount(3), "3 days this week")
+        // 口径防回潮（审查 MAJOR）：滚动 7 天口径的文案禁说 this week/weekly——
+        // 状态行分段条是日历周，一屏一种周口径
+        XCTAssertFalse(en.verdictHeadline(call: "light", reasonCode: "weeklyPlanReached",
+                                          dayName: "Push A", gapDays: nil, consecutiveDays: nil)
+            .lowercased().contains("week"))
+        XCTAssertFalse(zh.verdictHeadline(call: "light", reasonCode: "weeklyPlanReached",
+                                          dayName: "推 A", gapDays: nil, consecutiveDays: nil)
+            .contains("本周"))
         XCTAssertEqual(zh.weekStripA11y(3), "本周已练 3 天")
         XCTAssertEqual(en.weekStripA11y(1), "Trained 1 day this week")
         XCTAssertEqual(en.weekStripA11y(2), "Trained 2 days this week")
