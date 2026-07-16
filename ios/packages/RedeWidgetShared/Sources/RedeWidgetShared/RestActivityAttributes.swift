@@ -16,10 +16,17 @@ import Foundation
 
 public struct RestActivityAttributes: ActivityAttributes, Equatable {
     public struct ContentState: Codable, Hashable {
+        /// 本段休息起点（进度分母锚点 = begin 挂点当下）。extension 用
+        /// ProgressView(timerInterval: 起点...终点) 渲原生自更新进度环/条；
+        /// +30 加时保留原起点（controller 从 activity.content.state 读回），
+        /// 进度按新总时长诚实重算、不重置。暂停语义不变：暂停 = end + 恢复时
+        /// begin 新活动（起点=恢复时刻）。
+        public let restStartedAt: Date
         /// 休息结束的墙钟时刻（与 SessionStore.restCountdown 锚点同源）。
         public let restEndsAt: Date
 
-        public init(restEndsAt: Date) {
+        public init(restStartedAt: Date, restEndsAt: Date) {
+            self.restStartedAt = restStartedAt
             self.restEndsAt = restEndsAt
         }
     }
