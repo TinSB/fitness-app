@@ -1,5 +1,5 @@
 // 每周循环模式偏好（2026-07-08）：applyWeeklyCycleRestartPreference open-bag scalar +
-// weekly 模式下 TR7 换天完成不产生 rotationOffset 补偿（补偿是顺延型概念）。
+// weekly 模式下 TR12 换天完成不产生 rotationOffset 补偿（补偿是顺延型概念）。
 
 import Foundation
 import XCTest
@@ -61,6 +61,6 @@ final class WeeklyCycleRestartWriteTests: XCTestCase {
         _ = try writer.appendCompletedSession(session(id: "s0", date: "2026-07-06"))
         _ = try writer.applyOneTimeDayOverride(dayCode: "lower", dateISO: "2026-07-07")
         let after = try writer.appendCompletedSession(session(id: "s1", date: "2026-07-07"))
-        XCTAssertEqual(after.rotationOffset, -1, "顺延模式 TR7 语义不变")
+        XCTAssertEqual(after.rotationOffset, -1, "顺延模式 TR12 语义不变")
     }
 }

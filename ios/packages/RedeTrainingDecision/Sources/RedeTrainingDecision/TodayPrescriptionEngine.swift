@@ -392,7 +392,7 @@ public enum TodayPrescriptionEngine {
         // FR-PL7② 自定义日序：override 须为默认日序的排列，否则回退默认（resolvedDaySequence 内守卫）。
         // 默认（override=nil）逐字节等价于现状。
         let sequence = resolvedDaySequence(splitType: input.program.splitType, override: customization.daySequence)
-        // 轮转 = 序列[(自最近重启点的场次数 + 偏移) % 长度]。FR-TR7 临时换天那场完成时偏移 −1
+        // 轮转 = 序列[(自最近重启点的场次数 + 偏移) % 长度]。FR-TR12 临时换天那场完成时偏移 −1
         // 抵消推进 → 跳过的日下一场补回。回归协议（2026-07-08）：重启点 = 与前一场日期差
         // ≥comebackRestartGapDays 的场——其后轮换重新计数（无状态：每次从历史扫描；
         // 无重启点 = 场次数全量，逐字节等价现状，golden 零回归）。
@@ -405,7 +405,7 @@ public enum TodayPrescriptionEngine {
             sequence: sequence, sessions: input.sessions, todayDay: todayDay,
             rotationOffset: rotationOffset, weeklyCycleRestart: weeklyCycleRestart,
             restartToday: restartToday)
-        // FR-TR7「今天换一天练」：今日临时覆盖优先（须为本日序合法成员，否则回退轮转）。默认 nil = 现状。
+        // FR-TR12「今天换一天练」：今日临时覆盖优先（须为本日序合法成员，否则回退轮转）。默认 nil = 现状。
         // 优先级：用户显式换天 > 回归重启 > 轮转（决策在用户）。
         let dayCode = dayCodeOverride.flatMap { sequence.contains($0) ? $0 : nil } ?? rotated
 

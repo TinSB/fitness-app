@@ -114,7 +114,7 @@ extension RedeStrings {
     /// 通用「取消」按钮（对话框等共用）。
     public var commonCancel: String { t2c("取消", "Cancel") }
 
-    // MARK: FR-TR7「今天换一天练」临时训练日覆盖
+    // MARK: FR-TR12「今天换一天练」临时训练日覆盖
 
     /// 今日页入口：临时换今天练哪个训练日。
     public var swapDayEntry: String { t2c("今天换一天练", "Switch today's session") }

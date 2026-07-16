@@ -32,9 +32,9 @@ struct TodayModel {
     let oneTimeSubstitutions: [String: String]
     /// 器械场景（commercial-gym/home-dumbbell/minimal/nil）：换动作候选过滤用，与引擎同口径。
     let equipmentScenario: String?
-    /// FR-TR7 本分化的训练日序（如 ["upper","lower"]）：今日页「换一天练」选择器列这些。
+    /// FR-TR12 本分化的训练日序（如 ["upper","lower"]）：今日页「换一天练」选择器列这些。
     let daySequence: [String]
-    /// FR-TR7 今日按轮转**本该**练的训练日（不含临时覆盖）；与 prescription.dayCode 不同 = 今天临时换过了，
+    /// FR-TR12 今日按轮转**本该**练的训练日（不含临时覆盖）；与 prescription.dayCode 不同 = 今天临时换过了，
     /// 被跳过的就是它（撤销浮条「明天补回 X」、今日页「今天临时换为…」据此判断）。
     let scheduledDayCode: String?
     /// 每周循环模式（换天弹窗/撤销条文案分流：weekly 下不承诺「顺延补回」——审查 S1）。
@@ -105,7 +105,7 @@ struct TodayModel {
         // 喂引擎的有效替换 = 永久替换 + 今天的临时替换（临时优先）。**合并在 app 层做、引擎不区分二者**
         // → 引擎零改动、golden 零回归；临时项只今天混入、不落进永久表。
         let effectiveSubs = appData.exerciseSubstitutions.merging(oneTimeToday) { _, oneTime in oneTime }
-        // FR-TR7「今天换一天练」：本分化日序 + 今日轮转默认（含 rotationOffset）+ 今日临时覆盖（dateISO==今天且合法成员）。
+        // FR-TR12「今天换一天练」：本分化日序 + 今日轮转默认（含 rotationOffset）+ 今日临时覆盖（dateISO==今天且合法成员）。
         let daySequence = TodayPrescriptionEngine.resolvedDaySequence(
             splitType: input.program.splitType, override: appData.planCustomization?.daySequence)
         // 「今天本来该练什么」与引擎单一真源（含回归重启/每周循环模式）——旧公式
@@ -137,7 +137,7 @@ struct TodayModel {
             substitutions: effectiveSubs,
             // FR-PL6/PL7：用户自定义计划覆盖（缺 = .empty = 逐字段等价于现状、零回归）
             customization: PlanCustomizationBridge.input(from: appData.planCustomization),
-            // FR-TR7 今天换一天练：今日临时覆盖训练日 + 轮转偏移（默认 nil/0 = 现状、golden 零回归）
+            // FR-TR12 今天换一天练：今日临时覆盖训练日 + 轮转偏移（默认 nil/0 = 现状、golden 零回归）
             dayCodeOverride: dayCodeOverride,
             rotationOffset: appData.rotationOffset,
             // 每周循环模式（2026-07-08）：默认 false = 顺延（现状零回归）
