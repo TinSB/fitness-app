@@ -11,6 +11,8 @@ struct TodayTabView: View {
     let onStartTraining: () -> Void
     /// FR-T5 修数据卡「去核对」：跳到进展页数据质量区（跨 tab；由 RootTabView 切 selection）。
     var onReviewData: () -> Void = {}
+    /// K3「下一场」预告行：跳计划页（跨 tab；由 RootTabView 切 selection）。
+    var onGoPlan: () -> Void = {}
 
     @Environment(LocaleStore.self) private var localeStore
     @Environment(SessionStore.self) private var sessionStore
@@ -34,10 +36,13 @@ struct TodayTabView: View {
     /// 触感脉冲（采纳/撤销=成功确认，暂不/展开折叠=轻选择）：成功分支自增触发 .sensoryFeedback。
     @State private var commitPulse = 0
     @State private var selectPulse = 0
-    /// T1 练完态当日总结（rest/alreadyTrainedToday 时从已落盘历史派生；nil = 数据缺退回两行字）。
+    /// T1/K3 最近一场总结（无处方分支从已落盘历史派生；nil = 数据缺退回原状）。
+    /// K3（2026-07-16）放宽 today-only：休息日/停练回归日显「上一场」，练完态仍显「今天这场」。
     @State private var completedDigest: TodayCompletedDigest?
     /// N3b：近 5 场（含当场）总体量，旧→新——总结卡吨位行小折线用；<2 场不渲染（单点无意义）。
     @State private var recentVolumes: [CGFloat] = []
+    /// K3「下一场」预告（PlanDayProjection 现成投影；nil = 无排期不渲染）。
+    @State private var nextSession: PlanDayProjection?
     /// T1 练完态分享入口打开的预览（复用训练小结同款载体与预览视图）。
     @State private var sharePreview: SharePreviewItem?
 
@@ -138,13 +143,14 @@ struct TodayTabView: View {
         .sheet(item: $sharePreview) { item in
             ShareCardPreviewView(snapshots: item.snapshots)
         }
-        // T1：练完态出现（含视图挂着时训练在后台钩子/别处完成的 false→true 翻转）即派生总结；
-        // 离开练完态清空。绑 id 而非一次性 .task——一次性版本会错过「视图不重建、状态翻转」路径
+        // T1/K3：无处方分支出现（练完态翻转 / 休息日进页）即派生最近一场总结 + 下一场预告；
+        // 离开该分支清空。绑 id 而非一次性 .task——一次性版本会错过「视图不重建、状态翻转」路径
         //（-autoCompleteSession 实拍暴露：完成后 digest 不加载）。
-        .task(id: isCompletedToday) {
-            if isCompletedToday { await loadCompletedDigest() } else {
+        .task(id: showsRestBranch) {
+            if showsRestBranch { await loadCompletedDigest() } else {
                 completedDigest = nil
                 recentVolumes = []
+                nextSession = nil
             }
         }
         .sheet(item: $detailTarget) { target in
@@ -372,12 +378,20 @@ struct TodayTabView: View {
                     .padding(.horizontal, RedeSpace.page)
                     .padding(.top, 18)
 
-                // T1 练完态当日总结（FR-SH3 完成后轻量入口延续到今日页）：只在
-                // 「今天已练完」态显示（其他 rest 态无当天场）；数据缺失退回上面两行字。
+                // T1/K3 最近一场总结（FR-SH3 完成后轻量入口延续到今日页）：练完态显
+                // 「今天这场」、休息日/停练回归日显「上一场 · 日期」；零历史/数据缺失
+                // 退回上面单句（新用户首练引导已有，不编数据）。
                 if let digest = completedDigest {
                     completedSummaryBlock(digest)
                         .padding(.horizontal, RedeSpace.page)
                         .padding(.top, 24)
+                }
+
+                // K3「下一场」预告行（本分支唯一 ember 下一步——裁定 5）；点击跳计划页。
+                if let next = nextSession {
+                    nextSessionRow(next)
+                        .padding(.horizontal, RedeSpace.page)
+                        .padding(.top, completedDigest == nil ? 24 : 14)
                 }
             }
         }
@@ -683,29 +697,32 @@ struct TodayTabView: View {
             .foregroundStyle(Color.redeT4)
     }
 
-    // MARK: - T1 练完态当日总结
+    // MARK: - T1/K3 最近一场总结（练完态 = 今天这场；休息日/回归日 = 上一场）
 
-    /// 练完态判定：与裁决文案 case ("rest","alreadyTrainedToday") 同源（其他 rest 态无当天场）。
-    private var isCompletedToday: Bool {
-        callCode == "rest" && reasonCode == "alreadyTrainedToday"
+    /// 无处方分支判定（restBlock 可见）：digest/下一场的加载触发与渲染共用此口径。
+    /// unreadable → model nil → false（unreadableBlock 独占，不掺总结）。
+    private var showsRestBranch: Bool {
+        model != nil && (model?.prescription?.exercises.isEmpty ?? true)
     }
 
-    /// 从已落盘历史派生总结（snapshot 链与进度页同口径；dayCode/时长从 canonical 补）。
-    /// 任何一环缺失 → digest nil，页面保持原两行字（诚实兜底、不编数据）。
+    /// 从已落盘历史派生最近一场总结（snapshot 链与进度页同口径；dayCode/时长按 sessionId
+    /// 从 canonical 补）+ 「下一场」投影。任何一环缺失 → 对应块不渲染（诚实兜底、不编数据）。
     private func loadCompletedDigest() async {
-        guard isCompletedToday else { return }
+        guard showsRestBranch else { return }
+        // 下一场（现成只读投影；练完态含今日场 → 轮转已推进到下一日，与计划页排期同源）
+        nextSession = await Task.detached { SessionStore.loadPlanProjection().first?.first }.value
         let outcome = await ProgressModel.loadOutcomeAsync()
         guard case let .ready(pm) = outcome, let latest = pm.snapshot.history.first else { return }
         // N3b：同一 snapshot 顺手带出近 5 场总体量（history[0]=最新 → 反转成旧→新），不二次 IO。
         recentVolumes = pm.snapshot.history.prefix(5).reversed().map { CGFloat($0.totalVolumeKg) }
         let record = pm.statsRecords.first { $0.id == latest.sessionId }
-        let facts = await Task.detached { SessionStore.loadTodayCompletedFacts() }.value
-        let todayISO = Self.isoDay(model?.now ?? Date())
+        let sid = latest.sessionId
+        let facts = await Task.detached { SessionStore.loadCompletedFacts(sessionId: sid) }.value
         // patterns 同训练小结口径（SessionShareSnapshotBuilder）：catalog 查动作模式
         let catalog = ExerciseCatalog.minimal
         let patterns = (record?.exercises ?? []).compactMap { catalog.entry(id: $0.exerciseId)?.movementPattern }
         completedDigest = TodayCompletedDigestBuilder.digest(
-            latest: latest, record: record, todayISO: todayISO,
+            latest: latest, record: record,
             dayCode: facts?.dayCode, durationMinutes: facts?.durationMinutes, patterns: patterns)
     }
 
@@ -720,9 +737,15 @@ struct TodayTabView: View {
     /// 总结块（surface 原语，非 ForgedCard——今日页 0 铭牌现状不动）：
     /// 区头 + 训练日名 → 总量大数字 → 动作·组·时长 meta 行 → 分享入口（有可分享内容时）。
     private func completedSummaryBlock(_ digest: TodayCompletedDigest) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        // K3 区头分流：场次日期 == 今天 → 「今天这场」（练完态语义不变）；
+        // 否则「上一场 · 日期」（休息日/回归日，日期用 s.shortDate——不编成今天）。
+        let isTodaySession = digest.dateISO == Self.isoDay(model?.now ?? Date())
+        return VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Overline(text: s.todayDoneSummaryHeader, color: .redeT3)
+                Overline(text: isTodaySession
+                            ? s.todayDoneSummaryHeader
+                            : s.lastSessionSummaryHeader(dateText: s.shortDate(fromISO: digest.dateISO)),
+                         color: .redeT3)
                 if digest.prCount > 0 {
                     Text(s.shareCardPRBadge)
                         .font(.redeOverline).tracking(RedeTracking.overline)
@@ -777,6 +800,29 @@ struct TodayTabView: View {
         .padding(RedeSpace.card)
         .background(RoundedRectangle(cornerRadius: RedeShape.cardRadius).fill(Color.redeSurface))
         .overlay(RoundedRectangle(cornerRadius: RedeShape.cardRadius).stroke(Color.redeHair, lineWidth: 1))
+        .accessibilityElement(children: .combine)
+    }
+
+    /// K3「下一场」预告行：ember 竖标 + 训练日名 · 动作数 + chevron，点击跳计划页。
+    /// 数据 = PlanDayProjection（与计划页排期同源投影，永不分叉）。
+    private func nextSessionRow(_ day: PlanDayProjection) -> some View {
+        Button(action: onGoPlan) {
+            HStack(spacing: 10) {
+                Rectangle().fill(Color.redeEmber).frame(width: 3, height: 14)
+                Overline(text: s.nextSessionLabel, color: .redeT3)
+                Text("\(s.trainingDayName(day.dayCode)) · \(s.planDayExercises(day.exerciseCount))")
+                    .font(.redeCallout).monospacedDigit()
+                    .foregroundStyle(Color.redeT1)
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT4)
+                    .accessibilityHidden(true) // 装饰性 affordance；行 Button 已承载动作
+            }
+            .frame(minHeight: RedeShape.controlHeight)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.redePressableRow)
         .accessibilityElement(children: .combine)
     }
 

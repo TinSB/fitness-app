@@ -361,6 +361,10 @@ extension RedeStrings {
 
     /// 总结块区头（overline）。
     public var todayDoneSummaryHeader: String { t2("今天这场", "Today's session") }
+    /// 休息日/回归日「上一场」区头（K3 2026-07-16）："上一场 · 7月14日"。
+    public func lastSessionSummaryHeader(dateText: String) -> String {
+        t2("上一场 · \(dateText)", "Last session · \(dateText)")
+    }
     /// 总量标签（overline；数值走 formatVolumeKg 千分位 + 单位）。
     public var todayDoneVolumeLabel: String { t2("总量", "Volume") }
     /// 轻量分享入口（打开分享卡预览；FR-SH3 绝不自动弹出）。

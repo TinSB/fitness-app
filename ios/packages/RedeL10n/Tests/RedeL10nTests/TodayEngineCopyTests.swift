@@ -111,6 +111,9 @@ final class TodayEngineCopyTests: XCTestCase {
             "Last · Jul 13 · 60 kg · 1 set")
         XCTAssertEqual(zh.nextSessionLabel, "下一场")
         XCTAssertEqual(en.nextSessionLabel, "Next session")
+        // K3 休息日「上一场」区头
+        XCTAssertEqual(zh.lastSessionSummaryHeader(dateText: "7月14日"), "上一场 · 7月14日")
+        XCTAssertEqual(en.lastSessionSummaryHeader(dateText: "Jul 14"), "Last session · Jul 14")
     }
 
     // 自重展示（wave-6）：大数字=次数、无「0kg」
