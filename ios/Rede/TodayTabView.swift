@@ -24,7 +24,7 @@ struct TodayTabView: View {
     @State private var detailTarget: ExerciseDetailTarget?
     /// FR-TR6：点了某替代动作后，先弹「只换这次 / 以后都换」二选一，选完才写（携带写所需信息）。
     @State private var pendingSwap: PendingSwap?
-    /// FR-TR7「今天换一天练」：①选训练日的对话框 ②选了某天后的单次/永久二选一 ③永久分支打开顺序编辑器。
+    /// FR-TR12「今天换一天练」：①选训练日的对话框 ②选了某天后的单次/永久二选一 ③永久分支打开顺序编辑器。
     @State private var showDayPicker = false
     @State private var pendingDayOverride: String?
     @State private var showSequenceEditor = false
@@ -109,7 +109,7 @@ struct TodayTabView: View {
             if CommandLine.arguments.contains("-autoOpenSwap"), let first = model?.prescription?.exercises.first {
                 detailTarget = ExerciseDetailTarget(id: first.exerciseId, swapIntent: true)
             }
-            // FR-TR7 验证钩子：自动弹「今天换一天练」选训练日对话框。
+            // FR-TR12 验证钩子：自动弹「今天换一天练」选训练日对话框。
             if CommandLine.arguments.contains("-autoOpenDaySwap") { showDayPicker = true }
             // Task 5 验证钩子：恢复面板三动作各走一遍真实闭包（simctl 无法点击 UI）。
             // 用法：存在当日 draft 时 `-autoResumeAction resume|discard|later`。
@@ -176,7 +176,7 @@ struct TodayTabView: View {
         .sheet(item: $detailTarget) { target in
             exerciseDetailSheet(target)
         }
-        // FR-TR7「今天换一天练」品牌选择面板（替代原生 confirmationDialog）：①选训练日 ②单次/永久。
+        // FR-TR12「今天换一天练」品牌选择面板（替代原生 confirmationDialog）：①选训练日 ②单次/永久。
         // 同一 sheet 内就地切两步（pendingDayOverride 决定显哪步），关闭时清待定项防下次直接跳到②步。
         .sheet(isPresented: $showDayPicker, onDismiss: {
             pendingDayOverride = nil
@@ -185,7 +185,7 @@ struct TodayTabView: View {
         }) {
             daySwitchSheet
         }
-        // FR-TR7 永久分支：打开训练日顺序编辑器让用户看着完整序列自己拖（不在今日页猜意图）。
+        // FR-TR12 永久分支：打开训练日顺序编辑器让用户看着完整序列自己拖（不在今日页猜意图）。
         .sheet(isPresented: $showSequenceEditor) {
             PlanDaySequenceEditorView(onApplied: { Task { await sessionStore.loadToday() } })
         }
@@ -505,7 +505,7 @@ struct TodayTabView: View {
         }
     }
 
-    /// FR-TR7：今天的处方日 ≠ 轮转本该练的日 = 今天临时换过了。
+    /// FR-TR12：今天的处方日 ≠ 轮转本该练的日 = 今天临时换过了。
     private var isDayOverridden: Bool {
         guard let sched = model?.scheduledDayCode, let today = model?.prescription?.dayCode else { return false }
         return sched != today
@@ -520,7 +520,7 @@ struct TodayTabView: View {
                     .font(.redeSubhead)
                     .monospacedDigit()
                 Spacer(minLength: 8)
-                // FR-TR7「今天换一天练」入口：仅多于 1 个训练日的分化才有意义；正训练中不给换（避免改了正在练的）。
+                // FR-TR12「今天换一天练」入口：仅多于 1 个训练日的分化才有意义；正训练中不给换（避免改了正在练的）。
                 if (model?.daySequence.count ?? 0) > 1, sessionStore.flow == nil {
                     Button(s.swapDayEntry) { showDayPicker = true }
                         .font(.redeCaption).foregroundStyle(Color.redeEmber2)
@@ -545,7 +545,7 @@ struct TodayTabView: View {
         }
     }
 
-    /// FR-TR7「今天换一天练」品牌面板：同一 sheet 内分两步——pendingDayOverride==nil 选训练日，
+    /// FR-TR12「今天换一天练」品牌面板：同一 sheet 内分两步——pendingDayOverride==nil 选训练日，
     /// 选了某天后切到单次/永久。选项点击负责关闭/推进，避免两层原生弹窗的视觉与品牌断裂。
     @ViewBuilder private var daySwitchSheet: some View {
         if let day = pendingDayOverride {
@@ -579,7 +579,7 @@ struct TodayTabView: View {
         }
     }
 
-    /// FR-TR7 执行「只换今天」：写临时训练日覆盖 + 撤销浮条（明示明天补回被跳过的那天）。
+    /// FR-TR12 执行「只换今天」：写临时训练日覆盖 + 撤销浮条（明示明天补回被跳过的那天）。
     private func applyDayOverride(_ dayCode: String) async {
         let displaced = s.trainingDayName(model?.scheduledDayCode ?? "")
         if await sessionStore.applyOneTimeDayOverride(dayCode: dayCode) {
@@ -1191,7 +1191,7 @@ struct TodayTabView: View {
         enum Kind {
             case swap(originalId: String)
             case swapOneTime(originalId: String)   // FR-TR6「只换这次」：撤销路由到 removeOneTimeSubstitution
-            case dayOverride                        // FR-TR7「今天换一天练」：撤销路由到 removeOneTimeDayOverride
+            case dayOverride                        // FR-TR12「今天换一天练」：撤销路由到 removeOneTimeDayOverride
             case volume(weekStartISO: String)
         }
         let id = UUID()

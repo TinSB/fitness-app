@@ -886,7 +886,7 @@ final class SessionStore {
         await performCoachWrite { _ = try $0.removeOneTimeSubstitution(originalId: originalId) }
     }
 
-    /// FR-TR7「今天换一天练」：把今天的训练日临时改为 dayCode（带今日日期）。轮转偏移的 −1 抵消在这场训练
+    /// FR-TR12「今天换一天练」：把今天的训练日临时改为 dayCode（带今日日期）。轮转偏移的 −1 抵消在这场训练
     /// **完成时**由写闸消费（appendCompletedSession）——所以没练就不会动轮转，撤销也只需清覆盖。
     @discardableResult
     func applyOneTimeDayOverride(dayCode: String) async -> Bool {

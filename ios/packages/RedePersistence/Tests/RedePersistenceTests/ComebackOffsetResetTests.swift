@@ -1,7 +1,7 @@
 // 回归协议（2026-07-08）：重启场（与历史最后一场日期差 ≥21 天）完成时 rotationOffset
-// 归零——FR-TR7 换天累计的旧偏移在「从头开始」语义下清除；引擎轮换自重启点无状态
-// 重新计数（扫描历史），此清零只管残值。语义锁：<21 天不动 offset（TR7 不破）；
-// offset 已为 0 不写多余变更；与 TR7 消费（同场 -1）可叠加（先 -1 再判重启归零）。
+// 归零——FR-TR12 换天累计的旧偏移在「从头开始」语义下清除；引擎轮换自重启点无状态
+// 重新计数（扫描历史），此清零只管残值。语义锁：<21 天不动 offset（TR12 不破）；
+// offset 已为 0 不写多余变更；与 TR12 消费（同场 -1）可叠加（先 -1 再判重启归零）。
 
 import Foundation
 import XCTest
@@ -41,7 +41,7 @@ final class ComebackOffsetResetTests: XCTestCase {
     func testRestartSessionResetsAccruedOffset() throws {
         let writer = makeWriter()
         _ = try writer.appendCompletedSession(session(id: "s0", date: "2026-06-15"))
-        // TR7 换天完成累计 offset -1（用覆盖路径制造非零残值）
+        // TR12 换天完成累计 offset -1（用覆盖路径制造非零残值）
         _ = try writer.applyOneTimeDayOverride(dayCode: "lower", dateISO: "2026-06-16")
         let afterOverride = try writer.appendCompletedSession(session(id: "s1", date: "2026-06-16"))
         XCTAssertEqual(afterOverride.rotationOffset, -1)
@@ -55,7 +55,7 @@ final class ComebackOffsetResetTests: XCTestCase {
         _ = try writer.appendCompletedSession(session(id: "s0", date: "2026-06-15"))
         _ = try writer.applyOneTimeDayOverride(dayCode: "lower", dateISO: "2026-06-16")
         _ = try writer.appendCompletedSession(session(id: "s1", date: "2026-06-16"))
-        // 20 天 <21：TR7 偏移保留
+        // 20 天 <21：TR12 偏移保留
         let after = try writer.appendCompletedSession(session(id: "s2", date: "2026-07-06"))
         XCTAssertEqual(after.rotationOffset, -1)
     }
@@ -69,14 +69,14 @@ final class ComebackOffsetResetTests: XCTestCase {
     }
 
     func testRestartDayWithOverrideKeepsFreshTr7Delta() throws {
-        // 审查 M3 组合场景：重启日用户又「今天换一天练」并完成——本次写内 TR7 刚产生
+        // 审查 M3 组合场景：重启日用户又「今天换一天练」并完成——本次写内 TR12 刚产生
         // 的 -1 必须保留（序列头下一场补回），只清写前残值
         let writer = makeWriter()
         _ = try writer.appendCompletedSession(session(id: "s0", date: "2026-06-15"))
         // 制造写前残值 -1（6/16 换天完成）
         _ = try writer.applyOneTimeDayOverride(dayCode: "lower", dateISO: "2026-06-16")
         _ = try writer.appendCompletedSession(session(id: "s1", date: "2026-06-16"))
-        // 停练 22 天，重启日再换天并完成：写前残值 -1 应清、本次 TR7 的 -1 应留
+        // 停练 22 天，重启日再换天并完成：写前残值 -1 应清、本次 TR12 的 -1 应留
         _ = try writer.applyOneTimeDayOverride(dayCode: "lower", dateISO: "2026-07-08")
         let after = try writer.appendCompletedSession(session(id: "s2", date: "2026-07-08"))
         XCTAssertEqual(after.rotationOffset, -1, "本次换天补偿保留、历史残值清除")

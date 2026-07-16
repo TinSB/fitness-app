@@ -1,4 +1,4 @@
-// FR-TR7「今天换一天练」临时训练日覆盖写入合同（open-bag，无 schema bump）：
+// FR-TR12「今天换一天练」临时训练日覆盖写入合同（open-bag，无 schema bump）：
 //  - applyOneTimeDayOverride 写 {dayCode,dateISO}；removeOneTimeDayOverride 清。
 //  - **完成消费（关键）**：appendCompletedSession 时，若覆盖 dateISO == 该场 date → rotationOffset −1 + 清覆盖
 //    （抵消本场对轮转的推进、使被跳过的日下一场补回）；日期不符则不动。
