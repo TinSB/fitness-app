@@ -811,6 +811,7 @@ struct TodayTabView: View {
     ///（归 loadCompletedDigest 同批链，避免同屏双载）。
     private func loadWeekReviewIfEligible() async {
         guard isLocalMonday || weekReviewForced else { weekReview = nil; return }
+        if weekReview != nil { return }   // 幂等（审查 NIT：训练日主 .task 与 task(id:) 双链并发时省一次 snapshot IO）
         let outcome = await ProgressModel.loadOutcomeAsync()
         guard case let .ready(pm) = outcome else { weekReview = nil; return }
         computeWeekReview(snapshot: pm.snapshot)

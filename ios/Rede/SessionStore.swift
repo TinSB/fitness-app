@@ -70,10 +70,18 @@ final class SessionStore {
     /// 只在 restCountdown.begin/clear 既有接线点挂钩，不改 RestCountdown 本体。
     private let restLiveActivity = RestLiveActivityController()
 
+    /// K6 启动清理只跑一次（审查 MINOR：@State 初值表达式在 View 结构体每次构造时
+    /// 求值——将来任何让 WindowGroup 重估的改动都会构造临时 SessionStore，若清理在
+    /// init 无闸门，会误杀正在跑的休息 Live Activity；进程级 once 保住原语义）。
+    private static var didRunLaunchCleanup = false
+
     init() {
         // K6 启动清理：上个进程被杀（训练异常中断）可能留下孤儿 Live Activity——
-        // 新进程此刻必无休息在跑，全部收掉（controller 串行链保证先于本进程的 begin）。
-        restLiveActivity.end(endpoint: "launch-cleanup")
+        // 新进程首次构造时必无休息在跑，全部收掉（controller 串行链保证先于 begin）。
+        if !Self.didRunLaunchCleanup {
+            Self.didRunLaunchCleanup = true
+            restLiveActivity.end(endpoint: "launch-cleanup")
+        }
     }
     /// 启动时发现的可恢复 draft（FR-TR9 提示「继续进行中的训练」）。
     var pendingDraft: TrainSessionDraft?

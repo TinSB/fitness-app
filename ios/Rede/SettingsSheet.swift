@@ -203,6 +203,7 @@ struct SettingsSheet: View {
                     Image(systemName: "square.and.arrow.up")
                         .font(.redeCaption)
                         .foregroundStyle(Color.redeT4)
+                        .accessibilityHidden(true)   // 装饰性图标（§16.1，审查 NIT）
                     Text(s.settingsExportAction)
                         .font(.redeBody)
                         .foregroundStyle(Color.redeT2)
@@ -210,6 +211,7 @@ struct SettingsSheet: View {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(Color.redeT4)
+                        .accessibilityHidden(true)   // 装饰性 affordance（§16.1）
                 }
                 .frame(minHeight: RedeShape.controlHeight)
                 .contentShape(Rectangle())

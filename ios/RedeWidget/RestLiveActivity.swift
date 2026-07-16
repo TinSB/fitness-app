@@ -13,7 +13,9 @@ import RedeWidgetShared
 
 /// 品牌色本地副本（extension 不编 app target 的 RedeTheme.swift；hex 与其同值——
 /// base 0x15130F / T1 0xECE6D8 / T3 0x9C9484 / ember 0xE1652B）。
-private enum RestPalette {
+private // ⚠️ 品牌色本地副本（extension 无共享色 token 包）——四值必须与
+// ios/Rede/RedeTheme.swift 逐值一致；改 ember/基色时两处同改（审查 NIT 漂移风险留痕）。
+enum RestPalette {
     private static func hex(_ value: UInt32) -> Color {
         Color(
             .sRGB,
@@ -50,7 +52,9 @@ struct RestLiveActivity: Widget {
                     .font(.system(size: 36, weight: .semibold))
                     .monospacedDigit()
                     .multilineTextAlignment(.trailing)
-                    .foregroundStyle(RestPalette.ember)
+                    // 陈旧态灰化（审查 NIT：后台自然到点后系统只标 stale 不撤显——
+                    // 0:00 滞留期不再用 ember 冒充「活着的下一步」）
+                    .foregroundStyle(context.isStale ? RestPalette.t3 : RestPalette.ember)
                     .frame(maxWidth: 120)
             }
             .padding(.horizontal, 20)
@@ -84,8 +88,9 @@ struct RestLiveActivity: Widget {
                         .padding(.trailing, 4)
                 }
             } compactLeading: {
+                // 图标中性（审查 NIT：compact 同屏 ember 只留倒计时数字——「橙=唯一焦点」）
                 Image(systemName: "timer")
-                    .foregroundStyle(RestPalette.ember)
+                    .foregroundStyle(RestPalette.t3)
             } compactTrailing: {
                 Text(timerInterval: Self.timerRange(context.state), countsDown: true)
                     .font(.system(size: 13, weight: .medium))
@@ -94,6 +99,7 @@ struct RestLiveActivity: Widget {
                     .foregroundStyle(RestPalette.ember)
                     .frame(maxWidth: 44)
             } minimal: {
+                // minimal 无数字可显——ember 图标作倒计时唯一代理（有意保留，非双焦点）
                 Image(systemName: "timer")
                     .foregroundStyle(RestPalette.ember)
             }

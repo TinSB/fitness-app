@@ -216,7 +216,7 @@ public struct RedeStrings: Sendable {
     /// 导出读失败 alert（沿 dataUnreadable 文案家族：如实说读不出，绝不产出空文件假成功）。
     public var settingsExportFailedTitle: String { t("暂时读不出数据", "Can't read your data right now") }
     public var settingsExportFailedBody: String {
-        t("训练数据文件此刻读取失败　稍后再试一次", "The training data file couldn't be read. Try again in a bit")
+        t("训练数据文件此刻读取失败　稍后再试一次", "The training data file couldn't be read. Try again")
     }
     public var settingsExportFailedConfirm: String { t("好", "OK") }
     /// 设置面板铭牌头型号行（工艺重做 2026-06-10，Overline 渲染为全大写）。
