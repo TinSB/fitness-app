@@ -97,13 +97,13 @@ public struct CanonicalSessionWriter {
             }
             var storage = current.storage
             // 回归协议（审查 M3）：快照本次写之前的偏移——重启清零只清「历史残值」，
-            // 不吞同一次写内 FR-TR7 刚产生的换天补偿（重启日用户换天，被跳过的
+            // 不吞同一次写内 FR-TR12 刚产生的换天补偿（重启日用户换天，被跳过的
             // 序列头下一场仍要补回）。
             let offsetBeforeThisWrite = storage["rotationOffset"]?.asInt ?? 0
             var history = storage["history"]?.asArray ?? []
             history.append(.object(session.storage))
             storage["history"] = .array(history)
-            // FR-TR7：若这场是在「今天换一天练」的临时覆盖日完成的 → 消费它——rotationOffset −1（抵消本场对
+            // FR-TR12：若这场是在「今天换一天练」的临时覆盖日完成的 → 消费它——rotationOffset −1（抵消本场对
             // 「今天=序列[场次数%长度]」轮转的推进，使被跳过的训练日下一场补回）+ 清掉当天覆盖。非覆盖日不动。
             if let ov = storage["oneTimeDayOverride"]?.asObject,
                let ovDate = ov["dateISO"]?.asString, !ovDate.isEmpty,
@@ -120,13 +120,13 @@ public struct CanonicalSessionWriter {
             }
             // 回归协议（2026-07-08）：本场与已有历史最后一场日期差 ≥21 天 = 重启场——
             // 引擎轮换自重启点无状态重新计数（扫描历史），此处清 rotationOffset 残值
-            //（FR-TR7 换天累计的旧偏移在「从头开始」语义下应归零）。阈值与引擎
+            //（FR-TR12 换天累计的旧偏移在「从头开始」语义下应归零）。阈值与引擎
             // TodayPrescriptionEngine.comebackRestartGapDays 同值（跨包重复常数，
             // dayNumber 孪生同款纪律）。日期解析失败保守不动（不误清用户偏移）。
             if let sessionDate = session.date,
                let lastDate = current.history.compactMap({ $0.date }).max(),
                let gapDays = Self.daysBetween(lastDate, sessionDate), gapDays >= 21 {
-                // 只清写前残值：新值 = 本次写内新增量（TR7 的 0 或 -1），残值部分归零。
+                // 只清写前残值：新值 = 本次写内新增量（TR12 的 0 或 -1），残值部分归零。
                 // 注：history 为 raw 层（date 未经 Clean 校验）——脏日期解析失败时
                 // daysBetween=nil 保守不清（失败方向安全，审查 m4 留痕）。
                 let currentOffset = storage["rotationOffset"]?.asInt ?? 0
@@ -369,7 +369,7 @@ public struct CanonicalSessionWriter {
         }
     }
 
-    /// 已批准写入类别：FR-TR7「今天换一天练」临时训练日覆盖。写 oneTimeDayOverride={dayCode,dateISO}（覆盖前一条，
+    /// 已批准写入类别：FR-TR12「今天换一天练」临时训练日覆盖。写 oneTimeDayOverride={dayCode,dateISO}（覆盖前一条，
     /// 始终只一条）。dayCode 是否本日序合法成员由 app/引擎层校验（引擎对非法 override 回退轮转）；本层只结构守卫。
     /// rotationOffset 的 −1 抵消在**这场训练完成时**由 appendCompletedSession 消费（不在此处，避免没练就改了轮转）。
     @discardableResult

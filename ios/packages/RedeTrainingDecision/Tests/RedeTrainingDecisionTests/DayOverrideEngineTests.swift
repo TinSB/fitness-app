@@ -1,4 +1,4 @@
-// FR-TR7「今天换一天练」引擎契约：plan() 的 dayCodeOverride（今日临时换训练日）+ rotationOffset（抵消临时
+// FR-TR12「今天换一天练」引擎契约：plan() 的 dayCodeOverride（今日临时换训练日）+ rotationOffset（抵消临时
 // 换天那场对「今天=序列[场次数%长度]」轮转的推进，使被跳过的日下一场补回）。默认 nil/0 = 现状（golden 零回归）。
 
 import XCTest
