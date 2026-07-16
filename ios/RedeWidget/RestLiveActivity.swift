@@ -122,7 +122,8 @@ struct RestLiveActivity: Widget {
                 // 离线渲染密度评估：环内嵌小图标太糊，纯环胜出）
                 RestProgressRing(state: context.state, isStale: context.isStale)
             }
-            .keylineTint(RestPalette.ember)
+            // 灰化全家桶闭环（审查 NIT）：keyline 与数字/环/条同退——滞留期无任何橙色假活。
+            .keylineTint(context.isStale ? RestPalette.t3 : RestPalette.ember)
         }
     }
 
