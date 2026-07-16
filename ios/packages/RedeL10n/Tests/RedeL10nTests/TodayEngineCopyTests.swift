@@ -119,6 +119,34 @@ final class TodayEngineCopyTests: XCTestCase {
         XCTAssertEqual(en.weekTotalLine(days: 1, volumeText: "9,100"), "1 day this week · 9,100 kg total")
     }
 
+    // K8 周一「上周收官」行：观察式零评价、单位=天、负号 −（U+2212）、无对比只报事实。
+    func testWeekReviewLineAnchors() {
+        XCTAssertEqual(
+            zh.weekReviewLine(days: 3, volumeText: "12,400", deltaPercent: 8),
+            "上周练 3 天 · 合计 12,400 kg · 较前一周 +8%")
+        XCTAssertEqual(
+            zh.weekReviewLine(days: 2, volumeText: "8,600", deltaPercent: -12),
+            "上周练 2 天 · 合计 8,600 kg · 较前一周 −12%")
+        // 上上周无数据：只报事实，不硬造对比
+        XCTAssertEqual(
+            zh.weekReviewLine(days: 3, volumeText: "12,400", deltaPercent: nil),
+            "上周练 3 天 · 合计 12,400 kg")
+        XCTAssertEqual(
+            en.weekReviewLine(days: 3, volumeText: "12,400", deltaPercent: 8),
+            "3 days last week · 12,400 kg total · +8% vs the week before")
+        XCTAssertEqual(
+            en.weekReviewLine(days: 1, volumeText: "4,200", deltaPercent: nil),
+            "1 day last week · 4,200 kg total")
+        // 观察式禁评价词 + zh 无句号
+        for line in [zh.weekReviewLine(days: 3, volumeText: "12,400", deltaPercent: 8),
+                     zh.weekReviewLine(days: 1, volumeText: "900", deltaPercent: -50)] {
+            for banned in ["不错", "加油", "棒", "继续保持"] {
+                XCTAssertFalse(line.contains(banned), "K8 行必须观察式零评价: \(line)")
+            }
+            XCTAssertFalse(line.hasSuffix("。"))
+        }
+    }
+
     // 自重展示（wave-6）：大数字=次数、无「0kg」
     func testBodyweightDisplayShowsRepsNotZeroWeight() {
         XCTAssertEqual(zh.heroNumber(loadType: "bodyweight", weightKg: 0, reps: 12), "12")
