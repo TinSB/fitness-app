@@ -76,6 +76,9 @@ struct RestLiveActivity: Widget {
                             .foregroundStyle(RestPalette.t3)
                             .lineLimit(1)
                     }
+                    // Bug 修复（owner 真机 1.7(24)）：两 region 默认顶对齐、内容偏上——
+                    // 撑满高度垂直居中，左块与右侧倒计时同轴心。
+                    .frame(maxHeight: .infinity, alignment: .leading)
                     .padding(.leading, 4)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
@@ -83,8 +86,8 @@ struct RestLiveActivity: Widget {
                         .font(.system(size: 28, weight: .semibold))
                         .monospacedDigit()
                         .multilineTextAlignment(.trailing)
-                        .foregroundStyle(RestPalette.ember)
-                        .frame(maxWidth: 84)
+                        .foregroundStyle(context.isStale ? RestPalette.t3 : RestPalette.ember)
+                        .frame(maxWidth: 84, maxHeight: .infinity, alignment: .trailing)
                         .padding(.trailing, 4)
                 }
             } compactLeading: {
@@ -96,8 +99,12 @@ struct RestLiveActivity: Widget {
                     .font(.system(size: 13, weight: .medium))
                     .monospacedDigit()
                     .multilineTextAlignment(.trailing)
-                    .foregroundStyle(RestPalette.ember)
-                    .frame(maxWidth: 44)
+                    .foregroundStyle(context.isStale ? RestPalette.t3 : RestPalette.ember)
+                    // Bug 修复（owner 真机 1.7(24)）：Text(timerInterval:) 理想宽度按最坏
+                    // 计时串贪婪测量，maxWidth 约束不了它——超出 compactTrailing 宽度预算时
+                    // 系统整个丢弃该视图（胶囊右侧空白）。固定宽度绕开贪婪测量；40pt 实测
+                    // 覆盖 MM:SS（37.3pt @13pt medium monospacedDigit），宁大勿裁。
+                    .frame(width: 40, alignment: .trailing)
             } minimal: {
                 // minimal 无数字可显——ember 图标作倒计时唯一代理（有意保留，非双焦点）
                 Image(systemName: "timer")
