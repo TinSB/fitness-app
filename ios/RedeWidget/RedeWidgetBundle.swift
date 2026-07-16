@@ -1,8 +1,9 @@
-// RedeWidgetBundle — W-1 Readiness Widget V1.
+// RedeWidgetBundle — W-1 Readiness Widget V1 + K6 Rest Live Activity.
 //
-// The widget extension's @main entry. Hosts the single read-only readiness widget.
-// The extension reads a DERIVED snapshot from the shared App Group and renders it;
-// it NEVER writes canonical AppData and is NEVER a source of truth (master §12/§18).
+// The widget extension's @main entry. Hosts the read-only readiness widget and the
+// rest-timer Live Activity (K6, 2026-07-16). Both render DERIVED data handed over by
+// the app; they NEVER write canonical AppData and are NEVER a source of truth
+// (master §12/§18).
 
 import SwiftUI
 import WidgetKit
@@ -11,5 +12,6 @@ import WidgetKit
 struct RedeWidgetBundle: WidgetBundle {
     var body: some Widget {
         ReadinessWidget()
+        RestLiveActivity()
     }
 }
