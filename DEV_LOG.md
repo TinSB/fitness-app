@@ -6,6 +6,16 @@
 
 ---
 
+## 2026-07-16 · Archive 1.7 (build 24)：去空虚化完全体上包
+
+**用户目标**：owner「archive 1.7」——把去空虚化两批全量（#700 K1-K5 + #701 K6-K8）带上 TestFlight。
+
+**做了什么**：MARKETING 1.6→1.7 + build 23→24（八处双 target）；archive exit 0（`Archives/2026-07-16/Rede-1.7-24.xcarchive`）；PlistBuddy 实证 app+widget 均 1.7/24、签名 47K95GV3X5、`NSSupportsLiveActivities=true` 已进包；What's New 重定向 1.7/24（新增训练页待机/动作库/锁屏倒计时/休息日内容/数据导出六条双语条目）；验收清单 0.x → 1.7-24 + 新增 **L 组八条**（去空虚化目检 + Live Activity 三项重点真机项：Allow 后锁屏面/长按 expanded/暂停续时）。1.6(23) 若未上传则被 24 取代。
+
+**下一步**：owner Organizer 上传 → TestFlight 过清单（重点 L4-L6 Live Activity）→ 全过提审商店 1.7。
+
+---
+
 ## 2026-07-16 · 去空虚化第二批 K6-K8：Live Activity + 数据导出 + 周一收官行（三段式）
 
 **用户目标**：owner「第二批候选也同步进入，专业 prompt 执行，企业级规格」。
