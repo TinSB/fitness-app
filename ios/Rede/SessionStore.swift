@@ -227,6 +227,43 @@ final class SessionStore {
         )
     }
 
+    /// K5 计划页「上次」列：各训练日码最近一次完成日期（canonical storage["templateId"] 直读，
+    /// prefix(10) 日期归一——裁定 3）。从未练过的日码无键 → 该列不显示（不编数据）。只读不经写闸。
+    nonisolated static func loadDayLastTrainedDates() -> [String: String] {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load() else { return [:] }
+        var result: [String: String] = [:]
+        for session in appData.history where session.completed == true {
+            guard let day = session.storage["templateId"]?.asString,
+                  let date = session.date.map({ String($0.prefix(10)) }) else { continue }
+            if let existing = result[day], existing >= date { continue }
+            result[day] = date
+        }
+        return result
+    }
+
+    /// K5 计划页累计事实行：去重训练天数（cleanView.sessions，prefix(10) 归一）+
+    /// 自首场日期起的 ISO 周跨度（含当前周；WeekAnchor 同锚点——裁定 3）。无历史 → nil。
+    nonisolated static func loadTrainingTenure(now: Date = Date()) -> (weeks: Int, days: Int)? {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load() else { return nil }
+        let cleanView = CleanAppDataViewBuilder.build(from: appData)
+        let dates = Set(cleanView.sessions.map { String($0.date.prefix(10)) })
+        guard let firstISO = dates.min() else { return nil }
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        fmt.timeZone = .current
+        fmt.dateFormat = "yyyy-MM-dd"
+        guard let firstDate = fmt.date(from: firstISO),
+              let firstMonday = fmt.date(from: WeekAnchor.isoWeekStart(firstDate)),
+              let nowMonday = fmt.date(from: WeekAnchor.isoWeekStart(now)) else {
+            return (1, dates.count) // 日期解析异常兜底：集合非空至少 1 周（不编更多）
+        }
+        // 周差用四舍五入吸收 DST ±1h 漂移（两端都是本地周一零点）。
+        let weeks = max(1, Int((nowMonday.timeIntervalSince(firstMonday) / 604_800).rounded()) + 1)
+        return (weeks, dates.count)
+    }
+
     /// 计划页周期条状态（FR-PL2 S5）：仅周期化开启且有真历史锚点时返回，否则 nil（退诚实占位）。
     /// 走与今日页处方同一 clean pipeline + 同一锚点 → 周期条与处方相位永远一致。
     nonisolated static func loadCycleState(now: Date = Date()) -> MesocycleCycleState? {

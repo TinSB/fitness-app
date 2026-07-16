@@ -386,6 +386,14 @@ extension RedeStrings {
     /// 「下一场」预告行标签（Overline；内容 = trainingDayName · planDayExercises 组装）。
     public var nextSessionLabel: String { t2("下一场", "Next session") }
 
+    /// K4 练完态「本周」合计行："本周练 3 天 · 合计 58,400 kg"。天数复用 weekStripCount
+    ///（与状态行分段条同串同单位=天，裁定 3——同屏数字必对账）；吨位整数走 formatVolumeKg。
+    public func weekTotalLine(days: Int, volumeText: String) -> String {
+        locale == .zh
+            ? "\(weekStripCount(days)) · 合计 \(volumeText) \(unitLabel)"
+            : "\(weekStripCount(days)) · \(volumeText) \(unitLabel) total"
+    }
+
     private func t2(_ zh: String, _ en: String) -> String {
         locale == .zh ? zh : en
     }

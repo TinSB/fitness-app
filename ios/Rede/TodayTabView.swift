@@ -43,6 +43,9 @@ struct TodayTabView: View {
     @State private var recentVolumes: [CGFloat] = []
     /// K3「下一场」预告（PlanDayProjection 现成投影；nil = 无排期不渲染）。
     @State private var nextSession: PlanDayProjection?
+    /// K4 练完态「本周」合计吨位（snapshot.weeklyVolume 当前 ISO 周桶——与总结卡总量
+    /// 同一 snapshot 口径，同屏数字必对账；nil = 本周无桶/未加载不渲染）。
+    @State private var weekVolumeKg: Double?
     /// T1 练完态分享入口打开的预览（复用训练小结同款载体与预览视图）。
     @State private var sharePreview: SharePreviewItem?
 
@@ -151,6 +154,7 @@ struct TodayTabView: View {
                 completedDigest = nil
                 recentVolumes = []
                 nextSession = nil
+                weekVolumeKg = nil
             }
         }
         .sheet(item: $detailTarget) { target in
@@ -392,6 +396,24 @@ struct TodayTabView: View {
                     nextSessionRow(next)
                         .padding(.horizontal, RedeSpace.page)
                         .padding(.top, completedDigest == nil ? 24 : 14)
+                }
+
+                // K4 练完态「本周」合计行（仅今天有场时——休息日无当日增量，不重复周口径）：
+                // 天数 = 分段条同源 weekStatuses（严格对账），吨位 = snapshot 周桶（与总结卡同口径）。
+                if completedDigest?.dateISO == Self.isoDay(model?.now ?? Date()),
+                   let weekVolumeKg, let statuses = weekStatuses {
+                    VStack(spacing: 0) {
+                        Rectangle().fill(Color.redeHair2).frame(height: 1)
+                            .padding(.bottom, 10)
+                        Text(s.weekTotalLine(
+                            days: statuses.filter { $0 == .trained }.count,
+                            volumeText: s.formatVolumeKg(weekVolumeKg)))
+                            .font(.redeCaption).monospacedDigit()
+                            .foregroundStyle(Color.redeT3)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.top, 14)
                 }
             }
         }
@@ -715,6 +737,10 @@ struct TodayTabView: View {
         guard case let .ready(pm) = outcome, let latest = pm.snapshot.history.first else { return }
         // N3b：同一 snapshot 顺手带出近 5 场总体量（history[0]=最新 → 反转成旧→新），不二次 IO。
         recentVolumes = pm.snapshot.history.prefix(5).reversed().map { CGFloat($0.totalVolumeKg) }
+        // K4：本周合计取 snapshot.weeklyVolume 当前 ISO 周桶（与总结卡总量同一 snapshot
+        // 口径——同屏「总量」与「本周合计」必对账；周锚 WeekAnchor 与补量卡/分段条同源）。
+        let weekStart = WeekAnchor.isoWeekStart(model?.now ?? Date())
+        weekVolumeKg = pm.snapshot.weeklyVolume.first { $0.weekStartISO == weekStart }?.totalVolumeKg
         let record = pm.statsRecords.first { $0.id == latest.sessionId }
         let sid = latest.sessionId
         let facts = await Task.detached { SessionStore.loadCompletedFacts(sessionId: sid) }.value

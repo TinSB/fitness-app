@@ -76,6 +76,14 @@ struct ExerciseLibraryView: View {
         .sheet(item: $detail) { item in
             ExerciseDetailSheet(exerciseId: item.id)
         }
+        // K2 截图钩子（同 -autoOpenPlanEditor 先例）：-autoOpenLibraryDetail <exerciseId>
+        // 自动点开库内某动作详情（simctl 无法点击 UI）。
+        .task {
+            let args = CommandLine.arguments
+            if let i = args.firstIndex(of: "-autoOpenLibraryDetail"), args.indices.contains(i + 1) {
+                detail = ExerciseDetailItem(id: args[i + 1])
+            }
+        }
     }
 
     /// 开放行：动作名 + 器械 · 主肌群（细粒度，组头之下再给一层定位）+ chevron。

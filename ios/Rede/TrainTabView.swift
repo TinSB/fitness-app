@@ -1088,6 +1088,8 @@ struct TrainTabView: View {
                 .accessibilityElement(children: .combine)
             }
         }
+        // 无全宽子视图时 ScrollView 会把 hug 内容居中——待机态恒左对齐（实拍 02 抓获）。
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// 预览行：动作名 + 目标 W×次（中性色；目标经 LoadDisplay 吸附，与今日页 targetSummary 同口径）。

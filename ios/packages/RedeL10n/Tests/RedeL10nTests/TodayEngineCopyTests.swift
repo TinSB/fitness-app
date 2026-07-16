@@ -114,6 +114,9 @@ final class TodayEngineCopyTests: XCTestCase {
         // K3 休息日「上一场」区头
         XCTAssertEqual(zh.lastSessionSummaryHeader(dateText: "7月14日"), "上一场 · 7月14日")
         XCTAssertEqual(en.lastSessionSummaryHeader(dateText: "Jul 14"), "Last session · Jul 14")
+        // K4 本周合计：天数复用 weekStripCount（单位=天合流），吨位带单位
+        XCTAssertEqual(zh.weekTotalLine(days: 3, volumeText: "58,400"), "本周练 3 天 · 合计 58,400 kg")
+        XCTAssertEqual(en.weekTotalLine(days: 1, volumeText: "9,100"), "1 day this week · 9,100 kg total")
     }
 
     // 自重展示（wave-6）：大数字=次数、无「0kg」
