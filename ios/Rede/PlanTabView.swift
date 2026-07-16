@@ -27,6 +27,8 @@ struct PlanTabView: View {
     @State private var editingDay: PlanEditTarget?
     /// FR-PL7②：是否打开训练日顺序编辑器 sheet。
     @State private var showSequenceEditor = false
+    /// K2：是否打开动作库浏览器 sheet（入口只在计划页——系统逻辑 §7 大型动作浏览禁入 Train）。
+    @State private var showLibrary = false
 
     private var s: RedeStrings { localeStore.strings }
 
@@ -85,6 +87,9 @@ struct PlanTabView: View {
                         daySequenceEntryRow
                             .padding(.horizontal, RedeSpace.page)
                             .padding(.top, 8)
+                        // K2：动作库入口（同款行式披露语法，非按钮非卡；唯一入口——裁定 1）。
+                        libraryEntryRow
+                            .padding(.horizontal, RedeSpace.page)
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
@@ -161,6 +166,27 @@ struct PlanTabView: View {
         .sheet(isPresented: $showSequenceEditor) {
             PlanDaySequenceEditorView(onApplied: { Task { await reload() } })
         }
+        // K2：动作库浏览器（只读目录，无采纳/写入）。
+        .sheet(isPresented: $showLibrary) {
+            ExerciseLibraryView()
+        }
+    }
+
+    /// K2：动作库入口行（「调整训练日顺序」同款开放行语法）。计数 = 目录在架条目。
+    private var libraryEntryRow: some View {
+        let count = ExerciseCatalog.minimal.entries.filter { !$0.deprecated }.count
+        return Button { showLibrary = true } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "list.bullet").font(.redeCaption).foregroundStyle(Color.redeT3)
+                Text(s.exerciseLibraryEntry(count)).font(.redeSubhead).foregroundStyle(Color.redeT1)
+                Spacer()
+                Image(systemName: "chevron.right").font(.redeCaption).foregroundStyle(Color.redeT4)
+            }
+            .frame(minHeight: RedeShape.controlHeight)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.redePressableRow)
+        .accessibilityElement(children: .combine)
     }
 
     /// 一次后台读、同步一起赋值（审查 MINOR-1）：避免分批到达时闪占位。

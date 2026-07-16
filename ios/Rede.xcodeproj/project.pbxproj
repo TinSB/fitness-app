@@ -33,6 +33,8 @@
 		CA00000000000000000000B4 /* ProgressTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A4 /* ProgressTabView.swift */; };
 		CAMD00000000000000000002 /* MuscleDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAMD00000000000000000001 /* MuscleDetailSheet.swift */; };
 		CAMH00000000000000000002 /* MuscleHeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAMH00000000000000000001 /* MuscleHeatmapView.swift */; };
+		CAED00000000000000000002 /* ExerciseDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAED00000000000000000001 /* ExerciseDetailSheet.swift */; };
+		CAEB00000000000000000002 /* ExerciseLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAEB00000000000000000001 /* ExerciseLibraryView.swift */; };
 		CA00000000000000000000B5 /* PlanTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A5 /* PlanTabView.swift */; };
 		CB00000000000000000000B1 /* RedeTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB00000000000000000000A1 /* RedeTheme.swift */; };
 		CB00000000000000000000B2 /* RedeComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB00000000000000000000A2 /* RedeComponents.swift */; };
@@ -96,6 +98,8 @@
 		CA00000000000000000000A4 /* ProgressTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressTabView.swift; sourceTree = "<group>"; };
 		CAMD00000000000000000001 /* MuscleDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleDetailSheet.swift; sourceTree = "<group>"; };
 		CAMH00000000000000000001 /* MuscleHeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleHeatmapView.swift; sourceTree = "<group>"; };
+		CAED00000000000000000001 /* ExerciseDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseDetailSheet.swift; sourceTree = "<group>"; };
+		CAEB00000000000000000001 /* ExerciseLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryView.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A5 /* PlanTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTabView.swift; sourceTree = "<group>"; };
 		CB00000000000000000000A1 /* RedeTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeTheme.swift; sourceTree = "<group>"; };
 		CB00000000000000000000A2 /* RedeComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeComponents.swift; sourceTree = "<group>"; };
@@ -180,6 +184,8 @@
 				CA00000000000000000000A4 /* ProgressTabView.swift */,
 				CAMD00000000000000000001 /* MuscleDetailSheet.swift */,
 				CAMH00000000000000000001 /* MuscleHeatmapView.swift */,
+				CAED00000000000000000001 /* ExerciseDetailSheet.swift */,
+				CAEB00000000000000000001 /* ExerciseLibraryView.swift */,
 				CA00000000000000000000A5 /* PlanTabView.swift */,
 				AA00000000000000000000E6 /* Assets.xcassets */,
 				AA00000000000000000000E5 /* Info.plist */,
@@ -348,6 +354,8 @@
 				CA00000000000000000000B4 /* ProgressTabView.swift in Sources */,
 				CAMD00000000000000000002 /* MuscleDetailSheet.swift in Sources */,
 				CAMH00000000000000000002 /* MuscleHeatmapView.swift in Sources */,
+				CAED00000000000000000002 /* ExerciseDetailSheet.swift in Sources */,
+				CAEB00000000000000000002 /* ExerciseLibraryView.swift in Sources */,
 				CA00000000000000000000B5 /* PlanTabView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

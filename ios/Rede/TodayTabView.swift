@@ -1076,6 +1076,8 @@ struct TodayTabView: View {
         }
     }
 
+    // K2（2026-07-16）：信息主体抽到共享 ExerciseDetailSheet（动作库/训练中复用）；
+    // 今日页专属的「换回原动作」CTA 与替代动作区经注入槽保留在此——行为逐字节不变。
     private func exerciseDetailSheet(_ target: ExerciseDetailTarget) -> some View {
         let exerciseId = target.id
         let entry = ExerciseCatalog.minimal.entry(id: exerciseId)
@@ -1083,132 +1085,63 @@ struct TodayTabView: View {
         // 永久替代走 removeExerciseSubstitution；FR-TR6 今天临时替代走 removeOneTimeSubstitution（文案标明明天自动恢复）。
         let revertOriginalId = swapOriginalId(for: exerciseId)
         let oneTimeRevertOriginalId = oneTimeOriginalId(for: exerciseId)
-        return ScrollView {
-            VStack(alignment: .leading, spacing: RedeSpace.section) {
-                Text(localeStore.exerciseName(exerciseId))
-                    .font(.redeHeadline)
-                    .tracking(RedeTracking.headline)
-                    .foregroundStyle(Color.redeT1)
-
-                if let originalId = revertOriginalId {
-                    adoptCTA(s.swapRevertHint(originalName: localeStore.exerciseName(originalId))) {
-                        Task {
-                            if await sessionStore.removeExerciseSubstitution(originalId: originalId) { detailTarget = nil }
-                        }
-                    }
-                } else if let originalId = oneTimeRevertOriginalId {
-                    adoptCTA(s.swapOnceRevertHint(originalName: localeStore.exerciseName(originalId))) {
-                        Task {
-                            if await sessionStore.removeOneTimeSubstitution(originalId: originalId) { detailTarget = nil }
-                        }
+        return ExerciseDetailSheet(exerciseId: exerciseId) {
+            if let originalId = revertOriginalId {
+                adoptCTA(s.swapRevertHint(originalName: localeStore.exerciseName(originalId))) {
+                    Task {
+                        if await sessionStore.removeExerciseSubstitution(originalId: originalId) { detailTarget = nil }
                     }
                 }
-
-                if let entry {
-                    // FR-EX2 技术要点（双语自由 prose；缺则不显示）——放元数据前，最有用内容优先。
-                    if let cues = (s.locale == .zh ? entry.techniqueCuesZh : entry.techniqueCuesEn), !cues.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Overline(text: s.exerciseDetailTechnique)
-                            ForEach(Array(cues.enumerated()), id: \.offset) { _, cue in
-                                HStack(alignment: .top, spacing: 7) {
-                                    Text("·").font(.redeBody).foregroundStyle(Color.redeT3)
-                                    Text(cue).font(.redeBody).foregroundStyle(Color.redeT2)
-                                        .fixedSize(horizontal: false, vertical: true)
+            } else if let originalId = oneTimeRevertOriginalId {
+                adoptCTA(s.swapOnceRevertHint(originalName: localeStore.exerciseName(originalId))) {
+                    Task {
+                        if await sessionStore.removeOneTimeSubstitution(originalId: originalId) { detailTarget = nil }
+                    }
+                }
+            }
+        } alternativesSection: {
+            if let entry {
+                VStack(alignment: .leading, spacing: 6) {
+                    // 换动作意图：标题换成选择提示，替代项升级为可点采纳行（选中即写，撤销兜底，无二次确认）。
+                    Overline(text: target.swapIntent ? s.swapPickerHint : s.exerciseDetailAlternatives)
+                    let alts = alternatives(for: entry)
+                    if alts.isEmpty {
+                        Text(s.exerciseDetailNoAlternatives)
+                            .font(.redeBody).foregroundStyle(Color.redeT3)
+                    } else if target.swapIntent {
+                        ForEach(alts, id: \.self) { altId in
+                            Button {
+                                // root-collapse：若当前动作本身是某动作的（永久或临时）替代，覆盖写在**根 originalId** 上，
+                                // 不建 B→C 链（避免 key 语义错位；撤销也回到根，审查 MINOR）。
+                                let rootOriginal = swapOriginalId(for: exerciseId) ?? oneTimeOriginalId(for: exerciseId) ?? exerciseId
+                                // FR-TR6：先弹「只换这次 / 以后都换」二选一（见 .confirmationDialog），选完才写。
+                                pendingSwap = PendingSwap(
+                                    rootOriginal: rootOriginal, altId: altId,
+                                    altName: localeStore.exerciseName(altId), fromExerciseId: exerciseId
+                                )
+                            } label: {
+                                HStack {
+                                    Text(localeStore.exerciseName(altId))
+                                        .font(.redeBody).foregroundStyle(Color.redeT1)
+                                    Spacer()
+                                    Image(systemName: "arrow.left.arrow.right")
+                                        .font(.redeCaption).foregroundStyle(Color.redeEmber2)
                                 }
+                                .frame(minHeight: RedeShape.controlHeight)
+                                .contentShape(Rectangle())
                             }
+                            .buttonStyle(.redePressableRow)
+                            .disabled(sessionStore.isSaving)
                         }
-                    }
-
-                    // FR-EX2 调整难度（退阶/进阶；任一缺则不显示该行，零回归）——紧接技术要点，最有用的「怎么调」。
-                    let regression = s.locale == .zh ? entry.regressionZh : entry.regressionEn
-                    let progression = s.locale == .zh ? entry.progressionZh : entry.progressionEn
-                    if regression?.isEmpty == false || progression?.isEmpty == false {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Overline(text: s.exerciseDetailScaling)
-                            if let r = regression, !r.isEmpty { scalingRow(s.exerciseDetailRegression, r) }
-                            if let p = progression, !p.isEmpty { scalingRow(s.exerciseDetailProgression, p) }
-                        }
-                    }
-
-                    // FR-EX2 注意事项（保守安全提示；§7.1 fitness≠medical，中性呈现不施压；缺则不显示）。
-                    if let safety = (s.locale == .zh ? entry.safetyNoteZh : entry.safetyNoteEn), !safety.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Overline(text: s.exerciseDetailSafety)
-                            Text(safety).font(.redeBody).foregroundStyle(Color.redeT2)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-
-                    detailRow(s.exerciseDetailType, s.exerciseKindLabel(entry.kind))
-                    detailRow(s.exerciseDetailPattern, s.movementPatternLabel(entry.movementPattern))
-                    detailRow(s.exerciseDetailPrimary, s.muscleLabel(entry.primaryMuscle))
-                    if !entry.secondaryMuscles.isEmpty {
-                        detailRow(s.exerciseDetailSecondary, s.muscleListLabel(entry.secondaryMuscles))
-                    }
-                    detailRow(s.exerciseDetailEquipment, s.equipmentLabel(entry.equipment))
-                    VStack(alignment: .leading, spacing: 6) {
-                        // 换动作意图：标题换成选择提示，替代项升级为可点采纳行（选中即写，撤销兜底，无二次确认）。
-                        Overline(text: target.swapIntent ? s.swapPickerHint : s.exerciseDetailAlternatives)
-                        let alts = alternatives(for: entry)
-                        if alts.isEmpty {
-                            Text(s.exerciseDetailNoAlternatives)
-                                .font(.redeBody).foregroundStyle(Color.redeT3)
-                        } else if target.swapIntent {
-                            ForEach(alts, id: \.self) { altId in
-                                Button {
-                                    // root-collapse：若当前动作本身是某动作的（永久或临时）替代，覆盖写在**根 originalId** 上，
-                                    // 不建 B→C 链（避免 key 语义错位；撤销也回到根，审查 MINOR）。
-                                    let rootOriginal = swapOriginalId(for: exerciseId) ?? oneTimeOriginalId(for: exerciseId) ?? exerciseId
-                                    // FR-TR6：先弹「只换这次 / 以后都换」二选一（见 .confirmationDialog），选完才写。
-                                    pendingSwap = PendingSwap(
-                                        rootOriginal: rootOriginal, altId: altId,
-                                        altName: localeStore.exerciseName(altId), fromExerciseId: exerciseId
-                                    )
-                                } label: {
-                                    HStack {
-                                        Text(localeStore.exerciseName(altId))
-                                            .font(.redeBody).foregroundStyle(Color.redeT1)
-                                        Spacer()
-                                        Image(systemName: "arrow.left.arrow.right")
-                                            .font(.redeCaption).foregroundStyle(Color.redeEmber2)
-                                    }
-                                    .frame(minHeight: RedeShape.controlHeight)
-                                    .contentShape(Rectangle())
-                                }
-                                .buttonStyle(.redePressableRow)
-                                .disabled(sessionStore.isSaving)
-                            }
-                        } else {
-                            ForEach(alts, id: \.self) { altId in
-                                Text(localeStore.exerciseName(altId))
-                                    .font(.redeBody).foregroundStyle(Color.redeT2)
-                            }
-                        }
-                    }
-
-                    // FR-EX2 循证依据（真实可核验来源；缺则不显示）——置底作引用脚注，可点开真实出处。
-                    if let tag = entry.evidenceTag, !tag.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Overline(text: s.exerciseDetailEvidence)
-                            Text(tag).font(.redeCaption).foregroundStyle(Color.redeT3)
-                                .fixedSize(horizontal: false, vertical: true)
-                            // URL 失败（理论不达，来源已核验 https）则优雅降级：只显引用文本、无链接（graceful degradation）。
-                            if let urlString = entry.evidenceUrl, let url = URL(string: urlString) {
-                                Link(s.exerciseDetailViewSource, destination: url)
-                                    .font(.redeCaption).foregroundStyle(Color.redeEmber2)
-                                    .accessibilityLabel(s.exerciseDetailViewSource + "：" + tag) // VoiceOver 带来源上下文
-                            }
+                    } else {
+                        ForEach(alts, id: \.self) { altId in
+                            Text(localeStore.exerciseName(altId))
+                                .font(.redeBody).foregroundStyle(Color.redeT2)
                         }
                     }
                 }
             }
-            .padding(RedeSpace.page)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        // 整面板公理：sheet = 掀开的 base 锻面（同历史明细 sheet 口径）。
-        .presentationBackground(Color.redeBase)
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
         // FR-TR6：点替代项后弹「只换这次 / 以后都换」品牌面板（替代原生 confirmationDialog），选完才写。
         // 嵌在动作详情 sheet 之上（保留动作上下文，同原 action sheet 浮于其上的口径）。
         .sheet(item: $pendingSwap) { swap in
@@ -1224,26 +1157,6 @@ struct TodayTabView: View {
                 cancelLabel: s.commonCancel,
                 onCancel: { pendingSwap = nil }
             )
-        }
-    }
-
-    private func detailRow(_ label: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Overline(text: label)
-            Text(value).font(.redeBody).foregroundStyle(Color.redeT1)
-        }
-    }
-
-    // FR-EX2 退阶/进阶行：行内小标签（退阶/进阶）+ 双语 prose。
-    private func scalingRow(_ label: String, _ text: String) -> some View {
-        HStack(alignment: .top, spacing: 7) {
-            Text(label)
-                .font(.redeCaption).foregroundStyle(Color.redeT3)
-                .lineLimit(1)
-                .frame(minWidth: 30, alignment: .leading)
-            Text(text)
-                .font(.redeBody).foregroundStyle(Color.redeT2)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

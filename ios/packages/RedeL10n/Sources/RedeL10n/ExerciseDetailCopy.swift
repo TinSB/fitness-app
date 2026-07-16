@@ -38,6 +38,17 @@ extension RedeStrings {
         locale == .zh ? "查看动作详情" : "View exercise details"
     }
 
+    // MARK: - 动作库浏览器（K2 2026-07-16：165 条目录首个浏览入口，计划页）
+
+    /// 浏览页标题。
+    public var exerciseLibraryTitle: String { locale == .zh ? "动作库" : "Exercise library" }
+    /// 计划页入口行："动作库 · 165 个动作"（计数 = 目录在架条目，动态取真值不硬编码）。
+    public func exerciseLibraryEntry(_ count: Int) -> String {
+        locale == .zh
+            ? "动作库 · \(count) 个动作"
+            : (count == 1 ? "Exercise library · 1 exercise" : "Exercise library · \(count) exercises")
+    }
+
     // MARK: - 码 → 双语标签
 
     public func movementPatternLabel(_ code: String) -> String { detailLabel(code, Self.patternLabels) }

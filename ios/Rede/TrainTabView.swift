@@ -61,6 +61,10 @@ struct TrainTabView: View {
     /// 休息日「下一场」投影。只读派生、后台加载；缺数据 → 对应行不渲染（不编数据）。
     @State private var standbyLast: StandbyLast?
     @State private var standbyNext: PlanDayProjection?
+    /// K2c：训练中点当前动作名打开的只读详情（共享 ExerciseDetailSheet；非浏览、无换动作）。
+    @State private var trainDetail: ExerciseDetailItem?
+    /// 截图钩子 -autoOpenTrainExerciseDetail 只自动开一次（防换动作后重弹）。
+    @State private var didAutoOpenTrainDetail = false
 
     private var s: RedeStrings { localeStore.strings }
 
@@ -114,6 +118,18 @@ struct TrainTabView: View {
         .task(id: restTaskKey) { await runRestTimer() }
         // K1 待机数据：仅无会话时加载（进训练/收尾时 id 翻转自动重载或跳过）。
         .task(id: flow == nil) { await loadStandbyFacts() }
+        // K2c 截图钩子：-autoOpenTrainExerciseDetail 训练中自动打开当前动作详情（simctl 无法点击 UI）。
+        .task(id: flow?.currentExercise?.exerciseId) {
+            if CommandLine.arguments.contains("-autoOpenTrainExerciseDetail"), !didAutoOpenTrainDetail,
+               let id = flow?.currentExercise?.exerciseId {
+                didAutoOpenTrainDetail = true
+                trainDetail = ExerciseDetailItem(id: id)
+            }
+        }
+        // K2c：训练中当前动作的只读详情（共享件；换动作仍走「更多 → 换个动作」流）。
+        .sheet(item: $trainDetail) { item in
+            ExerciseDetailSheet(exerciseId: item.id)
+        }
         .sheet(isPresented: $showMoreSheet) { moreSheet }
         .sheet(isPresented: $showSwapSheet) { swapSheet }
         .sheet(isPresented: confirmBinding) { confirmSheet }
@@ -196,9 +212,25 @@ struct TrainTabView: View {
         let exercise = flow.currentExercise
         let recommendation = flow.currentRecommendation
         return VStack(alignment: .leading, spacing: 0) {
-            Text(exercise.map { localeStore.exerciseName($0.exerciseId) } ?? "")
-                .font(.redeSubhead)
-                .foregroundStyle(Color.redeT2)
+            // K2c：动作名可点开只读详情（技术要点/安全注意首次接进训练时刻）。
+            // 独立小按钮、命中区限于名字行——与下方快改/完成组的手势完全分离。
+            Button(action: {
+                if let id = exercise?.exerciseId { trainDetail = ExerciseDetailItem(id: id) }
+            }) {
+                HStack(spacing: 6) {
+                    Text(exercise.map { localeStore.exerciseName($0.exerciseId) } ?? "")
+                        .font(.redeSubhead)
+                        .foregroundStyle(Color.redeT2)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(Color.redeT4)
+                        .accessibilityHidden(true) // 装饰性 affordance；行 Button 已承载动作
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.redePressableRow)
+            .accessibilityHint(s.exerciseDetailHint)
+            .disabled(exercise == nil)
 
             Button(action: { startAdjust(targetKg: targetKg, recommendation: recommendation) }) {
                 let staging = showAdjust || hasAdjustment

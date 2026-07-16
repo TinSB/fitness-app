@@ -75,4 +75,13 @@ final class ExerciseDetailCopyTests: XCTestCase {
             XCTAssertNotEqual(zhText, enText, "中英标题相同（疑似漏译）: \(zhText)")
         }
     }
+
+    // K2 动作库（2026-07-16）：标题 + 计划页入口行（中西混排空格、zh 无句号、en 单复数分流）。
+    func testExerciseLibraryStrings() {
+        XCTAssertEqual(zh.exerciseLibraryTitle, "动作库")
+        XCTAssertEqual(en.exerciseLibraryTitle, "Exercise library")
+        XCTAssertEqual(zh.exerciseLibraryEntry(165), "动作库 · 165 个动作")
+        XCTAssertEqual(en.exerciseLibraryEntry(165), "Exercise library · 165 exercises")
+        XCTAssertEqual(en.exerciseLibraryEntry(1), "Exercise library · 1 exercise")
+    }
 }
