@@ -33,6 +33,10 @@ struct SettingsSheet: View {
     @State private var isNotifBusy = false
     @State private var health = HealthModel()  // FR-PR8：Apple 健康只读体重展示
     @State private var healthBusy = false
+    /// K7 数据导出（FR-SE6 兑现）：读 canonical 成功 → share sheet；失败 → 如实 alert。
+    @State private var exportItem: ExportFile?
+    @State private var exportBusy = false
+    @State private var exportFailed = false
     /// 行内单题编辑（方向 A 拍板 2026-06-10：改哪题进哪题，退役整流重跑）。
     @State private var editing: PlateQuestion?
     /// 最近一次保存的变更收据（铭牌下方替换提示行）。
@@ -78,23 +82,39 @@ struct SettingsSheet: View {
                     .padding(.horizontal, RedeSpace.page)
                     .padding(.top, 10)
             }
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    preferenceRows
-                    EngraveDivider().padding(.top, RedeSpace.section)
-                    periodizationSection
-                    EngraveDivider().padding(.top, RedeSpace.section)
-                    notificationsSection
-                    EngraveDivider().padding(.top, RedeSpace.section)
-                    healthSection
-                    EngraveDivider().padding(.top, RedeSpace.section)
-                    backgroundPlate
-                    EngraveDivider().padding(.top, RedeSpace.section)
-                    backplateInfo
-                    feedbackKey
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        preferenceRows
+                        EngraveDivider().padding(.top, RedeSpace.section)
+                        periodizationSection
+                        EngraveDivider().padding(.top, RedeSpace.section)
+                        notificationsSection
+                        EngraveDivider().padding(.top, RedeSpace.section)
+                        healthSection
+                        EngraveDivider().padding(.top, RedeSpace.section)
+                        dataSection
+                            .id("data")   // -settingsScrollTo 锚点
+                        EngraveDivider().padding(.top, RedeSpace.section)
+                        backgroundPlate
+                        EngraveDivider().padding(.top, RedeSpace.section)
+                        backplateInfo
+                        feedbackKey
+                    }
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.bottom, 24)
                 }
-                .padding(.horizontal, RedeSpace.page)
-                .padding(.bottom, 24)
+                .onAppear {
+                    // 截图钩子（沿 -progressScrollTo 先例）：-settingsScrollTo <锚点> 滚到
+                    // 折叠线以下区块（simctl 无法交互滚动时的审计通道）；未知锚点静默忽略。
+                    let args = ProcessInfo.processInfo.arguments
+                    if let idx = args.firstIndex(of: "-settingsScrollTo"), args.indices.contains(idx + 1) {
+                        let anchor = args[idx + 1]
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            proxy.scrollTo(anchor, anchor: .top)
+                        }
+                    }
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -102,6 +122,16 @@ struct SettingsSheet: View {
         .preferredColorScheme(.dark)
         .sensoryFeedback(.selection, trigger: store.unit)
         .sensoryFeedback(.selection, trigger: store.locale)
+        // K7：导出成功 → 系统 share sheet（临时文件由系统 tmp 生命周期回收）。
+        .sheet(item: $exportItem) { item in
+            ExportActivityView(items: [item.url])
+        }
+        // K7：读失败如实提示（dataUnreadable 文案家族），绝不假成功。
+        .alert(s.settingsExportFailedTitle, isPresented: $exportFailed) {
+            Button(s.settingsExportFailedConfirm, role: .cancel) {}
+        } message: {
+            Text(s.settingsExportFailedBody)
+        }
         .task {
             // 审查 MAJOR-2（M5-2）：清掉历史保存错误——本页只显示「设置期间」的写入错误（设置专属字段，隔离于训练 saveErrorText）。
             sessionStore.settingsSaveErrorText = nil
@@ -121,6 +151,8 @@ struct SettingsSheet: View {
                let question = PlateQuestion(rawValue: args[idx + 1]) {
                 editing = question
             }
+            // K7 截图钩子（同上先例）：-autoExportData 打开设置即触发导出（simctl 无法点击 UI）。
+            if args.contains("-autoExportData") { exportData() }
         }
     }
 
@@ -154,6 +186,72 @@ struct SettingsSheet: View {
                 }
                 .buttonStyle(.redePressable)
                 .disabled(healthBusy)
+            }
+        }
+    }
+
+    // MARK: - K7 数据（FR-SE6 兑现）：导出行 + 本机事实陈述（原背板「数据」折叠行上移合并，
+    // 避免同页两个「数据」标题；隐私/关于仍留背板渐进披露）
+
+    private var dataSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Overline(text: s.settingsData).padding(.top, 18)
+            Button {
+                exportData()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeT4)
+                    Text(s.settingsExportAction)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT2)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Color.redeT4)
+                }
+                .frame(minHeight: RedeShape.controlHeight)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.redePressableRow)
+            .disabled(exportBusy)
+            Text(s.settingsExportNote)
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT3)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// K7 导出：canonical `app-data.json` **原样字节**（不重编码、不挑字段——诚实带走全部数据）
+    /// → 系统临时目录落 `rede-export-yyyy-MM-dd.json` → share sheet。全程零写入 canonical；
+    /// 读失败/文件缺失如实 alert，绝不产出空文件假成功。
+    private func exportData() {
+        guard !exportBusy else { return }
+        exportBusy = true
+        Task {
+            defer { exportBusy = false }
+            let url = await Task.detached(priority: .userInitiated) { () -> URL? in
+                let source = TodayModel.canonicalFileURL()
+                guard let data = try? Data(contentsOf: source), !data.isEmpty else { return nil }
+                let formatter = DateFormatter()
+                formatter.locale = Locale(identifier: "en_US_POSIX")
+                formatter.timeZone = .current
+                formatter.dateFormat = "yyyy-MM-dd"
+                let dest = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("rede-export-\(formatter.string(from: Date())).json", isDirectory: false)
+                do {
+                    try? FileManager.default.removeItem(at: dest) // 同日重复导出：覆盖旧临时文件
+                    try data.write(to: dest, options: [.atomic])
+                    return dest
+                } catch {
+                    return nil
+                }
+            }.value
+            if let url {
+                exportItem = ExportFile(url: url)
+            } else {
+                exportFailed = true
             }
         }
     }
@@ -426,7 +524,7 @@ struct SettingsSheet: View {
 
     private var backplateInfo: some View {
         VStack(spacing: 0) {
-            infoRow(id: "data", title: s.settingsData, detail: s.settingsExportNote)
+            // 「数据」行已上移成 dataSection（K7：导出行 + 事实陈述同区，避免双标题）。
             infoRow(id: "privacy", title: s.settingsPrivacy, detail: s.settingsPrivacyNote)
             infoRow(id: "about", title: s.settingsAbout, detail: s.settingsDisclaimer)
         }
@@ -512,6 +610,21 @@ struct SettingsSheet: View {
             ptr.withMemoryRebound(to: CChar.self, capacity: Int(_SYS_NAMELEN)) { String(cString: $0) }
         }
     }
+}
+
+// MARK: - K7 导出载体（.sheet(item:) 驱动 + 系统 share sheet 包装，沿 ShareCardPreviewView 先例）
+
+private struct ExportFile: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
+private struct ExportActivityView: UIViewControllerRepresentable {
+    let items: [Any]
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+    func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
 }
 
 // MARK: - 行内单题编辑（方向 A 拍板 2026-06-10）
