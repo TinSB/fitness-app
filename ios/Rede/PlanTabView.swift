@@ -27,6 +27,12 @@ struct PlanTabView: View {
     @State private var editingDay: PlanEditTarget?
     /// FR-PL7②：是否打开训练日顺序编辑器 sheet。
     @State private var showSequenceEditor = false
+    /// K2：是否打开动作库浏览器 sheet（入口只在计划页——系统逻辑 §7 大型动作浏览禁入 Train）。
+    @State private var showLibrary = false
+    /// K5：各训练日码最近一次完成日期（canonical templateId 直读；无键 = 从未练过不显示）。
+    @State private var lastTrainedByDay: [String: String] = [:]
+    /// K5：累计事实（自首场起 ISO 周跨度 + 去重训练天数；nil = 无历史不渲染）。
+    @State private var tenure: (weeks: Int, days: Int)?
 
     private var s: RedeStrings { localeStore.strings }
 
@@ -48,6 +54,13 @@ struct PlanTabView: View {
                             Text(ctx)
                                 .font(.redeCallout)
                                 .foregroundStyle(Color.redeT3)
+                        }
+                        // K5 累计事实行（cleanView.sessions 去重天数 + 首场日期派生；
+                        // 单位=天——裁定 3；无历史不渲染）。
+                        if let tenure {
+                            Text(s.planTenureLine(weeks: tenure.weeks, days: tenure.days))
+                                .font(.redeCaption).monospacedDigit()
+                                .foregroundStyle(Color.redeT4)
                         }
                     }
                     .padding(.horizontal, RedeSpace.page)
@@ -85,6 +98,9 @@ struct PlanTabView: View {
                         daySequenceEntryRow
                             .padding(.horizontal, RedeSpace.page)
                             .padding(.top, 8)
+                        // K2：动作库入口（同款行式披露语法，非按钮非卡；唯一入口——裁定 1）。
+                        libraryEntryRow
+                            .padding(.horizontal, RedeSpace.page)
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
@@ -151,6 +167,9 @@ struct PlanTabView: View {
                 editingDay = PlanEditTarget(dayCode: args[i + 1])
             } else if args.contains("-autoOpenDaySequenceEditor") {
                 showSequenceEditor = true
+            } else if args.contains("-autoOpenLibrary") {
+                // K2 截图钩子：自动打开动作库浏览器（simctl 无法点击 UI）。
+                showLibrary = true
             }
         }
         // FR-PL6：训练日编辑器（增删换/重排/预览/采纳·恢复默认）；采纳后 reload 刷新排期。
@@ -161,6 +180,29 @@ struct PlanTabView: View {
         .sheet(isPresented: $showSequenceEditor) {
             PlanDaySequenceEditorView(onApplied: { Task { await reload() } })
         }
+        // K2：动作库浏览器（只读目录，无采纳/写入）。
+        .sheet(isPresented: $showLibrary) {
+            ExerciseLibraryView()
+        }
+    }
+
+    /// K2：动作库入口行（「调整训练日顺序」同款开放行语法）。计数 = 目录在架条目。
+    private var libraryEntryRow: some View {
+        let count = ExerciseCatalog.minimal.entries.filter { !$0.deprecated }.count
+        return Button { showLibrary = true } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "list.bullet").font(.redeCaption).foregroundStyle(Color.redeT3)
+                Text(s.exerciseLibraryEntry(count)).font(.redeSubhead).foregroundStyle(Color.redeT1)
+                Spacer()
+                Image(systemName: "chevron.right").font(.redeCaption).foregroundStyle(Color.redeT4)
+                    .accessibilityHidden(true)   // 装饰性 affordance（审查 NIT，与同屏行拉平）
+            }
+            .frame(minHeight: RedeShape.controlHeight)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.redePressableRow)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint(s.exerciseLibraryHint)
     }
 
     /// 一次后台读、同步一起赋值（审查 MINOR-1）：避免分批到达时闪占位。
@@ -168,12 +210,15 @@ struct PlanTabView: View {
     private func reload() async {
         let loaded = await Task.detached {
             (SessionStore.loadTemplateFacts(), SessionStore.loadCycleState(),
-             SessionStore.loadPlanProjection(), SessionStore.loadPlanAdjustmentState())
+             SessionStore.loadPlanProjection(), SessionStore.loadPlanAdjustmentState(),
+             SessionStore.loadDayLastTrainedDates(), SessionStore.loadTrainingTenure())
         }.value
         template = loaded.0
         cycle = loaded.1
         projection = loaded.2
         adjustment = loaded.3
+        lastTrainedByDay = loaded.4
+        tenure = loaded.5
     }
 
     /// 背景 · 器械（真数据，引导选项标题）；缺则 nil。
@@ -372,9 +417,18 @@ struct PlanTabView: View {
                         .font(.redeSubhead)
                         .foregroundStyle(Color.redeT1)
                     Spacer()
-                    Text(s.planDayExercises(day.exerciseCount))
-                        .font(.redeCaption).monospacedDigit()
-                        .foregroundStyle(Color.redeT4)
+                    // K5「上次」列：该日型最近一次完成日期（canonical templateId 直读；
+                    // 从未练过不显示——不编数据）。
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(s.planDayExercises(day.exerciseCount))
+                            .font(.redeCaption).monospacedDigit()
+                            .foregroundStyle(Color.redeT4)
+                        if let last = lastTrainedByDay[day.dayCode] {
+                            Text(s.planDayLastTrained(dateText: s.shortDate(fromISO: last)))
+                                .font(.redeCaption).monospacedDigit()
+                                .foregroundStyle(Color.redeT4)
+                        }
+                    }
                     Image(systemName: "chevron.right").font(.redeCaption).foregroundStyle(Color.redeT4)
                 }
                 Text(day.patternCodes.map(s.movementPatternLabel).joined(separator: " · "))

@@ -155,6 +155,18 @@ public struct RedeStrings: Sendable {
     public func planDayExercises(_ count: Int) -> String {
         t("\(count) 个动作", count == 1 ? "1 exercise" : "\(count) exercises")
     }
+    /// K5 计划页「上次」列："上次 · 7月12日"（从未练过的日不显示——不编数据）。
+    public func planDayLastTrained(dateText: String) -> String {
+        t("上次 · \(dateText)", "Last · \(dateText)")
+    }
+    /// K5 计划页累计事实行："已练 5 周 · 14 天"（天=去重训练日，单位=天——裁定 3；
+    /// 周=自首场日期起的 ISO 周跨度，含当前周）。
+    public func planTenureLine(weeks: Int, days: Int) -> String {
+        if locale == .zh { return "已练 \(weeks) 周 · \(days) 天" }
+        let w = weeks == 1 ? "1 week" : "\(weeks) weeks"
+        let d = days == 1 ? "1 day" : "\(days) days"
+        return "\(w) in · \(d) trained"
+    }
     /// 周排期下方尾注：排期已按训练进度滚动展示，仅剩调整/回滚待后续（FR-PL3/4）。
     public var planScheduleNote: String {
         // FR-PL3/4 调整建议/回滚已上线（#576–583）——去掉"将在后续版本加入"的腐烂承诺。

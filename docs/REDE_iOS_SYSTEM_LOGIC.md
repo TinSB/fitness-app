@@ -39,7 +39,7 @@ legacy/reference inventory 处置状态(2026-06-09 M1-0 起):
 | Tab | 页面使命 | 新实现规则 |
 |---|---|---|
 | 今日 | 告诉用户今天该不该练、练什么、从哪里开始 | 不做 dashboard；只回答今日决策和入口。 |
-| 训练 | 只承载专注训练 | 没有完整训练页、训练浏览页或训练 dashboard。 |
+| 训练 | 只承载专注训练 | 没有完整训练页、训练浏览页或训练 dashboard。**待机态（未开训，2026-07-16 K1）= 「训练准备」语义**：开始训练直启（与今日页同链 loadToday→startSession）+ 今日处方只读预览 + 上次一场事实行——零图表零分析零浏览入口，不构成 dashboard；§7 禁入清单不变（大型动作浏览仍禁入，动作库入口在计划页）。 |
 | 进展 | 证明训练有没有效果 | 合并历史、PR/e1RM、训练量、日历和数据可信度。 |
 | 计划 | 管未来几周怎么练 | 展示周期、周计划、调整建议和可回滚计划决策。 |
 
@@ -153,7 +153,7 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 **阈值地位**：14 天/21 天/连续 3 天/RIR 0.5/默认 6 是 MVP 起步值,非经验校准结果;由 RedeTrainingDecision 的 goldens 锁定——调阈值 = 调产品行为,必须显式改 golden 留痕,待 TestFlight 真实反馈后校准。
 
-**练完态当日总结（FR-T6，2026-07-05 #652）。** 裁决为 `rest/alreadyTrainedToday`（引擎唯一产出路径 gap==0）时，今日页在两行裁决句下渲染当日总结块：数据从**已落盘**历史派生（`TodayCompletedDigestBuilder`，RedeLocalSnapshot 纯函数）——组数/总量取 snapshot 链（与进展页同口径、可疑组已清洗）、动作数取完成落盘数（与训练小结当场卡的处方数口径有意不同）、训练日码与时长档从 canonical 直读补给（clean 链不带这两项，`SessionStore.loadTodayCompletedFacts` 只读）。分享快照全部经 `SharePrivacyFilter`（结构性缺失继承）；最新场非今天 / record 缺失 → nil 退回两行字；时长缺失不编时长档（训练总结卡不出、PR 卡保留）。视图加载绑 `.task(id: isCompletedToday)` 响应练完态翻转（一次性 .task 会错过「视图不重建、状态翻转」路径，实拍验证留痕）。
+**当日/上一场总结（FR-T6，2026-07-05 #652；K3 推广 2026-07-16）。** 整个无处方分支（练完态 + 休息日 + 回归日）渲染总结块：数据从**已落盘**历史派生（`TodayCompletedDigestBuilder`，RedeLocalSnapshot 纯函数，**「最近一场」语义**——K3 放宽原 today-only 门槛）——组数/总量取 snapshot 链（与进展页同口径、可疑组已清洗）、动作数取完成落盘数、训练日码与时长档从 canonical 直读补给（`SessionStore.loadCompletedFacts(sessionId:)` 只读、按快照 sessionId 直查）。区头按 `digest.dateISO`（**prefix(10) 归一**）分流：今天 =「今天这场」、否则「上一场 · 日期」；分享快照日期 = 场次真实日期（旧场分享卡不再冒充今天）。总结块下接「下一场」预告行（PlanDayProjection，ember，跳计划页）；练完态再接「本周练 N 天 · 合计 X」行（天=分段条同源 weekStatuses、吨位=snapshot 周桶——同屏对账口径）。record 缺失/零历史 → nil 退回裁决句（不编数据）；时长缺失不编时长档。视图加载绑 `.task(id: showsRestBranch)`。
 
 ### 6.0.1 今日处方引擎（TodayPrescription · M2-2 已实现）
 

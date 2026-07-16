@@ -361,10 +361,38 @@ extension RedeStrings {
 
     /// 总结块区头（overline）。
     public var todayDoneSummaryHeader: String { t2("今天这场", "Today's session") }
+    /// 休息日/回归日「上一场」区头（K3 2026-07-16）："上一场 · 7月14日"。
+    public func lastSessionSummaryHeader(dateText: String) -> String {
+        t2("上一场 · \(dateText)", "Last session · \(dateText)")
+    }
     /// 总量标签（overline；数值走 formatVolumeKg 千分位 + 单位）。
     public var todayDoneVolumeLabel: String { t2("总量", "Volume") }
     /// 轻量分享入口（打开分享卡预览；FR-SH3 绝不自动弹出）。
     public var todayDoneShareAction: String { t2("分享这场训练", "Share this workout") }
+
+    // MARK: - 待机仪表（K1 2026-07-16：训练 tab 待机 + 休息日预告，观察式事实行）
+
+    /// 「上次」事实行："上次 · 7月13日　全身 C · 21,300 lb · 14 组"。
+    /// dayName 缺失（旧记录无训练日码）该段整体省略——不编数据。单位=组（真实组数）。
+    public func standbyLastLine(dateText: String, dayName: String?, volumeText: String, setCount: Int) -> String {
+        let sets = locale == .zh ? "\(setCount) 组" : (setCount == 1 ? "1 set" : "\(setCount) sets")
+        let tail = "\(volumeText) \(unitLabel) · \(sets)"
+        if locale == .zh {
+            return dayName.map { "上次 · \(dateText)　\($0) · \(tail)" } ?? "上次 · \(dateText)　\(tail)"
+        }
+        return dayName.map { "Last · \(dateText) · \($0) · \(tail)" } ?? "Last · \(dateText) · \(tail)"
+    }
+
+    /// 「下一场」预告行标签（Overline；内容 = trainingDayName · planDayExercises 组装）。
+    public var nextSessionLabel: String { t2("下一场", "Next session") }
+
+    /// K4 练完态「本周」合计行："本周练 3 天 · 合计 58,400 kg"。天数复用 weekStripCount
+    ///（与状态行分段条同串同单位=天，裁定 3——同屏数字必对账）；吨位整数走 formatVolumeKg。
+    public func weekTotalLine(days: Int, volumeText: String) -> String {
+        locale == .zh
+            ? "\(weekStripCount(days)) · 合计 \(volumeText) \(unitLabel)"
+            : "\(weekStripCount(days)) · \(volumeText) \(unitLabel) total"
+    }
 
     private func t2(_ zh: String, _ en: String) -> String {
         locale == .zh ? zh : en

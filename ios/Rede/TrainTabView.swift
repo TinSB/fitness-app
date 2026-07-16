@@ -57,6 +57,14 @@ struct TrainTabView: View {
     @State private var showSwapSheet = false
     @State private var painToastVisible = false
     @State private var sharePreview: SharePreviewItem?   // FR-SH1：训练总结分享卡预览
+    /// K1 待机仪表（2026-07-16）：最近一场事实（快照链与今日页 loadCompletedDigest 同源）+
+    /// 休息日「下一场」投影。只读派生、后台加载；缺数据 → 对应行不渲染（不编数据）。
+    @State private var standbyLast: StandbyLast?
+    @State private var standbyNext: PlanDayProjection?
+    /// K2c：训练中点当前动作名打开的只读详情（共享 ExerciseDetailSheet；非浏览、无换动作）。
+    @State private var trainDetail: ExerciseDetailItem?
+    /// 截图钩子 -autoOpenTrainExerciseDetail 只自动开一次（防换动作后重弹）。
+    @State private var didAutoOpenTrainDetail = false
 
     private var s: RedeStrings { localeStore.strings }
 
@@ -93,7 +101,7 @@ struct TrainTabView: View {
                             .padding(.top, 12)
                     }
                 } else {
-                    emptyState
+                    standbyState
                         .padding(.horizontal, RedeSpace.page)
                         .padding(.top, 24)
                 }
@@ -108,6 +116,22 @@ struct TrainTabView: View {
         // 会话边界：换场（结束/新开训练）后旧暂存绝不滞留到新会话首组
         .onChange(of: sessionStore.sessionStartedAt) { _, _ in clearAdjustment() }
         .task(id: restTaskKey) { await runRestTimer() }
+        // K1 待机数据：仅无会话时加载（进训练/收尾时 id 翻转自动重载或跳过）。
+        // id 同时敏感 flow 与处方状态（审查 MINOR：练完收尾 loadToday 翻转 prescription
+        // 时自动重跑——否则「下一场」行要等切 tab 重建才出现）
+        .task(id: "\(flow == nil)|\(sessionStore.todayModel?.prescription == nil)") { await loadStandbyFacts() }
+        // K2c 截图钩子：-autoOpenTrainExerciseDetail 训练中自动打开当前动作详情（simctl 无法点击 UI）。
+        .task(id: flow?.currentExercise?.exerciseId) {
+            if CommandLine.arguments.contains("-autoOpenTrainExerciseDetail"), !didAutoOpenTrainDetail,
+               let id = flow?.currentExercise?.exerciseId {
+                didAutoOpenTrainDetail = true
+                trainDetail = ExerciseDetailItem(id: id)
+            }
+        }
+        // K2c：训练中当前动作的只读详情（共享件；换动作仍走「更多 → 换个动作」流）。
+        .sheet(item: $trainDetail) { item in
+            ExerciseDetailSheet(exerciseId: item.id)
+        }
         .sheet(isPresented: $showMoreSheet) { moreSheet }
         .sheet(isPresented: $showSwapSheet) { swapSheet }
         .sheet(isPresented: confirmBinding) { confirmSheet }
@@ -190,9 +214,28 @@ struct TrainTabView: View {
         let exercise = flow.currentExercise
         let recommendation = flow.currentRecommendation
         return VStack(alignment: .leading, spacing: 0) {
-            Text(exercise.map { localeStore.exerciseName($0.exerciseId) } ?? "")
-                .font(.redeSubhead)
-                .foregroundStyle(Color.redeT2)
+            // K2c：动作名可点开只读详情（技术要点/安全注意首次接进训练时刻）。
+            // 命中区 44pt 向上扩进卡顶 padding 死区（§12.4 硬规，审查 MINOR）——
+            // 下缘不扩，与下方快改/完成组的手势仍完全分离。
+            Button(action: {
+                if let id = exercise?.exerciseId { trainDetail = ExerciseDetailItem(id: id) }
+            }) {
+                HStack(spacing: 6) {
+                    Text(exercise.map { localeStore.exerciseName($0.exerciseId) } ?? "")
+                        .font(.redeSubhead)
+                        .foregroundStyle(Color.redeT2)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(Color.redeT4)
+                        .accessibilityHidden(true) // 装饰性 affordance；行 Button 已承载动作
+                }
+                .frame(minHeight: 44, alignment: .bottomLeading)
+                .padding(.top, -24)   // 44pt 命中区向上借卡顶死区，视觉位置不动
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.redePressableRow)
+            .accessibilityHint(s.exerciseDetailHint)
+            .disabled(exercise == nil)
 
             Button(action: { startAdjust(targetKg: targetKg, recommendation: recommendation) }) {
                 let staging = showAdjust || hasAdjustment
@@ -934,17 +977,168 @@ struct TrainTabView: View {
         }
     }
 
+    // MARK: - K1 待机仪表（2026-07-16）：85% 时间的训练 tab 不再是黑屏——
+    // 「训练准备」语义（预览 + 上次回执），不是 dashboard：零图表、零分析、零浏览入口。
+    // 保持 §12.5 空态语法（headline + 主按钮在顶，零新卡）；数据全部只读消费现成投影。
+
+    /// K1 待机「上次」事实行数据（ProgressSnapshot.HistoryEntry 同源投影）。
+    private struct StandbyLast: Equatable {
+        let dateISO: String
+        let dayCode: String?
+        let volumeKg: Double
+        let setCount: Int
+    }
+
+    /// 待机数据加载：今日模型（预览清单——严禁重跑引擎，直接取现成处方投影）+
+    /// 最近一场（与今日页 loadCompletedDigest 同一 snapshot 链）+ 休息日「下一场」投影。
+    private func loadStandbyFacts() async {
+        guard flow == nil else { return }
+        if sessionStore.todayOutcome == nil { await sessionStore.loadToday() }
+        var last: StandbyLast?
+        if case .ready(let pm)? = await ProgressModel.loadOutcomeAsync(),
+           let latest = pm.snapshot.history.first {
+            let sid = latest.sessionId
+            let dayCode = await Task.detached { SessionStore.loadCompletedFacts(sessionId: sid)?.dayCode }.value
+            last = StandbyLast(dateISO: latest.dateISO, dayCode: dayCode,
+                               volumeKg: latest.totalVolumeKg, setCount: latest.setCount)
+        }
+        var next: PlanDayProjection?
+        // 条件与 standbyState 渲染分支同款（审查 NIT：含引擎理论不可达的空清单防御分支）
+        if sessionStore.todayModel != nil,
+           sessionStore.todayModel?.prescription?.exercises.isEmpty ?? true {
+            next = await Task.detached { SessionStore.loadPlanProjection().first?.first }.value
+        }
+        standbyLast = last
+        standbyNext = next
+    }
+
+    @ViewBuilder
+    private var standbyState: some View {
+        if let model = sessionStore.todayModel {
+            if let prescription = model.prescription, !prescription.exercises.isEmpty {
+                trainingStandby(prescription)
+            } else {
+                restStandby(model)
+            }
+        } else {
+            // 未加载 / unreadable：沿用原空态承接（unreadable 的解释归今日页）
+            legacyEmptyState
+        }
+    }
+
+    /// 训练日待机：headline + 「开始训练」直启（裁定 2：loadToday → startSession，
+    /// 与 -autoStartSession 钩子同源路径）+ 「今天这场」预览 + 「上次」事实行。
+    /// 本屏唯一 ember = 开始按钮（裁定 5）；预览/上次全中性色。
+    private func trainingStandby(_ prescription: TodayPrescription) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(s.trainEmptyTitle)
+                .font(.redeHeadline)
+                .tracking(RedeTracking.headline)
+                .foregroundStyle(Color.redeT1)
+            EmbButton(icon: "play.fill", title: s.startTraining, action: {
+                Task { await sessionStore.startSessionLoadingIfNeeded() }
+            })
+            .padding(.top, 16)
+
+            Rectangle().fill(Color.redeHair2).frame(height: 1)
+                .padding(.vertical, RedeSpace.section)
+
+            Overline(text: s.todayDoneSummaryHeader)
+            Text(s.trainingDayName(prescription.dayCode))
+                .font(.redeSubhead)
+                .foregroundStyle(Color.redeT1)
+                .padding(.top, 6)
+            VStack(spacing: 0) {
+                ForEach(Array(prescription.exercises.enumerated()), id: \.offset) { _, ex in
+                    standbyPreviewRow(ex)
+                }
+            }
+            .padding(.top, 2)
+
+            if let last = standbyLast {
+                lastFactLine(last)
+                    .padding(.top, 14)
+            }
+        }
+    }
+
+    /// 休息日待机：裁决一句（如实显示裁决语境，无开始按钮——裁定 2）+ 上次事实行 +
+    /// 「下一场」预告行。本屏零 ember（裁定 5：训练 tab 的 ember 专属开始按钮）。
+    private func restStandby(_ model: TodayModel) -> some View {
+        var gapDays: Int?
+        var consecutiveDays: Int?
+        for signal in model.verdict.signals {
+            if case .daysSinceLastSession(let days) = signal { gapDays = days }
+            if case .consecutiveTrainingDays(let days) = signal { consecutiveDays = days }
+        }
+        return VStack(alignment: .leading, spacing: 14) {
+            Text(s.verdictHeadline(
+                call: model.verdict.call.rawValue,
+                reasonCode: model.verdict.reason.code,
+                dayName: model.prescription.map { s.trainingDayName($0.dayCode) } ?? "",
+                gapDays: gapDays, consecutiveDays: consecutiveDays))
+                .font(.redeHeadline)
+                .tracking(RedeTracking.headline)
+                .lineSpacing(22 * 0.3)
+                .foregroundStyle(Color.redeT1)
+                .fixedSize(horizontal: false, vertical: true)
+            if let last = standbyLast {
+                lastFactLine(last)
+            }
+            if let next = standbyNext {
+                HStack(spacing: 10) {
+                    Overline(text: s.nextSessionLabel)
+                    Text("\(s.trainingDayName(next.dayCode)) · \(s.planDayExercises(next.exerciseCount))")
+                        .font(.redeCallout).monospacedDigit()
+                        .foregroundStyle(Color.redeT2)
+                }
+                .accessibilityElement(children: .combine)
+            }
+        }
+        // 无全宽子视图时 ScrollView 会把 hug 内容居中——待机态恒左对齐（实拍 02 抓获）。
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// 预览行：动作名 + 目标 W×次（中性色；目标经 LoadDisplay 吸附，与今日页 targetSummary 同口径）。
+    /// a11y：整行合成一条读法；XXL 下名称/目标各自换行不挤压。
+    private func standbyPreviewRow(_ ex: ExercisePrescriptionPlan) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(localeStore.exerciseName(ex.exerciseId))
+                .font(.redeBody)
+                .foregroundStyle(Color.redeT2)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 12)
+            Text(s.targetLine(loadType: ex.loadType,
+                              weightKg: LoadDisplay.snap(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s),
+                              reps: ex.targetReps))
+                .font(.redeCallout).monospacedDigit()
+                .foregroundStyle(Color.redeT3)
+        }
+        .padding(.vertical, 9)
+        .overlay(alignment: .bottom) { Rectangle().fill(Color.redeHair2).frame(height: 1) }
+        .accessibilityElement(children: .combine)
+    }
+
+    /// 「上次」事实行：日期 + 训练日名 + 吨位 + 组数（零历史整行不渲染——不编数据）。
+    private func lastFactLine(_ last: StandbyLast) -> some View {
+        Text(s.standbyLastLine(
+            dateText: s.shortDate(fromISO: last.dateISO),
+            dayName: last.dayCode.map(s.trainingDayName),
+            volumeText: s.formatVolumeKg(last.volumeKg),
+            setCount: last.setCount))
+            .font(.redeCaption).monospacedDigit()
+            .foregroundStyle(Color.redeT4)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
     // 整面板（2026-06-11）：空态是「道歉」不是「判断」，不配 hero 铭牌——
-    // 开放式直落 base（与 Progress 空态语法统一）
-    private var emptyState: some View {
+    // 开放式直落 base（与 Progress 空态语法统一）。今日未加载/unreadable 时的兜底。
+    private var legacyEmptyState: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(s.trainEmptyTitle)
                 .font(.redeHeadline)
                 .tracking(RedeTracking.headline)
                 .foregroundStyle(Color.redeT1)
-            if sessionStore.todayModel != nil, sessionStore.todayModel?.prescription == nil {
-                Text(s.trainRestDayNote).font(.redeCallout).foregroundStyle(Color.redeT3)
-            }
             EmbButton(icon: "arrow.left", title: s.trainEmptyAction, action: onGoToday)
                 .padding(.top, 4)
         }

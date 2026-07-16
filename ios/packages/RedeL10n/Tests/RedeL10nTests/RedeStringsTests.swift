@@ -136,6 +136,15 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertEqual(en.planDayTypesHeader, "Day types")
     }
 
+    // K5 计划页收尾（2026-07-16）：训练日「上次」列 + 累计事实行（单位=天，裁定 3）。
+    func testPlanLastTrainedAndTenureAnchors() {
+        XCTAssertEqual(zh.planDayLastTrained(dateText: "7月12日"), "上次 · 7月12日")
+        XCTAssertEqual(en.planDayLastTrained(dateText: "Jul 12"), "Last · Jul 12")
+        XCTAssertEqual(zh.planTenureLine(weeks: 5, days: 14), "已练 5 周 · 14 天")
+        XCTAssertEqual(en.planTenureLine(weeks: 5, days: 14), "5 weeks in · 14 days trained")
+        XCTAssertEqual(en.planTenureLine(weeks: 1, days: 1), "1 week in · 1 day trained")
+    }
+
     func testZhEnDifferWhereExpected() {
         // 抽样:双语不是同一份表(允许 lb/RIR 等术语两边一致)
         XCTAssertNotEqual(zh.todayVerdict, en.todayVerdict)

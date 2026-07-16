@@ -11,6 +11,8 @@ struct TodayTabView: View {
     let onStartTraining: () -> Void
     /// FR-T5 修数据卡「去核对」：跳到进展页数据质量区（跨 tab；由 RootTabView 切 selection）。
     var onReviewData: () -> Void = {}
+    /// K3「下一场」预告行：跳计划页（跨 tab；由 RootTabView 切 selection）。
+    var onGoPlan: () -> Void = {}
 
     @Environment(LocaleStore.self) private var localeStore
     @Environment(SessionStore.self) private var sessionStore
@@ -34,10 +36,16 @@ struct TodayTabView: View {
     /// 触感脉冲（采纳/撤销=成功确认，暂不/展开折叠=轻选择）：成功分支自增触发 .sensoryFeedback。
     @State private var commitPulse = 0
     @State private var selectPulse = 0
-    /// T1 练完态当日总结（rest/alreadyTrainedToday 时从已落盘历史派生；nil = 数据缺退回两行字）。
+    /// T1/K3 最近一场总结（无处方分支从已落盘历史派生；nil = 数据缺退回原状）。
+    /// K3（2026-07-16）放宽 today-only：休息日/停练回归日显「上一场」，练完态仍显「今天这场」。
     @State private var completedDigest: TodayCompletedDigest?
     /// N3b：近 5 场（含当场）总体量，旧→新——总结卡吨位行小折线用；<2 场不渲染（单点无意义）。
     @State private var recentVolumes: [CGFloat] = []
+    /// K3「下一场」预告（PlanDayProjection 现成投影；nil = 无排期不渲染）。
+    @State private var nextSession: PlanDayProjection?
+    /// K4 练完态「本周」合计吨位（snapshot.weeklyVolume 当前 ISO 周桶——与总结卡总量
+    /// 同一 snapshot 口径，同屏数字必对账；nil = 本周无桶/未加载不渲染）。
+    @State private var weekVolumeKg: Double?
     /// T1 练完态分享入口打开的预览（复用训练小结同款载体与预览视图）。
     @State private var sharePreview: SharePreviewItem?
 
@@ -138,13 +146,15 @@ struct TodayTabView: View {
         .sheet(item: $sharePreview) { item in
             ShareCardPreviewView(snapshots: item.snapshots)
         }
-        // T1：练完态出现（含视图挂着时训练在后台钩子/别处完成的 false→true 翻转）即派生总结；
-        // 离开练完态清空。绑 id 而非一次性 .task——一次性版本会错过「视图不重建、状态翻转」路径
+        // T1/K3：无处方分支出现（练完态翻转 / 休息日进页）即派生最近一场总结 + 下一场预告；
+        // 离开该分支清空。绑 id 而非一次性 .task——一次性版本会错过「视图不重建、状态翻转」路径
         //（-autoCompleteSession 实拍暴露：完成后 digest 不加载）。
-        .task(id: isCompletedToday) {
-            if isCompletedToday { await loadCompletedDigest() } else {
+        .task(id: showsRestBranch) {
+            if showsRestBranch { await loadCompletedDigest() } else {
                 completedDigest = nil
                 recentVolumes = []
+                nextSession = nil
+                weekVolumeKg = nil
             }
         }
         .sheet(item: $detailTarget) { target in
@@ -372,12 +382,38 @@ struct TodayTabView: View {
                     .padding(.horizontal, RedeSpace.page)
                     .padding(.top, 18)
 
-                // T1 练完态当日总结（FR-SH3 完成后轻量入口延续到今日页）：只在
-                // 「今天已练完」态显示（其他 rest 态无当天场）；数据缺失退回上面两行字。
+                // T1/K3 最近一场总结（FR-SH3 完成后轻量入口延续到今日页）：练完态显
+                // 「今天这场」、休息日/停练回归日显「上一场 · 日期」；零历史/数据缺失
+                // 退回上面单句（新用户首练引导已有，不编数据）。
                 if let digest = completedDigest {
                     completedSummaryBlock(digest)
                         .padding(.horizontal, RedeSpace.page)
                         .padding(.top, 24)
+                }
+
+                // K3「下一场」预告行（本分支唯一 ember 下一步——裁定 5）；点击跳计划页。
+                if let next = nextSession {
+                    nextSessionRow(next)
+                        .padding(.horizontal, RedeSpace.page)
+                        .padding(.top, completedDigest == nil ? 24 : 14)
+                }
+
+                // K4 练完态「本周」合计行（仅今天有场时——休息日无当日增量，不重复周口径）：
+                // 天数 = 分段条同源 weekStatuses（严格对账），吨位 = snapshot 周桶（与总结卡同口径）。
+                if completedDigest?.dateISO == Self.isoDay(model?.now ?? Date()),
+                   let weekVolumeKg, let statuses = weekStatuses {
+                    VStack(spacing: 0) {
+                        Rectangle().fill(Color.redeHair2).frame(height: 1)
+                            .padding(.bottom, 10)
+                        Text(s.weekTotalLine(
+                            days: statuses.filter { $0 == .trained }.count,
+                            volumeText: s.formatVolumeKg(weekVolumeKg)))
+                            .font(.redeCaption).monospacedDigit()
+                            .foregroundStyle(Color.redeT3)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.top, 14)
                 }
             }
         }
@@ -683,29 +719,36 @@ struct TodayTabView: View {
             .foregroundStyle(Color.redeT4)
     }
 
-    // MARK: - T1 练完态当日总结
+    // MARK: - T1/K3 最近一场总结（练完态 = 今天这场；休息日/回归日 = 上一场）
 
-    /// 练完态判定：与裁决文案 case ("rest","alreadyTrainedToday") 同源（其他 rest 态无当天场）。
-    private var isCompletedToday: Bool {
-        callCode == "rest" && reasonCode == "alreadyTrainedToday"
+    /// 无处方分支判定（restBlock 可见）：digest/下一场的加载触发与渲染共用此口径。
+    /// unreadable → model nil → false（unreadableBlock 独占，不掺总结）。
+    private var showsRestBranch: Bool {
+        model != nil && (model?.prescription?.exercises.isEmpty ?? true)
     }
 
-    /// 从已落盘历史派生总结（snapshot 链与进度页同口径；dayCode/时长从 canonical 补）。
-    /// 任何一环缺失 → digest nil，页面保持原两行字（诚实兜底、不编数据）。
+    /// 从已落盘历史派生最近一场总结（snapshot 链与进度页同口径；dayCode/时长按 sessionId
+    /// 从 canonical 补）+ 「下一场」投影。任何一环缺失 → 对应块不渲染（诚实兜底、不编数据）。
     private func loadCompletedDigest() async {
-        guard isCompletedToday else { return }
+        guard showsRestBranch else { return }
+        // 下一场（现成只读投影；练完态含今日场 → 轮转已推进到下一日，与计划页排期同源）
+        nextSession = await Task.detached { SessionStore.loadPlanProjection().first?.first }.value
         let outcome = await ProgressModel.loadOutcomeAsync()
         guard case let .ready(pm) = outcome, let latest = pm.snapshot.history.first else { return }
         // N3b：同一 snapshot 顺手带出近 5 场总体量（history[0]=最新 → 反转成旧→新），不二次 IO。
         recentVolumes = pm.snapshot.history.prefix(5).reversed().map { CGFloat($0.totalVolumeKg) }
+        // K4：本周合计取 snapshot.weeklyVolume 当前 ISO 周桶（与总结卡总量同一 snapshot
+        // 口径——同屏「总量」与「本周合计」必对账；周锚 WeekAnchor 与补量卡/分段条同源）。
+        let weekStart = WeekAnchor.isoWeekStart(model?.now ?? Date())
+        weekVolumeKg = pm.snapshot.weeklyVolume.first { $0.weekStartISO == weekStart }?.totalVolumeKg
         let record = pm.statsRecords.first { $0.id == latest.sessionId }
-        let facts = await Task.detached { SessionStore.loadTodayCompletedFacts() }.value
-        let todayISO = Self.isoDay(model?.now ?? Date())
+        let sid = latest.sessionId
+        let facts = await Task.detached { SessionStore.loadCompletedFacts(sessionId: sid) }.value
         // patterns 同训练小结口径（SessionShareSnapshotBuilder）：catalog 查动作模式
         let catalog = ExerciseCatalog.minimal
         let patterns = (record?.exercises ?? []).compactMap { catalog.entry(id: $0.exerciseId)?.movementPattern }
         completedDigest = TodayCompletedDigestBuilder.digest(
-            latest: latest, record: record, todayISO: todayISO,
+            latest: latest, record: record,
             dayCode: facts?.dayCode, durationMinutes: facts?.durationMinutes, patterns: patterns)
     }
 
@@ -720,9 +763,15 @@ struct TodayTabView: View {
     /// 总结块（surface 原语，非 ForgedCard——今日页 0 铭牌现状不动）：
     /// 区头 + 训练日名 → 总量大数字 → 动作·组·时长 meta 行 → 分享入口（有可分享内容时）。
     private func completedSummaryBlock(_ digest: TodayCompletedDigest) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        // K3 区头分流：场次日期 == 今天 → 「今天这场」（练完态语义不变）；
+        // 否则「上一场 · 日期」（休息日/回归日，日期用 s.shortDate——不编成今天）。
+        let isTodaySession = digest.dateISO == Self.isoDay(model?.now ?? Date())
+        return VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Overline(text: s.todayDoneSummaryHeader, color: .redeT3)
+                Overline(text: isTodaySession
+                            ? s.todayDoneSummaryHeader
+                            : s.lastSessionSummaryHeader(dateText: s.shortDate(fromISO: digest.dateISO)),
+                         color: .redeT3)
                 if digest.prCount > 0 {
                     Text(s.shareCardPRBadge)
                         .font(.redeOverline).tracking(RedeTracking.overline)
@@ -777,6 +826,29 @@ struct TodayTabView: View {
         .padding(RedeSpace.card)
         .background(RoundedRectangle(cornerRadius: RedeShape.cardRadius).fill(Color.redeSurface))
         .overlay(RoundedRectangle(cornerRadius: RedeShape.cardRadius).stroke(Color.redeHair, lineWidth: 1))
+        .accessibilityElement(children: .combine)
+    }
+
+    /// K3「下一场」预告行：ember 竖标 + 训练日名 · 动作数 + chevron，点击跳计划页。
+    /// 数据 = PlanDayProjection（与计划页排期同源投影，永不分叉）。
+    private func nextSessionRow(_ day: PlanDayProjection) -> some View {
+        Button(action: onGoPlan) {
+            HStack(spacing: 10) {
+                Rectangle().fill(Color.redeEmber).frame(width: 3, height: 14)
+                Overline(text: s.nextSessionLabel, color: .redeT3)
+                Text("\(s.trainingDayName(day.dayCode)) · \(s.planDayExercises(day.exerciseCount))")
+                    .font(.redeCallout).monospacedDigit()
+                    .foregroundStyle(Color.redeT1)
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT4)
+                    .accessibilityHidden(true) // 装饰性 affordance；行 Button 已承载动作
+            }
+            .frame(minHeight: RedeShape.controlHeight)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.redePressableRow)
         .accessibilityElement(children: .combine)
     }
 
@@ -1076,6 +1148,8 @@ struct TodayTabView: View {
         }
     }
 
+    // K2（2026-07-16）：信息主体抽到共享 ExerciseDetailSheet（动作库/训练中复用）；
+    // 今日页专属的「换回原动作」CTA 与替代动作区经注入槽保留在此——行为逐字节不变。
     private func exerciseDetailSheet(_ target: ExerciseDetailTarget) -> some View {
         let exerciseId = target.id
         let entry = ExerciseCatalog.minimal.entry(id: exerciseId)
@@ -1083,132 +1157,63 @@ struct TodayTabView: View {
         // 永久替代走 removeExerciseSubstitution；FR-TR6 今天临时替代走 removeOneTimeSubstitution（文案标明明天自动恢复）。
         let revertOriginalId = swapOriginalId(for: exerciseId)
         let oneTimeRevertOriginalId = oneTimeOriginalId(for: exerciseId)
-        return ScrollView {
-            VStack(alignment: .leading, spacing: RedeSpace.section) {
-                Text(localeStore.exerciseName(exerciseId))
-                    .font(.redeHeadline)
-                    .tracking(RedeTracking.headline)
-                    .foregroundStyle(Color.redeT1)
-
-                if let originalId = revertOriginalId {
-                    adoptCTA(s.swapRevertHint(originalName: localeStore.exerciseName(originalId))) {
-                        Task {
-                            if await sessionStore.removeExerciseSubstitution(originalId: originalId) { detailTarget = nil }
-                        }
-                    }
-                } else if let originalId = oneTimeRevertOriginalId {
-                    adoptCTA(s.swapOnceRevertHint(originalName: localeStore.exerciseName(originalId))) {
-                        Task {
-                            if await sessionStore.removeOneTimeSubstitution(originalId: originalId) { detailTarget = nil }
-                        }
+        return ExerciseDetailSheet(exerciseId: exerciseId) {
+            if let originalId = revertOriginalId {
+                adoptCTA(s.swapRevertHint(originalName: localeStore.exerciseName(originalId))) {
+                    Task {
+                        if await sessionStore.removeExerciseSubstitution(originalId: originalId) { detailTarget = nil }
                     }
                 }
-
-                if let entry {
-                    // FR-EX2 技术要点（双语自由 prose；缺则不显示）——放元数据前，最有用内容优先。
-                    if let cues = (s.locale == .zh ? entry.techniqueCuesZh : entry.techniqueCuesEn), !cues.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Overline(text: s.exerciseDetailTechnique)
-                            ForEach(Array(cues.enumerated()), id: \.offset) { _, cue in
-                                HStack(alignment: .top, spacing: 7) {
-                                    Text("·").font(.redeBody).foregroundStyle(Color.redeT3)
-                                    Text(cue).font(.redeBody).foregroundStyle(Color.redeT2)
-                                        .fixedSize(horizontal: false, vertical: true)
+            } else if let originalId = oneTimeRevertOriginalId {
+                adoptCTA(s.swapOnceRevertHint(originalName: localeStore.exerciseName(originalId))) {
+                    Task {
+                        if await sessionStore.removeOneTimeSubstitution(originalId: originalId) { detailTarget = nil }
+                    }
+                }
+            }
+        } alternativesSection: {
+            if let entry {
+                VStack(alignment: .leading, spacing: 6) {
+                    // 换动作意图：标题换成选择提示，替代项升级为可点采纳行（选中即写，撤销兜底，无二次确认）。
+                    Overline(text: target.swapIntent ? s.swapPickerHint : s.exerciseDetailAlternatives)
+                    let alts = alternatives(for: entry)
+                    if alts.isEmpty {
+                        Text(s.exerciseDetailNoAlternatives)
+                            .font(.redeBody).foregroundStyle(Color.redeT3)
+                    } else if target.swapIntent {
+                        ForEach(alts, id: \.self) { altId in
+                            Button {
+                                // root-collapse：若当前动作本身是某动作的（永久或临时）替代，覆盖写在**根 originalId** 上，
+                                // 不建 B→C 链（避免 key 语义错位；撤销也回到根，审查 MINOR）。
+                                let rootOriginal = swapOriginalId(for: exerciseId) ?? oneTimeOriginalId(for: exerciseId) ?? exerciseId
+                                // FR-TR6：先弹「只换这次 / 以后都换」二选一（见 .confirmationDialog），选完才写。
+                                pendingSwap = PendingSwap(
+                                    rootOriginal: rootOriginal, altId: altId,
+                                    altName: localeStore.exerciseName(altId), fromExerciseId: exerciseId
+                                )
+                            } label: {
+                                HStack {
+                                    Text(localeStore.exerciseName(altId))
+                                        .font(.redeBody).foregroundStyle(Color.redeT1)
+                                    Spacer()
+                                    Image(systemName: "arrow.left.arrow.right")
+                                        .font(.redeCaption).foregroundStyle(Color.redeEmber2)
                                 }
+                                .frame(minHeight: RedeShape.controlHeight)
+                                .contentShape(Rectangle())
                             }
+                            .buttonStyle(.redePressableRow)
+                            .disabled(sessionStore.isSaving)
                         }
-                    }
-
-                    // FR-EX2 调整难度（退阶/进阶；任一缺则不显示该行，零回归）——紧接技术要点，最有用的「怎么调」。
-                    let regression = s.locale == .zh ? entry.regressionZh : entry.regressionEn
-                    let progression = s.locale == .zh ? entry.progressionZh : entry.progressionEn
-                    if regression?.isEmpty == false || progression?.isEmpty == false {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Overline(text: s.exerciseDetailScaling)
-                            if let r = regression, !r.isEmpty { scalingRow(s.exerciseDetailRegression, r) }
-                            if let p = progression, !p.isEmpty { scalingRow(s.exerciseDetailProgression, p) }
-                        }
-                    }
-
-                    // FR-EX2 注意事项（保守安全提示；§7.1 fitness≠medical，中性呈现不施压；缺则不显示）。
-                    if let safety = (s.locale == .zh ? entry.safetyNoteZh : entry.safetyNoteEn), !safety.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Overline(text: s.exerciseDetailSafety)
-                            Text(safety).font(.redeBody).foregroundStyle(Color.redeT2)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
-
-                    detailRow(s.exerciseDetailType, s.exerciseKindLabel(entry.kind))
-                    detailRow(s.exerciseDetailPattern, s.movementPatternLabel(entry.movementPattern))
-                    detailRow(s.exerciseDetailPrimary, s.muscleLabel(entry.primaryMuscle))
-                    if !entry.secondaryMuscles.isEmpty {
-                        detailRow(s.exerciseDetailSecondary, s.muscleListLabel(entry.secondaryMuscles))
-                    }
-                    detailRow(s.exerciseDetailEquipment, s.equipmentLabel(entry.equipment))
-                    VStack(alignment: .leading, spacing: 6) {
-                        // 换动作意图：标题换成选择提示，替代项升级为可点采纳行（选中即写，撤销兜底，无二次确认）。
-                        Overline(text: target.swapIntent ? s.swapPickerHint : s.exerciseDetailAlternatives)
-                        let alts = alternatives(for: entry)
-                        if alts.isEmpty {
-                            Text(s.exerciseDetailNoAlternatives)
-                                .font(.redeBody).foregroundStyle(Color.redeT3)
-                        } else if target.swapIntent {
-                            ForEach(alts, id: \.self) { altId in
-                                Button {
-                                    // root-collapse：若当前动作本身是某动作的（永久或临时）替代，覆盖写在**根 originalId** 上，
-                                    // 不建 B→C 链（避免 key 语义错位；撤销也回到根，审查 MINOR）。
-                                    let rootOriginal = swapOriginalId(for: exerciseId) ?? oneTimeOriginalId(for: exerciseId) ?? exerciseId
-                                    // FR-TR6：先弹「只换这次 / 以后都换」二选一（见 .confirmationDialog），选完才写。
-                                    pendingSwap = PendingSwap(
-                                        rootOriginal: rootOriginal, altId: altId,
-                                        altName: localeStore.exerciseName(altId), fromExerciseId: exerciseId
-                                    )
-                                } label: {
-                                    HStack {
-                                        Text(localeStore.exerciseName(altId))
-                                            .font(.redeBody).foregroundStyle(Color.redeT1)
-                                        Spacer()
-                                        Image(systemName: "arrow.left.arrow.right")
-                                            .font(.redeCaption).foregroundStyle(Color.redeEmber2)
-                                    }
-                                    .frame(minHeight: RedeShape.controlHeight)
-                                    .contentShape(Rectangle())
-                                }
-                                .buttonStyle(.redePressableRow)
-                                .disabled(sessionStore.isSaving)
-                            }
-                        } else {
-                            ForEach(alts, id: \.self) { altId in
-                                Text(localeStore.exerciseName(altId))
-                                    .font(.redeBody).foregroundStyle(Color.redeT2)
-                            }
-                        }
-                    }
-
-                    // FR-EX2 循证依据（真实可核验来源；缺则不显示）——置底作引用脚注，可点开真实出处。
-                    if let tag = entry.evidenceTag, !tag.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Overline(text: s.exerciseDetailEvidence)
-                            Text(tag).font(.redeCaption).foregroundStyle(Color.redeT3)
-                                .fixedSize(horizontal: false, vertical: true)
-                            // URL 失败（理论不达，来源已核验 https）则优雅降级：只显引用文本、无链接（graceful degradation）。
-                            if let urlString = entry.evidenceUrl, let url = URL(string: urlString) {
-                                Link(s.exerciseDetailViewSource, destination: url)
-                                    .font(.redeCaption).foregroundStyle(Color.redeEmber2)
-                                    .accessibilityLabel(s.exerciseDetailViewSource + "：" + tag) // VoiceOver 带来源上下文
-                            }
+                    } else {
+                        ForEach(alts, id: \.self) { altId in
+                            Text(localeStore.exerciseName(altId))
+                                .font(.redeBody).foregroundStyle(Color.redeT2)
                         }
                     }
                 }
             }
-            .padding(RedeSpace.page)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        // 整面板公理：sheet = 掀开的 base 锻面（同历史明细 sheet 口径）。
-        .presentationBackground(Color.redeBase)
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
         // FR-TR6：点替代项后弹「只换这次 / 以后都换」品牌面板（替代原生 confirmationDialog），选完才写。
         // 嵌在动作详情 sheet 之上（保留动作上下文，同原 action sheet 浮于其上的口径）。
         .sheet(item: $pendingSwap) { swap in
@@ -1224,26 +1229,6 @@ struct TodayTabView: View {
                 cancelLabel: s.commonCancel,
                 onCancel: { pendingSwap = nil }
             )
-        }
-    }
-
-    private func detailRow(_ label: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Overline(text: label)
-            Text(value).font(.redeBody).foregroundStyle(Color.redeT1)
-        }
-    }
-
-    // FR-EX2 退阶/进阶行：行内小标签（退阶/进阶）+ 双语 prose。
-    private func scalingRow(_ label: String, _ text: String) -> some View {
-        HStack(alignment: .top, spacing: 7) {
-            Text(label)
-                .font(.redeCaption).foregroundStyle(Color.redeT3)
-                .lineLimit(1)
-                .frame(minWidth: 30, alignment: .leading)
-            Text(text)
-                .font(.redeBody).foregroundStyle(Color.redeT2)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
