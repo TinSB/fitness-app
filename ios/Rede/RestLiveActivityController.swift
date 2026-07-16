@@ -42,9 +42,12 @@ final class RestLiveActivityController {
             return
         }
         logger.log("rest-live-activity start endpoint=\(endpoint, privacy: .public)")
+        // 进度起点 = 挂点当下（begin 调用时刻，与休息锚点同拍；恢复路径即恢复时刻）。
+        // 在 enqueue 外捕获——链上排队的延迟不改变锚定语义。
+        let startedAt = Date()
         enqueue { [logger] in
             let content = ActivityContent(
-                state: RestActivityAttributes.ContentState(restEndsAt: endsAt),
+                state: RestActivityAttributes.ContentState(restStartedAt: startedAt, restEndsAt: endsAt),
                 staleDate: endsAt.addingTimeInterval(60)
             )
             let existing = Activity<RestActivityAttributes>.activities
@@ -70,14 +73,19 @@ final class RestLiveActivityController {
     }
 
     /// 结束时刻变更（+30 加时挂点；运行中才调，暂停走 end/begin 对）。无活动时不起新的。
+    /// 保留原 restStartedAt（从 activity.content.state 读回）——进度按新总时长诚实
+    /// 重算回落，不重置不闪（换锚点会让进度环/条跳回全满，假装刚开始休息）。
     func updateEnd(endsAt: Date, endpoint: String) {
         logger.log("rest-live-activity update endpoint=\(endpoint, privacy: .public)")
         enqueue {
-            let content = ActivityContent(
-                state: RestActivityAttributes.ContentState(restEndsAt: endsAt),
-                staleDate: endsAt.addingTimeInterval(60)
-            )
             for activity in Activity<RestActivityAttributes>.activities {
+                let content = ActivityContent(
+                    state: RestActivityAttributes.ContentState(
+                        restStartedAt: activity.content.state.restStartedAt,
+                        restEndsAt: endsAt
+                    ),
+                    staleDate: endsAt.addingTimeInterval(60)
+                )
                 await activity.update(content)
             }
         }
