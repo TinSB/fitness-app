@@ -366,7 +366,4 @@ extension RedeStrings {
     /// 训练 tab 无进行中会话时的空态。
     public var trainEmptyTitle: String { locale == .zh ? "今天还没开始训练" : "No session in progress" }
     public var trainEmptyAction: String { locale == .zh ? "去今日页开始" : "Start from Today" }
-    public var trainRestDayNote: String {
-        locale == .zh ? "今天是休息日" : "Rest day"
-    }
 }

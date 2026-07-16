@@ -106,7 +106,6 @@ final class TrainEngineCopyTests: XCTestCase {
             en.adjustDiscoverHint, zh.adjustDiscoverHint, en.adjustDone, zh.adjustDone,
             zh.painRegistered, en.painRegistered,
             zh.summaryTitle, en.summaryTitle,
-            zh.trainRestDayNote, en.trainRestDayNote,
             zh.adjustOptionLabel("follow"), en.adjustOptionLabel("lighter"),
             zh.adjustPreviewNext(kg: "50"), en.adjustPreviewNext(kg: "50"),
             zh.adjustPreviewNote(reasonCode: "lastSetNearFailure") ?? "",

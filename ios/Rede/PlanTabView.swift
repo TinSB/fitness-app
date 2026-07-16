@@ -195,12 +195,14 @@ struct PlanTabView: View {
                 Text(s.exerciseLibraryEntry(count)).font(.redeSubhead).foregroundStyle(Color.redeT1)
                 Spacer()
                 Image(systemName: "chevron.right").font(.redeCaption).foregroundStyle(Color.redeT4)
+                    .accessibilityHidden(true)   // 装饰性 affordance（审查 NIT，与同屏行拉平）
             }
             .frame(minHeight: RedeShape.controlHeight)
             .contentShape(Rectangle())
         }
         .buttonStyle(.redePressableRow)
         .accessibilityElement(children: .combine)
+        .accessibilityHint(s.exerciseLibraryHint)
     }
 
     /// 一次后台读、同步一起赋值（审查 MINOR-1）：避免分批到达时闪占位。

@@ -48,7 +48,7 @@ public enum TodayCompletedDigestBuilder {
         var snapshots: [ShareSnapshot] = []
         if let durationMinutes {
             snapshots.append(SharePrivacyFilter.workoutSummary(
-                generatedDateISO: latest.dateISO,
+                generatedDateISO: String(latest.dateISO.prefix(10)),
                 dayCode: dayCode,
                 exerciseCount: record.exercises.count,
                 setCount: latest.setCount,
@@ -59,7 +59,7 @@ public enum TodayCompletedDigestBuilder {
         }
         if !latest.prExerciseIds.isEmpty, let top = latest.topSet {
             snapshots.append(SharePrivacyFilter.personalRecord(
-                generatedDateISO: latest.dateISO,
+                generatedDateISO: String(latest.dateISO.prefix(10)),
                 exerciseId: top.exerciseId,
                 weightKg: top.weightKg,
                 reps: top.reps,
@@ -67,8 +67,10 @@ public enum TodayCompletedDigestBuilder {
             ))
         }
 
+        // prefix(10) 归一（审查 MINOR：clean 层合法保留长 ISO 串——区头「今天」判定与
+        // K4 周合计行的等值比较、分享快照日期契约都要求纯 yyyy-MM-dd，裁定 3）
         return TodayCompletedDigest(
-            dateISO: latest.dateISO,
+            dateISO: String(latest.dateISO.prefix(10)),
             dayCode: dayCode,
             exerciseCount: record.exercises.count,
             setCount: latest.setCount,

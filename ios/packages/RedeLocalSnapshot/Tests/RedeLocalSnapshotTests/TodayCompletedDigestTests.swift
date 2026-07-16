@@ -110,4 +110,13 @@ final class TodayCompletedDigestTests: XCTestCase {
             XCTFail("expected personalRecord only")
         }
     }
+
+    func testLongISODateNormalizedToDayPrecision() {
+        // 审查 MINOR 锁：clean 层合法保留长 ISO 串——digest 侧必须归一 yyyy-MM-dd，
+        // 否则区头「今天」判定与 K4 周合计行的等值比较、分享快照日期契约全部失守
+        let digest = TodayCompletedDigestBuilder.digest(
+            latest: entry(dateISO: "2026-07-05T09:30:00Z"), record: record(),
+            dayCode: nil, durationMinutes: nil, patterns: [])
+        XCTAssertEqual(digest?.dateISO, "2026-07-05")
+    }
 }

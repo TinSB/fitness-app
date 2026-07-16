@@ -235,11 +235,24 @@ final class SessionStore {
         var result: [String: String] = [:]
         for session in appData.history where session.completed == true {
             guard let day = session.storage["templateId"]?.asString,
-                  let date = session.date.map({ String($0.prefix(10)) }) else { continue }
+                  let date = session.date.map({ String($0.prefix(10)) }),
+                  // 严格日期校验（审查 MINOR：raw canonical 可含垃圾串，字典序比较会让
+                  // "corrupted-x" 压过一切合法日期直出 UI——非法串跳过，同 clean 层口径）
+                  Self.isStrictDayISO(date) else { continue }
             if let existing = result[day], existing >= date { continue }
             result[day] = date
         }
         return result
+    }
+
+    /// 严格 yyyy-MM-dd 校验（K5 审查 MINOR；与 clean 层 isValidTrainingDate 同口径）。
+    nonisolated private static func isStrictDayISO(_ value: String) -> Bool {
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        fmt.timeZone = TimeZone(identifier: "UTC")
+        fmt.dateFormat = "yyyy-MM-dd"
+        fmt.isLenient = false
+        return value.count == 10 && fmt.date(from: value) != nil
     }
 
     /// K5 计划页累计事实行：去重训练天数（cleanView.sessions，prefix(10) 归一）+

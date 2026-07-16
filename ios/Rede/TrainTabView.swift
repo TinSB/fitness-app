@@ -117,7 +117,9 @@ struct TrainTabView: View {
         .onChange(of: sessionStore.sessionStartedAt) { _, _ in clearAdjustment() }
         .task(id: restTaskKey) { await runRestTimer() }
         // K1 待机数据：仅无会话时加载（进训练/收尾时 id 翻转自动重载或跳过）。
-        .task(id: flow == nil) { await loadStandbyFacts() }
+        // id 同时敏感 flow 与处方状态（审查 MINOR：练完收尾 loadToday 翻转 prescription
+        // 时自动重跑——否则「下一场」行要等切 tab 重建才出现）
+        .task(id: "\(flow == nil)|\(sessionStore.todayModel?.prescription == nil)") { await loadStandbyFacts() }
         // K2c 截图钩子：-autoOpenTrainExerciseDetail 训练中自动打开当前动作详情（simctl 无法点击 UI）。
         .task(id: flow?.currentExercise?.exerciseId) {
             if CommandLine.arguments.contains("-autoOpenTrainExerciseDetail"), !didAutoOpenTrainDetail,
@@ -213,7 +215,8 @@ struct TrainTabView: View {
         let recommendation = flow.currentRecommendation
         return VStack(alignment: .leading, spacing: 0) {
             // K2c：动作名可点开只读详情（技术要点/安全注意首次接进训练时刻）。
-            // 独立小按钮、命中区限于名字行——与下方快改/完成组的手势完全分离。
+            // 命中区 44pt 向上扩进卡顶 padding 死区（§12.4 硬规，审查 MINOR）——
+            // 下缘不扩，与下方快改/完成组的手势仍完全分离。
             Button(action: {
                 if let id = exercise?.exerciseId { trainDetail = ExerciseDetailItem(id: id) }
             }) {
@@ -226,6 +229,8 @@ struct TrainTabView: View {
                         .foregroundStyle(Color.redeT4)
                         .accessibilityHidden(true) // 装饰性 affordance；行 Button 已承载动作
                 }
+                .frame(minHeight: 44, alignment: .bottomLeading)
+                .padding(.top, -24)   // 44pt 命中区向上借卡顶死区，视觉位置不动
                 .contentShape(Rectangle())
             }
             .buttonStyle(.redePressableRow)
@@ -998,7 +1003,9 @@ struct TrainTabView: View {
                                volumeKg: latest.totalVolumeKg, setCount: latest.setCount)
         }
         var next: PlanDayProjection?
-        if sessionStore.todayModel != nil, sessionStore.todayModel?.prescription == nil {
+        // 条件与 standbyState 渲染分支同款（审查 NIT：含引擎理论不可达的空清单防御分支）
+        if sessionStore.todayModel != nil,
+           sessionStore.todayModel?.prescription?.exercises.isEmpty ?? true {
             next = await Task.detached { SessionStore.loadPlanProjection().first?.first }.value
         }
         standbyLast = last

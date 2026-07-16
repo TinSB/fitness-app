@@ -37,6 +37,10 @@ extension RedeStrings {
     public var exerciseDetailHint: String {
         locale == .zh ? "查看动作详情" : "View exercise details"
     }
+    /// 动作库入口 a11y hint（K2 审查 NIT 补齐）。
+    public var exerciseLibraryHint: String {
+        locale == .zh ? "浏览全部动作" : "Browse all exercises"
+    }
 
     // MARK: - 动作库浏览器（K2 2026-07-16：165 条目录首个浏览入口，计划页）
 
