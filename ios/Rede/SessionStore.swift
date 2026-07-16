@@ -231,6 +231,21 @@ final class SessionStore {
         )
     }
 
+    /// 任意已完成场次的 canonical 补充事实（K1 训练 tab 待机「上次」行 / K3 休息日「上一场」）：
+    /// 按 sessionId 直取训练日码与时长（快照链 HistoryEntry.sessionId 同源）。同上只读不经写闸；
+    /// 缺失/不可读 → nil（对应字段不显示——不编数据）。
+    nonisolated static func loadCompletedFacts(sessionId: String) -> TodayCompletedFacts? {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load(),
+              let session = appData.history.last(where: { $0.id == sessionId && $0.completed == true }) else {
+            return nil
+        }
+        return TodayCompletedFacts(
+            dayCode: session.storage["templateId"]?.asString,
+            durationMinutes: session.durationMin.map { Int($0.rounded()) }
+        )
+    }
+
     /// 计划页周期条状态（FR-PL2 S5）：仅周期化开启且有真历史锚点时返回，否则 nil（退诚实占位）。
     /// 走与今日页处方同一 clean pipeline + 同一锚点 → 周期条与处方相位永远一致。
     nonisolated static func loadCycleState(now: Date = Date()) -> MesocycleCycleState? {

@@ -366,6 +366,22 @@ extension RedeStrings {
     /// 轻量分享入口（打开分享卡预览；FR-SH3 绝不自动弹出）。
     public var todayDoneShareAction: String { t2("分享这场训练", "Share this workout") }
 
+    // MARK: - 待机仪表（K1 2026-07-16：训练 tab 待机 + 休息日预告，观察式事实行）
+
+    /// 「上次」事实行："上次 · 7月13日　全身 C · 21,300 lb · 14 组"。
+    /// dayName 缺失（旧记录无训练日码）该段整体省略——不编数据。单位=组（真实组数）。
+    public func standbyLastLine(dateText: String, dayName: String?, volumeText: String, setCount: Int) -> String {
+        let sets = locale == .zh ? "\(setCount) 组" : (setCount == 1 ? "1 set" : "\(setCount) sets")
+        let tail = "\(volumeText) \(unitLabel) · \(sets)"
+        if locale == .zh {
+            return dayName.map { "上次 · \(dateText)　\($0) · \(tail)" } ?? "上次 · \(dateText)　\(tail)"
+        }
+        return dayName.map { "Last · \(dateText) · \($0) · \(tail)" } ?? "Last · \(dateText) · \(tail)"
+    }
+
+    /// 「下一场」预告行标签（Overline；内容 = trainingDayName · planDayExercises 组装）。
+    public var nextSessionLabel: String { t2("下一场", "Next session") }
+
     private func t2(_ zh: String, _ en: String) -> String {
         locale == .zh ? zh : en
     }

@@ -94,6 +94,25 @@ final class TodayEngineCopyTests: XCTestCase {
         XCTAssertEqual(en.changeLine(exerciseName: "Bench press", change: "increase", fromKg: "60", toKg: "62.5"), "Bench press 60→62.5 kg · moving up")
     }
 
+    // K1 待机仪表（2026-07-16）：上次事实行 + 下一场标签——观察式、zh 无句号、中西混排空格。
+    func testStandbyLastLineAnchors() {
+        XCTAssertEqual(
+            zh.standbyLastLine(dateText: "7月13日", dayName: "全身 C", volumeText: "21,300", setCount: 14),
+            "上次 · 7月13日　全身 C · 21,300 kg · 14 组")
+        XCTAssertEqual(
+            en.standbyLastLine(dateText: "Jul 13", dayName: "Full Body C", volumeText: "21,300", setCount: 14),
+            "Last · Jul 13 · Full Body C · 21,300 kg · 14 sets")
+        // dayName 缺失整段省略（不编数据）；en 单数分流
+        XCTAssertEqual(
+            zh.standbyLastLine(dateText: "7月13日", dayName: nil, volumeText: "900", setCount: 3),
+            "上次 · 7月13日　900 kg · 3 组")
+        XCTAssertEqual(
+            en.standbyLastLine(dateText: "Jul 13", dayName: nil, volumeText: "60", setCount: 1),
+            "Last · Jul 13 · 60 kg · 1 set")
+        XCTAssertEqual(zh.nextSessionLabel, "下一场")
+        XCTAssertEqual(en.nextSessionLabel, "Next session")
+    }
+
     // 自重展示（wave-6）：大数字=次数、无「0kg」
     func testBodyweightDisplayShowsRepsNotZeroWeight() {
         XCTAssertEqual(zh.heroNumber(loadType: "bodyweight", weightKg: 0, reps: 12), "12")
