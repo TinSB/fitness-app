@@ -44,6 +44,11 @@ final class RedeStringsTests: XCTestCase {
             ("onbA11yAnswered", s.onbA11yAnswered), ("onbA11yCurrent", s.onbA11yCurrent),
             ("settingsDaysValue", s.settingsDaysValue(4)), ("settingsData", s.settingsData),
             ("settingsExportNote", s.settingsExportNote), ("settingsAbout", s.settingsAbout),
+            // K7 数据导出（FR-SE6 兑现）
+            ("settingsExportAction", s.settingsExportAction),
+            ("settingsExportFailedTitle", s.settingsExportFailedTitle),
+            ("settingsExportFailedBody", s.settingsExportFailedBody),
+            ("settingsExportFailedConfirm", s.settingsExportFailedConfirm),
             ("settingsPrivacy", s.settingsPrivacy), ("settingsPrivacyNote", s.settingsPrivacyNote),
             ("settingsPanelOverline", s.settingsPanelOverline),
             ("settingsDisclaimer", s.settingsDisclaimer), ("settingsFeedback", s.settingsFeedback),
@@ -159,6 +164,19 @@ final class RedeStringsTests: XCTestCase {
         // 兜底句必须把地址原样给出，用户才能手动发送
         XCTAssertTrue(zh.feedbackFallback(address: "x@y.z").contains("x@y.z"))
         XCTAssertTrue(en.feedbackFallback(address: "x@y.z").contains("x@y.z"))
+    }
+
+    func testExportCopyAnchors() {
+        // K7 数据导出（FR-SE6 兑现）：行标题锚句；失败家族沿 dataUnreadable 口径。
+        XCTAssertEqual(zh.settingsExportAction, "导出训练数据")
+        XCTAssertEqual(en.settingsExportAction, "Export training data")
+        XCTAssertEqual(zh.settingsExportFailedTitle, "暂时读不出数据")
+        XCTAssertEqual(en.settingsExportFailedTitle, "Can't read your data right now")
+        // 导出已兑现：说明不得再写「后续版本加入」的腐烂承诺
+        XCTAssertFalse(zh.settingsExportNote.contains("后续版本"), "导出已上线，事实陈述不得再写「后续版本加入」")
+        XCTAssertFalse(en.settingsExportNote.lowercased().contains("later version"))
+        XCTAssertTrue(zh.settingsExportNote.contains("导出"))
+        XCTAssertTrue(en.settingsExportNote.lowercased().contains("export"))
     }
 
     func testPrivacyNoteHonestWording() {

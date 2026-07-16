@@ -394,6 +394,23 @@ extension RedeStrings {
             : "\(weekStripCount(days)) · \(volumeText) \(unitLabel) total"
     }
 
+    /// K8 周一「上周收官」行（2026-07-16）："上周练 3 天 · 合计 12,400 kg · 较前一周 +8%"。
+    /// 观察式零评价（不写「不错/加油」）；单位=天（裁定 3 口径合流）；负号用 −（U+2212）；
+    /// deltaPercent=nil（上上周无数据）只报事实不硬造对比。上周零训练由调用方整行不渲染。
+    public func weekReviewLine(days: Int, volumeText: String, deltaPercent: Int?) -> String {
+        let delta = deltaPercent.map { p in
+            let sign = p < 0 ? "−" : "+"
+            return "\(sign)\(abs(p))%"
+        }
+        if locale == .zh {
+            let base = "上周练 \(days) 天 · 合计 \(volumeText) \(unitLabel)"
+            return delta.map { "\(base) · 较前一周 \($0)" } ?? base
+        }
+        let d = days == 1 ? "1 day last week" : "\(days) days last week"
+        let base = "\(d) · \(volumeText) \(unitLabel) total"
+        return delta.map { "\(base) · \($0) vs the week before" } ?? base
+    }
+
     private func t2(_ zh: String, _ en: String) -> String {
         locale == .zh ? zh : en
     }

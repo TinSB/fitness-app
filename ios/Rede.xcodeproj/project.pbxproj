@@ -45,6 +45,8 @@
 		CC00000000000000000001C1 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000000000000000001C2 /* OnboardingView.swift */; };
 		EE00000000000000000000A4 /* RedeWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000A3 /* RedeWidgetBundle.swift */; };
 		EE00000000000000000000A6 /* ReadinessWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000A5 /* ReadinessWidget.swift */; };
+		EE00000000000000000000AA /* RestLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000A9 /* RestLiveActivity.swift */; };
+		CARL00000000000000000002 /* RestLiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CARL00000000000000000001 /* RestLiveActivityController.swift */; };
 		EE00000000000000000000B3 /* RedeWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000B2 /* RedeWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		EE00000000000000000000D2 /* RedeWidgetShared in Frameworks */ = {isa = PBXBuildFile; productRef = EE00000000000000000000D1 /* RedeWidgetShared */; };
 		EE00000000000000000000D4 /* RedeWidgetShared in Frameworks */ = {isa = PBXBuildFile; productRef = EE00000000000000000000D3 /* RedeWidgetShared */; };
@@ -109,6 +111,8 @@
 		CC00000000000000000001C2 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		EE00000000000000000000A3 /* RedeWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeWidgetBundle.swift; sourceTree = "<group>"; };
 		EE00000000000000000000A5 /* ReadinessWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessWidget.swift; sourceTree = "<group>"; };
+		EE00000000000000000000A9 /* RestLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestLiveActivity.swift; sourceTree = "<group>"; };
+		CARL00000000000000000001 /* RestLiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestLiveActivityController.swift; sourceTree = "<group>"; };
 		EE00000000000000000000A7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		EE00000000000000000000A8 /* RedeWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RedeWidget.entitlements; sourceTree = "<group>"; };
 		EE00000000000000000000B2 /* RedeWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RedeWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -186,6 +190,7 @@
 				CAMH00000000000000000001 /* MuscleHeatmapView.swift */,
 				CAED00000000000000000001 /* ExerciseDetailSheet.swift */,
 				CAEB00000000000000000001 /* ExerciseLibraryView.swift */,
+				CARL00000000000000000001 /* RestLiveActivityController.swift */,
 				CA00000000000000000000A5 /* PlanTabView.swift */,
 				AA00000000000000000000E6 /* Assets.xcassets */,
 				AA00000000000000000000E5 /* Info.plist */,
@@ -201,6 +206,7 @@
 			children = (
 				EE00000000000000000000A3 /* RedeWidgetBundle.swift */,
 				EE00000000000000000000A5 /* ReadinessWidget.swift */,
+				EE00000000000000000000A9 /* RestLiveActivity.swift */,
 				EE00000000000000000000A7 /* Info.plist */,
 				EE00000000000000000000A8 /* RedeWidget.entitlements */,
 				BB0000000000000000000F0E /* PrivacyInfo.xcprivacy */,
@@ -356,6 +362,7 @@
 				CAMH00000000000000000002 /* MuscleHeatmapView.swift in Sources */,
 				CAED00000000000000000002 /* ExerciseDetailSheet.swift in Sources */,
 				CAEB00000000000000000002 /* ExerciseLibraryView.swift in Sources */,
+				CARL00000000000000000002 /* RestLiveActivityController.swift in Sources */,
 				CA00000000000000000000B5 /* PlanTabView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -366,6 +373,7 @@
 			files = (
 				EE00000000000000000000A4 /* RedeWidgetBundle.swift in Sources */,
 				EE00000000000000000000A6 /* ReadinessWidget.swift in Sources */,
+				EE00000000000000000000AA /* RestLiveActivity.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

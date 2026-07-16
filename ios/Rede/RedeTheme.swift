@@ -32,6 +32,8 @@ extension Color {
     static let redeT4 = Color(redeHex: 0x908A7C)
 
     // 品牌与语义
+    // ⚠️ ember/base/T1/T3 在 ios/RedeWidget/RestLiveActivity.swift 的 RestPalette 有
+    // 本地副本（extension 无共享 token 包）——改值时两处同改（K6 审查留痕）。
     static let redeEmber = Color(redeHex: 0xE1652B)
     static let redeEmber2 = Color(redeHex: 0xF0875A)
     static let redeRec = Color(redeHex: 0x2F7D5B)

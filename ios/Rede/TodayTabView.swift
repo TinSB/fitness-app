@@ -48,6 +48,16 @@ struct TodayTabView: View {
     @State private var weekVolumeKg: Double?
     /// T1 练完态分享入口打开的预览（复用训练小结同款载体与预览视图）。
     @State private var sharePreview: SharePreviewItem?
+    /// K8 周一「上周收官」行（PRD-4 周初叙事雏形；nil = 非周一/上周零训练/数据缺 → 不渲染）。
+    @State private var weekReview: WeekReview?
+
+    /// K8 数据载体：上周天数（cleanView 日期去重，单位=天）+ 上周吨位（snapshot 周桶）
+    /// + 较上上周百分比（上上周无桶/零吨位 → nil 只报事实）。
+    private struct WeekReview: Equatable {
+        let days: Int
+        let volumeKg: Double
+        let deltaPercent: Int?
+    }
 
     private var model: TodayModel? { sessionStore.todayModel }
 
@@ -89,6 +99,10 @@ struct TodayTabView: View {
         .task {
             sessionStore.coachSaveErrorText = nil // 进页清教练写错误（新视图干净起步；隔离于全局 saveErrorText）
             if sessionStore.todayOutcome == nil { await sessionStore.loadToday() }
+            // K8：训练日分支的周一收官行（休息/练完分支归 loadCompletedDigest 同批链，
+            // 不在此重复 IO）。loadToday 已 await——此刻 model/分支判定是最终值；
+            // weekReview 已有值说明 task(id:) 侧已算过（同日不变），不二次 IO。
+            if !showsRestBranch, weekReview == nil { await loadWeekReviewIfEligible() }
             // 截图/UI 验证钩子（同 -autoOpenSharePreview 先例）：自动打开设置页（看 Apple 健康区等）。
             if CommandLine.arguments.contains("-autoOpenSettings") { showSettings = true }
             // FR-TR6 验证钩子：自动给首个处方动作打开换动作（swapIntent）detail，便于点替代项验「只换这次/以后都换」。
@@ -155,6 +169,8 @@ struct TodayTabView: View {
                 recentVolumes = []
                 nextSession = nil
                 weekVolumeKg = nil
+                // K8：分支翻回训练态时收官行改走训练日入口重算（周一才 IO；非周一落 nil）
+                await loadWeekReviewIfEligible()
             }
         }
         .sheet(item: $detailTarget) { target in
@@ -294,6 +310,20 @@ struct TodayTabView: View {
             contextLine
                 .padding(.horizontal, RedeSpace.page)
                 .padding(.top, 4)
+
+            // K8 周一「上周收官」行（contextLine 之下、判断行之上）：单行中性判断句、
+            // 零 ember 零交互零 hairline；周二起 weekReview 自动为 nil 消失（无残留状态）。
+            if let review = weekReview {
+                Text(s.weekReviewLine(
+                    days: review.days,
+                    volumeText: s.formatVolumeKg(review.volumeKg),
+                    deltaPercent: review.deltaPercent))
+                    .font(.redeCaption).monospacedDigit()
+                    .foregroundStyle(Color.redeT3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.top, 10)
+            }
 
             // 切片6c 红线：今日页教练写入（采纳/撤销/暂不处理）失败时如实呈现，绝不静默假成功
             //（与 TrainTabView 收尾页同口径：saveFailedLine + 明细；下次教练写入开写自动清空）。
@@ -734,7 +764,11 @@ struct TodayTabView: View {
         // 下一场（现成只读投影；练完态含今日场 → 轮转已推进到下一日，与计划页排期同源）
         nextSession = await Task.detached { SessionStore.loadPlanProjection().first?.first }.value
         let outcome = await ProgressModel.loadOutcomeAsync()
-        guard case let .ready(pm) = outcome, let latest = pm.snapshot.history.first else { return }
+        guard case let .ready(pm) = outcome else { return }
+        // K8：周一收官行与本 digest 同批取自同一 snapshot（禁新增独立 IO 链路）；
+        // 在 history 空守卫之前算——零历史时 computeWeekReview 自会落 nil。
+        computeWeekReview(snapshot: pm.snapshot)
+        guard let latest = pm.snapshot.history.first else { return }
         // N3b：同一 snapshot 顺手带出近 5 场总体量（history[0]=最新 → 反转成旧→新），不二次 IO。
         recentVolumes = pm.snapshot.history.prefix(5).reversed().map { CGFloat($0.totalVolumeKg) }
         // K4：本周合计取 snapshot.weeklyVolume 当前 ISO 周桶（与总结卡总量同一 snapshot
@@ -758,6 +792,62 @@ struct TodayTabView: View {
         fmt.timeZone = .current
         fmt.dateFormat = "yyyy-MM-dd"
         return fmt.string(from: date)
+    }
+
+    // MARK: - K8 周一「上周收官」（PRD-4 周初叙事雏形，free 单行；付费深度版留 FR-SUB1）
+
+    /// 截图钩子（沿 -expandTodayReason 先例）：-forceWeekReview 非周一也渲染供实拍/审计。
+    private var weekReviewForced: Bool {
+        ProcessInfo.processInfo.arguments.contains("-forceWeekReview")
+    }
+
+    /// 仅本地日历周一全天显示（weekday==2；周二起条件自然翻假 → 行消失，无残留状态）。
+    private var isLocalMonday: Bool {
+        guard let now = model?.now else { return false }
+        return Calendar.current.component(.weekday, from: now) == 2
+    }
+
+    /// 训练日分支入口：周一（或钩子）才做一次 snapshot IO；休息/练完分支不走这里
+    ///（归 loadCompletedDigest 同批链，避免同屏双载）。
+    private func loadWeekReviewIfEligible() async {
+        guard isLocalMonday || weekReviewForced else { weekReview = nil; return }
+        if weekReview != nil { return }   // 幂等（审查 NIT：训练日主 .task 与 task(id:) 双链并发时省一次 snapshot IO）
+        let outcome = await ProgressModel.loadOutcomeAsync()
+        guard case let .ready(pm) = outcome else { weekReview = nil; return }
+        computeWeekReview(snapshot: pm.snapshot)
+    }
+
+    /// 上周完整周桶 vs 上上周（FR-PR3 周对比同口径：ISO 周、整数吨位）；天数 = cleanView
+    /// 上周日期去重（prefix(10) 归一，单位=天——裁定 3/5）。上周零训练 → nil 整行不显示
+    ///（不恐吓，回归语境归 verdict）；上上周无桶或零吨位 → 无对比只报事实。
+    private func computeWeekReview(snapshot: ProgressSnapshot) {
+        guard isLocalMonday || weekReviewForced, let model else { weekReview = nil; return }
+        let calendar = Calendar.current
+        guard let lastWeekDay = calendar.date(byAdding: .day, value: -7, to: model.now),
+              let prevWeekDay = calendar.date(byAdding: .day, value: -14, to: model.now) else {
+            weekReview = nil
+            return
+        }
+        // 周锚 WeekAnchor 与分段条/K4 同源；异常日期返回空串 → 如实不渲染
+        let thisMonday = WeekAnchor.isoWeekStart(model.now)
+        let lastMonday = WeekAnchor.isoWeekStart(lastWeekDay)
+        let prevMonday = WeekAnchor.isoWeekStart(prevWeekDay)
+        guard !thisMonday.isEmpty, !lastMonday.isEmpty else { weekReview = nil; return }
+        // yyyy-MM-dd 零填充字典序 = 时间序，闭开区间 [上周一, 本周一) 即上周整周
+        let lastWeekDays = Set(
+            model.cleanView.sessions.map { String($0.date.prefix(10)) }
+                .filter { $0 >= lastMonday && $0 < thisMonday }
+        ).count
+        guard lastWeekDays > 0,
+              let lastBucket = snapshot.weeklyVolume.first(where: { $0.weekStartISO == lastMonday }) else {
+            weekReview = nil // 上周零训练：整行不显示
+            return
+        }
+        let prevVolume = snapshot.weeklyVolume.first { $0.weekStartISO == prevMonday }?.totalVolumeKg
+        let delta: Int? = prevVolume.flatMap { prev in
+            prev > 0 ? Int(((lastBucket.totalVolumeKg - prev) / prev * 100).rounded()) : nil
+        }
+        weekReview = WeekReview(days: lastWeekDays, volumeKg: lastBucket.totalVolumeKg, deltaPercent: delta)
     }
 
     /// 总结块（surface 原语，非 ForgedCard——今日页 0 铭牌现状不动）：

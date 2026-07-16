@@ -66,6 +66,23 @@ final class SessionStore {
     /// 的 @State，切 tab 时 RootTabView 用 switch 销毁视图树即归 0。移到会话层后跨切页
     /// 存活，且按绝对结束时刻求剩余 → 离屏期间真实时间照常流逝。详见 RestCountdown。
     private(set) var restCountdown = RestCountdown()
+    /// K6 休息计时 Live Activity（视觉层——裁定 1：到点提醒仍归 G1 休息通知）。
+    /// 只在 restCountdown.begin/clear 既有接线点挂钩，不改 RestCountdown 本体。
+    private let restLiveActivity = RestLiveActivityController()
+
+    /// K6 启动清理只跑一次（审查 MINOR：@State 初值表达式在 View 结构体每次构造时
+    /// 求值——将来任何让 WindowGroup 重估的改动都会构造临时 SessionStore，若清理在
+    /// init 无闸门，会误杀正在跑的休息 Live Activity；进程级 once 保住原语义）。
+    private static var didRunLaunchCleanup = false
+
+    init() {
+        // K6 启动清理：上个进程被杀（训练异常中断）可能留下孤儿 Live Activity——
+        // 新进程首次构造时必无休息在跑，全部收掉（controller 串行链保证先于 begin）。
+        if !Self.didRunLaunchCleanup {
+            Self.didRunLaunchCleanup = true
+            restLiveActivity.end(endpoint: "launch-cleanup")
+        }
+    }
     /// 启动时发现的可恢复 draft（FR-TR9 提示「继续进行中的训练」）。
     var pendingDraft: TrainSessionDraft?
     /// 写入失败的如实呈现（FR-TR8：绝不假装成功）；nil = 无错误。训练落盘/偏好/引导共用。
@@ -1048,8 +1065,10 @@ final class SessionStore {
         if restored.phase == .resting {
             restCountdown.begin(seconds: restored.restSecondsPlanned)
             scheduleRestNotification(restSecondsPlanned: restored.restSecondsPlanned)
+            beginRestActivity(endpoint: "draft-restore")   // K6：恢复到休息态重挂视觉层
         } else {
             restCountdown.clear()
+            restLiveActivity.end(endpoint: "draft-restore-nonresting")
         }
     }
 
@@ -1060,6 +1079,7 @@ final class SessionStore {
         // 防「已放弃还弹休息结束」（Task 6 审查捞出的姊妹缺口）。「暂不」分支有意
         // 不撤：draft 仍在、用户可能随即恢复，语义归 owner 后续拍板。
         cancelRestNotification()
+        restLiveActivity.end(endpoint: "draft-discard")   // K6：孤儿视觉层同撤（launch-cleanup 之外的兜底）
     }
 
     /// 事件包装：转移 + 即时 draft 留存（每个动作后都可恢复）。
@@ -1103,15 +1123,23 @@ final class SessionStore {
     /// +30 加时。同步按新剩余重排休息提醒——否则通知仍按原时点弹、早于实际结束（审查 MAJOR-1）。
     func addRestTime(_ seconds: Int) {
         restCountdown.add(seconds: seconds)
-        if !restCountdown.isPaused { scheduleRestNotification(restSecondsPlanned: restCountdown.remaining()) }
+        if !restCountdown.isPaused {
+            scheduleRestNotification(restSecondsPlanned: restCountdown.remaining())
+            // K6：视觉层结束点同步推后（与通知同一新锚点）；暂停中无活动、恢复时重挂
+            if let end = restCountdown.endDate { restLiveActivity.updateEnd(endsAt: end, endpoint: "add-time") }
+        }
     }
     /// 暂停 / 继续切换。暂停撤回待发提醒（别在暂停期间弹）；继续按剩余重排（审查 MAJOR-1）。
     func toggleRestPause() {
         restCountdown.togglePause()
         if restCountdown.isPaused {
             cancelRestNotification()
+            // K6：Live Activity 原生倒计时不支持「冻结」语义——暂停期先收掉（诚实，
+            // 不显示一个还在走的假倒计时），继续时按新锚点重挂。
+            restLiveActivity.end(endpoint: "pause")
         } else {
             scheduleRestNotification(restSecondsPlanned: restCountdown.remaining())
+            beginRestActivity(endpoint: "resume")
         }
     }
 
@@ -1119,17 +1147,28 @@ final class SessionStore {
     /// restFinished 或落到 summary = 结束清空；confirmEnd↔resting 折返（结束确认弹层
     /// 取消后继续训练）期间不动锚点，故剩余随墙钟延续、不会重置。
     private func syncRestCountdown(after event: TrainFlowEvent, restCompletedNaturally: Bool = false) {
-        guard let flow else { restCountdown.clear(); cancelRestNotification(); return }
+        guard let flow else {
+            restCountdown.clear()
+            cancelRestNotification()
+            restLiveActivity.end(endpoint: "flow-missing")   // K6：无流必无休息视觉层
+            return
+        }
         switch event {
         case .logSet where flow.phase == .resting:
             restCountdown.begin(seconds: flow.restSecondsPlanned)
             scheduleRestNotification(restSecondsPlanned: flow.restSecondsPlanned)
+            beginRestActivity(endpoint: "rest-begin")   // K6：休息开始挂视觉层（begin 挂点）
         case .restFinished:
             restCountdown.clear()
             // 自然到点：不取消——通知正该此刻送达。仅手动提前结束才取消待发提醒（避免训练已推进还弹）。
             if !restCompletedNaturally { cancelRestNotification() }
+            restLiveActivity.end(endpoint: "rest-finished")   // K6：记组/下一组推进即收（clear 挂点）
         default:
-            if flow.phase == .summary { restCountdown.clear(); cancelRestNotification() }
+            if flow.phase == .summary {
+                restCountdown.clear()
+                cancelRestNotification()
+                restLiveActivity.end(endpoint: "session-summary")   // K6：落到收尾页即收
+            }
         }
     }
 
@@ -1150,6 +1189,51 @@ final class SessionStore {
 
     private func cancelRestNotification() {
         notificationScheduler.cancelRest(id: RestNotificationPolicy.shouldCancelRestNotification())
+    }
+
+    // MARK: - K6 休息计时 Live Activity（视觉层；到点提醒仍归上面的 G1 通知）
+
+    /// 从当前倒计时锚点 + 流构建并挂起/更新 Live Activity。锚点缺失（异常）不起——诚实。
+    private func beginRestActivity(endpoint: String) {
+        guard let end = restCountdown.endDate, let attributes = restActivityAttributes() else { return }
+        restLiveActivity.begin(attributes: attributes, endsAt: end, endpoint: endpoint)
+    }
+
+    /// Live Activity 静态属性（动作名 + 下一组目标串）。取数与训练页休息态 restPreviewText
+    /// 同源：当前动作还有组 → 下一组推荐目标；组满 → 下一动作首组计划目标；无下一动作 →
+    /// 只显动作名（不编数据）。格式化（目录名/档位吸附/单位）全在 app 侧完成——
+    /// extension 零业务计算（红线）。语言沿通知同一缓存（notifLocale）。
+    private func restActivityAttributes() -> RestActivityAttributes? {
+        guard let flow, let current = flow.currentExercise else { return nil }
+        let strings = RedeStrings(
+            locale: notifLocale,
+            unit: RedeUnit.resolve(todayModel?.cleanView.profile.unitSystem))
+        let catalog = ExerciseCatalog.minimal
+        let exerciseDone = flow.completedInCurrentExercise.count + flow.skippedInCurrentExercise >= current.sets.count
+        if !exerciseDone, let rec = flow.currentRecommendation {
+            return RestActivityAttributes(
+                exerciseName: catalog.displayName(current.exerciseId, localeCode: notifLocale.rawValue),
+                targetLine: strings.targetLine(
+                    loadType: current.loadType,
+                    weightKg: LoadDisplay.snap(rec.targetWeightKg, exerciseId: current.exerciseId, strings),
+                    reps: rec.targetReps))
+        }
+        // 组满休息 → 预告下一动作（同 restPreviewText 分支）；目标取其首组计划值
+        if flow.plan.exercises.indices.contains(flow.exerciseIndex + 1) {
+            let next = flow.plan.exercises[flow.exerciseIndex + 1]
+            let target = next.sets.first.map { first in
+                strings.targetLine(
+                    loadType: next.loadType,
+                    weightKg: LoadDisplay.snap(first.targetWeightKg, exerciseId: next.exerciseId, strings),
+                    reps: first.targetReps)
+            } ?? ""
+            return RestActivityAttributes(
+                exerciseName: catalog.displayName(next.exerciseId, localeCode: notifLocale.rawValue),
+                targetLine: target)
+        }
+        return RestActivityAttributes(
+            exerciseName: catalog.displayName(current.exerciseId, localeCode: notifLocale.rawValue),
+            targetLine: "")
     }
 
     private func persistDraft() {
@@ -1193,6 +1277,7 @@ final class SessionStore {
         flow = TrainFlowState(prescription: prescription, allowedEquipment: allowedEquipment, loadUnit: loadUnit)
         sessionStartedAt = now
         restCountdown.clear() // 新会话从 activeSet 起步，旧倒计时不得滞留
+        restLiveActivity.end(endpoint: "session-start")   // K6：旧视觉层同不得滞留
         persistDraft()
     }
 
@@ -1208,6 +1293,7 @@ final class SessionStore {
         saveErrorText = nil
         restCountdown.clear()
         cancelRestNotification() // FR-NT1：放弃/收尾时清掉待发的休息提醒，避免训练已结束还弹（审查 MAJOR-1）
+        restLiveActivity.end(endpoint: "session-end")   // K6：训练结束/放弃即收视觉层（含 abandonActiveSession 路径）
         // 先取消未完成的草稿写再删文件：否则排队中的 save 可能在 clear 之后落地，留孤儿草稿
         // → 下次启动误弹「恢复训练」（审查 M-1）。
         draftTask?.cancel()
