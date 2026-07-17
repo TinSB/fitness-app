@@ -6,6 +6,24 @@
 
 ---
 
+## 2026-07-17 · Rede 1.8 (build 25) 已提交 App Store 审核
+
+**用户目标**：接管 Claude 额度中断后的 1.8 发布工作，自己完成 App Store Connect 填写、用模拟器重拍商店图、上传并提交；审核通过后自动发布。
+
+**做了什么**：在 App Store Connect 直接核实并绑定 **1.8 (25)**；英/中双语 What's New 均按 1.8 实际能力重写并保存；用 iPhone 17 Pro Max 模拟器的真实 1.8/25 运行态分别生成 en-US 与 zh-Hans 各 5 张 **1320 × 2868** 截图，逐张目检无个人信息后按 Today → Development → Active Train → Exercise Library → Muscle Detail 排序上传，旧 6.5 英寸槽改为继承各自语言的新 6.9 英寸素材。发布设置保持「审核通过后自动发布」「立即向所有用户发布」「保留现有评分」。最终提交成功。
+
+**你能看到什么**：App Store 产品页会使用全新的双语截图和 1.8 更新说明；Apple 审核通过后无需再手动点发布，1.8 会自动替换当前 1.0。
+
+**验证与收据**：ASC 审核详情直接显示 **iOS App 1.8 / 1.8 (25) / 等待审核**；提交时间 2026-07-17 17:34 ET，提交 ID `73076a38-e6b8-43fa-a3df-e885f1a82f76`。最终文档写回后，本机再次运行权威 `.claude/quality-gate.cmd`，exit 0、`QUALITY GATE: PASS`，RedeDataHealth 54 项、RedeTrainingDecision 360 项、RedeWidgetShared 12 项测试全部零失败，Xcode 模拟器构建 `BUILD SUCCEEDED`。截图交付副本保存在桌面 `Rede 1.8 App Store Screenshots/`（根目录英文，`zh-Hans/` 中文）。
+
+**风险与遗留**：本轮没有伪造新的 TestFlight 真机收据；清单当前准确保留 19 个未勾选项（0.4、G1/G3、F+1、I1-I3、J1-J4、L1-L8），尤其 Live Activity L4-L6 仍建议在 1.8 真机上复验。owner 已明确指令本次直接提交并自动发布，因此这些项目作为已知残余风险放行、不是 PASS；优先在 Apple 批准前补验，来不及则发布后复验。ASC 的社交媒体年龄分级新问题截止 2026-09-07，目前不阻断本次提交。
+
+**规格写回**：none——本轮只做版本号与发布管理，没有改变产品行为、架构或数据契约；发布事实已写回 What's New、验收清单、CHANGELOG 与本日志。
+
+**下一步**：等待 Apple 审核；通过后核对公开商店版本变为 1.8，并完成上述真机残留项。
+
+---
+
 ## 2026-07-16 · 休息 Live Activity 修两个真机 bug + 质感升级（owner 1.7(24) 反馈批，三段式）
 
 **用户目标**：owner 真机实测反馈①休息时直接回桌面，灵动岛胶囊只有图标没倒计时，要先长按展开一次才出现；②展开态「平板卧推」等内容偏上没居中；③加点小细节要高级感但不花哨。
