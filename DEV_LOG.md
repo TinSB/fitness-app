@@ -6,6 +6,26 @@
 
 ---
 
+## 2026-07-18 · 首个付费功能“每周教练复盘”完成本地企业级闭环
+
+**用户目标**：把“每周教练复盘”做成 Rede Coach 的第一个新增付费能力，达到企业级；每次验收都必须在真实 iOS Simulator 里像用户一样走流程，同时继续遵守 1.8 全部现有能力永久免费、不创建 PR 的边界。
+
+**做了什么**：新增一条只读、确定性的周复盘链路。它只看上一完整 ISO 周的 canonical 训练历史，输出 **1 个主判断、最多 3 条可核对依据、1 个导航行动**；不聊天、不自动改计划、不写 canonical、不加 schema、不缓存第二份结果。纯决策引擎位于 `RedeTrainingDecision`，上一周事实投影位于 `RedeLocalSnapshot`，app 与 Progress 共用同一干净事实口径；中英文文案由 `RedeL10n` 统一管理。零场进入中性空态，一场固定保持校准，坏数据和当周 dropped session/exercise/set 或 suspect set 抢占正向趋势，无法归周的训练丢弃问题直接 fail closed；训练量只能作为依据，不能单独宣布进步。行动只会去 Today、Progress 或数据核对。
+
+**收费与安全边界**：复盘引擎完全不知道 entitlement，只有 app/UI 层接受 Apple 已验证的 active/grace Paid Coach。已验证用户即使商品目录或政策临时不可用仍可看复盘；free/checking/unknown/expired/refunded 都看不到付费结论。最终独立审查又抓出一个边界漏洞：商品目录已经 ready 时，checking/unknown 曾可能提前露出购买页，过期状态还会误标 Rede Coach。已先写失败测试稳定复现，再改为只有已确认 `freeCore + ready` 才能进入购买面；checking 显示核对中、unknown 显示重试、过期显示 Free Core。英文功能名同时严格统一为 canonical `Weekly Coach Review`。
+
+**真实验证**：`RedeL10n` 精确文案测试先红后绿；app 权益矩阵旧实现稳定红 2 项，修复后转绿；新增真实延迟 provider，让目录保持 ready、故意挂起 entitlement refresh，证明等待期间仍只显示 checking、不会抢先购买。最终 `bash .claude/quality-gate.cmd` exit 0：10 个 Swift 包、界面预算、通用模拟器构建和 **5 条 app-hosted policy XCTest** 全部通过，`QUALITY GATE: PASS`；测试收据为 `~/Library/Developer/Xcode/DerivedData/Rede-fehbzdcxewzuvxgixmetankthjqd/Logs/Test/Test-Rede-2026.07.18_17-04-50--0400.xcresult`。另跑 `Release` generic iOS Simulator build，结果 `BUILD SUCCEEDED`。最终独立只读审查 **PASS，P0/P1/P2 = 0**；唯一轻微项是文档测试计数 4→5，已当场修正。
+
+**模拟器真实流程**：在 iPhone 17 Pro / iOS 26.5 中实际完成中文付费空态 →“查看今天安排”→ Today；英文坏数据态 → 3 条依据 →“Review Training Data”→ Progress；英文 progressing 态 → Progress；production 无 fixture 的 Free Core → Rede Coach 准备页，确认无商品、价格、购买、恢复和管理入口。另实际覆盖最大 Dynamic Type、Reduce Motion 开启后的行动跳转、AX tree 完整 label/identifier，以及杀进程重开同一 fixture 的确定性；设置均已恢复。最终复核截图：`.ai-tmp/20260718-weekly-coach-review/en-paid-data-final-reviewed.png` 与 `en-free-preparing-final-reviewed.png`，同目录保留中英文、空态/进展态、Dynamic Type 等共 10 张证据。
+
+**没有假装通过的部分**：这些 fixture 与截图只证明本地 L3 功能/UX，不证明真实订阅交易。Xcode 26.6 + iOS 26.5 Simulator 的 StoreKitTest 仍报 `SKInternalErrorDomain Code=3`；真实 App Store Connect 月/年商品、当前 Privacy/Terms 地址、Sandbox/TestFlight 的购买/恢复/续订/grace/过期/退款/重装/换设备仍未验收。因此 production purchase gate 继续关闭，收费发布仍是 **No-Go**。
+
+**规格写回与收尾**：已原地更新 Master v3.4、PRD FR-SUB2/3、系统逻辑 §8.3/§8.4、产品文案基线和商业化 Roadmap；没有新增长期文档，`DOCS_MANIFEST` 无需改。临时产物收尾：删除 6 张过渡截图，保留 10 张 Simulator 证据，提升 0、待决定 0。Git 仅保留本地任务分支和本地提交，不 push、不创建 PR、不改 App Store Connect。
+
+**下一步**：功能实现已完成；要真正开放收费，必须先解除 StoreKitTest 环境阻塞，再配置真实商品与政策页并完成 Sandbox/TestFlight 全生命周期验收。未过这些门禁前不打开 production paywall。
+
+---
+
 ## 2026-07-18 · Rede Coach 订阅页面先落壳，功能完成后再逐项加入
 
 **用户目标**：先把可进入、可验收的订阅页面做出来；当前还没有完成的收费功能不提前写进页面，等各项能力真正完成后再往上填。

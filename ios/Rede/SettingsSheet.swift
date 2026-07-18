@@ -840,8 +840,21 @@ struct SettingsSheet: View {
 
 // MARK: - Rede Coach 页面（品牌页始终可见；购买控件仍由 launch gate 锁闭）
 
+enum RedeCoachEntitlementPresentation: Equatable {
+    case checking
+    case unavailable
+}
+
+enum RedeCoachCurrentPlan: Equatable {
+    case checking
+    case freeCore
+    case unknown
+    case paidCoach
+}
+
 enum RedeCoachPageContent: Equatable {
     case weeklyReview
+    case entitlement(RedeCoachEntitlementPresentation)
     case subscription(SubscriptionPagePresentation)
 }
 
@@ -854,7 +867,33 @@ enum RedeCoachPageContentPolicy {
         if FeatureAccessPolicy.allows(.paidCoach, entitlement: entitlement, now: now) {
             return .weeklyReview
         }
-        return .subscription(SubscriptionPagePolicy.presentation(for: launchDecision))
+
+        switch entitlement {
+        case .checking:
+            return .entitlement(.checking)
+        case .unknown:
+            return .entitlement(.unavailable)
+        case .freeCore, .paidCoach:
+            return .subscription(SubscriptionPagePolicy.presentation(for: launchDecision))
+        }
+    }
+
+    static func currentPlan(
+        entitlement: EntitlementState,
+        now: Date = Date()
+    ) -> RedeCoachCurrentPlan {
+        switch entitlement {
+        case .checking:
+            return .checking
+        case .freeCore:
+            return .freeCore
+        case .unknown:
+            return .unknown
+        case .paidCoach:
+            return FeatureAccessPolicy.allows(.paidCoach, entitlement: entitlement, now: now)
+                ? .paidCoach
+                : .freeCore
+        }
     }
 }
 
@@ -878,7 +917,7 @@ private struct SubscriptionPageSheet: View {
         )
     }
     private var currentPlan: String {
-        switch subscriptionModel.entitlement {
+        switch RedeCoachPageContentPolicy.currentPlan(entitlement: subscriptionModel.entitlement) {
         case .checking:
             s.settingsSubscriptionChecking
         case .freeCore:
@@ -922,6 +961,8 @@ private struct SubscriptionPageSheet: View {
                 // Access gate and launch gate are intentionally separate: a verified subscriber
                 // keeps Paid Coach even when product catalog/purchase presentation is unavailable.
                 WeeklyCoachReviewView(onAction: onCoachAction)
+            case .entitlement(let presentation):
+                entitlementContent(presentation)
             case .subscription(let presentation):
                 switch presentation {
                 case .preparing, .unavailable:
@@ -936,6 +977,48 @@ private struct SubscriptionPageSheet: View {
         .accessibilityIdentifier("subscription-page")
         .onDisappear {
             Task { await subscriptionModel.refresh() }
+        }
+    }
+
+    private func entitlementContent(_ presentation: RedeCoachEntitlementPresentation) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                brandHeader
+
+                EngraveDivider()
+                    .padding(.vertical, RedeSpace.section)
+
+                switch presentation {
+                case .checking:
+                    HStack(spacing: 12) {
+                        ProgressView()
+                            .tint(Color.redeEmber2)
+                            .accessibilityHidden(true)
+                        Text(s.settingsSubscriptionChecking)
+                            .font(.redeHeadline)
+                            .foregroundStyle(Color.redeT1)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("subscription-page-entitlement-checking")
+
+                case .unavailable:
+                    VStack(alignment: .leading, spacing: 14) {
+                        Overline(text: s.subscriptionPageUnavailableOverline, color: .redeCaution)
+                        Text(s.settingsSubscriptionUnknownTier)
+                            .font(.redeHeadline)
+                            .foregroundStyle(Color.redeT1)
+                            .fixedSize(horizontal: false, vertical: true)
+                        EmbButton(icon: "arrow.clockwise", title: s.settingsSubscriptionRetry) {
+                            Task { await subscriptionModel.refresh() }
+                        }
+                    }
+                    .accessibilityIdentifier("subscription-page-entitlement-unavailable")
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, RedeSpace.page)
+            .padding(.bottom, 36)
         }
     }
 

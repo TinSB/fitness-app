@@ -87,9 +87,9 @@ final class StoreKitEntitlementsTests: XCTestCase {
         )
 
         let nonPaidCases: [(EntitlementState, SubscriptionLaunchDecision, RedeCoachPageContent)] = [
-            (.checking, .blocked(.paidCapabilityNotReady), .subscription(.preparing)),
+            (.checking, .blocked(.paidCapabilityNotReady), .entitlement(.checking)),
             (.freeCore, .ready, .subscription(.store)),
-            (.unknown(.verificationFailed), .blocked(.catalogMismatch), .subscription(.unavailable)),
+            (.unknown(.verificationFailed), .blocked(.catalogMismatch), .entitlement(.unavailable)),
             (expired, .blocked(.paidCapabilityNotReady), .subscription(.preparing)),
             // Expiration/refund/revocation resolve to Free Core before this app policy runs.
             (.freeCore, .blocked(.catalogMismatch), .subscription(.unavailable)),
@@ -113,10 +113,78 @@ final class StoreKitEntitlementsTests: XCTestCase {
             )
         }
         XCTAssertEqual(transition, [
-            .subscription(.preparing),
+            .entitlement(.checking),
             .weeklyReview,
             .subscription(.preparing),
         ])
+
+        XCTAssertEqual(
+            RedeCoachPageContentPolicy.content(
+                entitlement: .checking,
+                launchDecision: .ready,
+                now: now
+            ),
+            .entitlement(.checking),
+            "A ready product gate must not expose purchase while Apple access is still being checked"
+        )
+        XCTAssertEqual(
+            RedeCoachPageContentPolicy.content(
+                entitlement: .unknown(.verificationFailed),
+                launchDecision: .ready,
+                now: now
+            ),
+            .entitlement(.unavailable),
+            "Unknown access must show an honest retry state instead of a purchase surface"
+        )
+        XCTAssertEqual(
+            RedeCoachPageContentPolicy.currentPlan(entitlement: expired, now: now),
+            .freeCore,
+            "An expired Paid Coach entitlement must not label the current plan as Rede Coach"
+        )
+    }
+
+    func testReadyCatalogDoesNotBypassDelayedEntitlementCheck() async {
+        let configuration = SubscriptionConfiguration(
+            productIDs: [monthlyID, annualID],
+            privacyPolicyURL: URL(string: "https://example.com/privacy"),
+            termsOfUseURL: URL(string: "https://example.com/terms"),
+            paidCapabilityIsReady: true
+        )
+        let provider = DelayedEntitlementProvider(
+            monthlyID: monthlyID,
+            annualID: annualID
+        )
+        let model = SubscriptionModel(provider: provider, configuration: configuration)
+
+        await model.start()
+        XCTAssertEqual(model.entitlement, .freeCore)
+        XCTAssertEqual(model.launchDecision, .ready)
+
+        await provider.delayNextEntitlementRead()
+        let refresh = Task { await model.refresh() }
+        await provider.waitUntilDelayedReadStarts()
+
+        XCTAssertEqual(model.entitlement, .checking)
+        XCTAssertEqual(model.launchDecision, .ready)
+        XCTAssertEqual(
+            RedeCoachPageContentPolicy.content(
+                entitlement: model.entitlement,
+                launchDecision: model.launchDecision
+            ),
+            .entitlement(.checking),
+            "A previously ready catalog must not expose purchase during a later entitlement refresh"
+        )
+
+        await provider.releaseDelayedEntitlementRead()
+        await refresh.value
+        XCTAssertEqual(model.entitlement, .freeCore)
+        XCTAssertEqual(
+            RedeCoachPageContentPolicy.content(
+                entitlement: model.entitlement,
+                launchDecision: model.launchDecision
+            ),
+            .subscription(.store)
+        )
     }
 
     func testWeeklyReviewFindingScopeCountsWeekDropsAndFailsClosedWhenDateIsUnknown() {
@@ -268,5 +336,71 @@ final class StoreKitEntitlementsTests: XCTestCase {
         XCTAssertEqual(model.entitlement, .freeCore)
 
         _ = restoredPurchase // Receipt anchor: proves restore used a real StoreKitTest transaction.
+    }
+}
+
+private actor DelayedEntitlementProvider: SubscriptionProviding {
+    nonisolated let transactionUpdates = AsyncStream<SubscriptionUpdate> { _ in }
+
+    private let catalog: [SubscriptionProduct]
+    private var shouldDelayNextRead = false
+    private var delayedReadStarted = false
+    private var delayedReadReleased = false
+
+    init(monthlyID: String, annualID: String) {
+        catalog = [
+            SubscriptionProduct(
+                id: monthlyID,
+                displayName: "Monthly",
+                displayPrice: "$1.00",
+                period: .monthly,
+                subscriptionGroupID: "rede-coach-test"
+            ),
+            SubscriptionProduct(
+                id: annualID,
+                displayName: "Annual",
+                displayPrice: "$10.00",
+                period: .annual,
+                subscriptionGroupID: "rede-coach-test"
+            ),
+        ]
+    }
+
+    func products() async throws -> [SubscriptionProduct] {
+        catalog
+    }
+
+    func currentEntitlement() async throws -> ResolvedEntitlement {
+        if shouldDelayNextRead {
+            shouldDelayNextRead = false
+            delayedReadStarted = true
+            while !delayedReadReleased {
+                await Task.yield()
+            }
+            delayedReadReleased = false
+        }
+        return .freeCore
+    }
+
+    func purchase(productID: String) async throws -> PurchaseOutcome {
+        throw SubscriptionIssue.configurationInvalid
+    }
+
+    func restore() async throws {}
+
+    func delayNextEntitlementRead() {
+        shouldDelayNextRead = true
+        delayedReadStarted = false
+        delayedReadReleased = false
+    }
+
+    func waitUntilDelayedReadStarts() async {
+        while !delayedReadStarted {
+            await Task.yield()
+        }
+    }
+
+    func releaseDelayedEntitlementRead() {
+        delayedReadReleased = true
     }
 }

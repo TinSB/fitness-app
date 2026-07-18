@@ -284,7 +284,7 @@ final class RedeStringsTests: XCTestCase {
 
     func testWeeklyCoachReviewCopyIsSpecificAndNonCausal() {
         XCTAssertEqual(zh.weeklyCoachReviewTitle, "每周教练复盘")
-        XCTAssertEqual(en.weeklyCoachReviewTitle, "Weekly coach review")
+        XCTAssertEqual(en.weeklyCoachReviewTitle, "Weekly Coach Review")
         XCTAssertEqual(zh.weeklyCoachReviewEmptyTitle, "上周没有训练记录")
         XCTAssertEqual(en.weeklyCoachReviewEmptyTitle, "No workouts were recorded last week")
         XCTAssertEqual(zh.weeklyCoachReviewVerdictTitle(code: "calibrating"), "继续训练后再判断趋势")

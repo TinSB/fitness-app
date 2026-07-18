@@ -5,7 +5,7 @@
 
 extension RedeStrings {
     public var weeklyCoachReviewTitle: String {
-        weeklyT("每周教练复盘", "Weekly coach review")
+        weeklyT("每周教练复盘", "Weekly Coach Review")
     }
 
     public var weeklyCoachReviewEvidenceTitle: String {
