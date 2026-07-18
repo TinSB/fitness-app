@@ -50,6 +50,26 @@ final class RedeStringsTests: XCTestCase {
             ("settingsExportFailedBody", s.settingsExportFailedBody),
             ("settingsExportFailedConfirm", s.settingsExportFailedConfirm),
             ("settingsPrivacy", s.settingsPrivacy), ("settingsPrivacyNote", s.settingsPrivacyNote),
+            // FR-SE9 / FR-SUB2：订阅管理与诚实状态
+            ("settingsSubscriptionSection", s.settingsSubscriptionSection),
+            ("settingsSubscriptionFreeCore", s.settingsSubscriptionFreeCore),
+            ("settingsSubscriptionPaidCoach", s.settingsSubscriptionPaidCoach),
+            ("settingsSubscriptionChecking", s.settingsSubscriptionChecking),
+            ("settingsSubscriptionUnknownTier", s.settingsSubscriptionUnknownTier),
+            ("settingsSubscriptionUnknown", s.settingsSubscriptionUnknown),
+            ("settingsSubscriptionFreeNote", s.settingsSubscriptionFreeNote),
+            ("settingsSubscriptionGrace", s.settingsSubscriptionGrace),
+            ("settingsSubscriptionVerified", s.settingsSubscriptionVerified),
+            ("settingsSubscriptionRestore", s.settingsSubscriptionRestore),
+            ("settingsSubscriptionManage", s.settingsSubscriptionManage),
+            ("settingsSubscriptionRetry", s.settingsSubscriptionRetry),
+            ("settingsSubscriptionPending", s.settingsSubscriptionPending),
+            ("settingsSubscriptionRestoreSuccess", s.settingsSubscriptionRestoreSuccess),
+            ("settingsSubscriptionOperationFailed", s.settingsSubscriptionOperationFailed),
+            ("settingsSubscriptionTerms", s.settingsSubscriptionTerms),
+            ("settingsSubscriptionOpenCoach", s.settingsSubscriptionOpenCoach),
+            ("subscriptionStoreHeadline", s.subscriptionStoreHeadline),
+            ("subscriptionStoreTransparency", s.subscriptionStoreTransparency),
             ("settingsPanelOverline", s.settingsPanelOverline),
             ("settingsDisclaimer", s.settingsDisclaimer), ("settingsFeedback", s.settingsFeedback),
             ("feedbackSubject", s.feedbackSubject(version: "0.1.0")),
@@ -188,6 +208,27 @@ final class RedeStringsTests: XCTestCase {
             for banned in ["永不", "100%", "匿名", "私密", "never leave", "anonymous", "hipaa", "private"] {
                 XCTAssertFalse(note.contains(banned), "隐私文案含绝对化措辞: \(banned)")
             }
+            XCTAssertTrue(note.contains("apple"), "StoreKit 上线后必须诚实披露订阅由 Apple 处理")
+            XCTAssertFalse(note.contains("不连网") || note.contains("no network connection"),
+                           "StoreKit 会连接 Apple，不能继续声称 App 完全不联网")
+        }
+    }
+
+    func testSubscriptionCopyAnchorsAndFreeCompatibilityFloor() {
+        XCTAssertEqual(zh.settingsSubscriptionSection, "方案")
+        XCTAssertEqual(en.settingsSubscriptionSection, "Plan")
+        XCTAssertEqual(zh.settingsSubscriptionFreeCore, "Free Core")
+        XCTAssertEqual(en.settingsSubscriptionFreeCore, "Free Core")
+        XCTAssertEqual(zh.settingsSubscriptionUnknownTier, "当前方案：暂时无法确认")
+        XCTAssertEqual(en.settingsSubscriptionUnknownTier, "Current plan: unavailable")
+        XCTAssertEqual(zh.settingsSubscriptionRestore, "恢复购买")
+        XCTAssertEqual(en.settingsSubscriptionRestore, "Restore purchases")
+        XCTAssertEqual(zh.subscriptionStoreHeadline, "更深入的训练判断，依据仍然清楚")
+        XCTAssertEqual(en.subscriptionStoreHeadline, "Deeper training decisions, with the reasoning shown")
+        XCTAssertTrue(zh.settingsSubscriptionFreeNote.contains("所有现有功能"))
+        XCTAssertTrue(en.settingsSubscriptionFreeNote.lowercased().contains("every existing feature"))
+        for line in [zh.settingsSubscriptionUnknown, en.settingsSubscriptionUnknown] {
+            XCTAssertTrue(line.contains("Free Core"), "未知态必须明确 Free Core 不受影响")
         }
     }
 
@@ -198,6 +239,10 @@ final class RedeStringsTests: XCTestCase {
             zh.startTraining, zh.trainLogSet, zh.trainFinish, zh.trainHold185,
             zh.todayWhyThisCall, zh.todayHideReason,
             zh.settingsTitle, zh.settingsLanguage, zh.settingsDone,
+            zh.settingsSubscriptionSection, zh.settingsSubscriptionRestore,
+            zh.settingsSubscriptionManage, zh.settingsSubscriptionRetry,
+            en.settingsSubscriptionSection, en.settingsSubscriptionRestore,
+            en.settingsSubscriptionManage, en.settingsSubscriptionRetry,
             zh.settingsWeeklyRestartLabel, zh.settingsWeeklyRestartNote, zh.carriedOverHeader(day: "腿 A"),
             zh.swapDayScopeOnceWeekly, en.settingsWeeklyRestartLabel, en.carriedOverHeader(day: "Legs A"),
             zh.planScheduleThisWeek, zh.planScheduleNextWeek, zh.planAdjustAfterLabel,

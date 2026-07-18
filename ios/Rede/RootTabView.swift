@@ -1,4 +1,5 @@
 import SwiftUI
+import RedeEntitlements
 import RedeL10n
 import RedeTrainingDecision
 
@@ -10,9 +11,11 @@ enum RootTab: Hashable {
 }
 
 struct RootTabView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var selection: RootTab
     @State private var localeStore: LocaleStore
     @State private var sessionStore = SessionStore()
+    @State private var subscriptionModel: SubscriptionModel
     /// M5-1b 首启引导：nil = 未检查（避免首帧闪烁误判）。
     @State private var showOnboarding: Bool?
     /// 截图钩子 -autoOpenSharePreview：用样本数据弹分享卡预览（仅测试脚手架）。
@@ -38,6 +41,10 @@ struct RootTabView: View {
             store.locale = forced
         }
         _localeStore = State(initialValue: store)
+        let subscriptionConfiguration = RedeSubscriptionRuntime.configuration(arguments: args)
+        _subscriptionModel = State(initialValue: RedeSubscriptionRuntime.makeModel(
+            configuration: subscriptionConfiguration
+        ))
     }
 
     var body: some View {
@@ -192,8 +199,18 @@ struct RootTabView: View {
                 selection = .today
             }
         }
+        .task {
+            // FR-SUB2：进程生命周期监听必须在任何购买展示前启动。StoreKit
+            // 查询失败只影响订阅状态，绝不阻塞首启、训练或 canonical 数据。
+            await subscriptionModel.start()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task { await subscriptionModel.refresh() }
+        }
         .environment(localeStore)
         .environment(sessionStore)
+        .environment(subscriptionModel)
         .preferredColorScheme(.dark)
     }
 }

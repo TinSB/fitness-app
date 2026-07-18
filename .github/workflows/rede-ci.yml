@@ -29,7 +29,7 @@ jobs:
           set -euo pipefail
           # Explicit test surface: a package silently vanishing must fail CI,
           # and a new package must be registered here before it counts as tested.
-          EXPECTED_PACKAGES="RedeDataHealth RedeDomain RedeHealthKit RedeL10n RedeLocalSnapshot RedeNotifications RedePersistence RedeTrainingDecision RedeWidgetShared"
+          EXPECTED_PACKAGES="RedeDataHealth RedeDomain RedeEntitlements RedeHealthKit RedeL10n RedeLocalSnapshot RedeNotifications RedePersistence RedeTrainingDecision RedeWidgetShared"
           for name in $EXPECTED_PACKAGES; do
             echo "== swift test: ios/packages/$name =="
             (cd "ios/packages/$name" && swift test)
@@ -50,3 +50,22 @@ jobs:
             -scheme Rede \
             -destination 'generic/platform=iOS Simulator' \
             build
+
+      - name: Verify production subscription fails closed
+        shell: bash
+        run: |
+          set -euo pipefail
+          REDE_SIMULATOR_ID="$(
+            xcrun simctl list devices available |
+              awk -F '[()]' '/iPhone/ && $2 ~ /^[0-9A-F-]+$/ { print $2; exit }'
+          )"
+          if [ -z "$REDE_SIMULATOR_ID" ]; then
+            echo "::error::No available iPhone Simulator for RedeTests"
+            exit 1
+          fi
+          xcodebuild \
+            -project ios/Rede.xcodeproj \
+            -scheme Rede \
+            -destination "platform=iOS Simulator,id=$REDE_SIMULATOR_ID" \
+            -only-testing:RedeTests/StoreKitEntitlementsTests/testProductionConfigurationFailsClosedWithoutApprovedProducts \
+            test

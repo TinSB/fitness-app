@@ -6,6 +6,30 @@
 
 ---
 
+## 2026-07-18 · 企业级订阅地基：能验证、会失败关闭，但还不能发布收费
+
+**用户目标**：接着开发地图第 2 块，用企业级标准把 Rede 的收费基础设施真正实现；同时沿用已拍板方案 A——Rede 1.8 已有能力永久免费。用户再次明确本项目不发布 PR。
+
+**做了什么**：新建第 10 个本地包 `RedeEntitlements`，把收费逻辑分成四层：① Free Core / Paid Coach 的纯访问政策；② Apple 商品目录、当前权益、购买、恢复、transaction updates 的唯一 StoreKit 2 adapter；③ app 生命周期级状态模型，把“方案核对、商品读取、购买/恢复操作”分开，不让一个失败污染另一个；④包内 Apple 原生 `SubscriptionStoreView` 与管理订阅 wrapper。已验证 transaction 先刷新本地 access state、再 finish；同一交易从购买结果和更新流重复到达只 finish 一次，但退款/撤销即使沿用同一 transaction ID 仍会重新计算并降回 Free Core。权益在已验证到期点自动复核，回到前台也会复核；并发查询只允许最新一轮落状态，旧 paid 结果不能晚到后重新解锁。未验证或读取失败立即变为 `unknown`，过期时间也由访问政策二次检查。购买 API 和 Apple 原生购买页都在入口内部重跑 paid capability + 商品 + 政策门禁，未来页面不能绕过 Settings。显式恢复只有用户点按钮才调用 `AppStore.sync()`；sync 后权益刷新失败不会再误报成功。所有 1.8 能力在 checking / unknown / catalog failure 下都由测试锁死为可用。
+
+**你能看到什么**：设置页现在有中英双语“方案 / Plan”区域，能诚实显示 Free Core、Rede Coach、核对中、无法确认、grace period，以及恢复/管理/政策入口。`unknown` 不再被伪装成 Free Core。隐私说明也改成可证明的事实：训练数据本机保存，订阅由 Apple 处理，没有账号和第三方统计。生产 build 的商品 ID、paid-capability 开关和政策 URL 故意为空，因此当前只显示 Free Core 状态，不会出现空 paywall、测试价格或假权益。调试配置有本地月/年两个测试商品，但绝不会当作 App Store Connect 商品。
+
+**TDD 与回归证据**：先后跑出真实红灯再修复：缺少订阅 API 的初始编译红灯；“已验证后才 finish”；购买结果与更新流重复 transaction 只 finish 一次；同 ID 的退款/撤销仍重建权益；`AppStore.sync()` 成功但权益刷新失败不得显示成功；unknown 方案态不得显示为 Free Core；到期不得继续访问；paid → unverified 必须立即关闭；入口门禁不可绕过；旧 paid 查询不得覆盖新 revocation；到期必须自动复核；购买验签失败撤销旧 paid；verified 与 unverified 混合时不得选乐观结果；旧查询未落地就不得 finish transaction；过期后的 status unavailable/unverified 不得降成 Free Core。stale-delivery 测试改为等待购买任务完整返回，并做了受控旧行为突变：旧逻辑稳定红 2 项，恢复正确实现后转绿。`RedeEntitlements` 当前 **25 个** package tests 全绿。本地 `.storekit` 结构测试锁定 1 个 subscription group、月/年 2 商品、en_US/zh_CN 双语。权威 `bash .claude/quality-gate.cmd` 最终 exit 0：10 个包全部通过、界面卡片预算通过、生产 `Rede` scheme 通用模拟器 `BUILD SUCCEEDED`，并在 iPhone Simulator 真跑 production fail-closed XCTest，最终 `QUALITY GATE: PASS`。测试收据：`~/Library/Developer/Xcode/DerivedData/Rede-fehbzdcxewzuvxgixmetankthjqd/Logs/Test/Test-Rede-2026.07.18_01-07-54--0400.xcresult`。
+
+**没有假装通过的部分**：仓库已新增 app-hosted `StoreKitEntitlementsTests`，其中 production 配置 fail-closed 测试通过；完整 user cancel → verification failure → purchase → expire → Ask to Buy pending/decline → restore → billing grace → renewal → refund 测试真实运行时失败。Xcode 26.6 使用 iOS 26.5 Simulator，在 `SKTestSession` 保存 Apple v6.3 对齐配置时持续返回 `SKInternalErrorDomain Code=3`，导致本地商品目录为空。已用 Xcode Scheme UI 直接确认并选择 `Rede.storekit`，又将配置逐字段与 Apple 官方样例核对；字段集合、类型、ID、group 引用和 P1M/P1Y 均一致，最后只按官方样例改 `_timeRate` 做一次单变量验证，错误不变。生产 `Rede` 与 `Rede-StoreKitTest` 已拆分后又做了一次有依据的复测，Code=3 仍复现，因此排除主 Scheme 污染并按三振规则停止猜改，不把测试标 skip。最新红灯收据：`~/Library/Developer/Xcode/DerivedData/Rede-fehbzdcxewzuvxgixmetankthjqd/Logs/Test/Test-Rede-2026.07.18_00-48-25--0400.xcresult`。
+
+**发布判定**：订阅基础设施达到可审计、可测试、失败关闭的工程地基，但**收费版本仍是 No-Go**。还缺：第一个 PRD 明确的 post-1.8 Paid Coach 能力、真实 App Store Connect 月/年 product IDs、最终价格/试用、与当前产品一致且可打开的 Privacy Policy / Terms、可复现 StoreKitTest 全绿，以及 Sandbox/TestFlight 的购买、续订、grace、过期、退款、恢复、重装/换设备、离线验收。任何一项缺失都不能打开 production purchase gate。
+
+**规格写回**：Master v3.3（第 10 包、平台现状与验证 No-Go）；系统逻辑 §8.3/状态表（实际状态机、StoreKitTest 阻塞）；PRD FR-SE9/FR-SUB2/R3；Roadmap P2 与下一步；Copy §6.2.1（已实现状态、unknown 不冒充 Free Core）；README 包清单；原型隐私事实；CHANGELOG。本轮没有新建长期文档，`DOCS_MANIFEST` 无需修改。
+
+**证据与临时产物**：保留两张设置页证据图（中文、英文）在 `.ai-tmp/2026-07-17-subscription-runtime/`；中途截取过早的英文截图已移到 `/private/tmp`，不再留在仓库。Apple 样例与 xcresult 导出在 `/private/tmp` / DerivedData，不进入仓库。
+
+**Git / 发布**：只在本地任务分支工作；不 push、不创建 PR、不改 App Store Connect、不创建真实商品。
+
+**下一步**：产品主线先批准第一个真正新增的 Paid Coach 能力；工程线在另一套可复现 Xcode/Simulator 环境跑通现有 StoreKit 生命周期测试。两条都完成后，才进入真实商品、政策页与 Sandbox/TestFlight。
+
+---
+
 ## 2026-07-17 · 订阅架构门禁：1.8 能力不回收，首片只用 StoreKit 2
 
 **用户目标**：按开发地图先做第 2 块——订阅架构门禁；在收费分界上选择方案 A：Rede 1.8 已经免费的能力以后仍然免费，付费层只承接后来新增的深度教练能力。用户同时明确要求本项目不发布 PR。

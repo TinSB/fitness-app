@@ -219,14 +219,62 @@ public struct RedeStrings: Sendable {
         t("训练数据文件此刻读取失败　稍后再试一次", "The training data file couldn't be read. Try again")
     }
     public var settingsExportFailedConfirm: String { t("好", "OK") }
+    // FR-SE9 / FR-SUB2：订阅状态、恢复与管理。价格、试用和续订条款不在这里，
+    // 只能由 StoreKit 本地化商品视图提供。
+    public var settingsSubscriptionSection: String { t("方案", "Plan") }
+    public var settingsSubscriptionFreeCore: String { "Free Core" }
+    public var settingsSubscriptionPaidCoach: String { "Rede Coach" }
+    public var settingsSubscriptionChecking: String { t("正在核对购买…", "Checking purchases…") }
+    public var settingsSubscriptionUnknownTier: String {
+        t("当前方案：暂时无法确认", "Current plan: unavailable")
+    }
+    public var settingsSubscriptionUnknown: String {
+        t("暂时无法核对购买　Free Core 仍可正常使用",
+          "Purchases can't be checked right now. Free Core still works")
+    }
+    public var settingsSubscriptionFreeNote: String {
+        t("此版本的所有现有功能均包含在 Free Core",
+          "Every existing feature in this version is included in Free Core")
+    }
+    public var settingsSubscriptionGrace: String {
+        t("续费宽限期内　Rede Coach 保持可用",
+          "Billing grace period. Rede Coach remains available")
+    }
+    public var settingsSubscriptionVerified: String {
+        t("当前权益已由 Apple 验证", "Current access verified by Apple")
+    }
+    public var settingsSubscriptionRestore: String { t("恢复购买", "Restore purchases") }
+    public var settingsSubscriptionManage: String { t("管理订阅", "Manage subscriptions") }
+    public var settingsSubscriptionRetry: String { t("重新核对", "Check again") }
+    public var settingsSubscriptionPending: String {
+        t("购买正在等待 Apple 确认　确认前不会扣除 Rede 权益",
+          "The purchase is waiting for Apple approval. Access won't change until it completes")
+    }
+    public var settingsSubscriptionRestoreSuccess: String {
+        t("购买记录已与 Apple 同步", "Purchases synced with Apple")
+    }
+    public var settingsSubscriptionOperationFailed: String {
+        t("暂时无法完成　稍后再试　Free Core 不受影响",
+          "Couldn't complete that right now. Try again later. Free Core is unaffected")
+    }
+    public var settingsSubscriptionTerms: String { t("使用条款", "Terms of Use") }
+    public var settingsSubscriptionOpenCoach: String { t("查看 Rede Coach", "View Rede Coach") }
+    public var subscriptionStoreHeadline: String {
+        t("更深入的训练判断，依据仍然清楚",
+          "Deeper training decisions, with the reasoning shown")
+    }
+    public var subscriptionStoreTransparency: String {
+        t("下方方案、价格、试用与续订条款均由 Apple 按你的地区显示",
+          "Apple shows the plans, prices, trials, and renewal terms for your region below")
+    }
     /// 设置面板铭牌头型号行（工艺重做 2026-06-10，Overline 渲染为全大写）。
     public var settingsPanelOverline: String { t("Rede · 调校", "Rede · Tuning") }
     public var settingsPrivacy: String { t("隐私", "Privacy") }
-    /// M6-2 隐私说明（FR-DT4 诚实表达 + 文案基线 §7.4）：只说代码可证的事实——
-    /// 「默认保存在本机」；禁绝对化（永不/100%/anonymous）。Apple 健康未上线不提。
+    /// M6-2 隐私说明（FR-DT4 诚实表达 + 文案基线 §7.4）：只说代码可证的事实。
+    /// StoreKit runtime 存在后不能继续声称 App 完全不联网；训练数据与 Apple 购买流分开说明。
     public var settingsPrivacyNote: String {
-        t("训练记录默认保存在这台设备本机　Rede 不连网、没有账号，也没有第三方统计组件　删除 App 会同时删除本机数据",
-          "Training records live on this device by default. Rede has no network connection, no account, and no third-party analytics. Deleting the app also deletes its local data")
+        t("训练记录默认保存在这台设备本机　订阅购买由 Apple 处理　Rede 没有账号或第三方统计组件　删除 App 会同时删除本机训练数据",
+          "Training records live on this device by default. Apple handles subscription purchases. Rede has no account or third-party analytics. Deleting the app also deletes its local training data")
     }
     public var settingsAbout: String { t("关于", "About") }
     /// FR-SE4 健康免责（fitness 非 medical 口径，沿文案基线 §7.1）。

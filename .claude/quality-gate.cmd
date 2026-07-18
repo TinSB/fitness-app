@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-EXPECTED_PACKAGES="RedeDataHealth RedeDomain RedeHealthKit RedeL10n RedeLocalSnapshot RedeNotifications RedePersistence RedeTrainingDecision RedeWidgetShared"
+EXPECTED_PACKAGES="RedeDataHealth RedeDomain RedeEntitlements RedeHealthKit RedeL10n RedeLocalSnapshot RedeNotifications RedePersistence RedeTrainingDecision RedeWidgetShared"
 
 for name in $EXPECTED_PACKAGES; do
   echo "== swift test: ios/packages/$name =="
@@ -49,5 +49,21 @@ xcodebuild \
   -scheme Rede \
   -destination 'generic/platform=iOS Simulator' \
   build
+
+echo "== xcodebuild: production subscription fail-closed test =="
+REDE_SIMULATOR_ID="$(
+  xcrun simctl list devices available |
+    awk -F '[()]' '/iPhone/ && $2 ~ /^[0-9A-F-]+$/ { print $2; exit }'
+)"
+if [ -z "$REDE_SIMULATOR_ID" ]; then
+  echo "ERROR: no available iPhone Simulator for RedeTests"
+  exit 1
+fi
+xcodebuild \
+  -project ios/Rede.xcodeproj \
+  -scheme Rede \
+  -destination "platform=iOS Simulator,id=$REDE_SIMULATOR_ID" \
+  -only-testing:RedeTests/StoreKitEntitlementsTests/testProductionConfigurationFailsClosedWithoutApprovedProducts \
+  test
 
 echo "QUALITY GATE: PASS"

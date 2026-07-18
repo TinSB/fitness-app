@@ -1,4 +1,5 @@
 import SwiftUI
+import RedeEntitlements
 import RedeL10n
 import RedeTrainingDecision
 
@@ -14,6 +15,7 @@ import RedeTrainingDecision
 struct SettingsSheet: View {
     @Bindable var store: LocaleStore
     @Environment(SessionStore.self) private var sessionStore
+    @Environment(SubscriptionModel.self) private var subscriptionModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -37,6 +39,8 @@ struct SettingsSheet: View {
     @State private var exportItem: ExportFile?
     @State private var exportBusy = false
     @State private var exportFailed = false
+    @State private var showSubscriptionStore = false
+    @State private var subscriptionManagementFailed = false
     /// 行内单题编辑（方向 A 拍板 2026-06-10：改哪题进哪题，退役整流重跑）。
     @State private var editing: PlateQuestion?
     /// 最近一次保存的变更收据（铭牌下方替换提示行）。
@@ -45,7 +49,8 @@ struct SettingsSheet: View {
     /// 背板折叠态（J5 渐进披露：默认全收起）。
     @State private var expandedInfo: Set<String> = []
 
-    /// M6-3 正式反馈渠道。mailto 外部拉起，不算 app runtime 网络真相（隐私文案「不连网」仍属实）。
+    /// M6-3 正式反馈渠道。mailto 交给系统邮件 App；StoreKit 另由 Apple
+    /// 服务处理。Rede 自身不上传训练数据，但不能再把整个 runtime 描述成“不连网”。
     /// 2026-06-19 改用 hello@rede.fit（Cloudflare Email Routing 转发到 owner 收件箱），不再暴露个人邮箱。
     private let feedbackAddress = "hello@rede.fit"
 
@@ -96,6 +101,9 @@ struct SettingsSheet: View {
                         dataSection
                             .id("data")   // -settingsScrollTo 锚点
                         EngraveDivider().padding(.top, RedeSpace.section)
+                        subscriptionSection
+                            .id("subscription")
+                        EngraveDivider().padding(.top, RedeSpace.section)
                         backgroundPlate
                         EngraveDivider().padding(.top, RedeSpace.section)
                         backplateInfo
@@ -126,11 +134,20 @@ struct SettingsSheet: View {
         .sheet(item: $exportItem) { item in
             ExportActivityView(items: [item.url])
         }
+        .sheet(isPresented: $showSubscriptionStore) {
+            SubscriptionStoreSheet(configuration: subscriptionModel.configuration)
+                .environment(store)
+                .environment(subscriptionModel)
+                .presentationDetents([.large])
+        }
         // K7：读失败如实提示（dataUnreadable 文案家族），绝不假成功。
         .alert(s.settingsExportFailedTitle, isPresented: $exportFailed) {
             Button(s.settingsExportFailedConfirm, role: .cancel) {}
         } message: {
             Text(s.settingsExportFailedBody)
+        }
+        .alert(s.settingsSubscriptionOperationFailed, isPresented: $subscriptionManagementFailed) {
+            Button(s.settingsExportFailedConfirm, role: .cancel) {}
         }
         .task {
             // 审查 MAJOR-2（M5-2）：清掉历史保存错误——本页只显示「设置期间」的写入错误（设置专属字段，隔离于训练 saveErrorText）。
@@ -186,6 +203,199 @@ struct SettingsSheet: View {
                 }
                 .buttonStyle(.redePressable)
                 .disabled(healthBusy)
+            }
+        }
+    }
+
+    // MARK: - FR-SE9 / FR-SUB2 方案与订阅
+
+    private var subscriptionSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Overline(text: s.settingsSubscriptionSection).padding(.top, 18)
+
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(subscriptionTierLabel)
+                    .font(.redeBody)
+                    .foregroundStyle(Color.redeT1)
+                Spacer()
+                if subscriptionModel.entitlement == .checking {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(Color.redeT3)
+                        .accessibilityLabel(s.settingsSubscriptionChecking)
+                }
+            }
+            .frame(minHeight: RedeShape.controlHeight)
+
+            Text(subscriptionStatusNote)
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if subscriptionModel.launchDecision == .ready {
+                subscriptionActionRow(
+                    title: s.settingsSubscriptionOpenCoach,
+                    systemImage: "sparkles"
+                ) {
+                    showSubscriptionStore = true
+                }
+            }
+
+            if !subscriptionModel.configuration.productIDs.isEmpty {
+                subscriptionActionRow(
+                    title: s.settingsSubscriptionRestore,
+                    systemImage: "arrow.clockwise"
+                ) {
+                    Task { await subscriptionModel.restore() }
+                }
+                .disabled(subscriptionOperationBusy)
+
+                subscriptionActionRow(
+                    title: s.settingsSubscriptionManage,
+                    systemImage: "rectangle.portrait.and.arrow.right"
+                ) {
+                    manageSubscriptions()
+                }
+
+                policyLinks
+            }
+
+            if case .unknown = subscriptionModel.entitlement {
+                Button(s.settingsSubscriptionRetry) {
+                    Task { await subscriptionModel.refresh() }
+                }
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT2)
+                .buttonStyle(.redePressable)
+            }
+
+            if let operationNote = subscriptionOperationNote {
+                Text(operationNote)
+                    .font(.redeCaption)
+                    .foregroundStyle(subscriptionOperationIsFailure ? Color.redeRisk : Color.redeT3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("subscription-operation-note")
+            }
+        }
+    }
+
+    private var subscriptionTierLabel: String {
+        switch subscriptionModel.entitlement {
+        case .checking:
+            s.settingsSubscriptionChecking
+        case .freeCore:
+            s.settingsSubscriptionFreeCore
+        case .unknown:
+            s.settingsSubscriptionUnknownTier
+        case .paidCoach:
+            s.settingsSubscriptionPaidCoach
+        }
+    }
+
+    private var subscriptionStatusNote: String {
+        switch subscriptionModel.entitlement {
+        case .checking:
+            s.settingsSubscriptionChecking
+        case .freeCore:
+            s.settingsSubscriptionFreeNote
+        case .unknown:
+            s.settingsSubscriptionUnknown
+        case .paidCoach(_, let billingState):
+            billingState == .gracePeriod
+                ? s.settingsSubscriptionGrace
+                : s.settingsSubscriptionVerified
+        }
+    }
+
+    private var subscriptionOperationBusy: Bool {
+        switch subscriptionModel.operation {
+        case .purchasing, .restoring: true
+        default: false
+        }
+    }
+
+    private var subscriptionOperationIsFailure: Bool {
+        if case .failed = subscriptionModel.operation { return true }
+        return false
+    }
+
+    private var subscriptionOperationNote: String? {
+        switch subscriptionModel.operation {
+        case .idle, .purchasing:
+            nil
+        case .restoring:
+            s.settingsSubscriptionChecking
+        case .pending:
+            s.settingsSubscriptionPending
+        case .succeeded(.restore):
+            s.settingsSubscriptionRestoreSuccess
+        case .succeeded(.purchase):
+            s.settingsSubscriptionVerified
+        case .failed:
+            s.settingsSubscriptionOperationFailed
+        }
+    }
+
+    private func subscriptionActionRow(
+        title: String,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: systemImage)
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT4)
+                    .accessibilityHidden(true)
+                Text(title)
+                    .font(.redeBody)
+                    .foregroundStyle(Color.redeT2)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.redeT4)
+                    .accessibilityHidden(true)
+            }
+            .frame(minHeight: RedeShape.controlHeight)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.redePressableRow)
+    }
+
+    private var policyLinks: some View {
+        HStack(spacing: 16) {
+            if let privacyURL = subscriptionModel.configuration.privacyPolicyURL {
+                Button(s.settingsPrivacy) { openURL(privacyURL) }
+            }
+            if let termsURL = subscriptionModel.configuration.termsOfUseURL {
+                Button(s.settingsSubscriptionTerms) { openURL(termsURL) }
+            }
+        }
+        .font(.redeCaption)
+        .foregroundStyle(Color.redeT3)
+        .buttonStyle(.redePressable)
+    }
+
+    private func manageSubscriptions() {
+        guard let scene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first(where: { $0.activationState == .foregroundActive }) else {
+            subscriptionManagementFailed = true
+            return
+        }
+        let groupID: String? = {
+            guard case .available(let products) = subscriptionModel.catalog else { return nil }
+            return products.first?.subscriptionGroupID
+        }()
+        Task {
+            do {
+                try await RedeSubscriptionManagement.show(
+                    in: scene,
+                    subscriptionGroupID: groupID
+                )
+                await subscriptionModel.refresh()
+            } catch {
+                subscriptionManagementFailed = true
             }
         }
     }
@@ -610,6 +820,60 @@ struct SettingsSheet: View {
         uname(&sys)
         return withUnsafePointer(to: &sys.machine) { ptr in
             ptr.withMemoryRebound(to: CChar.self, capacity: Int(_SYS_NAMELEN)) { String(cString: $0) }
+        }
+    }
+}
+
+// MARK: - StoreKit 订阅页（价格/试用/续订条款全部由 Apple 本地化）
+
+private struct SubscriptionStoreSheet: View {
+    let configuration: SubscriptionConfiguration
+    @Environment(LocaleStore.self) private var localeStore
+    @Environment(SubscriptionModel.self) private var subscriptionModel
+    @Environment(\.dismiss) private var dismiss
+
+    private var s: RedeStrings { localeStore.strings }
+    private var products: [SubscriptionProduct] {
+        guard case .available(let products) = subscriptionModel.catalog else { return [] }
+        return products
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Overline(text: s.settingsSubscriptionPaidCoach, color: .redeT3)
+                Spacer()
+                Button(s.settingsDone) { dismiss() }
+                    .font(.redeBody)
+                    .foregroundStyle(Color.redeT2)
+                    .buttonStyle(.redePressable)
+            }
+            .padding(.horizontal, RedeSpace.page)
+            .frame(height: 58)
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(Color.redeHair2).frame(height: 1)
+            }
+
+            RedeSubscriptionStoreView(configuration: configuration, products: products) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(s.subscriptionStoreHeadline)
+                        .font(.redeTitle)
+                        .foregroundStyle(Color.redeT1)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(s.subscriptionStoreTransparency)
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeT3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 12)
+            }
+            .tint(Color.redeEmber2)
+        }
+        .background(Color.redeBase.ignoresSafeArea())
+        .preferredColorScheme(.dark)
+        .onDisappear {
+            Task { await subscriptionModel.refresh() }
         }
     }
 }

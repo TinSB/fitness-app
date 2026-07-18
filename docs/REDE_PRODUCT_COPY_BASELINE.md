@@ -1,7 +1,7 @@
 # Rede Product Copy Baseline — 产品文案基底
 
 > **状态:** Canonical / living copy baseline
-> **最后更新:** 2026-07-17（订阅方案 A：1.8 已有能力不回收，Paid Coach 只写未来新增能力）
+> **最后更新:** 2026-07-18（订阅基础 runtime 状态文案落地；生产购买仍关闭）
 > **适用范围:** 产品定位、v0 / 原型生成、App Store 文案、onboarding、paywall、UI microcopy、空状态、错误、通知、双语 locale
 > **权威边界:** 本文定义 Rede 如何说话,视觉品牌与原型画面方向以 `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md` 为准。本文不授权任何新功能、网络、云、HealthKit 范围、医疗判断或 source-of-truth 变更。功能与架构边界以 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 和 `docs/REDE_iOS_SYSTEM_LOGIC.md` 为准。
 
@@ -445,7 +445,9 @@ English:
 
 花括号内容是条件模板，不得直接作为成品字符串。没有 StoreKit 返回的 trial/offer 就整句不显示；商品目录加载失败时不显示猜测价格。
 
-### 6.2.1 订阅状态与恢复文案（未来 runtime 合同）
+### 6.2.1 订阅状态与恢复文案（已实现基础 runtime 合同）
+
+当前 Settings 已使用本节的双语状态：Free Core、Rede Coach、核对中、未知、pending、恢复/管理与操作失败。`unknown` 的方案标题必须是“当前方案：暂时无法确认”，不能把无法验证的状态伪装成 Free Core；同一状态的说明仍明确 Free Core 不受影响。购买页只有在 paid capability、两个 StoreKit 商品和两条 HTTPS 政策地址同时通过 launch gate 时才出现，production 配置当前故意关闭。
 
 | 场景 | 中文 | English | 行为边界 |
 |---|---|---|---|
