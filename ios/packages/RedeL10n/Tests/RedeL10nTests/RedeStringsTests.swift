@@ -75,6 +75,25 @@ final class RedeStringsTests: XCTestCase {
             ("subscriptionPageUnavailableOverline", s.subscriptionPageUnavailableOverline),
             ("subscriptionPageUnavailableTitle", s.subscriptionPageUnavailableTitle),
             ("subscriptionPageFreeCoreAvailable", s.subscriptionPageFreeCoreAvailable),
+            // FR-SUB3 每周教练复盘
+            ("weeklyCoachReviewTitle", s.weeklyCoachReviewTitle),
+            ("weeklyCoachReviewEvidenceTitle", s.weeklyCoachReviewEvidenceTitle),
+            ("weeklyCoachReviewLoading", s.weeklyCoachReviewLoading),
+            ("weeklyCoachReviewEmptyTitle", s.weeklyCoachReviewEmptyTitle),
+            ("weeklyCoachReviewEmptyBody", s.weeklyCoachReviewEmptyBody),
+            ("weeklyCoachReviewUnavailableTitle", s.weeklyCoachReviewUnavailableTitle),
+            ("weeklyCoachReviewUnavailableBody", s.weeklyCoachReviewUnavailableBody),
+            ("weeklyCoachReviewRetry", s.weeklyCoachReviewRetry),
+            ("weeklyCoachReviewWeek", s.weeklyCoachReviewWeek(dateText: "7月6日")),
+            ("weeklyCoachReviewVerdictTitle", s.weeklyCoachReviewVerdictTitle(code: "progressing")),
+            ("weeklyCoachReviewVerdictBody", s.weeklyCoachReviewVerdictBody(code: "dataNeedsReview", count: 2)),
+            ("weeklyCoachReviewTrainingDays", s.weeklyCoachReviewTrainingDays(3)),
+            ("weeklyCoachReviewRecentMedian", s.weeklyCoachReviewRecentMedian(2.5)),
+            ("weeklyCoachReviewSessions", s.weeklyCoachReviewSessions(3)),
+            ("weeklyCoachReviewDataFindings", s.weeklyCoachReviewDataFindings(2)),
+            ("weeklyCoachReviewCleanVolume", s.weeklyCoachReviewCleanVolume("8,400 kg")),
+            ("weeklyCoachReviewKeyLift", s.weeklyCoachReviewKeyLift(name: "卧推", call: "up", deltaText: "+2.5 kg")),
+            ("weeklyCoachReviewAction", s.weeklyCoachReviewAction(code: "viewProgress")),
             ("settingsPanelOverline", s.settingsPanelOverline),
             ("settingsDisclaimer", s.settingsDisclaimer), ("settingsFeedback", s.settingsFeedback),
             ("feedbackSubject", s.feedbackSubject(version: "0.1.0")),
@@ -262,6 +281,30 @@ final class RedeStringsTests: XCTestCase {
         }
         XCTAssertNotEqual(zh.subscriptionPageNotOpen, zh.subscriptionPageUnavailableTitle)
         XCTAssertNotEqual(en.subscriptionPageNotOpen, en.subscriptionPageUnavailableTitle)
+    }
+
+    func testWeeklyCoachReviewCopyIsSpecificAndNonCausal() {
+        XCTAssertEqual(zh.weeklyCoachReviewTitle, "每周教练复盘")
+        XCTAssertEqual(en.weeklyCoachReviewTitle, "Weekly coach review")
+        XCTAssertEqual(zh.weeklyCoachReviewVerdictTitle(code: "progressing"), "关键动作在向上走")
+        XCTAssertEqual(en.weeklyCoachReviewVerdictTitle(code: "progressing"), "Your key lift is moving up")
+        XCTAssertEqual(zh.weeklyCoachReviewAction(code: "reviewData"), "核对数据")
+        XCTAssertEqual(en.weeklyCoachReviewAction(code: "viewProgress"), "View progress")
+
+        let weeklyCopy = [
+            zh.weeklyCoachReviewVerdictBody(code: "dataNeedsReview", count: 2),
+            zh.weeklyCoachReviewVerdictBody(code: "rebuildRhythm", count: 0),
+            zh.weeklyCoachReviewVerdictBody(code: "progressing", count: 0),
+            en.weeklyCoachReviewVerdictBody(code: "dataNeedsReview", count: 2),
+            en.weeklyCoachReviewVerdictBody(code: "rebuildRhythm", count: 0),
+            en.weeklyCoachReviewVerdictBody(code: "progressing", count: 0),
+        ].joined(separator: " ").lowercased()
+
+        let words = weeklyCopy.split(whereSeparator: { !$0.isLetter }).map(String.init)
+        XCTAssertFalse(words.contains("ai"), "复盘文案不得自称 AI")
+        for banned in ["算法", "因为", "导致", "caused", "best", "最佳", "free core", "本机"] {
+            XCTAssertFalse(weeklyCopy.contains(banned), "复盘文案不得作因果、AI 或无关小字声明: \(banned)")
+        }
     }
 
     func testUiShortPhrasesHaveNoTrailingPeriod() {
