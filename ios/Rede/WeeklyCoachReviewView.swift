@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import RedeDataHealth
 import RedeDomain
 import RedeL10n
 import RedeLocalSnapshot
@@ -13,6 +14,29 @@ private enum WeeklyCoachReviewScreenState: Equatable {
     case loading
     case ready(WeeklyCoachReviewOutcome)
     case unreadable
+}
+
+/// 将 DataHealth 问题诚实归入上一完整周。无法定位日期的 dropped training data
+/// 直接返回 nil，使页面进入不可读态；不能静默忽略后继续给出正向判断。
+enum WeeklyCoachReviewFindingScope {
+    static func count(
+        issues: [DataHealthIssue],
+        suspectSetDatesISO: [String],
+        reviewWeekStartISO: String,
+        reviewWeekEndExclusiveISO: String
+    ) -> Int? {
+        let dropped = issues.filter(\.isDroppedTrainingData)
+        guard dropped.allSatisfy({ $0.droppedTrainingDateISO != nil }) else { return nil }
+
+        let droppedInWeek = dropped.filter { issue in
+            guard let dateISO = issue.droppedTrainingDateISO else { return false }
+            return dateISO >= reviewWeekStartISO && dateISO < reviewWeekEndExclusiveISO
+        }.count
+        let suspectInWeek = suspectSetDatesISO.filter { dateISO in
+            dateISO >= reviewWeekStartISO && dateISO < reviewWeekEndExclusiveISO
+        }.count
+        return droppedInWeek + suspectInWeek
+    }
 }
 
 private enum WeeklyCoachReviewLoader {
@@ -64,12 +88,14 @@ private enum WeeklyCoachReviewLoader {
             return .unreadable
         }
 
-        // SuspectSet 有明确日期，能诚实归到 review week；dropped/ignored 只有全历史总数，
-        // V1 不把它们冒充成上周问题。
-        let findingCount = core.quality.suspectSets.filter { suspect in
-            suspect.dateISO >= facts.reviewWeekStartISO
-                && suspect.dateISO < facts.reviewWeekEndExclusiveISO
-        }.count
+        guard let findingCount = WeeklyCoachReviewFindingScope.count(
+            issues: core.cleanView.issues,
+            suspectSetDatesISO: core.quality.suspectSets.map(\.dateISO),
+            reviewWeekStartISO: facts.reviewWeekStartISO,
+            reviewWeekEndExclusiveISO: facts.reviewWeekEndExclusiveISO
+        ) else {
+            return .unreadable
+        }
         let lift = facts.keyLiftTrend.map { assessment in
             WeeklyCoachLiftSignal(
                 exerciseId: assessment.exerciseId,
@@ -190,7 +216,7 @@ struct WeeklyCoachReviewView: View {
                 VStack(alignment: .leading, spacing: RedeSpace.section) {
                     statusCard(
                         title: s.weeklyCoachReviewEmptyTitle,
-                        body: s.weeklyCoachReviewEmptyBody,
+                        body: nil,
                         identifier: "weekly-review-empty"
                     )
                     EmbButton(icon: "arrow.left", title: s.weeklyCoachReviewAction(code: "openToday")) {
@@ -219,13 +245,15 @@ struct WeeklyCoachReviewView: View {
                             .font(.redeTitle)
                             .foregroundStyle(Color.redeT1)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text(s.weeklyCoachReviewVerdictBody(
+                        if let body = s.weeklyCoachReviewVerdictBody(
                             code: verdictCode(review.verdict),
                             count: dataFindingCount(review.evidence)
-                        ))
-                        .font(.redeBody)
-                        .foregroundStyle(Color.redeT2)
-                        .fixedSize(horizontal: false, vertical: true)
+                        ) {
+                            Text(body)
+                                .font(.redeBody)
+                                .foregroundStyle(Color.redeT2)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(20)
@@ -307,17 +335,19 @@ struct WeeklyCoachReviewView: View {
         .accessibilityIdentifier(identifier)
     }
 
-    private func statusCard(title: String, body: String, identifier: String) -> some View {
+    private func statusCard(title: String, body: String?, identifier: String) -> some View {
         ForgedCard(showReg: true) {
             VStack(alignment: .leading, spacing: 12) {
                 Text(title)
                     .font(.redeHeadline)
                     .foregroundStyle(Color.redeT1)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(body)
-                    .font(.redeBody)
-                    .foregroundStyle(Color.redeT2)
-                    .fixedSize(horizontal: false, vertical: true)
+                if let body {
+                    Text(body)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(20)

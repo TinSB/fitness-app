@@ -129,8 +129,23 @@ public enum WeeklyCoachReviewEngine {
             )
         }
 
-        if input.sessionCount == 0, input.recentMedianTrainingDays == nil {
+        if input.sessionCount == 0 {
             return .empty(.noCompletedTraining)
+        }
+
+        // 一场训练只够陈述事实，不足以支持周趋势；即使历史中位数或关键动作
+        // 信号存在，也先失败关闭为校准态。
+        if input.sessionCount == 1 {
+            return review(
+                input,
+                verdict: .calibrating,
+                evidence: [
+                    .trainingDays(count: input.trainingDayCount),
+                    .sessions(count: input.sessionCount),
+                    .cleanVolumeKg(input.cleanVolumeKg),
+                ],
+                action: .viewProgress
+            )
         }
 
         if input.trainingDayCount == 0 || isMeaningfullyBelowRecentRhythm(input) {

@@ -840,20 +840,42 @@ struct SettingsSheet: View {
 
 // MARK: - Rede Coach 页面（品牌页始终可见；购买控件仍由 launch gate 锁闭）
 
+enum RedeCoachPageContent: Equatable {
+    case weeklyReview
+    case subscription(SubscriptionPagePresentation)
+}
+
+enum RedeCoachPageContentPolicy {
+    static func content(
+        entitlement: EntitlementState,
+        launchDecision: SubscriptionLaunchDecision,
+        now: Date = Date()
+    ) -> RedeCoachPageContent {
+        if FeatureAccessPolicy.allows(.paidCoach, entitlement: entitlement, now: now) {
+            return .weeklyReview
+        }
+        return .subscription(SubscriptionPagePolicy.presentation(for: launchDecision))
+    }
+}
+
 private struct SubscriptionPageSheet: View {
     let configuration: SubscriptionConfiguration
     let onCoachAction: (WeeklyCoachReviewAction) -> Void
     @Environment(LocaleStore.self) private var localeStore
     @Environment(SubscriptionModel.self) private var subscriptionModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var s: RedeStrings { localeStore.strings }
     private var products: [SubscriptionProduct] {
         guard case .available(let products) = subscriptionModel.catalog else { return [] }
         return products
     }
-    private var pagePresentation: SubscriptionPagePresentation {
-        SubscriptionPagePolicy.presentation(for: subscriptionModel.launchDecision)
+    private var pageContent: RedeCoachPageContent {
+        RedeCoachPageContentPolicy.content(
+            entitlement: subscriptionModel.entitlement,
+            launchDecision: subscriptionModel.launchDecision
+        )
     }
     private var currentPlan: String {
         switch subscriptionModel.entitlement {
@@ -873,10 +895,21 @@ private struct SubscriptionPageSheet: View {
             HStack {
                 Overline(text: s.settingsSubscriptionPaidCoach, color: .redeT3)
                 Spacer()
-                Button(s.settingsDone) { dismiss() }
-                    .font(.redeBody)
+                if dynamicTypeSize.isAccessibilitySize {
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 18, weight: .semibold))
+                            .frame(width: 44, height: 44)
+                    }
                     .foregroundStyle(Color.redeT2)
+                    .accessibilityLabel(s.settingsDone)
                     .buttonStyle(.redePressable)
+                } else {
+                    Button(s.settingsDone) { dismiss() }
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT2)
+                        .buttonStyle(.redePressable)
+                }
             }
             .padding(.horizontal, RedeSpace.page)
             .frame(height: 58)
@@ -884,17 +917,15 @@ private struct SubscriptionPageSheet: View {
                 Rectangle().fill(Color.redeHair2).frame(height: 1)
             }
 
-            if FeatureAccessPolicy.allows(
-                .paidCoach,
-                entitlement: subscriptionModel.entitlement
-            ) {
+            switch pageContent {
+            case .weeklyReview:
                 // Access gate and launch gate are intentionally separate: a verified subscriber
                 // keeps Paid Coach even when product catalog/purchase presentation is unavailable.
                 WeeklyCoachReviewView(onAction: onCoachAction)
-            } else {
-                switch pagePresentation {
+            case .subscription(let presentation):
+                switch presentation {
                 case .preparing, .unavailable:
-                    previewContent(pagePresentation)
+                    previewContent(presentation)
                 case .store:
                     storeContent
                 }

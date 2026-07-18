@@ -63,18 +63,16 @@ final class WeeklyCoachReviewEngineTests: XCTestCase {
         XCTAssertEqual(outcome, .empty(.noCompletedTraining))
     }
 
-    func testZeroTrainingAfterPriorHistoryRebuildsRhythm() throws {
-        let review = try unwrapReview(WeeklyCoachReviewEngine.evaluate(makeInput(
+    func testZeroTrainingAfterPriorHistoryRemainsNeutralEmptyState() {
+        let outcome = WeeklyCoachReviewEngine.evaluate(makeInput(
             trainingDays: 0,
             sessions: 0,
             cleanVolumeKg: 0,
             recentMedianTrainingDays: 3,
             lift: nil
-        )))
+        ))
 
-        XCTAssertEqual(review.verdict, .rebuildRhythm)
-        XCTAssertEqual(review.action, .openToday)
-        XCTAssertEqual(review.evidence.first, .trainingDays(count: 0))
+        XCTAssertEqual(outcome, .empty(.noCompletedTraining))
     }
 
     func testOneFullDayBelowRecentMedianRebuildsRhythmBeforeLiftTrend() throws {
@@ -138,6 +136,23 @@ final class WeeklyCoachReviewEngineTests: XCTestCase {
         XCTAssertFalse(
             review.evidence.contains(.keyLift(exerciseId: "squat", call: .up, deltaKg: 5)),
             "没有前一可比历史时不得把单周内部变化包装成周趋势"
+        )
+    }
+
+    func testSingleSessionCannotClaimProgressEvenWithPriorHistoryAndPositiveLift() throws {
+        let review = try unwrapReview(WeeklyCoachReviewEngine.evaluate(makeInput(
+            trainingDays: 1,
+            sessions: 1,
+            cleanVolumeKg: 1_200,
+            recentMedianTrainingDays: 1,
+            lift: WeeklyCoachLiftSignal(exerciseId: "squat", call: .up, deltaKg: 5)
+        )))
+
+        XCTAssertEqual(review.verdict, .calibrating)
+        XCTAssertEqual(review.action, .viewProgress)
+        XCTAssertFalse(
+            review.evidence.contains(.keyLift(exerciseId: "squat", call: .up, deltaKg: 5)),
+            "单场训练不足以支撑周趋势，必须失败关闭为事实态"
         )
     }
 

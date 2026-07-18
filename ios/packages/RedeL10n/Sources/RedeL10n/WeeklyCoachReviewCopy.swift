@@ -17,12 +17,7 @@ extension RedeStrings {
     }
 
     public var weeklyCoachReviewEmptyTitle: String {
-        weeklyT("还没有完整训练周", "No completed training week yet")
-    }
-
-    public var weeklyCoachReviewEmptyBody: String {
-        weeklyT("完成一周训练后，这里会给出第一份复盘",
-                "Complete a training week to get your first review")
+        weeklyT("上周没有训练记录", "No workouts were recorded last week")
     }
 
     public var weeklyCoachReviewUnavailableTitle: String {
@@ -45,7 +40,7 @@ extension RedeStrings {
     public func weeklyCoachReviewVerdictTitle(code: String) -> String {
         switch code {
         case "dataNeedsReview":
-            return weeklyT("先核对记录", "Review the data first")
+            return weeklyT("先核对上周的训练记录", "Check last week’s training records first")
         case "rebuildRhythm":
             return weeklyT("先把训练节奏接回来", "Rebuild your training rhythm")
         case "progressing":
@@ -55,11 +50,11 @@ extension RedeStrings {
         case "easing":
             return weeklyT("关键动作有所回落", "Your key lift eased back")
         default:
-            return weeklyT("这周先记录事实", "This week is still calibrating")
+            return weeklyT("继续训练后再判断趋势", "Keep training before calling a trend")
         }
     }
 
-    public func weeklyCoachReviewVerdictBody(code: String, count: Int) -> String {
+    public func weeklyCoachReviewVerdictBody(code: String, count: Int) -> String? {
         switch code {
         case "dataNeedsReview":
             return weeklyT("上周有 \(count) 条记录需要确认，核对后再读趋势",
@@ -77,8 +72,7 @@ extension RedeStrings {
             return weeklyT("可比训练记录显示关键动作有所回落",
                            "Comparable training records show your key lift easing back")
         default:
-            return weeklyT("先积累更多可比训练记录，再判断变化",
-                           "Build more comparable training history before calling a change")
+            return nil
         }
     }
 
@@ -88,7 +82,8 @@ extension RedeStrings {
 
     public func weeklyCoachReviewRecentMedian(_ count: Double) -> String {
         let value = count.rounded() == count ? String(Int(count)) : String(count)
-        return weeklyT("近期中位 \(value) 天", "Recent median · \(value) days")
+        let days = count == 1 ? "day" : "days"
+        return weeklyT("近期中位 \(value) 天", "Recent median · \(value) \(days)")
     }
 
     public func weeklyCoachReviewSessions(_ count: Int) -> String {
@@ -119,9 +114,9 @@ extension RedeStrings {
 
     public func weeklyCoachReviewAction(code: String) -> String {
         switch code {
-        case "reviewData": return weeklyT("核对数据", "Review data")
-        case "openToday": return weeklyT("回今日", "Back to Today")
-        default: return weeklyT("查看进展", "View progress")
+        case "reviewData": return weeklyT("核对训练数据", "Review Training Data")
+        case "openToday": return weeklyT("查看今天安排", "View Today")
+        default: return weeklyT("查看进展", "View Progress")
         }
     }
 

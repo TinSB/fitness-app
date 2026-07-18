@@ -2,6 +2,7 @@ import StoreKit
 import StoreKitTest
 import XCTest
 @testable import Rede
+import RedeDataHealth
 import RedeEntitlements
 
 /// StoreKitTest owns one process-global environment. Keep the full lifecycle in
@@ -49,6 +50,112 @@ final class StoreKitEntitlementsTests: XCTestCase {
         XCTAssertEqual(presentation, .preparing)
         XCTAssertFalse(presentation.showsTransactionControls)
         #endif
+    }
+
+    func testRedeCoachPageContentCoversEntitlementAndLaunchGateMatrix() {
+        let now = Date(timeIntervalSince1970: 10_000)
+        let active = EntitlementState.paidCoach(
+            expirationDate: Date(timeIntervalSince1970: 20_000),
+            billingState: .active
+        )
+        let grace = EntitlementState.paidCoach(
+            expirationDate: Date(timeIntervalSince1970: 20_000),
+            billingState: .gracePeriod
+        )
+        let expired = EntitlementState.paidCoach(
+            expirationDate: now,
+            billingState: .active
+        )
+
+        XCTAssertEqual(
+            RedeCoachPageContentPolicy.content(
+                entitlement: active,
+                launchDecision: .blocked(.catalogMismatch),
+                now: now
+            ),
+            .weeklyReview,
+            "Verified access must survive a product-catalog failure"
+        )
+        XCTAssertEqual(
+            RedeCoachPageContentPolicy.content(
+                entitlement: grace,
+                launchDecision: .blocked(.missingPolicyLinks),
+                now: now
+            ),
+            .weeklyReview,
+            "Verified grace access must remain available"
+        )
+
+        let nonPaidCases: [(EntitlementState, SubscriptionLaunchDecision, RedeCoachPageContent)] = [
+            (.checking, .blocked(.paidCapabilityNotReady), .subscription(.preparing)),
+            (.freeCore, .ready, .subscription(.store)),
+            (.unknown(.verificationFailed), .blocked(.catalogMismatch), .subscription(.unavailable)),
+            (expired, .blocked(.paidCapabilityNotReady), .subscription(.preparing)),
+            // Expiration/refund/revocation resolve to Free Core before this app policy runs.
+            (.freeCore, .blocked(.catalogMismatch), .subscription(.unavailable)),
+        ]
+        for (entitlement, decision, expected) in nonPaidCases {
+            XCTAssertEqual(
+                RedeCoachPageContentPolicy.content(
+                    entitlement: entitlement,
+                    launchDecision: decision,
+                    now: now
+                ),
+                expected
+            )
+        }
+
+        let transition = [EntitlementState.checking, active, .freeCore].map {
+            RedeCoachPageContentPolicy.content(
+                entitlement: $0,
+                launchDecision: .blocked(.paidCapabilityNotReady),
+                now: now
+            )
+        }
+        XCTAssertEqual(transition, [
+            .subscription(.preparing),
+            .weeklyReview,
+            .subscription(.preparing),
+        ])
+    }
+
+    func testWeeklyReviewFindingScopeCountsWeekDropsAndFailsClosedWhenDateIsUnknown() {
+        let inWeekDrop = DataHealthIssue.setDropped(
+            sessionId: "s1",
+            dateISO: "2026-07-08",
+            exerciseId: "squat",
+            reason: .invalidWeight
+        )
+        let outOfWeekDrop = DataHealthIssue.exerciseDropped(
+            sessionId: "s2",
+            dateISO: "2026-07-15",
+            reason: .missingExerciseId
+        )
+        XCTAssertEqual(
+            WeeklyCoachReviewFindingScope.count(
+                issues: [inWeekDrop, outOfWeekDrop, .profileFieldIgnored(field: "age")],
+                suspectSetDatesISO: ["2026-07-09"],
+                reviewWeekStartISO: "2026-07-06",
+                reviewWeekEndExclusiveISO: "2026-07-13"
+            ),
+            2,
+            "Only in-week dropped training facts and suspect sets belong to this review"
+        )
+
+        let unknownDateDrop = DataHealthIssue.sessionDropped(
+            id: "s3",
+            dateISO: nil,
+            reason: .invalidDateFormat
+        )
+        XCTAssertNil(
+            WeeklyCoachReviewFindingScope.count(
+                issues: [unknownDateDrop],
+                suspectSetDatesISO: [],
+                reviewWeekStartISO: "2026-07-06",
+                reviewWeekEndExclusiveISO: "2026-07-13"
+            ),
+            "A dropped training record with no trustworthy date must fail closed"
+        )
     }
 
     func testLocalCatalogPurchasePendingRestoreRenewalExpirationAndRefund() async throws {

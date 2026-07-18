@@ -21,31 +21,37 @@ public enum CleanAppDataViewBuilder {
         let rawHistory = appData.storage["history"]?.asArray ?? []
         for element in rawHistory {
             guard let object = element.asObject else {
-                issues.append(.sessionDropped(id: nil, reason: .notAnObject))
+                issues.append(.sessionDropped(id: nil, dateISO: nil, reason: .notAnObject))
                 continue
             }
             let session = TrainingSession(storage: object)
+            let dateISO = session.date.flatMap(normalizedTrainingDate)
             guard let id = session.id, !id.isEmpty else {
-                issues.append(.sessionDropped(id: nil, reason: .missingId))
+                issues.append(.sessionDropped(id: nil, dateISO: dateISO, reason: .missingId))
                 continue
             }
             guard session.completed == true else {
-                issues.append(.sessionDropped(id: id, reason: .notCompleted))
+                issues.append(.sessionDropped(id: id, dateISO: dateISO, reason: .notCompleted))
                 continue
             }
             guard let date = session.date, !date.isEmpty else {
-                issues.append(.sessionDropped(id: id, reason: .missingDate))
+                issues.append(.sessionDropped(id: id, dateISO: nil, reason: .missingDate))
                 continue
             }
-            guard isValidTrainingDate(date) else {
-                issues.append(.sessionDropped(id: id, reason: .invalidDateFormat))
+            guard let dateISO else {
+                issues.append(.sessionDropped(id: id, dateISO: nil, reason: .invalidDateFormat))
                 continue
             }
             guard seenSessionIds.insert(id).inserted else {
-                issues.append(.sessionDropped(id: id, reason: .duplicateId))
+                issues.append(.sessionDropped(id: id, dateISO: dateISO, reason: .duplicateId))
                 continue
             }
-            let exercises = cleanExercises(of: session, sessionId: id, issues: &issues)
+            let exercises = cleanExercises(
+                of: session,
+                sessionId: id,
+                dateISO: dateISO,
+                issues: &issues
+            )
             sessions.append(CleanTrainingSession(id: id, date: date, exercises: exercises))
         }
 
@@ -72,14 +78,14 @@ public enum CleanAppDataViewBuilder {
 
     /// 严格校验 "yyyy-MM-dd"（更长 ISO 串取前 10 位）：零填充、月 1-12、日按月/闰年。
     /// 下游引擎按天序号计算 recency，格式非法必须在本层留痕拦截，不许静默蒸发。
-    private static func isValidTrainingDate(_ date: String) -> Bool {
+    private static func normalizedTrainingDate(_ date: String) -> String? {
         let s = String(date.prefix(10))
         let parts = s.split(separator: "-", omittingEmptySubsequences: false)
         guard parts.count == 3,
               parts[0].count == 4, parts[1].count == 2, parts[2].count == 2,
               let year = Int(parts[0]), let month = Int(parts[1]), let day = Int(parts[2]),
               (1...12).contains(month)
-        else { return false }
+        else { return nil }
         let daysInMonth: Int
         switch month {
         case 1, 3, 5, 7, 8, 10, 12: daysInMonth = 31
@@ -88,33 +94,53 @@ public enum CleanAppDataViewBuilder {
             let isLeap = (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
             daysInMonth = isLeap ? 29 : 28
         }
-        return (1...daysInMonth).contains(day)
+        return (1...daysInMonth).contains(day) ? s : nil
     }
 
     private static func cleanExercises(
         of session: TrainingSession,
         sessionId: String,
+        dateISO: String,
         issues: inout [DataHealthIssue]
     ) -> [CleanExercise] {
         var result: [CleanExercise] = []
         for exercise in session.exercises {
             guard let exerciseId = exercise.exerciseId, !exerciseId.isEmpty else {
-                issues.append(.exerciseDropped(sessionId: sessionId, reason: .missingExerciseId))
+                issues.append(.exerciseDropped(
+                    sessionId: sessionId,
+                    dateISO: dateISO,
+                    reason: .missingExerciseId
+                ))
                 continue
             }
             var sets: [CleanLoggedSet] = []
             for set in exercise.sets {
                 guard let weight = set.weight, weight >= 0 else {
-                    issues.append(.setDropped(sessionId: sessionId, exerciseId: exerciseId, reason: .invalidWeight))
+                    issues.append(.setDropped(
+                        sessionId: sessionId,
+                        dateISO: dateISO,
+                        exerciseId: exerciseId,
+                        reason: .invalidWeight
+                    ))
                     continue
                 }
                 guard let reps = set.reps, reps >= 1 else {
-                    issues.append(.setDropped(sessionId: sessionId, exerciseId: exerciseId, reason: .invalidReps))
+                    issues.append(.setDropped(
+                        sessionId: sessionId,
+                        dateISO: dateISO,
+                        exerciseId: exerciseId,
+                        reason: .invalidReps
+                    ))
                     continue
                 }
                 var rir = set.rir
                 if let value = rir, !(0...15).contains(value) {
-                    issues.append(.setFieldIgnored(sessionId: sessionId, exerciseId: exerciseId, field: "rir"))
+                    issues.append(.setFieldIgnored(
+                        sessionId: sessionId,
+                        dateISO: dateISO,
+                        exerciseId: exerciseId,
+                        field: "rir"
+                    ))
                     rir = nil
                 }
                 sets.append(CleanLoggedSet(weight: weight, reps: reps, rir: rir))

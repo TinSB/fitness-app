@@ -80,13 +80,12 @@ final class RedeStringsTests: XCTestCase {
             ("weeklyCoachReviewEvidenceTitle", s.weeklyCoachReviewEvidenceTitle),
             ("weeklyCoachReviewLoading", s.weeklyCoachReviewLoading),
             ("weeklyCoachReviewEmptyTitle", s.weeklyCoachReviewEmptyTitle),
-            ("weeklyCoachReviewEmptyBody", s.weeklyCoachReviewEmptyBody),
             ("weeklyCoachReviewUnavailableTitle", s.weeklyCoachReviewUnavailableTitle),
             ("weeklyCoachReviewUnavailableBody", s.weeklyCoachReviewUnavailableBody),
             ("weeklyCoachReviewRetry", s.weeklyCoachReviewRetry),
             ("weeklyCoachReviewWeek", s.weeklyCoachReviewWeek(dateText: "7月6日")),
             ("weeklyCoachReviewVerdictTitle", s.weeklyCoachReviewVerdictTitle(code: "progressing")),
-            ("weeklyCoachReviewVerdictBody", s.weeklyCoachReviewVerdictBody(code: "dataNeedsReview", count: 2)),
+            ("weeklyCoachReviewVerdictBody", s.weeklyCoachReviewVerdictBody(code: "dataNeedsReview", count: 2) ?? ""),
             ("weeklyCoachReviewTrainingDays", s.weeklyCoachReviewTrainingDays(3)),
             ("weeklyCoachReviewRecentMedian", s.weeklyCoachReviewRecentMedian(2.5)),
             ("weeklyCoachReviewSessions", s.weeklyCoachReviewSessions(3)),
@@ -286,18 +285,31 @@ final class RedeStringsTests: XCTestCase {
     func testWeeklyCoachReviewCopyIsSpecificAndNonCausal() {
         XCTAssertEqual(zh.weeklyCoachReviewTitle, "每周教练复盘")
         XCTAssertEqual(en.weeklyCoachReviewTitle, "Weekly coach review")
+        XCTAssertEqual(zh.weeklyCoachReviewEmptyTitle, "上周没有训练记录")
+        XCTAssertEqual(en.weeklyCoachReviewEmptyTitle, "No workouts were recorded last week")
+        XCTAssertEqual(zh.weeklyCoachReviewVerdictTitle(code: "calibrating"), "继续训练后再判断趋势")
+        XCTAssertEqual(en.weeklyCoachReviewVerdictTitle(code: "calibrating"), "Keep training before calling a trend")
+        XCTAssertNil(zh.weeklyCoachReviewVerdictBody(code: "calibrating", count: 0))
+        XCTAssertNil(en.weeklyCoachReviewVerdictBody(code: "calibrating", count: 0))
+        XCTAssertEqual(zh.weeklyCoachReviewVerdictTitle(code: "dataNeedsReview"), "先核对上周的训练记录")
+        XCTAssertEqual(en.weeklyCoachReviewVerdictTitle(code: "dataNeedsReview"), "Check last week’s training records first")
         XCTAssertEqual(zh.weeklyCoachReviewVerdictTitle(code: "progressing"), "关键动作在向上走")
         XCTAssertEqual(en.weeklyCoachReviewVerdictTitle(code: "progressing"), "Your key lift is moving up")
-        XCTAssertEqual(zh.weeklyCoachReviewAction(code: "reviewData"), "核对数据")
-        XCTAssertEqual(en.weeklyCoachReviewAction(code: "viewProgress"), "View progress")
+        XCTAssertEqual(zh.weeklyCoachReviewAction(code: "openToday"), "查看今天安排")
+        XCTAssertEqual(zh.weeklyCoachReviewAction(code: "viewProgress"), "查看进展")
+        XCTAssertEqual(zh.weeklyCoachReviewAction(code: "reviewData"), "核对训练数据")
+        XCTAssertEqual(en.weeklyCoachReviewAction(code: "openToday"), "View Today")
+        XCTAssertEqual(en.weeklyCoachReviewAction(code: "viewProgress"), "View Progress")
+        XCTAssertEqual(en.weeklyCoachReviewAction(code: "reviewData"), "Review Training Data")
+        XCTAssertEqual(en.weeklyCoachReviewRecentMedian(1), "Recent median · 1 day")
 
         let weeklyCopy = [
-            zh.weeklyCoachReviewVerdictBody(code: "dataNeedsReview", count: 2),
-            zh.weeklyCoachReviewVerdictBody(code: "rebuildRhythm", count: 0),
-            zh.weeklyCoachReviewVerdictBody(code: "progressing", count: 0),
-            en.weeklyCoachReviewVerdictBody(code: "dataNeedsReview", count: 2),
-            en.weeklyCoachReviewVerdictBody(code: "rebuildRhythm", count: 0),
-            en.weeklyCoachReviewVerdictBody(code: "progressing", count: 0),
+            zh.weeklyCoachReviewVerdictBody(code: "dataNeedsReview", count: 2) ?? "",
+            zh.weeklyCoachReviewVerdictBody(code: "rebuildRhythm", count: 0) ?? "",
+            zh.weeklyCoachReviewVerdictBody(code: "progressing", count: 0) ?? "",
+            en.weeklyCoachReviewVerdictBody(code: "dataNeedsReview", count: 2) ?? "",
+            en.weeklyCoachReviewVerdictBody(code: "rebuildRhythm", count: 0) ?? "",
+            en.weeklyCoachReviewVerdictBody(code: "progressing", count: 0) ?? "",
         ].joined(separator: " ").lowercased()
 
         let words = weeklyCopy.split(whereSeparator: { !$0.isLetter }).map(String.init)
