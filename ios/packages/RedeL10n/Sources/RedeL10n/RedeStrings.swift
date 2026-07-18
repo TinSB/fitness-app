@@ -206,11 +206,6 @@ public struct RedeStrings: Sendable {
           "When on, training runs a 4-week block with built-in overload and deload weeks, and Plan shows your current cycle. When off, each session is tuned only to how you've been responding. The safety rule (auto-deload after heavy load) is always on.")
     }
     public var settingsData: String { t("数据", "Data") }
-    /// FR-SE6 数据事实陈述（K7 2026-07-16 导出兑现后同步去掉「后续版本加入」的时间表措辞）。
-    public var settingsExportNote: String {
-        t("所有训练记录都保存在这台设备本地　可随时导出完整数据带走",
-          "All training records live on this device. Export the full data file anytime")
-    }
     /// FR-SE6 导出行（K7）：canonical 原样 JSON → 系统分享面板。
     public var settingsExportAction: String { t("导出训练数据", "Export training data") }
     /// 导出读失败 alert（沿 dataUnreadable 文案家族：如实说读不出，绝不产出空文件假成功）。
@@ -231,10 +226,6 @@ public struct RedeStrings: Sendable {
     public var settingsSubscriptionUnknown: String {
         t("暂时无法核对购买　Free Core 仍可正常使用",
           "Purchases can't be checked right now. Free Core still works")
-    }
-    public var settingsSubscriptionFreeNote: String {
-        t("此版本的所有现有功能均包含在 Free Core",
-          "Every existing feature in this version is included in Free Core")
     }
     public var settingsSubscriptionGrace: String {
         t("续费宽限期内　Rede Coach 保持可用",

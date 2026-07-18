@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-07-18 · 设置页去掉三类常驻说明小字
+
+**用户目标**：设置页不要再在自解释的项目下面堆说明小字；明确删除“训练数据保存在本机并可导出”“此版本所有功能均包含在 Free Core”和训练背景下的“点任意一行修改”。
+
+**做了什么**：删除数据导出行和 Free Core 下方的双语常驻副文；训练背景只保留分区标题、五个可点击值和箭头，默认不再显示操作说明。保存训练背景后的短暂结果收据仍会出现；购买核对、unknown、grace period、恢复成功/失败、导出失败等真实状态/错误文案没有被误删。“点任意一行修改”只留作 VoiceOver 无障碍提示，不再显示在屏幕上。产品文案基线 §5.5 已写入长期规则：自解释的设置项不配常驻 caption，但状态、错误、结果和无障碍反馈必须保留。
+
+**验证证据**：先用聚焦检查真实得到 RED，准确命中 `SettingsSheet` 的三个旧渲染点；最小修改后同一检查 PASS。`RedeL10n` 运行 **122 项、0 失败**。权威 `bash .claude/quality-gate.cmd` exit 0：10 个 Swift 包全部通过、Settings 卡片预算通过、通用 iOS Simulator 构建成功、production subscription fail-closed XCTest 通过，最终 `QUALITY GATE: PASS`；收据：`~/Library/Developer/Xcode/DerivedData/Rede-fehbzdcxewzuvxgixmetankthjqd/Logs/Test/Test-Rede-2026.07.18_10-54-55--0400.xcresult`。独立只读审查 PASS，P0/P1/P2/P3 均为 0。
+
+**模拟器真实流程**：将新构建安装到 iPhone 17 Pro / iOS 26.5 Simulator，实际打开中文 Today → Settings、展开并滚动到数据/方案/训练背景：三个位置都只剩主信息，没有目标小字；点击“目标”成功进入训练背景编辑页，再取消返回，证明去掉提示没有破坏可编辑性且未修改数据。最后关闭设置并停留在中文 Today。证据：`.ai-tmp/20260718-compact-settings-copy/01-settings-compact-copy-zh.png`。
+
+**规格写回与范围**：产品文案基线 §5.5 已更新；没有新增长期文档，`DOCS_MANIFEST` 无需改。训练、存储、导出行为、订阅权益和数据 schema 均未改变。Git 只做本地提交，不 push、不创建 PR。
+
+---
+
 ## 2026-07-18 · 模拟器真实流程成为 Rede 验收硬门槛
 
 **用户目标**：以后 Rede 的界面、购买、发布和用户流程改动，不能只靠测试或构建判定完成；必须在 iOS Simulator 像用户一样走完整条路径并留可核对证据。

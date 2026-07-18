@@ -37,13 +37,14 @@ final class RedeStringsTests: XCTestCase {
             ("planTemplateLine", s.planTemplateLine(splitName: s.onbSplitName("upper-lower"), days: 4)),
             ("settingsTitle", s.settingsTitle), ("settingsLanguage", s.settingsLanguage),
             ("settingsDone", s.settingsDone), ("settingsUnit", s.settingsUnit),
-            ("settingsBackground", s.settingsBackground), ("settingsPlateHint", s.settingsPlateHint),
+            ("settingsBackground", s.settingsBackground),
+            ("settingsPlateAccessibilityHint", s.settingsPlateAccessibilityHint),
             ("onbEditSave", s.onbEditSave), ("onbEditCancel", s.onbEditCancel),
             ("onbDaysNote", s.onbDaysNote), ("onbEquipEcho", s.onbEquipEcho("commercial-gym")),
             ("onbEquipEchoHome", s.onbEquipEcho("home-dumbbell")), ("onbEquipEchoMinimal", s.onbEquipEcho("minimal")),
             ("onbA11yAnswered", s.onbA11yAnswered), ("onbA11yCurrent", s.onbA11yCurrent),
             ("settingsDaysValue", s.settingsDaysValue(4)), ("settingsData", s.settingsData),
-            ("settingsExportNote", s.settingsExportNote), ("settingsAbout", s.settingsAbout),
+            ("settingsAbout", s.settingsAbout),
             // K7 数据导出（FR-SE6 兑现）
             ("settingsExportAction", s.settingsExportAction),
             ("settingsExportFailedTitle", s.settingsExportFailedTitle),
@@ -57,7 +58,6 @@ final class RedeStringsTests: XCTestCase {
             ("settingsSubscriptionChecking", s.settingsSubscriptionChecking),
             ("settingsSubscriptionUnknownTier", s.settingsSubscriptionUnknownTier),
             ("settingsSubscriptionUnknown", s.settingsSubscriptionUnknown),
-            ("settingsSubscriptionFreeNote", s.settingsSubscriptionFreeNote),
             ("settingsSubscriptionGrace", s.settingsSubscriptionGrace),
             ("settingsSubscriptionVerified", s.settingsSubscriptionVerified),
             ("settingsSubscriptionRestore", s.settingsSubscriptionRestore),
@@ -187,16 +187,11 @@ final class RedeStringsTests: XCTestCase {
     }
 
     func testExportCopyAnchors() {
-        // K7 数据导出（FR-SE6 兑现）：行标题锚句；失败家族沿 dataUnreadable 口径。
+        // K7 数据导出（FR-SE6 兑现）：自解释的行标题；失败家族沿 dataUnreadable 口径。
         XCTAssertEqual(zh.settingsExportAction, "导出训练数据")
         XCTAssertEqual(en.settingsExportAction, "Export training data")
         XCTAssertEqual(zh.settingsExportFailedTitle, "暂时读不出数据")
         XCTAssertEqual(en.settingsExportFailedTitle, "Can't read your data right now")
-        // 导出已兑现：说明不得再写「后续版本加入」的腐烂承诺
-        XCTAssertFalse(zh.settingsExportNote.contains("后续版本"), "导出已上线，事实陈述不得再写「后续版本加入」")
-        XCTAssertFalse(en.settingsExportNote.lowercased().contains("later version"))
-        XCTAssertTrue(zh.settingsExportNote.contains("导出"))
-        XCTAssertTrue(en.settingsExportNote.lowercased().contains("export"))
     }
 
     func testPrivacyNoteHonestWording() {
@@ -225,8 +220,6 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertEqual(en.settingsSubscriptionRestore, "Restore purchases")
         XCTAssertEqual(zh.subscriptionStoreHeadline, "更深入的训练判断，依据仍然清楚")
         XCTAssertEqual(en.subscriptionStoreHeadline, "Deeper training decisions, with the reasoning shown")
-        XCTAssertTrue(zh.settingsSubscriptionFreeNote.contains("所有现有功能"))
-        XCTAssertTrue(en.settingsSubscriptionFreeNote.lowercased().contains("every existing feature"))
         for line in [zh.settingsSubscriptionUnknown, en.settingsSubscriptionUnknown] {
             XCTAssertTrue(line.contains("Free Core"), "未知态必须明确 Free Core 不受影响")
         }

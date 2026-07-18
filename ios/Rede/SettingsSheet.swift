@@ -227,10 +227,12 @@ struct SettingsSheet: View {
             }
             .frame(minHeight: RedeShape.controlHeight)
 
-            Text(subscriptionStatusNote)
-                .font(.redeCaption)
-                .foregroundStyle(Color.redeT3)
-                .fixedSize(horizontal: false, vertical: true)
+            if let subscriptionStatusNote {
+                Text(subscriptionStatusNote)
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             if subscriptionModel.launchDecision == .ready {
                 subscriptionActionRow(
@@ -292,12 +294,12 @@ struct SettingsSheet: View {
         }
     }
 
-    private var subscriptionStatusNote: String {
+    private var subscriptionStatusNote: String? {
         switch subscriptionModel.entitlement {
         case .checking:
             s.settingsSubscriptionChecking
         case .freeCore:
-            s.settingsSubscriptionFreeNote
+            nil
         case .unknown:
             s.settingsSubscriptionUnknown
         case .paidCoach(_, let billingState):
@@ -400,8 +402,8 @@ struct SettingsSheet: View {
         }
     }
 
-    // MARK: - K7 数据（FR-SE6 兑现）：导出行 + 本机事实陈述（原背板「数据」折叠行上移合并，
-    // 避免同页两个「数据」标题；隐私/关于仍留背板渐进披露）
+    // MARK: - K7 数据（FR-SE6 兑现）：只保留自解释的导出行；owner 2026-07-18
+    // 删除常驻说明小字。隐私/关于仍留背板渐进披露。
 
     private var dataSection: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -428,10 +430,6 @@ struct SettingsSheet: View {
             }
             .buttonStyle(.redePressableRow)
             .disabled(exportBusy)
-            Text(s.settingsExportNote)
-                .font(.redeCaption)
-                .foregroundStyle(Color.redeT3)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -688,11 +686,13 @@ struct SettingsSheet: View {
                 .padding(.horizontal, 16)
             }
             .padding(.top, 9)
-            // 变更收据（保存后）或可点提示（默认）
-            Text(editReceipt ?? s.settingsPlateHint)
-                .font(.redeCaption)
-                .foregroundStyle(editReceipt != nil ? Color.redeT3 : Color.redeT4)
-                .padding(.top, 10)
+            // 只在保存后显示短暂变更收据；不常驻“点任意一行修改”说明小字。
+            if let editReceipt {
+                Text(editReceipt)
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT3)
+                    .padding(.top, 10)
+            }
         }
     }
 
@@ -729,14 +729,14 @@ struct SettingsSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.redePressableRow)
-        .accessibilityHint(profileComplete ? s.settingsPlateHint : "")
+        .accessibilityHint(profileComplete ? s.settingsPlateAccessibilityHint : "")
     }
 
     // MARK: - 背板蚀刻：数据/隐私/关于 渐进披露（默认收起）
 
     private var backplateInfo: some View {
         VStack(spacing: 0) {
-            // 「数据」行已上移成 dataSection（K7：导出行 + 事实陈述同区，避免双标题）。
+            // 「数据」行已上移成 dataSection（K7：单一导出入口，避免双标题）。
             infoRow(id: "privacy", title: s.settingsPrivacy, detail: s.settingsPrivacyNote)
             infoRow(id: "about", title: s.settingsAbout, detail: s.settingsDisclaimer)
         }

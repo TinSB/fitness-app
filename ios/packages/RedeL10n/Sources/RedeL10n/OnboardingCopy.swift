@@ -199,7 +199,8 @@ extension RedeStrings {
         }
     }
 
-    public var settingsPlateHint: String {
+    /// VoiceOver-only guidance. The visible Settings plate is self-explanatory.
+    public var settingsPlateAccessibilityHint: String {
         locale == .zh ? "点任意一行修改" : "Tap any row to change it"
     }
 
