@@ -1,7 +1,7 @@
 # Rede Product Copy Baseline — 产品文案基底
 
 > **状态:** Canonical / living copy baseline
-> **最后更新:** 2026-07-18（订阅基础 runtime 状态文案落地；生产购买仍关闭）
+> **最后更新:** 2026-07-18（每周教练复盘双语文案已落地并完成本地 Simulator 验收；生产购买仍关闭）
 > **适用范围:** 产品定位、v0 / 原型生成、App Store 文案、onboarding、paywall、UI microcopy、空状态、错误、通知、双语 locale
 > **权威边界:** 本文定义 Rede 如何说话,视觉品牌与原型画面方向以 `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md` 为准。本文不授权任何新功能、网络、云、HealthKit 范围、医疗判断或 source-of-truth 变更。功能与架构边界以 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 和 `docs/REDE_iOS_SYSTEM_LOGIC.md` 为准。
 
@@ -416,7 +416,7 @@ English:
 
 `Rede Coach` 是订阅层的统一用户名称。它的核心不是"更多功能",而是未来新增的"更少猜测,更多依据"；**Rede 1.8 已经提供的训练、记录、判断/解释、计划、进展、数据质量、肌群等级、导出与现有分享能力继续免费**。任何 paywall 文案只能描述已经真实实现、且 PRD 预先标为 paid 的新增能力，不得把现有能力换个名字后收费。
 
-首个具体 Paid Coach 功能已批准为 **每周教练复盘 / Weekly Coach Review（FR-SUB3）**。在它真实实现并通过 package、app 与 Simulator 验收前，production 页面仍不得显示权益卖点或打开购买；验收后只能按下列已批准结果表达，现有建议理由、自动计划更新、数据质量提醒和肌群等级仍不得进入权益列表。
+首个具体 Paid Coach 功能 **每周教练复盘 / Weekly Coach Review（FR-SUB3）** 已完成 package、app 与 Simulator 本地验收。它只能按下列已批准结果表达；现有建议理由、自动计划更新、数据质量提醒和肌群等级仍不得进入权益列表。该功能完成不等于 production paywall 获准：在真实商品、政策地址、StoreKit 生命周期与 Sandbox/TestFlight 门禁通过前，production 页面仍不得显示权益卖点或打开购买。
 
 ### 6.1.1 每周教练复盘
 
@@ -439,30 +439,15 @@ Paywall 必须具体,不要煽动。
 
 1. 一句价值：这次新增的教练能力具体替用户减少什么判断负担。
 2. 最多三个权益：只能列 PRD 已批准并已实现的 **1.8 之后新增能力**；不得列现有 readiness explanation / plan adjustment / data-quality / muscle level 等免费面。
-3. 免费连续性：明确原有训练、记录和数据仍可照常使用。
-4. 价格、试用、续订与资格：逐字依据 StoreKit 当前商品，不硬编码金额、试用天数或“最划算”。
-5. `恢复购买` / `Restore Purchases` 与 `管理订阅` / `Manage Subscription`。
-6. 可点击的 `隐私政策` / `Privacy Policy` 与 `使用条款` / `Terms of Use`；目标 URL 属于发布配置，提交前逐一打开核验。
+3. 价格、试用、续订与资格：逐字依据 StoreKit 当前商品，不硬编码金额、试用天数或“最划算”。
+4. `恢复购买` / `Restore Purchases` 与 `管理订阅` / `Manage Subscription`。
+5. 可点击的 `隐私政策` / `Privacy Policy` 与 `使用条款` / `Terms of Use`；目标 URL 属于发布配置，提交前逐一打开核验。
 
-示例:
-
-中文:
-
-> Rede Coach 增加这里列出的新教练工具　Rede 1.8 Free Core 继续可用
->
-> {若 StoreKit 返回试用：试用结束后按此处显示的价格续订} 可在 Apple 订阅设置中管理或取消
-
-English:
-
-> Rede Coach adds the new coaching tools listed here. Rede 1.8 Free Core stays available
->
-> {If StoreKit returns a trial: After the trial, your subscription renews at the price shown here.} Manage or cancel it in Apple subscription settings
-
-花括号内容是条件模板，不得直接作为成品字符串。没有 StoreKit 返回的 trial/offer 就整句不显示；商品目录加载失败时不显示猜测价格。
+不要在权益卡、行动按钮或页面底部追加“现有功能都在 Free Core”“数据都保存在本机”“随时导出”等常驻解释小字。需要展示的试用、续订、取消和政策信息只在 StoreKit/法律要求的位置按实际商品条件呈现；没有 StoreKit 返回的 trial/offer 就整句不显示，商品目录加载失败时不显示猜测价格。
 
 ### 6.2.1 订阅状态与恢复文案（已实现基础 runtime 合同）
 
-当前 Settings 已使用本节的双语状态：Free Core、Rede Coach、核对中、未知、pending、恢复/管理与操作失败。`unknown` 的方案标题必须是“当前方案：暂时无法确认”，不能把无法验证的状态伪装成 Free Core；同一状态的说明仍明确 Free Core 不受影响。Settings 的“查看 Rede Coach”始终进入品牌页：gate 未就绪时只显示品牌名、当前方案与诚实状态，不写价值承诺、不列权益、不放禁用购买按钮，也不显示价格、试用、恢复、管理或政策链接。付费功能尚未准备好与商品/政策配置异常使用不同状态文案。首个 paid 功能完成并写入本节后，才把真实权益填入页面；paid capability、两个 StoreKit 商品和两条 HTTPS 政策地址同时通过 launch gate 后，页面才切换到 Apple 购买面。production 配置当前故意关闭购买控件。
+当前 Settings 已使用本节的双语状态：Free Core、Rede Coach、核对中、未知、pending、恢复/管理与操作失败。`unknown` 的方案标题必须是“当前方案：暂时无法确认”，不能把无法验证的状态伪装成 Free Core。Settings 的“查看 Rede Coach”始终进入品牌页：gate 未就绪时只显示品牌名、当前方案与诚实状态，不写价值承诺、不列权益、不放禁用购买按钮，也不显示价格、试用、恢复、管理或政策链接。付费能力未达商业发布门禁与商品/政策配置异常使用不同状态文案。每周教练复盘已完成本地实现，但只有 paid capability、两个 StoreKit 商品和两条 HTTPS 政策地址同时通过 launch gate 后，页面才把这项真实权益填入 Apple 购买面。production 配置当前故意关闭购买控件。
 
 预览页固定文案：
 

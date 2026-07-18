@@ -1,6 +1,6 @@
 # Rede iOS — 系统逻辑全景
 
-> **活文档 · 系统逻辑主文档**。本文定义 Rede 干净重写的产品、系统逻辑和工程合同。干净 iOS 实现(`ios/Rede` + 10 个干净包)已是活跃实现并 shipping 到 M6，订阅基础设施以 fail-closed 形态在开发版中存在；已退役的旧 IronPath/PWA 代码仅作参考。架构边界、source-of-truth、平台权限和禁用系统以 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 为最高契约。
+> **活文档 · 系统逻辑主文档**。本文定义 Rede 干净重写的产品、系统逻辑和工程合同。干净 iOS 实现(`ios/Rede` + 10 个干净包)已是活跃实现并 shipping 到 M6，订阅基础设施以 fail-closed 形态在开发版中存在，首个 post-1.8 Paid Coach 能力“每周教练复盘”已完成本地实现与 Simulator 验收；已退役的旧 IronPath/PWA 代码仅作参考。架构边界、source-of-truth、平台权限和禁用系统以 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 为最高契约。
 
 ## 0. 干净重写基线
 
@@ -1228,6 +1228,10 @@ Account/sync/cloud settings 不进入第一版干净实现,不得做成无能力
 **派生与权益边界。** V1 每次打开从 canonical 历史重算，不持久化复盘归档、已读状态、周初计划快照或输入摘要，不 bump schema；用户修正历史后结果随真实数据更新。Paid access 与 purchase launch gate 分离：有效 active/grace entitlement 可看复盘，即使商品目录/政策临时不可用；free/checking/unknown/expired/refunded 不得看到付费结论，页面加载期间 entitlement 变化要取消/清空结果。引擎永远不知道用户是否付费。
 
 **验证。** 包测试覆盖零历史/仅本周、上周零场/一场、同日多场去重、跨年与时区、坏数据优先、up/flat/down、吨位升而主项持平、非法数值 fail-safe、依据数量与稳定顺序；app 测试覆盖 active/grace/free/checking/unknown/expired/refunded、已验证 Paid + catalog failure、Free Core 不可阻断和加载竞态。Simulator 必须真走中英文 Rede Coach → 复盘 → 依据 → 行动，并覆盖数据不足/坏数据、Dynamic Type、VoiceOver、Reduce Motion、杀进程重开确定性；调试 fixture 只算本地 L3 UI 证据，StoreKitTest 与 Sandbox/TestFlight 仍是独立收费发布门禁。
+
+**实现状态（2026-07-18）。** `WeeklyCoachReviewEngine`、上一完整周 `WeeklyReviewFactsBuilder`、双语 `RedeL10n` renderer、Rede Coach 页面与 Today/Progress/data-review 导航均已落地。零场固定进入无训练空态；只有一场时无论是否存在历史都只给事实并保持校准，绝不调用进步；训练量只作依据。`RedeDataHealth` 为 dropped session/exercise/set 保留可归周的日期，上一完整周内的 dropped data 与 suspect set 会抢占趋势；任一 dropped training issue 无法定位日期时，页面直接进入不可读态，不静默忽略后输出正向结论。有效 active/grace entitlement 与 purchase launch gate 已解耦，已验证用户在商品/政策不可用时仍可看复盘，其他权益态只看诚实的订阅状态页。
+
+本地证据已通过全部包测试、4 条 app policy XCTest、权威 `.claude/quality-gate.cmd`、Release generic iOS Simulator build，以及 iPhone 17 Pro / iOS 26.5 真实点击：中文零训练 → “查看今天安排” → 今日；英文坏数据 → “Review Training Data” → Progress；生产 Free Core 只见准备态且无商品/价格/购买/恢复控件；最大 Dynamic Type 页头与行动可达；Simulator AX tree 可读完整 VoiceOver label/identifier；Reduce Motion 实际开启后复盘 → Progress 仍通过，并已恢复原设置。重复杀进程/重启同一 fixture 保持确定结果。上述只证明本地 L3 功能与 UX，不证明 StoreKit 交易；`SKInternalErrorDomain Code=3`、真实 App Store Connect 商品/政策地址、Sandbox/TestFlight 购买与恢复仍是 production No-Go。
 
 ## 9. Share / Growth System
 
