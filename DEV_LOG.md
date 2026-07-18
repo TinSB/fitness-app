@@ -6,6 +6,22 @@
 
 ---
 
+## 2026-07-18 · 模拟器真实流程成为 Rede 验收硬门槛
+
+**用户目标**：以后 Rede 的界面、购买、发布和用户流程改动，不能只靠测试或构建判定完成；必须在 iOS Simulator 像用户一样走完整条路径并留可核对证据。
+
+**真实用户流程**：已将订阅地基提交 `b72df9b` 的 production Rede 安装到 **iPhone 17 Pro / iOS 26.5 Simulator**，并用可见界面实际点击完成：英文 Today → Settings → Plan / Free Core；切换中文后核对“方案 / Free Core”，关闭设置并进入完整“计划”页，证明 1.8 Free Core 未被收费地基误锁；再恢复英文并返回 Today。production 配置下设置页没有“恢复购买”“管理订阅”或购买入口，符合商品 ID、政策 URL 和 paid capability 为空时的 fail-closed 合同。
+
+**收费安全路径**：仅用本地 `-redeStoreKitTest` 测试参数重新启动同一 Debug app，确认“Restore purchases / Manage subscriptions / Privacy / Terms of Use”入口出现，但商品目录不可用时不显示购买按钮。实际点击恢复购买后出现 Apple 原生登录提示；取消后 app 返回设置页并明确显示“Couldn't complete that right now… Free Core is unaffected”。实际点击管理订阅后进入 Apple 原生管理页；当前模拟器环境显示 `Cannot Connect`，关闭后能安全返回 Rede，未崩溃、未制造假权益。最后已终止测试参数实例，以无参数 production 配置重启；再次核对设置页只显示 Free Core 且无收费操作，关闭设置后把模拟器留在英文 Today。
+
+**验收判定**：production Free Core 中英文与 Plan 可用性、收费入口 fail-closed、恢复取消错误处理、管理页失败后返回均 **PASS**。真实购买、成功恢复、续订、grace period、过期与退款仍是 **No-Go / 未验证**：Xcode 26.6 + iOS 26.5 Simulator 的本地 StoreKit 配置仍触发 `SKInternalErrorDomain Code=3`，且没有真实 App Store Connect 商品与 Sandbox/TestFlight 账号证据；不得把本轮安全路径冒充完整收费生命周期通过。
+
+**可核对证据**：`.ai-tmp/2026-07-18-subscription-simulator-flow/03-settings-expanded.png`（英文 Free Core）、`04-settings-plan-free-core-zh.png`（中文 Free Core）、`05-free-core-plan-zh.png`（中文计划页）、`06-free-core-today-en-final.png`（恢复英文 Today）、`07-storekit-test-actions-before.png`（仅测试态的恢复/管理入口）、`08-restore-cancel-fail-closed.png`（恢复取消后 Free Core 不受影响）、`09-manage-subscriptions-cannot-connect.png`（Apple 原生管理页环境失败）。
+
+**规格写回**：none——本轮只完成既有订阅合同的运行时验收，没有改变 Rede 产品行为、架构或用户合同；长期模拟器验收规则已写入跨会话记忆，本日志记录真实执行与 No-Go 边界。
+
+---
+
 ## 2026-07-18 · 企业级订阅地基：能验证、会失败关闭，但还不能发布收费
 
 **用户目标**：接着开发地图第 2 块，用企业级标准把 Rede 的收费基础设施真正实现；同时沿用已拍板方案 A——Rede 1.8 已有能力永久免费。用户再次明确本项目不发布 PR。
