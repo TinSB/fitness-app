@@ -6,6 +6,26 @@
 
 ---
 
+## 2026-07-17 · 订阅架构门禁：1.8 能力不回收，首片只用 StoreKit 2
+
+**用户目标**：按开发地图先做第 2 块——订阅架构门禁；在收费分界上选择方案 A：Rede 1.8 已经免费的能力以后仍然免费，付费层只承接后来新增的深度教练能力。用户同时明确要求本项目不发布 PR。
+
+**做了什么**：先只读核对仓库和 Apple / RevenueCat 官方资料，确认当前代码里没有 StoreKit、RevenueCat、paywall、恢复购买、entitlement 或 `.storekit` 配置。四种候选中选择最小边界：未来新建薄 `RedeEntitlements` 包，只有包内 iOS platform/UI adapters 接触 StoreKit 2，app 通过 seam 和导出的 subscription-view wrapper 使用；Apple 已验证的 current entitlement 是唯一付费真相；恢复购买只能由用户显式触发；价格、试用和续订条款只读 StoreKit 本地化商品。首片不接 RevenueCat、账号、Rede server、远程收据或远程分析，权益也绝不写进 canonical AppData、导出、widget 或训练引擎。
+
+**你能看到什么**：当前 1.8 完全没有 UI 或功能变化，也没有出现订阅墙。长期产品合同已经锁死：1.8 现有的今日判断/解释、训练处方与记录、计划查看/调整/编辑、进展/e1RM/数据质量/肌群等级、本地导出和现有分享卡全部属于 Free Core；未来 `Rede Coach` 只能展示真正新增、且开发前已在 PRD 明确标成 paid 的能力。安全、训练与记录、保存、数据读取/导出、隐私控制永远不能收费。
+
+**验证与证据**：本地代码审计确认订阅 runtime 为零；Apple 官方 `Transaction.currentEntitlements`、`AppStore.sync()`、StoreKit views 与 StoreKit testing 文档构成平台依据。独立审查发现并纠正了旧文案仍把 1.8 的解释/自动调整/数据质量提示暗示为付费、StoreKit view import 边界矛盾、pending/unknown 文案不诚实、Roadmap 当前状态过时和 paywall 缺 Privacy Policy / Terms of Use 目的地等问题；最终复核 **PASS，P0/P1/P2 为 0**。权威 `bash .claude/quality-gate.cmd` 首次因沙箱禁止写 SwiftPM module cache 而在测试前 exit 1；同一命令获准重跑后 exit 0、**9/9 包零失败**（含 RedeDataHealth 54、RedeTrainingDecision 360、RedeWidgetShared 12），Xcode `BUILD SUCCEEDED`，最终 `QUALITY GATE: PASS`。最终 `git diff --check` 通过。
+
+**风险与遗留**：这是 docs-only gate，不等于订阅已经做完。`RedeEntitlements` 包、月/年商品、product IDs、价格、试用、paywall、购买/恢复代码、StoreKit 配置和 App Store Connect 订阅产品全部仍不存在；定价区间只是待刷新假设。真实实现必须再过纯 seam 测试、StoreKitTest、Sandbox/TestFlight 的购买/pending/续订/grace/过期/退款撤销/恢复/换设备/离线验收，Xcode 本地测试不能替代真实商店。
+
+**规格写回**：Master v3.2（包边界、平台与权益真相、验证）；系统逻辑 §8.3（状态机、购买/恢复、失败行为、方案 A）；PRD FR-SE9/FR-SUB1/FR-SUB2 与 R3；Roadmap P2/定价分界/当前 1.8 状态；Copy §6（Rede Coach 命名、paywall 与状态文案）；CHANGELOG（本次架构事实）。没有新建长期文档，`DOCS_MANIFEST` 无需改。
+
+**Git / 发布**：只保留本地任务分支与本地提交；按用户明确指令，不 push、不创建 PR。
+
+**下一步**：架构门禁完成后，下一独立切片才是创建 `RedeEntitlements` + StoreKitTest 的最小 runtime 骨架；在首个真实 paid 能力写进 PRD 前，不做可发布 paywall。
+
+---
+
 ## 2026-07-17 · Rede 1.8 (build 25) 已提交 App Store 审核
 
 **用户目标**：接管 Claude 额度中断后的 1.8 发布工作，自己完成 App Store Connect 填写、用模拟器重拍商店图、上传并提交；审核通过后自动发布。

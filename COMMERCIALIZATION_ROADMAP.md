@@ -21,14 +21,14 @@
 
 | Workstream | 重写基线 | 距离 / 难度 |
 |---|---|---|
-| iOS 原生 | 产品系统逻辑、训练决策合同、设计语言和文案基线已明确;干净 iOS 实现已是活跃实现,旧 IronPath/PWA 代码已退役（git tag `legacy-parity-final`） | ✅ **R0 已上 TestFlight（2026-06-16，内部测试）**。clean rewrite 已实现 Today / 专注训练 / Progress / Plan 占位 / 引导 / 设置最小闭环（见 MVP §9，M0~M5 全 ✅，M6-4 🟡 已上传内测、阻塞全解除，版本 0.1.0）;距 R0 收官仅剩 §1 八条真机验收 owner 确认。下一阶段 → P0 需求验证 + 收 beta 反馈 |
+| iOS 原生 | 产品系统逻辑、训练决策合同、设计语言和文案基线已明确;干净 iOS 实现已是活跃实现,旧 IronPath/PWA 代码已退役（git tag `legacy-parity-final`） | ✅ **Rede 1.8 (build 25) 已于 2026-07-17 提交 App Store 审核，当前 Waiting for Review**。现役 app + widget + 9 个本地包已覆盖完整 1.8 Free Core；下一工程阶段是 P2 订阅 runtime，公开商店发布仍以 Apple 审核结果为准 |
 | 账号 + Auth | 无 first-version runtime；iOS 原生方向保留在 `docs/REDE_REBUILD_00_IRONRULES_AND_CLOUD.md` 与 `docs/CLOUD_DECISIONS_ARCHIVE.md` | **近 greenfield**。服务 opt-in 云同步、跨设备恢复和账号级支持;不阻塞首个 App Store 订阅闭环 |
 | 云同步 | 无 first-version runtime；已拍板方向是 local-first + opt-in + CRDT 记录级合并 | 未实现。offline-first 冲突合并是最贵、最容易返工的一块;进入实现前必须先通过 Master Architecture gate |
-| 订阅基础设施 | 0 | StoreKit 2 / RevenueCat / 权益门禁 / paywall / 试用 / 恢复购买全部从零。App Store entitlement 可以先与一方账号解耦;账号只增强跨设备和支持体验。任何 StoreKit/RevenueCat/收据校验/权益持久化实现前都要先同步 Master Architecture |
+| 订阅基础设施 | 🟡 架构门禁已过，runtime 仍为 0 | 2026-07-17 已拍板 StoreKit 2 + 薄 `RedeEntitlements` seam、Apple 已验证 entitlement 真相、方案 A（1.8 已有能力全部继续免费）。尚无 package、商品、paywall、购买/恢复代码或 App Store Connect 订阅配置；RevenueCat、账号、服务端权益和远程分析不进首片 |
 | 英文化 | 产品文案方向已定义;双语 key 化基础设施与中英切换已建立（`RedeL10n` + `LocaleStore`，M0-3/M5-2），UI 文案全部 key 化 | **被低估的大头**。基础设施已就位;真正的难点仍在**证据/教练解释文案**——你的差异化所在,必须专业英文重写（非机翻），公开上架前由英文母语 lifter 审校 |
 | 合规 | README 已坚持"训练决策支持，非医疗诊断" | 隐私政策 / ToS / 隐私营养标签 / 医疗免责 / GDPR·CCPA / 第三方 AI 数据披露 待补。**务必守住 "fitness 不是 medical" 定位**，否则触发 Apple Guideline 1.4.1 的监管证明要求 |
 | 获客 / 增长 / 数据 | 无 approved runtime analytics;官网验证可在外部工具中进行 | 定位、ASO、冷启动渠道、漏斗埋点全空白 |
-| 分享 / 增长资产 | 系统逻辑已确定 Share / Growth System; native share snapshot/card renderer 尚未实现 | 官网阶段用静态 mock 测传播兴趣;第一版 App 用本地分享卡 + iOS Share Sheet。账号、feed、归因、公开主页后置到架构 gate |
+| 分享 / 增长资产 | S0 本地分享链已实现 | 1.8 已有训练总结、PR/里程碑、发展画像三类本地分享卡 + iOS Share Sheet；它们属于 Free Core。账号、feed、归因、公开主页继续后置到架构 gate |
 
 **结论**：真正的首发关键路径是 **外部付费意愿验证 → clean iOS rewrite 最小训练闭环 → 订阅权益 → 英文核心内容 → iOS 上架就绪 → 合规 → 基础备份/导出信任**。账号和云同步是后续 Trust Infra / Paid Coach 增强项,不能抢在收费闭环和产品价值验证之前消耗最大工程成本。
 
@@ -78,8 +78,8 @@
 | 阶段 | 周期 | 目标 | 出口 Gate |
 |---|---|---|---|
 | **P0 外部定位与付费意向验证** | W0–W5 | 锁定英文定位/差异化、定价假设、付费意愿信号 | 有可量化需求 + 价格点击 / 留资 / founder beta 信号 |
-| **P1 Clean iOS Rewrite SPEC + 最小训练闭环** ✅ 已完成、R0 已上 TestFlight | W4–W14（已过） | 把系统逻辑切成可验证 rewrite slices,实现 Today / 专注训练 / Progress 最小闭环 | ✅ 已达成（M0~M5 全 ✅，M6-4 🟡 已上传 TestFlight 内测、阻塞全解除）：clean runtime 有真实训练闭环、fixtures、Swift tests 和可演示 UI;距 R0 收官仅剩 §1 八条真机验收 |
-| **P2 商业化地基** | W10–W20 | 订阅+权益+埋点+基础备份/导出;账号/云同步完成 gate 设计 | 能收费 + 本地数据可带走 + 能测漏斗 |
+| **P1 Clean iOS Rewrite SPEC + 最小训练闭环** ✅ 已完成 | W4–W14（已过） | 把系统逻辑切成可验证 rewrite slices,实现 Today / 专注训练 / Progress 最小闭环 | ✅ 已达成并持续扩展至 1.8 (25)；公开商店审核属于 P3，不再把旧 R0 验收写成当前阻塞 |
+| **P2 商业化地基** | W10–W20 | 订阅+权益+基础备份/导出；远程埋点、账号、云同步各自走独立 gate | 能收费 + 权益可恢复 + 本地数据可带走；软启动前确定可验证漏斗方案 |
 | **P3 英文化 / 合规 / iOS 上架就绪** | W12–W24 | 专业英文、StoreKit/App Store Connect、HealthKit 边界、合规、过审 | 价值面英文达母语级并拿到 App Store 批准 build |
 | **P4 软启动+冷启动** | W18–W26 | 小英文区软启动、跑通漏斗、起量 | 健康的 trial→paid 与 D30 |
 | **P5 留存增长+放量** | W24+ | 留存闭环、放量美区/英区、定价优化 | LTV > CAC，可持续增长 |
@@ -95,9 +95,9 @@
 - **Gate**：waitlist 量级 + paywall 点击率 + 访谈质量 + founder beta 愿意尝试/愿付价格达到预设阈值,才进入 P1 clean rewrite。
 - *Claude Code brief*：①外部验证网站文案/信息架构/价格意向 CTA;②分享卡静态 mock 与文案变体;③访谈招募和信号表,不接仓库 runtime。
 
-### P1 Clean iOS Rewrite SPEC + 最小训练闭环（W4–W14）— 关键路径 · ✅ 已基本完成
+### P1 Clean iOS Rewrite SPEC + 最小训练闭环（W4–W14）— 关键路径 · ✅ 已完成
 
-> **现状（2026-06-16）**：P1 关键路径走完，**R0 已上 TestFlight（内部测试）**——MVP 闭环 M0~M5 全 ✅ 验收（版本 0.1.0，7 个干净包带测试，动作库已扩至 123 条 wave-15）；M6-4 🟡 已上传内测、阻塞全部解除（签名通 + widget bundle id 修 #546 + GitHub 解禁），距 R0 收官仅剩 §1 八条真机验收 owner 确认。下方周数 W4–W14 已成历史，本节作战略节奏回顾保留。
+> **现状（2026-07-17）**：P1 已完成，产品已扩展到 Rede 1.8 (build 25)、9 个现役本地包和 165 动作目录；1.8 已提交 App Store 审核并处于 Waiting for Review。下方 W4–W14 仅作战略节奏回顾，不再代表当前版本或下一步。
 >
 > **P1 已完成、R0 已上 TestFlight（2026-06-16，内部测试）。** 原 P1 的 slice 级执行清单（MVP 实现计划）为有界活文档，已按其 §11 收官删除（留痕进 `CHANGELOG.md` 2026-06-16 MVP 达成记录、长期结论回收进本路线图 + 系统逻辑 §10 + PRD、git 历史可恢复）。后续由 [`docs/REDE_PRD.md`](docs/REDE_PRD.md)（产品需求真源，FR 优先级与发布映射见其 §5/§8，R0 = 已交付范围）+ 基于 PRD 的开发规划接棒。
 
@@ -110,13 +110,13 @@
 
 ### P2 商业化地基（W10–W20）— 关键路径
 
-- **订阅基础设施**：StoreKit 2 + **RevenueCat**（权益、收据校验、试用、恢复购买）+ paywall + 门禁。首版可以使用 App Store entitlement 作为付费真相,不要求一方账号先落地;真正接 StoreKit / RevenueCat SDK / 远程收据校验 / 权益持久化前,必须先通过 Master Architecture gate,不得直接改依赖或引入网络。
-- **可见备份 / 导出**：先让用户确认本地数据能带走,避免 local-first 被误解为"丢了就没了"。
+- **订阅基础设施（架构 gate 已过，runtime 待做）**：StoreKit 2 放在薄 `RedeEntitlements` seam 后；Apple 已验证 current entitlement 是唯一付费真相，月/年同一 access tier，显式恢复，价格/试用/条款完全取 StoreKit 本地化值。首片不接 RevenueCat、不建账号/服务器、不持久化 entitlement、不接远程 analytics；RevenueCat 只在跨平台、账号支持、webhook、客服后台或订阅分析成为真实需求时重开评估。
+- **可见备份 / 导出**：canonical JSON 原样导出已随 1.8 实现；独立备份仍是后续信任切片。
 - **账号 + Auth gate**：设计 Sign in with Apple / Supabase Auth 的用户生命周期、删号、恢复购买关联和隐私边界;通过 Master Architecture 后再实现。
 - **云同步 gate**：设计 local-first + opt-in 同步、source-of-truth、冲突合并、备份先于覆盖和 CRDT/记录粒度;通过 Master Architecture 后再实现,不得在 P2 偷跑网络或云端权威真相。
-- **埋点**：激活、留存、trial-start、trial-convert、churn 全链路。**上线即埋点，没有数据不谈增长。**
-- **Gate**：能收费 + 权益可恢复 + 本地数据可导出/备份 + 漏斗可观测;账号/云同步只完成 architecture gate 和切片计划,不作为首个付费闭环阻塞项。
-- *Claude Code brief*：①StoreKit / RevenueCat entitlement architecture gate 与 paywall 门禁设计,通过后再实现；②备份/导出用户可见路径；③分析事件字典与埋点；④账号/云同步 architecture gate 文档与验收切片。
+- **埋点（独立 gate）**：激活、留存、trial-start、trial-convert、churn 的观测方案必须在软启动前成立，但远程 analytics 不得夹带进首个 StoreKit 实现切片；先明确最小数据、隐私披露与退出边界。
+- **Gate**：StoreKitTest + Sandbox/TestFlight 证明购买、pending、续订/grace、过期、退款/撤销、恢复、重装/换设备和离线；商品目录/权益未知时 1.8 Free Core 完整可用；本地数据可导出。账号/云同步/远程分析不阻塞首个收费闭环。
+- *实现 brief*：①先创建 `RedeEntitlements` 纯合同 + fake provider + StoreKitTest；②在 PRD 批准首个 1.8 之后的 paid 能力；③再配置单一 subscription group、paywall 与可打开的 Privacy Policy / Terms of Use，走真实商店验证；④分析、账号、云同步各走独立 gate。
 
 ### P3 英文化 / 合规 / iOS 上架就绪（W12–W24）— 与 P2 并行
 
@@ -167,8 +167,8 @@
 ### Rede 定价主张
 
 - **定位**：在 Hevy（$24/yr 的 logger+轻 trainer）**之上**，对标/超越 Fitbod（$96/yr 黑箱 AI），卖点 = **"会解释自己的循证教练"**。
-- **推荐**：年订 **$59.99–$69.99**、月订 **$9.99–$11.99**、**14 天试用**（向"17–32 天试用转化最高=45.7%"的高转化带靠拢，可 A/B 14 vs 30）。**主推年订**（57% 用户偏好年付，年付 LTV/留存更高）。
-- **免费/付费分界**：Free Core 保留核心记录、专注训练、基础进展、本地导出和基础分享卡,确保 ASO 排名、留存和用户信任。Paid Coach 卖当前可解释的教练价值:readiness 解释、自动计划调整、每周引证行动、e1RM 趋势与数据质量提醒（坏数据预警；**不写「置信度」字样**，见 copy §3.4 / §6.2）、肌群等级深度解释和更强计划适配。Future Trust Infra 单独 gate:云同步、账号、HealthKit-derived readiness、远程归因等只有在 Master Architecture 批准且真实实现后才进入包装,不得当作首个订阅闭环的硬依赖。
+- **待验证价格假设，不是已批准商品配置**：年订 **$59.99–$69.99**、月订 **$9.99–$11.99**、**14 天试用**；创建 App Store Connect 商品前必须刷新竞品、Apple 当前政策和试用证据。同一 subscription group 的月/年商品提供同一 `paidCoach` access tier；App 内只显示 StoreKit 返回的 storefront 本地化价格、资格与续订条款，绝不硬编码这些美元假设。
+- **免费/付费分界（方案 A，2026-07-17 已拍板）**：Rede 1.8 已有能力全部继续属于 Free Core——现有 readiness 判断/解释、训练处方与记录、计划查看/自动调整/编辑、进展/e1RM/数据质量/肌群等级、本地导出和现有分享卡均不得回收收费。Paid Coach（用户名称 `Rede Coach`）只卖 **1.8 之后真正新增**、且实现前已在 PRD 明确标为 paid 的深度教练能力，例如未来更长周期洞察、新的自动周行动、高级比较或新的计划适配/导入；这些只是候选，不因写在 Roadmap 就获得实现授权。安全、核心训练/记录、canonical 保存、数据读取/导出、隐私控制永不收费。Future Trust Infra 继续单独 gate。
 - **苹果经济学**：首发默认走 StoreKit IAP 和 App Store 合规 paywall。Small Business Program 资格、Apple 费率、外链支付政策和地区差异必须在订阅产品配置前按 Apple 当前规则和法律意见刷新;不要把外链绕抽成当作首发策略。
 
 ---
@@ -194,16 +194,17 @@
 
 ---
 
-## 7. 未来 30 天立即可做（不依赖工程，你/运营可并行启动）
+## 7. 当前下一步（2026-07-17）
 
-1. 竞品逐个拆解：Hevy / Fitbod / Boostcamp / Strong / JEFIT 的功能 × 定价 × 差评点 → 一页定位缝隙图。
-2. 写定英文定位陈述 + 一句话价值主张 + 3 个核心卖点。
-3. 上线并对外投放外部英文落地页 + 邮件 waitlist + **烟雾测试 paywall**（真实价格按钮量转化）；上线前先把表单接到可审计的获客存储或邮件工具，继续保持“不扣费/非真实订阅”的透明文案，不在本仓库恢复 Web runtime。
-4. 做 5 张英文分享卡 mock:Workout Summary、Muscle Level、Level Up、PR、Plan/Routine,拿给英文 lifter 看是否愿意晒、愿意点、愿意导入。
-5. 在 r/weightroom、r/naturalhypertrophy、r/Fitness 及健身 Discord 招募 20–50 名英文 beta lifter。
-6. 起草英文隐私政策 / ToS / 医疗免责骨架。
-7. 注册 Apple Developer Program,并在订阅产品配置前核验 **Small Business Program** 资格、当期费率和外链支付规则。
+P0/P1 的验证与 clean rewrite 清单已成为历史；Rede 1.8 (25) 已提交 App Review。当前工程主线是 **P2 subscription runtime**，但不得在没有真实 paid 产品价值时先发布空 paywall：
+
+1. 在 PRD 新立第一个 **1.8 之后新增**的 Paid Coach 能力，写清用户结果、Free Core 回归和付费验收；若尚未选定，可先做 entitlement 基础设施，但不能发布 paywall。
+2. 创建 `RedeEntitlements` 最小骨架：纯 `AccessTier` / `EntitlementState` / `FeatureAccessPolicy` / `SubscriptionProviding` + fake provider 单测，不接训练引擎、不写 canonical。
+3. 增加包内 StoreKit 2 platform/UI adapters 与 StoreKitTest，覆盖购买、pending、取消、验证失败、续订、grace、过期、退款/撤销和显式恢复；商品目录/权益失败时锁住 1.8 Free Core 全回归。
+4. 创建 App Store Connect 单一 subscription group 的月/年商品前，刷新 Apple 当前政策、Small Business Program 资格、竞品价格和试用证据；product IDs、价格和试用不写成架构常量。
+5. 首个 paid 能力真实存在后再接 Settings / paywall；配置可点击的 Privacy Policy / Terms of Use（URL 属于发布配置），并用 Sandbox/TestFlight 验证本地化商品、购买/恢复、重装/换设备、离线行为和两条政策目的地；通过前不提交订阅版本。
+6. 远程 analytics、账号、云同步继续各走独立 gate，不夹进 entitlement 首片。英文母语复核、隐私政策 / ToS / fitness 免责与 1.8 真机残留验收可并行，不改变主线。
 
 ---
 
-*下一步可深入的任一块（按需求展开为可执行方案 / 可交付 Claude Code 的 brief）：P0 验证实验设计、P1 地基技术 brief、定价与 paywall 文案、冷启动渠道 playbook、指标体系与埋点字典。*
+*当前最小下一片：`RedeEntitlements` 纯合同 + fake provider 测试；production paywall 必须等首个 paid PRD 能力成立。*

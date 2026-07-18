@@ -4,11 +4,12 @@
 > Every human and every AI agent must read this document before making changes and must obey it. If a requested task conflicts with this document, stop and require explicit architecture approval before writing code.
 
 - **Status:** Authoritative / binding
-- **Version:** 3.1
-- **Last updated:** 2026-06-13
+- **Version:** 3.2
+- **Last updated:** 2026-07-17
 - **Repository:** `TinSB/fitness-app` (the GitHub slug is still `fitness-app`; the product and local working dir are `Rede`)
 - **v3.0 amendment:** established a clean code rewrite baseline, written cleanly against the manifest-registered living docs (especially `docs/REDE_iOS_SYSTEM_LOGIC.md`) instead of extending or porting the polluted legacy implementation.
-- **v3.1 amendment (2026-06-13):** the clean rewrite is now the **active implementation**. `ios/Rede` has been a clean app shell since M0-1, and the MVP training loop has shipped through milestones M0–M6 (only M6-4 TestFlight upload remains). The boundaries and contracts below still bind; where this doc previously said "ios/ is reference-only / not yet implemented," read it as describing the **retired IronPath/PWA-era code** (removed during M1-0, preserved at git tag `legacy-parity-final`), not the current clean `ios/Rede` + 7 in-tree packages.
+- **v3.1 amendment (2026-06-13):** the clean rewrite is now the **active implementation**. `ios/Rede` has been a clean app shell since M0-1, and the MVP training loop had shipped through milestones M0–M6 (with M6-4 TestFlight upload still open at that dated snapshot). The boundaries and contracts below still bind; where this doc previously said "ios/ is reference-only / not yet implemented," read it as describing the **retired IronPath/PWA-era code** (removed during M1-0, preserved at git tag `legacy-parity-final`), not the then-current clean `ios/Rede` + 7 in-tree packages. Current inventory is recorded by v3.2 and the tables below.
+- **v3.2 amendment (2026-07-17):** approved the subscription architecture boundary without implementing it: StoreKit 2 behind a thin future `RedeEntitlements` package, Apple-verified transactions as entitlement truth, no RevenueCat/account/server/remote analytics in the first slice, and no entitlement state in canonical AppData. Product boundary A is binding: everything already available in Rede 1.8 remains Free Core; only capabilities added after 1.8 may be proposed as Paid Coach features through an explicit PRD amendment.
 
 ---
 
@@ -32,12 +33,12 @@ It does not outrank explicit, in-the-moment human approval that knowingly amends
 | Area | Baseline |
 |---|---|
 | Product truth | `docs/REDE_iOS_SYSTEM_LOGIC.md` plus the other manifest-registered living docs. |
-| Code status | The clean `ios/Rede` app + 7 in-tree Swift packages are the active implementation (M0–M6 shipped). Retired IronPath/PWA-era code is reference-only (git tag `legacy-parity-final`) and is not a contract. |
+| Code status | The clean `ios/Rede` app + 9 in-tree Swift packages are the active implementation (M0–M6 shipped). Retired IronPath/PWA-era code is reference-only (git tag `legacy-parity-final`) and is not a contract. |
 | Target runtime | A clean native iOS SwiftUI app with local Swift packages and local-first persistence. |
 | Target source of truth | A single canonical local AppData model, persisted through a gated write path. |
 | Target engine boundary | Raw AppData never enters training engines; engines consume clean typed inputs. |
-| Target platform scope | Foundation JSON persistence, approved HealthKit adapters, local notifications, WidgetKit/App Group read-only handoff. |
-| Deferred systems | Account, cloud sync, CRDT, watchOS, subscription entitlement infrastructure, remote networking, remote analytics, and referral attribution require explicit architecture amendments. |
+| Target platform scope | Foundation JSON persistence, approved HealthKit adapters, local notifications, WidgetKit/App Group read-only handoff, plus the approved-but-not-yet-implemented StoreKit 2 boundary in §5/§9. |
+| Deferred systems | Account, cloud sync, CRDT, watchOS, remote networking, remote analytics, referral attribution, third-party subscription SDKs, and server-side entitlement systems require explicit architecture amendments. Subscription runtime is authorized only through the bounded StoreKit 2 implementation slice defined below. |
 
 Removed implementation surfaces:
 
@@ -49,7 +50,7 @@ Removed implementation surfaces:
 
 Active vs reference surfaces:
 
-- The clean `ios/Rede` SwiftUI app, the Readiness widget, and the 7 in-tree Swift packages are the **active implementation**.
+- The clean `ios/Rede` SwiftUI app, the Readiness widget, and the 9 in-tree Swift packages are the **active implementation**.
 - Retired IronPath/PWA-era packages and code (removed during M1-0, preserved at git tag `legacy-parity-final`) are reference-only.
 - Do not treat retired runtime behavior as a contract when it conflicts with the living docs.
 - Do not port retired code wholesale into the clean rewrite without a review slice that proves the behavior is still desired and unpolluted.
@@ -106,7 +107,7 @@ The app layer must not:
 
 ## 5. Target Swift Package Boundaries
 
-### Packages present today (8, all in the CI test matrix)
+### Packages present today (9, all in the CI test matrix)
 
 | Package | Responsibility | Depends on |
 |---|---|---|
@@ -118,6 +119,7 @@ The app layer must not:
 | `RedeWidgetShared` | Read-only widget snapshot model and App Group snapshot store. | Foundation only |
 | `RedeL10n` | Terms and formatting support. | Foundation only |
 | `RedeNotifications` | Local-notification policies (FR-NT1/2) + the `#if os(iOS)` UNUserNotificationCenter adapter behind a `NotificationScheduling` seam. Pure policy is host-tested; derived/transient, never canonical, no remote/push. | Foundation only |
+| `RedeHealthKit` | Approved read-only HealthKit body-weight adapter (`BodyWeightReading` + `#if os(iOS)` `HKBodyWeightReader`). Display-only; never canonical and never engine truth. Workout import / HKWorkout write remain deferred. | Foundation only |
 
 ### Target package names not yet created on disk
 
@@ -125,9 +127,9 @@ These are reserved future boundaries (named here so logic lands in the right pla
 
 | Package | Intended responsibility | Status |
 |---|---|---|
-| `RedeHealthKit` | Approved HealthKit adapters and pure mapping seams. | Created (FR-PR8 scope A, #617). Read-only body-weight (`BodyWeightReading` seam + `#if os(iOS)` `HKBodyWeightReader` reading `bodyMass`). Display-only — never canonical, never engine truth. Workout import / HKWorkout write deferred. |
-| `RedeBackup` | Backup/export. | Not created. Does not authorize backup/export implementation. |
+| `RedeBackup` | Future automated backup / restore orchestration beyond the shipped canonical JSON export. | Not created. The direct 1.8 JSON export does not authorize a second backup store or restore runtime. |
 | `RedeUIKit` | Shared UI framework. | Not created. Does not authorize a shared UI framework migration. |
+| `RedeEntitlements` | Pure access policy plus the only StoreKit 2 platform adapter. | Architecture approved in v3.2; not created. Creation requires the bounded runtime slice and validation in §10. |
 
 There is no approved cloud/sync runtime in the clean rewrite baseline. Future iOS-native account/cloud/sync work must follow `docs/REDE_REBUILD_00_IRONRULES_AND_CLOUD.md` and `docs/CLOUD_DECISIONS_ARCHIVE.md`, then land through an explicit Master-approved implementation slice.
 
@@ -138,6 +140,21 @@ There is no approved cloud/sync runtime in the clean rewrite baseline. Future iO
 3. The import graph must remain a DAG.
 4. Packages never depend on the app target.
 5. Not-yet-created target packages stay unbuilt until an approved slice creates them.
+
+### Subscription Entitlement Boundary (v3.2)
+
+The first subscription implementation is deliberately narrow:
+
+1. `RedeEntitlements` owns pure domain types such as `AccessTier`, `EntitlementState`, `FeatureAccessPolicy`, and the `SubscriptionProviding` seam. Only its narrowly scoped iOS platform/UI adapters may import StoreKit; if the first paywall uses `SubscriptionStoreView`, the package exports a wrapper that the app renders without importing StoreKit itself.
+2. Apple-verified current transactions are the entitlement truth. The app may derive transient UI state from them, but must not persist a custom paid flag, receipt, product catalog, or entitlement snapshot in canonical AppData, backups, exports, widgets, or training-engine inputs.
+3. `active` and billing-grace-period subscription states unlock Paid Coach. Refunded, revoked, expired, or absent current entitlements resolve to Free Core. Unverified or unavailable results remain an honest `unknown` state with retry/error UI; they never block training, recording, saving, export, privacy controls, or any other Free Core behavior.
+4. The app observes transaction updates for the process lifetime and finishes only verified transactions after local access state has been refreshed. `AppStore.sync()` is allowed only behind an explicit user-initiated Restore Purchases action; it is not a launch-time refresh mechanism.
+5. Product names, localized prices, trial/offer text, renewal terms, and purchase controls come from StoreKit. Rede must not hard-code a price or claim an offer that the returned product does not contain. Product-catalog failure must not revoke a separately verified current Paid Coach entitlement. A Rede-styled shell around Apple's StoreKit subscription views is the preferred first UI surface. The package-owned wrapper must expose working Privacy Policy and Terms of Use destinations (using StoreKit policy destinations when applicable); exact URLs are validated release configuration, not architecture constants.
+6. The first slice has one subscription group with monthly and annual products at the same access level. Exact product IDs, prices, trial eligibility, storefront availability, and App Store Connect configuration are release/admin decisions, not architecture constants.
+7. No account, Rede server, remote receipt service, RevenueCat, remote analytics, or `appAccountToken` is part of the first slice. A future amendment may reconsider a vendor/server only after a concrete need exists for cross-platform entitlement, account support, webhooks, customer support tooling, or subscription analytics.
+8. Product boundary A is a compatibility floor: every capability present in Rede 1.8 remains Free Core. A future capability may be gated as Paid Coach only when its PRD entry says so before implementation. Safety behavior, core training, recording, canonical save, data access/export, and privacy controls can never be paywalled.
+
+Primary platform evidence for this amendment: Apple [`Transaction.currentEntitlements`](https://developer.apple.com/documentation/storekit/transaction/currententitlements), [`AppStore.sync()`](https://developer.apple.com/documentation/storekit/appstore/sync%28%29), and [StoreKit views](https://developer.apple.com/documentation/storekit/storekit-views), reviewed 2026-07-17.
 
 ---
 
@@ -157,6 +174,7 @@ Hard rules:
 3. No task may change where canonical AppData lives without amending this document.
 4. Canonical AppData writes must go through `CanonicalSessionWriter`.
 5. Full AppData restore is deferred behind DataHealth clean-view and repair-apply gates.
+6. Subscription entitlement is StoreKit-derived platform state, not user training data. It must never mutate canonical AppData, change engine inputs, or appear in canonical export/restore payloads.
 
 ---
 
@@ -221,6 +239,7 @@ Allowed platform integrations:
 - UserNotifications only inside `RedeNotifications` (created, FR-NT1/2: local rest/weekly reminders behind `NotificationScheduling`).
 - WidgetKit only inside the widget target and `RedeWidgetShared` adapter.
 - App Groups only for the read-only widget snapshot handoff.
+- StoreKit 2 only inside the future `RedeEntitlements` iOS platform/UI adapters described in §5. The app may render an exported subscription-view wrapper but must not import StoreKit directly. StoreKit state may gate explicitly approved Paid Coach UI, but may not gate or alter Free Core engines, persistence, export, or safety behavior.
 
 Forbidden without amendment:
 
@@ -236,6 +255,8 @@ Forbidden without amendment:
 - remote push notifications
 - watchOS / WatchConnectivity
 - CRDT storage or sync
+- RevenueCat or any other third-party subscription SDK
+- Rede-hosted receipt validation or entitlement servers
 
 ---
 
@@ -265,6 +286,15 @@ xcodebuild \
 ```
 
 The GitHub workflow must remain Swift/Xcode based. Do not reintroduce Node, Vite, browser tests, or web build checks.
+
+The future subscription runtime slice must additionally prove all of the following before release:
+
+- pure policy/state tests with a fake `SubscriptionProviding` implementation;
+- StoreKitTest coverage for purchase success, user cancellation, pending purchase, verification failure, renewal, expiration, refund/revocation, and explicit restore;
+- Sandbox or TestFlight acceptance for localized products, purchase, renewal state, restore, billing grace period where configured, cancellation/refund/revocation, reinstall/new-device behavior, offline launch, and working Privacy Policy / Terms of Use destinations;
+- regression proof that Free Core training, saving, export, and existing Rede 1.8 surfaces work when the product catalog is unavailable and when entitlement state is unknown.
+
+Xcode StoreKit tests are necessary but do not prove App Store Connect product configuration or production-store behavior.
 
 ---
 
