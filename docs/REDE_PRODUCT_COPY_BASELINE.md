@@ -449,7 +449,19 @@ English:
 
 ### 6.2.1 订阅状态与恢复文案（已实现基础 runtime 合同）
 
-当前 Settings 已使用本节的双语状态：Free Core、Rede Coach、核对中、未知、pending、恢复/管理与操作失败。`unknown` 的方案标题必须是“当前方案：暂时无法确认”，不能把无法验证的状态伪装成 Free Core；同一状态的说明仍明确 Free Core 不受影响。购买页只有在 paid capability、两个 StoreKit 商品和两条 HTTPS 政策地址同时通过 launch gate 时才出现，production 配置当前故意关闭。
+当前 Settings 已使用本节的双语状态：Free Core、Rede Coach、核对中、未知、pending、恢复/管理与操作失败。`unknown` 的方案标题必须是“当前方案：暂时无法确认”，不能把无法验证的状态伪装成 Free Core；同一状态的说明仍明确 Free Core 不受影响。Settings 的“查看 Rede Coach”始终进入品牌页：gate 未就绪时只显示品牌名、当前方案与诚实状态，不写价值承诺、不列权益、不放禁用购买按钮，也不显示价格、试用、恢复、管理或政策链接。付费功能尚未准备好与商品/政策配置异常使用不同状态文案。首个 paid 功能完成并写入本节后，才把真实权益填入页面；paid capability、两个 StoreKit 商品和两条 HTTPS 政策地址同时通过 launch gate 后，页面才切换到 Apple 购买面。production 配置当前故意关闭购买控件。
+
+预览页固定文案：
+
+| 位置 | 中文 | English |
+|---|---|---|
+| 当前方案标签 | 当前方案 | Current plan |
+| 状态眉题 | 准备中 | In development |
+| 功能区占位 | 功能完成后再加入这里 | Features will be added here when they’re ready |
+| 购买状态 | 订阅尚未开放 | Subscriptions aren’t open yet |
+| 异常状态眉题 | 暂时不可用 | Temporarily unavailable |
+| 异常状态标题 | 订阅选项暂时不可用 | Subscription options are temporarily unavailable |
+| 异常状态保障 | Free Core 仍可使用 | Free Core remains available |
 
 | 场景 | 中文 | English | 行为边界 |
 |---|---|---|---|

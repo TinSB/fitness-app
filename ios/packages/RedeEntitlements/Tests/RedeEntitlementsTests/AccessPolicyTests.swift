@@ -158,4 +158,55 @@ final class AccessPolicyTests: XCTestCase {
             .blocked(.catalogMismatch)
         )
     }
+
+    func testSubscriptionPagePresentationSeparatesPreparationFromOperationalFailure() {
+        XCTAssertEqual(
+            SubscriptionPagePolicy.presentation(for: .blocked(.paidCapabilityNotReady)),
+            .preparing
+        )
+        for blocker in [
+            SubscriptionLaunchBlocker.missingPolicyLinks,
+            .invalidPolicyLinks,
+            .catalogMismatch,
+        ] {
+            XCTAssertEqual(
+                SubscriptionPagePolicy.presentation(for: .blocked(blocker)),
+                .unavailable
+            )
+        }
+        XCTAssertEqual(
+            SubscriptionPagePolicy.presentation(
+                for: SubscriptionLaunchGate.evaluate(configuration: .disabled, products: [])
+            ),
+            .preparing,
+            "The production-disabled configuration must render the page shell without StoreKit controls"
+        )
+        XCTAssertEqual(SubscriptionPagePolicy.presentation(for: .ready), .store)
+    }
+
+    func testBlockedPageNeverShowsTransactionControlsAcrossEntitlementStates() {
+        let decisions: [SubscriptionLaunchDecision] = [
+            .blocked(.paidCapabilityNotReady),
+            .blocked(.missingPolicyLinks),
+            .blocked(.invalidPolicyLinks),
+            .blocked(.catalogMismatch),
+        ]
+        let entitlements: [EntitlementState] = [
+            .checking,
+            .freeCore,
+            .paidCoach(expirationDate: nil, billingState: .active),
+            .paidCoach(expirationDate: nil, billingState: .gracePeriod),
+            .unknown(.storeUnavailable),
+            .unknown(.verificationFailed),
+        ]
+
+        for decision in decisions {
+            let presentation = SubscriptionPagePolicy.presentation(for: decision)
+            XCTAssertFalse(presentation.showsTransactionControls)
+            for entitlement in entitlements {
+                XCTAssertTrue(FeatureAccessPolicy.allows(.freeCore, entitlement: entitlement))
+            }
+        }
+        XCTAssertTrue(SubscriptionPagePolicy.presentation(for: .ready).showsTransactionControls)
+    }
 }

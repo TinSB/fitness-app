@@ -55,6 +55,9 @@ public final class SubscriptionModel {
     }
 
     public var launchDecision: SubscriptionLaunchDecision {
+        guard configuration.paidCapabilityIsReady else {
+            return .blocked(.paidCapabilityNotReady)
+        }
         guard case .available(let products) = catalog else {
             return .blocked(.catalogMismatch)
         }

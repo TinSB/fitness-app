@@ -40,6 +40,33 @@ public enum SubscriptionLaunchDecision: Equatable, Sendable {
     case blocked(SubscriptionLaunchBlocker)
 }
 
+/// The branded Rede Coach page can exist before products are ready, while the
+/// Apple purchase surface remains controlled by `SubscriptionLaunchGate`.
+public enum SubscriptionPagePresentation: Equatable, Sendable {
+    case preparing
+    case unavailable
+    case store
+
+    public var showsTransactionControls: Bool {
+        self == .store
+    }
+}
+
+public enum SubscriptionPagePolicy {
+    public static func presentation(
+        for launchDecision: SubscriptionLaunchDecision
+    ) -> SubscriptionPagePresentation {
+        switch launchDecision {
+        case .ready:
+            .store
+        case .blocked(.paidCapabilityNotReady):
+            .preparing
+        case .blocked:
+            .unavailable
+        }
+    }
+}
+
 /// A single fail-closed launch gate for the purchase surface. Entitlement
 /// verification still runs when this gate is blocked so existing customers can
 /// retain access; only new purchase presentation is disabled.

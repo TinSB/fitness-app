@@ -20,9 +20,13 @@ final class StoreKitEntitlementsTests: XCTestCase {
 
         XCTAssertTrue(configuration.productIDs.isEmpty)
         XCTAssertFalse(configuration.paidCapabilityIsReady)
-        XCTAssertEqual(
-            SubscriptionLaunchGate.evaluate(configuration: configuration, products: []),
-            .blocked(.paidCapabilityNotReady)
+        let model = RedeSubscriptionRuntime.makeModel(configuration: configuration)
+        XCTAssertEqual(model.launchDecision, .blocked(.paidCapabilityNotReady))
+        let presentation = SubscriptionPagePolicy.presentation(for: model.launchDecision)
+        XCTAssertEqual(presentation, .preparing)
+        XCTAssertFalse(
+            presentation.showsTransactionControls,
+            "The production Settings and Rede Coach surfaces must expose no transaction controls"
         )
     }
 

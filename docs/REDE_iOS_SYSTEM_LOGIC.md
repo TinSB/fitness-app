@@ -1190,7 +1190,7 @@ Settings：
 - Screening。
 - HealthKit permissions。
 - Data export/backup UI。
-- Subscription surfaces（基础状态已进入 Settings；生产购买入口保持 fail-closed）。
+- Subscription surfaces（Settings 中的 Rede Coach 品牌页始终可进入；生产购买控件保持 fail-closed）。
 
 Account/sync/cloud settings 不进入第一版干净实现,不得做成无能力的 UI placeholder。
 
@@ -1206,13 +1206,14 @@ Account/sync/cloud settings 不进入第一版干净实现,不得做成无能力
 - App 生命周期持续监听 `Transaction.updates`，并在已验证 expiration/grace deadline 与每次回前台时重新核对。并发查询使用递增版本，只允许最新结果改写 entitlement，防止旧 paid 查询晚到后覆盖退款/撤销。购买成功后先验证交易并刷新本地 access state，再 finish 已验证 transaction；pending 保持等待态，user-cancelled 安静返回，unverified 立即降为 `unknown`。
 - “恢复购买”只能由用户在订阅页主动触发 `AppStore.sync()`；不在启动时强制 sync，不把恢复失败解释成用户未购买。设置页同时提供“管理订阅”入口。
 - 商品、价格、试用/优惠、续订条款和资格均来自 StoreKit 当前返回值；目录加载失败时不得显示硬编码价格，也不得撤销已从 current entitlements 独立验证出的 Paid Coach 权益。首版同一 subscription group 下提供月订与年订，权益等级相同；具体 product ID、价格、试用与 storefront 配置在实现/发布切片确认。
+- **品牌页与购买面分离。** Settings 始终提供“查看 Rede Coach”入口。launch gate 被阻断时进入非交易预览态，只显示品牌名、当前方案和诚实状态；`.paidCapabilityNotReady` 显示“准备中 / 订阅尚未开放”，商品或政策配置异常显示“暂时不可用 / Free Core 仍可使用”。所有 StoreKit 交易相关入口（包括恢复、管理和政策链接）与购买面共用同一 gate；预览态不得显示价值承诺、价格、试用、恢复、管理、购买按钮或任何尚未实现的权益。只有 gate `.ready` 时，同一页面才切换到 Apple StoreKit 购买面。页面可见不等于 paywall 可发布。
 - 首版优先采用 `RedeEntitlements` 导出的 Apple StoreKit subscription-view wrapper，由 Rede 风格外壳承载，减少自写购买状态；wrapper 必须配置可点击的 Privacy Policy / Terms of Use destinations（适用时使用 StoreKit policy destinations），具体 URL 属于发布配置且上线前验证，不写成架构常量；不得为首片引入账号、Rede server、远程收据、RevenueCat、远程 analytics 或 `appAccountToken`。
 
 **未来 paid 候选，不是已批准功能清单。** 更长周期的教练洞察、新增的自动周行动、新的高级比较、计划适配或计划导入可在后续 PRD 切片中提案；只有真正新增且已验收的能力才能出现在 paywall。当前 1.8 的解释、自动调整、数据质量与肌群等级不能被这句话反向收费。
 
 **实现验收。** 纯 seam/state 单测 + StoreKitTest 必须覆盖成功、取消、pending、验证失败、续订、过期、退款/撤销和恢复；Sandbox/TestFlight 再证明本地化商品、购买/续订、grace period（若配置）、恢复、重装/换设备、离线启动，以及 Privacy Policy / Terms of Use 两个目的地可打开且内容匹配当前产品。Xcode 本地测试不能替代真实 App Store 环境。商品目录不可用与权益 `unknown` 时，1.8 全部 Free Core 回归仍须通过。
 
-**实现状态（2026-07-18）。** 纯合同、fake-provider 状态机、Free Core 不可阻断、商品/政策/paid-capability 四重 launch gate、入口内部二次门禁、已验证交易先投影后 finish、被新查询淘汰的旧 delivery 禁止 finish、重复 delivery 幂等、同 transaction ID 退款/撤销重算、混合 verified/unverified 强制 fail-closed、过期后 status unavailable/unverified 保持 unknown、查询竞态防护、到期/回前台复核、显式 restore、StoreKit 2 adapter/UI wrapper 与 Settings 双语状态均已实现。production Info 配置故意为空，因此 app 只显示 Free Core/核对状态，不展示购买页；生产 `Rede` 与本地 `Rede-StoreKitTest` 已拆成两个 shared scheme，避免普通 Run 带入测试商品。25 项包测试与纳入本地/CI 权威门禁的 production fail-closed app XCTest 全绿；其中 stale-delivery 测试会确定性等待购买任务完成，并已通过受控旧行为突变证明能抓住误 finish。仓库还包含结构化本地 StoreKit v6.3 fixture 和覆盖取消、验证失败、grace 等完整场景的 `SKTestSession` XCTest；但当前 Xcode 26.6 + iOS 26.5 Simulator 在保存配置时返回 `SKInternalErrorDomain Code=3`，商品目录未加载。该失败不豁免，购买/续订/退款链与 Sandbox/TestFlight 仍为 No-Go 门禁。
+**实现状态（2026-07-18）。** 纯合同、fake-provider 状态机、Free Core 不可阻断、商品/政策/paid-capability 四重 launch gate、入口内部二次门禁、已验证交易先投影后 finish、被新查询淘汰的旧 delivery 禁止 finish、重复 delivery 幂等、同 transaction ID 退款/撤销重算、混合 verified/unverified 强制 fail-closed、过期后 status unavailable/unverified 保持 unknown、查询竞态防护、到期/回前台复核、显式 restore、StoreKit 2 adapter/UI wrapper、Settings 双语状态与非交易 Rede Coach 页面壳均已实现。production Info 配置故意为空，因此 app 可进入 Rede Coach 预览页，但只显示当前 Free Core 与准备状态，不显示商品、价格、恢复、管理或购买控件；生产 `Rede` 与本地 `Rede-StoreKitTest` 已拆成两个 shared scheme，避免普通 Run 带入测试商品。包测试与纳入本地/CI 权威门禁的 production fail-closed app XCTest 持续守门。仓库还包含结构化本地 StoreKit v6.3 fixture 和覆盖取消、验证失败、grace 等完整场景的 `SKTestSession` XCTest；但当前 Xcode 26.6 + iOS 26.5 Simulator 在保存配置时返回 `SKInternalErrorDomain Code=3`，商品目录未加载。该失败不豁免，购买/续订/退款链与 Sandbox/TestFlight 仍为 No-Go 门禁。
 
 ## 9. Share / Growth System
 

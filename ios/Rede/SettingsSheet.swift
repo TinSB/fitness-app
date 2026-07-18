@@ -39,7 +39,7 @@ struct SettingsSheet: View {
     @State private var exportItem: ExportFile?
     @State private var exportBusy = false
     @State private var exportFailed = false
-    @State private var showSubscriptionStore = false
+    @State private var showSubscriptionPage = false
     @State private var subscriptionManagementFailed = false
     /// 行内单题编辑（方向 A 拍板 2026-06-10：改哪题进哪题，退役整流重跑）。
     @State private var editing: PlateQuestion?
@@ -55,6 +55,9 @@ struct SettingsSheet: View {
     private let feedbackAddress = "hello@rede.fit"
 
     private var s: RedeStrings { store.strings }
+    private var subscriptionPagePresentation: SubscriptionPagePresentation {
+        SubscriptionPagePolicy.presentation(for: subscriptionModel.launchDecision)
+    }
 
     var body: some View {
         NavigationStack {
@@ -134,8 +137,8 @@ struct SettingsSheet: View {
         .sheet(item: $exportItem) { item in
             ExportActivityView(items: [item.url])
         }
-        .sheet(isPresented: $showSubscriptionStore) {
-            SubscriptionStoreSheet(configuration: subscriptionModel.configuration)
+        .sheet(isPresented: $showSubscriptionPage) {
+            SubscriptionPageSheet(configuration: subscriptionModel.configuration)
                 .environment(store)
                 .environment(subscriptionModel)
                 .presentationDetents([.large])
@@ -234,16 +237,14 @@ struct SettingsSheet: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            if subscriptionModel.launchDecision == .ready {
-                subscriptionActionRow(
-                    title: s.settingsSubscriptionOpenCoach,
-                    systemImage: "sparkles"
-                ) {
-                    showSubscriptionStore = true
-                }
+            subscriptionActionRow(
+                title: s.settingsSubscriptionOpenCoach,
+                systemImage: "sparkles"
+            ) {
+                showSubscriptionPage = true
             }
 
-            if !subscriptionModel.configuration.productIDs.isEmpty {
+            if subscriptionPagePresentation.showsTransactionControls {
                 subscriptionActionRow(
                     title: s.settingsSubscriptionRestore,
                     systemImage: "arrow.clockwise"
@@ -824,9 +825,9 @@ struct SettingsSheet: View {
     }
 }
 
-// MARK: - StoreKit 订阅页（价格/试用/续订条款全部由 Apple 本地化）
+// MARK: - Rede Coach 页面（品牌页始终可见；购买控件仍由 launch gate 锁闭）
 
-private struct SubscriptionStoreSheet: View {
+private struct SubscriptionPageSheet: View {
     let configuration: SubscriptionConfiguration
     @Environment(LocaleStore.self) private var localeStore
     @Environment(SubscriptionModel.self) private var subscriptionModel
@@ -836,6 +837,21 @@ private struct SubscriptionStoreSheet: View {
     private var products: [SubscriptionProduct] {
         guard case .available(let products) = subscriptionModel.catalog else { return [] }
         return products
+    }
+    private var pagePresentation: SubscriptionPagePresentation {
+        SubscriptionPagePolicy.presentation(for: subscriptionModel.launchDecision)
+    }
+    private var currentPlan: String {
+        switch subscriptionModel.entitlement {
+        case .checking:
+            s.settingsSubscriptionChecking
+        case .freeCore:
+            s.settingsSubscriptionFreeCore
+        case .unknown:
+            s.settingsSubscriptionUnknownTier
+        case .paidCoach:
+            s.settingsSubscriptionPaidCoach
+        }
     }
 
     var body: some View {
@@ -854,27 +870,119 @@ private struct SubscriptionStoreSheet: View {
                 Rectangle().fill(Color.redeHair2).frame(height: 1)
             }
 
-            RedeSubscriptionStoreView(configuration: configuration, products: products) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(s.subscriptionStoreHeadline)
-                        .font(.redeTitle)
-                        .foregroundStyle(Color.redeT1)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text(s.subscriptionStoreTransparency)
-                        .font(.redeCaption)
-                        .foregroundStyle(Color.redeT3)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 12)
+            switch pagePresentation {
+            case .preparing, .unavailable:
+                previewContent(pagePresentation)
+            case .store:
+                storeContent
             }
-            .tint(Color.redeEmber2)
         }
         .background(Color.redeBase.ignoresSafeArea())
         .preferredColorScheme(.dark)
+        .accessibilityIdentifier("subscription-page")
         .onDisappear {
             Task { await subscriptionModel.refresh() }
         }
+    }
+
+    private func previewContent(_ presentation: SubscriptionPagePresentation) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                brandHeader
+
+                EngraveDivider()
+                    .padding(.vertical, RedeSpace.section)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Overline(text: s.subscriptionPageCurrentPlan)
+                    Text(currentPlan)
+                        .font(.redeHeadline)
+                        .foregroundStyle(Color.redeT1)
+                }
+
+                EngraveDivider()
+                    .padding(.vertical, RedeSpace.section)
+
+                previewStatus(presentation)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier(
+                        presentation == .preparing
+                            ? "subscription-page-preparing"
+                            : "subscription-page-unavailable"
+                    )
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, RedeSpace.page)
+            .padding(.bottom, 36)
+        }
+    }
+
+    private var storeContent: some View {
+        RedeSubscriptionStoreView(configuration: configuration, products: products) {
+            VStack(alignment: .leading, spacing: 14) {
+                Text(s.settingsSubscriptionPaidCoach)
+                    .font(.redeTitle)
+                    .foregroundStyle(Color.redeT1)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(alignment: .firstTextBaseline) {
+                    Text(s.subscriptionPageCurrentPlan)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT3)
+                    Spacer()
+                    Text(currentPlan)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT1)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 12)
+        }
+        .tint(Color.redeEmber2)
+        .accessibilityIdentifier("subscription-page-store")
+    }
+
+    @ViewBuilder
+    private func previewStatus(_ presentation: SubscriptionPagePresentation) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            switch presentation {
+            case .preparing:
+                Overline(text: s.subscriptionPagePreparingOverline, color: .redeEmber2)
+                Text(s.subscriptionPagePreparingTitle)
+                    .font(.redeHeadline)
+                    .foregroundStyle(Color.redeT1)
+                    .fixedSize(horizontal: false, vertical: true)
+                previewStatusLine(s.subscriptionPageNotOpen)
+            case .unavailable:
+                Overline(text: s.subscriptionPageUnavailableOverline, color: .redeCaution)
+                Text(s.subscriptionPageUnavailableTitle)
+                    .font(.redeHeadline)
+                    .foregroundStyle(Color.redeT1)
+                    .fixedSize(horizontal: false, vertical: true)
+                previewStatusLine(s.subscriptionPageFreeCoreAvailable)
+            case .store:
+                EmptyView()
+            }
+        }
+    }
+
+    private func previewStatusLine(_ text: String) -> some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(Color.redeT4)
+                .frame(width: 6, height: 6)
+                .accessibilityHidden(true)
+            Text(text)
+                .font(.redeBody)
+                .foregroundStyle(Color.redeT2)
+        }
+    }
+
+    private var brandHeader: some View {
+        Text(s.settingsSubscriptionPaidCoach)
+            .font(.redeTitle)
+            .foregroundStyle(Color.redeT1)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, 28)
     }
 }
 

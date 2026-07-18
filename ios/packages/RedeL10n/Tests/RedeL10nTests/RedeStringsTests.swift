@@ -68,8 +68,13 @@ final class RedeStringsTests: XCTestCase {
             ("settingsSubscriptionOperationFailed", s.settingsSubscriptionOperationFailed),
             ("settingsSubscriptionTerms", s.settingsSubscriptionTerms),
             ("settingsSubscriptionOpenCoach", s.settingsSubscriptionOpenCoach),
-            ("subscriptionStoreHeadline", s.subscriptionStoreHeadline),
-            ("subscriptionStoreTransparency", s.subscriptionStoreTransparency),
+            ("subscriptionPageCurrentPlan", s.subscriptionPageCurrentPlan),
+            ("subscriptionPagePreparingOverline", s.subscriptionPagePreparingOverline),
+            ("subscriptionPagePreparingTitle", s.subscriptionPagePreparingTitle),
+            ("subscriptionPageNotOpen", s.subscriptionPageNotOpen),
+            ("subscriptionPageUnavailableOverline", s.subscriptionPageUnavailableOverline),
+            ("subscriptionPageUnavailableTitle", s.subscriptionPageUnavailableTitle),
+            ("subscriptionPageFreeCoreAvailable", s.subscriptionPageFreeCoreAvailable),
             ("settingsPanelOverline", s.settingsPanelOverline),
             ("settingsDisclaimer", s.settingsDisclaimer), ("settingsFeedback", s.settingsFeedback),
             ("feedbackSubject", s.feedbackSubject(version: "0.1.0")),
@@ -218,11 +223,45 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertEqual(en.settingsSubscriptionUnknownTier, "Current plan: unavailable")
         XCTAssertEqual(zh.settingsSubscriptionRestore, "恢复购买")
         XCTAssertEqual(en.settingsSubscriptionRestore, "Restore purchases")
-        XCTAssertEqual(zh.subscriptionStoreHeadline, "更深入的训练判断，依据仍然清楚")
-        XCTAssertEqual(en.subscriptionStoreHeadline, "Deeper training decisions, with the reasoning shown")
+        XCTAssertEqual(zh.subscriptionPageCurrentPlan, "当前方案")
+        XCTAssertEqual(en.subscriptionPageCurrentPlan, "Current plan")
+        XCTAssertEqual(zh.subscriptionPagePreparingOverline, "准备中")
+        XCTAssertEqual(en.subscriptionPagePreparingOverline, "In development")
+        XCTAssertEqual(zh.subscriptionPagePreparingTitle, "功能完成后再加入这里")
+        XCTAssertEqual(en.subscriptionPagePreparingTitle, "Features will be added here when they’re ready")
+        XCTAssertEqual(zh.subscriptionPageNotOpen, "订阅尚未开放")
+        XCTAssertEqual(en.subscriptionPageNotOpen, "Subscriptions aren’t open yet")
+        XCTAssertEqual(zh.subscriptionPageUnavailableOverline, "暂时不可用")
+        XCTAssertEqual(en.subscriptionPageUnavailableOverline, "Temporarily unavailable")
+        XCTAssertEqual(zh.subscriptionPageUnavailableTitle, "订阅选项暂时不可用")
+        XCTAssertEqual(en.subscriptionPageUnavailableTitle, "Subscription options are temporarily unavailable")
+        XCTAssertEqual(zh.subscriptionPageFreeCoreAvailable, "Free Core 仍可使用")
+        XCTAssertEqual(en.subscriptionPageFreeCoreAvailable, "Free Core remains available")
         for line in [zh.settingsSubscriptionUnknown, en.settingsSubscriptionUnknown] {
             XCTAssertTrue(line.contains("Free Core"), "未知态必须明确 Free Core 不受影响")
         }
+    }
+
+    func testSubscriptionPreviewDoesNotPromiseProductsOrUnbuiltFeatures() {
+        let copy = [
+            zh.subscriptionPagePreparingTitle,
+            zh.subscriptionPageNotOpen,
+            zh.subscriptionPageUnavailableOverline,
+            zh.subscriptionPageUnavailableTitle,
+            zh.subscriptionPageFreeCoreAvailable,
+            en.subscriptionPagePreparingTitle,
+            en.subscriptionPageNotOpen,
+            en.subscriptionPageUnavailableOverline,
+            en.subscriptionPageUnavailableTitle,
+            en.subscriptionPageFreeCoreAvailable,
+        ].joined(separator: " ").lowercased()
+
+        for banned in ["价格", "试用", "优惠", "购买", "判断", "洞察",
+                       "price", "trial", "discount", "buy", "decision", "insight"] {
+            XCTAssertFalse(copy.contains(banned), "预览页不能承诺商品、优惠、交易或未实现能力: \(banned)")
+        }
+        XCTAssertNotEqual(zh.subscriptionPageNotOpen, zh.subscriptionPageUnavailableTitle)
+        XCTAssertNotEqual(en.subscriptionPageNotOpen, en.subscriptionPageUnavailableTitle)
     }
 
     func testUiShortPhrasesHaveNoTrailingPeriod() {

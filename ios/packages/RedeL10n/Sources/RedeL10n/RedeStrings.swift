@@ -250,13 +250,22 @@ public struct RedeStrings: Sendable {
     }
     public var settingsSubscriptionTerms: String { t("使用条款", "Terms of Use") }
     public var settingsSubscriptionOpenCoach: String { t("查看 Rede Coach", "View Rede Coach") }
-    public var subscriptionStoreHeadline: String {
-        t("更深入的训练判断，依据仍然清楚",
-          "Deeper training decisions, with the reasoning shown")
+    public var subscriptionPageCurrentPlan: String { t("当前方案", "Current plan") }
+    public var subscriptionPagePreparingOverline: String { t("准备中", "In development") }
+    public var subscriptionPagePreparingTitle: String {
+        t("功能完成后再加入这里", "Features will be added here when they’re ready")
     }
-    public var subscriptionStoreTransparency: String {
-        t("下方方案、价格、试用与续订条款均由 Apple 按你的地区显示",
-          "Apple shows the plans, prices, trials, and renewal terms for your region below")
+    public var subscriptionPageNotOpen: String {
+        t("订阅尚未开放", "Subscriptions aren’t open yet")
+    }
+    public var subscriptionPageUnavailableOverline: String {
+        t("暂时不可用", "Temporarily unavailable")
+    }
+    public var subscriptionPageUnavailableTitle: String {
+        t("订阅选项暂时不可用", "Subscription options are temporarily unavailable")
+    }
+    public var subscriptionPageFreeCoreAvailable: String {
+        t("Free Core 仍可使用", "Free Core remains available")
     }
     /// 设置面板铭牌头型号行（工艺重做 2026-06-10，Overline 渲染为全大写）。
     public var settingsPanelOverline: String { t("Rede · 调校", "Rede · Tuning") }

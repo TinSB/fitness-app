@@ -29,6 +29,21 @@ final class SubscriptionModelTests: XCTestCase {
         )
     }
 
+    func testDisabledProductionConfigShowsPreparingBeforeCatalogLoadsOrFails() async {
+        let provider = FakeSubscriptionProvider()
+        provider.productsResult = .failure(.productsUnavailable)
+        let model = SubscriptionModel(provider: provider, configuration: .disabled)
+
+        XCTAssertEqual(model.launchDecision, .blocked(.paidCapabilityNotReady))
+        await model.start()
+        XCTAssertEqual(model.catalog, .unavailable(.productsUnavailable))
+        XCTAssertEqual(
+            model.launchDecision,
+            .blocked(.paidCapabilityNotReady),
+            "An intentionally disabled product must stay in preparation, not look operationally broken"
+        )
+    }
+
     func testStartLoadsEntitlementAndCatalogIndependently() async {
         let provider = FakeSubscriptionProvider()
         provider.entitlementResult = .success(.paidCoach(

@@ -24,7 +24,7 @@
 | iOS 原生 | 产品系统逻辑、训练决策合同、设计语言和文案基线已明确;干净 iOS 实现已是活跃实现,旧 IronPath/PWA 代码已退役（git tag `legacy-parity-final`） | ✅ **Rede 1.8 (build 25) 已于 2026-07-17 提交 App Store 审核，当前 Waiting for Review**。现役 app + widget + 10 个本地包已覆盖完整 1.8 Free Core 与 production-disabled 订阅地基；公开商店发布仍以 Apple 审核结果为准 |
 | 账号 + Auth | 无 first-version runtime；iOS 原生方向保留在 `docs/REDE_REBUILD_00_IRONRULES_AND_CLOUD.md` 与 `docs/CLOUD_DECISIONS_ARCHIVE.md` | **近 greenfield**。服务 opt-in 云同步、跨设备恢复和账号级支持;不阻塞首个 App Store 订阅闭环 |
 | 云同步 | 无 first-version runtime；已拍板方向是 local-first + opt-in + CRDT 记录级合并 | 未实现。offline-first 冲突合并是最贵、最容易返工的一块;进入实现前必须先通过 Master Architecture gate |
-| 订阅基础设施 | 🟡 企业级地基已落地，生产收费仍关闭 | 2026-07-18 已有 `RedeEntitlements`、StoreKit 2 adapter/UI wrapper、Settings 方案态、到期/前台复核、并发旧结果/混合信任/交易确认防护、显式恢复、入口级 fail-closed launch gate、生产/测试双 scheme、本地月/年 fixture 与 app XCTest target。25 项包测试、generic build 和 production fail-closed app test 已进入本地/CI 权威门禁。尚无获批 paid capability、真实 App Store Connect 商品/价格/试用或有效政策页；Xcode 26.6 + iOS 26.5 Simulator 的 `SKTestSession` 仍在保存配置时报 `Code=3`。RevenueCat、账号、服务端权益和远程分析不进首片 |
+| 订阅基础设施 | 🟡 企业级地基与非交易页面壳已落地，生产收费仍关闭 | 2026-07-18 已有 `RedeEntitlements`、StoreKit 2 adapter/UI wrapper、Settings 方案态、可始终进入的 Rede Coach 品牌页、到期/前台复核、并发旧结果/混合信任/交易确认防护、显式恢复、入口级 fail-closed launch gate、生产/测试双 scheme、本地月/年 fixture 与 app XCTest target。品牌页在 production 只显示品牌名、当前方案与诚实状态，不含价值承诺、商品、价格、试用、购买或未实现权益。尚无获批 paid capability、真实 App Store Connect 商品/价格/试用或有效政策页；Xcode 26.6 + iOS 26.5 Simulator 的 `SKTestSession` 仍在保存配置时报 `Code=3`。RevenueCat、账号、服务端权益和远程分析不进首片 |
 | 英文化 | 产品文案方向已定义;双语 key 化基础设施与中英切换已建立（`RedeL10n` + `LocaleStore`，M0-3/M5-2），UI 文案全部 key 化 | **被低估的大头**。基础设施已就位;真正的难点仍在**证据/教练解释文案**——你的差异化所在,必须专业英文重写（非机翻），公开上架前由英文母语 lifter 审校 |
 | 合规 | README 已坚持"训练决策支持，非医疗诊断" | 隐私政策 / ToS / 隐私营养标签 / 医疗免责 / GDPR·CCPA / 第三方 AI 数据披露 待补。**务必守住 "fitness 不是 medical" 定位**，否则触发 Apple Guideline 1.4.1 的监管证明要求 |
 | 获客 / 增长 / 数据 | 无 approved runtime analytics;官网验证可在外部工具中进行 | 定位、ASO、冷启动渠道、漏斗埋点全空白 |
@@ -196,10 +196,10 @@
 
 ## 7. 当前下一步（2026-07-18）
 
-P0/P1 的验证与 clean rewrite 清单已成为历史；Rede 1.8 (25) 已提交 App Review。P2 的 production-disabled subscription foundation 已实现，但不得在没有真实 paid 产品价值和真实商店证据时发布空 paywall：
+P0/P1 的验证与 clean rewrite 清单已成为历史；Rede 1.8 (25) 已提交 App Review。P2 的 production-disabled subscription foundation 与非交易 Rede Coach 页面壳已实现。页面壳可以先存在，但不得在没有真实 paid 产品价值和真实商店证据时把它变成空 paywall：
 
 1. 在 PRD 新立第一个 **1.8 之后新增**的 Paid Coach 能力，写清用户结果、Free Core 回归和付费验收；这是现在的产品主阻塞。
-2. 保留现有 `RedeEntitlements` 基础设施与 production fail-closed 配置；不得为了展示 paywall 临时复用 1.8 免费能力。
+2. 首个 paid 功能完成后再把真实权益填入现有页面；不得为了填满页面临时复用 1.8 免费能力。production fail-closed 配置继续保留。
 3. 解决 Xcode 26.6 / iOS 26.5 Simulator `SKTestSession` 的 `SKInternalErrorDomain Code=3`，或在另一套可复现 Xcode/Simulator 环境跑通仓库已有的购买、取消、pending、验证失败、续订、grace、过期、退款/撤销和恢复 XCTest；失败不得改成跳过。
 4. 创建 App Store Connect 单一 subscription group 的月/年商品前，刷新 Apple 当前政策、Small Business Program 资格、竞品价格和试用证据；product IDs、价格和试用不写成架构常量。
 5. 首个 paid 能力真实存在后再打开生产 paywall；配置可点击的 Privacy Policy / Terms of Use（URL 属于发布配置），并用 Sandbox/TestFlight 验证本地化商品、购买/恢复、重装/换设备、离线行为和两条政策目的地；通过前不提交订阅版本。
@@ -207,4 +207,4 @@ P0/P1 的验证与 clean rewrite 清单已成为历史；Rede 1.8 (25) 已提交
 
 ---
 
-*当前最小下一片：先批准第一个 post-1.8 Paid Coach 能力，同时在可复现环境跑通现有 StoreKitTest；production paywall 在这两项与政策/真实商店门禁通过前保持关闭。*
+*当前最小下一片：在现成 Rede Coach 页面壳之上，先批准并实现第一个 post-1.8 Paid Coach 能力，同时在可复现环境跑通现有 StoreKitTest；真实权益、商品与购买控件只在各自门禁通过后逐步填入。*

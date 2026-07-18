@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-07-18 · Rede Coach 订阅页面先落壳，功能完成后再逐项加入
+
+**用户目标**：先把可进入、可验收的订阅页面做出来；当前还没有完成的收费功能不提前写进页面，等各项能力真正完成后再往上填。
+
+**做了什么**：Settings 的“查看 Rede Coach”现在始终可见，并进入独立的 Rede Coach 品牌页。production 当前只显示品牌名、当前方案 Free Core 与“准备中 / 功能完成后再加入这里 / 订阅尚未开放”，不写价值承诺，也不显示价格、试用、权益列表、购买、恢复、管理或政策链接。页面状态与 Apple 购买面严格分离：只有 paid capability、商品目录和政策地址全部通过同一个 launch gate 时，才会在原页面切换到 StoreKit 购买面；功能尚未开发显示“准备中”，未来商品或政策配置异常则显示“暂时不可用 / Free Core 仍可使用”。Settings 的恢复、管理和政策入口也接到同一交易门禁，blocked 状态不会从旁路露出收费操作。
+
+**TDD 与问题闭环**：页面展示策略和双语文案都先跑出真实红灯再实现。首次模拟器验收又抓到一个自动测试遗漏：production disabled 配置在商品未加载时被错误归为“暂时不可用”，而不是“准备中”；新增模型回归测试后先稳定红 2 项，再把 `paidCapabilityNotReady` 的优先级提到 catalog 判断之前，同一测试转绿。双语文案定向测试 **14/14**、访问/交易控件策略 **7/7** 通过；app-hosted production 测试同时锁定 `.preparing` 且零交易控件。最终权威 `bash .claude/quality-gate.cmd` exit 0，十个 Swift 包、通用模拟器构建与 production app XCTest 全部通过，`QUALITY GATE: PASS`；收据：`~/Library/Developer/Xcode/DerivedData/Rede-fehbzdcxewzuvxgixmetankthjqd/Logs/Test/Test-Rede-2026.07.18_11-32-42--0400.xcresult`。独立只读复审 PASS，P0/P1/P2/P3 均为 0。
+
+**模拟器真实流程**：把最终 production 构建安装到 iPhone 17 Pro / iOS 26.5 Simulator，实际点击中文 Settings →“查看 Rede Coach”→ Rede Coach 页面；屏幕与辅助功能树共同确认页面为 Free Core / 准备中，且没有价格、试用、购买、恢复、管理或政策控件。点击“完成”返回 Settings，再关闭设置返回中文 Today，整条往返正常。证据：`.ai-tmp/20260718-subscription-page-shell/02-rede-coach-preview-zh-final.png`。
+
+**发布边界与规格写回**：这次完成的是非交易页面壳，不是可出售订阅。StoreKitTest 仍受 Xcode 26.6 + iOS 26.5 Simulator `SKInternalErrorDomain Code=3` 阻断；首个真实 post-1.8 Paid Coach 功能、App Store Connect 商品、最终价格/试用、有效政策地址和 Sandbox/TestFlight 生命周期验收仍缺，production purchase gate 继续关闭。已原地更新 Master v3.3、系统逻辑 §8.3、PRD FR-SUB2、商业化 Roadmap P2 与文案基线 §6.2.1；没有新增长期文档，`DOCS_MANIFEST` 无需改。Git 只做本地提交，不 push、不创建 PR。
+
+---
+
 ## 2026-07-18 · 设置页去掉三类常驻说明小字
 
 **用户目标**：设置页不要再在自解释的项目下面堆说明小字；明确删除“训练数据保存在本机并可导出”“此版本所有功能均包含在 Free Core”和训练背景下的“点任意一行修改”。
