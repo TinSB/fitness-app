@@ -49,6 +49,7 @@ final class WeeklyReviewFactsBuilderTests: XCTestCase {
         ))
 
         XCTAssertEqual(result.reviewWeekStartISO, "2026-07-06")
+        XCTAssertEqual(result.reviewWeekEndExclusiveISO, "2026-07-13")
         XCTAssertEqual(result.trainingDayCount, 2, "同日两场只算一个训练日")
         XCTAssertEqual(result.sessionCount, 3, "场次仍如实保留")
         XCTAssertEqual(result.cleanVolumeKg, 1_000, accuracy: 0.001)

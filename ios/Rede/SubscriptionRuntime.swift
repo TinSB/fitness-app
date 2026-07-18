@@ -46,10 +46,45 @@ enum RedeSubscriptionRuntime {
     }
 
     @MainActor
-    static func makeModel(configuration: SubscriptionConfiguration) -> SubscriptionModel {
-        SubscriptionModel(
+    static func makeModel(
+        configuration: SubscriptionConfiguration,
+        arguments: [String] = ProcessInfo.processInfo.arguments
+    ) -> SubscriptionModel {
+        #if DEBUG
+        if arguments.contains("-redePaidCoachActiveFixture") {
+            // L3 Simulator entitlement fixture only: unlock an already-owned feature while the
+            // production purchase launch gate remains disabled. No products or transactions exist.
+            return SubscriptionModel(
+                provider: PaidCoachActiveFixtureProvider(),
+                configuration: configuration
+            )
+        }
+        #endif
+        return SubscriptionModel(
             provider: StoreKitSubscriptionProvider(productIDs: configuration.productIDs),
             configuration: configuration
         )
     }
 }
+
+#if DEBUG
+private actor PaidCoachActiveFixtureProvider: SubscriptionProviding {
+    nonisolated var transactionUpdates: AsyncStream<SubscriptionUpdate> {
+        AsyncStream { continuation in continuation.finish() }
+    }
+
+    func products() async throws -> [SubscriptionProduct] { [] }
+
+    func currentEntitlement() async throws -> ResolvedEntitlement {
+        .paidCoach(expirationDate: nil, billingState: .active)
+    }
+
+    func purchase(productID: String) async throws -> PurchaseOutcome {
+        throw SubscriptionIssue.configurationInvalid
+    }
+
+    func restore() async throws {
+        throw SubscriptionIssue.configurationInvalid
+    }
+}
+#endif

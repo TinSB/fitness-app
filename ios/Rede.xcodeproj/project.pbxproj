@@ -20,6 +20,7 @@
 		DD00000000000000000000A2 /* RedeHealthKit in Frameworks */ = {isa = PBXBuildFile; productRef = DD00000000000000000000B2 /* RedeHealthKit */; };
 		FF00000000000000000000A1 /* RedeEntitlements in Frameworks */ = {isa = PBXBuildFile; productRef = FF00000000000000000000B1 /* RedeEntitlements */; };
 		FF00000000000000000000D1 /* SubscriptionRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000000000000000000D2 /* SubscriptionRuntime.swift */; };
+		F20000000000000000000001 /* WeeklyCoachReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000002 /* WeeklyCoachReviewView.swift */; };
 		F10000000000000000000001 /* StoreKitEntitlementsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000005 /* StoreKitEntitlementsTests.swift */; };
 		F10000000000000000000002 /* Rede.storekit in Resources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000006 /* Rede.storekit */; };
 		F10000000000000000000003 /* RedeEntitlements in Frameworks */ = {isa = PBXBuildFile; productRef = F10000000000000000000011 /* RedeEntitlements */; };
@@ -107,6 +108,7 @@
 		BB0000000000000000000F0A /* ShareCardPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCardPreviewView.swift; sourceTree = "<group>"; };
 		BB0000000000000000000F12 /* HealthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthModel.swift; sourceTree = "<group>"; };
 		FF00000000000000000000D2 /* SubscriptionRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionRuntime.swift; sourceTree = "<group>"; };
+		F20000000000000000000002 /* WeeklyCoachReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyCoachReviewView.swift; sourceTree = "<group>"; };
 		BB0000000000000000000F21 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		BB0000000000000000000F22 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		BB00000000000000000001E2 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
@@ -209,6 +211,7 @@
 				BB0000000000000000000F0A /* ShareCardPreviewView.swift */,
 				BB0000000000000000000F12 /* HealthModel.swift */,
 				FF00000000000000000000D2 /* SubscriptionRuntime.swift */,
+				F20000000000000000000002 /* WeeklyCoachReviewView.swift */,
 				BB00000000000000000001E2 /* SessionStore.swift */,
 				CC00000000000000000001A2 /* ProgressModel.swift */,
 				CC00000000000000000001C2 /* OnboardingView.swift */,
@@ -427,6 +430,7 @@
 				BB0000000000000000000F09 /* ShareCardPreviewView.swift in Sources */,
 				BB0000000000000000000F11 /* HealthModel.swift in Sources */,
 				FF00000000000000000000D1 /* SubscriptionRuntime.swift in Sources */,
+				F20000000000000000000001 /* WeeklyCoachReviewView.swift in Sources */,
 				BB00000000000000000001E1 /* SessionStore.swift in Sources */,
 				CC00000000000000000001A1 /* ProgressModel.swift in Sources */,
 				CC00000000000000000001C1 /* OnboardingView.swift in Sources */,

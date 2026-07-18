@@ -16,6 +16,7 @@ struct RootTabView: View {
     @State private var localeStore: LocaleStore
     @State private var sessionStore = SessionStore()
     @State private var subscriptionModel: SubscriptionModel
+    @State private var progressScrollTarget: ProgressScrollTarget?
     /// M5-1b 首启引导：nil = 未检查（避免首帧闪烁误判）。
     @State private var showOnboarding: Bool?
     /// 截图钩子 -autoOpenSharePreview：用样本数据弹分享卡预览（仅测试脚手架）。
@@ -43,7 +44,8 @@ struct RootTabView: View {
         _localeStore = State(initialValue: store)
         let subscriptionConfiguration = RedeSubscriptionRuntime.configuration(arguments: args)
         _subscriptionModel = State(initialValue: RedeSubscriptionRuntime.makeModel(
-            configuration: subscriptionConfiguration
+            configuration: subscriptionConfiguration,
+            arguments: args
         ))
     }
 
@@ -65,13 +67,23 @@ struct RootTabView: View {
                             }
                             selection = .train
                         }
-                    }, onReviewData: { selection = .progress }, // FR-T5 修数据卡「去核对」→ 进展页
+                    }, onReviewData: {
+                        progressScrollTarget = .dataQuality
+                        selection = .progress
+                    }, // FR-T5/FR-SUB3 修数据「去核对」→ 进展页数据质量区
+                       onViewProgress: {
+                           progressScrollTarget = nil
+                           selection = .progress
+                       },
                        onGoPlan: { selection = .plan })          // K3「下一场」行 → 计划页
                 case .train:
                     TrainTabView(onGoToday: { selection = .today })
                 case .progress:
                     // M2 空态承接：空态主按钮回今日（与 Train/Plan 空态同口径）
-                    ProgressTabView(onGoToday: { selection = .today })
+                    ProgressTabView(
+                        onGoToday: { selection = .today },
+                        scrollTarget: $progressScrollTarget
+                    )
                 case .plan:
                     // FR-PL1：占位页动作 = 回今日（每天的安排由今日页给出）
                     PlanTabView(onGoToday: { selection = .today })

@@ -11,6 +11,8 @@ struct TodayTabView: View {
     let onStartTraining: () -> Void
     /// FR-T5 修数据卡「去核对」：跳到进展页数据质量区（跨 tab；由 RootTabView 切 selection）。
     var onReviewData: () -> Void = {}
+    /// FR-SUB3 正常复盘行动：打开进展页顶部，不强制滚到数据质量区。
+    var onViewProgress: () -> Void = {}
     /// K3「下一场」预告行：跳计划页（跨 tab；由 RootTabView 切 selection）。
     var onGoPlan: () -> Void = {}
 
@@ -20,6 +22,9 @@ struct TodayTabView: View {
     // 截图钩子（沿 -initialTab 先例）：-expandTodayReason 启动即展开依据抽屉
     @State private var reasonExpanded = ProcessInfo.processInfo.arguments.contains("-expandTodayReason")
     @State private var showSettings = false
+    /// 嵌套 Rede Coach sheet 先全部关闭，再在 Settings sheet 的 onDismiss 切 tab，
+    /// 避免 dismissal 与 tab navigation 同帧竞争。
+    @State private var pendingCoachAction: WeeklyCoachReviewAction?
     /// FR-EX2：点开的动作详情目标（nil = 未打开）。
     @State private var detailTarget: ExerciseDetailTarget?
     /// FR-TR6：点了某替代动作后，先弹「只换这次 / 以后都换」二选一，选完才写（携带写所需信息）。
@@ -150,9 +155,23 @@ struct TodayTabView: View {
                 onCancel: {}  // 无独立取消行：「稍后再说」已是显式行，滑走同义
             )
         }
-        .sheet(isPresented: $showSettings) {
+        .sheet(isPresented: $showSettings, onDismiss: {
+            guard let action = pendingCoachAction else { return }
+            pendingCoachAction = nil
+            switch action {
+            case .openToday:
+                break
+            case .reviewData:
+                onReviewData()
+            case .viewProgress:
+                onViewProgress()
+            }
+        }) {
             // 工艺重做（2026-06-10）：内容超半屏，补 .large 档 + 拖拽指示条
-            SettingsSheet(store: localeStore)
+            SettingsSheet(
+                store: localeStore,
+                onCoachAction: { pendingCoachAction = $0 }
+            )
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }

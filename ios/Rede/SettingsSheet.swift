@@ -14,6 +14,7 @@ import RedeTrainingDecision
 
 struct SettingsSheet: View {
     @Bindable var store: LocaleStore
+    var onCoachAction: (WeeklyCoachReviewAction) -> Void = { _ in }
     @Environment(SessionStore.self) private var sessionStore
     @Environment(SubscriptionModel.self) private var subscriptionModel
     @Environment(\.dismiss) private var dismiss
@@ -40,6 +41,7 @@ struct SettingsSheet: View {
     @State private var exportBusy = false
     @State private var exportFailed = false
     @State private var showSubscriptionPage = false
+    @State private var pendingCoachAction: WeeklyCoachReviewAction?
     @State private var subscriptionManagementFailed = false
     /// 行内单题编辑（方向 A 拍板 2026-06-10：改哪题进哪题，退役整流重跑）。
     @State private var editing: PlateQuestion?
@@ -137,8 +139,19 @@ struct SettingsSheet: View {
         .sheet(item: $exportItem) { item in
             ExportActivityView(items: [item.url])
         }
-        .sheet(isPresented: $showSubscriptionPage) {
-            SubscriptionPageSheet(configuration: subscriptionModel.configuration)
+        .sheet(isPresented: $showSubscriptionPage, onDismiss: {
+            guard let action = pendingCoachAction else { return }
+            pendingCoachAction = nil
+            onCoachAction(action)
+            dismiss()
+        }) {
+            SubscriptionPageSheet(
+                configuration: subscriptionModel.configuration,
+                onCoachAction: { action in
+                    pendingCoachAction = action
+                    showSubscriptionPage = false
+                }
+            )
                 .environment(store)
                 .environment(subscriptionModel)
                 .presentationDetents([.large])
@@ -829,6 +842,7 @@ struct SettingsSheet: View {
 
 private struct SubscriptionPageSheet: View {
     let configuration: SubscriptionConfiguration
+    let onCoachAction: (WeeklyCoachReviewAction) -> Void
     @Environment(LocaleStore.self) private var localeStore
     @Environment(SubscriptionModel.self) private var subscriptionModel
     @Environment(\.dismiss) private var dismiss
@@ -870,11 +884,20 @@ private struct SubscriptionPageSheet: View {
                 Rectangle().fill(Color.redeHair2).frame(height: 1)
             }
 
-            switch pagePresentation {
-            case .preparing, .unavailable:
-                previewContent(pagePresentation)
-            case .store:
-                storeContent
+            if FeatureAccessPolicy.allows(
+                .paidCoach,
+                entitlement: subscriptionModel.entitlement
+            ) {
+                // Access gate and launch gate are intentionally separate: a verified subscriber
+                // keeps Paid Coach even when product catalog/purchase presentation is unavailable.
+                WeeklyCoachReviewView(onAction: onCoachAction)
+            } else {
+                switch pagePresentation {
+                case .preparing, .unavailable:
+                    previewContent(pagePresentation)
+                case .store:
+                    storeContent
+                }
             }
         }
         .background(Color.redeBase.ignoresSafeArea())

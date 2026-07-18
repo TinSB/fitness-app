@@ -30,6 +30,27 @@ final class StoreKitEntitlementsTests: XCTestCase {
         )
     }
 
+    func testDebugPaidFixtureUnlocksFeatureWithoutOpeningPurchaseGate() async {
+        #if DEBUG
+        let configuration = RedeSubscriptionRuntime.configuration(
+            bundle: .main,
+            arguments: ["RedeTests"]
+        )
+        let model = RedeSubscriptionRuntime.makeModel(
+            configuration: configuration,
+            arguments: ["RedeTests", "-redePaidCoachActiveFixture"]
+        )
+
+        await model.start()
+
+        XCTAssertTrue(FeatureAccessPolicy.allows(.paidCoach, entitlement: model.entitlement))
+        XCTAssertEqual(model.launchDecision, .blocked(.paidCapabilityNotReady))
+        let presentation = SubscriptionPagePolicy.presentation(for: model.launchDecision)
+        XCTAssertEqual(presentation, .preparing)
+        XCTAssertFalse(presentation.showsTransactionControls)
+        #endif
+    }
+
     func testLocalCatalogPurchasePendingRestoreRenewalExpirationAndRefund() async throws {
         let configurationURL = try XCTUnwrap(
             Bundle(for: StoreKitEntitlementsTests.self)

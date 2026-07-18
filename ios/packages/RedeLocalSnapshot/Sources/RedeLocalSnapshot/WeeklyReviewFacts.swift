@@ -6,6 +6,7 @@
 
 public struct WeeklyReviewFacts: Equatable, Sendable {
     public let reviewWeekStartISO: String
+    public let reviewWeekEndExclusiveISO: String
     public let trainingDayCount: Int
     public let sessionCount: Int
     public let cleanVolumeKg: Double
@@ -16,6 +17,7 @@ public struct WeeklyReviewFacts: Equatable, Sendable {
 
     public init(
         reviewWeekStartISO: String,
+        reviewWeekEndExclusiveISO: String,
         trainingDayCount: Int,
         sessionCount: Int,
         cleanVolumeKg: Double,
@@ -23,6 +25,7 @@ public struct WeeklyReviewFacts: Equatable, Sendable {
         keyLiftTrend: TrendAssessment?
     ) {
         self.reviewWeekStartISO = reviewWeekStartISO
+        self.reviewWeekEndExclusiveISO = reviewWeekEndExclusiveISO
         self.trainingDayCount = trainingDayCount
         self.sessionCount = sessionCount
         self.cleanVolumeKg = cleanVolumeKg
@@ -71,6 +74,7 @@ public enum WeeklyReviewFactsBuilder {
 
         return WeeklyReviewFacts(
             reviewWeekStartISO: reviewWeekStartISO,
+            reviewWeekEndExclusiveISO: currentWeekStartISO,
             trainingDayCount: trainingDays.count,
             sessionCount: reviewSessions.count,
             cleanVolumeKg: reviewVolume,
