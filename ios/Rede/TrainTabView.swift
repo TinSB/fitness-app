@@ -1,7 +1,9 @@
 import SwiftUI
+import StoreKit
 import RedeL10n
 import RedeTrainingDecision
 import RedeLocalSnapshot
+import RedeDomain
 
 // Train — 按 rede-app.html #s-train 复原（M0-2 静态稿 → M3-2 全交互）。
 // 视觉合同沿用静态稿；状态转移全在 TrainFlowState（包内有测试），本层只渲染 +
@@ -53,6 +55,11 @@ struct TrainTabView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// 快改入口一次性提示（用过即永久消失）。
     @AppStorage("hasUsedQuickAdjust") private var hasUsedQuickAdjust = false
+    /// FR-评分：完成训练后请求 App Store 评分。requestReview 是系统弹窗（无自定义文案）；
+    /// 何时问的节流逻辑在 RedeDomain.ReviewPromptPolicy（纯逻辑，已单测）。完成场数复用既有
+    /// `completedSessionCount`（清洗后真实场数，不另设持久化计数器）；只持久化「上次请求评分的版本」。
+    @Environment(\.requestReview) private var requestReview
+    @AppStorage("reviewPrompt.lastRequestedVersion") private var reviewLastRequestedVersion = ""
     @State private var showMoreSheet = false
     @State private var showSwapSheet = false
     @State private var painToastVisible = false
@@ -74,6 +81,22 @@ struct TrainTabView: View {
     /// 质量清洗丢弃的场不计入。
     private var completedSessionCount: Int { sessionStore.todayModel?.cleanView.sessions.count ?? 0 }
     private var flow: TrainFlowState? { sessionStore.flow }
+
+    /// 训练完成并落盘后（全程最高满意度时刻）请求 App Store 评分——但仅在用户已获得价值
+    /// （≥N 场完成）且当前 App 版本尚未问过时。判定在 ReviewPromptPolicy（已单测）；系统弹窗
+    /// 本身由 Apple 决定是否真正展示（每 365 天≤3 次）。在请求「之前」就记下「本版本已问」，
+    /// 即便系统抑制弹窗也绝不在同版本重复打扰。
+    @MainActor private func requestReviewAfterCompletedSession() {
+        let currentVersion = (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String) ?? ""
+        let last = reviewLastRequestedVersion.isEmpty ? nil : reviewLastRequestedVersion
+        guard ReviewPromptPolicy().shouldRequestReview(
+            completedSessionCount: completedSessionCount,
+            lastRequestedVersion: last,
+            currentVersion: currentVersion
+        ) else { return }
+        reviewLastRequestedVersion = currentVersion
+        requestReview()
+    }
 
     var body: some View {
         ScrollView {
@@ -1341,6 +1364,8 @@ struct TrainTabView: View {
                 Task {
                     if await sessionStore.completeAndPersistSession() {
                         onGoToday()
+                        // 保存完成→回 Today 后，在稳定屏幕上尝试请求评分（受节流策略约束）。
+                        requestReviewAfterCompletedSession()
                     }
                 }
             })
