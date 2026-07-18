@@ -168,8 +168,12 @@
 
 - **定位**：在 Hevy（$24/yr 的 logger+轻 trainer）**之上**，对标/超越 Fitbod（$96/yr 黑箱 AI），卖点 = **"会解释自己的循证教练"**。
 - **待验证价格假设，不是已批准商品配置**：年订 **$59.99–$69.99**、月订 **$9.99–$11.99**、**14 天试用**；创建 App Store Connect 商品前必须刷新竞品、Apple 当前政策和试用证据。同一 subscription group 的月/年商品提供同一 `paidCoach` access tier；App 内只显示 StoreKit 返回的 storefront 本地化价格、资格与续订条款，绝不硬编码这些美元假设。
-- **免费/付费分界（方案 A，2026-07-17 已拍板）**：Rede 1.8 已有能力全部继续属于 Free Core——现有 readiness 判断/解释、训练处方与记录、计划查看/自动调整/编辑、进展/e1RM/数据质量/肌群等级、本地导出和现有分享卡均不得回收收费。Paid Coach（用户名称 `Rede Coach`）只卖 **1.8 之后真正新增**、且实现前已在 PRD 明确标为 paid 的深度教练能力，例如未来更长周期洞察、新的自动周行动、高级比较或新的计划适配/导入；这些只是候选，不因写在 Roadmap 就获得实现授权。安全、核心训练/记录、canonical 保存、数据读取/导出、隐私控制永不收费。Future Trust Infra 继续单独 gate。
+- **免费/付费分界（方案 A，2026-07-17 已拍板）**：Rede 1.8 已有能力全部继续属于 Free Core——现有 readiness 判断/解释、训练处方与记录、计划查看/自动调整/编辑、进展/e1RM/数据质量/肌群等级、本地导出和现有分享卡均不得回收收费。首个获批 post-1.8 Paid Coach 能力为 **每周教练复盘（FR-SUB3）**：只新增跨周事实的单一判断、可核对依据与行动编排，不锁底层数据或入口。后续更长周期洞察、自动周行动、计划适配/导入仍只是候选，不因写在 Roadmap 就获得实现授权。安全、核心训练/记录、canonical 保存、数据读取/导出、隐私控制永不收费。Future Trust Infra 继续单独 gate。
 - **苹果经济学**：首发默认走 StoreKit IAP 和 App Store 合规 paywall。Small Business Program 资格、Apple 费率、外链支付政策和地区差异必须在订阅产品配置前按 Apple 当前规则和法律意见刷新;不要把外链绕抽成当作首发策略。
+
+### 首个 Paid Coach Decision Gate（2026-07-18）
+
+每周教练复盘专家判断 **80/100**（用户价值 17/20、差异化 18/20、技术可行性 19/20、风险与可逆性 13/15、真实付费证据 7/15、测量准备度 6/10），高于 70 分开发线；付费证据仍为 E0/E1，因此只授权本地产品开发和受控测试，不授权 production paywall。发布前产品门槛：固定任务可用性测试至少 6/8 用户能无帮助复述主判断并完成行动，且无人把观察误解成医学/确定因果；技术门槛为场景 fixtures 全绿、Free Core 零回归、Simulator 中英/权益矩阵通过。若用户认为只是免费统计换壳、超过 25% 测试者误解结论，或主要活跃用户长期无法获得可靠复盘，则停止收费包装并回到证据验证。
 
 ---
 
@@ -198,8 +202,8 @@
 
 P0/P1 的验证与 clean rewrite 清单已成为历史；Rede 1.8 (25) 已提交 App Review。P2 的 production-disabled subscription foundation 与非交易 Rede Coach 页面壳已实现。页面壳可以先存在，但不得在没有真实 paid 产品价值和真实商店证据时把它变成空 paywall：
 
-1. 在 PRD 新立第一个 **1.8 之后新增**的 Paid Coach 能力，写清用户结果、Free Core 回归和付费验收；这是现在的产品主阻塞。
-2. 首个 paid 功能完成后再把真实权益填入现有页面；不得为了填满页面临时复用 1.8 免费能力。production fail-closed 配置继续保留。
+1. 按已批准 FR-SUB3 实现首个 **1.8 之后新增**的 Paid Coach 能力“每周教练复盘”；V1 纯派生、只导航、不自动改计划，Free Core 回归与 Simulator 验收是完成门槛。
+2. FR-SUB3 完成 package/app/Simulator 验收后，才把这一项真实权益填入现有 StoreKit 页面；不得为了填满页面临时复用 1.8 免费能力。production fail-closed 配置继续保留。
 3. 解决 Xcode 26.6 / iOS 26.5 Simulator `SKTestSession` 的 `SKInternalErrorDomain Code=3`，或在另一套可复现 Xcode/Simulator 环境跑通仓库已有的购买、取消、pending、验证失败、续订、grace、过期、退款/撤销和恢复 XCTest；失败不得改成跳过。
 4. 创建 App Store Connect 单一 subscription group 的月/年商品前，刷新 Apple 当前政策、Small Business Program 资格、竞品价格和试用证据；product IDs、价格和试用不写成架构常量。
 5. 首个 paid 能力真实存在后再打开生产 paywall；配置可点击的 Privacy Policy / Terms of Use（URL 属于发布配置），并用 Sandbox/TestFlight 验证本地化商品、购买/恢复、重装/换设备、离线行为和两条政策目的地；通过前不提交订阅版本。
@@ -207,4 +211,4 @@ P0/P1 的验证与 clean rewrite 清单已成为历史；Rede 1.8 (25) 已提交
 
 ---
 
-*当前最小下一片：在现成 Rede Coach 页面壳之上，先批准并实现第一个 post-1.8 Paid Coach 能力，同时在可复现环境跑通现有 StoreKitTest；真实权益、商品与购买控件只在各自门禁通过后逐步填入。*
+*当前最小下一片：实现并验收 FR-SUB3 每周教练复盘；同时在可复现环境跑通现有 StoreKitTest。真实权益、商品与购买控件只在各自门禁通过后逐步填入。*

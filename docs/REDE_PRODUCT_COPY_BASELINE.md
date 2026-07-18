@@ -416,7 +416,20 @@ English:
 
 `Rede Coach` 是订阅层的统一用户名称。它的核心不是"更多功能",而是未来新增的"更少猜测,更多依据"；**Rede 1.8 已经提供的训练、记录、判断/解释、计划、进展、数据质量、肌群等级、导出与现有分享能力继续免费**。任何 paywall 文案只能描述已经真实实现、且 PRD 预先标为 paid 的新增能力，不得把现有能力换个名字后收费。
 
-当前没有任何具体 Paid Coach 功能获批，因此本节**不预写权益卖点**。首个 paid PRD 条目真实实现并验收后，才从该条目的用户结果写双语卖点；现有建议理由、自动计划更新、数据质量提醒和肌群等级不得出现在权益列表中。
+首个具体 Paid Coach 功能已批准为 **每周教练复盘 / Weekly Coach Review（FR-SUB3）**。在它真实实现并通过 package、app 与 Simulator 验收前，production 页面仍不得显示权益卖点或打开购买；验收后只能按下列已批准结果表达，现有建议理由、自动计划更新、数据质量提醒和肌群等级仍不得进入权益列表。
+
+### 6.1.1 每周教练复盘
+
+| 位置 | 中文 | English | 红线 |
+|---|---|---|---|
+| 功能名 | 每周教练复盘 | Weekly Coach Review | 不写 AI Coach / 智能黑箱。 |
+| 付费结果 | 一个判断　可核对的依据　一个下一步 | One call, evidence you can check, and one next step | 只在功能验收且购买 gate ready 后进入 StoreKit 页面价值面。 |
+| 零训练主状态 | 上周没有训练记录 | No workouts were recorded last week | 不羞辱、不追问原因。 |
+| 校准主状态 | 继续训练后再判断趋势 | Keep training before calling a trend | 作为主状态，不在下面另挂解释小字。 |
+| 数据优先主状态 | 先核对上周的训练记录 | Check last week’s training records first | 数据质量入口本身仍是 Free Core。 |
+| 行动 | 查看今天安排 / 查看进展 / 核对训练数据 | View Today / View Progress / Review Training Data | V1 只导航，不写计划。 |
+
+复盘页信息预算固定为 `1 个主判断 + 最多 3 条依据 + 1 个行动`。依据使用正文/清单字阶，不使用 caption 堆常驻说明；不显示“置信度”、算法名、因果语言、医学判断、计划完成率或“你退步了”。具体数字必须能回到 Free Core 的原始训练/进展事实对账。
 
 ### 6.2 Paywall 框架
 

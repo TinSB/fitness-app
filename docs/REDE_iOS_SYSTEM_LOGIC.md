@@ -1215,6 +1215,20 @@ Account/sync/cloud settings 不进入第一版干净实现,不得做成无能力
 
 **实现状态（2026-07-18）。** 纯合同、fake-provider 状态机、Free Core 不可阻断、商品/政策/paid-capability 四重 launch gate、入口内部二次门禁、已验证交易先投影后 finish、被新查询淘汰的旧 delivery 禁止 finish、重复 delivery 幂等、同 transaction ID 退款/撤销重算、混合 verified/unverified 强制 fail-closed、过期后 status unavailable/unverified 保持 unknown、查询竞态防护、到期/回前台复核、显式 restore、StoreKit 2 adapter/UI wrapper、Settings 双语状态与非交易 Rede Coach 页面壳均已实现。production Info 配置故意为空，因此 app 可进入 Rede Coach 预览页，但只显示当前 Free Core 与准备状态，不显示商品、价格、恢复、管理或购买控件；生产 `Rede` 与本地 `Rede-StoreKitTest` 已拆成两个 shared scheme，避免普通 Run 带入测试商品。包测试与纳入本地/CI 权威门禁的 production fail-closed app XCTest 持续守门。仓库还包含结构化本地 StoreKit v6.3 fixture 和覆盖取消、验证失败、grace 等完整场景的 `SKTestSession` XCTest；但当前 Xcode 26.6 + iOS 26.5 Simulator 在保存配置时返回 `SKInternalErrorDomain Code=3`，商品目录未加载。该失败不豁免，购买/续订/退款链与 Sandbox/TestFlight 仍为 No-Go 门禁。
 
+### 8.4 每周教练复盘（Weekly Coach Review · FR-SUB3）
+
+**用户结果。** Rede Coach 在新周只回答一个问题：上一完整训练周最值得关注的是什么。首屏固定为一个主判断、最多三条可核对依据和一个行动；不是聊天页，不把现有 Progress 图表换壳收费，也不在结论下堆算法说明、置信度标签或免责声明小字。现有 FR-T8 免费周一事实单行保持原样。
+
+**纯决策合同。** `WeeklyCoachReviewEngine` 归 `RedeTrainingDecision`，沿 `CoachActionEngine` 模式保持纯函数、typed output、零文案、零 clock/IO、零 entitlement/StoreKit/import AppData。app 组合层只注入窄事实：`reviewWeekStartISO`、同日去重训练日数、场次数、剔除可疑组后的训练量、近期完整周训练日中位数、截至上周末的关键动作趋势（up/flat/down/calibrating）和上周数据问题数。引擎输出 `verdict + evidence[≤3] + action`；文案全部由 `RedeL10n` 按 reason code 渲染。
+
+**周口径与可信输入。** 只分析 `[上周一, 本周一)`，当前周与未来记录全部排除；跨年、DST 和时区沿 `WeekAnchor` 的 civil-date/ISO Monday 口径。训练日从 clean session 日期去重；训练量、e1RM 和关键动作趋势从排除可疑组后的 `ProgressSnapshot` 重建。吨位可作依据，不能独立推出进步/退步。当前数据没有可追溯的 plan effective-date timeline，故 V1 禁止读取今天的计划评价上一周、禁止输出“完成 X/Y 次计划”；未来若要计划依从必须另走 schema/版本时间线 gate，不能补一个依赖周一开 App 的机会式快照。
+
+**确定性优先级。** 上周数据问题抢占正向判断并行动到核对数据；上周零训练进入中性事实态并回今日；可靠数据不足进入校准/事实态；实际训练日较近期完整周中位数明显减少时只说节奏变化；其余才按关键动作趋势给 progressing/holding/easing。下降不写“退步”，减载、回归或疼痛不被催补量。V1 动作只有 `reviewData`、`openToday`、`viewProgress`，全部为导航且不写 canonical、不改计划。
+
+**派生与权益边界。** V1 每次打开从 canonical 历史重算，不持久化复盘归档、已读状态、周初计划快照或输入摘要，不 bump schema；用户修正历史后结果随真实数据更新。Paid access 与 purchase launch gate 分离：有效 active/grace entitlement 可看复盘，即使商品目录/政策临时不可用；free/checking/unknown/expired/refunded 不得看到付费结论，页面加载期间 entitlement 变化要取消/清空结果。引擎永远不知道用户是否付费。
+
+**验证。** 包测试覆盖零历史/仅本周、上周零场/一场、同日多场去重、跨年与时区、坏数据优先、up/flat/down、吨位升而主项持平、非法数值 fail-safe、依据数量与稳定顺序；app 测试覆盖 active/grace/free/checking/unknown/expired/refunded、已验证 Paid + catalog failure、Free Core 不可阻断和加载竞态。Simulator 必须真走中英文 Rede Coach → 复盘 → 依据 → 行动，并覆盖数据不足/坏数据、Dynamic Type、VoiceOver、Reduce Motion、杀进程重开确定性；调试 fixture 只算本地 L3 UI 证据，StoreKitTest 与 Sandbox/TestFlight 仍是独立收费发布门禁。
+
 ## 9. Share / Growth System
 
 分享系统是 Rede 的商业化增长回路,负责把训练成果、肌群等级、PR、均衡发展和可执行计划转化为用户愿意主动传播的隐私安全资产。它不是第一版社交网络,也不是公开排行榜。第一版干净实现的 S0 边界是本地生成分享卡、调用 iOS Share Sheet、附带通用 App Store / landing link;账号、云端个人页、公开 feed、归因链接、远程模板库和好友关系都属于后续 Master-approved implementation slice。
