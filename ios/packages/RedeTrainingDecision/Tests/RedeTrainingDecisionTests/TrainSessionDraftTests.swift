@@ -108,6 +108,46 @@ final class TrainSessionDraftTests: XCTestCase {
         XCTAssertEqual(restored, flow)
     }
 
+    // 本次训练重排必须进入 typed event：draft JSON 往返后重放得到完全相同的队列与状态。
+    func testMoveEventCodableRoundTripAndReplay() throws {
+        var flow = try makeFlow()
+        let targetId = flow.plan.exercises[2].exerciseId
+        flow.moveExerciseToCurrent(targetId)
+        XCTAssertEqual(flow.events, [.moveExerciseToCurrent(targetId)])
+
+        let draft = TrainSessionDraft(
+            dateISO: "2026-06-10",
+            startedAt: Date(timeIntervalSince1970: 1_780_000_000),
+            prescription: flow.prescription,
+            events: flow.events
+        )
+        let data = try JSONEncoder().encode(draft)
+        let decoded = try JSONDecoder().decode(TrainSessionDraft.self, from: data)
+        XCTAssertEqual(decoded.events, [.moveExerciseToCurrent(targetId)])
+
+        let restored = try XCTUnwrap(decoded.restoreFlow())
+        XCTAssertEqual(restored, flow)
+        XCTAssertEqual(restored.plan.exercises.map(\.exerciseId), flow.plan.exercises.map(\.exerciseId))
+    }
+
+    // 无效目标、或在已经记录正式事实后才出现的 move 事件，恢复必须整体失败而不是部分重放。
+    func testRestoreFailsClosedForInvalidMoveEvent() throws {
+        let flow = try makeFlow()
+        XCTAssertNil(TrainFlowState.restore(
+            prescription: flow.prescription,
+            events: [.moveExerciseToCurrent("no-such-exercise")]
+        ))
+
+        let targetId = flow.plan.exercises[2].exerciseId
+        XCTAssertNil(TrainFlowState.restore(
+            prescription: flow.prescription,
+            events: [
+                .logSet(obs(60, 6)),
+                .moveExerciseToCurrent(targetId),
+            ]
+        ))
+    }
+
     // 跨天作废
     func testDraftIsOnlyRestorableSameDay() throws {
         let draft = TrainSessionDraft(

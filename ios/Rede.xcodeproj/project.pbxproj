@@ -25,6 +25,7 @@
 		FA0000000000000000000005 /* AppUpdateViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000006 /* AppUpdateViews.swift */; };
 		F10000000000000000000001 /* StoreKitEntitlementsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000005 /* StoreKitEntitlementsTests.swift */; };
 		FA0000000000000000000001 /* AppUpdateRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000002 /* AppUpdateRuntimeTests.swift */; };
+		FD0000000000000000000001 /* SessionStoreDraftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0000000000000000000002 /* SessionStoreDraftTests.swift */; };
 		F10000000000000000000002 /* Rede.storekit in Resources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000006 /* Rede.storekit */; };
 		F10000000000000000000003 /* RedeEntitlements in Frameworks */ = {isa = PBXBuildFile; productRef = F10000000000000000000011 /* RedeEntitlements */; };
 		BB00000000000000000001D1 /* TodayModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000001D2 /* TodayModel.swift */; };
@@ -97,6 +98,7 @@
 		F10000000000000000000004 /* RedeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RedeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F10000000000000000000005 /* StoreKitEntitlementsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitEntitlementsTests.swift; sourceTree = "<group>"; };
 		FA0000000000000000000002 /* AppUpdateRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdateRuntimeTests.swift; sourceTree = "<group>"; };
+		FD0000000000000000000002 /* SessionStoreDraftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStoreDraftTests.swift; sourceTree = "<group>"; };
 		F10000000000000000000006 /* Rede.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = packages/RedeEntitlements/Tests/RedeEntitlementsTests/Resources/Rede.storekit; sourceTree = SOURCE_ROOT; };
 		AA00000000000000000000E1 /* RedeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeApp.swift; sourceTree = "<group>"; };
 		AA00000000000000000000E5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -245,6 +247,7 @@
 			children = (
 				F10000000000000000000005 /* StoreKitEntitlementsTests.swift */,
 				FA0000000000000000000002 /* AppUpdateRuntimeTests.swift */,
+				FD0000000000000000000002 /* SessionStoreDraftTests.swift */,
 				F10000000000000000000006 /* Rede.storekit */,
 			);
 			path = RedeTests;
@@ -472,6 +475,7 @@
 			files = (
 				F10000000000000000000001 /* StoreKitEntitlementsTests.swift in Sources */,
 				FA0000000000000000000001 /* AppUpdateRuntimeTests.swift in Sources */,
+				FD0000000000000000000001 /* SessionStoreDraftTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

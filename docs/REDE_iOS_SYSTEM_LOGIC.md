@@ -199,6 +199,16 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 **跳过/替换/收尾模型**：`SetSkipReason`（equipmentBusy/painDiscomfort/fatigue/timeShort/other）、`SessionEndReason`（completedAll/timeUp/fatigue/pain/other）——rawValue 即留痕 code；`ExerciseReplacementEngine.candidates(for:)` = catalog 同替代族按声明顺序排除自身（FR-TR6 地基）。这些是引擎输入事实，M3-3 已经唯一写闸落盘：`CompletedSessionBuilder` 只记录用户事实（实际组/跳过/替换审计/收尾原因，engine 输出不落盘），写前 gate 的真实现为 `RedeDataHealth.CanonicalWriteValidation`（clean 视图不丢 session + 新 session 必须通过净化）。
 
+### 6.0.3 本次训练编排（FR-TR14）
+
+**产品边界。** 自动处方是默认起点，不是训练中的锁。用户临时调整默认只影响当前 session；不改 `PlanCustomization`、不形成长期偏好、不训练推荐系统。训练结束后显式保存到长期计划属于后续独立写闸切片，未实现前不得出现假入口。「本次顺序」是 Train 内的任务型窄编辑器，不等于永久计划编辑或大型动作浏览器。
+
+**双层真相。** `prescription` 保持不可变，保存系统原建议及来源；`TrainFlowState.plan` 是本次会话可变执行队列。最终历史只记录实际完成事实，移动队列本身不生成 replacement、skip 或完成组，也不把系统目标值写入 canonical。所有队列变化必须是 typed `TrainFlowEvent`，经 `SessionStore` 的 reducer 接线进入事件日志并随 draft 重放；UI 禁止直接改 `plan`。普通训练事件在单一串行后台队列 best-effort 保存；S1 移动必须走 durable barrier：先等待此前普通写，再同步确认包含新事件的 draft 已原子落盘，之后 UI 才能宣布成功。durable 写失败须把内存 flow 精确回滚、保留尚未提交的本地快改并如实报错；读取和清除也在同一队列，清除后旧写不得倒灌。恢复仍以 `state.events == events` fail-closed，S1 不改 canonical AppData / `TrainingSession` schema，也不提升 draft 版本。
+
+**S1「后续动作现在练」合同。** 仅当 phase=`activeSet`，且当前动作尚无完成组、跳过组或待提交疼痛标记时，用户可从当前索引之后选择一个唯一已排动作并「现在练」。稳定移动语义：`[A,B,C,D]` 当前 A、选择 C → `[C,A,B,D]`；已完成前缀和其他动作相对顺序不变，`exerciseIndex` 与动作总数不变，目标动作自身的组数、重量、次数、RIR、休息和器械事实原样保留。移动后重置本动作的 warm-up pointer 与 Hold；热身按新的当前动作重新派生。当前/更早/不存在/重复目标、resting/confirm/summary、当前动作已有正式事实时必须拒绝且不追加事件。
+
+**S1 UI。** 热身与正式组画面都提供可点击的「接下来」开放行，进入「本次顺序」sheet；顶部静态显示当前动作，下方列出今天稍后的已排动作，每行单一操作「现在练」。点选在 durable commit 成功后回到新的 Hero，不弹确认、不依赖可见教学小字；失败则留在 sheet、显示即时错误并用 VoiceOver announcement 主动播报。已有正式事实后「接下来」退为不可点击静态行。完整替换继续走 FR-TR6 的「换一个动作」，两种语义不得再混用。Dynamic Type、VoiceOver、Reduce Motion 与稳定 accessibility identifier 必须覆盖。后续的完整目录增删、剩余组次修改、自定义热身、部分完成动作暂停/恢复与保存到计划，均不在 S1。
+
 ### 6.1 动作库、模板生成与动作事实权威
 
 训练计划不能依赖一组锁死的默认模板。Rede 的训练内容必须拆成三层:

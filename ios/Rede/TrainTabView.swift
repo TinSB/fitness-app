@@ -1,5 +1,6 @@
 import SwiftUI
 import StoreKit
+import UIKit
 import RedeL10n
 import RedeTrainingDecision
 import RedeLocalSnapshot
@@ -53,6 +54,7 @@ struct TrainTabView: View {
     @State private var summaryDonePulse = 0
     @FocusState private var weightFieldFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     /// 快改入口一次性提示（用过即永久消失）。
     @AppStorage("hasUsedQuickAdjust") private var hasUsedQuickAdjust = false
     /// FR-评分：完成训练后请求 App Store 评分。requestReview 是系统弹窗（无自定义文案）；
@@ -62,6 +64,9 @@ struct TrainTabView: View {
     @AppStorage("reviewPrompt.lastRequestedVersion") private var reviewLastRequestedVersion = ""
     @State private var showMoreSheet = false
     @State private var showSwapSheet = false
+    @State private var showSessionOrderSheet = false
+    @State private var sessionOrderUpdateFailed = false
+    @State private var pendingSessionOrderAnnouncement: String?
     @State private var painToastVisible = false
     @State private var sharePreview: SharePreviewItem?   // FR-SH1：训练总结分享卡预览
     /// K1 待机仪表（2026-07-16）：最近一场事实（快照链与今日页 loadCompletedDigest 同源）+
@@ -72,6 +77,8 @@ struct TrainTabView: View {
     @State private var trainDetail: ExerciseDetailItem?
     /// 截图钩子 -autoOpenTrainExerciseDetail 只自动开一次（防换动作后重弹）。
     @State private var didAutoOpenTrainDetail = false
+    /// S1 模拟器验收钩子只自动开一次（移动后 current id 变化不得重弹）。
+    @State private var didAutoOpenSessionOrder = false
 
     private var s: RedeStrings { localeStore.strings }
 
@@ -114,15 +121,15 @@ struct TrainTabView: View {
                             .padding(.horizontal, RedeSpace.page)
                             .padding(.top, 10)
                     }
-                    // 热身期不显示工作组组表/下一组预告（尚未进首个工作组）。
+                    // 热身期不显示工作组组表；「接下来」始终可见，供训练开始前调整本次顺序。
                     if !flow.isWarmingUp {
                         setTable(flow)
                             .padding(.horizontal, RedeSpace.page)
                             .padding(.top, RedeSpace.section)
-                        nextUpLine(flow)
-                            .padding(.horizontal, RedeSpace.page)
-                            .padding(.top, 12)
                     }
+                    nextUpLine(flow)
+                        .padding(.horizontal, RedeSpace.page)
+                        .padding(.top, 12)
                 } else {
                     standbyState
                         .padding(.horizontal, RedeSpace.page)
@@ -151,12 +158,25 @@ struct TrainTabView: View {
                 trainDetail = ExerciseDetailItem(id: id)
             }
         }
+        // S1 一次性模拟器验收钩子：必须等自动开训建立 flow 与可移动候选后才呈现。
+        .task(id: flow?.currentExercise?.exerciseId) {
+            if CommandLine.arguments.contains("-autoOpenSessionOrder"), !didAutoOpenSessionOrder,
+               !(flow?.moveToCurrentCandidates.isEmpty ?? true) {
+                didAutoOpenSessionOrder = true
+                sessionOrderUpdateFailed = false
+                showSessionOrderSheet = true
+            }
+        }
         // K2c：训练中当前动作的只读详情（共享件；换动作仍走「更多 → 换个动作」流）。
         .sheet(item: $trainDetail) { item in
             ExerciseDetailSheet(exerciseId: item.id)
         }
         .sheet(isPresented: $showMoreSheet) { moreSheet }
         .sheet(isPresented: $showSwapSheet) { swapSheet }
+        .sheet(
+            isPresented: $showSessionOrderSheet,
+            onDismiss: announcePendingSessionOrderMove
+        ) { sessionOrderSheet }
         .sheet(isPresented: confirmBinding) { confirmSheet }
         .sheet(isPresented: summaryBinding) { summarySheet }
     }
@@ -978,17 +998,80 @@ struct TrainTabView: View {
         .overlay(alignment: .bottom) { Rectangle().fill(Color.redeHair2).frame(height: 1) }
     }
 
+    @ViewBuilder
     private func nextUpLine(_ flow: TrainFlowState) -> some View {
         let next = flow.plan.exercises.indices.contains(flow.exerciseIndex + 1)
             ? flow.plan.exercises[flow.exerciseIndex + 1] : nil
-        return Group {
-            if let next {
-                Text(s.restNextExercise(localeStore.exerciseName(next.exerciseId)) + " · \(next.sets.count) × \(next.sets.first?.targetReps ?? 0)")
-                    .font(.redeCaption)
-                    .monospacedDigit()
-                    .foregroundStyle(Color.redeT4)
+        if let next {
+            let name = localeStore.exerciseName(next.exerciseId)
+            let canOpen = !flow.moveToCurrentCandidates.isEmpty
+            if canOpen {
+                Button(action: {
+                    sessionOrderUpdateFailed = false
+                    showSessionOrderSheet = true
+                    actionPulse += 1
+                }) {
+                    sessionOrderEntryContent(name: name, showsDisclosure: true)
+                }
+                .buttonStyle(.redePressableRow)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(s.sessionOrderEntry), \(name)")
+                .accessibilityHint(s.sessionOrderOpenHint)
+                .accessibilityIdentifier("train-session-order-open")
+            } else {
+                sessionOrderEntryContent(name: name, showsDisclosure: false)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(s.sessionOrderEntry), \(name)")
+                    .accessibilityIdentifier("train-session-order-next-static")
             }
         }
+    }
+
+    @ViewBuilder
+    private func sessionOrderEntryContent(name: String, showsDisclosure: Bool) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(s.sessionOrderEntry)
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT4)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(name)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT2)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 8)
+                    if showsDisclosure { sessionOrderChevron }
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
+            .overlay(alignment: .bottom) { Rectangle().fill(Color.redeHair2).frame(height: 1) }
+        } else {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(s.sessionOrderEntry)
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT4)
+                    .fixedSize(horizontal: true, vertical: false)
+                Spacer(minLength: 8)
+                Text(name)
+                    .font(.redeBody)
+                    .foregroundStyle(Color.redeT2)
+                    .multilineTextAlignment(.trailing)
+                    .fixedSize(horizontal: false, vertical: true)
+                if showsDisclosure { sessionOrderChevron }
+            }
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .contentShape(Rectangle())
+            .overlay(alignment: .bottom) { Rectangle().fill(Color.redeHair2).frame(height: 1) }
+        }
+    }
+
+    private var sessionOrderChevron: some View {
+        Image(systemName: "chevron.right")
+            .font(.system(size: 11, weight: .medium))
+            .foregroundStyle(Color.redeT4)
+            .accessibilityHidden(true)
     }
 
     // MARK: - 疼痛提示 / 空态
@@ -1252,6 +1335,132 @@ struct TrainTabView: View {
         .presentationBackground(Color.redeBase)
     }
 
+    private var sessionOrderSheet: some View {
+        let currentName = flow?.currentExercise
+            .map { localeStore.exerciseName($0.exerciseId) } ?? ""
+        let candidates = flow?.moveToCurrentCandidates ?? []
+        return VStack(alignment: .leading, spacing: 0) {
+            Overline(text: s.sessionOrderTitle)
+                .padding(.top, 18)
+                .accessibilityIdentifier("train-session-order-sheet")
+
+            sessionOrderCurrentRow(name: currentName)
+                .padding(.top, 4)
+
+            if sessionOrderUpdateFailed {
+                Text(s.sessionOrderUpdateError)
+                    .font(.redeCallout)
+                    .foregroundStyle(Color.redeRisk)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 12)
+                    .accessibilityIdentifier("train-session-order-error")
+            }
+
+            Overline(text: s.sessionOrderLater)
+                .padding(.top, 18)
+
+            ScrollView {
+                VStack(spacing: 0) {
+                    ForEach(Array(candidates.enumerated()), id: \.element) { index, id in
+                        sessionOrderMoveRow(
+                            id: id,
+                            name: localeStore.exerciseName(id),
+                            divider: index < candidates.count - 1
+                        )
+                    }
+                }
+                .padding(.top, 4)
+            }
+        }
+        .padding(.horizontal, 20)
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .presentationBackground(Color.redeBase)
+    }
+
+    @ViewBuilder
+    private func sessionOrderCurrentRow(name: String) -> some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(s.sessionOrderCurrent)
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT4)
+                Text(name)
+                    .font(.redeBody)
+                    .foregroundStyle(Color.redeT2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .padding(.vertical, 6)
+            .overlay(alignment: .bottom) { Rectangle().fill(Color.redeHair2).frame(height: 1) }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(s.sessionOrderCurrent), \(name)")
+            .accessibilityIdentifier("train-session-order-current")
+        } else {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(s.sessionOrderCurrent)
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT4)
+                    .fixedSize(horizontal: true, vertical: false)
+                Spacer(minLength: 8)
+                Text(name)
+                    .font(.redeBody)
+                    .foregroundStyle(Color.redeT2)
+                    .multilineTextAlignment(.trailing)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .overlay(alignment: .bottom) { Rectangle().fill(Color.redeHair2).frame(height: 1) }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(s.sessionOrderCurrent), \(name)")
+            .accessibilityIdentifier("train-session-order-current")
+        }
+    }
+
+    private func sessionOrderMoveRow(id: String, name: String, divider: Bool) -> some View {
+        Button(action: { moveExerciseToCurrent(id: id, name: name) }) {
+            Group {
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(name)
+                            .font(.redeBody)
+                            .foregroundStyle(Color.redeT2)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(s.sessionOrderTrainNow)
+                            .font(.redeCallout)
+                            .foregroundStyle(Color.redeEmber)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                } else {
+                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                        Text(name)
+                            .font(.redeBody)
+                            .foregroundStyle(Color.redeT2)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 8)
+                        Text(s.sessionOrderTrainNow)
+                            .font(.redeCallout)
+                            .foregroundStyle(Color.redeEmber)
+                            .fixedSize(horizontal: true, vertical: false)
+                        sessionOrderChevron
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .contentShape(Rectangle())
+            .overlay(alignment: .bottom) {
+                if divider { Rectangle().fill(Color.redeHair2).frame(height: 1) }
+            }
+        }
+        .buttonStyle(.redePressableRow)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(s.sessionOrderMoveA11y(name: name))
+        .accessibilityHint(s.sessionOrderMoveHint)
+        .accessibilityIdentifier("train-session-order-move-\(id)")
+    }
+
     private var confirmBinding: Binding<Bool> {
         Binding(
             get: { sessionStore.flow?.phase == .confirmEnd },
@@ -1448,6 +1657,30 @@ struct TrainTabView: View {
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) { showAdjust = false }
         hasAdjustment = false
         showExactField = false
+    }
+
+    /// S1：只有 reducer 接受且同步 draft 落盘后才关闭；失败留在 sheet 内如实提示。
+    private func moveExerciseToCurrent(id: String, name: String) {
+        guard sessionStore.applyDurably(.moveExerciseToCurrent(id)) else {
+            sessionOrderUpdateFailed = true
+            let announcement = s.sessionOrderUpdateError
+            DispatchQueue.main.async {
+                UIAccessibility.post(notification: .announcement, argument: announcement)
+            }
+            return
+        }
+        clearAdjustment()
+        sessionOrderUpdateFailed = false
+        pendingSessionOrderAnnouncement = s.sessionOrderMovedAnnouncement(name: name)
+        actionPulse += 1
+        showSessionOrderSheet = false
+    }
+
+    /// VoiceOver 等 sheet 真正退场后再播报，避免转场吞掉成功反馈；手势关闭没有 pending，不会误报。
+    private func announcePendingSessionOrderMove() {
+        guard let announcement = pendingSessionOrderAnnouncement else { return }
+        pendingSessionOrderAnnouncement = nil
+        UIAccessibility.post(notification: .announcement, argument: announcement)
     }
 
     private func logCurrentSet() {

@@ -13,6 +13,7 @@ public enum TrainFlowEvent: Equatable, Sendable, Codable {
     case skipSet(SetSkipReason)
     case skipExercise(SetSkipReason)
     case replaceExercise(String)
+    case moveExerciseToCurrent(String)
     case reportPain
     case toggleHold
     case requestFinish
@@ -152,6 +153,23 @@ public struct TrainFlowState: Equatable, Sendable {
             excluding: Set(plan.exercises.map(\.exerciseId)),
             allowedEquipment: allowedEquipment
         )
+    }
+
+    /// 当前尚无正式事实时，可把后续已排且全计划唯一的动作提到现在练。
+    /// 这是本次 session 的顺序调整，不是动作替换；候选顺序与当前队列一致。
+    public var moveToCurrentCandidates: [String] {
+        guard phase == .activeSet,
+              completedInCurrentExercise.isEmpty,
+              skippedInCurrentExercise == 0,
+              !painReportedForCurrentSet,
+              plan.exercises.indices.contains(exerciseIndex)
+        else { return [] }
+
+        let counts = Dictionary(grouping: plan.exercises, by: \.exerciseId)
+            .mapValues(\.count)
+        return plan.exercises.dropFirst(exerciseIndex + 1).compactMap { exercise in
+            counts[exercise.exerciseId] == 1 ? exercise.exerciseId : nil
+        }
     }
 
     // MARK: - 热身（FR-TR10 · 流内临时引导，不落库）
@@ -304,6 +322,27 @@ public struct TrainFlowState: Equatable, Sendable {
         plan = SessionSetPlan(dayCode: plan.dayCode, exercises: exercises)
     }
 
+    /// 把一个尚未开始的后续已排动作稳定移动到当前位置。
+    /// `[A, B, C, D]` 当前 A、选择 C → `[C, A, B, D]`；动作计划参数原样保留。
+    public mutating func moveExerciseToCurrent(_ exerciseId: String) {
+        guard moveToCurrentCandidates.contains(exerciseId),
+              let targetIndex = plan.exercises.indices.dropFirst(exerciseIndex + 1)
+                .first(where: { plan.exercises[$0].exerciseId == exerciseId })
+        else { return }
+
+        var exercises = plan.exercises
+        let target = exercises.remove(at: targetIndex)
+        exercises.insert(target, at: exerciseIndex)
+
+        events.append(.moveExerciseToCurrent(exerciseId))
+        plan = SessionSetPlan(dayCode: plan.dayCode, exercises: exercises)
+        completedInCurrentExercise = []
+        skippedInCurrentExercise = 0
+        isHolding = false
+        painReportedForCurrentSet = false
+        warmupPointer = 0
+    }
+
     public mutating func toggleHold() {
         guard phase == .activeSet || phase == .resting else { return }
         events.append(.toggleHold)
@@ -353,6 +392,7 @@ public struct TrainFlowState: Equatable, Sendable {
             case .skipSet(let reason): state.skipSet(reason: reason)
             case .skipExercise(let reason): state.skipExercise(reason: reason)
             case .replaceExercise(let id): state.replaceCurrentExercise(with: id)
+            case .moveExerciseToCurrent(let id): state.moveExerciseToCurrent(id)
             case .reportPain: state.reportPain()
             case .toggleHold: state.toggleHold()
             case .requestFinish: state.requestFinish()

@@ -336,6 +336,8 @@ Train 是最克制的页面。用户在器械旁,手上可能有汗,注意力在
 - `疼痛或不适`
 - `完成训练`
 
+**本次顺序（FR-TR14，2026-07-19）**：入口「接下来 / Up next」，sheet 标题「本次顺序 / Session order」，分区「当前 / Current」「今天稍后 / Later today」，行操作「现在练 / Train now」。这些标签直接表达行为，不附可见说明小字；VoiceOver 可补充「从今天剩余动作中选择现在训练的动作 / Choose a scheduled exercise to train now」和「当前动作会顺延到稍后 / The current exercise moves later」。成功播报「已切换到{动作名} / Now training {exercise name}」。写入失败只在当下显示并播报「暂时无法调整，请再试一次 / Couldn’t update the session. Try again」，不得假成功或清掉用户尚未提交的快改。
+
 **教学提示一次性策略（2026-07-05 拍板）**：「点重量可调整　之后的建议随之更新」是教学文案不是状态信息——只在「没用过快改入口 且 累计完成 < 3 场」时显示，任一条件破即永久消失；说明书不驻留界面。「按计划目标开始」是状态行（完成组后变为「上组接近力竭，从 X 回调」等），不适用此策略。
 
 不要写:
