@@ -4,6 +4,8 @@ import XCTest
 @testable import Rede
 import RedeDataHealth
 import RedeEntitlements
+import RedeL10n
+import RedeTrainingDecision
 
 /// StoreKitTest owns one process-global environment. Keep the full lifecycle in
 /// one serial test so product, transaction, expiration, and refund state cannot
@@ -223,6 +225,147 @@ final class StoreKitEntitlementsTests: XCTestCase {
                 reviewWeekEndExclusiveISO: "2026-07-13"
             ),
             "A dropped training record with no trustworthy date must fail closed"
+        )
+    }
+
+    func testWeeklyReviewMemoPolicyPromotesOneTypedFactAndKeepsTheOtherTwo() {
+        let progressing = WeeklyCoachReview(
+            reviewWeekStartISO: "2026-07-06",
+            verdict: .progressing,
+            evidence: [
+                .trainingDays(count: 3),
+                .keyLift(exerciseId: "bench-press", call: .up, deltaKg: 2.5),
+                .cleanVolumeKg(8_400),
+            ],
+            action: .viewProgress
+        )
+        XCTAssertEqual(WeeklyCoachReviewMemoPolicy.spotlightEvidenceIndex(in: progressing), 1)
+        XCTAssertEqual(
+            WeeklyCoachReviewMemoPolicy.supportingEvidence(in: progressing),
+            [.trainingDays(count: 3), .cleanVolumeKg(8_400)]
+        )
+
+        let dataReview = WeeklyCoachReview(
+            reviewWeekStartISO: "2026-07-06",
+            verdict: .dataNeedsReview,
+            evidence: [
+                .dataFindings(count: 2),
+                .trainingDays(count: 3),
+                .cleanVolumeKg(8_400),
+            ],
+            action: .reviewData
+        )
+        XCTAssertEqual(WeeklyCoachReviewMemoPolicy.spotlightEvidenceIndex(in: dataReview), 0)
+
+        let rebuildRhythm = WeeklyCoachReview(
+            reviewWeekStartISO: "2026-07-06",
+            verdict: .rebuildRhythm,
+            evidence: [
+                .trainingDays(count: 2),
+                .recentMedianTrainingDays(count: 3),
+                .cleanVolumeKg(4_200),
+            ],
+            action: .openToday
+        )
+        XCTAssertEqual(WeeklyCoachReviewMemoPolicy.spotlightEvidenceIndex(in: rebuildRhythm), 0)
+        XCTAssertEqual(
+            WeeklyCoachReviewMemoPolicy.supportingEvidence(in: rebuildRhythm),
+            [.recentMedianTrainingDays(count: 3), .cleanVolumeKg(4_200)]
+        )
+
+        for (verdict, call) in [
+            (WeeklyCoachReviewVerdict.holding, WeeklyCoachLiftCall.flat),
+            (.easing, .down),
+        ] {
+            let liftReview = WeeklyCoachReview(
+                reviewWeekStartISO: "2026-07-06",
+                verdict: verdict,
+                evidence: [
+                    .trainingDays(count: 3),
+                    .keyLift(exerciseId: "bench-press", call: call, deltaKg: nil),
+                    .cleanVolumeKg(8_400),
+                ],
+                action: .viewProgress
+            )
+            XCTAssertEqual(WeeklyCoachReviewMemoPolicy.spotlightEvidenceIndex(in: liftReview), 1)
+        }
+
+        let calibrating = WeeklyCoachReview(
+            reviewWeekStartISO: "2026-07-06",
+            verdict: .calibrating,
+            evidence: [
+                .trainingDays(count: 1),
+                .sessions(count: 1),
+                .cleanVolumeKg(2_100),
+            ],
+            action: .viewProgress
+        )
+        XCTAssertEqual(WeeklyCoachReviewMemoPolicy.spotlightEvidenceIndex(in: calibrating), 1)
+        XCTAssertEqual(
+            WeeklyCoachReviewMemoPolicy.supportingEvidence(in: calibrating),
+            [.trainingDays(count: 1), .cleanVolumeKg(2_100)]
+        )
+
+        let calibratingLift = WeeklyCoachReview(
+            reviewWeekStartISO: "2026-07-06",
+            verdict: .calibrating,
+            evidence: [
+                .trainingDays(count: 3),
+                .keyLift(exerciseId: "bench-press", call: .calibrating, deltaKg: nil),
+                .cleanVolumeKg(8_400),
+            ],
+            action: .viewProgress
+        )
+        XCTAssertEqual(WeeklyCoachReviewMemoPolicy.spotlightEvidenceIndex(in: calibratingLift), 1)
+    }
+
+    func testWeeklyReviewDatePolicyUsesISOWeekYearAndHandlesCrossYearRange() {
+        let zh = RedeStrings(locale: .zh)
+        let en = RedeStrings(locale: .en)
+
+        XCTAssertEqual(
+            WeeklyCoachReviewDatePolicy.presentation(
+                weekStartISO: "2026-07-06",
+                locale: .zh,
+                strings: zh
+            ),
+            WeeklyCoachReviewDatePresentation(
+                issue: "Weekly Review / Week 28",
+                range: "7月6日—12日 · 2026"
+            )
+        )
+        XCTAssertEqual(
+            WeeklyCoachReviewDatePolicy.presentation(
+                weekStartISO: "2026-07-06",
+                locale: .en,
+                strings: en
+            ),
+            WeeklyCoachReviewDatePresentation(
+                issue: "Weekly Review / Week 28",
+                range: "Jul 6–12 · 2026"
+            )
+        )
+        XCTAssertEqual(
+            WeeklyCoachReviewDatePolicy.presentation(
+                weekStartISO: "2025-12-29",
+                locale: .zh,
+                strings: zh
+            ),
+            WeeklyCoachReviewDatePresentation(
+                issue: "Weekly Review / Week 1",
+                range: "2025年12月29日—2026年1月4日"
+            )
+        )
+        XCTAssertEqual(
+            WeeklyCoachReviewDatePolicy.presentation(
+                weekStartISO: "2020-12-28",
+                locale: .en,
+                strings: en
+            ),
+            WeeklyCoachReviewDatePresentation(
+                issue: "Weekly Review / Week 53",
+                range: "Dec 28, 2020–Jan 3, 2021"
+            )
         )
     }
 

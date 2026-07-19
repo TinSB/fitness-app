@@ -6,6 +6,38 @@
 
 ---
 
+## 2026-07-18 · “每周教练复盘”按已批准 V2 概念稿完成高端决策备忘录界面
+
+**用户目标**：把竞品调研后已认可的 V2 概念稿真正落进 Rede；即使当前事实维度有限，也要用品牌、编辑取舍和信息层级把现有事实展示成值得付费的教练产品，同时绝不虚构医学、生理、恢复或 AI 能力。验收必须在真实 iOS Simulator 中走完整用户流程，本项目不创建 PR。
+
+**做了什么**：以 Figma `Research-backed V2 / Coach Decision Memo` 的最终页为显示真相源，把原复盘改成一页连续的教练决策备忘录：`REDE COACH` 品牌页眉、ISO 周期次、一个 `Coach Call`、一个主聚光事实、最多两条不重复依据和唯一下一步；单条 Emberline 贯穿页面，不再堆“高级数据卡”。聚光选择仍只消费既有 typed facts：坏数据优先、节奏不足看训练天数、趋势态看关键动作、校准态无动作事实时看完成场次；没有可比差值时只写“可比趋势 / 可比场次不足”，不制造 `0 kg` 或假精度。跨公历年的周范围会同时显示两端年份。
+
+**你能看到什么**：中文 progressing 态显示“关键动作，向上。”与平板卧推 `e1RM +2.5 kg`；英文坏数据态显示“Verify first. Then read the trend.”和 `2 entries to review`；holding、easing、节奏恢复、纯校准、零训练和不可用/重试都各有诚实状态。设置页训练背景行只读“字段名 + 当前值”，按 owner 最新指令连隐藏的“点任意一行修改 / Tap any row to change it”无障碍提示也已删除；没有新增任何营销小字。
+
+**自动验证**：`RedeL10n` V2 精确文案测试先红后绿；最终定向回归为文案 **1/1**、周复盘引擎 **11/11**、app-hosted 聚光选择与 ISO 跨年日期 **2/2**，Debug Simulator build `BUILD SUCCEEDED`，`git diff --check` 通过。策略测试覆盖 data / rhythm / progressing / holding / easing / calibrating（含“有关键动作但无差值”）；日期测试覆盖普通周、跨年周和 ISO week-year 边界。交付前完整质量门禁绑定冻结输入执行，最终结果以本轮 `RUN_RECEIPT` 为准，不在这里预写 PASS。
+
+**模拟器真实流程**：在 iPhone 17 Pro / iOS 26.5 上，用最终同一 Debug 构建实际点击 `今日 → 设置 → 查看 Rede Coach → 查看进展`，确认两层 sheet 正常关闭、`进展` tab 被选中；再回 `今日 → 设置 → 查看 Rede Coach`，同一周报告可再次进入。另逐一运行 data、rhythm、calibrating、lift-calibrating、holding、easing、empty、unavailable/retry 状态；最大辅助字体 `accessibility-extra-extra-extra-large` 下页头、期次、判断与主事实自然换行，辅助功能树仍按顺序暴露两条依据和唯一 CTA，实际激活 CTA 后成功进入 Progress。字体最后恢复为 `large`。最终证据保存在 `.ai-tmp/20260718-weekly-review-v2/`；旧 01–04 已用最终构建原位覆盖，不混用旧 digest。
+
+**规格、收费与发布边界**：产品文案基线 §5.5 与 §6.1.1 已原地写回 V2 展示标题、三事实预算、跨年和无障碍提示边界；该文档已登记，`DOCS_MANIFEST` 无需增加条目。没有新 schema、持久化、分析、字体、素材、StoreKit 商品或 entitlement 规则；现有 1.8 Free Core 不变。fixture、测试和截图只证明本地功能/导航与 L3 UI 行为，不证明真实 Apple 购买、恢复、续订、grace、过期、退款或 Sandbox/TestFlight；production purchase gate 继续关闭。没有 commit、push、PR 或 App Store Connect 操作。
+
+---
+
+## 2026-07-18 · 先做竞品与消费者调研，再重做“每周教练复盘”V2 概念稿
+
+**用户目标**：暂停继续凭感觉美化第一版周复盘；先研究竞品真正做对了什么、消费者还缺什么，再把结论转成一份更像付费产品、但不虚构 Rede 当前能力的 Figma 概念稿。
+
+**调研与拍板**：只读核对了 WHOOP、Oura、Strava、Fitbod、Future、Freeletics、Gentler Streak 与 Hevy 的官方功能说明，并交叉检查 App Store、Reddit、Trustpilot 和 WHOOP Community 的 12 条公开消费者反馈。重复出现的信号很一致：用户愿意为“替我完成判断并改变下一步”付费，不愿为重复已知统计、脱离目标的通用夸奖或机械惩罚休息付费；一屏总览、结论可核对、固定复盘仪式和长期连续性比卡片数量更重要。由此放弃继续做高密度“高级数据报告”，选择 **教练决策备忘录**：一个周判断、一个关键变化、两条不重复的上下文事实、一个真实可达的下一步。
+
+**你能看到什么**：旧版 V1 完整保留作对照；新建 [Research-backed V2 / Coach Decision Memo Board](https://www.figma.com/design/Vya8Qpx8tk3neXETkwfga1?node-id=16-2)。左栏说明竞品优点与消费者明确反感的模式，中栏是 402 × 874 的 Rede Coach 新页面，右栏解释为什么这样设计，并把本期真实能力与未来机会分开。页面只使用现有 typed facts：周范围、训练 3 天、平板卧推 e1RM +2.5 kg、有效训练量 8,400 kg；没有恢复分、医学结论、AI 置信度、假历史、假分享或假深链。CTA 最终保持当前真实可达的“查看进展”。
+
+**设计与可信边界**：Forged Graphite、唯一 hero、单一连续 Emberline 和非卡墙结构继续遵守 Rede canonical。竞品启发只迁移“周期仪式、编辑后的一个重点、证据与下一步”，不复制 WHOOP/Oura 的生理数据或 AI 权威。历史档案、分享、目标上下文和可追问能力只列在 NEXT，不伪装成 NOW。Figma 编辑稿使用 Inter（当前 Figma 自动化渲染 SF Pro 会空白），生产实现仍以 iOS system SF Pro 为准。
+
+**验证证据**：最终整板 1,600 × 1,100、核心页面 402 × 874 已逐屏截图复核。程序化验收覆盖 138 个节点、73 个文字节点：空文字 0、零尺寸 0、占位文案 0、缺失字体 0、越界/溢出 0、裸色 0；89 处颜色全部绑定现有 Rede Figma variables；核心页恰好 1 个 hero、1 条 Emberline，并新增 34pt 底部安全区。现有色板在相关深色面上的文字/Ember 对比度为 4.60–14.91:1。独立只读审查初次发现“单动作趋势深链”假承诺和底部安全区缺失两个 P1；修复并清理品牌命名/营销小字后，冻结复核为 **P0/P1/P2/P3 = 0，可进入用户评审**。
+
+**文件、发布与下一步**：本轮没有修改 Swift、数据、订阅门禁或规格合同；没有创建本地截图、临时脚本或新长期文档，`DOCS_MANIFEST` 无需改。没有 commit、push、PR 或 App Store 操作。因为本轮交付物仍是 Figma 概念稿，模拟器验收不适用；待产品所有者认可方向并批准实现后，下一切片才把 V2 翻译成 SwiftUI，并按 Rede 硬门槛在真实 iOS Simulator 中完整走复盘 → 查看进展 → 返回流程并留截图。
+
+---
+
 ## 2026-07-18 · 首个付费功能“每周教练复盘”完成本地企业级闭环
 
 **用户目标**：把“每周教练复盘”做成 Rede Coach 的第一个新增付费能力，达到企业级；每次验收都必须在真实 iOS Simulator 里像用户一样走流程，同时继续遵守 1.8 全部现有能力永久免费、不创建 PR 的边界。
@@ -44,7 +76,7 @@
 
 **用户目标**：设置页不要再在自解释的项目下面堆说明小字；明确删除“训练数据保存在本机并可导出”“此版本所有功能均包含在 Free Core”和训练背景下的“点任意一行修改”。
 
-**做了什么**：删除数据导出行和 Free Core 下方的双语常驻副文；训练背景只保留分区标题、五个可点击值和箭头，默认不再显示操作说明。保存训练背景后的短暂结果收据仍会出现；购买核对、unknown、grace period、恢复成功/失败、导出失败等真实状态/错误文案没有被误删。“点任意一行修改”只留作 VoiceOver 无障碍提示，不再显示在屏幕上。产品文案基线 §5.5 已写入长期规则：自解释的设置项不配常驻 caption，但状态、错误、结果和无障碍反馈必须保留。
+**做了什么**：删除数据导出行和 Free Core 下方的双语常驻副文；训练背景只保留分区标题、五个可点击值和箭头，默认不再显示操作说明。保存训练背景后的短暂结果收据仍会出现；购买核对、unknown、grace period、恢复成功/失败、导出失败等真实状态/错误文案没有被误删。该切片最初把“点任意一行修改”只留作 VoiceOver 提示；owner 随后明确连这条隐藏提示也不要，已在本日 V2 实现切片删除，训练背景行现在只暴露字段名与当前值。产品文案基线 §5.5 已同步当前合同。
 
 **验证证据**：先用聚焦检查真实得到 RED，准确命中 `SettingsSheet` 的三个旧渲染点；最小修改后同一检查 PASS。`RedeL10n` 运行 **122 项、0 失败**。权威 `bash .claude/quality-gate.cmd` exit 0：10 个 Swift 包全部通过、Settings 卡片预算通过、通用 iOS Simulator 构建成功、production subscription fail-closed XCTest 通过，最终 `QUALITY GATE: PASS`；收据：`~/Library/Developer/Xcode/DerivedData/Rede-fehbzdcxewzuvxgixmetankthjqd/Logs/Test/Test-Rede-2026.07.18_10-54-55--0400.xcresult`。独立只读审查 PASS，P0/P1/P2/P3 均为 0。
 

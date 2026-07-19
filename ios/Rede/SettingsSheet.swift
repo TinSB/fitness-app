@@ -743,7 +743,6 @@ struct SettingsSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.redePressableRow)
-        .accessibilityHint(profileComplete ? s.settingsPlateAccessibilityHint : "")
     }
 
     // MARK: - 背板蚀刻：数据/隐私/关于 渐进披露（默认收起）

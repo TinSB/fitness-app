@@ -38,7 +38,6 @@ final class RedeStringsTests: XCTestCase {
             ("settingsTitle", s.settingsTitle), ("settingsLanguage", s.settingsLanguage),
             ("settingsDone", s.settingsDone), ("settingsUnit", s.settingsUnit),
             ("settingsBackground", s.settingsBackground),
-            ("settingsPlateAccessibilityHint", s.settingsPlateAccessibilityHint),
             ("onbEditSave", s.onbEditSave), ("onbEditCancel", s.onbEditCancel),
             ("onbDaysNote", s.onbDaysNote), ("onbEquipEcho", s.onbEquipEcho("commercial-gym")),
             ("onbEquipEchoHome", s.onbEquipEcho("home-dumbbell")), ("onbEquipEchoMinimal", s.onbEquipEcho("minimal")),
@@ -285,6 +284,63 @@ final class RedeStringsTests: XCTestCase {
     func testWeeklyCoachReviewCopyIsSpecificAndNonCausal() {
         XCTAssertEqual(zh.weeklyCoachReviewTitle, "每周教练复盘")
         XCTAssertEqual(en.weeklyCoachReviewTitle, "Weekly Coach Review")
+        XCTAssertEqual(zh.weeklyCoachReviewIssue(weekOfYear: 28), "Weekly Review / Week 28")
+        XCTAssertEqual(en.weeklyCoachReviewIssue(weekOfYear: 28), "Weekly Review / Week 28")
+        XCTAssertEqual(
+            zh.weeklyCoachReviewDateRange(startText: "7月6日", endText: "12日", year: 2026),
+            "7月6日—12日 · 2026"
+        )
+        XCTAssertEqual(
+            en.weeklyCoachReviewDateRange(startText: "Jul 6", endText: "12", year: 2026),
+            "Jul 6–12 · 2026"
+        )
+        XCTAssertEqual(
+            zh.weeklyCoachReviewCrossYearDateRange(
+                startText: "12月29日",
+                startYear: 2025,
+                endText: "1月4日",
+                endYear: 2026
+            ),
+            "2025年12月29日—2026年1月4日"
+        )
+        XCTAssertEqual(
+            en.weeklyCoachReviewCrossYearDateRange(
+                startText: "Dec 29",
+                startYear: 2025,
+                endText: "Jan 4",
+                endYear: 2026
+            ),
+            "Dec 29, 2025–Jan 4, 2026"
+        )
+        XCTAssertEqual(zh.weeklyCoachReviewDecisionLabel, "本周判定 / Coach Call")
+        XCTAssertEqual(en.weeklyCoachReviewDecisionLabel, "Coach Call")
+        XCTAssertEqual(zh.weeklyCoachReviewMovementLabel, "关键变化 / Movement")
+        XCTAssertEqual(en.weeklyCoachReviewMovementLabel, "Movement")
+        XCTAssertEqual(zh.weeklyCoachReviewEvidenceMemoLabel, "判断依据 / Evidence")
+        XCTAssertEqual(en.weeklyCoachReviewEvidenceMemoLabel, "Evidence")
+        XCTAssertEqual(zh.weeklyCoachReviewNextLabel, "下一步 / Next")
+        XCTAssertEqual(en.weeklyCoachReviewNextLabel, "Next")
+        XCTAssertEqual(zh.weeklyCoachReviewComparableRecords, "e1RM · 可比记录")
+        XCTAssertEqual(en.weeklyCoachReviewComparableRecords, "e1RM · Comparable Records")
+        XCTAssertEqual(
+            zh.weeklyCoachReviewLiftDetail(code: "calibrating", hasDelta: false),
+            "可比场次不足"
+        )
+        XCTAssertEqual(
+            en.weeklyCoachReviewLiftDetail(code: "up", hasDelta: false),
+            "e1RM · Comparable Trend"
+        )
+        XCTAssertEqual(zh.weeklyCoachReviewDayUnit(3), "天")
+        XCTAssertEqual(en.weeklyCoachReviewDayUnit(1), "day")
+        XCTAssertEqual(en.weeklyCoachReviewDayUnit(3), "days")
+        XCTAssertEqual(zh.weeklyCoachReviewSessionUnit(3), "场")
+        XCTAssertEqual(en.weeklyCoachReviewEntryUnit(2), "entries")
+        XCTAssertEqual(zh.weeklyCoachReviewLiftCallMetric(code: "calibrating"), "校准中")
+        XCTAssertEqual(en.weeklyCoachReviewLiftCallMetric(code: "up"), "Moving Up")
+        XCTAssertEqual(zh.weeklyCoachReviewVerdictDisplayTitle(code: "progressing"), "关键动作，\n向上。")
+        XCTAssertEqual(en.weeklyCoachReviewVerdictDisplayTitle(code: "progressing"), "Key lift,\nmoving up.")
+        XCTAssertEqual(zh.weeklyCoachReviewVerdictDisplayTitle(code: "dataNeedsReview"), "先核对，\n再判断。")
+        XCTAssertEqual(en.weeklyCoachReviewVerdictDisplayTitle(code: "dataNeedsReview"), "Verify first.\nThen read the trend.")
         XCTAssertEqual(zh.weeklyCoachReviewEmptyTitle, "上周没有训练记录")
         XCTAssertEqual(en.weeklyCoachReviewEmptyTitle, "No workouts were recorded last week")
         XCTAssertEqual(zh.weeklyCoachReviewVerdictTitle(code: "calibrating"), "继续训练后再判断趋势")
@@ -304,6 +360,10 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertEqual(en.weeklyCoachReviewRecentMedian(1), "Recent median · 1 day")
 
         let weeklyCopy = [
+            zh.weeklyCoachReviewVerdictDisplayTitle(code: "dataNeedsReview"),
+            zh.weeklyCoachReviewVerdictDisplayTitle(code: "progressing"),
+            en.weeklyCoachReviewVerdictDisplayTitle(code: "dataNeedsReview"),
+            en.weeklyCoachReviewVerdictDisplayTitle(code: "progressing"),
             zh.weeklyCoachReviewVerdictBody(code: "dataNeedsReview", count: 2) ?? "",
             zh.weeklyCoachReviewVerdictBody(code: "rebuildRhythm", count: 0) ?? "",
             zh.weeklyCoachReviewVerdictBody(code: "progressing", count: 0) ?? "",

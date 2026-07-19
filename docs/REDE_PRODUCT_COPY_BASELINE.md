@@ -394,7 +394,7 @@ Plan 禁止:
 
 Settings 里不要营销。只说事实。
 
-**常驻副文门禁（2026-07-18 owner 拍板）:** 自解释的设置项只显示分区、行标题、当前值或控件，不在其下常驻一行“解释这个界面”的 caption。`导出训练数据`、`Free Core` 和可点击的训练背景行已经足够清楚，因此不再附“数据保存在本机 / 可导出”“此版本所有功能均包含在 Free Core”“点任意一行修改”等小字。这个门禁只删除冗余常驻副文；真实错误、购买核对状态、保存结果等即时反馈必须保留，VoiceOver 提示也继续存在。
+**常驻副文门禁（2026-07-18 owner 拍板）:** 自解释的设置项只显示分区、行标题、当前值或控件，不在其下常驻一行“解释这个界面”的 caption。`导出训练数据`、`Free Core` 和可点击的训练背景行已经足够清楚，因此不再附“数据保存在本机 / 可导出”“此版本所有功能均包含在 Free Core”“点任意一行修改”等小字。这个门禁只删除冗余常驻副文；真实错误、购买核对状态、保存结果等即时反馈必须保留。训练背景行继续向 VoiceOver 提供自解释的“字段名 + 当前值”，但不再追加“点任意一行修改 / Tap any row to change it”提示。
 
 > **实现状态（2026-06-13）:** 下面的 Apple Health / HealthKit 文案是 **FF 目标表面，当前未实现**——代码里没有 HealthKit。已 ship 的 Settings 隐私串遵循「未上线不提」（HealthKit 实装时再加这段）。本段保留为 HealthKit slice 落地时的文案基线。已 ship 的设置文案以 `RedeL10n` 实际串为准。
 
@@ -424,12 +424,19 @@ English:
 |---|---|---|---|
 | 功能名 | 每周教练复盘 | Weekly Coach Review | 不写 AI Coach / 智能黑箱。 |
 | 付费结果 | 一个判断　可核对的依据　一个下一步 | One call, evidence you can check, and one next step | 只在功能验收且购买 gate ready 后进入 StoreKit 页面价值面。 |
+| 期次眉题 | Weekly Review / Week {ISO 周序号} | Weekly Review / Week {ISO week number} | 周序号与周范围必须来自同一 ISO 周；跨公历年时两端年份都显示。 |
+| 本周判定标签 | 本周判定 / Coach Call | Coach Call | 只命名当前 typed verdict，不添加原因或建议。 |
+| 数据优先展示标题 | 先核对，<br>再判断。 | Verify first.<br>Then read the trend. | 不在坏数据上输出正向趋势。 |
+| 节奏展示标题 | 先接回，<br>训练节奏。 | Rebuild<br>your rhythm. | 不羞辱缺训，不宣称计划失败。 |
+| 关键动作展示标题 | 关键动作，<br>向上。 / 稳定。 / 回落。 | Key lift,<br>moving up. / holding. / easing. | `回落 / easing` 不写“退步”；无真实差值时只显示可比趋势，不伪造数字。 |
+| 校准展示标题 | 继续积累，<br>再判断。 | Keep building.<br>Then call the trend. | 可比场次不足时必须显式说不足。 |
+| 主聚光事实 | 关键变化 / 数据核对 / 训练节奏 / 训练积累 | Movement / Data Check / Rhythm / Baseline | 每周只提升 1 条 typed fact；不得把推断包装成事实。 |
+| 支撑依据 | 判断依据 / Evidence；最多 2 条 | Evidence; no more than 2 facts | 与主聚光事实不重复；总事实预算仍为 3 条。 |
+| 下一步 | 下一步 / Next | Next | 页面只保留 1 个真实可达行动。 |
 | 零训练主状态 | 上周没有训练记录 | No workouts were recorded last week | 不羞辱、不追问原因。 |
-| 校准主状态 | 继续训练后再判断趋势 | Keep training before calling a trend | 作为主状态，不在下面另挂解释小字。 |
-| 数据优先主状态 | 先核对上周的训练记录 | Check last week’s training records first | 数据质量入口本身仍是 Free Core。 |
-| 行动 | 查看今天安排 / 查看进展 / 核对训练数据 | View Today / View Progress / Review Training Data | V1 只导航，不写计划。 |
+| 行动 | 查看今天安排 / 查看进展 / 核对训练数据 | View Today / View Progress / Review Training Data | 只导航，不写计划。 |
 
-复盘页信息预算固定为 `1 个主判断 + 最多 3 条依据 + 1 个行动`。依据使用正文/清单字阶，不使用 caption 堆常驻说明；不显示“置信度”、算法名、因果语言、医学判断、计划完成率或“你退步了”。具体数字必须能回到 Free Core 的原始训练/进展事实对账。
+复盘页 V2 的信息预算固定为 `1 个主判断 + 1 条主聚光事实 + 最多 2 条支撑依据 + 1 个行动`。主聚光事实与支撑依据合计仍不超过 3 条，且不得重复。依据使用正文/清单字阶，不使用 caption 堆常驻说明；不显示“置信度”、算法名、因果语言、医学判断、计划完成率或“你退步了”。具体数字必须能回到 Free Core 的原始训练/进展事实对账。
 
 ### 6.2 Paywall 框架
 

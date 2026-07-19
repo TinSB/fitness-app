@@ -199,11 +199,6 @@ extension RedeStrings {
         }
     }
 
-    /// VoiceOver-only guidance. The visible Settings plate is self-explanatory.
-    public var settingsPlateAccessibilityHint: String {
-        locale == .zh ? "点任意一行修改" : "Tap any row to change it"
-    }
-
     // MARK: - VoiceOver（刻线进度格状态）
 
     public var onbA11yAnswered: String { locale == .zh ? "已回答" : "answered" }
