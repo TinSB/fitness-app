@@ -13,7 +13,7 @@ import RedeTrainingDecision
 enum ShareLinks {
     /// App Store 链接（Rede Strength · Apple ID 6780301633，1.0 过审邮件 2026-06-27 提供）。
     /// 分享文案 = tagline + 此链接；若未来某市场不可用，卡片仍有 shareCardDownloadHint 兜底文案。
-    static let appStoreURL: URL? = URL(string: "https://apps.apple.com/app/rede-strength/id6780301633")
+    static let appStoreURL: URL? = RedeAppUpdateRuntime.appStoreURL
 }
 
 /// FR-SH1：分享卡预览的 Identifiable 载体（[ShareSnapshot] 本身非 Identifiable）。

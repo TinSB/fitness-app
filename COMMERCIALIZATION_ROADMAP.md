@@ -22,6 +22,7 @@
 | Workstream | 重写基线 | 距离 / 难度 |
 |---|---|---|
 | iOS 原生 | 产品系统逻辑、训练决策合同、设计语言和文案基线已明确;干净 iOS 实现已是活跃实现,旧 IronPath/PWA 代码已退役（git tag `legacy-parity-final`） | ✅ **Rede 1.8 (build 25) 已于 2026-07-17 提交 App Store 审核，当前 Waiting for Review**。现役 app + widget + 10 个本地包已覆盖完整 1.8 Free Core 与 production-disabled 订阅地基；公开商店发布仍以 Apple 审核结果为准 |
+| 更新透明度 | 1.8 及更早二进制只能依赖 App Store 自动更新/系统通知；没有应用内版本感知 | ✅ 下一发布包已完成 Apple 公共版本查询、Today 非阻断提示、Settings 三入口与内置 What's New 的本地实现与 Simulator 验收；不引入 push、强更、服务器、remote copy 或 analytics。实时 Apple 目录与 TestFlight 仍待发布链验证 |
 | 账号 + Auth | 无 first-version runtime；iOS 原生方向保留在 `docs/REDE_REBUILD_00_IRONRULES_AND_CLOUD.md` 与 `docs/CLOUD_DECISIONS_ARCHIVE.md` | **近 greenfield**。服务 opt-in 云同步、跨设备恢复和账号级支持;不阻塞首个 App Store 订阅闭环 |
 | 云同步 | 无 first-version runtime；已拍板方向是 local-first + opt-in + CRDT 记录级合并 | 未实现。offline-first 冲突合并是最贵、最容易返工的一块;进入实现前必须先通过 Master Architecture gate |
 | 订阅基础设施 | 🟡 企业级地基与首个 Paid Coach capability 已落地，生产收费仍关闭 | 2026-07-18 已有 `RedeEntitlements`、StoreKit 2 adapter/UI wrapper、Settings 方案态、可始终进入的 Rede Coach 品牌页、到期/前台复核、并发旧结果/混合信任/交易确认防护、显式恢复、入口级 fail-closed launch gate、生产/测试双 scheme、本地月/年 fixture 与 app XCTest target；首个 post-1.8 capability“每周教练复盘”也已通过 package/app/Simulator 本地验收。品牌页在 production 仍只显示品牌名、当前方案与诚实状态，不含价值承诺、商品、价格、试用或购买。尚无真实 App Store Connect 商品/价格/试用或有效政策页；Xcode 26.6 + iOS 26.5 Simulator 的 `SKTestSession` 仍在保存配置时报 `Code=3`。RevenueCat、账号、服务端权益和远程分析不进首片 |
@@ -124,13 +125,14 @@
 - **证据/教练/定义/professional copy 专业英文重写**（母语级、Apple/Things 调性，**严禁机翻**——这是差异化护城河）。
 - 英文 onboarding，围绕"循证教练"卖点设计首启。
 - App Store 商店页文案 + 截图 + **英文 ASO** 关键词。
+- **发布体验 / 更新透明度（FR-SE10）**：已为下一发布包内置 Apple 公共版本检查、非阻断更新入口与一次性 What's New；失败不挡训练，首次安装不弹，无远程推送或强更。
 - **HealthKit 权限 / 观测事实 / HealthContext gate**（native 才能做）——先服务 Progress / dataQuality 解释;影响 readiness 或 Scheduler 前必须有 Master-approved engine-input slice。
 - App Store Connect 配置、**隐私营养标签**、健康/医疗**免责**（守住 fitness 定位）、订阅产品配置。
 - 合规：隐私政策、ToS、GDPR/CCPA、（若用第三方 AI 处理用户数据需**显式披露+同意**）。
 - **Share Card MVP**：实现本地 `ShareSnapshot`、`SharePrivacyFilter`、Workout / Muscle Level / Level Up / PR / Balance 卡片渲染和 iOS Share Sheet。不得引入账号、云端个人页、公开 feed、远程归因或 HealthKit 原始数据分享。
 - TestFlight 公测 → 修 → 提审 → 过审。
-- **Gate**：价值面（证据/教练解释）英文达母语级,由英文母语 lifter 验收;拿到 App Store 批准 build。
-- *Claude Code brief*：①i18n 基础设施 + clean runtime key 提取；②英文内容文件骨架与人工校对流程；③HealthKit authorization / HealthObservation / HealthContext gate 设计；④App Store Connect 元数据/隐私标签清单；⑤订阅产品与 paywall 联调 gate；⑥本地分享卡 MVP。
+- **Gate**：价值面（证据/教练解释）英文达母语级,由英文母语 lifter 验收；更新可用/已最新/离线/稍后/What's New 完成 Simulator 与可访问性验收；拿到 App Store 批准 build。
+- *Claude Code brief*：①i18n 基础设施 + clean runtime key 提取；②英文内容文件骨架与人工校对流程；③HealthKit authorization / HealthObservation / HealthContext gate 设计；④App Store Connect 元数据/隐私标签清单；⑤订阅产品与 paywall 联调 gate；⑥本地分享卡 MVP；⑦FR-SE10 更新感知。
 
 ### P4 软启动 + 冷启动获客（W18–W26）
 
@@ -203,11 +205,12 @@
 P0/P1 的验证与 clean rewrite 清单已成为历史；Rede 1.8 (25) 已提交 App Review。P2 的 production-disabled subscription foundation、非交易 Rede Coach 页面壳和首个 post-1.8 Paid Coach capability“每周教练复盘”均已完成本地实现。FR-SUB3 的 package/app tests、质量门禁、Release build 与中英文/权益/辅助功能 Simulator 流程已通过；这仍不是商店交易证据：
 
 1. ✅ 保留 FR-SUB3 当前边界：纯派生、只导航、不自动改计划；有效 paid entitlement 可见，Free/unknown 不泄露付费结论，1.8 Free Core 不回收收费。
-2. 解决 Xcode 26.6 / iOS 26.5 Simulator `SKTestSession` 的 `SKInternalErrorDomain Code=3`，或在另一套可复现 Xcode/Simulator 环境跑通仓库已有的购买、取消、pending、验证失败、续订、grace、过期、退款/撤销和恢复 XCTest；失败不得改成跳过。
-3. 创建 App Store Connect 单一 subscription group 的月/年商品前，刷新 Apple 当前政策、Small Business Program 资格、竞品价格和试用证据；product IDs、价格和试用不写成架构常量。
-4. 配置可点击的 Privacy Policy / Terms of Use（URL 属于发布配置），并用 Sandbox/TestFlight 验证本地化商品、购买/恢复、重装/换设备、离线行为和两条政策目的地；全部通过后，才在 StoreKit 购买面填入每周教练复盘这一项真实权益并打开 production gate，通过前不提交订阅版本。
-5. 远程 analytics、账号、云同步继续各走独立 gate，不夹进 entitlement 首片。英文母语复核、隐私政策 / ToS / fitness 免责与 1.8 真机残留验收可并行，不改变主线。
+2. ✅ FR-SE10 已完成本地实现与 Simulator 验收：从下一发布包建立老用户更新链，已覆盖 Apple 查询 fixture、离线降级、稍后、Settings、What's New、中英文、最大 Dynamic Type、首次安装与训练中不打断；它不改变收费 No-Go，实时目录与 TestFlight 仍待发布链验证。
+3. 解决 Xcode 26.6 / iOS 26.5 Simulator `SKTestSession` 的 `SKInternalErrorDomain Code=3`，或在另一套可复现 Xcode/Simulator 环境跑通仓库已有的购买、取消、pending、验证失败、续订、grace、过期、退款/撤销和恢复 XCTest；失败不得改成跳过。
+4. 创建 App Store Connect 单一 subscription group 的月/年商品前，刷新 Apple 当前政策、Small Business Program 资格、竞品价格和试用证据；product IDs、价格和试用不写进代码或架构常量。
+5. 配置可点击的 Privacy Policy / Terms of Use（URL 属于发布配置），并用 Sandbox/TestFlight 验证本地化商品、购买/恢复、重装/换设备、离线行为和两条政策目的地；全部通过后，才在 StoreKit 购买面填入每周教练复盘这一项真实权益并打开 production gate，通过前不提交订阅版本。
+6. 远程 analytics、账号、云同步继续各走独立 gate，不夹进 entitlement 或 FR-SE10。英文母语复核、隐私政策 / ToS / fitness 免责与 1.8 真机残留验收可并行，不改变主线。
 
 ---
 
-*当前最小下一片：在可复现环境跑通现有 StoreKitTest，并准备真实 App Store Connect 商品与政策配置；FR-SUB3 已完成本地实现，但 production 商品与购买控件只在交易和 Sandbox/TestFlight 门禁通过后打开。*
+*当前并行切片：FR-SE10 更新感知完成本地实现与 Simulator 验收；收费主线仍是在可复现环境跑通 StoreKitTest，并准备真实 App Store Connect 商品与政策配置。production 商品与购买控件只在交易和 Sandbox/TestFlight 门禁通过后打开。*

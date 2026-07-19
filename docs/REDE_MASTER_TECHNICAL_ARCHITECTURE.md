@@ -4,7 +4,7 @@
 > Every human and every AI agent must read this document before making changes and must obey it. If a requested task conflicts with this document, stop and require explicit architecture approval before writing code.
 
 - **Status:** Authoritative / binding
-- **Version:** 3.4
+- **Version:** 3.5
 - **Last updated:** 2026-07-18
 - **Repository:** `TinSB/fitness-app` (the GitHub slug is still `fitness-app`; the product and local working dir are `Rede`)
 - **v3.0 amendment:** established a clean code rewrite baseline, written cleanly against the manifest-registered living docs (especially `docs/REDE_iOS_SYSTEM_LOGIC.md`) instead of extending or porting the polluted legacy implementation.
@@ -12,6 +12,8 @@
 - **v3.2 amendment (2026-07-17):** approved the subscription architecture boundary without implementing it: StoreKit 2 behind a thin future `RedeEntitlements` package, Apple-verified transactions as entitlement truth, no RevenueCat/account/server/remote analytics in the first slice, and no entitlement state in canonical AppData. Product boundary A is binding: everything already available in Rede 1.8 remains Free Core; only capabilities added after 1.8 may be proposed as Paid Coach features through an explicit PRD amendment.
 - **v3.3 implementation reconciliation (2026-07-18):** the bounded subscription foundation now exists as the tenth in-tree package. It includes pure access policy, StoreKit 2 product/transaction/restore adapters, a process-lifetime entitlement model, expiration and foreground revalidation, stale-query protection, a package-owned `SubscriptionStoreView` wrapper, Settings plan state, a non-transactional Rede Coach page shell, a fail-closed production launch gate, and local-only monthly/annual StoreKit fixtures. The branded page shell may remain visible while blocked, but Apple product, price, trial, renewal, restore, and purchase controls appear only after the gate is ready. The production `Rede` scheme is isolated from the dedicated `Rede-StoreKitTest` scheme, and CI runs an app-hosted production fail-closed XCTest in addition to all package tests and the generic build. Production purchase presentation remains disabled because no post-1.8 Paid Coach capability, App Store Connect product configuration, final pricing/trial, or validated current Privacy/Terms destinations have been approved. The Xcode 26.6 + iOS 26.5 Simulator StoreKitTest service still returns `SKInternalErrorDomain Code=3` while saving an Apple-v6.3-aligned configuration, so full purchase/renewal/refund lifecycle and Sandbox/TestFlight acceptance remain release blockers.
 - **v3.4 implementation reconciliation (2026-07-18):** the first approved post-1.8 capability, `Weekly Coach Review` (FR-SUB3), is now implemented end to end behind verified Paid Coach access. A pure typed engine in `RedeTrainingDecision` consumes narrowly projected, clean prior-week facts; dated dropped-training findings and suspect sets fail closed before a positive trend can be shown; `RedeL10n` owns the approved bilingual states and actions; the app renders the review without persisting a second truth source. Active/grace entitlements retain access even if the purchase catalog or policy configuration is unavailable, while free/checking/unknown/expired/refunded states never receive the paid result. Checking and unknown entitlement states also never reach the purchase surface even if the product gate is already ready; an expired entitlement is presented as Free Core. Local package/app tests, the authoritative quality gate, Release build, and iPhone 17 Pro Simulator flows cover the Chinese empty state to Today, English data-review state to Progress, production Free Core preview, accessibility labels, maximum Dynamic Type, and Reduce Motion. These are L3 local implementation/UX evidence only. Production purchase presentation remains disabled until real App Store Connect products, current policy destinations, a working StoreKit lifecycle environment, and Sandbox/TestFlight acceptance exist; the current `SKInternalErrorDomain Code=3` blocker is unchanged.
+- **v3.5 amendment (2026-07-18):** approved one narrow App Store update-awareness boundary. The app may make an anonymous, throttled HTTPS GET to Apple's public App Store Lookup catalog using Rede's public app ID, then locally validate the expected bundle ID, solely to compare the installed marketing version with the public store version. Pure version/cadence/snooze policy belongs in `RedeDomain`; the `URLSession` adapter remains in the thin app platform layer. The response is optional presentation input, never product, entitlement, training, or canonical truth. Invalid data, timeout, offline state, an older/equal store version, or any service failure produces no automatic prompt and never blocks launch, training, saving, export, or subscription access. No Rede server, remote config, push, analytics, device identifier, authentication, remote release copy, forced update, or in-app binary updater is authorized. Loss-tolerant UI receipts for last check, per-version snooze, and last-seen What's New may use namespaced `UserDefaults`; they are not canonical data and may be discarded safely.
+- **v3.5 implementation reconciliation (2026-07-18):** FR-SE10 now exists in the clean app. `RedeDomain` owns numeric marketing-version comparison, rolling 24-hour automatic-attempt cadence, and version-scoped seven-day snooze; the app target owns the injectable, non-redirecting Apple Lookup adapter, shared in-flight request, loss-tolerant receipts, Settings rows, non-blocking Today signal, and built-in bilingual What's New. Automatic failures remain silent, explicit failures remain honest, a launch that still needs onboarding conservatively records the current release without presenting, and any other installed-version change presents matching bundled notes once. This means the rare upgrader who never completed onboarding also skips that one automatic sheet, while the permanent Settings entry remains available. Targeted domain/app/localization tests and real iPhone 17 Pro / iOS 26.5 Simulator flows covered current/available/unavailable fixtures, Later, Settings, both locales, maximum Dynamic Type, first install, and an active-training launch. Simulator interaction exposed an observation bug where Later persisted but did not immediately dismiss the signal; a failing observation test now locks the repair. Independent review additionally locked reverse automatic/manual request ordering, stale Settings-result invalidation, exact app-ID/bundle/version response identity, duplicate-record rejection, redirect refusal, and a release guard requiring the current marketing version to have bundled bilingual notes. This is local L3 behavior evidence only: it does not prove a live Apple catalog response, App Store propagation, or TestFlight behavior, and it cannot retroactively notify users running the old 1.8 binary.
 
 ---
 
@@ -39,8 +41,8 @@ It does not outrank explicit, in-the-moment human approval that knowingly amends
 | Target runtime | A clean native iOS SwiftUI app with local Swift packages and local-first persistence. |
 | Target source of truth | A single canonical local AppData model, persisted through a gated write path. |
 | Target engine boundary | Raw AppData never enters training engines; engines consume clean typed inputs. |
-| Target platform scope | Foundation JSON persistence, approved HealthKit adapters, local notifications, WidgetKit/App Group read-only handoff, plus the implemented-but-production-disabled StoreKit 2 boundary in §5/§9. |
-| Deferred systems | Account, cloud sync, CRDT, watchOS, remote networking, remote analytics, referral attribution, third-party subscription SDKs, and server-side entitlement systems require explicit architecture amendments. Subscription runtime is authorized only through the bounded StoreKit 2 implementation slice defined below. |
+| Target platform scope | Foundation JSON persistence, approved HealthKit adapters, local notifications, WidgetKit/App Group read-only handoff, the implemented-but-production-disabled StoreKit 2 boundary in §5/§9, plus the bounded Apple public-catalog lookup in §9. |
+| Deferred systems | Account, cloud sync, CRDT, watchOS, general-purpose remote networking, remote config, remote analytics, referral attribution, third-party subscription SDKs, and server-side entitlement systems require explicit architecture amendments. Subscription runtime and update awareness are authorized only through their bounded slices below. |
 
 Removed implementation surfaces:
 
@@ -113,7 +115,7 @@ The app layer must not:
 
 | Package | Responsibility | Depends on |
 |---|---|---|
-| `RedeDomain` | Codable AppData model and domain values. | Foundation only |
+| `RedeDomain` | Codable AppData model, domain values, and small platform-independent app policies such as review/update cadence and semantic version comparison. | Foundation only |
 | `RedeDataHealth` | Clean AppData projection, repair logic, and runtime guards. | `RedeDomain` |
 | `RedeTrainingDecision` | Training decision, readiness, scheduling, progression, insights, muscle level, support allocation, session prescription, and coach-action engines. | `RedeDomain`, `RedeDataHealth` |
 | `RedePersistence` | AppData store protocol, JSON file store, and canonical write orchestration. | `RedeDomain` |
@@ -243,12 +245,15 @@ Allowed platform integrations:
 - WidgetKit only inside the widget target and `RedeWidgetShared` adapter.
 - App Groups only for the read-only widget snapshot handoff.
 - StoreKit 2 only inside the `RedeEntitlements` iOS platform/UI adapters described in §5. The app may render the exported subscription-view wrapper but must not import StoreKit directly. StoreKit state may gate explicitly approved Paid Coach UI, but may not gate or alter Free Core engines, persistence, export, or safety behavior.
+- `URLSession` only inside the app-target App Store lookup adapter approved by v3.5. It may issue one direct, throttled anonymous HTTPS GET to Apple's public Lookup catalog using only Rede's public app ID; the expected bundle ID is never sent and is used locally to validate the returned record. It must refuse every redirect, validate the final response URL plus the expected Rede record, decode only the public marketing version needed for comparison, carry no user/device/training identifiers or credentials, and remain independently injectable for deterministic tests. Automatic checks run at most once per 24 hours; a per-version “Later” action suppresses the prompt for seven days. Network/decoding errors are silent for automatic checks and honest but non-blocking for an explicit Settings check. Built-in `RedeL10n` copy—not remote release notes—owns every visible string. The only action is user-initiated navigation to Rede's App Store product page.
+
+The update-awareness surface is informational infrastructure, part of Free Core, and never a compatibility or purchase gate. It may show a non-blocking Today signal, a Settings version/check surface, and a one-time built-in What's New sheet after an installed-version change. It must not interrupt an active training flow. A binary that predates this boundary cannot be retroactively made to prompt; the first build containing it establishes protection only for later releases.
 
 Forbidden without amendment:
 
 - CloudKit / iCloud
 - Supabase client/runtime implementation
-- URLSession / remote networking
+- URLSession / remote networking except the bounded Apple public-catalog lookup above
 - WebView
 - account/auth SDKs
 - UserDefaults as source-of-truth storage
@@ -289,6 +294,8 @@ xcodebuild \
 ```
 
 The GitHub workflow must remain Swift/Xcode based. Do not reintroduce Node, Vite, browser tests, or web build checks.
+
+Update awareness must additionally prove pure version ordering, invalid-version fail-closed behavior, equal/older-store suppression, 24-hour automatic throttling, version-scoped seven-day snooze, and newer-version snooze bypass. App tests must prove Apple response validation plus automatic/manual error semantics without live-network dependence. Simulator acceptance must visibly cover update available, up to date, offline/error, Later, Settings manual check, one-time What's New, maximum Dynamic Type, VoiceOver labels, and a return to the training loop. A live Apple response is useful operational evidence but is not a deterministic test fixture and must never be required for launch.
 
 The subscription runtime must additionally prove all of the following before release:
 

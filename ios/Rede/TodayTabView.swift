@@ -18,10 +18,13 @@ struct TodayTabView: View {
 
     @Environment(LocaleStore.self) private var localeStore
     @Environment(SessionStore.self) private var sessionStore
+    @Environment(AppUpdateModel.self) private var appUpdateModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     // 截图钩子（沿 -initialTab 先例）：-expandTodayReason 启动即展开依据抽屉
     @State private var reasonExpanded = ProcessInfo.processInfo.arguments.contains("-expandTodayReason")
     @State private var showSettings = false
+    /// 初始 Today 读取完成后才允许自动 What's New，避免抢在恢复训练面板前弹出。
+    @State private var initialTodayLoadComplete = false
     /// 嵌套 Rede Coach sheet 先全部关闭，再在 Settings sheet 的 onDismiss 切 tab，
     /// 避免 dismissal 与 tab navigation 同帧竞争。
     @State private var pendingCoachAction: WeeklyCoachReviewAction?
@@ -84,6 +87,13 @@ struct TodayTabView: View {
                     onTrailingTap: { showSettings = true }
                 )
 
+                if let version = appUpdateModel.promptVersion {
+                    AppUpdateSignalStrip(version: version)
+                        .transition(reduceMotion
+                            ? .opacity
+                            : .move(edge: .top).combined(with: .opacity))
+                }
+
                 todayContent
             }
             .padding(.bottom, RedeSpace.bottomBar)
@@ -99,11 +109,13 @@ struct TodayTabView: View {
         // 教练卡 / 写失败提示的出现消失（采纳/暂不后随 reload 变化）= 过渡，不硬闪（reduceMotion 守卫）。
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: coachAction?.actionKey)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: sessionStore.coachSaveErrorText)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: appUpdateModel.promptVersion)
         .sensoryFeedback(.success, trigger: commitPulse)   // 采纳 / 撤销成功 = 提交确认
         .sensoryFeedback(.selection, trigger: selectPulse) // 暂不 / 展开折叠 = 轻选择
         .task {
             sessionStore.coachSaveErrorText = nil // 进页清教练写错误（新视图干净起步；隔离于全局 saveErrorText）
             if sessionStore.todayOutcome == nil { await sessionStore.loadToday() }
+            initialTodayLoadComplete = true
             // K8：训练日分支的周一收官行（休息/练完分支归 loadCompletedDigest 同批链，
             // 不在此重复 IO）。loadToday 已 await——此刻 model/分支判定是最终值；
             // weekReview 已有值说明 task(id:) 侧已算过（同日不变），不二次 IO。
@@ -174,6 +186,26 @@ struct TodayTabView: View {
             )
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: Binding(
+            get: {
+                initialTodayLoadComplete
+                    && appUpdateModel.shouldPresentWhatsNew
+                    && !showSettings
+                    && sessionStore.pendingDraft == nil
+                    && sessionStore.flow == nil
+            },
+            set: { isPresented in
+                if !isPresented { appUpdateModel.markWhatsNewSeen() }
+            }
+        ), onDismiss: {
+            appUpdateModel.markWhatsNewSeen()
+        }) {
+            AppUpdateWhatsNewSheet(version: appUpdateModel.installedVersion) {
+                appUpdateModel.markWhatsNewSeen()
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
         // T1 练完态分享入口 → 分享卡预览（与训练小结同一预览视图与隐私链）
         .sheet(item: $sharePreview) { item in

@@ -50,6 +50,22 @@ final class RedeStringsTests: XCTestCase {
             ("settingsExportFailedBody", s.settingsExportFailedBody),
             ("settingsExportFailedConfirm", s.settingsExportFailedConfirm),
             ("settingsPrivacy", s.settingsPrivacy), ("settingsPrivacyNote", s.settingsPrivacyNote),
+            // FR-SE10：版本、更新检查与内置 What's New
+            ("appUpdateSection", s.appUpdateSection),
+            ("appUpdateVersion", s.appUpdateVersion),
+            ("appUpdateCheck", s.appUpdateCheck),
+            ("appUpdateWhatsNew", s.appUpdateWhatsNew),
+            ("appUpdateChecking", s.appUpdateChecking),
+            ("appUpdateUpToDate", s.appUpdateUpToDate),
+            ("appUpdateUnableToCheck", s.appUpdateUnableToCheck),
+            ("appUpdateAvailable", s.appUpdateAvailable(version: "1.9")),
+            ("appUpdateSignalOverline", s.appUpdateSignalOverline(version: "1.9")),
+            ("appUpdateSignalTitle", s.appUpdateSignalTitle),
+            ("appUpdateViewUpdate", s.appUpdateViewUpdate),
+            ("appUpdateLater", s.appUpdateLater),
+            ("appUpdateContinue", s.appUpdateContinue),
+            ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.8", build: "25")),
+            ("appUpdateHighlights", s.appUpdateHighlights(version: "1.8").joined(separator: " ")),
             // FR-SE9 / FR-SUB2：订阅管理与诚实状态
             ("settingsSubscriptionSection", s.settingsSubscriptionSection),
             ("settingsSubscriptionFreeCore", s.settingsSubscriptionFreeCore),
@@ -229,6 +245,29 @@ final class RedeStringsTests: XCTestCase {
             XCTAssertFalse(note.contains("不连网") || note.contains("no network connection"),
                            "StoreKit 会连接 Apple，不能继续声称 App 完全不联网")
         }
+    }
+
+    func testAppUpdateCopyMatchesApprovedBaseline() {
+        XCTAssertEqual(zh.appUpdateSection, "版本")
+        XCTAssertEqual(en.appUpdateSection, "Version")
+        XCTAssertEqual(zh.appUpdateCheck, "检查更新")
+        XCTAssertEqual(en.appUpdateCheck, "Check for Updates")
+        XCTAssertEqual(zh.appUpdateWhatsNew, "本次新增")
+        XCTAssertEqual(en.appUpdateWhatsNew, "What's New")
+        XCTAssertEqual(zh.appUpdateSignalTitle, "新版本已就绪")
+        XCTAssertEqual(en.appUpdateSignalTitle, "A New Version Is Ready")
+        XCTAssertEqual(zh.appUpdateAvailable(version: "1.9"), "1.9 可用")
+        XCTAssertEqual(en.appUpdateAvailable(version: "1.9"), "1.9 Available")
+        XCTAssertEqual(
+            zh.appUpdateHighlights(version: "1.8"),
+            ["每块肌肉，都有自己的等级", "训练、休息与下一组，始终清楚", "计划与进展，更完整也更好读"]
+        )
+        XCTAssertEqual(
+            en.appUpdateHighlights(version: "1.8"),
+            ["A level for every muscle", "Training, rest, and the next set—always clear", "Planning and progress, fuller and clearer"]
+        )
+        XCTAssertTrue(zh.appUpdateHighlights(version: "1.7").isEmpty)
+        XCTAssertTrue(en.appUpdateHighlights(version: "1.9").isEmpty)
     }
 
     func testSubscriptionCopyAnchorsAndFreeCompatibilityFloor() {

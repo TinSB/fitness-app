@@ -16,6 +16,7 @@ struct RootTabView: View {
     @State private var localeStore: LocaleStore
     @State private var sessionStore = SessionStore()
     @State private var subscriptionModel: SubscriptionModel
+    @State private var appUpdateModel: AppUpdateModel
     @State private var progressScrollTarget: ProgressScrollTarget?
     /// M5-1b 首启引导：nil = 未检查（避免首帧闪烁误判）。
     @State private var showOnboarding: Bool?
@@ -47,6 +48,7 @@ struct RootTabView: View {
             configuration: subscriptionConfiguration,
             arguments: args
         ))
+        _appUpdateModel = State(initialValue: RedeAppUpdateRuntime.makeModel(arguments: args))
     }
 
     var body: some View {
@@ -136,6 +138,14 @@ struct RootTabView: View {
             } else {
                 showOnboarding = await Task.detached { SessionStore.needsOnboarding() }.value
             }
+
+            // FR-SE10：首次安装不把当前版本冒充“更新”；已有用户升级后只展示一次
+            // 内置 What's New。公开版本检查失败不影响首启与训练，自动检查按 24h 节流。
+            let isFirstInstall = showOnboarding == true
+            appUpdateModel.prepareWhatsNew(isFirstInstall: isFirstInstall)
+            if !isFirstInstall {
+                await appUpdateModel.checkAutomatically()
+            }
             // 截图钩子：用样本分享卡数据直接弹预览（验证卡片渲染，不必跑完整训练流）。
             if args.contains("-autoOpenSharePreview") {
                 sharePreviewSample = SharePreviewItem(snapshots: ShareCardSample.snapshots)
@@ -218,11 +228,17 @@ struct RootTabView: View {
         }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
-            Task { await subscriptionModel.refresh() }
+            Task {
+                await subscriptionModel.refresh()
+                if showOnboarding == false {
+                    await appUpdateModel.checkAutomatically()
+                }
+            }
         }
         .environment(localeStore)
         .environment(sessionStore)
         .environment(subscriptionModel)
+        .environment(appUpdateModel)
         .preferredColorScheme(.dark)
     }
 }

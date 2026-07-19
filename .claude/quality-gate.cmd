@@ -50,7 +50,7 @@ xcodebuild \
   -destination 'generic/platform=iOS Simulator' \
   build
 
-echo "== xcodebuild: subscription + Weekly Coach Review app policy tests =="
+echo "== xcodebuild: subscription + Weekly Coach Review + app update policy tests =="
 REDE_SIMULATOR_ID="$(
   xcrun simctl list devices available |
     awk -F '[()]' '/iPhone/ && $2 ~ /^[0-9A-F-]+$/ { print $2; exit }'
@@ -68,6 +68,7 @@ xcodebuild \
   -only-testing:RedeTests/StoreKitEntitlementsTests/testRedeCoachPageContentCoversEntitlementAndLaunchGateMatrix \
   -only-testing:RedeTests/StoreKitEntitlementsTests/testReadyCatalogDoesNotBypassDelayedEntitlementCheck \
   -only-testing:RedeTests/StoreKitEntitlementsTests/testWeeklyReviewFindingScopeCountsWeekDropsAndFailsClosedWhenDateIsUnknown \
+  -only-testing:RedeTests/AppUpdateRuntimeTests \
   test
 
 echo "QUALITY GATE: PASS"

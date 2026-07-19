@@ -17,9 +17,11 @@ struct SettingsSheet: View {
     var onCoachAction: (WeeklyCoachReviewAction) -> Void = { _ in }
     @Environment(SessionStore.self) private var sessionStore
     @Environment(SubscriptionModel.self) private var subscriptionModel
+    @Environment(AppUpdateModel.self) private var appUpdateModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var profile: SessionStore.ProfileSnapshot?
     /// 周期化开关持久态（FR-PL2 enablement；默认关 = opt-in）。
@@ -41,6 +43,7 @@ struct SettingsSheet: View {
     @State private var exportBusy = false
     @State private var exportFailed = false
     @State private var showSubscriptionPage = false
+    @State private var showWhatsNew = false
     @State private var pendingCoachAction: WeeklyCoachReviewAction?
     @State private var subscriptionManagementFailed = false
     /// 行内单题编辑（方向 A 拍板 2026-06-10：改哪题进哪题，退役整流重跑）。
@@ -111,6 +114,9 @@ struct SettingsSheet: View {
                         EngraveDivider().padding(.top, RedeSpace.section)
                         backgroundPlate
                         EngraveDivider().padding(.top, RedeSpace.section)
+                        appUpdateSection
+                            .id("update")
+                        EngraveDivider().padding(.top, RedeSpace.section)
                         backplateInfo
                         feedbackKey
                     }
@@ -156,6 +162,15 @@ struct SettingsSheet: View {
                 .environment(subscriptionModel)
                 .presentationDetents([.large])
         }
+        .sheet(isPresented: $showWhatsNew, onDismiss: {
+            appUpdateModel.markWhatsNewSeen()
+        }) {
+            AppUpdateWhatsNewSheet(version: appUpdateModel.installedVersion) {
+                appUpdateModel.markWhatsNewSeen()
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
         // K7：读失败如实提示（dataUnreadable 文案家族），绝不假成功。
         .alert(s.settingsExportFailedTitle, isPresented: $exportFailed) {
             Button(s.settingsExportFailedConfirm, role: .cancel) {}
@@ -186,6 +201,8 @@ struct SettingsSheet: View {
             }
             // K7 截图钩子（同上先例）：-autoExportData 打开设置即触发导出（simctl 无法点击 UI）。
             if args.contains("-autoExportData") { exportData() }
+            // FR-SE10 验证钩子：打开设置后走真实手动检查路径，失败态也必须可见。
+            if args.contains("-manualCheckAppUpdate") { await appUpdateModel.checkManually() }
         }
     }
 
@@ -743,6 +760,171 @@ struct SettingsSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.redePressableRow)
+    }
+
+    // MARK: - FR-SE10 版本与更新（事实行；无常驻说明小字）
+
+    private var appUpdateSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Overline(text: s.appUpdateSection)
+                .padding(.top, 18)
+                .padding(.bottom, 7)
+
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(s.appUpdateVersion)
+                    .font(.redeBody)
+                    .foregroundStyle(Color.redeT2)
+                Spacer()
+                Text(s.appUpdateVersionValue(
+                    marketingVersion: appUpdateModel.installedVersion,
+                    build: appUpdateModel.build
+                ))
+                .font(.redeBody)
+                .monospacedDigit()
+                .foregroundStyle(Color.redeT1)
+            }
+            .frame(minHeight: RedeShape.controlHeight)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("settings-update-version")
+
+            Rectangle().fill(Color.redeHair2).frame(height: 1)
+
+            Group {
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 0) {
+                        appUpdateCheckButton
+                        appUpdateCheckAccessory(alignment: .leading)
+                    }
+                } else {
+                    HStack(alignment: .center, spacing: 8) {
+                        appUpdateCheckButton
+                        appUpdateCheckAccessory(alignment: .trailing)
+                    }
+                }
+            }
+            .frame(minHeight: RedeShape.controlHeight)
+
+            Rectangle().fill(Color.redeHair2).frame(height: 1)
+
+            Button {
+                appUpdateModel.showWhatsNewManually()
+                showWhatsNew = appUpdateModel.shouldPresentWhatsNew
+            } label: {
+                HStack(spacing: 8) {
+                    Text(s.appUpdateWhatsNew)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT2)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Color.redeT4)
+                        .accessibilityHidden(true)
+                }
+                .frame(minHeight: RedeShape.controlHeight)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.redePressableRow)
+            .disabled(!RedeAppUpdateRuntime.hasBundledWhatsNew(for: appUpdateModel.installedVersion))
+            .accessibilityIdentifier("settings-whats-new")
+
+            Rectangle().fill(Color.redeHair2).frame(height: 1)
+        }
+        .accessibilityIdentifier("settings-update-section")
+    }
+
+    private var appUpdateStatusText: String? {
+        switch appUpdateModel.manualStatus {
+        case .checking:
+            nil
+        case .upToDate:
+            s.appUpdateUpToDate
+        case .updateAvailable(let version):
+            s.appUpdateAvailable(version: version)
+        case .failed:
+            s.appUpdateUnableToCheck
+        case .idle:
+            appUpdateModel.availableVersion.map { s.appUpdateAvailable(version: $0) }
+        }
+    }
+
+    private var appUpdateStatusIsFailure: Bool {
+        appUpdateModel.manualStatus == .failed
+    }
+
+    private var appUpdateActionVersion: String? {
+        switch appUpdateModel.manualStatus {
+        case .updateAvailable(let version):
+            version
+        case .idle:
+            appUpdateModel.availableVersion
+        case .checking, .upToDate, .failed:
+            nil
+        }
+    }
+
+    private var appUpdateCheckButton: some View {
+        Button(action: performUpdateCheckAction) {
+            Text(s.appUpdateCheck)
+                .font(.redeBody)
+                .foregroundStyle(Color.redeT2)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, minHeight: RedeShape.controlHeight, alignment: .leading)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.redePressableRow)
+        .disabled(appUpdateModel.manualStatus == .checking)
+        .accessibilityIdentifier("settings-check-update")
+    }
+
+    @ViewBuilder
+    private func appUpdateCheckAccessory(alignment: Alignment) -> some View {
+        if appUpdateModel.manualStatus == .checking {
+            ProgressView()
+                .controlSize(.small)
+                .tint(Color.redeT3)
+                .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil, alignment: alignment)
+                .accessibilityLabel(s.appUpdateChecking)
+        } else if let version = appUpdateActionVersion {
+            Button {
+                openURL(RedeAppUpdateRuntime.appStoreURL)
+            } label: {
+                HStack(spacing: 6) {
+                    Text(s.appUpdateAvailable(version: version))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 10, weight: .semibold))
+                        .accessibilityHidden(true)
+                }
+                .font(.redeCaption)
+                .monospacedDigit()
+                .foregroundStyle(Color.redeEmber2)
+                .frame(
+                    maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil,
+                    minHeight: RedeShape.controlHeight,
+                    alignment: alignment
+                )
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.redePressable)
+            .accessibilityLabel("\(s.appUpdateAvailable(version: version)), \(s.appUpdateViewUpdate)")
+            .accessibilityIdentifier("settings-view-update")
+        } else if let status = appUpdateStatusText {
+            Text(status)
+                .font(.redeCaption)
+                .monospacedDigit()
+                .foregroundStyle(appUpdateStatusIsFailure ? Color.redeRisk : Color.redeT3)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(
+                    maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil,
+                    alignment: alignment
+                )
+                .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
+        }
+    }
+
+    private func performUpdateCheckAction() {
+        guard appUpdateModel.manualStatus != .checking else { return }
+        Task { await appUpdateModel.checkManually() }
     }
 
     // MARK: - 背板蚀刻：数据/隐私/关于 渐进披露（默认收起）

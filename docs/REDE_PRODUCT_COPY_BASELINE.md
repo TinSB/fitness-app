@@ -1,7 +1,7 @@
 # Rede Product Copy Baseline — 产品文案基底
 
 > **状态:** Canonical / living copy baseline
-> **最后更新:** 2026-07-18（每周教练复盘双语文案已落地并完成本地 Simulator 验收；生产购买仍关闭）
+> **最后更新:** 2026-07-18（FR-SE10 更新提示 / Settings / What's New 双语合同已实现并通过本地双语 Simulator 验收；生产购买仍关闭）
 > **适用范围:** 产品定位、v0 / 原型生成、App Store 文案、onboarding、paywall、UI microcopy、空状态、错误、通知、双语 locale
 > **权威边界:** 本文定义 Rede 如何说话,视觉品牌与原型画面方向以 `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md` 为准。本文不授权任何新功能、网络、云、HealthKit 范围、医疗判断或 source-of-truth 变更。功能与架构边界以 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 和 `docs/REDE_iOS_SYSTEM_LOGIC.md` 为准。
 
@@ -396,6 +396,31 @@ Settings 里不要营销。只说事实。
 
 **常驻副文门禁（2026-07-18 owner 拍板）:** 自解释的设置项只显示分区、行标题、当前值或控件，不在其下常驻一行“解释这个界面”的 caption。`导出训练数据`、`Free Core` 和可点击的训练背景行已经足够清楚，因此不再附“数据保存在本机 / 可导出”“此版本所有功能均包含在 Free Core”“点任意一行修改”等小字。这个门禁只删除冗余常驻副文；真实错误、购买核对状态、保存结果等即时反馈必须保留。训练背景行继续向 VoiceOver 提供自解释的“字段名 + 当前值”，但不再追加“点任意一行修改 / Tap any row to change it”提示。
 
+**版本与更新（FR-SE10，2026-07-18 owner 批准）：** Settings 仍只说事实，版本值直接放在行尾；检查结果是用户动作后的即时状态，不写成长段说明。今日页更新信号只回答“有新版 / 去哪里 / 是否稍后”，不列更新日志、不催促、不制造过期恐惧。What's New 是版本叙事面，可有品牌分量，但只讲已经随该版本交付的事实；不用算法、AI、革命性、全面升级等空泛词。
+
+| 状态 / 动作 | 中文 | English |
+|---|---|---|
+| 分区 | 版本 | Version |
+| 当前版本行 | 版本 | Version |
+| 主动检查 | 检查更新 | Check for Updates |
+| 更新内容入口 | 本次新增 | What's New |
+| 检查中 | 正在检查 | Checking |
+| 已最新 | 已是最新版本 | Up to Date |
+| 失败 | 暂时无法检查 | Unable to Check |
+| 新版可用值 | `1.9 可用` | `1.9 Available` |
+| 今日信号标题 | 新版本已就绪 | A New Version Is Ready |
+| 商店动作 | 查看更新 | View Update |
+| 稍后 | 稍后 | Later |
+| What's New 主操作 | 继续 | Continue |
+
+What's New 的当前 1.8 内置叙事用三条开放行，不附常驻小字：
+
+| 中文 | English |
+|---|---|
+| 每块肌肉，都有自己的等级 | A level for every muscle |
+| 训练、休息与下一组，始终清楚 | Training, rest, and the next set—always clear |
+| 计划与进展，更完整也更好读 | Planning and progress, fuller and clearer |
+
 > **实现状态（2026-06-13）:** 下面的 Apple Health / HealthKit 文案是 **FF 目标表面，当前未实现**——代码里没有 HealthKit。已 ship 的 Settings 隐私串遵循「未上线不提」（HealthKit 实装时再加这段）。本段保留为 HealthKit slice 落地时的文案基线。已 ship 的设置文案以 `RedeL10n` 实际串为准。
 
 示例（FF·HealthKit slice 落地时启用）:
@@ -589,6 +614,9 @@ English examples:
 - `未开启同步时保存在本机`
 - `HealthKit access is permission-based`
 - `sync only when enabled`
+- `检查更新时，只向 Apple 查询 Rede 的公开版本` / `Update checks ask Apple only for Rede’s public version`
+
+FR-SE10 的隐私口径只允许说明“训练数据不会随版本查询发送”；不得因此写回“完全不联网”。版本查询失败、关闭或被系统阻断时，训练核心照常工作。
 
 ---
 

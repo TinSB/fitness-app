@@ -21,7 +21,10 @@
 		FF00000000000000000000A1 /* RedeEntitlements in Frameworks */ = {isa = PBXBuildFile; productRef = FF00000000000000000000B1 /* RedeEntitlements */; };
 		FF00000000000000000000D1 /* SubscriptionRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000000000000000000D2 /* SubscriptionRuntime.swift */; };
 		F20000000000000000000001 /* WeeklyCoachReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000002 /* WeeklyCoachReviewView.swift */; };
+		FA0000000000000000000003 /* AppUpdateRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000004 /* AppUpdateRuntime.swift */; };
+		FA0000000000000000000005 /* AppUpdateViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000006 /* AppUpdateViews.swift */; };
 		F10000000000000000000001 /* StoreKitEntitlementsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000005 /* StoreKitEntitlementsTests.swift */; };
+		FA0000000000000000000001 /* AppUpdateRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000002 /* AppUpdateRuntimeTests.swift */; };
 		F10000000000000000000002 /* Rede.storekit in Resources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000006 /* Rede.storekit */; };
 		F10000000000000000000003 /* RedeEntitlements in Frameworks */ = {isa = PBXBuildFile; productRef = F10000000000000000000011 /* RedeEntitlements */; };
 		BB00000000000000000001D1 /* TodayModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000001D2 /* TodayModel.swift */; };
@@ -93,6 +96,7 @@
 		AA00000000000000000000B2 /* Rede.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Rede.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F10000000000000000000004 /* RedeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RedeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F10000000000000000000005 /* StoreKitEntitlementsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitEntitlementsTests.swift; sourceTree = "<group>"; };
+		FA0000000000000000000002 /* AppUpdateRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdateRuntimeTests.swift; sourceTree = "<group>"; };
 		F10000000000000000000006 /* Rede.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = packages/RedeEntitlements/Tests/RedeEntitlementsTests/Resources/Rede.storekit; sourceTree = SOURCE_ROOT; };
 		AA00000000000000000000E1 /* RedeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeApp.swift; sourceTree = "<group>"; };
 		AA00000000000000000000E5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -109,6 +113,8 @@
 		BB0000000000000000000F12 /* HealthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthModel.swift; sourceTree = "<group>"; };
 		FF00000000000000000000D2 /* SubscriptionRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionRuntime.swift; sourceTree = "<group>"; };
 		F20000000000000000000002 /* WeeklyCoachReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyCoachReviewView.swift; sourceTree = "<group>"; };
+		FA0000000000000000000004 /* AppUpdateRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdateRuntime.swift; sourceTree = "<group>"; };
+		FA0000000000000000000006 /* AppUpdateViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdateViews.swift; sourceTree = "<group>"; };
 		BB0000000000000000000F21 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		BB0000000000000000000F22 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		BB00000000000000000001E2 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
@@ -212,6 +218,8 @@
 				BB0000000000000000000F12 /* HealthModel.swift */,
 				FF00000000000000000000D2 /* SubscriptionRuntime.swift */,
 				F20000000000000000000002 /* WeeklyCoachReviewView.swift */,
+				FA0000000000000000000004 /* AppUpdateRuntime.swift */,
+				FA0000000000000000000006 /* AppUpdateViews.swift */,
 				BB00000000000000000001E2 /* SessionStore.swift */,
 				CC00000000000000000001A2 /* ProgressModel.swift */,
 				CC00000000000000000001C2 /* OnboardingView.swift */,
@@ -236,6 +244,7 @@
 			isa = PBXGroup;
 			children = (
 				F10000000000000000000005 /* StoreKitEntitlementsTests.swift */,
+				FA0000000000000000000002 /* AppUpdateRuntimeTests.swift */,
 				F10000000000000000000006 /* Rede.storekit */,
 			);
 			path = RedeTests;
@@ -431,6 +440,8 @@
 				BB0000000000000000000F11 /* HealthModel.swift in Sources */,
 				FF00000000000000000000D1 /* SubscriptionRuntime.swift in Sources */,
 				F20000000000000000000001 /* WeeklyCoachReviewView.swift in Sources */,
+				FA0000000000000000000003 /* AppUpdateRuntime.swift in Sources */,
+				FA0000000000000000000005 /* AppUpdateViews.swift in Sources */,
 				BB00000000000000000001E1 /* SessionStore.swift in Sources */,
 				CC00000000000000000001A1 /* ProgressModel.swift in Sources */,
 				CC00000000000000000001C1 /* OnboardingView.swift in Sources */,
@@ -460,6 +471,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F10000000000000000000001 /* StoreKitEntitlementsTests.swift in Sources */,
+				FA0000000000000000000001 /* AppUpdateRuntimeTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
