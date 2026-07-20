@@ -61,6 +61,8 @@ final class RedeStringsTests: XCTestCase {
             ("appUpdateAvailable", s.appUpdateAvailable(version: "1.9")),
             ("appUpdateSignalOverline", s.appUpdateSignalOverline(version: "1.9")),
             ("appUpdateSignalTitle", s.appUpdateSignalTitle),
+            ("appUpdateRowTitle", s.appUpdateRowTitle(version: "1.9")),
+            ("appUpdateViewShort", s.appUpdateViewShort),
             ("appUpdateViewUpdate", s.appUpdateViewUpdate),
             ("appUpdateLater", s.appUpdateLater),
             ("appUpdateContinue", s.appUpdateContinue),
@@ -92,15 +94,13 @@ final class RedeStringsTests: XCTestCase {
             ("subscriptionPageFreeCoreAvailable", s.subscriptionPageFreeCoreAvailable),
             // FR-SUB3 每周教练复盘
             ("weeklyCoachReviewTitle", s.weeklyCoachReviewTitle),
-            ("weeklyCoachReviewEvidenceTitle", s.weeklyCoachReviewEvidenceTitle),
             ("weeklyCoachReviewLoading", s.weeklyCoachReviewLoading),
             ("weeklyCoachReviewEmptyTitle", s.weeklyCoachReviewEmptyTitle),
             ("weeklyCoachReviewUnavailableTitle", s.weeklyCoachReviewUnavailableTitle),
             ("weeklyCoachReviewUnavailableBody", s.weeklyCoachReviewUnavailableBody),
             ("weeklyCoachReviewRetry", s.weeklyCoachReviewRetry),
-            ("weeklyCoachReviewWeek", s.weeklyCoachReviewWeek(dateText: "7月6日")),
             ("weeklyCoachReviewVerdictTitle", s.weeklyCoachReviewVerdictTitle(code: "progressing")),
-            ("weeklyCoachReviewVerdictBody", s.weeklyCoachReviewVerdictBody(code: "dataNeedsReview", count: 2) ?? ""),
+            ("weeklyCoachReviewVerdictDisplayTitle", s.weeklyCoachReviewVerdictDisplayTitle(code: "progressing")),
             ("weeklyCoachReviewTrainingDays", s.weeklyCoachReviewTrainingDays(3)),
             ("weeklyCoachReviewRecentMedian", s.weeklyCoachReviewRecentMedian(2.5)),
             ("weeklyCoachReviewSessions", s.weeklyCoachReviewSessions(3)),
@@ -256,6 +256,11 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertEqual(en.appUpdateWhatsNew, "What's New")
         XCTAssertEqual(zh.appUpdateSignalTitle, "新版本已就绪")
         XCTAssertEqual(en.appUpdateSignalTitle, "A New Version Is Ready")
+        // 2026-07-20 今日页单行更新信号（三层块收敛）：事实句 + 短「查看」。
+        XCTAssertEqual(zh.appUpdateRowTitle(version: "1.9"), "新版本 1.9")
+        XCTAssertEqual(en.appUpdateRowTitle(version: "1.9"), "New version 1.9")
+        XCTAssertEqual(zh.appUpdateViewShort, "查看")
+        XCTAssertEqual(en.appUpdateViewShort, "View")
         XCTAssertEqual(zh.appUpdateAvailable(version: "1.9"), "1.9 可用")
         XCTAssertEqual(en.appUpdateAvailable(version: "1.9"), "1.9 Available")
         XCTAssertEqual(
@@ -384,8 +389,6 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertEqual(en.weeklyCoachReviewEmptyTitle, "No workouts were recorded last week")
         XCTAssertEqual(zh.weeklyCoachReviewVerdictTitle(code: "calibrating"), "继续训练后再判断趋势")
         XCTAssertEqual(en.weeklyCoachReviewVerdictTitle(code: "calibrating"), "Keep training before calling a trend")
-        XCTAssertNil(zh.weeklyCoachReviewVerdictBody(code: "calibrating", count: 0))
-        XCTAssertNil(en.weeklyCoachReviewVerdictBody(code: "calibrating", count: 0))
         XCTAssertEqual(zh.weeklyCoachReviewVerdictTitle(code: "dataNeedsReview"), "先核对上周的训练记录")
         XCTAssertEqual(en.weeklyCoachReviewVerdictTitle(code: "dataNeedsReview"), "Check last week’s training records first")
         XCTAssertEqual(zh.weeklyCoachReviewVerdictTitle(code: "progressing"), "关键动作在向上走")
@@ -398,17 +401,19 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertEqual(en.weeklyCoachReviewAction(code: "reviewData"), "Review Training Data")
         XCTAssertEqual(en.weeklyCoachReviewRecentMedian(1), "Recent median · 1 day")
 
+        // 2026-07-20 YAGNI 清理：V1 遗留 weeklyCoachReviewVerdictBody/Week/EvidenceTitle
+        // 已删（无生产调用点）；禁词扫描改扫仍在生产的判断句家族。
         let weeklyCopy = [
             zh.weeklyCoachReviewVerdictDisplayTitle(code: "dataNeedsReview"),
             zh.weeklyCoachReviewVerdictDisplayTitle(code: "progressing"),
             en.weeklyCoachReviewVerdictDisplayTitle(code: "dataNeedsReview"),
             en.weeklyCoachReviewVerdictDisplayTitle(code: "progressing"),
-            zh.weeklyCoachReviewVerdictBody(code: "dataNeedsReview", count: 2) ?? "",
-            zh.weeklyCoachReviewVerdictBody(code: "rebuildRhythm", count: 0) ?? "",
-            zh.weeklyCoachReviewVerdictBody(code: "progressing", count: 0) ?? "",
-            en.weeklyCoachReviewVerdictBody(code: "dataNeedsReview", count: 2) ?? "",
-            en.weeklyCoachReviewVerdictBody(code: "rebuildRhythm", count: 0) ?? "",
-            en.weeklyCoachReviewVerdictBody(code: "progressing", count: 0) ?? "",
+            zh.weeklyCoachReviewVerdictTitle(code: "dataNeedsReview"),
+            zh.weeklyCoachReviewVerdictTitle(code: "rebuildRhythm"),
+            zh.weeklyCoachReviewVerdictTitle(code: "progressing"),
+            en.weeklyCoachReviewVerdictTitle(code: "dataNeedsReview"),
+            en.weeklyCoachReviewVerdictTitle(code: "rebuildRhythm"),
+            en.weeklyCoachReviewVerdictTitle(code: "progressing"),
         ].joined(separator: " ").lowercased()
 
         let words = weeklyCopy.split(whereSeparator: { !$0.isLetter }).map(String.init)

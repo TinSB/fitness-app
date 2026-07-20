@@ -2,7 +2,9 @@ import Foundation
 import SwiftUI
 import RedeL10n
 
-/// Today 的非阻断更新信号。保持开放行结构，不把版本提醒做成促销卡或强制弹窗。
+/// Today 的非阻断更新信号（2026-07-20 收敛：三层块 → 单行开放行、移页底运维位）。
+/// 「新版本 X.Y · 查看 · 稍后」量级——仅「查看」用 ember2（ember 只标训练下一步的
+/// 唯一豁免动作），其余中性；7 天稍后语义与两个动作保留，a11y label 沿用完整文案。
 struct AppUpdateSignalStrip: View {
     let version: String
 
@@ -13,61 +15,58 @@ struct AppUpdateSignalStrip: View {
     private var s: RedeStrings { localeStore.strings }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Overline(text: s.appUpdateSignalOverline(version: version), color: .redeEmber2)
-
-            Text(s.appUpdateSignalTitle)
-                .font(.redeHeadline)
-                .tracking(RedeTracking.headline)
-                .foregroundStyle(Color.redeT1)
-                .fixedSize(horizontal: false, vertical: true)
-
-            ViewThatFits(in: .horizontal) {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 16) {
+                titleText
+                Spacer(minLength: 8)
+                viewUpdateAction
+                laterAction
+            }
+            // 大字号/窄屏：事实句单独一行，动作保持并排可点。
+            VStack(alignment: .leading, spacing: 2) {
+                titleText
                 HStack(spacing: 20) {
-                    viewUpdateAction
-                    laterAction
-                }
-                VStack(alignment: .leading, spacing: 2) {
                     viewUpdateAction
                     laterAction
                 }
             }
         }
         .padding(.horizontal, RedeSpace.page)
-        .padding(.vertical, 18)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .overlay(alignment: .leading) {
-            Rectangle()
-                .fill(Color.redeEmber)
-                .frame(width: 3)
-                .padding(.vertical, 14)
-        }
         .overlay(alignment: .top) {
             Rectangle().fill(Color.redeHair2).frame(height: 1)
-        }
-        .overlay(alignment: .bottom) {
-            Rectangle().fill(Color.redeHair2).frame(height: 1)
+                .padding(.horizontal, RedeSpace.page)
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("app-update-signal")
+    }
+
+    private var titleText: some View {
+        Text(s.appUpdateRowTitle(version: version))
+            .font(.redeCaption)
+            .monospacedDigit()
+            .foregroundStyle(Color.redeT3)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(minHeight: RedeShape.controlHeight)
     }
 
     private var viewUpdateAction: some View {
         Button {
             openURL(RedeAppUpdateRuntime.appStoreURL)
         } label: {
-            HStack(spacing: 7) {
-                Text(s.appUpdateViewUpdate)
+            HStack(spacing: 5) {
+                Text(s.appUpdateViewShort)
                 Image(systemName: "arrow.up.right")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 10, weight: .semibold))
                     .accessibilityHidden(true)
             }
-            .font(.redeSubhead)
+            .font(.redeCallout)
             .foregroundStyle(Color.redeEmber2)
             .frame(minHeight: RedeShape.controlHeight, alignment: .leading)
             .contentShape(Rectangle())
         }
         .buttonStyle(.redePressable)
+        .accessibilityLabel(s.appUpdateViewUpdate)
         .accessibilityIdentifier("app-update-view-update")
     }
 
@@ -76,8 +75,8 @@ struct AppUpdateSignalStrip: View {
             appUpdateModel.snoozeAvailableUpdate()
         } label: {
             Text(s.appUpdateLater)
-                .font(.redeBody)
-                .foregroundStyle(Color.redeT2)
+                .font(.redeCallout)
+                .foregroundStyle(Color.redeT3)
                 .frame(minHeight: RedeShape.controlHeight, alignment: .leading)
                 .contentShape(Rectangle())
         }

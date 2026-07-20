@@ -87,14 +87,17 @@ struct TodayTabView: View {
                     onTrailingTap: { showSettings = true }
                 )
 
+                todayContent
+
+                // FR-SE10 更新信号（2026-07-20 收敛）：低频运维信息移页底 receipt 区之后，
+                // 不再压在训练判断上方；设置页「版本与更新」常驻入口保证可发现性。
                 if let version = appUpdateModel.promptVersion {
                     AppUpdateSignalStrip(version: version)
+                        .padding(.top, 28)
                         .transition(reduceMotion
                             ? .opacity
-                            : .move(edge: .top).combined(with: .opacity))
+                            : .move(edge: .bottom).combined(with: .opacity))
                 }
-
-                todayContent
             }
             .padding(.bottom, RedeSpace.bottomBar)
         }

@@ -43,6 +43,16 @@ extension RedeStrings {
         updateT("新版本已就绪", "A New Version Is Ready")
     }
 
+    /// 今日页页底单行更新信号的事实句（2026-07-20 收敛：三层块 → 单行开放行）。
+    public func appUpdateRowTitle(version: String) -> String {
+        updateT("新版本 \(version)", "New version \(version)")
+    }
+
+    /// 单行信号里的「查看」短动作；完整语义（查看更新）保留在 a11y label 与设置页。
+    public var appUpdateViewShort: String {
+        updateT("查看", "View")
+    }
+
     public var appUpdateViewUpdate: String {
         updateT("查看更新", "View Update")
     }
