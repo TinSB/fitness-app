@@ -1004,31 +1004,36 @@ struct TrainTabView: View {
             ? flow.plan.exercises[flow.exerciseIndex + 1] : nil
         if let next {
             let name = localeStore.exerciseName(next.exerciseId)
+            // 组次预告「3 × 8」（2026-07-20 NIT 回补）：straight sets 展开，全组同次数，
+            // 取组数 × 首组目标次数；纯数字无文案，中英同形。空组保守不显示。
+            let setsPreview = next.sets.first.map { "\(next.sets.count) × \($0.targetReps)" }
             let canOpen = !flow.moveToCurrentCandidates.isEmpty
+            let a11yLabel = setsPreview.map { "\(s.sessionOrderEntry), \(name), \($0)" }
+                ?? "\(s.sessionOrderEntry), \(name)"
             if canOpen {
                 Button(action: {
                     sessionOrderUpdateFailed = false
                     showSessionOrderSheet = true
                     actionPulse += 1
                 }) {
-                    sessionOrderEntryContent(name: name, showsDisclosure: true)
+                    sessionOrderEntryContent(name: name, setsPreview: setsPreview, showsDisclosure: true)
                 }
                 .buttonStyle(.redePressableRow)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(s.sessionOrderEntry), \(name)")
+                .accessibilityLabel(a11yLabel)
                 .accessibilityHint(s.sessionOrderOpenHint)
                 .accessibilityIdentifier("train-session-order-open")
             } else {
-                sessionOrderEntryContent(name: name, showsDisclosure: false)
+                sessionOrderEntryContent(name: name, setsPreview: setsPreview, showsDisclosure: false)
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("\(s.sessionOrderEntry), \(name)")
+                    .accessibilityLabel(a11yLabel)
                     .accessibilityIdentifier("train-session-order-next-static")
             }
         }
     }
 
     @ViewBuilder
-    private func sessionOrderEntryContent(name: String, showsDisclosure: Bool) -> some View {
+    private func sessionOrderEntryContent(name: String, setsPreview: String?, showsDisclosure: Bool) -> some View {
         if dynamicTypeSize.isAccessibilitySize {
             VStack(alignment: .leading, spacing: 4) {
                 Text(s.sessionOrderEntry)
@@ -1039,6 +1044,11 @@ struct TrainTabView: View {
                         .font(.redeBody)
                         .foregroundStyle(Color.redeT2)
                         .fixedSize(horizontal: false, vertical: true)
+                    if let setsPreview {
+                        Text("· \(setsPreview)")
+                            .font(.redeCaption).monospacedDigit()
+                            .foregroundStyle(Color.redeT4)
+                    }
                     Spacer(minLength: 8)
                     if showsDisclosure { sessionOrderChevron }
                 }
@@ -1059,6 +1069,12 @@ struct TrainTabView: View {
                     .foregroundStyle(Color.redeT2)
                     .multilineTextAlignment(.trailing)
                     .fixedSize(horizontal: false, vertical: true)
+                if let setsPreview {
+                    Text("· \(setsPreview)")
+                        .font(.redeCaption).monospacedDigit()
+                        .foregroundStyle(Color.redeT4)
+                        .fixedSize(horizontal: true, vertical: false)
+                }
                 if showsDisclosure { sessionOrderChevron }
             }
             .frame(maxWidth: .infinity, minHeight: 44)
