@@ -45,7 +45,6 @@ struct SettingsSheet: View {
     @State private var showSubscriptionPage = false
     @State private var showWhatsNew = false
     @State private var pendingCoachAction: WeeklyCoachReviewAction?
-    @State private var subscriptionManagementFailed = false
     /// 行内单题编辑（方向 A 拍板 2026-06-10：改哪题进哪题，退役整流重跑）。
     @State private var editing: PlateQuestion?
     /// 最近一次保存的变更收据（铭牌下方替换提示行）。
@@ -60,9 +59,6 @@ struct SettingsSheet: View {
     private let feedbackAddress = "hello@rede.fit"
 
     private var s: RedeStrings { store.strings }
-    private var subscriptionPagePresentation: SubscriptionPagePresentation {
-        SubscriptionPagePolicy.presentation(for: subscriptionModel.launchDecision)
-    }
 
     var body: some View {
         NavigationStack {
@@ -177,9 +173,6 @@ struct SettingsSheet: View {
         } message: {
             Text(s.settingsExportFailedBody)
         }
-        .alert(s.settingsSubscriptionOperationFailed, isPresented: $subscriptionManagementFailed) {
-            Button(s.settingsExportFailedConfirm, role: .cancel) {}
-        }
         .task {
             // 审查 MAJOR-2（M5-2）：清掉历史保存错误——本页只显示「设置期间」的写入错误（设置专属字段，隔离于训练 saveErrorText）。
             sessionStore.settingsSaveErrorText = nil
@@ -241,6 +234,10 @@ struct SettingsSheet: View {
     }
 
     // MARK: - FR-SE9 / FR-SUB2 方案与订阅
+    // 2026-07-20 收敛：设置页只留「方案事实行 + 查看 Rede Coach 入口」两行。
+    // 恢复购买/隐私/条款依赖 Coach 页购买面的 Apple 原生同款控件（RedeSubscriptionStoreView
+    // 的 .storeButton(restorePurchases) + policy destinations）；「管理订阅」移到 Coach 页。
+    // entitlement 矩阵语义不变——只动行的归属，不动门禁条件。
 
     private var subscriptionSection: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -260,6 +257,7 @@ struct SettingsSheet: View {
             }
             .frame(minHeight: RedeShape.controlHeight)
 
+            // 例外态注解（非控件行）：宽限期/无法核对必须如实可见，常规态零小字。
             if let subscriptionStatusNote {
                 Text(subscriptionStatusNote)
                     .font(.redeCaption)
@@ -272,42 +270,6 @@ struct SettingsSheet: View {
                 systemImage: "sparkles"
             ) {
                 showSubscriptionPage = true
-            }
-
-            if subscriptionPagePresentation.showsTransactionControls {
-                subscriptionActionRow(
-                    title: s.settingsSubscriptionRestore,
-                    systemImage: "arrow.clockwise"
-                ) {
-                    Task { await subscriptionModel.restore() }
-                }
-                .disabled(subscriptionOperationBusy)
-
-                subscriptionActionRow(
-                    title: s.settingsSubscriptionManage,
-                    systemImage: "rectangle.portrait.and.arrow.right"
-                ) {
-                    manageSubscriptions()
-                }
-
-                policyLinks
-            }
-
-            if case .unknown = subscriptionModel.entitlement {
-                Button(s.settingsSubscriptionRetry) {
-                    Task { await subscriptionModel.refresh() }
-                }
-                .font(.redeCaption)
-                .foregroundStyle(Color.redeT2)
-                .buttonStyle(.redePressable)
-            }
-
-            if let operationNote = subscriptionOperationNote {
-                Text(operationNote)
-                    .font(.redeCaption)
-                    .foregroundStyle(subscriptionOperationIsFailure ? Color.redeRisk : Color.redeT3)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("subscription-operation-note")
             }
         }
     }
@@ -325,47 +287,16 @@ struct SettingsSheet: View {
         }
     }
 
+    /// 仅例外态显示：宽限期（billingState 唯一展示面）与无法核对。
+    /// verified/checking 的常规注解按两行收敛裁掉（spinner/tier 行已表达）。
     private var subscriptionStatusNote: String? {
         switch subscriptionModel.entitlement {
-        case .checking:
-            s.settingsSubscriptionChecking
-        case .freeCore:
+        case .checking, .freeCore:
             nil
         case .unknown:
             s.settingsSubscriptionUnknown
         case .paidCoach(_, let billingState):
-            billingState == .gracePeriod
-                ? s.settingsSubscriptionGrace
-                : s.settingsSubscriptionVerified
-        }
-    }
-
-    private var subscriptionOperationBusy: Bool {
-        switch subscriptionModel.operation {
-        case .purchasing, .restoring: true
-        default: false
-        }
-    }
-
-    private var subscriptionOperationIsFailure: Bool {
-        if case .failed = subscriptionModel.operation { return true }
-        return false
-    }
-
-    private var subscriptionOperationNote: String? {
-        switch subscriptionModel.operation {
-        case .idle, .purchasing:
-            nil
-        case .restoring:
-            s.settingsSubscriptionChecking
-        case .pending:
-            s.settingsSubscriptionPending
-        case .succeeded(.restore):
-            s.settingsSubscriptionRestoreSuccess
-        case .succeeded(.purchase):
-            s.settingsSubscriptionVerified
-        case .failed:
-            s.settingsSubscriptionOperationFailed
+            billingState == .gracePeriod ? s.settingsSubscriptionGrace : nil
         }
     }
 
@@ -393,44 +324,6 @@ struct SettingsSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.redePressableRow)
-    }
-
-    private var policyLinks: some View {
-        HStack(spacing: 16) {
-            if let privacyURL = subscriptionModel.configuration.privacyPolicyURL {
-                Button(s.settingsPrivacy) { openURL(privacyURL) }
-            }
-            if let termsURL = subscriptionModel.configuration.termsOfUseURL {
-                Button(s.settingsSubscriptionTerms) { openURL(termsURL) }
-            }
-        }
-        .font(.redeCaption)
-        .foregroundStyle(Color.redeT3)
-        .buttonStyle(.redePressable)
-    }
-
-    private func manageSubscriptions() {
-        guard let scene = UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene })
-            .first(where: { $0.activationState == .foregroundActive }) else {
-            subscriptionManagementFailed = true
-            return
-        }
-        let groupID: String? = {
-            guard case .available(let products) = subscriptionModel.catalog else { return nil }
-            return products.first?.subscriptionGroupID
-        }()
-        Task {
-            do {
-                try await RedeSubscriptionManagement.show(
-                    in: scene,
-                    subscriptionGroupID: groupID
-                )
-                await subscriptionModel.refresh()
-            } catch {
-                subscriptionManagementFailed = true
-            }
-        }
     }
 
     // MARK: - K7 数据（FR-SE6 兑现）：只保留自解释的导出行；owner 2026-07-18
@@ -1085,6 +978,8 @@ private struct SubscriptionPageSheet: View {
     @Environment(SubscriptionModel.self) private var subscriptionModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// 「管理订阅」失败提示（2026-07-20 自设置页移入：事务控件聚到 Coach 页）。
+    @State private var managementFailed = false
 
     private var s: RedeStrings { localeStore.strings }
     private var products: [SubscriptionProduct] {
@@ -1142,6 +1037,12 @@ private struct SubscriptionPageSheet: View {
                 // Access gate and launch gate are intentionally separate: a verified subscriber
                 // keeps Paid Coach even when product catalog/purchase presentation is unavailable.
                 WeeklyCoachReviewView(onAction: onCoachAction)
+                // 付费态页脚「管理订阅」（自设置页移入）：沿用既有 launch-gate 条件
+                //（与原设置页 showsTransactionControls 同门禁），矩阵语义不变。
+                if SubscriptionPagePolicy.presentation(for: subscriptionModel.launchDecision)
+                    .showsTransactionControls {
+                    manageSubscriptionsFooter
+                }
             case .entitlement(let presentation):
                 entitlementContent(presentation)
             case .subscription(let presentation):
@@ -1156,8 +1057,63 @@ private struct SubscriptionPageSheet: View {
         .background(Color.redeBase.ignoresSafeArea())
         .preferredColorScheme(.dark)
         .accessibilityIdentifier("subscription-page")
+        .alert(s.settingsSubscriptionOperationFailed, isPresented: $managementFailed) {
+            Button(s.settingsExportFailedConfirm, role: .cancel) {}
+        }
         .onDisappear {
             Task { await subscriptionModel.refresh() }
+        }
+    }
+
+    /// 「管理订阅」行：付费态挂 WeeklyCoachReviewView 页脚；free+store 态挂购买面
+    /// marketing shell 底部。进入 Apple 管理面，返回后刷新权益。
+    private var manageSubscriptionsFooter: some View {
+        Button {
+            manageSubscriptions()
+        } label: {
+            HStack(spacing: 8) {
+                Text(s.settingsSubscriptionManage)
+                    .font(.redeBody)
+                    .foregroundStyle(Color.redeT2)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.redeT4)
+                    .accessibilityHidden(true)
+            }
+            .padding(.horizontal, RedeSpace.page)
+            .frame(minHeight: RedeShape.controlHeight)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.redePressableRow)
+        .overlay(alignment: .top) {
+            Rectangle().fill(Color.redeHair2).frame(height: 1)
+                .padding(.horizontal, RedeSpace.page)
+        }
+        .accessibilityIdentifier("subscription-page-manage")
+    }
+
+    private func manageSubscriptions() {
+        guard let scene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first(where: { $0.activationState == .foregroundActive }) else {
+            managementFailed = true
+            return
+        }
+        let groupID: String? = {
+            guard case .available(let products) = subscriptionModel.catalog else { return nil }
+            return products.first?.subscriptionGroupID
+        }()
+        Task {
+            do {
+                try await RedeSubscriptionManagement.show(
+                    in: scene,
+                    subscriptionGroupID: groupID
+                )
+                await subscriptionModel.refresh()
+            } catch {
+                managementFailed = true
+            }
         }
     }
 
@@ -1251,6 +1207,26 @@ private struct SubscriptionPageSheet: View {
                         .font(.redeBody)
                         .foregroundStyle(Color.redeT1)
                 }
+                // free+store 态「管理订阅」（自设置页移入）：购买面 marketing shell 底部。
+                // Apple 原生恢复购买/隐私/条款控件由 RedeSubscriptionStoreView 自带。
+                Button {
+                    manageSubscriptions()
+                } label: {
+                    HStack(spacing: 8) {
+                        Text(s.settingsSubscriptionManage)
+                            .font(.redeCallout)
+                            .foregroundStyle(Color.redeT3)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(Color.redeT4)
+                            .accessibilityHidden(true)
+                    }
+                    .frame(minHeight: RedeShape.controlHeight)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.redePressableRow)
+                .accessibilityIdentifier("subscription-page-manage")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, 12)
