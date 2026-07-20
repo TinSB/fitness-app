@@ -8,10 +8,6 @@ extension RedeStrings {
         weeklyT("每周教练复盘", "Weekly Coach Review")
     }
 
-    public var weeklyCoachReviewEvidenceTitle: String {
-        weeklyT("依据", "Evidence")
-    }
-
     public func weeklyCoachReviewIssue(weekOfYear: Int) -> String {
         "Weekly Review / Week \(weekOfYear)"
     }
@@ -144,10 +140,6 @@ extension RedeStrings {
         weeklyT("重新读取", "Try again")
     }
 
-    public func weeklyCoachReviewWeek(dateText: String) -> String {
-        weeklyT("复盘周 · \(dateText)", "Week of \(dateText)")
-    }
-
     public func weeklyCoachReviewVerdictTitle(code: String) -> String {
         switch code {
         case "dataNeedsReview":
@@ -180,28 +172,6 @@ extension RedeStrings {
             return weeklyT("关键动作，\n回落。", "Key lift,\neasing.")
         default:
             return weeklyT("继续积累，\n再判断。", "Keep building.\nThen call the trend.")
-        }
-    }
-
-    public func weeklyCoachReviewVerdictBody(code: String, count: Int) -> String? {
-        switch code {
-        case "dataNeedsReview":
-            return weeklyT("上周有 \(count) 条记录需要确认，核对后再读趋势",
-                           "Last week has \(count) entries to confirm before reading the trend")
-        case "rebuildRhythm":
-            return weeklyT("上周训练节奏比近期少至少一天，下一次训练从今日接上",
-                           "Last week was at least one training day below your recent rhythm. Pick up from Today")
-        case "progressing":
-            return weeklyT("可比训练记录显示关键动作上升",
-                           "Comparable training records show your key lift moving up")
-        case "holding":
-            return weeklyT("可比训练记录显示关键动作保持稳定",
-                           "Comparable training records show your key lift holding steady")
-        case "easing":
-            return weeklyT("可比训练记录显示关键动作有所回落",
-                           "Comparable training records show your key lift easing back")
-        default:
-            return nil
         }
     }
 
