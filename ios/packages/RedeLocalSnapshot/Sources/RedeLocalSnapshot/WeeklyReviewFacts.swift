@@ -45,6 +45,12 @@ public enum WeeklyReviewFactsBuilder {
         facts: [String: ExerciseStatsFacts] = [:],
         todayISO: String
     ) -> WeeklyReviewFacts? {
+        // 归一（2026-07-20 加固）：clean 层合法保留长 ISO 串（与 K8 行/TodayCompletedDigest
+        // 同姿态），此处 prefix(10) 归一后再交给严格日期校验——含内部 ProgressSnapshotBuilder
+        // 的周桶/趋势重建，消灭「免费行练 1 天 vs 付费页没记录」的同屏分叉。
+        // 归一后仍非法的记录照旧逐条跳过，不放松校验。
+        let allSessions = normalized(allSessions)
+        let cleanSessions = normalized(cleanSessions)
         guard let currentWeekStartISO = SnapshotDayMath.isoWeekStart(of: todayISO),
               let currentWeekStartDay = SnapshotDayMath.dayNumber(of: currentWeekStartISO) else {
             return nil
@@ -84,6 +90,19 @@ public enum WeeklyReviewFactsBuilder {
             ),
             keyLiftTrend: keyTrend
         )
+    }
+
+    /// dateISO 超过 10 位时截到本地日（yyyy-MM-dd）；短日期原样返回，不做二次分配。
+    private static func normalized(_ sessions: [SnapshotSessionRecord]) -> [SnapshotSessionRecord] {
+        sessions.map { record in
+            guard record.dateISO.count > 10 else { return record }
+            return SnapshotSessionRecord(
+                id: record.id,
+                dateISO: String(record.dateISO.prefix(10)),
+                exercises: record.exercises,
+                durationMinutes: record.durationMinutes
+            )
+        }
     }
 
     private static func recentMedian(

@@ -137,4 +137,37 @@ final class WeeklyReviewFactsBuilderTests: XCTestCase {
             todayISO: "2026-02-30"
         ))
     }
+
+    /// 2026-07-20 加固锁：clean 层合法保留长 ISO 串（K8 行/TodayCompletedDigest 同一现实），
+    /// builder 必须 prefix(10) 归一后再严格校验——否则免费周一行认训练日、付费复盘页说没记录。
+    func testLongISOSessionDatesAreNormalizedNotDropped() throws {
+        let short = [
+            session("a", "2026-07-06", weight: 100, reps: 5),
+            session("b", "2026-07-09", weight: 50, reps: 10),
+        ]
+        let long = [
+            session("a", "2026-07-06T08:30:00Z", weight: 100, reps: 5),
+            session("b", "2026-07-09T21:15:00+08:00", weight: 50, reps: 10),
+        ]
+
+        let expected = try XCTUnwrap(WeeklyReviewFactsBuilder.build(
+            allSessions: short, cleanSessions: short, facts: facts, todayISO: "2026-07-15"))
+        let normalized = try XCTUnwrap(WeeklyReviewFactsBuilder.build(
+            allSessions: long, cleanSessions: long, facts: facts, todayISO: "2026-07-15"))
+
+        // 训练日/场次/clean 吨位/趋势必须与短日期完全一致——同屏两个消费面不允许分叉。
+        XCTAssertEqual(normalized, expected)
+        XCTAssertEqual(normalized.trainingDayCount, 2)
+        XCTAssertEqual(normalized.sessionCount, 2)
+        XCTAssertEqual(normalized.cleanVolumeKg, 1_000, accuracy: 0.001)
+
+        // 归一只解长 ISO，不放松严格校验：归一后仍非法的日期照旧整条跳过。
+        let withInvalid = long + [session("bad", "2026-02-30T09:00:00Z", weight: 999, reps: 1)]
+        XCTAssertEqual(
+            try XCTUnwrap(WeeklyReviewFactsBuilder.build(
+                allSessions: withInvalid, cleanSessions: withInvalid,
+                facts: facts, todayISO: "2026-07-15")),
+            expected
+        )
+    }
 }

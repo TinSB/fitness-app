@@ -39,6 +39,36 @@ enum WeeklyCoachReviewFindingScope {
     }
 }
 
+/// TrendAssessment → WeeklyCoachLiftSignal 的唯一映射（2026-07-20 自私有 loader 提炼）。
+/// 0kg 假精度防线：校准态 deltaKg 恒为 0（TrendAssessment 合同），若透传会在付费页
+/// 渲染成「+0 kg」假结论——calibrating 必须携带 nil，由测试锁死（防线被删测试即红）。
+enum WeeklyCoachLiftSignalPolicy {
+    static func signal(exerciseId: String, call: TrendCall, deltaKg: Double) -> WeeklyCoachLiftSignal {
+        WeeklyCoachLiftSignal(
+            exerciseId: exerciseId,
+            call: liftCall(call),
+            deltaKg: call == .calibrating ? nil : deltaKg
+        )
+    }
+
+    static func signal(from assessment: TrendAssessment) -> WeeklyCoachLiftSignal {
+        signal(
+            exerciseId: assessment.exerciseId,
+            call: assessment.call,
+            deltaKg: assessment.deltaKg
+        )
+    }
+
+    static func liftCall(_ call: TrendCall) -> WeeklyCoachLiftCall {
+        switch call {
+        case .up: .up
+        case .flat: .flat
+        case .down: .down
+        case .calibrating: .calibrating
+        }
+    }
+}
+
 /// V2 只重排展示层的事实优先级；typed verdict、evidence 与 action 原样保留。
 enum WeeklyCoachReviewMemoPolicy {
     static func spotlightEvidenceIndex(in review: WeeklyCoachReview) -> Int {
@@ -199,13 +229,7 @@ private enum WeeklyCoachReviewLoader {
         ) else {
             return .unreadable
         }
-        let lift = facts.keyLiftTrend.map { assessment in
-            WeeklyCoachLiftSignal(
-                exerciseId: assessment.exerciseId,
-                call: liftCall(assessment.call),
-                deltaKg: assessment.call == .calibrating ? nil : assessment.deltaKg
-            )
-        }
+        let lift = facts.keyLiftTrend.map(WeeklyCoachLiftSignalPolicy.signal(from:))
         let input = WeeklyCoachReviewInput(
             reviewWeekStartISO: facts.reviewWeekStartISO,
             trainingDayCount: facts.trainingDayCount,
@@ -216,15 +240,6 @@ private enum WeeklyCoachReviewLoader {
             dataFindingCount: findingCount
         )
         return .ready(WeeklyCoachReviewEngine.evaluate(input))
-    }
-
-    private static func liftCall(_ call: TrendCall) -> WeeklyCoachLiftCall {
-        switch call {
-        case .up: .up
-        case .flat: .flat
-        case .down: .down
-        case .calibrating: .calibrating
-        }
     }
 
     #if DEBUG

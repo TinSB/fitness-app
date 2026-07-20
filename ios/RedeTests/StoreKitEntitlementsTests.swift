@@ -5,6 +5,7 @@ import XCTest
 import RedeDataHealth
 import RedeEntitlements
 import RedeL10n
+import RedeLocalSnapshot
 import RedeTrainingDecision
 
 /// StoreKitTest owns one process-global environment. Keep the full lifecycle in
@@ -317,6 +318,39 @@ final class StoreKitEntitlementsTests: XCTestCase {
             action: .viewProgress
         )
         XCTAssertEqual(WeeklyCoachReviewMemoPolicy.spotlightEvidenceIndex(in: calibratingLift), 1)
+    }
+
+    /// 0kg 假精度防线（2026-07-20 加固）：TrendAssessment 合同里 calibrating 的 deltaKg
+    /// 恒为 0；映射若把它透传，付费页会渲染「+0 kg」假结论。防线现为
+    /// WeeklyCoachLiftSignalPolicy 内的唯一映射——删掉 calibrating→nil 守卫本测试即红。
+    func testWeeklyReviewLiftSignalPolicyDropsCalibratingZeroDelta() {
+        let calibrating = WeeklyCoachLiftSignalPolicy.signal(
+            exerciseId: "bench-press",
+            call: .calibrating,
+            deltaKg: 0
+        )
+        XCTAssertEqual(calibrating.call, .calibrating)
+        XCTAssertNil(
+            calibrating.deltaKg,
+            "A calibrating trend must not surface its placeholder 0 kg as a real delta"
+        )
+
+        // 有真实差值的趋势态原样透传——防线只挡校准态占位值。
+        let up = WeeklyCoachLiftSignalPolicy.signal(
+            exerciseId: "bench-press",
+            call: .up,
+            deltaKg: 2.5
+        )
+        XCTAssertEqual(up.call, .up)
+        XCTAssertEqual(up.deltaKg, 2.5)
+
+        let flatZero = WeeklyCoachLiftSignalPolicy.signal(
+            exerciseId: "bench-press",
+            call: .flat,
+            deltaKg: 0
+        )
+        XCTAssertEqual(flatZero.call, .flat)
+        XCTAssertEqual(flatZero.deltaKg, 0, "A genuine flat window keeps its honest 0 delta")
     }
 
     func testWeeklyReviewDatePolicyUsesISOWeekYearAndHandlesCrossYearRange() {
