@@ -1238,7 +1238,7 @@ Account/sync/cloud settings 不进入第一版干净实现,不得做成无能力
 
 **派生与权益边界。** V1 每次打开从 canonical 历史重算，不持久化复盘归档、已读状态、周初计划快照或输入摘要，不 bump schema；用户修正历史后结果随真实数据更新。Paid access 与 purchase launch gate 分离：有效 active/grace entitlement 可看复盘，即使商品目录/政策临时不可用；free/checking/unknown/expired/refunded 不得看到付费结论，页面加载期间 entitlement 变化要取消/清空结果。引擎永远不知道用户是否付费。
 
-**验证。** 包测试覆盖零历史/仅本周、上周零场/一场、同日多场去重、跨年与时区、坏数据优先、up/flat/down、吨位升而主项持平、非法数值 fail-safe、依据数量与稳定顺序；app 测试覆盖 active/grace/free/checking/unknown/expired/refunded、已验证 Paid + catalog failure、Free Core 不可阻断和加载竞态。Simulator 必须真走中英文 Rede Coach → 复盘 → 依据 → 行动，并覆盖数据不足/坏数据、Dynamic Type、VoiceOver、Reduce Motion、杀进程重开确定性；调试 fixture 只算本地 L3 UI 证据，StoreKitTest 与 Sandbox/TestFlight 仍是独立收费发布门禁。
+**验证。** 包测试覆盖零历史/仅本周、上周零场/一场、同日多场去重、长 ISO 日期归一、坏数据优先、up/flat/down、吨位升而主项持平、非法数值 fail-safe、依据数量与稳定顺序（包层是纯 civil-date 日期数学，无时区依赖；跨年周范围由 app-hosted 日期策略测试覆盖——2026-07-20 纠偏，原「跨年与时区」表述与测试归属不符）；app 测试覆盖 active/grace/free/checking/unknown/expired/refunded、已验证 Paid + catalog failure、Free Core 不可阻断、加载竞态、ISO week-year 跨年日期展示和 calibrating 态 0kg 假精度防线。Simulator 必须真走中英文 Rede Coach → 复盘 → 依据 → 行动，并覆盖数据不足/坏数据、Dynamic Type、VoiceOver、Reduce Motion、杀进程重开确定性；调试 fixture 只算本地 L3 UI 证据，StoreKitTest 与 Sandbox/TestFlight 仍是独立收费发布门禁。
 
 **实现状态（2026-07-18）。** `WeeklyCoachReviewEngine`、上一完整周 `WeeklyReviewFactsBuilder`、双语 `RedeL10n` renderer、Rede Coach 页面与 Today/Progress/data-review 导航均已落地。零场固定进入无训练空态；只有一场时无论是否存在历史都只给事实并保持校准，绝不调用进步；训练量只作依据。`RedeDataHealth` 为 dropped session/exercise/set 保留可归周的日期，上一完整周内的 dropped data 与 suspect set 会抢占趋势；任一 dropped training issue 无法定位日期时，页面直接进入不可读态，不静默忽略后输出正向结论。有效 active/grace entitlement 与 purchase launch gate 已解耦，已验证用户在商品/政策不可用时仍可看复盘；checking/unknown 即使目录 ready 也不会露出购买面，过期状态按 Free Core 显示，其他权益态只看诚实的订阅状态页。
 
@@ -1258,7 +1258,15 @@ Account/sync/cloud settings 不进入第一版干净实现,不得做成无能力
 
 **验收。** package tests 覆盖版本顺序、非法输入、24h 边界、版本隔离七天 snooze 与更高版本绕过；app tests 用假 client/clock/store 覆盖精确响应身份、duplicate/redirect 拒绝、双向并发合并、自动/手动失败与状态代次、主动绕过自动节流、首次安装、当前发布版本内置文案守卫、升级一次性 What's New，以及 Later 后观察面立即失效，禁止依赖实时网络。iPhone 17 Pro / iOS 26.5 Simulator 已真实点击更新可用 → Later、已最新、主动失败、设置三行、What's New 和中英文流程；最大 Dynamic Type 下三条内容与两个更新动作仍可达，训练态启动未被打断；独立临时 Simulator 的首次安装只显示 onboarding、不弹 What's New。真实点击曾复现“Later 已写 receipt 但提示仍留在屏幕”的观察失效问题，失败测试与最小修复后同一路径确认提示立即消失。所有截图和 launch fixture 只算本地 L3 证据，不替代实时 Apple 目录、App Store 传播或 TestFlight 验收。
 
-## 9. Share / Growth System
+**展示收敛（2026-07-20）。** 今日页更新信号从 overline+headline+双动作三层块收敛为页底 receipt 区之后的**单行开放行**「新版本 X.Y · 查看 · 稍后」（caption/callout 级；仅「查看」用 ember2，其余中性——ember 只标训练下一步的唯一豁免动作）。七天稍后语义、两个动作、a11y label（完整「查看更新」）与 identifier 全部保留；低频运维信息不再压在训练判断上方，设置页「版本与更新」常驻入口保证可发现性。
+
+### 8.6 App Store 评分请求（Review Prompt · FR-SE11）
+
+**用户结果。** 用户在刚保存完一次训练——全程最高满意度时刻——可能看到一次系统「给 Rede 评分」弹窗；刚装的新用户绝不会被问，同一版本绝不重复问。弹窗是 Apple 系统面（无自定义文案、无自绘 UI），是否真正展示由系统决定（Apple 另限每 365 天 ≤3 次）。
+
+**纯策略与副作用边界。** 何时该问归 `RedeDomain/ReviewPromptPolicy`（无依赖纯逻辑，`swift test` 9 条锁定）：① 清洗后累计完成场次 ≥3（`minimumCompletedSessions`，初始化钳制 ≥1）；② 每版本最多一次——`lastRequestedVersion != currentVersion` 才有资格，发新版本重新有资格；③ 当前版本读取失败（空串）绝不弹。副作用归 app 壳 `TrainTabView`：完成落盘成功后取值调用 `requestReview`；完成场数复用清洗后 `completedSessionCount`（与 CoachActionEngine 同口径，不另设持久化计数器）；只持久化 `reviewPrompt.lastRequestedVersion`（`UserDefaults`，可丢弃 UI receipt，不进 canonical/导出/引擎）。在请求「之前」即记录本版本已问——系统抑制弹窗也不会同版本重复打扰。
+
+**验收。** 策略层 9 条单测覆盖阈值上下界、每版本一次、旧版本可再问、空版本不弹与初始化钳制；端到端门控（第 3 场从空翻成当前版本号且此后不变）因 app 壳无测试 target，登记为 1.9 提交前手动验收项（TestFlight 验收清单 M1）。
 
 分享系统是 Rede 的商业化增长回路,负责把训练成果、肌群等级、PR、均衡发展和可执行计划转化为用户愿意主动传播的隐私安全资产。它不是第一版社交网络,也不是公开排行榜。第一版干净实现的 S0 边界是本地生成分享卡、调用 iOS Share Sheet、附带通用 App Store / landing link;账号、云端个人页、公开 feed、归因链接、远程模板库和好友关系都属于后续 Master-approved implementation slice。
 
