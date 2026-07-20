@@ -194,6 +194,9 @@ struct SettingsSheet: View {
             }
             // K7 截图钩子（同上先例）：-autoExportData 打开设置即触发导出（simctl 无法点击 UI）。
             if args.contains("-autoExportData") { exportData() }
+            // 截图钩子（2026-07-20，同上先例）：-autoOpenCoachPage 打开 Rede Coach 页
+            //（配 -redePaidCoachActiveFixture / -weeklyCoachReviewFixture 拍订阅/复盘态）。
+            if args.contains("-autoOpenCoachPage") { showSubscriptionPage = true }
             // FR-SE10 验证钩子：打开设置后走真实手动检查路径，失败态也必须可见。
             if args.contains("-manualCheckAppUpdate") { await appUpdateModel.checkManually() }
         }

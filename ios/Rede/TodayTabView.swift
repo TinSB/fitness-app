@@ -76,6 +76,10 @@ struct TodayTabView: View {
 
     private var s: RedeStrings { localeStore.strings }
 
+    // 截图钩子（沿 -expandTodayReason 先例）：-todayStartAtBottom 打开即停在页底
+    //（simctl 无法交互滚动；供实拍页底更新行等低频区）。
+    private static let startAtBottom = ProcessInfo.processInfo.arguments.contains("-todayStartAtBottom")
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -101,6 +105,7 @@ struct TodayTabView: View {
             }
             .padding(.bottom, RedeSpace.bottomBar)
         }
+        .defaultScrollAnchor(Self.startAtBottom ? .bottom : .top)
         .background(Color.redeBase)
         // 切片6c：撤销条挂今日页根、避开 tab 栏；独立于教练卡，卡 reload 消失也不丢撤销入口。
         .overlay(alignment: .bottom) {
