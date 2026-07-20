@@ -51,10 +51,15 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             build
 
-      - name: Verify production subscription fails closed
+      - name: App-hosted policy tests (fail-closed subscription + review + update + drafts)
         shell: bash
         run: |
           set -euo pipefail
+          # 2026-07-20: keep this -only-testing list identical to .claude/quality-gate.cmd.
+          # Explicitly excluded (red, release blocker — not skipped):
+          #   StoreKitEntitlementsTests/testLocalCatalogPurchasePendingRestoreRenewalExpirationAndRefund
+          #   (SKInternalErrorDomain Code=3 saving the .storekit config on Xcode 26.6 + iOS 26.5;
+          #   unblock steps: docs/工作记录/2026-07-20-purchase-gate-checklist.md item ①)
           REDE_SIMULATOR_ID="$(
             xcrun simctl list devices available |
               awk -F '[()]' '/iPhone/ && $2 ~ /^[0-9A-F-]+$/ { print $2; exit }'
@@ -68,4 +73,13 @@ jobs:
             -scheme Rede \
             -destination "platform=iOS Simulator,id=$REDE_SIMULATOR_ID" \
             -only-testing:RedeTests/StoreKitEntitlementsTests/testProductionConfigurationFailsClosedWithoutApprovedProducts \
+            -only-testing:RedeTests/StoreKitEntitlementsTests/testDebugPaidFixtureUnlocksFeatureWithoutOpeningPurchaseGate \
+            -only-testing:RedeTests/StoreKitEntitlementsTests/testRedeCoachPageContentCoversEntitlementAndLaunchGateMatrix \
+            -only-testing:RedeTests/StoreKitEntitlementsTests/testReadyCatalogDoesNotBypassDelayedEntitlementCheck \
+            -only-testing:RedeTests/StoreKitEntitlementsTests/testWeeklyReviewFindingScopeCountsWeekDropsAndFailsClosedWhenDateIsUnknown \
+            -only-testing:RedeTests/StoreKitEntitlementsTests/testWeeklyReviewMemoPolicyPromotesOneTypedFactAndKeepsTheOtherTwo \
+            -only-testing:RedeTests/StoreKitEntitlementsTests/testWeeklyReviewDatePolicyUsesISOWeekYearAndHandlesCrossYearRange \
+            -only-testing:RedeTests/StoreKitEntitlementsTests/testWeeklyReviewLiftSignalPolicyDropsCalibratingZeroDelta \
+            -only-testing:RedeTests/SessionStoreDraftTests \
+            -only-testing:RedeTests/AppUpdateRuntimeTests \
             test

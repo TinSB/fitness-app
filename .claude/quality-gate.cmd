@@ -50,7 +50,15 @@ xcodebuild \
   -destination 'generic/platform=iOS Simulator' \
   build
 
-echo "== xcodebuild: subscription + Weekly Coach Review + app update policy tests =="
+echo "== xcodebuild: subscription + Weekly Coach Review + app update + session draft tests =="
+# 2026-07-20 收口：白名单补入 SessionStoreDraftTests（FR-TR14 S1 durable draft，5 条）
+# 与周复盘政策测试（MemoPolicy/DatePolicy/LiftSignalPolicy）。保持与 rede-ci.yml 同一份清单。
+#
+# 显式排除（红测试，不进清单）：
+#   StoreKitEntitlementsTests/testLocalCatalogPurchasePendingRestoreRenewalExpirationAndRefund
+#   blocker：Xcode 26.6 + iOS 26.5 Simulator 保存 .storekit 配置报 SKInternalErrorDomain
+#   Code=3（CHANGELOG 2026-07-18 已登记为发布阻断，非跳过）。解除条件与开闸动作序列见
+#   docs/工作记录/2026-07-20-purchase-gate-checklist.md（开闸六项之①，解除时同 PR 进清单）。
 REDE_SIMULATOR_ID="$(
   xcrun simctl list devices available |
     awk -F '[()]' '/iPhone/ && $2 ~ /^[0-9A-F-]+$/ { print $2; exit }'
@@ -68,6 +76,10 @@ xcodebuild \
   -only-testing:RedeTests/StoreKitEntitlementsTests/testRedeCoachPageContentCoversEntitlementAndLaunchGateMatrix \
   -only-testing:RedeTests/StoreKitEntitlementsTests/testReadyCatalogDoesNotBypassDelayedEntitlementCheck \
   -only-testing:RedeTests/StoreKitEntitlementsTests/testWeeklyReviewFindingScopeCountsWeekDropsAndFailsClosedWhenDateIsUnknown \
+  -only-testing:RedeTests/StoreKitEntitlementsTests/testWeeklyReviewMemoPolicyPromotesOneTypedFactAndKeepsTheOtherTwo \
+  -only-testing:RedeTests/StoreKitEntitlementsTests/testWeeklyReviewDatePolicyUsesISOWeekYearAndHandlesCrossYearRange \
+  -only-testing:RedeTests/StoreKitEntitlementsTests/testWeeklyReviewLiftSignalPolicyDropsCalibratingZeroDelta \
+  -only-testing:RedeTests/SessionStoreDraftTests \
   -only-testing:RedeTests/AppUpdateRuntimeTests \
   test
 
