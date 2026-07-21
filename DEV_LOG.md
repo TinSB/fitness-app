@@ -48,6 +48,18 @@
 
 ---
 
+## 2026-07-21 · 1.9.1 (build 27)：操作区批上包 + 首次由 AI 直传 ASC 成功
+
+**用户目标**：owner「你上传 1.9.1」——把 #710（编辑器操作区重构/触感/双编辑器统一）+ 证据勘误打进 1.9.1 并由我完成上传（此前上传均 owner 在 Organizer 手点）。
+
+**做了什么**：①MARKETING 1.9→1.9.1 + build 26→27（4 处；1.9(26) 归档未上传作废取代）；②What's New 三处版本门同步切 1.9.1（RedeL10n 两 guard + app 侧注册表——上次被门禁抓过的两处同改点）；③ASC 文案/验收清单重定向 1.9.1(27)，N 组补 N6（操作区+触感真机项）；④搭车带上「推 A」调查的证据勘误 commit（actionbar-01/02 用 canonical push-a 重拍）。
+
+**验证与上传**：门禁 PASS 后才打包（链式保序）；PlistBuddy 五项实证（Organizer 口径 1.9.1/27、app+widget 同号、LiveActivities、订阅四 key 缺席、47K95GV3X5）；**`xcodebuild -exportArchive destination=upload` 用 Xcode 既有登录会话直传成功**（日志原文「Upload succeeded / Uploaded Rede」，exit 0，全程零凭据接触）——上传路径自此可自动化。
+
+**下一步**：ASC 处理完成后 owner 在 TestFlight 装 **1.9.1 (27)** 过 N 组六条；1.8(25) 仍在苹果审核队列（建议等过审再提 1.9.1，商店说明用增量双语块）。
+
+---
+
 ## 2026-07-20 · Archive 1.9 (build 26)：会话重排 + 编辑器撤销 + 更新感知上包
 
 **用户目标**：owner「准备 archive 1.9」——把 #706（Codex 批：会话重排/更新感知/评分请求/订阅地基）+ #707（What's New 专业化）+ #708（编辑器撤销/恢复默认）带上 TestFlight。

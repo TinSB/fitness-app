@@ -65,9 +65,9 @@ final class RedeStringsTests: XCTestCase {
             ("appUpdateViewUpdate", s.appUpdateViewUpdate),
             ("appUpdateLater", s.appUpdateLater),
             ("appUpdateContinue", s.appUpdateContinue),
-            ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.9", build: "26")),
-            ("appUpdateHeroLine", s.appUpdateHeroLine(version: "1.9")),
-            ("appUpdateHighlights", s.appUpdateHighlights(version: "1.9").joined(separator: " ")),
+            ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.9.1", build: "27")),
+            ("appUpdateHeroLine", s.appUpdateHeroLine(version: "1.9.1")),
+            ("appUpdateHighlights", s.appUpdateHighlights(version: "1.9.1").joined(separator: " ")),
             // FR-SE9 / FR-SUB2：订阅管理与诚实状态
             ("settingsSubscriptionSection", s.settingsSubscriptionSection),
             ("settingsSubscriptionFreeCore", s.settingsSubscriptionFreeCore),
@@ -258,10 +258,10 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertEqual(en.appUpdateAvailable(version: "1.9"), "1.9 Available")
         // 2026-07-20 owner「文案太不专业」重写：hero=版本主打句，亮点=具体名词句（基线 §5.5）。
         // 2026-07-20 archive 1.9：内置叙事切到 1.9（只保留当前发布版本，YAGNI）。
-        XCTAssertEqual(zh.appUpdateHeroLine(version: "1.9"), "训练现场，顺序随你调")
-        XCTAssertEqual(en.appUpdateHeroLine(version: "1.9"), "Adjust your session on the spot")
+        XCTAssertEqual(zh.appUpdateHeroLine(version: "1.9.1"), "训练现场，顺序随你调")
+        XCTAssertEqual(en.appUpdateHeroLine(version: "1.9.1"), "Adjust your session on the spot")
         XCTAssertEqual(
-            zh.appUpdateHighlights(version: "1.9"),
+            zh.appUpdateHighlights(version: "1.9.1"),
             [
                 "「接下来」可现在练：训练中把后面的动作提到当前，重量与进阶仍由系统安排",
                 "计划编辑器防误删：移除动作可逐步撤回，「恢复默认」一键回到教练方案",
@@ -269,7 +269,7 @@ final class RedeStringsTests: XCTestCase {
             ]
         )
         XCTAssertEqual(
-            en.appUpdateHighlights(version: "1.9"),
+            en.appUpdateHighlights(version: "1.9.1"),
             [
                 "\"Up next\" can be now: pull a later exercise into the current slot mid-workout, loads still set by the system",
                 "The plan editor forgives: undo removals step by step, or restore the coach's default in one tap",
