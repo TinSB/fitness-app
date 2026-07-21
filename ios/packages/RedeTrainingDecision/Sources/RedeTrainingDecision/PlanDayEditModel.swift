@@ -68,8 +68,17 @@ public enum PlanDayEditRules {
     }
 
     /// 采纳收敛裁定（见 PlanDayApplyResolution 各 case 注释）。
+    /// 2026-07-20 操作区批（裁定 C）：`PlanDaySequenceEditorView` 同构复用——working=日序
+    /// 工作副本、defaults=defaultDaySequence、clearCustom → removeCustomDaySequence。
     public static func applyResolution(working: [String], defaults: [String], wasCustomized: Bool) -> PlanDayApplyResolution {
         guard isAtDefault(working: working, defaults: defaults) else { return .writeCustom }
         return wasCustomized ? .clearCustom : .noop
+    }
+
+    /// 无改动判定（2026-07-20 操作区批，裁定 A）：工作副本==打开时初始列表 → 「采纳修改」
+    /// disabled（无改动没有「采纳」可言）。比较内容非操作历史——改了又改回去仍算无改动。
+    /// 与 `isAtDefault` 基线不同：initial 是**打开面板时的有效列表**（可能已是自定义）。
+    public static func hasChanges(working: [String], initial: [String]) -> Bool {
+        working != initial
     }
 }
