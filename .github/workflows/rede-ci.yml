@@ -29,7 +29,7 @@ jobs:
           set -euo pipefail
           # Explicit test surface: a package silently vanishing must fail CI,
           # and a new package must be registered here before it counts as tested.
-          EXPECTED_PACKAGES="RedeDataHealth RedeDomain RedeHealthKit RedeL10n RedeLocalSnapshot RedeNotifications RedePersistence RedeTrainingDecision RedeWidgetShared"
+          EXPECTED_PACKAGES="RedeDataHealth RedeDomain RedeEntitlements RedeHealthKit RedeL10n RedeLocalSnapshot RedeNotifications RedePersistence RedeTrainingDecision RedeWidgetShared"
           for name in $EXPECTED_PACKAGES; do
             echo "== swift test: ios/packages/$name =="
             (cd "ios/packages/$name" && swift test)
@@ -50,3 +50,36 @@ jobs:
             -scheme Rede \
             -destination 'generic/platform=iOS Simulator' \
             build
+
+      - name: App-hosted policy tests (fail-closed subscription + review + update + drafts)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # 2026-07-20: keep this -only-testing list identical to .claude/quality-gate.cmd.
+          # Explicitly excluded (red, release blocker — not skipped):
+          #   StoreKitEntitlementsTests/testLocalCatalogPurchasePendingRestoreRenewalExpirationAndRefund
+          #   (SKInternalErrorDomain Code=3 saving the .storekit config on Xcode 26.6 + iOS 26.5;
+          #   unblock steps: docs/工作记录/2026-07-20-purchase-gate-checklist.md item ①)
+          REDE_SIMULATOR_ID="$(
+            xcrun simctl list devices available |
+              awk -F '[()]' '/iPhone/ && $2 ~ /^[0-9A-F-]+$/ { print $2; exit }'
+          )"
+          if [ -z "$REDE_SIMULATOR_ID" ]; then
+            echo "::error::No available iPhone Simulator for RedeTests"
+            exit 1
+          fi
+          xcodebuild \
+            -project ios/Rede.xcodeproj \
+            -scheme Rede \
+            -destination "platform=iOS Simulator,id=$REDE_SIMULATOR_ID" \
+            -only-testing:RedeTests/StoreKitEntitlementsTests/testProductionConfigurationFailsClosedWithoutApprovedProducts \
+            -only-testing:RedeTests/StoreKitEntitlementsTests/testDebugPaidFixtureUnlocksFeatureWithoutOpeningPurchaseGate \
+            -only-testing:RedeTests/StoreKitEntitlementsTests/testRedeCoachPageContentCoversEntitlementAndLaunchGateMatrix \
+            -only-testing:RedeTests/StoreKitEntitlementsTests/testReadyCatalogDoesNotBypassDelayedEntitlementCheck \
+            -only-testing:RedeTests/StoreKitEntitlementsTests/testWeeklyReviewFindingScopeCountsWeekDropsAndFailsClosedWhenDateIsUnknown \
+            -only-testing:RedeTests/StoreKitEntitlementsTests/testWeeklyReviewMemoPolicyPromotesOneTypedFactAndKeepsTheOtherTwo \
+            -only-testing:RedeTests/StoreKitEntitlementsTests/testWeeklyReviewDatePolicyUsesISOWeekYearAndHandlesCrossYearRange \
+            -only-testing:RedeTests/StoreKitEntitlementsTests/testWeeklyReviewLiftSignalPolicyDropsCalibratingZeroDelta \
+            -only-testing:RedeTests/SessionStoreDraftTests \
+            -only-testing:RedeTests/AppUpdateRuntimeTests \
+            test

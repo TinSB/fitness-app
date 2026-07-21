@@ -37,19 +37,71 @@ final class RedeStringsTests: XCTestCase {
             ("planTemplateLine", s.planTemplateLine(splitName: s.onbSplitName("upper-lower"), days: 4)),
             ("settingsTitle", s.settingsTitle), ("settingsLanguage", s.settingsLanguage),
             ("settingsDone", s.settingsDone), ("settingsUnit", s.settingsUnit),
-            ("settingsBackground", s.settingsBackground), ("settingsPlateHint", s.settingsPlateHint),
+            ("settingsBackground", s.settingsBackground),
             ("onbEditSave", s.onbEditSave), ("onbEditCancel", s.onbEditCancel),
             ("onbDaysNote", s.onbDaysNote), ("onbEquipEcho", s.onbEquipEcho("commercial-gym")),
             ("onbEquipEchoHome", s.onbEquipEcho("home-dumbbell")), ("onbEquipEchoMinimal", s.onbEquipEcho("minimal")),
             ("onbA11yAnswered", s.onbA11yAnswered), ("onbA11yCurrent", s.onbA11yCurrent),
             ("settingsDaysValue", s.settingsDaysValue(4)), ("settingsData", s.settingsData),
-            ("settingsExportNote", s.settingsExportNote), ("settingsAbout", s.settingsAbout),
+            ("settingsAbout", s.settingsAbout),
             // K7 数据导出（FR-SE6 兑现）
             ("settingsExportAction", s.settingsExportAction),
             ("settingsExportFailedTitle", s.settingsExportFailedTitle),
             ("settingsExportFailedBody", s.settingsExportFailedBody),
             ("settingsExportFailedConfirm", s.settingsExportFailedConfirm),
             ("settingsPrivacy", s.settingsPrivacy), ("settingsPrivacyNote", s.settingsPrivacyNote),
+            // FR-SE10：版本、更新检查与内置 What's New
+            ("appUpdateSection", s.appUpdateSection),
+            ("appUpdateVersion", s.appUpdateVersion),
+            ("appUpdateCheck", s.appUpdateCheck),
+            ("appUpdateWhatsNew", s.appUpdateWhatsNew),
+            ("appUpdateChecking", s.appUpdateChecking),
+            ("appUpdateUpToDate", s.appUpdateUpToDate),
+            ("appUpdateUnableToCheck", s.appUpdateUnableToCheck),
+            ("appUpdateAvailable", s.appUpdateAvailable(version: "1.9")),
+            ("appUpdateSignalOverline", s.appUpdateSignalOverline(version: "1.9")),
+            ("appUpdateRowTitle", s.appUpdateRowTitle(version: "1.9")),
+            ("appUpdateViewShort", s.appUpdateViewShort),
+            ("appUpdateViewUpdate", s.appUpdateViewUpdate),
+            ("appUpdateLater", s.appUpdateLater),
+            ("appUpdateContinue", s.appUpdateContinue),
+            ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.8", build: "25")),
+            ("appUpdateHighlights", s.appUpdateHighlights(version: "1.8").joined(separator: " ")),
+            // FR-SE9 / FR-SUB2：订阅管理与诚实状态
+            ("settingsSubscriptionSection", s.settingsSubscriptionSection),
+            ("settingsSubscriptionFreeCore", s.settingsSubscriptionFreeCore),
+            ("settingsSubscriptionPaidCoach", s.settingsSubscriptionPaidCoach),
+            ("settingsSubscriptionChecking", s.settingsSubscriptionChecking),
+            ("settingsSubscriptionUnknownTier", s.settingsSubscriptionUnknownTier),
+            ("settingsSubscriptionUnknown", s.settingsSubscriptionUnknown),
+            ("settingsSubscriptionGrace", s.settingsSubscriptionGrace),
+            ("settingsSubscriptionManage", s.settingsSubscriptionManage),
+            ("settingsSubscriptionRetry", s.settingsSubscriptionRetry),
+            ("settingsSubscriptionOperationFailed", s.settingsSubscriptionOperationFailed),
+            ("settingsSubscriptionOpenCoach", s.settingsSubscriptionOpenCoach),
+            ("subscriptionPageCurrentPlan", s.subscriptionPageCurrentPlan),
+            ("subscriptionPagePreparingOverline", s.subscriptionPagePreparingOverline),
+            ("subscriptionPagePreparingTitle", s.subscriptionPagePreparingTitle),
+            ("subscriptionPageNotOpen", s.subscriptionPageNotOpen),
+            ("subscriptionPageUnavailableOverline", s.subscriptionPageUnavailableOverline),
+            ("subscriptionPageUnavailableTitle", s.subscriptionPageUnavailableTitle),
+            ("subscriptionPageFreeCoreAvailable", s.subscriptionPageFreeCoreAvailable),
+            // FR-SUB3 每周教练复盘
+            ("weeklyCoachReviewTitle", s.weeklyCoachReviewTitle),
+            ("weeklyCoachReviewLoading", s.weeklyCoachReviewLoading),
+            ("weeklyCoachReviewEmptyTitle", s.weeklyCoachReviewEmptyTitle),
+            ("weeklyCoachReviewUnavailableTitle", s.weeklyCoachReviewUnavailableTitle),
+            ("weeklyCoachReviewUnavailableBody", s.weeklyCoachReviewUnavailableBody),
+            ("weeklyCoachReviewRetry", s.weeklyCoachReviewRetry),
+            ("weeklyCoachReviewVerdictTitle", s.weeklyCoachReviewVerdictTitle(code: "progressing")),
+            ("weeklyCoachReviewVerdictDisplayTitle", s.weeklyCoachReviewVerdictDisplayTitle(code: "progressing")),
+            ("weeklyCoachReviewTrainingDays", s.weeklyCoachReviewTrainingDays(3)),
+            ("weeklyCoachReviewRecentMedian", s.weeklyCoachReviewRecentMedian(2.5)),
+            ("weeklyCoachReviewSessions", s.weeklyCoachReviewSessions(3)),
+            ("weeklyCoachReviewDataFindings", s.weeklyCoachReviewDataFindings(2)),
+            ("weeklyCoachReviewCleanVolume", s.weeklyCoachReviewCleanVolume("8,400 kg")),
+            ("weeklyCoachReviewKeyLift", s.weeklyCoachReviewKeyLift(name: "卧推", call: "up", deltaText: "+2.5 kg")),
+            ("weeklyCoachReviewAction", s.weeklyCoachReviewAction(code: "viewProgress")),
             ("settingsPanelOverline", s.settingsPanelOverline),
             ("settingsDisclaimer", s.settingsDisclaimer), ("settingsFeedback", s.settingsFeedback),
             ("feedbackSubject", s.feedbackSubject(version: "0.1.0")),
@@ -167,16 +219,11 @@ final class RedeStringsTests: XCTestCase {
     }
 
     func testExportCopyAnchors() {
-        // K7 数据导出（FR-SE6 兑现）：行标题锚句；失败家族沿 dataUnreadable 口径。
+        // K7 数据导出（FR-SE6 兑现）：自解释的行标题；失败家族沿 dataUnreadable 口径。
         XCTAssertEqual(zh.settingsExportAction, "导出训练数据")
         XCTAssertEqual(en.settingsExportAction, "Export training data")
         XCTAssertEqual(zh.settingsExportFailedTitle, "暂时读不出数据")
         XCTAssertEqual(en.settingsExportFailedTitle, "Can't read your data right now")
-        // 导出已兑现：说明不得再写「后续版本加入」的腐烂承诺
-        XCTAssertFalse(zh.settingsExportNote.contains("后续版本"), "导出已上线，事实陈述不得再写「后续版本加入」")
-        XCTAssertFalse(en.settingsExportNote.lowercased().contains("later version"))
-        XCTAssertTrue(zh.settingsExportNote.contains("导出"))
-        XCTAssertTrue(en.settingsExportNote.lowercased().contains("export"))
     }
 
     func testPrivacyNoteHonestWording() {
@@ -188,6 +235,181 @@ final class RedeStringsTests: XCTestCase {
             for banned in ["永不", "100%", "匿名", "私密", "never leave", "anonymous", "hipaa", "private"] {
                 XCTAssertFalse(note.contains(banned), "隐私文案含绝对化措辞: \(banned)")
             }
+            XCTAssertTrue(note.contains("apple"), "StoreKit 上线后必须诚实披露订阅由 Apple 处理")
+            XCTAssertFalse(note.contains("不连网") || note.contains("no network connection"),
+                           "StoreKit 会连接 Apple，不能继续声称 App 完全不联网")
+        }
+    }
+
+    func testAppUpdateCopyMatchesApprovedBaseline() {
+        XCTAssertEqual(zh.appUpdateSection, "版本")
+        XCTAssertEqual(en.appUpdateSection, "Version")
+        XCTAssertEqual(zh.appUpdateCheck, "检查更新")
+        XCTAssertEqual(en.appUpdateCheck, "Check for Updates")
+        XCTAssertEqual(zh.appUpdateWhatsNew, "本次新增")
+        XCTAssertEqual(en.appUpdateWhatsNew, "What's New")
+        // 2026-07-20 今日页单行更新信号（三层块收敛）：事实句 + 短「查看」。
+        XCTAssertEqual(zh.appUpdateRowTitle(version: "1.9"), "新版本 1.9")
+        XCTAssertEqual(en.appUpdateRowTitle(version: "1.9"), "New version 1.9")
+        XCTAssertEqual(zh.appUpdateViewShort, "查看")
+        XCTAssertEqual(en.appUpdateViewShort, "View")
+        XCTAssertEqual(zh.appUpdateAvailable(version: "1.9"), "1.9 可用")
+        XCTAssertEqual(en.appUpdateAvailable(version: "1.9"), "1.9 Available")
+        XCTAssertEqual(
+            zh.appUpdateHighlights(version: "1.8"),
+            ["每块肌肉，都有自己的等级", "训练、休息与下一组，始终清楚", "计划与进展，更完整也更好读"]
+        )
+        XCTAssertEqual(
+            en.appUpdateHighlights(version: "1.8"),
+            ["A level for every muscle", "Training, rest, and the next set—always clear", "Planning and progress, fuller and clearer"]
+        )
+        XCTAssertTrue(zh.appUpdateHighlights(version: "1.7").isEmpty)
+        XCTAssertTrue(en.appUpdateHighlights(version: "1.9").isEmpty)
+    }
+
+    func testSubscriptionCopyAnchorsAndFreeCompatibilityFloor() {
+        XCTAssertEqual(zh.settingsSubscriptionSection, "方案")
+        XCTAssertEqual(en.settingsSubscriptionSection, "Plan")
+        XCTAssertEqual(zh.settingsSubscriptionFreeCore, "Free Core")
+        XCTAssertEqual(en.settingsSubscriptionFreeCore, "Free Core")
+        XCTAssertEqual(zh.settingsSubscriptionUnknownTier, "当前方案：暂时无法确认")
+        XCTAssertEqual(en.settingsSubscriptionUnknownTier, "Current plan: unavailable")
+        XCTAssertEqual(zh.subscriptionPageCurrentPlan, "当前方案")
+        XCTAssertEqual(en.subscriptionPageCurrentPlan, "Current plan")
+        XCTAssertEqual(zh.subscriptionPagePreparingOverline, "准备中")
+        XCTAssertEqual(en.subscriptionPagePreparingOverline, "In development")
+        XCTAssertEqual(zh.subscriptionPagePreparingTitle, "功能完成后再加入这里")
+        XCTAssertEqual(en.subscriptionPagePreparingTitle, "Features will be added here when they’re ready")
+        XCTAssertEqual(zh.subscriptionPageNotOpen, "订阅尚未开放")
+        XCTAssertEqual(en.subscriptionPageNotOpen, "Subscriptions aren’t open yet")
+        XCTAssertEqual(zh.subscriptionPageUnavailableOverline, "暂时不可用")
+        XCTAssertEqual(en.subscriptionPageUnavailableOverline, "Temporarily unavailable")
+        XCTAssertEqual(zh.subscriptionPageUnavailableTitle, "订阅选项暂时不可用")
+        XCTAssertEqual(en.subscriptionPageUnavailableTitle, "Subscription options are temporarily unavailable")
+        XCTAssertEqual(zh.subscriptionPageFreeCoreAvailable, "Free Core 仍可使用")
+        XCTAssertEqual(en.subscriptionPageFreeCoreAvailable, "Free Core remains available")
+        for line in [zh.settingsSubscriptionUnknown, en.settingsSubscriptionUnknown] {
+            XCTAssertTrue(line.contains("Free Core"), "未知态必须明确 Free Core 不受影响")
+        }
+    }
+
+    func testSubscriptionPreviewDoesNotPromiseProductsOrUnbuiltFeatures() {
+        let copy = [
+            zh.subscriptionPagePreparingTitle,
+            zh.subscriptionPageNotOpen,
+            zh.subscriptionPageUnavailableOverline,
+            zh.subscriptionPageUnavailableTitle,
+            zh.subscriptionPageFreeCoreAvailable,
+            en.subscriptionPagePreparingTitle,
+            en.subscriptionPageNotOpen,
+            en.subscriptionPageUnavailableOverline,
+            en.subscriptionPageUnavailableTitle,
+            en.subscriptionPageFreeCoreAvailable,
+        ].joined(separator: " ").lowercased()
+
+        for banned in ["价格", "试用", "优惠", "购买", "判断", "洞察",
+                       "price", "trial", "discount", "buy", "decision", "insight"] {
+            XCTAssertFalse(copy.contains(banned), "预览页不能承诺商品、优惠、交易或未实现能力: \(banned)")
+        }
+        XCTAssertNotEqual(zh.subscriptionPageNotOpen, zh.subscriptionPageUnavailableTitle)
+        XCTAssertNotEqual(en.subscriptionPageNotOpen, en.subscriptionPageUnavailableTitle)
+    }
+
+    func testWeeklyCoachReviewCopyIsSpecificAndNonCausal() {
+        XCTAssertEqual(zh.weeklyCoachReviewTitle, "每周教练复盘")
+        XCTAssertEqual(en.weeklyCoachReviewTitle, "Weekly Coach Review")
+        XCTAssertEqual(zh.weeklyCoachReviewIssue(weekOfYear: 28), "Weekly Review / Week 28")
+        XCTAssertEqual(en.weeklyCoachReviewIssue(weekOfYear: 28), "Weekly Review / Week 28")
+        XCTAssertEqual(
+            zh.weeklyCoachReviewDateRange(startText: "7月6日", endText: "12日", year: 2026),
+            "7月6日—12日 · 2026"
+        )
+        XCTAssertEqual(
+            en.weeklyCoachReviewDateRange(startText: "Jul 6", endText: "12", year: 2026),
+            "Jul 6–12 · 2026"
+        )
+        XCTAssertEqual(
+            zh.weeklyCoachReviewCrossYearDateRange(
+                startText: "12月29日",
+                startYear: 2025,
+                endText: "1月4日",
+                endYear: 2026
+            ),
+            "2025年12月29日—2026年1月4日"
+        )
+        XCTAssertEqual(
+            en.weeklyCoachReviewCrossYearDateRange(
+                startText: "Dec 29",
+                startYear: 2025,
+                endText: "Jan 4",
+                endYear: 2026
+            ),
+            "Dec 29, 2025–Jan 4, 2026"
+        )
+        XCTAssertEqual(zh.weeklyCoachReviewDecisionLabel, "本周判定 / Coach Call")
+        XCTAssertEqual(en.weeklyCoachReviewDecisionLabel, "Coach Call")
+        XCTAssertEqual(zh.weeklyCoachReviewMovementLabel, "关键变化 / Movement")
+        XCTAssertEqual(en.weeklyCoachReviewMovementLabel, "Movement")
+        XCTAssertEqual(zh.weeklyCoachReviewEvidenceMemoLabel, "判断依据 / Evidence")
+        XCTAssertEqual(en.weeklyCoachReviewEvidenceMemoLabel, "Evidence")
+        XCTAssertEqual(zh.weeklyCoachReviewNextLabel, "下一步 / Next")
+        XCTAssertEqual(en.weeklyCoachReviewNextLabel, "Next")
+        XCTAssertEqual(zh.weeklyCoachReviewComparableRecords, "e1RM · 可比记录")
+        XCTAssertEqual(en.weeklyCoachReviewComparableRecords, "e1RM · Comparable Records")
+        XCTAssertEqual(
+            zh.weeklyCoachReviewLiftDetail(code: "calibrating", hasDelta: false),
+            "可比场次不足"
+        )
+        XCTAssertEqual(
+            en.weeklyCoachReviewLiftDetail(code: "up", hasDelta: false),
+            "e1RM · Comparable Trend"
+        )
+        XCTAssertEqual(zh.weeklyCoachReviewDayUnit(3), "天")
+        XCTAssertEqual(en.weeklyCoachReviewDayUnit(1), "day")
+        XCTAssertEqual(en.weeklyCoachReviewDayUnit(3), "days")
+        XCTAssertEqual(zh.weeklyCoachReviewSessionUnit(3), "场")
+        XCTAssertEqual(en.weeklyCoachReviewEntryUnit(2), "entries")
+        XCTAssertEqual(zh.weeklyCoachReviewLiftCallMetric(code: "calibrating"), "校准中")
+        XCTAssertEqual(en.weeklyCoachReviewLiftCallMetric(code: "up"), "Moving Up")
+        XCTAssertEqual(zh.weeklyCoachReviewVerdictDisplayTitle(code: "progressing"), "关键动作，\n向上。")
+        XCTAssertEqual(en.weeklyCoachReviewVerdictDisplayTitle(code: "progressing"), "Key lift,\nmoving up.")
+        XCTAssertEqual(zh.weeklyCoachReviewVerdictDisplayTitle(code: "dataNeedsReview"), "先核对，\n再判断。")
+        XCTAssertEqual(en.weeklyCoachReviewVerdictDisplayTitle(code: "dataNeedsReview"), "Verify first.\nThen read the trend.")
+        XCTAssertEqual(zh.weeklyCoachReviewEmptyTitle, "上周没有训练记录")
+        XCTAssertEqual(en.weeklyCoachReviewEmptyTitle, "No workouts were recorded last week")
+        XCTAssertEqual(zh.weeklyCoachReviewVerdictTitle(code: "calibrating"), "继续训练后再判断趋势")
+        XCTAssertEqual(en.weeklyCoachReviewVerdictTitle(code: "calibrating"), "Keep training before calling a trend")
+        XCTAssertEqual(zh.weeklyCoachReviewVerdictTitle(code: "dataNeedsReview"), "先核对上周的训练记录")
+        XCTAssertEqual(en.weeklyCoachReviewVerdictTitle(code: "dataNeedsReview"), "Check last week’s training records first")
+        XCTAssertEqual(zh.weeklyCoachReviewVerdictTitle(code: "progressing"), "关键动作在向上走")
+        XCTAssertEqual(en.weeklyCoachReviewVerdictTitle(code: "progressing"), "Your key lift is moving up")
+        XCTAssertEqual(zh.weeklyCoachReviewAction(code: "openToday"), "查看今天安排")
+        XCTAssertEqual(zh.weeklyCoachReviewAction(code: "viewProgress"), "查看进展")
+        XCTAssertEqual(zh.weeklyCoachReviewAction(code: "reviewData"), "核对训练数据")
+        XCTAssertEqual(en.weeklyCoachReviewAction(code: "openToday"), "View Today")
+        XCTAssertEqual(en.weeklyCoachReviewAction(code: "viewProgress"), "View Progress")
+        XCTAssertEqual(en.weeklyCoachReviewAction(code: "reviewData"), "Review Training Data")
+        XCTAssertEqual(en.weeklyCoachReviewRecentMedian(1), "Recent median · 1 day")
+
+        // 2026-07-20 YAGNI 清理：V1 遗留 weeklyCoachReviewVerdictBody/Week/EvidenceTitle
+        // 已删（无生产调用点）；禁词扫描改扫仍在生产的判断句家族。
+        let weeklyCopy = [
+            zh.weeklyCoachReviewVerdictDisplayTitle(code: "dataNeedsReview"),
+            zh.weeklyCoachReviewVerdictDisplayTitle(code: "progressing"),
+            en.weeklyCoachReviewVerdictDisplayTitle(code: "dataNeedsReview"),
+            en.weeklyCoachReviewVerdictDisplayTitle(code: "progressing"),
+            zh.weeklyCoachReviewVerdictTitle(code: "dataNeedsReview"),
+            zh.weeklyCoachReviewVerdictTitle(code: "rebuildRhythm"),
+            zh.weeklyCoachReviewVerdictTitle(code: "progressing"),
+            en.weeklyCoachReviewVerdictTitle(code: "dataNeedsReview"),
+            en.weeklyCoachReviewVerdictTitle(code: "rebuildRhythm"),
+            en.weeklyCoachReviewVerdictTitle(code: "progressing"),
+        ].joined(separator: " ").lowercased()
+
+        let words = weeklyCopy.split(whereSeparator: { !$0.isLetter }).map(String.init)
+        XCTAssertFalse(words.contains("ai"), "复盘文案不得自称 AI")
+        for banned in ["算法", "因为", "导致", "caused", "best", "最佳", "free core", "本机"] {
+            XCTAssertFalse(weeklyCopy.contains(banned), "复盘文案不得作因果、AI 或无关小字声明: \(banned)")
         }
     }
 
@@ -198,6 +420,10 @@ final class RedeStringsTests: XCTestCase {
             zh.startTraining, zh.trainLogSet, zh.trainFinish, zh.trainHold185,
             zh.todayWhyThisCall, zh.todayHideReason,
             zh.settingsTitle, zh.settingsLanguage, zh.settingsDone,
+            zh.settingsSubscriptionSection,
+            zh.settingsSubscriptionManage, zh.settingsSubscriptionRetry,
+            en.settingsSubscriptionSection,
+            en.settingsSubscriptionManage, en.settingsSubscriptionRetry,
             zh.settingsWeeklyRestartLabel, zh.settingsWeeklyRestartNote, zh.carriedOverHeader(day: "腿 A"),
             zh.swapDayScopeOnceWeekly, en.settingsWeeklyRestartLabel, en.carriedOverHeader(day: "Legs A"),
             zh.planScheduleThisWeek, zh.planScheduleNextWeek, zh.planAdjustAfterLabel,

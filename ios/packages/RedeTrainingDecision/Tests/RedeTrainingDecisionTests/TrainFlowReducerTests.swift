@@ -21,6 +21,17 @@ final class TrainFlowReducerTests: XCTestCase {
         CompletedSetObservation(weightKg: w, reps: r, rir: rir, painReported: pain)
     }
 
+    private func assertMoveRejected(
+        _ state: inout TrainFlowState,
+        targetExerciseId: String,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let before = state
+        state.moveExerciseToCurrent(targetExerciseId)
+        XCTAssertEqual(state, before, "rejected move must not mutate state or append an event", file: file, line: line)
+    }
+
     // 初始：push-a 第 1 动作第 1 组，phase = activeSet
     func testInitialStatePointsAtFirstSet() throws {
         let state = try makeState()
@@ -108,6 +119,160 @@ final class TrainFlowReducerTests: XCTestCase {
         XCTAssertEqual(state.currentExercise?.exerciseId, "db-bench-press")
         XCTAssertEqual(state.replacements.first?.originalExerciseId, "bench-press")
         XCTAssertEqual(state.replacements.first?.actualExerciseId, "db-bench-press")
+    }
+
+    // 本次训练重排：选择一个尚未开始的已排动作，应稳定移动到当前；不是替换或跳过。
+    func testMovingScheduledExerciseToCurrentPreservesPlanAndResetsTransientGuidance() throws {
+        var state = try makeState()
+        let originalPlan = state.plan
+        let originalCurrent = try XCTUnwrap(originalPlan.exercises.first)
+        let target = originalPlan.exercises[2]
+        let expectedCandidates = originalPlan.exercises.dropFirst().map(\.exerciseId)
+
+        XCTAssertEqual(state.moveToCurrentCandidates, expectedCandidates)
+        state.skipAllWarmup()
+        XCTAssertGreaterThan(state.warmupPointer, 0, "fixture must exercise warm-up reset")
+        state.toggleHold()
+        XCTAssertTrue(state.isHolding)
+
+        state.moveExerciseToCurrent(target.exerciseId)
+
+        let expectedOrder = [target, originalCurrent, originalPlan.exercises[1]]
+            + Array(originalPlan.exercises.dropFirst(3))
+        XCTAssertEqual(state.plan.exercises, expectedOrder)
+        XCTAssertEqual(state.currentExercise, target, "moved exercise must keep its full planned parameters")
+        XCTAssertEqual(state.exerciseIndex, 0)
+        XCTAssertEqual(state.progress.exerciseTotal, originalPlan.exercises.count)
+        XCTAssertFalse(state.isHolding, "hold belongs to the former current exercise")
+        XCTAssertEqual(state.warmupPointer, 0, "new current exercise starts its own warm-up guidance")
+        XCTAssertEqual(state.events, [.toggleHold, .moveExerciseToCurrent(target.exerciseId)])
+        XCTAssertTrue(state.replacements.isEmpty)
+        XCTAssertTrue(state.skippedSets.isEmpty)
+        XCTAssertTrue(state.skippedExercises.isEmpty)
+    }
+
+    // 移入动作做完后，原当前动作应紧接着出现；稳定移动不能丢失或复制任何计划项。
+    func testCompletingMovedExerciseReturnsToFormerCurrentExercise() throws {
+        var state = try makeState()
+        let originalPlan = state.plan
+        let originalCurrentId = try XCTUnwrap(originalPlan.exercises.first?.exerciseId)
+        let target = originalPlan.exercises[2]
+
+        state.moveExerciseToCurrent(target.exerciseId)
+        for _ in target.sets {
+            state.logSet(obs(target.sets[0].targetWeightKg, target.sets[0].targetReps))
+            XCTAssertEqual(state.phase, .resting)
+            state.restFinished()
+        }
+
+        XCTAssertEqual(state.exerciseIndex, 1)
+        XCTAssertEqual(state.currentExercise?.exerciseId, originalCurrentId)
+        XCTAssertEqual(state.plan.exercises.map(\.exerciseId).count, originalPlan.exercises.count)
+        XCTAssertEqual(Set(state.plan.exercises.map(\.exerciseId)).count, originalPlan.exercises.count)
+        XCTAssertEqual(state.observationsByExercise[target.exerciseId]?.count, target.sets.count)
+        XCTAssertNil(state.observationsByExercise[originalCurrentId])
+        XCTAssertTrue(state.replacements.isEmpty)
+        XCTAssertTrue(state.skippedExercises.isEmpty)
+    }
+
+    // 当前指针已越过首动作时，仍只在未完成后缀内稳定移动；完成前缀和既有事实必须原样保留。
+    func testMovingAtLaterExercisePreservesCompletedPrefixAndRejectsEarlierTarget() throws {
+        var state = try makeState()
+        let completedExercise = try XCTUnwrap(state.currentExercise)
+        for set in completedExercise.sets {
+            state.logSet(obs(set.targetWeightKg, set.targetReps))
+            state.restFinished()
+        }
+        XCTAssertEqual(state.exerciseIndex, 1)
+
+        let beforeMove = state
+        let targetIndex = 4
+        let target = beforeMove.plan.exercises[targetIndex]
+        var expectedOrder = beforeMove.plan.exercises
+        expectedOrder.remove(at: targetIndex)
+        expectedOrder.insert(target, at: beforeMove.exerciseIndex)
+
+        state.moveExerciseToCurrent(target.exerciseId)
+
+        XCTAssertEqual(state.exerciseIndex, 1)
+        XCTAssertEqual(state.plan.exercises, expectedOrder)
+        XCTAssertEqual(state.plan.exercises[0], beforeMove.plan.exercises[0])
+        XCTAssertEqual(
+            state.observationsByExercise[completedExercise.exerciseId],
+            beforeMove.observationsByExercise[completedExercise.exerciseId]
+        )
+
+        let afterAcceptedMove = state
+        assertMoveRejected(&state, targetExerciseId: completedExercise.exerciseId)
+        XCTAssertEqual(state, afterAcceptedMove)
+    }
+
+    // 已有正式事实或不在 activeSet 时拒绝重排，拒绝必须是完全无副作用的。
+    func testMoveRejectsAfterCompletedOrSkippedSetPendingPainAndWhileResting() throws {
+        var completed = try makeState()
+        let completedTarget = completed.plan.exercises[2].exerciseId
+        completed.logSet(obs(60, 6))
+        completed.restFinished()
+        XCTAssertEqual(completed.phase, .activeSet)
+        XCTAssertFalse(completed.completedInCurrentExercise.isEmpty)
+        XCTAssertTrue(completed.moveToCurrentCandidates.isEmpty)
+        assertMoveRejected(&completed, targetExerciseId: completedTarget)
+
+        var skipped = try makeState()
+        let skippedTarget = skipped.plan.exercises[2].exerciseId
+        skipped.skipSet(reason: .equipmentBusy)
+        XCTAssertGreaterThan(skipped.skippedInCurrentExercise, 0)
+        XCTAssertTrue(skipped.moveToCurrentCandidates.isEmpty)
+        assertMoveRejected(&skipped, targetExerciseId: skippedTarget)
+
+        var pain = try makeState()
+        let painTarget = pain.plan.exercises[2].exerciseId
+        pain.reportPain()
+        XCTAssertTrue(pain.painReportedForCurrentSet)
+        XCTAssertTrue(pain.moveToCurrentCandidates.isEmpty)
+        assertMoveRejected(&pain, targetExerciseId: painTarget)
+
+        var resting = try makeState()
+        let restingTarget = resting.plan.exercises[2].exerciseId
+        resting.logSet(obs(60, 6))
+        XCTAssertEqual(resting.phase, .resting)
+        XCTAssertTrue(resting.moveToCurrentCandidates.isEmpty)
+        assertMoveRejected(&resting, targetExerciseId: restingTarget)
+    }
+
+    // 目标必须在当前位置之后且只出现一次；当前、缺失和歧义目标全部 fail closed。
+    func testMoveRejectsCurrentMissingAndAmbiguousTargets() throws {
+        var state = try makeState()
+        let currentId = try XCTUnwrap(state.currentExercise?.exerciseId)
+        assertMoveRejected(&state, targetExerciseId: currentId)
+        assertMoveRejected(&state, targetExerciseId: "no-such-exercise")
+
+        let source = state.prescription
+        let first = source.exercises[0]
+        let repeated = source.exercises[1]
+        var ambiguous = TrainFlowState(prescription: TodayPrescription(
+            dayCode: source.dayCode,
+            exercises: [first, repeated, repeated],
+            dayReasons: source.dayReasons
+        ))
+        XCTAssertFalse(ambiguous.moveToCurrentCandidates.contains(repeated.exerciseId))
+        assertMoveRejected(&ambiguous, targetExerciseId: repeated.exerciseId)
+    }
+
+    // 收尾确认与小结都是已冻结边界；重排请求必须连事件日志也完全不碰。
+    func testMoveRejectsConfirmEndAndSummaryWithoutMutatingStateOrEvents() throws {
+        var confirming = try makeState()
+        let confirmingTarget = confirming.plan.exercises[2].exerciseId
+        confirming.requestFinish()
+        XCTAssertEqual(confirming.phase, .confirmEnd)
+        assertMoveRejected(&confirming, targetExerciseId: confirmingTarget)
+
+        var summary = try makeState()
+        let summaryTarget = summary.plan.exercises[2].exerciseId
+        summary.requestFinish()
+        summary.confirmEnd(reason: .timeUp)
+        XCTAssertEqual(summary.phase, .summary)
+        assertMoveRejected(&summary, targetExerciseId: summaryTarget)
     }
 
     // 档位系统（2026-06-13）：换动作后步长按「换入动作器械 × 用户单位」重算

@@ -287,6 +287,33 @@ extension RedeStrings {
     public var skipExerciseAction: String { locale == .zh ? "跳过这个动作" : "Skip this exercise" }
     public var swapExerciseAction: String { locale == .zh ? "换一个动作" : "Swap exercise" }
 
+    // MARK: 本次顺序（FR-TR14 S1）
+
+    public var sessionOrderEntry: String { locale == .zh ? "接下来" : "Up next" }
+    public var sessionOrderTitle: String { locale == .zh ? "本次顺序" : "Session order" }
+    public var sessionOrderCurrent: String { locale == .zh ? "当前" : "Current" }
+    public var sessionOrderLater: String { locale == .zh ? "今天稍后" : "Later today" }
+    public var sessionOrderTrainNow: String { locale == .zh ? "现在练" : "Train now" }
+    public var sessionOrderOpenHint: String {
+        locale == .zh
+            ? "从今天剩余动作中选择现在训练的动作"
+            : "Choose a scheduled exercise to train now"
+    }
+    public func sessionOrderMoveA11y(name: String) -> String {
+        locale == .zh ? "现在练，\(name)" : "Train \(name) now"
+    }
+    public var sessionOrderMoveHint: String {
+        locale == .zh ? "当前动作会顺延到稍后" : "The current exercise moves later"
+    }
+    public func sessionOrderMovedAnnouncement(name: String) -> String {
+        locale == .zh ? "已切换到\(name)" : "Now training \(name)"
+    }
+    public var sessionOrderUpdateError: String {
+        locale == .zh
+            ? "暂时无法调整，请再试一次"
+            : "Couldn’t update the session. Try again"
+    }
+
     public func skipReasonLabel(_ code: String) -> String {
         switch code {
         case "equipmentBusy": return locale == .zh ? "器械被占用" : "Equipment busy"

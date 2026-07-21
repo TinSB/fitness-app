@@ -24,6 +24,44 @@ enum DataQualityComposer {
     }
 }
 
+/// Progress 与 Weekly Coach Review 共用的只读核心投影。把目录事实、质量报告、
+/// 原貌 records、剔除可疑组后的 statsRecords 和 snapshot 锁在同一组装点，避免两个页面
+/// 各算一套；不读 HealthKit、不写 muscle memory、不接 UI 或 entitlement。
+struct ProgressCoreProjection {
+    let cleanView: CleanAppDataView
+    let catalog: ExerciseCatalog
+    let facts: [String: ExerciseStatsFacts]
+    let quality: DataQualityReport
+    let records: [SnapshotSessionRecord]
+    let statsRecords: [SnapshotSessionRecord]
+    let snapshot: ProgressSnapshot
+
+    static func build(from appData: AppData) -> ProgressCoreProjection {
+        let cleanView = CleanAppDataViewBuilder.build(from: appData)
+        let catalog = ExerciseCatalog.minimal
+        var facts: [String: ExerciseStatsFacts] = [:]
+        for entry in catalog.entries {
+            facts[entry.id] = ExerciseStatsFacts(
+                loadFactor: entry.loadFactor,
+                isCompound: entry.kind == "compound",
+                isAssisted: entry.loadType == "assisted"
+            )
+        }
+        let quality = DataQualityComposer.report(cleanView: cleanView, catalog: catalog)
+        let records = ProgressModel.mapToRecords(cleanView)
+        let statsRecords = ProgressModel.mapToRecords(cleanView, excluding: quality.suspectSets)
+        return ProgressCoreProjection(
+            cleanView: cleanView,
+            catalog: catalog,
+            facts: facts,
+            quality: quality,
+            records: records,
+            statsRecords: statsRecords,
+            snapshot: ProgressSnapshotBuilder.build(sessions: statsRecords, facts: facts)
+        )
+    }
+}
+
 struct ProgressModel {
     enum LoadOutcome {
         case ready(ProgressModel)
@@ -81,23 +119,14 @@ struct ProgressModel {
             return .unreadable // 同 TodayModel 三态口径：绝不当新用户渲染
         }
 
-        let cleanView = CleanAppDataViewBuilder.build(from: appData)
-        // §6.2 目录只读投影：吨位系数/复合标记进统计层；合理上限进可疑组判定
-        let catalog = ExerciseCatalog.minimal
-        var facts: [String: ExerciseStatsFacts] = [:]
-        for entry in catalog.entries {
-            facts[entry.id] = ExerciseStatsFacts(
-                loadFactor: entry.loadFactor, isCompound: entry.kind == "compound",
-                isAssisted: entry.loadType == "assisted"
-            )
-        }
-        // 数据质量报告走单一组装真源（与今日页修数据卡同口径），见 DataQualityComposer。
-        let quality = DataQualityComposer.report(cleanView: cleanView, catalog: catalog)
-        // 可疑组不进统计（趋势/PR/判断句）——可信度的行为表达（§3.4：判断更保守），
-        // 数据区仍如实列出（FR-PR4 标记不隐藏）。canonical 原样不动。
-        let records = mapToRecords(cleanView)
-        let statsRecords = mapToRecords(cleanView, excluding: quality.suspectSets)
-        let snapshot = ProgressSnapshotBuilder.build(sessions: statsRecords, facts: facts)
+        let core = ProgressCoreProjection.build(from: appData)
+        let cleanView = core.cleanView
+        let catalog = core.catalog
+        let facts = core.facts
+        let quality = core.quality
+        let records = core.records
+        let statsRecords = core.statsRecords
+        let snapshot = core.snapshot
         let keyTrend = TrendInsight.keyExercise(of: snapshot, facts: facts)
         // FR-PR5 连续性月历：训练日 = 有 session 的本地日（含被质量标记的场——那天确实练了，
         // 故用未过滤 records 而非 statsRecords）；当月网格在包内纯算（civil-days，无时区坑）。

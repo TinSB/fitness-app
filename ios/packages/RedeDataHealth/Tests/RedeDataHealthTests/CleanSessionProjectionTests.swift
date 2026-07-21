@@ -58,32 +58,32 @@ final class CleanSessionProjectionTests: XCTestCase {
     func testSessionWithoutIdIsDroppedWithIssue() throws {
         let view = try makeView(#"{"schemaVersion": 8, "history": [{"date": "2026-06-01", "completed": true}]}"#)
         XCTAssertTrue(view.sessions.isEmpty)
-        XCTAssertEqual(view.issues, [.sessionDropped(id: nil, reason: .missingId)])
+        XCTAssertEqual(view.issues, [.sessionDropped(id: nil, dateISO: "2026-06-01", reason: .missingId)])
         XCTAssertTrue(view.hasDirtyData)
     }
 
     func testSessionNotCompletedIsDropped() throws {
         let view = try makeView(#"{"schemaVersion": 8, "history": [{"id": "s1", "date": "2026-06-01", "completed": false}]}"#)
         XCTAssertTrue(view.sessions.isEmpty)
-        XCTAssertEqual(view.issues, [.sessionDropped(id: "s1", reason: .notCompleted)])
+        XCTAssertEqual(view.issues, [.sessionDropped(id: "s1", dateISO: "2026-06-01", reason: .notCompleted)])
     }
 
     func testSessionMissingCompletedFieldIsDroppedAsNotCompleted() throws {
         // 字段缺失与显式 false 刻意同义（见 DataHealthIssue.notCompleted 注释）。
         let view = try makeView(#"{"schemaVersion": 8, "history": [{"id": "s1", "date": "2026-06-01"}]}"#)
         XCTAssertTrue(view.sessions.isEmpty)
-        XCTAssertEqual(view.issues, [.sessionDropped(id: "s1", reason: .notCompleted)])
+        XCTAssertEqual(view.issues, [.sessionDropped(id: "s1", dateISO: "2026-06-01", reason: .notCompleted)])
     }
 
     func testSessionWithoutDateIsDropped() throws {
         let view = try makeView(#"{"schemaVersion": 8, "history": [{"id": "s1", "completed": true}]}"#)
-        XCTAssertEqual(view.issues, [.sessionDropped(id: "s1", reason: .missingDate)])
+        XCTAssertEqual(view.issues, [.sessionDropped(id: "s1", dateISO: nil, reason: .missingDate)])
     }
 
     func testSessionWithInvalidDateFormatIsDropped() throws {
         let view = try makeView(#"{"schemaVersion": 8, "history": [{"id": "s1", "date": "2026-6-9", "completed": true}]}"#)
         XCTAssertTrue(view.sessions.isEmpty)
-        XCTAssertEqual(view.issues, [.sessionDropped(id: "s1", reason: .invalidDateFormat)])
+        XCTAssertEqual(view.issues, [.sessionDropped(id: "s1", dateISO: nil, reason: .invalidDateFormat)])
     }
 
     func testIsoDatetimeDatePassesFormatGuard() throws {
@@ -101,13 +101,13 @@ final class CleanSessionProjectionTests: XCTestCase {
         """#)
         XCTAssertEqual(view.sessions.count, 1)
         XCTAssertEqual(view.sessions.first?.date, "2026-06-01")
-        XCTAssertEqual(view.issues, [.sessionDropped(id: "dup", reason: .duplicateId)])
+        XCTAssertEqual(view.issues, [.sessionDropped(id: "dup", dateISO: "2026-06-02", reason: .duplicateId)])
     }
 
     func testNonObjectHistoryElementIsReportedNotCrashed() throws {
         let view = try makeView(#"{"schemaVersion": 8, "history": ["junk", {"id": "s1", "date": "2026-06-01", "completed": true}]}"#)
         XCTAssertEqual(view.sessions.count, 1)
-        XCTAssertEqual(view.issues, [.sessionDropped(id: nil, reason: .notAnObject)])
+        XCTAssertEqual(view.issues, [.sessionDropped(id: nil, dateISO: nil, reason: .notAnObject)])
     }
 
     func testExerciseWithoutExerciseIdIsDropped() throws {
@@ -118,7 +118,9 @@ final class CleanSessionProjectionTests: XCTestCase {
         ]}
         """#)
         XCTAssertEqual(view.sessions.first?.exercises.count, 0)
-        XCTAssertEqual(view.issues, [.exerciseDropped(sessionId: "s1", reason: .missingExerciseId)])
+        XCTAssertEqual(view.issues, [
+            .exerciseDropped(sessionId: "s1", dateISO: "2026-06-01", reason: .missingExerciseId),
+        ])
     }
 
     func testInvalidSetsAreDroppedIndividually() throws {
@@ -136,9 +138,9 @@ final class CleanSessionProjectionTests: XCTestCase {
         let sets = try XCTUnwrap(view.sessions.first?.exercises.first?.sets)
         XCTAssertEqual(sets.count, 1)
         XCTAssertEqual(view.issues, [
-            .setDropped(sessionId: "s1", exerciseId: "squat", reason: .invalidReps),
-            .setDropped(sessionId: "s1", exerciseId: "squat", reason: .invalidWeight),
-            .setDropped(sessionId: "s1", exerciseId: "squat", reason: .invalidWeight),
+            .setDropped(sessionId: "s1", dateISO: "2026-06-01", exerciseId: "squat", reason: .invalidReps),
+            .setDropped(sessionId: "s1", dateISO: "2026-06-01", exerciseId: "squat", reason: .invalidWeight),
+            .setDropped(sessionId: "s1", dateISO: "2026-06-01", exerciseId: "squat", reason: .invalidWeight),
         ])
     }
 
@@ -151,7 +153,9 @@ final class CleanSessionProjectionTests: XCTestCase {
         """#)
         let set = try XCTUnwrap(view.sessions.first?.exercises.first?.sets.first)
         XCTAssertNil(set.rir)
-        XCTAssertEqual(view.issues, [.setFieldIgnored(sessionId: "s1", exerciseId: "squat", field: "rir")])
+        XCTAssertEqual(view.issues, [
+            .setFieldIgnored(sessionId: "s1", dateISO: "2026-06-01", exerciseId: "squat", field: "rir"),
+        ])
     }
 
     func testBoundaryValuesPassGuards() throws {
@@ -201,7 +205,21 @@ final class CleanSessionProjectionTests: XCTestCase {
         let exercise = try XCTUnwrap(view.sessions.first?.exercises.first)
         XCTAssertEqual(exercise.exerciseId, "squat")
         XCTAssertTrue(exercise.sets.isEmpty)
-        XCTAssertEqual(view.issues, [.setDropped(sessionId: "s1", exerciseId: "squat", reason: .invalidWeight)])
+        XCTAssertEqual(view.issues, [
+            .setDropped(sessionId: "s1", dateISO: "2026-06-01", exerciseId: "squat", reason: .invalidWeight),
+        ])
+    }
+
+    func testDroppedTrainingIssuesExposeDateScopeAndUnscopedFailures() throws {
+        let scoped = try makeView(#"{"schemaVersion": 8, "history": [{"id": "s1", "date": "2026-06-01", "completed": true, "exercises": [{"exerciseId": "squat", "sets": [{"weight": -1, "reps": 5}]}]}]}"#)
+        let scopedIssue = try XCTUnwrap(scoped.issues.first)
+        XCTAssertTrue(scopedIssue.isDroppedTrainingData)
+        XCTAssertEqual(scopedIssue.droppedTrainingDateISO, "2026-06-01")
+
+        let unscoped = try makeView(#"{"schemaVersion": 8, "history": [{"id": "s2", "date": "bad-date", "completed": true}]}"#)
+        let unscopedIssue = try XCTUnwrap(unscoped.issues.first)
+        XCTAssertTrue(unscopedIssue.isDroppedTrainingData)
+        XCTAssertNil(unscopedIssue.droppedTrainingDateISO)
     }
 
     func testEmptyAppDataYieldsEmptyCleanView() throws {

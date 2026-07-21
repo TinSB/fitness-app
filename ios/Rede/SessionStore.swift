@@ -20,28 +20,58 @@ private struct DataHealthGate: AppDataWriteGate {
 // 这里只是 @Observable 包装 + 时钟注入点。进行中会话仅存内存
 //（FR-TR9 跨进程恢复未排片，已在 MVP 计划留痕）；完成落盘归 M3-3。
 
-/// draft 文件存取（独立于 canonical，不经写闸；best-effort——draft 丢失不阻塞训练）。
-private enum DraftFile {
-    static var url: URL {
-        TodayModel.canonicalFileURL().deletingLastPathComponent()
-            .appendingPathComponent("active-session-draft.json", isDirectory: false)
+/// 进行中训练 draft 的可注入存取 seam。独立于 canonical，不经 AppData 写闸。
+protocol TrainSessionDraftStoring {
+    func load() -> TrainSessionDraft?
+    func enqueueSave(_ draft: TrainSessionDraft)
+    @discardableResult func saveDurably(_ draft: TrainSessionDraft) -> Bool
+    func clear()
+}
+
+/// 生产默认文件实现：单一串行队列保证普通异步写、耐久同步写、读取与清除严格有序。
+/// durable/clear 的同步块天然排在此前 enqueue 后，旧写不会越过 clear 倒灌。
+final class FileTrainSessionDraftStore: TrainSessionDraftStoring, @unchecked Sendable {
+    private let url: URL
+    private let queue = DispatchQueue(label: "com.rede.train-session-draft")
+
+    init(url: URL = TodayModel.canonicalFileURL().deletingLastPathComponent()
+        .appendingPathComponent("active-session-draft.json", isDirectory: false)) {
+        self.url = url
     }
 
-    static func load() -> TrainSessionDraft? {
-        guard let data = try? Data(contentsOf: url) else { return nil }
-        return try? JSONDecoder().decode(TrainSessionDraft.self, from: data)
+    func load() -> TrainSessionDraft? {
+        queue.sync {
+            guard let data = try? Data(contentsOf: url) else { return nil }
+            return try? JSONDecoder().decode(TrainSessionDraft.self, from: data)
+        }
     }
 
-    static func save(_ draft: TrainSessionDraft) {
-        guard let data = try? JSONEncoder().encode(draft) else { return }
-        try? FileManager.default.createDirectory(
-            at: url.deletingLastPathComponent(), withIntermediateDirectories: true
-        )
-        try? data.write(to: url, options: [.atomic])
+    func enqueueSave(_ draft: TrainSessionDraft) {
+        queue.async { [url] in
+            _ = Self.write(draft, to: url)
+        }
     }
 
-    static func clear() {
-        try? FileManager.default.removeItem(at: url)
+    @discardableResult
+    func saveDurably(_ draft: TrainSessionDraft) -> Bool {
+        queue.sync { Self.write(draft, to: url) }
+    }
+
+    func clear() {
+        queue.sync { try? FileManager.default.removeItem(at: url) }
+    }
+
+    private static func write(_ draft: TrainSessionDraft, to url: URL) -> Bool {
+        do {
+            let data = try JSONEncoder().encode(draft)
+            try FileManager.default.createDirectory(
+                at: url.deletingLastPathComponent(), withIntermediateDirectories: true
+            )
+            try data.write(to: url, options: [.atomic])
+            return true
+        } catch {
+            return false
+        }
     }
 }
 
@@ -69,13 +99,16 @@ final class SessionStore {
     /// K6 休息计时 Live Activity（视觉层——裁定 1：到点提醒仍归 G1 休息通知）。
     /// 只在 restCountdown.begin/clear 既有接线点挂钩，不改 RestCountdown 本体。
     private let restLiveActivity = RestLiveActivityController()
+    /// 进行中训练 draft 存取；生产默认仍落原文件，测试注入 fake，禁止触碰真实 AppData。
+    private let draftStore: any TrainSessionDraftStoring
 
     /// K6 启动清理只跑一次（审查 MINOR：@State 初值表达式在 View 结构体每次构造时
     /// 求值——将来任何让 WindowGroup 重估的改动都会构造临时 SessionStore，若清理在
     /// init 无闸门，会误杀正在跑的休息 Live Activity；进程级 once 保住原语义）。
     private static var didRunLaunchCleanup = false
 
-    init() {
+    init(draftStore: any TrainSessionDraftStoring = FileTrainSessionDraftStore()) {
+        self.draftStore = draftStore
         // K6 启动清理：上个进程被杀（训练异常中断）可能留下孤儿 Live Activity——
         // 新进程首次构造时必无休息在跑，全部收掉（controller 串行链保证先于 begin）。
         if !Self.didRunLaunchCleanup {
@@ -101,9 +134,6 @@ final class SessionStore {
     var planProposalSnoozed = false
     /// 保存进行中（防双击双写；MainActor 上同步置位）。
     var isSaving = false
-    /// 草稿写任务句柄：每次 persistDraft 取消上一次未完成的写，防乱序覆盖（审计 MAJOR）。
-    private var draftTask: Task<Void, Never>?
-
     var todayModel: TodayModel? {
         if case .ready(let model)? = todayOutcome { return model }
         return nil
@@ -1037,7 +1067,7 @@ final class SessionStore {
 
     /// 当日 draft → 恢复提示；跨天/无效 → 静默清除。
     private func checkForRestorableDraft() {
-        guard flow == nil, pendingDraft == nil, let draft = DraftFile.load() else { return }
+        guard flow == nil, pendingDraft == nil, let draft = draftStore.load() else { return }
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = .current
@@ -1045,7 +1075,7 @@ final class SessionStore {
         if draft.isRestorable(todayISO: formatter.string(from: Date())) {
             pendingDraft = draft
         } else {
-            DraftFile.clear()
+            draftStore.clear()
         }
     }
 
@@ -1054,7 +1084,7 @@ final class SessionStore {
         pendingDraft = nil
         guard let restored = draft.restoreFlow(allowedEquipment: allowedEquipment, loadUnit: loadUnit) else {
             // 重放失败（如 catalog 漂移）：宁可不恢复，清掉过期 draft
-            DraftFile.clear()
+            draftStore.clear()
             return
         }
         flow = restored
@@ -1074,7 +1104,7 @@ final class SessionStore {
 
     func discardPendingDraft() {
         pendingDraft = nil
-        DraftFile.clear()
+        draftStore.clear()
         // 放弃 = 训练废弃，旧进程在休息开始时排的 rest-end 提醒必然过期——撤掉，
         // 防「已放弃还弹休息结束」（Task 6 审查捞出的姊妹缺口）。「暂不」分支有意
         // 不撤：draft 仍在、用户可能随即恢复，语义归 owner 后续拍板。
@@ -1087,20 +1117,46 @@ final class SessionStore {
     /// 休息提醒，让它此刻送达（前台经 delegate 呈现 / 后台系统送达）。手动「下一组」提前结束或收尾才取消。
     func apply(_ event: TrainFlowEvent, restCompletedNaturally: Bool = false) {
         guard flow != nil else { return }
+        _ = reduce(event)
+        syncRestCountdown(after: event, restCompletedNaturally: restCompletedNaturally)
+        enqueueDraftSave()
+    }
+
+    /// FR-TR14 S1 的持久化提交：仅允许本次顺序 move。
+    /// reducer 接受且同步 draft 保存成功才提交；任何失败都恢复逐字段完全相同的 flow。
+    @discardableResult
+    func applyDurably(_ event: TrainFlowEvent) -> Bool {
+        guard case .moveExerciseToCurrent = event, let before = flow else { return false }
+        guard reduce(event) else {
+            flow = before
+            return false
+        }
+        guard saveDraftDurably() else {
+            flow = before
+            return false
+        }
+        return true
+    }
+
+    /// TrainFlowEvent → reducer 的唯一 app 层接线。返回值只表示 typed event 是否被接受。
+    @discardableResult
+    private func reduce(_ event: TrainFlowEvent) -> Bool {
+        guard flow != nil else { return false }
+        let eventCountBefore = flow?.events.count ?? 0
         switch event {
         case .logSet(let obs): flow?.logSet(obs)
         case .restFinished: flow?.restFinished()
         case .skipSet(let reason): flow?.skipSet(reason: reason)
         case .skipExercise(let reason): flow?.skipExercise(reason: reason)
         case .replaceExercise(let id): flow?.replaceCurrentExercise(with: id)
+        case .moveExerciseToCurrent(let id): flow?.moveExerciseToCurrent(id)
         case .reportPain: flow?.reportPain()
         case .toggleHold: flow?.toggleHold()
         case .requestFinish: flow?.requestFinish()
         case .keepTraining: flow?.keepTraining()
         case .confirmEnd(let reason): flow?.confirmEnd(reason: reason)
         }
-        syncRestCountdown(after: event, restCompletedNaturally: restCompletedNaturally)
-        persistDraft()
+        return flow?.events.count == eventCountBefore + 1 && flow?.events.last == event
     }
 
     // MARK: - FR-TR10 热身（流内临时引导，不进 events/不落库）
@@ -1236,27 +1292,31 @@ final class SessionStore {
             targetLine: "")
     }
 
-    private func persistDraft() {
-        guard let flow, flow.phase != .summary else { return }
+    private func currentDraft() -> TrainSessionDraft? {
+        guard let flow, flow.phase != .summary else { return nil }
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = .current
         formatter.dateFormat = "yyyy-MM-dd"
-        let draft = TrainSessionDraft(
+        return TrainSessionDraft(
             dateISO: formatter.string(from: sessionStartedAt ?? Date()),
             startedAt: sessionStartedAt ?? Date(),
             prescription: flow.prescription,
             events: flow.events,
             catalogVersion: ExerciseCatalog.minimal.catalogVersion
         )
-        // 取消上一次未完成的草稿写再派新写：快速连续打组会派多个并发写，乱序完成会把旧草稿盖回去
-        //（杀进程重开恢复到错误中点，审计 MAJOR）。cancel 是协作式——故在写前查 isCancelled 跳过被取代的写
-        //（已开始的 .atomic 写不会半截，最坏只是少写一帧旧草稿）。同 PlanDayEditorView impactTask 模式。
-        draftTask?.cancel()
-        draftTask = Task.detached(priority: .utility) {
-            guard !Task.isCancelled else { return }
-            DraftFile.save(draft)
-        }
+    }
+
+    /// 普通训练事件只排队，UI 不等待文件 IO；失败保持 best-effort 语义。
+    private func enqueueDraftSave() {
+        guard let draft = currentDraft() else { return }
+        draftStore.enqueueSave(draft)
+    }
+
+    /// 仅关键顺序调整使用：在同一队列等待此前普通写完成，再同步确认最终快照落盘。
+    private func saveDraftDurably() -> Bool {
+        guard let draft = currentDraft() else { return false }
+        return draftStore.saveDurably(draft)
     }
 
     /// FR-EQ1：当前档案的器械白名单（nil = 不过滤）。
@@ -1278,7 +1338,7 @@ final class SessionStore {
         sessionStartedAt = now
         restCountdown.clear() // 新会话从 activeSet 起步，旧倒计时不得滞留
         restLiveActivity.end(endpoint: "session-start")   // K6：旧视觉层同不得滞留
-        persistDraft()
+        enqueueDraftSave()
     }
 
     /// 今日尚未加载时先加载再开训（Plan tab 直接开训路径）。
@@ -1294,11 +1354,8 @@ final class SessionStore {
         restCountdown.clear()
         cancelRestNotification() // FR-NT1：放弃/收尾时清掉待发的休息提醒，避免训练已结束还弹（审查 MAJOR-1）
         restLiveActivity.end(endpoint: "session-end")   // K6：训练结束/放弃即收视觉层（含 abandonActiveSession 路径）
-        // 先取消未完成的草稿写再删文件：否则排队中的 save 可能在 clear 之后落地，留孤儿草稿
-        // → 下次启动误弹「恢复训练」（审查 M-1）。
-        draftTask?.cancel()
-        draftTask = nil
-        DraftFile.clear()
+        // draft 写已严格同步有序；清除后不会再有旧异步任务倒灌孤儿草稿。
+        draftStore.clear()
     }
 
     /// 放弃进行中训练（owner 反馈 2026-06-13）：清空流与 draft、不写 canonical——

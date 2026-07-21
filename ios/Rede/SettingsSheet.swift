@@ -1,4 +1,5 @@
 import SwiftUI
+import RedeEntitlements
 import RedeL10n
 import RedeTrainingDecision
 
@@ -13,10 +14,14 @@ import RedeTrainingDecision
 
 struct SettingsSheet: View {
     @Bindable var store: LocaleStore
+    var onCoachAction: (WeeklyCoachReviewAction) -> Void = { _ in }
     @Environment(SessionStore.self) private var sessionStore
+    @Environment(SubscriptionModel.self) private var subscriptionModel
+    @Environment(AppUpdateModel.self) private var appUpdateModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var profile: SessionStore.ProfileSnapshot?
     /// 周期化开关持久态（FR-PL2 enablement；默认关 = opt-in）。
@@ -37,6 +42,9 @@ struct SettingsSheet: View {
     @State private var exportItem: ExportFile?
     @State private var exportBusy = false
     @State private var exportFailed = false
+    @State private var showSubscriptionPage = false
+    @State private var showWhatsNew = false
+    @State private var pendingCoachAction: WeeklyCoachReviewAction?
     /// 行内单题编辑（方向 A 拍板 2026-06-10：改哪题进哪题，退役整流重跑）。
     @State private var editing: PlateQuestion?
     /// 最近一次保存的变更收据（铭牌下方替换提示行）。
@@ -45,7 +53,8 @@ struct SettingsSheet: View {
     /// 背板折叠态（J5 渐进披露：默认全收起）。
     @State private var expandedInfo: Set<String> = []
 
-    /// M6-3 正式反馈渠道。mailto 外部拉起，不算 app runtime 网络真相（隐私文案「不连网」仍属实）。
+    /// M6-3 正式反馈渠道。mailto 交给系统邮件 App；StoreKit 另由 Apple
+    /// 服务处理。Rede 自身不上传训练数据，但不能再把整个 runtime 描述成“不连网”。
     /// 2026-06-19 改用 hello@rede.fit（Cloudflare Email Routing 转发到 owner 收件箱），不再暴露个人邮箱。
     private let feedbackAddress = "hello@rede.fit"
 
@@ -96,7 +105,13 @@ struct SettingsSheet: View {
                         dataSection
                             .id("data")   // -settingsScrollTo 锚点
                         EngraveDivider().padding(.top, RedeSpace.section)
+                        subscriptionSection
+                            .id("subscription")
+                        EngraveDivider().padding(.top, RedeSpace.section)
                         backgroundPlate
+                        EngraveDivider().padding(.top, RedeSpace.section)
+                        appUpdateSection
+                            .id("update")
                         EngraveDivider().padding(.top, RedeSpace.section)
                         backplateInfo
                         feedbackKey
@@ -126,6 +141,32 @@ struct SettingsSheet: View {
         .sheet(item: $exportItem) { item in
             ExportActivityView(items: [item.url])
         }
+        .sheet(isPresented: $showSubscriptionPage, onDismiss: {
+            guard let action = pendingCoachAction else { return }
+            pendingCoachAction = nil
+            onCoachAction(action)
+            dismiss()
+        }) {
+            SubscriptionPageSheet(
+                configuration: subscriptionModel.configuration,
+                onCoachAction: { action in
+                    pendingCoachAction = action
+                    showSubscriptionPage = false
+                }
+            )
+                .environment(store)
+                .environment(subscriptionModel)
+                .presentationDetents([.large])
+        }
+        .sheet(isPresented: $showWhatsNew, onDismiss: {
+            appUpdateModel.markWhatsNewSeen()
+        }) {
+            AppUpdateWhatsNewSheet(version: appUpdateModel.installedVersion) {
+                appUpdateModel.markWhatsNewSeen()
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
         // K7：读失败如实提示（dataUnreadable 文案家族），绝不假成功。
         .alert(s.settingsExportFailedTitle, isPresented: $exportFailed) {
             Button(s.settingsExportFailedConfirm, role: .cancel) {}
@@ -153,6 +194,11 @@ struct SettingsSheet: View {
             }
             // K7 截图钩子（同上先例）：-autoExportData 打开设置即触发导出（simctl 无法点击 UI）。
             if args.contains("-autoExportData") { exportData() }
+            // 截图钩子（2026-07-20，同上先例）：-autoOpenCoachPage 打开 Rede Coach 页
+            //（配 -redePaidCoachActiveFixture / -weeklyCoachReviewFixture 拍订阅/复盘态）。
+            if args.contains("-autoOpenCoachPage") { showSubscriptionPage = true }
+            // FR-SE10 验证钩子：打开设置后走真实手动检查路径，失败态也必须可见。
+            if args.contains("-manualCheckAppUpdate") { await appUpdateModel.checkManually() }
         }
     }
 
@@ -190,8 +236,101 @@ struct SettingsSheet: View {
         }
     }
 
-    // MARK: - K7 数据（FR-SE6 兑现）：导出行 + 本机事实陈述（原背板「数据」折叠行上移合并，
-    // 避免同页两个「数据」标题；隐私/关于仍留背板渐进披露）
+    // MARK: - FR-SE9 / FR-SUB2 方案与订阅
+    // 2026-07-20 收敛：设置页只留「方案事实行 + 查看 Rede Coach 入口」两行。
+    // 恢复购买/隐私/条款依赖 Coach 页购买面的 Apple 原生同款控件（RedeSubscriptionStoreView
+    // 的 .storeButton(restorePurchases) + policy destinations）；「管理订阅」移到 Coach 页。
+    // entitlement 矩阵语义不变——只动行的归属，不动门禁条件。
+
+    private var subscriptionSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Overline(text: s.settingsSubscriptionSection).padding(.top, 18)
+
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(subscriptionTierLabel)
+                    .font(.redeBody)
+                    .foregroundStyle(Color.redeT1)
+                Spacer()
+                if subscriptionModel.entitlement == .checking {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(Color.redeT3)
+                        .accessibilityLabel(s.settingsSubscriptionChecking)
+                }
+            }
+            .frame(minHeight: RedeShape.controlHeight)
+
+            // 例外态注解（非控件行）：宽限期/无法核对必须如实可见，常规态零小字。
+            if let subscriptionStatusNote {
+                Text(subscriptionStatusNote)
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT3)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            subscriptionActionRow(
+                title: s.settingsSubscriptionOpenCoach,
+                systemImage: "sparkles"
+            ) {
+                showSubscriptionPage = true
+            }
+        }
+    }
+
+    private var subscriptionTierLabel: String {
+        switch subscriptionModel.entitlement {
+        case .checking:
+            s.settingsSubscriptionChecking
+        case .freeCore:
+            s.settingsSubscriptionFreeCore
+        case .unknown:
+            s.settingsSubscriptionUnknownTier
+        case .paidCoach:
+            s.settingsSubscriptionPaidCoach
+        }
+    }
+
+    /// 仅例外态显示：宽限期（billingState 唯一展示面）与无法核对。
+    /// verified/checking 的常规注解按两行收敛裁掉（spinner/tier 行已表达）。
+    private var subscriptionStatusNote: String? {
+        switch subscriptionModel.entitlement {
+        case .checking, .freeCore:
+            nil
+        case .unknown:
+            s.settingsSubscriptionUnknown
+        case .paidCoach(_, let billingState):
+            billingState == .gracePeriod ? s.settingsSubscriptionGrace : nil
+        }
+    }
+
+    private func subscriptionActionRow(
+        title: String,
+        systemImage: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: systemImage)
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT4)
+                    .accessibilityHidden(true)
+                Text(title)
+                    .font(.redeBody)
+                    .foregroundStyle(Color.redeT2)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.redeT4)
+                    .accessibilityHidden(true)
+            }
+            .frame(minHeight: RedeShape.controlHeight)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.redePressableRow)
+    }
+
+    // MARK: - K7 数据（FR-SE6 兑现）：只保留自解释的导出行；owner 2026-07-18
+    // 删除常驻说明小字。隐私/关于仍留背板渐进披露。
 
     private var dataSection: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -218,10 +357,6 @@ struct SettingsSheet: View {
             }
             .buttonStyle(.redePressableRow)
             .disabled(exportBusy)
-            Text(s.settingsExportNote)
-                .font(.redeCaption)
-                .foregroundStyle(Color.redeT3)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -478,11 +613,13 @@ struct SettingsSheet: View {
                 .padding(.horizontal, 16)
             }
             .padding(.top, 9)
-            // 变更收据（保存后）或可点提示（默认）
-            Text(editReceipt ?? s.settingsPlateHint)
-                .font(.redeCaption)
-                .foregroundStyle(editReceipt != nil ? Color.redeT3 : Color.redeT4)
-                .padding(.top, 10)
+            // 只在保存后显示短暂变更收据；不常驻“点任意一行修改”说明小字。
+            if let editReceipt {
+                Text(editReceipt)
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT3)
+                    .padding(.top, 10)
+            }
         }
     }
 
@@ -519,14 +656,178 @@ struct SettingsSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.redePressableRow)
-        .accessibilityHint(profileComplete ? s.settingsPlateHint : "")
+    }
+
+    // MARK: - FR-SE10 版本与更新（事实行；无常驻说明小字）
+
+    private var appUpdateSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Overline(text: s.appUpdateSection)
+                .padding(.top, 18)
+                .padding(.bottom, 7)
+
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(s.appUpdateVersion)
+                    .font(.redeBody)
+                    .foregroundStyle(Color.redeT2)
+                Spacer()
+                Text(s.appUpdateVersionValue(
+                    marketingVersion: appUpdateModel.installedVersion,
+                    build: appUpdateModel.build
+                ))
+                .font(.redeBody)
+                .monospacedDigit()
+                .foregroundStyle(Color.redeT1)
+            }
+            .frame(minHeight: RedeShape.controlHeight)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("settings-update-version")
+
+            Rectangle().fill(Color.redeHair2).frame(height: 1)
+
+            Group {
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 0) {
+                        appUpdateCheckButton
+                        appUpdateCheckAccessory(alignment: .leading)
+                    }
+                } else {
+                    HStack(alignment: .center, spacing: 8) {
+                        appUpdateCheckButton
+                        appUpdateCheckAccessory(alignment: .trailing)
+                    }
+                }
+            }
+            .frame(minHeight: RedeShape.controlHeight)
+
+            Rectangle().fill(Color.redeHair2).frame(height: 1)
+
+            Button {
+                appUpdateModel.showWhatsNewManually()
+                showWhatsNew = appUpdateModel.shouldPresentWhatsNew
+            } label: {
+                HStack(spacing: 8) {
+                    Text(s.appUpdateWhatsNew)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT2)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Color.redeT4)
+                        .accessibilityHidden(true)
+                }
+                .frame(minHeight: RedeShape.controlHeight)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.redePressableRow)
+            .disabled(!RedeAppUpdateRuntime.hasBundledWhatsNew(for: appUpdateModel.installedVersion))
+            .accessibilityIdentifier("settings-whats-new")
+
+            Rectangle().fill(Color.redeHair2).frame(height: 1)
+        }
+        .accessibilityIdentifier("settings-update-section")
+    }
+
+    private var appUpdateStatusText: String? {
+        switch appUpdateModel.manualStatus {
+        case .checking:
+            nil
+        case .upToDate:
+            s.appUpdateUpToDate
+        case .updateAvailable(let version):
+            s.appUpdateAvailable(version: version)
+        case .failed:
+            s.appUpdateUnableToCheck
+        case .idle:
+            appUpdateModel.availableVersion.map { s.appUpdateAvailable(version: $0) }
+        }
+    }
+
+    private var appUpdateStatusIsFailure: Bool {
+        appUpdateModel.manualStatus == .failed
+    }
+
+    private var appUpdateActionVersion: String? {
+        switch appUpdateModel.manualStatus {
+        case .updateAvailable(let version):
+            version
+        case .idle:
+            appUpdateModel.availableVersion
+        case .checking, .upToDate, .failed:
+            nil
+        }
+    }
+
+    private var appUpdateCheckButton: some View {
+        Button(action: performUpdateCheckAction) {
+            Text(s.appUpdateCheck)
+                .font(.redeBody)
+                .foregroundStyle(Color.redeT2)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, minHeight: RedeShape.controlHeight, alignment: .leading)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.redePressableRow)
+        .disabled(appUpdateModel.manualStatus == .checking)
+        .accessibilityIdentifier("settings-check-update")
+    }
+
+    @ViewBuilder
+    private func appUpdateCheckAccessory(alignment: Alignment) -> some View {
+        if appUpdateModel.manualStatus == .checking {
+            ProgressView()
+                .controlSize(.small)
+                .tint(Color.redeT3)
+                .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil, alignment: alignment)
+                .accessibilityLabel(s.appUpdateChecking)
+        } else if let version = appUpdateActionVersion {
+            Button {
+                openURL(RedeAppUpdateRuntime.appStoreURL)
+            } label: {
+                HStack(spacing: 6) {
+                    Text(s.appUpdateAvailable(version: version))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 10, weight: .semibold))
+                        .accessibilityHidden(true)
+                }
+                .font(.redeCaption)
+                .monospacedDigit()
+                .foregroundStyle(Color.redeEmber2)
+                .frame(
+                    maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil,
+                    minHeight: RedeShape.controlHeight,
+                    alignment: alignment
+                )
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.redePressable)
+            .accessibilityLabel("\(s.appUpdateAvailable(version: version)), \(s.appUpdateViewUpdate)")
+            .accessibilityIdentifier("settings-view-update")
+        } else if let status = appUpdateStatusText {
+            Text(status)
+                .font(.redeCaption)
+                .monospacedDigit()
+                .foregroundStyle(appUpdateStatusIsFailure ? Color.redeRisk : Color.redeT3)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(
+                    maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil,
+                    alignment: alignment
+                )
+                .multilineTextAlignment(dynamicTypeSize.isAccessibilitySize ? .leading : .trailing)
+        }
+    }
+
+    private func performUpdateCheckAction() {
+        guard appUpdateModel.manualStatus != .checking else { return }
+        Task { await appUpdateModel.checkManually() }
     }
 
     // MARK: - 背板蚀刻：数据/隐私/关于 渐进披露（默认收起）
 
     private var backplateInfo: some View {
         VStack(spacing: 0) {
-            // 「数据」行已上移成 dataSection（K7：导出行 + 事实陈述同区，避免双标题）。
+            // 「数据」行已上移成 dataSection（K7：单一导出入口，避免双标题）。
             infoRow(id: "privacy", title: s.settingsPrivacy, detail: s.settingsPrivacyNote)
             infoRow(id: "about", title: s.settingsAbout, detail: s.settingsDisclaimer)
         }
@@ -611,6 +912,374 @@ struct SettingsSheet: View {
         return withUnsafePointer(to: &sys.machine) { ptr in
             ptr.withMemoryRebound(to: CChar.self, capacity: Int(_SYS_NAMELEN)) { String(cString: $0) }
         }
+    }
+}
+
+// MARK: - Rede Coach 页面（品牌页始终可见；购买控件仍由 launch gate 锁闭）
+
+enum RedeCoachEntitlementPresentation: Equatable {
+    case checking
+    case unavailable
+}
+
+enum RedeCoachCurrentPlan: Equatable {
+    case checking
+    case freeCore
+    case unknown
+    case paidCoach
+}
+
+enum RedeCoachPageContent: Equatable {
+    case weeklyReview
+    case entitlement(RedeCoachEntitlementPresentation)
+    case subscription(SubscriptionPagePresentation)
+}
+
+enum RedeCoachPageContentPolicy {
+    static func content(
+        entitlement: EntitlementState,
+        launchDecision: SubscriptionLaunchDecision,
+        now: Date = Date()
+    ) -> RedeCoachPageContent {
+        if FeatureAccessPolicy.allows(.paidCoach, entitlement: entitlement, now: now) {
+            return .weeklyReview
+        }
+
+        switch entitlement {
+        case .checking:
+            return .entitlement(.checking)
+        case .unknown:
+            return .entitlement(.unavailable)
+        case .freeCore, .paidCoach:
+            return .subscription(SubscriptionPagePolicy.presentation(for: launchDecision))
+        }
+    }
+
+    static func currentPlan(
+        entitlement: EntitlementState,
+        now: Date = Date()
+    ) -> RedeCoachCurrentPlan {
+        switch entitlement {
+        case .checking:
+            return .checking
+        case .freeCore:
+            return .freeCore
+        case .unknown:
+            return .unknown
+        case .paidCoach:
+            return FeatureAccessPolicy.allows(.paidCoach, entitlement: entitlement, now: now)
+                ? .paidCoach
+                : .freeCore
+        }
+    }
+}
+
+private struct SubscriptionPageSheet: View {
+    let configuration: SubscriptionConfiguration
+    let onCoachAction: (WeeklyCoachReviewAction) -> Void
+    @Environment(LocaleStore.self) private var localeStore
+    @Environment(SubscriptionModel.self) private var subscriptionModel
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    /// 「管理订阅」失败提示（2026-07-20 自设置页移入：事务控件聚到 Coach 页）。
+    @State private var managementFailed = false
+
+    private var s: RedeStrings { localeStore.strings }
+    private var products: [SubscriptionProduct] {
+        guard case .available(let products) = subscriptionModel.catalog else { return [] }
+        return products
+    }
+    private var pageContent: RedeCoachPageContent {
+        RedeCoachPageContentPolicy.content(
+            entitlement: subscriptionModel.entitlement,
+            launchDecision: subscriptionModel.launchDecision
+        )
+    }
+    private var currentPlan: String {
+        switch RedeCoachPageContentPolicy.currentPlan(entitlement: subscriptionModel.entitlement) {
+        case .checking:
+            s.settingsSubscriptionChecking
+        case .freeCore:
+            s.settingsSubscriptionFreeCore
+        case .unknown:
+            s.settingsSubscriptionUnknownTier
+        case .paidCoach:
+            s.settingsSubscriptionPaidCoach
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Overline(text: s.settingsSubscriptionPaidCoach, color: .redeT3)
+                Spacer()
+                if dynamicTypeSize.isAccessibilitySize {
+                    Button { dismiss() } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 18, weight: .semibold))
+                            .frame(width: 44, height: 44)
+                    }
+                    .foregroundStyle(Color.redeT2)
+                    .accessibilityLabel(s.settingsDone)
+                    .buttonStyle(.redePressable)
+                } else {
+                    Button(s.settingsDone) { dismiss() }
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT2)
+                        .buttonStyle(.redePressable)
+                }
+            }
+            .padding(.horizontal, RedeSpace.page)
+            .frame(height: 58)
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(Color.redeHair2).frame(height: 1)
+            }
+
+            switch pageContent {
+            case .weeklyReview:
+                // Access gate and launch gate are intentionally separate: a verified subscriber
+                // keeps Paid Coach even when product catalog/purchase presentation is unavailable.
+                WeeklyCoachReviewView(onAction: onCoachAction)
+                // 付费态页脚「管理订阅」（自设置页移入）：沿用既有 launch-gate 条件
+                //（与原设置页 showsTransactionControls 同门禁），矩阵语义不变。
+                if SubscriptionPagePolicy.presentation(for: subscriptionModel.launchDecision)
+                    .showsTransactionControls {
+                    manageSubscriptionsFooter
+                }
+            case .entitlement(let presentation):
+                entitlementContent(presentation)
+            case .subscription(let presentation):
+                switch presentation {
+                case .preparing, .unavailable:
+                    previewContent(presentation)
+                case .store:
+                    storeContent
+                }
+            }
+        }
+        .background(Color.redeBase.ignoresSafeArea())
+        .preferredColorScheme(.dark)
+        .accessibilityIdentifier("subscription-page")
+        .alert(s.settingsSubscriptionOperationFailed, isPresented: $managementFailed) {
+            Button(s.settingsExportFailedConfirm, role: .cancel) {}
+        }
+        .onDisappear {
+            Task { await subscriptionModel.refresh() }
+        }
+    }
+
+    /// 「管理订阅」行：付费态挂 WeeklyCoachReviewView 页脚；free+store 态挂购买面
+    /// marketing shell 底部。进入 Apple 管理面，返回后刷新权益。
+    private var manageSubscriptionsFooter: some View {
+        Button {
+            manageSubscriptions()
+        } label: {
+            HStack(spacing: 8) {
+                Text(s.settingsSubscriptionManage)
+                    .font(.redeBody)
+                    .foregroundStyle(Color.redeT2)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.redeT4)
+                    .accessibilityHidden(true)
+            }
+            .padding(.horizontal, RedeSpace.page)
+            .frame(minHeight: RedeShape.controlHeight)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.redePressableRow)
+        .overlay(alignment: .top) {
+            Rectangle().fill(Color.redeHair2).frame(height: 1)
+                .padding(.horizontal, RedeSpace.page)
+        }
+        .accessibilityIdentifier("subscription-page-manage")
+    }
+
+    private func manageSubscriptions() {
+        guard let scene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first(where: { $0.activationState == .foregroundActive }) else {
+            managementFailed = true
+            return
+        }
+        let groupID: String? = {
+            guard case .available(let products) = subscriptionModel.catalog else { return nil }
+            return products.first?.subscriptionGroupID
+        }()
+        Task {
+            do {
+                try await RedeSubscriptionManagement.show(
+                    in: scene,
+                    subscriptionGroupID: groupID
+                )
+                await subscriptionModel.refresh()
+            } catch {
+                managementFailed = true
+            }
+        }
+    }
+
+    private func entitlementContent(_ presentation: RedeCoachEntitlementPresentation) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                brandHeader
+
+                EngraveDivider()
+                    .padding(.vertical, RedeSpace.section)
+
+                switch presentation {
+                case .checking:
+                    HStack(spacing: 12) {
+                        ProgressView()
+                            .tint(Color.redeEmber2)
+                            .accessibilityHidden(true)
+                        Text(s.settingsSubscriptionChecking)
+                            .font(.redeHeadline)
+                            .foregroundStyle(Color.redeT1)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("subscription-page-entitlement-checking")
+
+                case .unavailable:
+                    VStack(alignment: .leading, spacing: 14) {
+                        Overline(text: s.subscriptionPageUnavailableOverline, color: .redeCaution)
+                        Text(s.settingsSubscriptionUnknownTier)
+                            .font(.redeHeadline)
+                            .foregroundStyle(Color.redeT1)
+                            .fixedSize(horizontal: false, vertical: true)
+                        EmbButton(icon: "arrow.clockwise", title: s.settingsSubscriptionRetry) {
+                            Task { await subscriptionModel.refresh() }
+                        }
+                    }
+                    .accessibilityIdentifier("subscription-page-entitlement-unavailable")
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, RedeSpace.page)
+            .padding(.bottom, 36)
+        }
+    }
+
+    private func previewContent(_ presentation: SubscriptionPagePresentation) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                brandHeader
+
+                EngraveDivider()
+                    .padding(.vertical, RedeSpace.section)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Overline(text: s.subscriptionPageCurrentPlan)
+                    Text(currentPlan)
+                        .font(.redeHeadline)
+                        .foregroundStyle(Color.redeT1)
+                }
+
+                EngraveDivider()
+                    .padding(.vertical, RedeSpace.section)
+
+                previewStatus(presentation)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier(
+                        presentation == .preparing
+                            ? "subscription-page-preparing"
+                            : "subscription-page-unavailable"
+                    )
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, RedeSpace.page)
+            .padding(.bottom, 36)
+        }
+    }
+
+    private var storeContent: some View {
+        RedeSubscriptionStoreView(configuration: configuration, products: products) {
+            VStack(alignment: .leading, spacing: 14) {
+                Text(s.settingsSubscriptionPaidCoach)
+                    .font(.redeTitle)
+                    .foregroundStyle(Color.redeT1)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(alignment: .firstTextBaseline) {
+                    Text(s.subscriptionPageCurrentPlan)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT3)
+                    Spacer()
+                    Text(currentPlan)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT1)
+                }
+                // free+store 态「管理订阅」（自设置页移入）：购买面 marketing shell 底部。
+                // Apple 原生恢复购买/隐私/条款控件由 RedeSubscriptionStoreView 自带。
+                Button {
+                    manageSubscriptions()
+                } label: {
+                    HStack(spacing: 8) {
+                        Text(s.settingsSubscriptionManage)
+                            .font(.redeCallout)
+                            .foregroundStyle(Color.redeT3)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(Color.redeT4)
+                            .accessibilityHidden(true)
+                    }
+                    .frame(minHeight: RedeShape.controlHeight)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.redePressableRow)
+                .accessibilityIdentifier("subscription-page-manage")
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 12)
+        }
+        .tint(Color.redeEmber2)
+        .accessibilityIdentifier("subscription-page-store")
+    }
+
+    @ViewBuilder
+    private func previewStatus(_ presentation: SubscriptionPagePresentation) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            switch presentation {
+            case .preparing:
+                Overline(text: s.subscriptionPagePreparingOverline, color: .redeEmber2)
+                Text(s.subscriptionPagePreparingTitle)
+                    .font(.redeHeadline)
+                    .foregroundStyle(Color.redeT1)
+                    .fixedSize(horizontal: false, vertical: true)
+                previewStatusLine(s.subscriptionPageNotOpen)
+            case .unavailable:
+                Overline(text: s.subscriptionPageUnavailableOverline, color: .redeCaution)
+                Text(s.subscriptionPageUnavailableTitle)
+                    .font(.redeHeadline)
+                    .foregroundStyle(Color.redeT1)
+                    .fixedSize(horizontal: false, vertical: true)
+                previewStatusLine(s.subscriptionPageFreeCoreAvailable)
+            case .store:
+                EmptyView()
+            }
+        }
+    }
+
+    private func previewStatusLine(_ text: String) -> some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(Color.redeT4)
+                .frame(width: 6, height: 6)
+                .accessibilityHidden(true)
+            Text(text)
+                .font(.redeBody)
+                .foregroundStyle(Color.redeT2)
+        }
+    }
+
+    private var brandHeader: some View {
+        Text(s.settingsSubscriptionPaidCoach)
+            .font(.redeTitle)
+            .foregroundStyle(Color.redeT1)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, 28)
     }
 }
 

@@ -17,9 +17,22 @@ private enum ScaleKind: Hashable {
     case session, week, cycle
 }
 
+enum ProgressScrollTarget: Hashable {
+    case dataQuality
+}
+
 struct ProgressTabView: View {
     /// M2 空态承接（§12.5）：空态主按钮回今日开训（跨 tab；由 RootTabView 切 selection）。
-    var onGoToday: () -> Void = {}
+    let onGoToday: () -> Void
+    @Binding private var scrollTarget: ProgressScrollTarget?
+
+    init(
+        onGoToday: @escaping () -> Void = {},
+        scrollTarget: Binding<ProgressScrollTarget?> = .constant(nil)
+    ) {
+        self.onGoToday = onGoToday
+        _scrollTarget = scrollTarget
+    }
 
     @Environment(LocaleStore.self) private var localeStore
     @State private var scale: ScaleKind = {
@@ -97,7 +110,21 @@ struct ProgressTabView: View {
                         proxy.scrollTo(anchor, anchor: .top)
                     }
                 }
+                consumeScrollTarget(proxy)
             }
+            .onChange(of: scrollTarget) { _, _ in consumeScrollTarget(proxy) }
+        }
+    }
+
+    private func consumeScrollTarget(_ proxy: ScrollViewProxy) {
+        guard outcome != nil, let target = scrollTarget else { return }
+        let anchor: String
+        switch target {
+        case .dataQuality: anchor = "data-quality"
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            proxy.scrollTo(anchor, anchor: .top)
+            scrollTarget = nil
         }
     }
 
@@ -161,6 +188,7 @@ struct ProgressTabView: View {
                 dataQualitySection(model.quality)
                     .padding(.horizontal, RedeSpace.page)
                     .padding(.top, RedeSpace.section)
+                    .id("data-quality")
             }
         }
     }
@@ -271,6 +299,7 @@ struct ProgressTabView: View {
                 dataQualitySection(model.quality)
                     .padding(.horizontal, RedeSpace.page)
                     .padding(.top, RedeSpace.section)
+                    .id("data-quality")
             }
         }
     }

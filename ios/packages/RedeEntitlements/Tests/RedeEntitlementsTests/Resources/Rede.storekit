@@ -1,0 +1,183 @@
+{
+  "appPolicies" : {
+    "eula" : "Local StoreKit test configuration. Rede production uses the Apple Standard EULA unless an approved custom EULA replaces it.",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : "https://rede.fit/privacy"
+      }
+    ]
+  },
+  "identifier" : "52EDE001",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_askToBuyEnabled" : false,
+    "_billingGracePeriodEnabled" : true,
+    "_billingIssuesEnabled" : false,
+    "_compatibilityTimeRate" : {
+      "3" : 6
+    },
+    "_disableDialogs" : false,
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_renewalBillingIssuesEnabled" : false,
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+      {
+        "current" : { "index" : 2, "type" : "generic" },
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : { "index" : 1, "type" : "purchase" },
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : { "index" : 0, "type" : "verification" },
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : { "index" : 2, "type" : "generic" },
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : { "index" : 2, "type" : "generic" },
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : { "index" : 3, "type" : "generic" },
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : { "index" : 3, "type" : "generic" },
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
+      },
+      {
+        "current" : { "index" : 0, "type" : "refund request" },
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
+      },
+      {
+        "current" : { "index" : 4, "type" : "generic" },
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
+      }
+    ],
+    "_timeRate" : 1003
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "52EDEC01",
+      "localizations" : [
+
+      ],
+      "name" : "Rede Coach",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "billingPlans" : [
+            {
+              "billingPlanType" : "BILLED_UPFRONT",
+              "commitmentDisplayPrice" : "4.99",
+              "displayPrice" : "4.99",
+              "internalID" : "52EDE101",
+              "isEnabled" : true
+            }
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "4.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "52EDE201",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+            {
+              "description" : "Monthly Rede Coach access for local StoreKit testing",
+              "displayName" : "Rede Coach Monthly",
+              "locale" : "en_US"
+            },
+            {
+              "description" : "用于本地 StoreKit 测试的 Rede Coach 月度方案",
+              "displayName" : "Rede Coach 月度",
+              "locale" : "zh_CN"
+            }
+          ],
+          "productID" : "com.tinsab.rede.coach.monthly.test",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Rede Coach Monthly (Local Test)",
+          "subscriptionGroupID" : "52EDEC01",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "billingPlans" : [
+            {
+              "billingPlanType" : "BILLED_UPFRONT",
+              "commitmentDisplayPrice" : "39.99",
+              "displayPrice" : "39.99",
+              "internalID" : "52EDE102",
+              "isEnabled" : true
+            }
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "39.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "52EDE202",
+          "introductoryOffers" : [
+
+          ],
+          "localizations" : [
+            {
+              "description" : "Annual Rede Coach access for local StoreKit testing",
+              "displayName" : "Rede Coach Annual",
+              "locale" : "en_US"
+            },
+            {
+              "description" : "用于本地 StoreKit 测试的 Rede Coach 年度方案",
+              "displayName" : "Rede Coach 年度",
+              "locale" : "zh_CN"
+            }
+          ],
+          "productID" : "com.tinsab.rede.coach.annual.test",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Rede Coach Annual (Local Test)",
+          "subscriptionGroupID" : "52EDEC01",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 6,
+    "minor" : 3
+  }
+}

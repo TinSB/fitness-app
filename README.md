@@ -33,7 +33,7 @@ Systems that are not approved first-version runtime:
 - watchOS, WatchConnectivity, and CRDT active-session co-editing.
 - Full AppData restore.
 - Remote push notifications.
-- Subscription SDK or remote entitlement infrastructure.
+- Third-party subscription SDK or remote entitlement infrastructure. The approved native StoreKit 2 boundary lives only in `RedeEntitlements` and is production-disabled until release gates pass.
 
 Those systems require a new approved architecture amendment and a fresh Swift-native design before implementation.
 
@@ -52,8 +52,11 @@ Local Swift packages that exist today (under `ios/packages/`, all in the CI test
 | `RedeLocalSnapshot` | Derived local display snapshots for Focus/session projections. |
 | `RedeWidgetShared` | Read-only widget snapshot model (drives the shipped Readiness widget). |
 | `RedeL10n` | Terms and formatting support. |
+| `RedeNotifications` | Local notification policy plus the narrow UserNotifications adapter. |
+| `RedeHealthKit` | Read-only body-weight policy seam plus the narrow HealthKit adapter. |
+| `RedeEntitlements` | Free Core/Paid Coach access policy, StoreKit 2 adapter, lifecycle model, fail-closed launch gate, and StoreKit UI wrappers. |
 
-Planned target package names that do **not** yet exist on disk (named in the Master Architecture as future boundaries; creating them requires an approved architecture slice): `RedeHealthKit` (HealthKit adapters), `RedeNotifications` (local notification adapters), `RedeBackup`, `RedeUIKit`.
+Planned target package names that do **not** yet exist on disk (named in the Master Architecture as future boundaries; creating them requires an approved architecture slice): `RedeBackup`, `RedeUIKit`.
 
 Core data rules:
 
@@ -73,21 +76,23 @@ Start by reading:
 - `COMMERCIALIZATION_ROADMAP.md`
 - `docs/REDE_PRD.md`
 
-The existing Xcode project may be inspected or built only as a legacy reference. It is not the product validation baseline. Do not start new feature work by patching legacy runtime code unless a rewrite slice explicitly approves reuse.
+The existing Xcode project is the active native product runtime and validation surface. Retired IronPath/PWA-era behavior is available only through git history/tagged reference and must not be ported back without an approved rewrite slice.
 
-Optional legacy reference inspection:
+Open the active Xcode project:
 
 ```bash
 open ios/Rede.xcodeproj
 ```
 
-To inspect available legacy schemes from the command line:
+To inspect available schemes from the command line:
 
 ```bash
 xcodebuild -list -project ios/Rede.xcodeproj
 ```
 
-To build the legacy reference from the command line:
+`Rede` is the production-like shared scheme and never injects local products. `Rede-StoreKitTest` is the isolated local StoreKit scheme; its product IDs and prices are test fixtures only and must never become App Store Connect configuration.
+
+To build the active app from the command line:
 
 ```bash
 xcodebuild \
@@ -123,6 +128,12 @@ done
 ```
 
 App-level behavior requires Xcode build or simulator validation when the clean runtime touches iOS frameworks, entitlements, HealthKit, notifications, WidgetKit, or app wiring.
+
+The authoritative local gate mirrors CI, runs all ten packages, builds the production scheme, and proves production subscription configuration fails closed:
+
+```bash
+bash .claude/quality-gate.cmd
+```
 
 ## Documentation
 

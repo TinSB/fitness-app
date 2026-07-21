@@ -1,4 +1,5 @@
 import SwiftUI
+import RedeEntitlements
 import RedeL10n
 import RedeTrainingDecision
 
@@ -10,9 +11,13 @@ enum RootTab: Hashable {
 }
 
 struct RootTabView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var selection: RootTab
     @State private var localeStore: LocaleStore
     @State private var sessionStore = SessionStore()
+    @State private var subscriptionModel: SubscriptionModel
+    @State private var appUpdateModel: AppUpdateModel
+    @State private var progressScrollTarget: ProgressScrollTarget?
     /// M5-1b 首启引导：nil = 未检查（避免首帧闪烁误判）。
     @State private var showOnboarding: Bool?
     /// 截图钩子 -autoOpenSharePreview：用样本数据弹分享卡预览（仅测试脚手架）。
@@ -38,6 +43,12 @@ struct RootTabView: View {
             store.locale = forced
         }
         _localeStore = State(initialValue: store)
+        let subscriptionConfiguration = RedeSubscriptionRuntime.configuration(arguments: args)
+        _subscriptionModel = State(initialValue: RedeSubscriptionRuntime.makeModel(
+            configuration: subscriptionConfiguration,
+            arguments: args
+        ))
+        _appUpdateModel = State(initialValue: RedeAppUpdateRuntime.makeModel(arguments: args))
     }
 
     var body: some View {
@@ -58,13 +69,23 @@ struct RootTabView: View {
                             }
                             selection = .train
                         }
-                    }, onReviewData: { selection = .progress }, // FR-T5 修数据卡「去核对」→ 进展页
+                    }, onReviewData: {
+                        progressScrollTarget = .dataQuality
+                        selection = .progress
+                    }, // FR-T5/FR-SUB3 修数据「去核对」→ 进展页数据质量区
+                       onViewProgress: {
+                           progressScrollTarget = nil
+                           selection = .progress
+                       },
                        onGoPlan: { selection = .plan })          // K3「下一场」行 → 计划页
                 case .train:
                     TrainTabView(onGoToday: { selection = .today })
                 case .progress:
                     // M2 空态承接：空态主按钮回今日（与 Train/Plan 空态同口径）
-                    ProgressTabView(onGoToday: { selection = .today })
+                    ProgressTabView(
+                        onGoToday: { selection = .today },
+                        scrollTarget: $progressScrollTarget
+                    )
                 case .plan:
                     // FR-PL1：占位页动作 = 回今日（每天的安排由今日页给出）
                     PlanTabView(onGoToday: { selection = .today })
@@ -116,6 +137,14 @@ struct RootTabView: View {
                 showOnboarding = false
             } else {
                 showOnboarding = await Task.detached { SessionStore.needsOnboarding() }.value
+            }
+
+            // FR-SE10：首次安装不把当前版本冒充“更新”；已有用户升级后只展示一次
+            // 内置 What's New。公开版本检查失败不影响首启与训练，自动检查按 24h 节流。
+            let isFirstInstall = showOnboarding == true
+            appUpdateModel.prepareWhatsNew(isFirstInstall: isFirstInstall)
+            if !isFirstInstall {
+                await appUpdateModel.checkAutomatically()
             }
             // 截图钩子：用样本分享卡数据直接弹预览（验证卡片渲染，不必跑完整训练流）。
             if args.contains("-autoOpenSharePreview") {
@@ -192,8 +221,24 @@ struct RootTabView: View {
                 selection = .today
             }
         }
+        .task {
+            // FR-SUB2：进程生命周期监听必须在任何购买展示前启动。StoreKit
+            // 查询失败只影响订阅状态，绝不阻塞首启、训练或 canonical 数据。
+            await subscriptionModel.start()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task {
+                await subscriptionModel.refresh()
+                if showOnboarding == false {
+                    await appUpdateModel.checkAutomatically()
+                }
+            }
+        }
         .environment(localeStore)
         .environment(sessionStore)
+        .environment(subscriptionModel)
+        .environment(appUpdateModel)
         .preferredColorScheme(.dark)
     }
 }

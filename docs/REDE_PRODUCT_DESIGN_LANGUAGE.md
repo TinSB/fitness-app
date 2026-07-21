@@ -1,7 +1,7 @@
 # Rede Product Design Language — 产品设计语言
 
 > **状态:** Canonical / living design-language baseline
-> **最后更新:** 2026-06-15（§13 视觉重做「密而干净」：今日改纯清单、进展周期改多主项趋势清单、训练加跟上次比；§11 dark locked tokens / §12 整面板公理仍在）
+> **最后更新:** 2026-07-18（§5.5 增补 FR-SE10 的系统设置式更新行合同；§13「密而干净」、§11 dark locked tokens 与 §12 整面板公理仍在）
 > **适用范围:** 产品视觉品牌、App UI 方向、landing page、widget、App Store 截图、v0 / 原型生成、设计 QA
 > **权威边界:** 本文只定义 Rede 应该长什么样、给人什么感觉、哪些视觉方向不能用。它不授权新功能、网络、云、账号、HealthKit 范围、订阅基础设施、source-of-truth 变更或任何 Swift package 边界变化。功能与架构边界以 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 和 `docs/REDE_iOS_SYSTEM_LOGIC.md` 为准。文案语气以 `docs/REDE_PRODUCT_COPY_BASELINE.md` 为准。
 
@@ -355,6 +355,8 @@ Rede 的圆角要克制。
 - 不写品牌口号。
 - 不出现 landing page 式视觉。
 
+**本次顺序（FR-TR14）。** 热身与正式组都把「接下来 · 动作名」呈现为 ≥44pt 的系统式开放行；进入 sheet 后只显示「当前」与「今天稍后」两段，候选整行是单一「现在练」操作。动作名优先、允许 Dynamic Type 换行，右侧动作不得被截断。durable commit 成功后立即回到新当前动作；失败留在原 sheet，以即时 risk callout + VoiceOver announcement 反馈，不伪装成常驻说明。全程不弹确认、不加解释小字、不复制 Plan 的拖拽编辑器；替换动作仍是独立入口。
+
 ### 5.3 进展
 
 进展页证明训练有没有工作。
@@ -398,6 +400,8 @@ Settings 是低频入口,不进底部 tab。
 - 稳定。
 - 少品牌色。
 - 危险操作必须确认。
+
+版本 / 检查更新 / 本次新增使用系统设置式开放行：左侧标题，右侧当前值或即时状态，导航型行带 chevron，整行命中区 ≥44pt。不得在行下追加“为何要更新 / 数据如何处理”小字；错误只在用户主动检查后即时出现。
 
 不要做空的账号/同步/cloud placeholder。第一版干净实现没有这些能力。
 
@@ -629,6 +633,8 @@ App 主模式深色（见 §3.3 更新）。浅色为受支持的次级 theme，
 
 sheet = 掀开的 base 锻面（`presentationBackground = base`，禁 surface/raised 整面底）+ grabber。动作列表 = 开放行（文字 + chevron + hairline），禁描边按钮堆；唯一主操作可用锻面主按钮（emb）。
 
+What's New 遵守同一 sheet 语法：版本 overline + 大标题 + 三条带序号的开放行 + 一个底部主操作。它不是 dashboard，不堆 feature 卡，不用 caption 解释算法；首次安装不自动出现，升级后只自动出现一次，设置内可重看。Today 的“新版可用”是 header 下方的扁平信号条（上下 hairline + ember 刻线 + 标题/双动作），不使用 `ForgedCard`、不抢今日判断 hero，也绝不做强制全屏门。
+
 ### 12.4 开放行 affordance 三件套
 
 无框可点元素必须带以下三者之一 + 命中区 ≥44pt + 整行 contentShape：① chevron（导航/展开）；② 钢色 tick 下标（选中态）；③ 数字/文字亮度跳档（站点/档位）。纯文字级操作仅限既有 .ghost / .rop / .ctrlop 类。
@@ -759,6 +765,7 @@ minimumScaleFactor(0.6) 收缩不截断。
 
 - 一切位移/缩放/转场动效都过 `@Environment(\.accessibilityReduceMotion)` 守卫（关则降级为无动效或纯透明度）。折叠/撤销条/按压缩放/分屏过渡均遵此。
 - **分屏过渡（Phase 1 已落地）**：进展尺度切换（session/week/cycle）交叉淡入（`.id(scale)` + `.transition` + setter `withAnimation`）；计划调整卡、今日教练卡、写失败提示的出现/消失走 `.transition` + body `.animation(value:)`。**绑定原则**：`.animation` 一律用带 `value:` 的现代形式（作用域限定该值变化，不泄漏到无关更新）；trigger/`value:` 用稳定标识或 Equatable 实值。
+- 更新信号与 What's New 在 Reduce Motion 开启时直接出现/消失，不做位移、缩放或自动滚动；按压仍保留降亮反馈。
 - 余下入场动效（图表/折线 grow-in、numericText 数字滚动）属后续 Phase——见 DEV_LOG。
 
 ---

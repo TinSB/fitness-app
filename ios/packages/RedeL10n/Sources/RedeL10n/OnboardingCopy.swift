@@ -199,10 +199,6 @@ extension RedeStrings {
         }
     }
 
-    public var settingsPlateHint: String {
-        locale == .zh ? "点任意一行修改" : "Tap any row to change it"
-    }
-
     // MARK: - VoiceOver（刻线进度格状态）
 
     public var onbA11yAnswered: String { locale == .zh ? "已回答" : "answered" }

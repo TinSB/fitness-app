@@ -23,10 +23,36 @@ public enum DataHealthIssue: Equatable, Hashable, Sendable {
         case invalidReps
     }
 
-    case sessionDropped(id: String?, reason: SessionDropReason)
-    case exerciseDropped(sessionId: String, reason: ExerciseDropReason)
-    case setDropped(sessionId: String, exerciseId: String, reason: SetDropReason)
-    case setFieldIgnored(sessionId: String, exerciseId: String, field: String)
+    case sessionDropped(id: String?, dateISO: String?, reason: SessionDropReason)
+    case exerciseDropped(sessionId: String, dateISO: String, reason: ExerciseDropReason)
+    case setDropped(sessionId: String, dateISO: String, exerciseId: String, reason: SetDropReason)
+    case setFieldIgnored(sessionId: String, dateISO: String, exerciseId: String, field: String)
     case profileFieldIgnored(field: String)
     case programFieldIgnored(field: String)
+
+    /// Weekly review 只把真正丢弃训练事实的问题纳入判断；被忽略的 RIR/profile/program
+    /// 字段不影响训练日、场次、训练量或关键动作趋势。
+    public var isDroppedTrainingData: Bool {
+        switch self {
+        case .sessionDropped, .exerciseDropped, .setDropped:
+            true
+        case .setFieldIgnored, .profileFieldIgnored, .programFieldIgnored:
+            false
+        }
+    }
+
+    /// nil 表示该丢弃问题无法可靠归入某一周；调用方必须失败关闭，不能把它
+    /// 静默排除后继续给出正向趋势。
+    public var droppedTrainingDateISO: String? {
+        switch self {
+        case .sessionDropped(_, let dateISO, _):
+            dateISO
+        case .exerciseDropped(_, let dateISO, _):
+            dateISO
+        case .setDropped(_, let dateISO, _, _):
+            dateISO
+        case .setFieldIgnored, .profileFieldIgnored, .programFieldIgnored:
+            nil
+        }
+    }
 }

@@ -114,4 +114,52 @@ final class CompletedSessionBuilderTests: XCTestCase {
         XCTAssertEqual(exercise.storage["originalExerciseId"], .string("bench-press"))
         XCTAssertEqual(exercise.storage["actualExerciseId"], .string("db-bench-press"))
     }
+
+    // 重排是队列事实而非动作替换：完成记录按实际执行顺序输出，且不产生替换/跳过审计。
+    func testMovedExerciseBuildsInExecutionOrderWithoutReplacementOrSkipAudit() throws {
+        let input = try TestSupport.makeInput(
+            appDataJSON: #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}}"#,
+            todayISO: "2026-06-09"
+        )
+        let verdict = TodayVerdictEngine.evaluate(input)
+        let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict))
+        var flow = TrainFlowState(prescription: prescription)
+        let originalCurrentId = try XCTUnwrap(flow.currentExercise?.exerciseId)
+        let movedPlan = flow.plan.exercises[2]
+
+        flow.moveExerciseToCurrent(movedPlan.exerciseId)
+        for _ in movedPlan.sets {
+            flow.logSet(CompletedSetObservation(
+                weightKg: movedPlan.sets[0].targetWeightKg,
+                reps: movedPlan.sets[0].targetReps,
+                rir: 2,
+                painReported: false
+            ))
+            flow.restFinished()
+        }
+        XCTAssertEqual(flow.currentExercise?.exerciseId, originalCurrentId)
+        flow.logSet(CompletedSetObservation(weightKg: 60, reps: 6, rir: 2, painReported: false))
+        flow.requestFinish()
+        flow.confirmEnd(reason: .timeUp)
+
+        let session = CompletedSessionBuilder.build(
+            from: flow,
+            sessionId: "moved-order",
+            dateISO: "2026-06-09",
+            startedAtISO: "t0",
+            finishedAtISO: "t1",
+            durationMinutes: 12
+        )
+
+        XCTAssertEqual(session.exercises.map(\.exerciseId), [movedPlan.exerciseId, originalCurrentId])
+        for exercise in session.exercises {
+            XCTAssertNil(exercise.storage["originalExerciseId"])
+            XCTAssertNil(exercise.storage["actualExerciseId"])
+        }
+        XCTAssertNil(session.storage["skippedSets"])
+        XCTAssertNil(session.storage["skippedExercises"])
+        XCTAssertTrue(flow.replacements.isEmpty)
+        XCTAssertTrue(flow.skippedSets.isEmpty)
+        XCTAssertTrue(flow.skippedExercises.isEmpty)
+    }
 }

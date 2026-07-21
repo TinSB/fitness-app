@@ -11,15 +11,23 @@ struct TodayTabView: View {
     let onStartTraining: () -> Void
     /// FR-T5 修数据卡「去核对」：跳到进展页数据质量区（跨 tab；由 RootTabView 切 selection）。
     var onReviewData: () -> Void = {}
+    /// FR-SUB3 正常复盘行动：打开进展页顶部，不强制滚到数据质量区。
+    var onViewProgress: () -> Void = {}
     /// K3「下一场」预告行：跳计划页（跨 tab；由 RootTabView 切 selection）。
     var onGoPlan: () -> Void = {}
 
     @Environment(LocaleStore.self) private var localeStore
     @Environment(SessionStore.self) private var sessionStore
+    @Environment(AppUpdateModel.self) private var appUpdateModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     // 截图钩子（沿 -initialTab 先例）：-expandTodayReason 启动即展开依据抽屉
     @State private var reasonExpanded = ProcessInfo.processInfo.arguments.contains("-expandTodayReason")
     @State private var showSettings = false
+    /// 初始 Today 读取完成后才允许自动 What's New，避免抢在恢复训练面板前弹出。
+    @State private var initialTodayLoadComplete = false
+    /// 嵌套 Rede Coach sheet 先全部关闭，再在 Settings sheet 的 onDismiss 切 tab，
+    /// 避免 dismissal 与 tab navigation 同帧竞争。
+    @State private var pendingCoachAction: WeeklyCoachReviewAction?
     /// FR-EX2：点开的动作详情目标（nil = 未打开）。
     @State private var detailTarget: ExerciseDetailTarget?
     /// FR-TR6：点了某替代动作后，先弹「只换这次 / 以后都换」二选一，选完才写（携带写所需信息）。
@@ -68,6 +76,10 @@ struct TodayTabView: View {
 
     private var s: RedeStrings { localeStore.strings }
 
+    // 截图钩子（沿 -expandTodayReason 先例）：-todayStartAtBottom 打开即停在页底
+    //（simctl 无法交互滚动；供实拍页底更新行等低频区）。
+    private static let startAtBottom = ProcessInfo.processInfo.arguments.contains("-todayStartAtBottom")
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -80,9 +92,20 @@ struct TodayTabView: View {
                 )
 
                 todayContent
+
+                // FR-SE10 更新信号（2026-07-20 收敛）：低频运维信息移页底 receipt 区之后，
+                // 不再压在训练判断上方；设置页「版本与更新」常驻入口保证可发现性。
+                if let version = appUpdateModel.promptVersion {
+                    AppUpdateSignalStrip(version: version)
+                        .padding(.top, 28)
+                        .transition(reduceMotion
+                            ? .opacity
+                            : .move(edge: .bottom).combined(with: .opacity))
+                }
             }
             .padding(.bottom, RedeSpace.bottomBar)
         }
+        .defaultScrollAnchor(Self.startAtBottom ? .bottom : .top)
         .background(Color.redeBase)
         // 切片6c：撤销条挂今日页根、避开 tab 栏；独立于教练卡，卡 reload 消失也不丢撤销入口。
         .overlay(alignment: .bottom) {
@@ -94,11 +117,13 @@ struct TodayTabView: View {
         // 教练卡 / 写失败提示的出现消失（采纳/暂不后随 reload 变化）= 过渡，不硬闪（reduceMotion 守卫）。
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: coachAction?.actionKey)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: sessionStore.coachSaveErrorText)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: appUpdateModel.promptVersion)
         .sensoryFeedback(.success, trigger: commitPulse)   // 采纳 / 撤销成功 = 提交确认
         .sensoryFeedback(.selection, trigger: selectPulse) // 暂不 / 展开折叠 = 轻选择
         .task {
             sessionStore.coachSaveErrorText = nil // 进页清教练写错误（新视图干净起步；隔离于全局 saveErrorText）
             if sessionStore.todayOutcome == nil { await sessionStore.loadToday() }
+            initialTodayLoadComplete = true
             // K8：训练日分支的周一收官行（休息/练完分支归 loadCompletedDigest 同批链，
             // 不在此重复 IO）。loadToday 已 await——此刻 model/分支判定是最终值；
             // weekReview 已有值说明 task(id:) 侧已算过（同日不变），不二次 IO。
@@ -150,11 +175,45 @@ struct TodayTabView: View {
                 onCancel: {}  // 无独立取消行：「稍后再说」已是显式行，滑走同义
             )
         }
-        .sheet(isPresented: $showSettings) {
+        .sheet(isPresented: $showSettings, onDismiss: {
+            guard let action = pendingCoachAction else { return }
+            pendingCoachAction = nil
+            switch action {
+            case .openToday:
+                break
+            case .reviewData:
+                onReviewData()
+            case .viewProgress:
+                onViewProgress()
+            }
+        }) {
             // 工艺重做（2026-06-10）：内容超半屏，补 .large 档 + 拖拽指示条
-            SettingsSheet(store: localeStore)
+            SettingsSheet(
+                store: localeStore,
+                onCoachAction: { pendingCoachAction = $0 }
+            )
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: Binding(
+            get: {
+                initialTodayLoadComplete
+                    && appUpdateModel.shouldPresentWhatsNew
+                    && !showSettings
+                    && sessionStore.pendingDraft == nil
+                    && sessionStore.flow == nil
+            },
+            set: { isPresented in
+                if !isPresented { appUpdateModel.markWhatsNewSeen() }
+            }
+        ), onDismiss: {
+            appUpdateModel.markWhatsNewSeen()
+        }) {
+            AppUpdateWhatsNewSheet(version: appUpdateModel.installedVersion) {
+                appUpdateModel.markWhatsNewSeen()
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
         // T1 练完态分享入口 → 分享卡预览（与训练小结同一预览视图与隐私链）
         .sheet(item: $sharePreview) { item in

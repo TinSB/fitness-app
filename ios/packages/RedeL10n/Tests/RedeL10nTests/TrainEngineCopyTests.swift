@@ -52,6 +52,29 @@ final class TrainEngineCopyTests: XCTestCase {
         }
     }
 
+    func testSessionOrderAnchorsBothLocales() {
+        XCTAssertEqual(zh.sessionOrderEntry, "接下来")
+        XCTAssertEqual(en.sessionOrderEntry, "Up next")
+        XCTAssertEqual(zh.sessionOrderTitle, "本次顺序")
+        XCTAssertEqual(en.sessionOrderTitle, "Session order")
+        XCTAssertEqual(zh.sessionOrderCurrent, "当前")
+        XCTAssertEqual(en.sessionOrderCurrent, "Current")
+        XCTAssertEqual(zh.sessionOrderLater, "今天稍后")
+        XCTAssertEqual(en.sessionOrderLater, "Later today")
+        XCTAssertEqual(zh.sessionOrderTrainNow, "现在练")
+        XCTAssertEqual(en.sessionOrderTrainNow, "Train now")
+        XCTAssertEqual(zh.sessionOrderOpenHint, "从今天剩余动作中选择现在训练的动作")
+        XCTAssertEqual(en.sessionOrderOpenHint, "Choose a scheduled exercise to train now")
+        XCTAssertEqual(zh.sessionOrderMoveA11y(name: "上斜哑铃卧推"), "现在练，上斜哑铃卧推")
+        XCTAssertEqual(en.sessionOrderMoveA11y(name: "Incline dumbbell press"), "Train Incline dumbbell press now")
+        XCTAssertEqual(zh.sessionOrderMoveHint, "当前动作会顺延到稍后")
+        XCTAssertEqual(en.sessionOrderMoveHint, "The current exercise moves later")
+        XCTAssertEqual(zh.sessionOrderMovedAnnouncement(name: "上斜哑铃卧推"), "已切换到上斜哑铃卧推")
+        XCTAssertEqual(en.sessionOrderMovedAnnouncement(name: "Incline dumbbell press"), "Now training Incline dumbbell press")
+        XCTAssertEqual(zh.sessionOrderUpdateError, "暂时无法调整，请再试一次")
+        XCTAssertEqual(en.sessionOrderUpdateError, "Couldn’t update the session. Try again")
+    }
+
     func testPainAdvisoryUsesApprovedShape() {
         // §7.1：不承诺安全/预防，用「暂停、调整、咨询专业人士」
         XCTAssertEqual(zh.painAdvisory, "出现疼痛时暂停、调整动作，或咨询专业人士")

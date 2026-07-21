@@ -6,6 +6,230 @@
 
 ---
 
+## 2026-07-20 · Codex 批审查修复批：更新提示单行化、订阅区收敛、复盘防线加固、治理收口
+
+**用户目标**：把 Codex 18 提交批的四 lens 审查结论（0 MAJOR，7 MINOR + 4 NIT）一次落地，同时按 owner 授权做两处 UX 收敛裁定：今日页更新提示不再压在训练判断上方、设置页订阅区不再堆七行。
+
+**做了什么（A-F 六组）**：**A** 今日页更新提示从三层块压成页底单行「新版本 X.Y · 查看 · 稍后」（仅「查看」橙色，7 天稍后语义与两个动作零损失，大字号自动纵排）；**B** 设置页订阅区收敛为「方案事实行 + 查看 Rede Coach」两行，恢复购买/隐私/条款交回 Coach 页购买面的 Apple 原生控件，「管理订阅」移到 Coach 页（付费态页脚 + 购买面底部，沿用原有同一门禁条件，entitlement 判定零改动）；**C** 训练页「接下来」行补回「· 3 × 8」组次预告；**D** 周教练复盘两处防线加固——长 ISO 日期在事实层入口归一（消灭「免费周一行练 1 天 vs 付费页没记录」的同屏分叉可能，锁测试先红后绿），calibrating 态 0kg 假精度防线提炼成可测纯函数并加测试锁（先拆防线证明测试必红，再还原转绿）；**E** 文档治理七项（CHANGELOG 补 7/19 顺序改排与 7/18 评分请求两条、评分请求立 FR-SE11 规格 + 系统逻辑 §8.6 + TestFlight 清单 M1 手动项、§8.4 验证表述纠偏、V1 死文案三函数删除、premium-audit 临时目录归属登记、开闸 checklist 立档含已裁定的 grace 政策）；**F** 门禁/CI 白名单收口（SessionStoreDraftTests 5 条 + 周复盘政策测试 3 条进清单，本地与 CI 同一份，红着的 StoreKit 生命周期测试继续显式排除并注明 blocker 与解除路径）。
+
+**你能看到什么**：今日页顶部干净了——更新提醒变成页底一条安静的小字行；设置页「方案」区只剩两行；训练中「接下来」能直接看到下一动作的组数次数；周复盘在历史数据带时间戳时不会再出现免费行和付费页各说各话。
+
+**证据**：模拟器实拍 7 张（docs/工作记录/2026-07-20-fixbatch-*.png：页底更新行、无更新无残留、最大辅助字号纵排、设置两行、Coach 付费复盘态、Coach 生产 Free 态无控件泄漏、训练页组次预告）；D1/D2 两处测试先红后绿有失败输出留痕；RedeLocalSnapshot 196、RedeL10n 126 包测试绿；完整门禁两跑均 exit 0（app-hosted 白名单从 18 条扩到 26 条并实证全绿：AppUpdate 13 + SessionStoreDraft 5 + StoreKit/周复盘政策 8，QUALITY GATE: PASS）。
+
+**风险与边界**：付费态「管理订阅」页脚沿用与旧设置页完全相同的 launch-gate 条件，购买闸关着时不可见（实拍确认生产态零泄漏）——开闸后才露出，属既有语义非新回归；订阅 fail-closed 判定、复盘引擎语义、版本号 1.8/25 全部未动。**下一步**：主会话多 lens 审查 + PR；「管理订阅」页脚与购买面全控件的可见实拍留待 Xcode StoreKitTest scheme 会话（simctl 无法附加 .storekit 配置）。
+
+---
+
+## 2026-07-19 · 本次训练可把后续动作提到现在练，失败与杀进程都不乱序
+
+**用户目标**：自动处方必须保留，但不能把用户锁死。陪朋友训练、器械临时变化或当天节奏不同时，用户要能在训练现场改变动作顺序；本轮按一个部分一个部分交付，只先做「后续已排动作现在练」，并继续把真实 iOS Simulator 全流程作为完成门槛，不创建 PR。
+
+**做了什么**：新增 PRD `FR-TR14` 的 S1。热身与正式组页面现在都有一条 ≥44pt 的「接下来」开放行，进入无说明小字的「本次顺序」sheet；顶部显示当前动作，下面列出今天稍后的已排动作，每行只有「现在练」。选择后采用稳定移动：如 `[A,B,C,D]` 选择 C 变为 `[C,A,B,D]`，原当前动作顺延，其余相对顺序、组数、重量、次数、RIR、休息和器械事实不变；它不是替换或跳过，不改长期计划，也不喂给推荐学习。当前动作已有完成/跳过/疼痛事实、处于休息/收尾/小结，或目标无效/重复/在更早位置时，入口会关闭且状态完全不变。
+
+**耐久性与手感**：顺序移动是 typed event，只有 reducer 接受且包含新事件的 session draft 已原子落盘后，页面才关闭并播报成功。普通高频训练记录仍在单一串行后台队列 best-effort 写入，不把 JSON 和文件 IO 搬到主线程；顺序移动用同一队列的 durable barrier，先排空旧写、再保存最终快照，读取与清除也同队列，旧写不能在清除后倒灌。写失败会精确回滚 flow、留在 sheet、显示并播报即时错误，也不会清掉用户尚未打勾的重量/次数快改。已有正式事实后，「接下来」退为明确的不可点击静态行，不再用可点 ID 造成假自动化通过。
+
+**TDD、审查与完整门禁**：定向验证为真实 File draft store / app 接线 **5/5**、训练 reducer **19/19**、双语文案 **12/12**，另有 draft replay 与完成历史回归覆盖；项目文件检查、差异检查和最终 iOS Simulator build 通过。独立终审三轮依次抓出“成功先于落盘”、失败清掉快改、VoiceOver 失败不主动播报、普通事件主线程 IO 和静态行沿用可点 ID 等问题，全部先形成测试或确定性验收再修；最终 **P0/P1/P2/P3 = 0**。完整门禁绑定冻结输入 `012129399154114aa5dd4f653deb288e7cb2783e1a9e39e71b8644ac25262c46`：首次受限执行在任何测试前因 Swift/Clang 缓存不可写退出；输入不变、解除该环境限制后的唯一有效门禁 exit 0，10 个 Swift 包、8 个界面预算、通用 iOS Simulator build 与 18 条 app-hosted 政策测试全部通过，`QUALITY GATE: PASS`。xcresult：`~/Library/Developer/Xcode/DerivedData/Rede-fehbzdcxewzuvxgixmetankthjqd/Logs/Test/Test-Rede-2026.07.19_13-54-44--0400.xcresult`。
+
+**模拟器真实流程**：在 iPhone 17 Pro / iOS 26.5 上，用最终构建实际选择「现在练 · 单臂哑铃划船」，点击返回后立即终止 App；重启并恢复训练，当前仍为单臂哑铃划船，原哑铃卧推正确成为下一动作。记录一组后，辅助功能树只暴露 `train-session-order-next-static`，不能再打开重排。另先把未提交快改设为 27.5 kg，再把专用模拟器的精确 RedeData 目录临时设为只读制造真实写失败：sheet 保持「当前 · 单臂哑铃划船」，出现 `train-session-order-error`，关闭 sheet 后 27.5 kg 与整套快改控件仍在；目录权限随后已恢复原 `0755`。英文 `accessibility-extra-extra-extra-large` 下标题、当前动作与候选操作可读且列表可滚动，AX label/hint 完整；文字大小最后恢复为 `medium`。最终证据保存在 `.ai-tmp/20260719-session-order-s1/` 的 3 张 `final-v2-*` 截图。
+
+**规格、数据与范围**：已原地更新 PRD FR-TR14、系统逻辑 §6.0.3、产品设计语言 §5.2 与双语文案基线 §5.2；四份文档原本都已登记在 `DOCS_MANIFEST`，无需新增条目。没有改 canonical AppData、`TrainingSession` schema、draft 版本、StoreKit、权益或 1.8 Free Core；处方真相保持不可变，只有本次会话执行队列可变。完整动作库增删、剩余组次修改、自定义热身、部分完成动作暂停/恢复与保存到长期计划都仍关闭，必须作为后续独立切片交付。
+
+**剩余风险与下一步**：durable move 在极慢存储下可能短暂等待此前几个小 draft 写；普通训练事件仍沿用 best-effort 恢复语义，极端瞬杀可能来不及保存最后一个普通事件。新增 app-hosted draft 测试已定向真实运行，但当前仓库的默认 CI/完整门禁选择列表尚未纳入该测试类；修改 gate/CI 属独立治理范围，需要 owner 另行批准。Git 只保留本地任务分支与本地提交，不 push、不创建 PR。下一独立切片建议做「从完整动作库加入本次训练 + 调整剩余组次」，仍不写回长期计划。
+
+---
+
+## 2026-07-18 · 老用户更新链完成：Rede 会在安全时机提示新版本
+
+**用户目标**：老用户不应靠每天打开 App Store 才知道 Rede 有更新；同时不能用强更、弹窗轰炸、服务器或推送打断训练。验收仍必须在真实 iOS Simulator 中像用户一样走完整流程，本项目不创建 PR。
+
+**做了什么**：新增 FR-SE10。Rede 在首屏可用后和回前台时，以滚动 24 小时节流匿名查询 Apple 公开目录；只有商店 marketing version 严格更高时，今日页才出现开放式“新版本已就绪”信号。用户可去 App Store，或对这个版本“稍后”七天；更高版本不会被旧的稍后状态压住。设置页长期有“版本 / 检查更新 / 本次新增”，主动失败会如实显示“暂时无法检查”，自动失败则完全静默。升级后随 App 打包的双语 What's New 只自动出现一次，首次安装不弹，之后仍可从设置重看。查询不携带训练、健康、设备标识、账号或分析数据；没有 Rede server、push、remote copy、强更或 app 内下载。
+
+**TDD 与真实问题闭环**：`RedeDomain` 的 5 条策略测试锁定 `1.10 > 1.9`、非法版本、严格更新、24 小时与按版本七天稍后；app runtime 的 13 条测试锁定 Apple track/bundle/version/唯一记录、拒绝重定向、自动/手动失败、双向共享并发请求、主动检查越过自动节流并刷新缓存版本、自动成功按代次清掉旧手动结论、首次安装/升级一次、当前发布版本必须有双语内置说明、Apple 官方商品目的地、稍后有效期，以及 UI 观察面立即失效。Simulator 第一次真实点击“稍后”时发现 receipt 已写入、画面却没有消失；先补观察回调失败测试稳定复现，再以最小 observable revision 修复，同一测试转绿，实际点击后 AX 树中的提示也立即消失。独立审查又发现已有缓存时 Settings 会把“检查更新”偷换成打开商店、自动发现新版后设置仍可能残留旧“已是最新/无法检查”，以及手动/自动复用请求时存在结果覆盖竞态；这些问题都形成了静态红灯、失败测试或确定性策略守卫，再把检查与商店动作分开，并让新自动成功仅在没有重叠手动代次时失效旧结论。最终截图复核还发现最大辅助字号下英文 `1.9 Available` 虽有完整 VoiceOver label、可见文案却被省略；修正为辅助字号自动纵向展开两个动作后重新编译，并在中英文界面真实点击“检查更新”和“查看更新”，两条可见文案均完整。查看更新后，Apple 官方 Lookup 核对出当前精确 `trackViewUrl`，链接守卫先红再改为官方值；但该 Simulator 对 Rede 官方 URL 和已知 Apple 自有 App Store URL 都统一报“地址无效”，证明这是模拟设备没有可用 App Store 目的地，而不是本轮可以伪装通过的真机结果。双语精确文案定向测试通过，Debug Simulator build 成功；app runtime 测试类已登记到本地权威门禁。CI 按仓库“需 owner 单独批准”规则未改。交付前完整质量门禁绑定冻结输入执行，最终结果以本轮 `RUN_RECEIPT` 为准，不在这里预写 PASS。
+
+**模拟器真实流程**：在 iPhone 17 Pro / iOS 26.5 上实际完成中文升级后 What's New → 继续 → 今日更新提示 → 稍后立即消失；设置页核对 1.8 (25)、已是最新版本与中文 What's New；英文主动检查失败显示 Unable to Check，并进入英文 What's New。最大 Dynamic Type `accessibility-extra-extra-extra-large` 下三条新增内容仍可滚动、Continue 固定可达，今日更新动作自动改为纵向；最终设置行也在中英文分别暴露独立的“检查更新 / Check for Updates”和“1.9 可用，查看更新 / 1.9 Available, View Update”按钮，真实点击检查仍会刷新，真实点击查看更新会离开 Rede 交给系统。模拟器缺少可用 App Store 目的地，故商品页渲染保留为真机/TestFlight 验收项；字体最后恢复为 `large`。另以训练 fixture 直接进入活跃训练，确认没有更新弹层；再创建一台独立临时 Simulator 做干净首次安装，只见 onboarding、不见 What's New，验收后已关闭并永久删除这台无用户数据的临时设备。证据保存在 `.ai-tmp/update-awareness/`。
+
+**规格、数据与发布边界**：Master v3.5、系统逻辑 §8.5、PRD FR-SE10、双语文案、设计语言与商业 Roadmap 已原地写回；没有新增长期文档，`DOCS_MANIFEST` 无需增加。版本检查 receipt 是可丢弃 UI 状态，不进入 canonical、导出、Widget、训练引擎或订阅。当前用“仍需 onboarding”保守识别首次安装，因此极少数从旧版升级、但始终没完成 onboarding 的用户也会跳过一次自动 What's New；设置里的“本次新增”仍可打开，若未来必须严格区分则另加独立于 canonical 数据的安装 receipt。旧 1.8 二进制无法被新代码隔空提醒；本地 fixture 与截图只证明 L3 行为，不证明实时 Apple 版本传播、真机 App Store 页面或 TestFlight。Git 只做本地提交，不 push、不创建 PR、不改 App Store Connect。
+
+---
+
+## 2026-07-18 · “每周教练复盘”按已批准 V2 概念稿完成高端决策备忘录界面
+
+**用户目标**：把竞品调研后已认可的 V2 概念稿真正落进 Rede；即使当前事实维度有限，也要用品牌、编辑取舍和信息层级把现有事实展示成值得付费的教练产品，同时绝不虚构医学、生理、恢复或 AI 能力。验收必须在真实 iOS Simulator 中走完整用户流程，本项目不创建 PR。
+
+**做了什么**：以 Figma `Research-backed V2 / Coach Decision Memo` 的最终页为显示真相源，把原复盘改成一页连续的教练决策备忘录：`REDE COACH` 品牌页眉、ISO 周期次、一个 `Coach Call`、一个主聚光事实、最多两条不重复依据和唯一下一步；单条 Emberline 贯穿页面，不再堆“高级数据卡”。聚光选择仍只消费既有 typed facts：坏数据优先、节奏不足看训练天数、趋势态看关键动作、校准态无动作事实时看完成场次；没有可比差值时只写“可比趋势 / 可比场次不足”，不制造 `0 kg` 或假精度。跨公历年的周范围会同时显示两端年份。
+
+**你能看到什么**：中文 progressing 态显示“关键动作，向上。”与平板卧推 `e1RM +2.5 kg`；英文坏数据态显示“Verify first. Then read the trend.”和 `2 entries to review`；holding、easing、节奏恢复、纯校准、零训练和不可用/重试都各有诚实状态。设置页训练背景行只读“字段名 + 当前值”，按 owner 最新指令连隐藏的“点任意一行修改 / Tap any row to change it”无障碍提示也已删除；没有新增任何营销小字。
+
+**自动验证**：`RedeL10n` V2 精确文案测试先红后绿；最终定向回归为文案 **1/1**、周复盘引擎 **11/11**、app-hosted 聚光选择与 ISO 跨年日期 **2/2**，Debug Simulator build `BUILD SUCCEEDED`，`git diff --check` 通过。策略测试覆盖 data / rhythm / progressing / holding / easing / calibrating（含“有关键动作但无差值”）；日期测试覆盖普通周、跨年周和 ISO week-year 边界。交付前完整质量门禁绑定冻结输入执行，最终结果以本轮 `RUN_RECEIPT` 为准，不在这里预写 PASS。
+
+**模拟器真实流程**：在 iPhone 17 Pro / iOS 26.5 上，用最终同一 Debug 构建实际点击 `今日 → 设置 → 查看 Rede Coach → 查看进展`，确认两层 sheet 正常关闭、`进展` tab 被选中；再回 `今日 → 设置 → 查看 Rede Coach`，同一周报告可再次进入。另逐一运行 data、rhythm、calibrating、lift-calibrating、holding、easing、empty、unavailable/retry 状态；最大辅助字体 `accessibility-extra-extra-extra-large` 下页头、期次、判断与主事实自然换行，辅助功能树仍按顺序暴露两条依据和唯一 CTA，实际激活 CTA 后成功进入 Progress。字体最后恢复为 `large`。最终证据保存在 `.ai-tmp/20260718-weekly-review-v2/`；旧 01–04 已用最终构建原位覆盖，不混用旧 digest。
+
+**规格、收费与发布边界**：产品文案基线 §5.5 与 §6.1.1 已原地写回 V2 展示标题、三事实预算、跨年和无障碍提示边界；该文档已登记，`DOCS_MANIFEST` 无需增加条目。没有新 schema、持久化、分析、字体、素材、StoreKit 商品或 entitlement 规则；现有 1.8 Free Core 不变。fixture、测试和截图只证明本地功能/导航与 L3 UI 行为，不证明真实 Apple 购买、恢复、续订、grace、过期、退款或 Sandbox/TestFlight；production purchase gate 继续关闭。没有 commit、push、PR 或 App Store Connect 操作。
+
+---
+
+## 2026-07-18 · 先做竞品与消费者调研，再重做“每周教练复盘”V2 概念稿
+
+**用户目标**：暂停继续凭感觉美化第一版周复盘；先研究竞品真正做对了什么、消费者还缺什么，再把结论转成一份更像付费产品、但不虚构 Rede 当前能力的 Figma 概念稿。
+
+**调研与拍板**：只读核对了 WHOOP、Oura、Strava、Fitbod、Future、Freeletics、Gentler Streak 与 Hevy 的官方功能说明，并交叉检查 App Store、Reddit、Trustpilot 和 WHOOP Community 的 12 条公开消费者反馈。重复出现的信号很一致：用户愿意为“替我完成判断并改变下一步”付费，不愿为重复已知统计、脱离目标的通用夸奖或机械惩罚休息付费；一屏总览、结论可核对、固定复盘仪式和长期连续性比卡片数量更重要。由此放弃继续做高密度“高级数据报告”，选择 **教练决策备忘录**：一个周判断、一个关键变化、两条不重复的上下文事实、一个真实可达的下一步。
+
+**你能看到什么**：旧版 V1 完整保留作对照；新建 [Research-backed V2 / Coach Decision Memo Board](https://www.figma.com/design/Vya8Qpx8tk3neXETkwfga1?node-id=16-2)。左栏说明竞品优点与消费者明确反感的模式，中栏是 402 × 874 的 Rede Coach 新页面，右栏解释为什么这样设计，并把本期真实能力与未来机会分开。页面只使用现有 typed facts：周范围、训练 3 天、平板卧推 e1RM +2.5 kg、有效训练量 8,400 kg；没有恢复分、医学结论、AI 置信度、假历史、假分享或假深链。CTA 最终保持当前真实可达的“查看进展”。
+
+**设计与可信边界**：Forged Graphite、唯一 hero、单一连续 Emberline 和非卡墙结构继续遵守 Rede canonical。竞品启发只迁移“周期仪式、编辑后的一个重点、证据与下一步”，不复制 WHOOP/Oura 的生理数据或 AI 权威。历史档案、分享、目标上下文和可追问能力只列在 NEXT，不伪装成 NOW。Figma 编辑稿使用 Inter（当前 Figma 自动化渲染 SF Pro 会空白），生产实现仍以 iOS system SF Pro 为准。
+
+**验证证据**：最终整板 1,600 × 1,100、核心页面 402 × 874 已逐屏截图复核。程序化验收覆盖 138 个节点、73 个文字节点：空文字 0、零尺寸 0、占位文案 0、缺失字体 0、越界/溢出 0、裸色 0；89 处颜色全部绑定现有 Rede Figma variables；核心页恰好 1 个 hero、1 条 Emberline，并新增 34pt 底部安全区。现有色板在相关深色面上的文字/Ember 对比度为 4.60–14.91:1。独立只读审查初次发现“单动作趋势深链”假承诺和底部安全区缺失两个 P1；修复并清理品牌命名/营销小字后，冻结复核为 **P0/P1/P2/P3 = 0，可进入用户评审**。
+
+**文件、发布与下一步**：本轮没有修改 Swift、数据、订阅门禁或规格合同；没有创建本地截图、临时脚本或新长期文档，`DOCS_MANIFEST` 无需改。没有 commit、push、PR 或 App Store 操作。因为本轮交付物仍是 Figma 概念稿，模拟器验收不适用；待产品所有者认可方向并批准实现后，下一切片才把 V2 翻译成 SwiftUI，并按 Rede 硬门槛在真实 iOS Simulator 中完整走复盘 → 查看进展 → 返回流程并留截图。
+
+**归属登记（2026-07-20 补）**：`.ai-tmp/20260718-weekly-review-premium-audit/`（现状截图 ×5 + audit-notes.md）属本轮之前对 V1 复盘页的付费体验审计轮——即周复盘 V1 → V2 概念稿之间的诊断输入，按 **EVIDENCE** 分类保留，不是散落垃圾。
+
+---
+
+## 2026-07-18 · 首个付费功能“每周教练复盘”完成本地企业级闭环
+
+**用户目标**：把“每周教练复盘”做成 Rede Coach 的第一个新增付费能力，达到企业级；每次验收都必须在真实 iOS Simulator 里像用户一样走流程，同时继续遵守 1.8 全部现有能力永久免费、不创建 PR 的边界。
+
+**做了什么**：新增一条只读、确定性的周复盘链路。它只看上一完整 ISO 周的 canonical 训练历史，输出 **1 个主判断、最多 3 条可核对依据、1 个导航行动**；不聊天、不自动改计划、不写 canonical、不加 schema、不缓存第二份结果。纯决策引擎位于 `RedeTrainingDecision`，上一周事实投影位于 `RedeLocalSnapshot`，app 与 Progress 共用同一干净事实口径；中英文文案由 `RedeL10n` 统一管理。零场进入中性空态，一场固定保持校准，坏数据和当周 dropped session/exercise/set 或 suspect set 抢占正向趋势，无法归周的训练丢弃问题直接 fail closed；训练量只能作为依据，不能单独宣布进步。行动只会去 Today、Progress 或数据核对。
+
+**收费与安全边界**：复盘引擎完全不知道 entitlement，只有 app/UI 层接受 Apple 已验证的 active/grace Paid Coach。已验证用户即使商品目录或政策临时不可用仍可看复盘；free/checking/unknown/expired/refunded 都看不到付费结论。最终独立审查又抓出一个边界漏洞：商品目录已经 ready 时，checking/unknown 曾可能提前露出购买页，过期状态还会误标 Rede Coach。已先写失败测试稳定复现，再改为只有已确认 `freeCore + ready` 才能进入购买面；checking 显示核对中、unknown 显示重试、过期显示 Free Core。英文功能名同时严格统一为 canonical `Weekly Coach Review`。
+
+**真实验证**：`RedeL10n` 精确文案测试先红后绿；app 权益矩阵旧实现稳定红 2 项，修复后转绿；新增真实延迟 provider，让目录保持 ready、故意挂起 entitlement refresh，证明等待期间仍只显示 checking、不会抢先购买。最终 `bash .claude/quality-gate.cmd` exit 0：10 个 Swift 包、界面预算、通用模拟器构建和 **5 条 app-hosted policy XCTest** 全部通过，`QUALITY GATE: PASS`；测试收据为 `~/Library/Developer/Xcode/DerivedData/Rede-fehbzdcxewzuvxgixmetankthjqd/Logs/Test/Test-Rede-2026.07.18_17-04-50--0400.xcresult`。另跑 `Release` generic iOS Simulator build，结果 `BUILD SUCCEEDED`。最终独立只读审查 **PASS，P0/P1/P2 = 0**；唯一轻微项是文档测试计数 4→5，已当场修正。
+
+**模拟器真实流程**：在 iPhone 17 Pro / iOS 26.5 中实际完成中文付费空态 →“查看今天安排”→ Today；英文坏数据态 → 3 条依据 →“Review Training Data”→ Progress；英文 progressing 态 → Progress；production 无 fixture 的 Free Core → Rede Coach 准备页，确认无商品、价格、购买、恢复和管理入口。另实际覆盖最大 Dynamic Type、Reduce Motion 开启后的行动跳转、AX tree 完整 label/identifier，以及杀进程重开同一 fixture 的确定性；设置均已恢复。最终复核截图：`.ai-tmp/20260718-weekly-coach-review/en-paid-data-final-reviewed.png` 与 `en-free-preparing-final-reviewed.png`，同目录保留中英文、空态/进展态、Dynamic Type 等共 10 张证据。
+
+**没有假装通过的部分**：这些 fixture 与截图只证明本地 L3 功能/UX，不证明真实订阅交易。Xcode 26.6 + iOS 26.5 Simulator 的 StoreKitTest 仍报 `SKInternalErrorDomain Code=3`；真实 App Store Connect 月/年商品、当前 Privacy/Terms 地址、Sandbox/TestFlight 的购买/恢复/续订/grace/过期/退款/重装/换设备仍未验收。因此 production purchase gate 继续关闭，收费发布仍是 **No-Go**。
+
+**规格写回与收尾**：已原地更新 Master v3.4、PRD FR-SUB2/3、系统逻辑 §8.3/§8.4、产品文案基线和商业化 Roadmap；没有新增长期文档，`DOCS_MANIFEST` 无需改。临时产物收尾：删除 6 张过渡截图，保留 10 张 Simulator 证据，提升 0、待决定 0。Git 仅保留本地任务分支和本地提交，不 push、不创建 PR、不改 App Store Connect。
+
+**下一步**：功能实现已完成；要真正开放收费，必须先解除 StoreKitTest 环境阻塞，再配置真实商品与政策页并完成 Sandbox/TestFlight 全生命周期验收。未过这些门禁前不打开 production paywall。
+
+---
+
+## 2026-07-18 · Rede Coach 订阅页面先落壳，功能完成后再逐项加入
+
+**用户目标**：先把可进入、可验收的订阅页面做出来；当前还没有完成的收费功能不提前写进页面，等各项能力真正完成后再往上填。
+
+**做了什么**：Settings 的“查看 Rede Coach”现在始终可见，并进入独立的 Rede Coach 品牌页。production 当前只显示品牌名、当前方案 Free Core 与“准备中 / 功能完成后再加入这里 / 订阅尚未开放”，不写价值承诺，也不显示价格、试用、权益列表、购买、恢复、管理或政策链接。页面状态与 Apple 购买面严格分离：只有 paid capability、商品目录和政策地址全部通过同一个 launch gate 时，才会在原页面切换到 StoreKit 购买面；功能尚未开发显示“准备中”，未来商品或政策配置异常则显示“暂时不可用 / Free Core 仍可使用”。Settings 的恢复、管理和政策入口也接到同一交易门禁，blocked 状态不会从旁路露出收费操作。
+
+**TDD 与问题闭环**：页面展示策略和双语文案都先跑出真实红灯再实现。首次模拟器验收又抓到一个自动测试遗漏：production disabled 配置在商品未加载时被错误归为“暂时不可用”，而不是“准备中”；新增模型回归测试后先稳定红 2 项，再把 `paidCapabilityNotReady` 的优先级提到 catalog 判断之前，同一测试转绿。双语文案定向测试 **14/14**、访问/交易控件策略 **7/7** 通过；app-hosted production 测试同时锁定 `.preparing` 且零交易控件。最终权威 `bash .claude/quality-gate.cmd` exit 0，十个 Swift 包、通用模拟器构建与 production app XCTest 全部通过，`QUALITY GATE: PASS`；收据：`~/Library/Developer/Xcode/DerivedData/Rede-fehbzdcxewzuvxgixmetankthjqd/Logs/Test/Test-Rede-2026.07.18_11-32-42--0400.xcresult`。独立只读复审 PASS，P0/P1/P2/P3 均为 0。
+
+**模拟器真实流程**：把最终 production 构建安装到 iPhone 17 Pro / iOS 26.5 Simulator，实际点击中文 Settings →“查看 Rede Coach”→ Rede Coach 页面；屏幕与辅助功能树共同确认页面为 Free Core / 准备中，且没有价格、试用、购买、恢复、管理或政策控件。点击“完成”返回 Settings，再关闭设置返回中文 Today，整条往返正常。证据：`.ai-tmp/20260718-subscription-page-shell/02-rede-coach-preview-zh-final.png`。
+
+**发布边界与规格写回**：这次完成的是非交易页面壳，不是可出售订阅。StoreKitTest 仍受 Xcode 26.6 + iOS 26.5 Simulator `SKInternalErrorDomain Code=3` 阻断；首个真实 post-1.8 Paid Coach 功能、App Store Connect 商品、最终价格/试用、有效政策地址和 Sandbox/TestFlight 生命周期验收仍缺，production purchase gate 继续关闭。已原地更新 Master v3.3、系统逻辑 §8.3、PRD FR-SUB2、商业化 Roadmap P2 与文案基线 §6.2.1；没有新增长期文档，`DOCS_MANIFEST` 无需改。Git 只做本地提交，不 push、不创建 PR。
+
+---
+
+## 2026-07-18 · 设置页去掉三类常驻说明小字
+
+**用户目标**：设置页不要再在自解释的项目下面堆说明小字；明确删除“训练数据保存在本机并可导出”“此版本所有功能均包含在 Free Core”和训练背景下的“点任意一行修改”。
+
+**做了什么**：删除数据导出行和 Free Core 下方的双语常驻副文；训练背景只保留分区标题、五个可点击值和箭头，默认不再显示操作说明。保存训练背景后的短暂结果收据仍会出现；购买核对、unknown、grace period、恢复成功/失败、导出失败等真实状态/错误文案没有被误删。该切片最初把“点任意一行修改”只留作 VoiceOver 提示；owner 随后明确连这条隐藏提示也不要，已在本日 V2 实现切片删除，训练背景行现在只暴露字段名与当前值。产品文案基线 §5.5 已同步当前合同。
+
+**验证证据**：先用聚焦检查真实得到 RED，准确命中 `SettingsSheet` 的三个旧渲染点；最小修改后同一检查 PASS。`RedeL10n` 运行 **122 项、0 失败**。权威 `bash .claude/quality-gate.cmd` exit 0：10 个 Swift 包全部通过、Settings 卡片预算通过、通用 iOS Simulator 构建成功、production subscription fail-closed XCTest 通过，最终 `QUALITY GATE: PASS`；收据：`~/Library/Developer/Xcode/DerivedData/Rede-fehbzdcxewzuvxgixmetankthjqd/Logs/Test/Test-Rede-2026.07.18_10-54-55--0400.xcresult`。独立只读审查 PASS，P0/P1/P2/P3 均为 0。
+
+**模拟器真实流程**：将新构建安装到 iPhone 17 Pro / iOS 26.5 Simulator，实际打开中文 Today → Settings、展开并滚动到数据/方案/训练背景：三个位置都只剩主信息，没有目标小字；点击“目标”成功进入训练背景编辑页，再取消返回，证明去掉提示没有破坏可编辑性且未修改数据。最后关闭设置并停留在中文 Today。证据：`.ai-tmp/20260718-compact-settings-copy/01-settings-compact-copy-zh.png`。
+
+**规格写回与范围**：产品文案基线 §5.5 已更新；没有新增长期文档，`DOCS_MANIFEST` 无需改。训练、存储、导出行为、订阅权益和数据 schema 均未改变。Git 只做本地提交，不 push、不创建 PR。
+
+---
+
+## 2026-07-18 · 模拟器真实流程成为 Rede 验收硬门槛
+
+**用户目标**：以后 Rede 的界面、购买、发布和用户流程改动，不能只靠测试或构建判定完成；必须在 iOS Simulator 像用户一样走完整条路径并留可核对证据。
+
+**真实用户流程**：已将订阅地基提交 `b72df9b` 的 production Rede 安装到 **iPhone 17 Pro / iOS 26.5 Simulator**，并用可见界面实际点击完成：英文 Today → Settings → Plan / Free Core；切换中文后核对“方案 / Free Core”，关闭设置并进入完整“计划”页，证明 1.8 Free Core 未被收费地基误锁；再恢复英文并返回 Today。production 配置下设置页没有“恢复购买”“管理订阅”或购买入口，符合商品 ID、政策 URL 和 paid capability 为空时的 fail-closed 合同。
+
+**收费安全路径**：仅用本地 `-redeStoreKitTest` 测试参数重新启动同一 Debug app，确认“Restore purchases / Manage subscriptions / Privacy / Terms of Use”入口出现，但商品目录不可用时不显示购买按钮。实际点击恢复购买后出现 Apple 原生登录提示；取消后 app 返回设置页并明确显示“Couldn't complete that right now… Free Core is unaffected”。实际点击管理订阅后进入 Apple 原生管理页；当前模拟器环境显示 `Cannot Connect`，关闭后能安全返回 Rede，未崩溃、未制造假权益。最后已终止测试参数实例，以无参数 production 配置重启；再次核对设置页只显示 Free Core 且无收费操作，关闭设置后把模拟器留在英文 Today。
+
+**验收判定**：production Free Core 中英文与 Plan 可用性、收费入口 fail-closed、恢复取消错误处理、管理页失败后返回均 **PASS**。真实购买、成功恢复、续订、grace period、过期与退款仍是 **No-Go / 未验证**：Xcode 26.6 + iOS 26.5 Simulator 的本地 StoreKit 配置仍触发 `SKInternalErrorDomain Code=3`，且没有真实 App Store Connect 商品与 Sandbox/TestFlight 账号证据；不得把本轮安全路径冒充完整收费生命周期通过。
+
+**可核对证据**：`.ai-tmp/2026-07-18-subscription-simulator-flow/03-settings-expanded.png`（英文 Free Core）、`04-settings-plan-free-core-zh.png`（中文 Free Core）、`05-free-core-plan-zh.png`（中文计划页）、`06-free-core-today-en-final.png`（恢复英文 Today）、`07-storekit-test-actions-before.png`（仅测试态的恢复/管理入口）、`08-restore-cancel-fail-closed.png`（恢复取消后 Free Core 不受影响）、`09-manage-subscriptions-cannot-connect.png`（Apple 原生管理页环境失败）。
+
+**规格写回**：none——本轮只完成既有订阅合同的运行时验收，没有改变 Rede 产品行为、架构或用户合同；长期模拟器验收规则已写入跨会话记忆，本日志记录真实执行与 No-Go 边界。
+
+---
+
+## 2026-07-18 · 企业级订阅地基：能验证、会失败关闭，但还不能发布收费
+
+**用户目标**：接着开发地图第 2 块，用企业级标准把 Rede 的收费基础设施真正实现；同时沿用已拍板方案 A——Rede 1.8 已有能力永久免费。用户再次明确本项目不发布 PR。
+
+**做了什么**：新建第 10 个本地包 `RedeEntitlements`，把收费逻辑分成四层：① Free Core / Paid Coach 的纯访问政策；② Apple 商品目录、当前权益、购买、恢复、transaction updates 的唯一 StoreKit 2 adapter；③ app 生命周期级状态模型，把“方案核对、商品读取、购买/恢复操作”分开，不让一个失败污染另一个；④包内 Apple 原生 `SubscriptionStoreView` 与管理订阅 wrapper。已验证 transaction 先刷新本地 access state、再 finish；同一交易从购买结果和更新流重复到达只 finish 一次，但退款/撤销即使沿用同一 transaction ID 仍会重新计算并降回 Free Core。权益在已验证到期点自动复核，回到前台也会复核；并发查询只允许最新一轮落状态，旧 paid 结果不能晚到后重新解锁。未验证或读取失败立即变为 `unknown`，过期时间也由访问政策二次检查。购买 API 和 Apple 原生购买页都在入口内部重跑 paid capability + 商品 + 政策门禁，未来页面不能绕过 Settings。显式恢复只有用户点按钮才调用 `AppStore.sync()`；sync 后权益刷新失败不会再误报成功。所有 1.8 能力在 checking / unknown / catalog failure 下都由测试锁死为可用。
+
+**你能看到什么**：设置页现在有中英双语“方案 / Plan”区域，能诚实显示 Free Core、Rede Coach、核对中、无法确认、grace period，以及恢复/管理/政策入口。`unknown` 不再被伪装成 Free Core。隐私说明也改成可证明的事实：训练数据本机保存，订阅由 Apple 处理，没有账号和第三方统计。生产 build 的商品 ID、paid-capability 开关和政策 URL 故意为空，因此当前只显示 Free Core 状态，不会出现空 paywall、测试价格或假权益。调试配置有本地月/年两个测试商品，但绝不会当作 App Store Connect 商品。
+
+**TDD 与回归证据**：先后跑出真实红灯再修复：缺少订阅 API 的初始编译红灯；“已验证后才 finish”；购买结果与更新流重复 transaction 只 finish 一次；同 ID 的退款/撤销仍重建权益；`AppStore.sync()` 成功但权益刷新失败不得显示成功；unknown 方案态不得显示为 Free Core；到期不得继续访问；paid → unverified 必须立即关闭；入口门禁不可绕过；旧 paid 查询不得覆盖新 revocation；到期必须自动复核；购买验签失败撤销旧 paid；verified 与 unverified 混合时不得选乐观结果；旧查询未落地就不得 finish transaction；过期后的 status unavailable/unverified 不得降成 Free Core。stale-delivery 测试改为等待购买任务完整返回，并做了受控旧行为突变：旧逻辑稳定红 2 项，恢复正确实现后转绿。`RedeEntitlements` 当前 **25 个** package tests 全绿。本地 `.storekit` 结构测试锁定 1 个 subscription group、月/年 2 商品、en_US/zh_CN 双语。权威 `bash .claude/quality-gate.cmd` 最终 exit 0：10 个包全部通过、界面卡片预算通过、生产 `Rede` scheme 通用模拟器 `BUILD SUCCEEDED`，并在 iPhone Simulator 真跑 production fail-closed XCTest，最终 `QUALITY GATE: PASS`。测试收据：`~/Library/Developer/Xcode/DerivedData/Rede-fehbzdcxewzuvxgixmetankthjqd/Logs/Test/Test-Rede-2026.07.18_01-07-54--0400.xcresult`。
+
+**没有假装通过的部分**：仓库已新增 app-hosted `StoreKitEntitlementsTests`，其中 production 配置 fail-closed 测试通过；完整 user cancel → verification failure → purchase → expire → Ask to Buy pending/decline → restore → billing grace → renewal → refund 测试真实运行时失败。Xcode 26.6 使用 iOS 26.5 Simulator，在 `SKTestSession` 保存 Apple v6.3 对齐配置时持续返回 `SKInternalErrorDomain Code=3`，导致本地商品目录为空。已用 Xcode Scheme UI 直接确认并选择 `Rede.storekit`，又将配置逐字段与 Apple 官方样例核对；字段集合、类型、ID、group 引用和 P1M/P1Y 均一致，最后只按官方样例改 `_timeRate` 做一次单变量验证，错误不变。生产 `Rede` 与 `Rede-StoreKitTest` 已拆分后又做了一次有依据的复测，Code=3 仍复现，因此排除主 Scheme 污染并按三振规则停止猜改，不把测试标 skip。最新红灯收据：`~/Library/Developer/Xcode/DerivedData/Rede-fehbzdcxewzuvxgixmetankthjqd/Logs/Test/Test-Rede-2026.07.18_00-48-25--0400.xcresult`。
+
+**发布判定**：订阅基础设施达到可审计、可测试、失败关闭的工程地基，但**收费版本仍是 No-Go**。还缺：第一个 PRD 明确的 post-1.8 Paid Coach 能力、真实 App Store Connect 月/年 product IDs、最终价格/试用、与当前产品一致且可打开的 Privacy Policy / Terms、可复现 StoreKitTest 全绿，以及 Sandbox/TestFlight 的购买、续订、grace、过期、退款、恢复、重装/换设备、离线验收。任何一项缺失都不能打开 production purchase gate。
+
+**规格写回**：Master v3.3（第 10 包、平台现状与验证 No-Go）；系统逻辑 §8.3/状态表（实际状态机、StoreKitTest 阻塞）；PRD FR-SE9/FR-SUB2/R3；Roadmap P2 与下一步；Copy §6.2.1（已实现状态、unknown 不冒充 Free Core）；README 包清单；原型隐私事实；CHANGELOG。本轮没有新建长期文档，`DOCS_MANIFEST` 无需修改。
+
+**证据与临时产物**：保留两张设置页证据图（中文、英文）在 `.ai-tmp/2026-07-17-subscription-runtime/`；中途截取过早的英文截图已移到 `/private/tmp`，不再留在仓库。Apple 样例与 xcresult 导出在 `/private/tmp` / DerivedData，不进入仓库。
+
+**Git / 发布**：只在本地任务分支工作；不 push、不创建 PR、不改 App Store Connect、不创建真实商品。
+
+**下一步**：产品主线先批准第一个真正新增的 Paid Coach 能力；工程线在另一套可复现 Xcode/Simulator 环境跑通现有 StoreKit 生命周期测试。两条都完成后，才进入真实商品、政策页与 Sandbox/TestFlight。
+
+---
+
+## 2026-07-17 · 订阅架构门禁：1.8 能力不回收，首片只用 StoreKit 2
+
+**用户目标**：按开发地图先做第 2 块——订阅架构门禁；在收费分界上选择方案 A：Rede 1.8 已经免费的能力以后仍然免费，付费层只承接后来新增的深度教练能力。用户同时明确要求本项目不发布 PR。
+
+**做了什么**：先只读核对仓库和 Apple / RevenueCat 官方资料，确认当前代码里没有 StoreKit、RevenueCat、paywall、恢复购买、entitlement 或 `.storekit` 配置。四种候选中选择最小边界：未来新建薄 `RedeEntitlements` 包，只有包内 iOS platform/UI adapters 接触 StoreKit 2，app 通过 seam 和导出的 subscription-view wrapper 使用；Apple 已验证的 current entitlement 是唯一付费真相；恢复购买只能由用户显式触发；价格、试用和续订条款只读 StoreKit 本地化商品。首片不接 RevenueCat、账号、Rede server、远程收据或远程分析，权益也绝不写进 canonical AppData、导出、widget 或训练引擎。
+
+**你能看到什么**：当前 1.8 完全没有 UI 或功能变化，也没有出现订阅墙。长期产品合同已经锁死：1.8 现有的今日判断/解释、训练处方与记录、计划查看/调整/编辑、进展/e1RM/数据质量/肌群等级、本地导出和现有分享卡全部属于 Free Core；未来 `Rede Coach` 只能展示真正新增、且开发前已在 PRD 明确标成 paid 的能力。安全、训练与记录、保存、数据读取/导出、隐私控制永远不能收费。
+
+**验证与证据**：本地代码审计确认订阅 runtime 为零；Apple 官方 `Transaction.currentEntitlements`、`AppStore.sync()`、StoreKit views 与 StoreKit testing 文档构成平台依据。独立审查发现并纠正了旧文案仍把 1.8 的解释/自动调整/数据质量提示暗示为付费、StoreKit view import 边界矛盾、pending/unknown 文案不诚实、Roadmap 当前状态过时和 paywall 缺 Privacy Policy / Terms of Use 目的地等问题；最终复核 **PASS，P0/P1/P2 为 0**。权威 `bash .claude/quality-gate.cmd` 首次因沙箱禁止写 SwiftPM module cache 而在测试前 exit 1；同一命令获准重跑后 exit 0、**9/9 包零失败**（含 RedeDataHealth 54、RedeTrainingDecision 360、RedeWidgetShared 12），Xcode `BUILD SUCCEEDED`，最终 `QUALITY GATE: PASS`。最终 `git diff --check` 通过。
+
+**风险与遗留**：这是 docs-only gate，不等于订阅已经做完。`RedeEntitlements` 包、月/年商品、product IDs、价格、试用、paywall、购买/恢复代码、StoreKit 配置和 App Store Connect 订阅产品全部仍不存在；定价区间只是待刷新假设。真实实现必须再过纯 seam 测试、StoreKitTest、Sandbox/TestFlight 的购买/pending/续订/grace/过期/退款撤销/恢复/换设备/离线验收，Xcode 本地测试不能替代真实商店。
+
+**规格写回**：Master v3.2（包边界、平台与权益真相、验证）；系统逻辑 §8.3（状态机、购买/恢复、失败行为、方案 A）；PRD FR-SE9/FR-SUB1/FR-SUB2 与 R3；Roadmap P2/定价分界/当前 1.8 状态；Copy §6（Rede Coach 命名、paywall 与状态文案）；CHANGELOG（本次架构事实）。没有新建长期文档，`DOCS_MANIFEST` 无需改。
+
+**Git / 发布**：只保留本地任务分支与本地提交；按用户明确指令，不 push、不创建 PR。
+
+**下一步**：架构门禁完成后，下一独立切片才是创建 `RedeEntitlements` + StoreKitTest 的最小 runtime 骨架；在首个真实 paid 能力写进 PRD 前，不做可发布 paywall。
+
+---
+
+## 2026-07-17 · Rede 1.8 (build 25) 已提交 App Store 审核
+
+**用户目标**：接管 Claude 额度中断后的 1.8 发布工作，自己完成 App Store Connect 填写、用模拟器重拍商店图、上传并提交；审核通过后自动发布。
+
+**做了什么**：在 App Store Connect 直接核实并绑定 **1.8 (25)**；英/中双语 What's New 均按 1.8 实际能力重写并保存；用 iPhone 17 Pro Max 模拟器的真实 1.8/25 运行态分别生成 en-US 与 zh-Hans 各 5 张 **1320 × 2868** 截图，逐张目检无个人信息后按 Today → Development → Active Train → Exercise Library → Muscle Detail 排序上传，旧 6.5 英寸槽改为继承各自语言的新 6.9 英寸素材。发布设置保持「审核通过后自动发布」「立即向所有用户发布」「保留现有评分」。最终提交成功。
+
+**你能看到什么**：App Store 产品页会使用全新的双语截图和 1.8 更新说明；Apple 审核通过后无需再手动点发布，1.8 会自动替换当前 1.0。
+
+**验证与收据**：ASC 审核详情直接显示 **iOS App 1.8 / 1.8 (25) / 等待审核**；提交时间 2026-07-17 17:34 ET，提交 ID `73076a38-e6b8-43fa-a3df-e885f1a82f76`。最终文档写回后，本机再次运行权威 `.claude/quality-gate.cmd`，exit 0、`QUALITY GATE: PASS`，RedeDataHealth 54 项、RedeTrainingDecision 360 项、RedeWidgetShared 12 项测试全部零失败，Xcode 模拟器构建 `BUILD SUCCEEDED`。截图交付副本保存在桌面 `Rede 1.8 App Store Screenshots/`（根目录英文，`zh-Hans/` 中文）。
+
+**风险与遗留**：本轮没有伪造新的 TestFlight 真机收据；清单当前准确保留 19 个未勾选项（0.4、G1/G3、F+1、I1-I3、J1-J4、L1-L8），尤其 Live Activity L4-L6 仍建议在 1.8 真机上复验。owner 已明确指令本次直接提交并自动发布，因此这些项目作为已知残余风险放行、不是 PASS；优先在 Apple 批准前补验，来不及则发布后复验。ASC 的社交媒体年龄分级新问题截止 2026-09-07，目前不阻断本次提交。
+
+**规格写回**：none——本轮只做版本号与发布管理，没有改变产品行为、架构或数据契约；发布事实已写回 What's New、验收清单、CHANGELOG 与本日志。
+
+**下一步**：等待 Apple 审核；通过后核对公开商店版本变为 1.8，并完成上述真机残留项。
+## 2026-07-18 · 加 App Store 评分请求（requestReview）——冷启动只有 1 个评分的根因修复
+
+**用户目标**：商店只有 1 个评分（4.0★、无文字）。根因排查发现：**App 里从来没有请求评分的代码**，评分全靠用户自己跑去商店打，所以几乎没有。owner 拍板在下一版（1.9）加评分弹窗，攒进 1.9 一起提交（不打断正在审核的 1.8）。
+
+**做了什么**：在「训练完成并落盘」这一全程最高满意度时刻，接入 StoreKit 系统评分弹窗（`@Environment(\.requestReview)`），受一套**纯逻辑节流策略**约束：
+- 新建 `RedeDomain/ReviewPromptPolicy`（无依赖纯逻辑，可 `swift test`）——规则：① 至少完成 **3 场**训练才问（绝不打扰刚装的新用户）；② 每个 App 版本最多问一次（发新版才重新有资格）；③ 版本号读取失败时绝不弹。
+- App 壳 `TrainTabView`：完成落盘成功后调用请求方法；完成场数**复用既有 `completedSessionCount`**（清洗后真实场数，不另设持久化计数器——遵守文件既有约定），只持久化「上次请求评分的版本」。在请求「之前」就记下本版本已问，即便系统抑制弹窗也绝不同版本重复打扰。
+- 系统弹窗无自定义文案（Apple 决定是否真正展示，每 365 天≤3 次），本策略是在其之上更保守的自我节流。
+
+**你能看到什么**：1.9 上线后，用户在完成第 3 次训练（老用户升级后的下一次完成）时会看到系统「给 Rede 评分」弹窗，且同一版本不会反复打扰。目标：把评分从个位数往上带、并积累文字评论。
+
+**证据**：`ReviewPromptPolicy` 单测 9 条（阈值上下界、每版本一次、旧版本可再问、空版本不弹、初始化钳制）——`swift test` RedeDomain **59 通过 0 失败**；App 全量 `xcodebuild`（iPhone 17 Pro 模拟器）**BUILD SUCCEEDED**。独立 code-reviewer 审查：无 P0/P1/P2；三个 P3 已处理两个（去掉与文件约定冲突的独立计数器、改复用真实场数；删无用 Equatable），剩一个见风险。
+
+**风险 / 待定**
+- **端到端行为无自动化证据（P3）**：App 壳无测试 target，"第 3 场→弹、每版本一次"的完整链路只有纯策略层单测 + 编译通过背书。**1.9 提交前建议做一次手动验收**：debug build 里连续完成训练，看 `UserDefaults` 的 `reviewPrompt.lastRequestedVersion` 在第 3 场从空翻成当前版本号且此后不变（系统弹窗本身无法稳定截图，但这个 key 能证明门控正确）。
+- 副标题 `5x5, 531 & RPE, explained` + 新关键词随 1.9 一起提交（当前被 1.8 审核锁住，见 rede-web DEV_LOG 2026-07-18）。
+
+**下一步**：owner 过 PR；1.9 打包时把本改动 + 新副标题/关键词一起提交；提交前做上面的手动验收。
+
+---
+
 ## 2026-07-16 · 休息 Live Activity 修两个真机 bug + 质感升级（owner 1.7(24) 反馈批，三段式）
 
 **用户目标**：owner 真机实测反馈①休息时直接回桌面，灵动岛胶囊只有图标没倒计时，要先长按展开一次才出现；②展开态「平板卧推」等内容偏上没居中；③加点小细节要高级感但不花哨。
