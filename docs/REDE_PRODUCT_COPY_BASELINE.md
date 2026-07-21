@@ -415,13 +415,14 @@ Settings 里不要营销。只说事实。
 | 稍后 | 稍后 | Later |
 | What's New 主操作 | 继续 | Continue |
 
-What's New 的当前 1.8 内置叙事用三条开放行，不附常驻小字：
+What's New 的当前 1.8 内置叙事 = **一句 hero 主打句 + 三条具体亮点行**，不附常驻小字（2026-07-20 owner「文案太不专业」重写：亮点必须是具体名词句——写清「什么功能、在哪、给什么」，禁空泛形容词组如「更完整也更好读」；版本号只在 sheet 顶部 overline 出现一次，正文 hero 不再重复大版本数字）：
 
-| 中文 | English |
-|---|---|
-| 每块肌肉，都有自己的等级 | A level for every muscle |
-| 训练、休息与下一组，始终清楚 | Training, rest, and the next set—always clear |
-| 计划与进展，更完整也更好读 | Planning and progress, fuller and clearer |
+| 位置 | 中文 | English |
+|---|---|---|
+| hero | 每块肌肉，都有自己的等级 | Every muscle earns its level |
+| 01 | 新增「发展」板块：每块肌群的发展等级，配前后人形热力图 | New Development section: a level for every muscle group, with a body heatmap |
+| 02 | 组间休息上锁屏：锁屏与灵动岛实时倒计时，不用回 App 看表 | Rest reaches the Lock Screen: live countdowns on the Lock Screen and Dynamic Island |
+| 03 | 新增动作库：165 个动作按肌群分组，训练中也能查看要点 | New exercise library: 165 exercises grouped by muscle, with cues mid-workout |
 
 > **实现状态（2026-06-13）:** 下面的 Apple Health / HealthKit 文案是 **FF 目标表面，当前未实现**——代码里没有 HealthKit。已 ship 的 Settings 隐私串遵循「未上线不提」（HealthKit 实装时再加这段）。本段保留为 HealthKit slice 落地时的文案基线。已 ship 的设置文案以 `RedeL10n` 实际串为准。
 

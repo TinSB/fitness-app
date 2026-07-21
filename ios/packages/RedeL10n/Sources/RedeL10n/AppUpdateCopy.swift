@@ -65,19 +65,26 @@ extension RedeStrings {
         "\(marketingVersion) (\(build))"
     }
 
+    /// 版本主打句（What's New 的 hero；空串 = 该版本无内置叙事，视图回退显示版本号）。
+    /// 文案纪律（基线 §5.5）：只讲已交付事实，Apple 式具体名词句，零空泛形容词。
+    public func appUpdateHeroLine(version: String) -> String {
+        guard version == "1.8" else { return "" }
+        return updateT("每块肌肉，都有自己的等级", "Every muscle earns its level")
+    }
+
     public func appUpdateHighlights(version: String) -> [String] {
         guard version == "1.8" else { return [] }
         if locale == .zh {
             return [
-                "每块肌肉，都有自己的等级",
-                "训练、休息与下一组，始终清楚",
-                "计划与进展，更完整也更好读",
+                "新增「发展」板块：每块肌群的发展等级，配前后人形热力图",
+                "组间休息上锁屏：锁屏与灵动岛实时倒计时，不用回 App 看表",
+                "新增动作库：165 个动作按肌群分组，训练中也能查看要点",
             ]
         }
         return [
-            "A level for every muscle",
-            "Training, rest, and the next set—always clear",
-            "Planning and progress, fuller and clearer",
+            "New Development section: a level for every muscle group, with a body heatmap",
+            "Rest reaches the Lock Screen: live countdowns on the Lock Screen and Dynamic Island",
+            "New exercise library: 165 exercises grouped by muscle, with cues mid-workout",
         ]
     }
 
