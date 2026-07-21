@@ -22,6 +22,15 @@ extension RedeStrings {
     public var planEditMoveUp: String { locale == .zh ? "上移" : "Move up" }
     public var planEditMoveDown: String { locale == .zh ? "下移" : "Move down" }
     public var planEditRestoreDefault: String { locale == .zh ? "恢复默认" : "Restore default" }
+    /// 移除后撤销条正文（2026-07-20 owner 实机反馈：误删要能一键撤回）。name 为已本地化动作名；
+    /// 撤销动作词复用 coachUndoLabel（与今日页撤销条同源）。
+    public func planEditRemovedLine(_ name: String) -> String {
+        locale == .zh ? "已移除「\(name)」" : "Removed \(name)"
+    }
+    /// 撤销条无障碍整读（不带书名号，VoiceOver 读得顺；动作词收尾）。
+    public func planEditRemovedUndoA11y(_ name: String) -> String {
+        locale == .zh ? "已移除 \(name)，撤销" : "Removed \(name), undo"
+    }
     public var planEditCustomizedBadge: String { locale == .zh ? "已自定义" : "Customized" }
     public var planEditApply: String { locale == .zh ? "采纳修改" : "Apply changes" }
     public var planEditCancel: String { locale == .zh ? "取消" : "Cancel" }
