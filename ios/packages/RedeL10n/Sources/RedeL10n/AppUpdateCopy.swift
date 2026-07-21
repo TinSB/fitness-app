@@ -69,12 +69,12 @@ extension RedeStrings {
     /// 文案纪律（基线 §5.5）：只讲已交付事实，Apple 式具体名词句，零空泛形容词。
     /// 只保留当前发布版本的叙事（升级只会看到当前版本，旧版本文案按 YAGNI 移除）。
     public func appUpdateHeroLine(version: String) -> String {
-        guard version == "1.9" else { return "" }
+        guard version == "1.9.1" else { return "" }
         return updateT("训练现场，顺序随你调", "Adjust your session on the spot")
     }
 
     public func appUpdateHighlights(version: String) -> [String] {
-        guard version == "1.9" else { return [] }
+        guard version == "1.9.1" else { return [] }
         if locale == .zh {
             return [
                 "「接下来」可现在练：训练中把后面的动作提到当前，重量与进阶仍由系统安排",
