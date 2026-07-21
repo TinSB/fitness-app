@@ -66,6 +66,7 @@ final class RedeStringsTests: XCTestCase {
             ("appUpdateLater", s.appUpdateLater),
             ("appUpdateContinue", s.appUpdateContinue),
             ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.8", build: "25")),
+            ("appUpdateHeroLine", s.appUpdateHeroLine(version: "1.8")),
             ("appUpdateHighlights", s.appUpdateHighlights(version: "1.8").joined(separator: " ")),
             // FR-SE9 / FR-SUB2：订阅管理与诚实状态
             ("settingsSubscriptionSection", s.settingsSubscriptionSection),
@@ -255,16 +256,28 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertEqual(en.appUpdateViewShort, "View")
         XCTAssertEqual(zh.appUpdateAvailable(version: "1.9"), "1.9 可用")
         XCTAssertEqual(en.appUpdateAvailable(version: "1.9"), "1.9 Available")
+        // 2026-07-20 owner「文案太不专业」重写：hero=版本主打句，亮点=具体名词句（基线 §5.5）。
+        XCTAssertEqual(zh.appUpdateHeroLine(version: "1.8"), "每块肌肉，都有自己的等级")
+        XCTAssertEqual(en.appUpdateHeroLine(version: "1.8"), "Every muscle earns its level")
         XCTAssertEqual(
             zh.appUpdateHighlights(version: "1.8"),
-            ["每块肌肉，都有自己的等级", "训练、休息与下一组，始终清楚", "计划与进展，更完整也更好读"]
+            [
+                "新增「发展」板块：每块肌群的发展等级，配前后人形热力图",
+                "组间休息上锁屏：锁屏与灵动岛实时倒计时，不用回 App 看表",
+                "新增动作库：165 个动作按肌群分组，训练中也能查看要点",
+            ]
         )
         XCTAssertEqual(
             en.appUpdateHighlights(version: "1.8"),
-            ["A level for every muscle", "Training, rest, and the next set—always clear", "Planning and progress, fuller and clearer"]
+            [
+                "New Development section: a level for every muscle group, with a body heatmap",
+                "Rest reaches the Lock Screen: live countdowns on the Lock Screen and Dynamic Island",
+                "New exercise library: 165 exercises grouped by muscle, with cues mid-workout",
+            ]
         )
         XCTAssertTrue(zh.appUpdateHighlights(version: "1.7").isEmpty)
         XCTAssertTrue(en.appUpdateHighlights(version: "1.9").isEmpty)
+        XCTAssertTrue(zh.appUpdateHeroLine(version: "1.9").isEmpty)
     }
 
     func testSubscriptionCopyAnchorsAndFreeCompatibilityFloor() {

@@ -123,14 +123,27 @@ struct AppUpdateWhatsNewSheet: View {
                     Overline(text: s.appUpdateWhatsNew)
                         .padding(.top, 30)
 
-                    Text(version)
-                        .font(.redeDisplay)
-                        .tracking(RedeTracking.display)
-                        .monospacedDigit()
-                        .foregroundStyle(Color.redeT1)
-                        .padding(.top, 7)
-                        .padding(.bottom, 22)
-                        .accessibilityLabel("Rede \(version)")
+                    // hero = 版本主打句（顶部 overline 已含版本号，不再重复大数字；
+                    // 无内置叙事的版本回退显示版本号，保持既有形态）。
+                    if s.appUpdateHeroLine(version: version).isEmpty {
+                        Text(version)
+                            .font(.redeDisplay)
+                            .tracking(RedeTracking.display)
+                            .monospacedDigit()
+                            .foregroundStyle(Color.redeT1)
+                            .padding(.top, 7)
+                            .padding(.bottom, 22)
+                            .accessibilityLabel("Rede \(version)")
+                    } else {
+                        Text(s.appUpdateHeroLine(version: version))
+                            .font(.redeTitle)
+                            .tracking(RedeTracking.title)
+                            .foregroundStyle(Color.redeT1)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 10)
+                            .padding(.bottom, 22)
+                            .accessibilityLabel("Rede \(version)　\(s.appUpdateHeroLine(version: version))")
+                    }
 
                     Rectangle().fill(Color.redeHair).frame(height: 1)
 
