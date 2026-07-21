@@ -494,7 +494,8 @@ final class SessionStore {
     /// completedSessionCount 供编辑器实时算「下一个训练日将变为 X」（轮转锚定完成场次）。
     struct DaySequenceContext: Equatable {
         let dayCodes: [String]          // 当前顺序（编辑器 seed）
-        let isCustomized: Bool          // 是否已存在自定义日序（控制「恢复默认」是否显示）
+        let defaultDayCodes: [String]   // 教练默认日序（2026-07-20 操作区批：恢复默认的暂存目标 + 置灰基线）
+        let isCustomized: Bool          // 是否已存在自定义日序（采纳收敛 applyResolution 输入）
         let splitType: String?          // 预览 nextDayCode 用
         let completedSessionCount: Int  // 预览 nextDayCode 用（轮转锚点）
     }
@@ -513,9 +514,9 @@ final class SessionStore {
         guard !current.isEmpty else { return nil }
         // isCustomized：存了合法排列 override（== 当前有效序）且**顺序确实异于默认**才算已自定义。
         // 脏 override 当未自定义；override 恰等于默认序也当未自定义（否则「恢复默认」会在已是默认时误显示=no-op 入口，审查 MAJOR）。
-        let isCustomized = override != nil && current == override
-            && current != TodayPrescriptionEngine.defaultDaySequence(splitType: split)
-        return DaySequenceContext(dayCodes: current, isCustomized: isCustomized,
+        let defaults = TodayPrescriptionEngine.defaultDaySequence(splitType: split)
+        let isCustomized = override != nil && current == override && current != defaults
+        return DaySequenceContext(dayCodes: current, defaultDayCodes: defaults, isCustomized: isCustomized,
                                   splitType: split, completedSessionCount: projectionRotationBase(input: input, appData: appData))
     }
 

@@ -5,6 +5,9 @@ import RedeTrainingDecision
 // FR-PL7② 训练日顺序编辑器（切片 S10）。从计划页「调整训练日顺序」入口打开：
 // 上移/下移重排整周训练日的先后（只重排已有训练日类型，不增删——保 A/B 分化与肌群 2×/周）。
 // 护栏：实时预览「下一个训练日将变为 X」（轮转锚定已完成场次，重排会让下一个训练日跳变，诚实告知不阻止）。
+// 2026-07-20 操作区批（裁定 C，与 PlanDayEditorView 同构统一）：采纳=EmbButton 全宽唯一主操作
+//（无改动 disabled）+ 恢复默认常驻安静文字行（暂存化：点击只重置工作副本、采纳才落盘，
+// 收敛复用 PlanDayEditRules.applyResolution）+ 取消上移右上 ✕；重排无「删除」动作 → 不加撤销条。
 // 整面板公理：sheet 内 0 ForgedCard——开放行 + 发丝线 + 单一 ember 主操作（采纳）。
 struct PlanDaySequenceEditorView: View {
     let onApplied: () -> Void   // 采纳/恢复后让计划页 reload() 刷新排期
@@ -15,6 +18,7 @@ struct PlanDaySequenceEditorView: View {
 
     @State private var dayCodes: [String] = []        // 工作副本（数组顺序 = 训练日先后）
     @State private var initialOrder: [String] = []     // 载入时的顺序（无改动则禁用采纳，免 no-op 写）
+    @State private var defaultOrder: [String] = []     // 教练默认日序（恢复默认的暂存目标 + 置灰基线）
     @State private var wasCustomized = false
     @State private var splitType: String?
     @State private var completedSessionCount = 0
@@ -28,6 +32,9 @@ struct PlanDaySequenceEditorView: View {
     @State private var dropTargetIndex = 0              // 当前落点下标（在 withAnimation 里更新 → 让位行平滑开槽）
     @State private var liftPulse = 0                    // 抓起触感脉冲
     @State private var movePulse = 0                    // 每跨一行的轻触感脉冲
+    // 2026-07-20 操作区批（裁定 B/C）触感脉冲：单调自增计数器（设计语言 §16 pulse 纪律）。
+    @State private var restorePulse = 0                 // 恢复默认 = 中震
+    @State private var applyPulse = 0                   // 采纳成功 = success 提交确认
     private let rowHeight: CGFloat = RedeShape.controlHeight  // 固定行高 = 落点取整步距
 
     private var s: RedeStrings { localeStore.strings }
@@ -43,8 +50,14 @@ struct PlanDaySequenceEditorView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: RedeSpace.section) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(s.planSeqEditTitle)
-                        .font(.redeHeadline).tracking(RedeTracking.headline).foregroundStyle(Color.redeT1)
+                    // 取消上移右上 ✕ 与标题同行（What's New sheet header 先例，裁定 A/C 统一）；
+                    // 底部不再有取消文字钮；下滑关面板 = 同一取消语义（暂存不落盘天然安全）。
+                    HStack(spacing: 8) {
+                        Text(s.planSeqEditTitle)
+                            .font(.redeHeadline).tracking(RedeTracking.headline).foregroundStyle(Color.redeT1)
+                        Spacer()
+                        closeButton
+                    }
                     Text(s.planSeqEditSubtitle)
                         .font(.redeCaption).foregroundStyle(Color.redeT3)
                         .fixedSize(horizontal: false, vertical: true)
@@ -77,9 +90,20 @@ struct PlanDaySequenceEditorView: View {
         .presentationBackground(Color.redeBase)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
-        .task { if !loaded { await load() } }
+        .task {
+            if !loaded { await load() }
+            // 截图/UI 验证钩子（同 PlanDayEditorView 先例，仅带参激活，驱动真实 move/restore/apply 路径）：
+            // -autoSeqMoveFirstDown 首行下移一位（制造改动态）；-autoSeqRestoreDefault 恢复默认（暂存）；
+            // -autoApplySeqEdit 采纳（含收敛落盘）。
+            let args = CommandLine.arguments
+            if args.contains("-autoSeqMoveFirstDown"), let first = dayCodes.first { move(code: first, by: 1) }
+            if args.contains("-autoSeqRestoreDefault") { restoreToDefault() }
+            if args.contains("-autoApplySeqEdit") { await apply() }
+        }
         .sensoryFeedback(.impact, trigger: liftPulse)     // 抓起一行 = 轻震
         .sensoryFeedback(.selection, trigger: movePulse)  // 每跨一槽 = 轻 tick
+        .sensoryFeedback(.impact(weight: .medium), trigger: restorePulse)  // 恢复默认 = 中震
+        .sensoryFeedback(.success, trigger: applyPulse)                    // 采纳成功 = 提交确认
     }
 
     // MARK: 训练日清单（开放行：整行长按拖动重排；上下移留作无障碍动作）
@@ -189,22 +213,44 @@ struct PlanDaySequenceEditorView: View {
             }
     }
 
-    // MARK: 采纳 / 恢复默认 / 取消
+    // MARK: 采纳 / 恢复默认 / 取消（2026-07-20 操作区批，与 PlanDayEditorView 同构）
+
+    /// 右上 ✕ 取消（What's New sheet 先例：xmark 13 semibold / t2 / controlHeight² / redePressable）。
+    private var closeButton: some View {
+        Button { dismiss() } label: {
+            Image(systemName: "xmark")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.redeT2)
+                .frame(width: RedeShape.controlHeight, height: RedeShape.controlHeight)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.redePressable)
+        .disabled(sessionStore.isSaving)
+        .accessibilityLabel(s.planEditCancel)
+        .accessibilityIdentifier("plan-seq-editor-close")
+    }
 
     private var actionRow: some View {
-        HStack {
-            Button(s.planEditApply) { Task { await apply() } }
-                .font(.redeBody.weight(.semibold)).foregroundStyle(Color.redeEmber2)
-                .buttonStyle(.redePressable).disabled(sessionStore.isSaving || dayCodes == initialOrder)
-            Spacer()
-            if wasCustomized {
-                Button(s.planEditRestoreDefault) { Task { await restore() } }
-                    .font(.redeCaption).foregroundStyle(Color.redeT3)
-                    .buttonStyle(.redePressable).disabled(sessionStore.isSaving)
+        // 结构同 PlanDayEditorView：「恢复默认」右对齐安静文字行（常驻，序列==默认置灰——
+        // 显式换色，redePressable 不自带禁用变暗）+ 「采纳修改」EmbButton 全宽唯一 ember 主操作。
+        // 恢复默认语义=暂存：只重置工作副本、留在 sheet；落盘统一走采纳（收敛见 apply()）。
+        let restoreDisabled = sessionStore.isSaving || !loaded
+            || PlanDayEditRules.isAtDefault(working: dayCodes, defaults: defaultOrder)
+        let applyDisabled = sessionStore.isSaving || dayCodes.isEmpty
+            || !PlanDayEditRules.hasChanges(working: dayCodes, initial: initialOrder)
+        return VStack(spacing: 4) {
+            HStack {
+                Spacer()
+                Button(s.planEditRestoreDefault) { restoreToDefault() }
+                    .font(.redeCaption)
+                    .foregroundStyle(restoreDisabled ? Color.redeT4.opacity(0.4) : Color.redeT3)
+                    .buttonStyle(.redePressable)
+                    .disabled(restoreDisabled)
             }
-            Button(s.planEditCancel) { dismiss() }
-                .font(.redeCaption).foregroundStyle(Color.redeT4)
-                .buttonStyle(.redePressable).disabled(sessionStore.isSaving)
+            .frame(minHeight: RedeShape.controlHeight)
+            EmbButton(icon: "checkmark", title: s.planEditApply) { Task { await apply() } }
+                .disabled(applyDisabled)
+                .opacity(applyDisabled ? 0.45 : 1)
         }
     }
 
@@ -216,6 +262,7 @@ struct PlanDaySequenceEditorView: View {
         guard let ctx else { loaded = true; return }
         dayCodes = ctx.dayCodes
         initialOrder = ctx.dayCodes
+        defaultOrder = ctx.defaultDayCodes
         wasCustomized = ctx.isCustomized
         splitType = ctx.splitType
         completedSessionCount = ctx.completedSessionCount
@@ -230,17 +277,35 @@ struct PlanDaySequenceEditorView: View {
         dayCodes.swapAt(idx, target)
     }
 
-    private func apply() async {
-        if await sessionStore.applyCustomDaySequence(dayCodes) {
-            onApplied()
-            dismiss()
+    /// 恢复默认（暂存化，裁定 C）：只重置工作副本、留在 sheet；「下一个训练日」预览随之实时更新；
+    /// 落盘统一走「采纳修改」。
+    private func restoreToDefault() {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            dayCodes = defaultOrder
         }
+        restorePulse += 1   // 恢复默认 = 中震（裁定 B）
     }
 
-    private func restore() async {
-        if await sessionStore.removeCustomDaySequence() {
-            onApplied()
+    /// 采纳收敛（复用 PlanDayEditRules.applyResolution，PlanDayEditModelTests 日序合同锁定）：
+    /// 序==默认 且已自定义 → removeCustomDaySequence 清记录（canonical 不留与默认等值的冗余覆盖）；
+    /// 序==默认 且未自定义 → 无操作直接关；其余正常写自定义日序。
+    private func apply() async {
+        switch PlanDayEditRules.applyResolution(working: dayCodes, defaults: defaultOrder, wasCustomized: wasCustomized) {
+        case .noop:
+            applyPulse += 1   // 采纳成功 = success 确认（先于 dismiss 触发）
             dismiss()
+        case .clearCustom:
+            if await sessionStore.removeCustomDaySequence() {
+                applyPulse += 1
+                onApplied()
+                dismiss()
+            }
+        case .writeCustom:
+            if await sessionStore.applyCustomDaySequence(dayCodes) {
+                applyPulse += 1
+                onApplied()
+                dismiss()
+            }
         }
     }
 }
