@@ -66,11 +66,12 @@
 ## 实施回执（2026-07-20 回填）
 
 - **commit 清单**（分支 `codex/0720-plan-editor-undo`，基线 = 最新 origin/main 7b40f6b；不 push 不开 PR）：
-  - `2b177e9` 纯模型 PlanDayEditUndoModel + PlanDayEditRules（TDD 先红后绿，12 测）
+  - `2b177e9` 纯模型 PlanDayEditUndoModel + PlanDayEditRules（TDD 先红后绿，11 测；验收批补 1 条重排×撤销语义锁 → 现 12）
   - `2517642` 撤销条双语文案 planEditRemovedLine + a11y 整读（精确断言；撤销词复用 coachUndoLabel）
   - `6b539aa` PlanDayEditorView 撤销条 + 恢复默认常驻/暂存化 + 采纳收敛；DayEditorContext 加 defaultExerciseIds
   - 后续一条：规格写回 + 证据 PNG + DEV_LOG + 本回执（即本文件所在提交）
-- **A 撤销栈**：纯逻辑在 `RedeTrainingDecision/Sources/RedeTrainingDecision/PlanDayEditModel.swift`（选了包内而非 app-hosted → 无需动 gate/CI 白名单）；`PlanDayEditModelTests` 12 条先红（cannot find 'PlanDayEditUndoModel'）后绿，覆盖：原位还原/三连删三连撤/index 夹取/重加入跳过继续 pop/全被跳过返 nil/空栈/清栈/收敛三分支/默认等值判断。包全量 391 测 0 失败。视图侧撤销条在影响预览之下、actionRow 之上，正文 t3 + 唯一 ember「撤销」，零图标零小字，a11y =「已移除 X，撤销」；swap 不入栈；恢复默认/采纳/取消清栈。实拍：`2026-07-20-planundo-02-removed-undo-bar.png`（移除后条出现）、`03-undone-restored.png`（撤销回原位、条消失）、`03b-multi-remove-partial-undo.png`（连删 2 撤 1：上斜还原到位、条常驻显示下一目标「平板卧推」）。
+- **A 撤销栈**：纯逻辑在 `RedeTrainingDecision/Sources/RedeTrainingDecision/PlanDayEditModel.swift`（选了包内而非 app-hosted → 无需动 gate/CI 白名单）；`PlanDayEditModelTests` 11 条先红（cannot find 'PlanDayEditUndoModel'）后绿，覆盖：原位还原/三连删三连撤/index 夹取/重加入跳过继续 pop/全被跳过返 nil/空栈/清栈/收敛三分支/默认等值判断。包全量 391 测 0 失败。视图侧撤销条在影响预览之下、actionRow 之上，正文 t3 + 唯一 ember「撤销」，零图标零小字，a11y =「已移除 X，撤销」；swap 不入栈；恢复默认/采纳/取消清栈。实拍：`2026-07-20-planundo-02-removed-undo-bar.png`（移除后条出现）、`03b-multi-remove-no-undo.png`（连删 2 未撤：列表缺两项、条显最近移除——与 02 可区分的中间态）。
+- **验收批证据勘误（2026-07-21 主会话）**：原 `03-undone-restored.png` 与 01、原 `03b` 与 02 **字节级相同**（端态像素本就重合：撤销还原后==置灰基线、连删 2 撤 1 终态==只删 1 终态——两对场景的确定性终态一致，非独立证据但也非造假）。处置：删除零增量的 03，重拍 03b 为可区分的「连删 2 未撤」中间态；**撤销还原的行为真相由纯模型测试锁定**（含验收批补的重排×撤销语义锁，现 12 条），实拍只证端态与条的存在。撤销条动效（transition 修复后）与真手感仍留 TestFlight 待验。
 - **B 恢复默认**：①常驻——`wasCustomized` 渲染条件已去除，列表==教练默认时 disabled 置灰（发现 redePressable+硬设 foregroundStyle 不自带禁用变暗 → 显式换色 `redeT4.opacity(0.4)`，同 iconButton 口径，像素级对比过亮/暗两态）；②暂存——点击只 `exerciseIds = defaultIds` + recomputeImpact，留在 sheet 不落盘不 dismiss；③收敛落盘——采纳走 `PlanDayEditRules.applyResolution`：==默认且已自定义 → `removeCustomDayPlan`（实测 canonical `planCustomization` 采纳后 = null，容器整个清掉、零冗余自定义）；==默认且未自定义 → noop 不写盘直接关。实拍：`01-default-restore-disabled.png`（未改过置灰）、`04-customized-restore-enabled.png`（已自定义可用）、`05-restore-staged-in-sheet.png`（点击后列表变回默认、仍在 sheet、按钮转灰）、`06-reopen-after-apply-disabled.png`（采纳后再开面板置灰=记录已清干净）。
 - **规格写回**：PRD FR-PL6 行为句（撤销条语义 + 常驻/暂存三点）与 FR-PL6.2/6.3（「单步恢复默认」改「先重置工作副本、采纳收敛落盘」+ applyResolution 三分支）；系统逻辑 §8.2 编辑器 UI 段（撤销栈/撤销条/置灰实现细节/DayEditorContext 新字段）+ 诚实红线段钩子清单（补 `-autoRemoveFirstExercise N` / `-autoUndoRemoval` / `-autoRestoreDefault` / `-autoApplyPlanEdit`）；设计语言 = N/A（grep 确认该文档未记载编辑器动作行，仅 FR-TR14 段提及不复制拖拽编辑器——无对应节可改）。
 - **gate**：两冻结点均 exit 0，尾部原文 `QUALITY GATE: PASS`（冻结 1 = 代码三提交后；冻结 2 = 文档/证据提交后）。新测试全在 SPM 包内（RedeTrainingDecision + RedeL10n，gate 本就全量跑包测试）→ app-hosted 白名单不变（前后均 26 条）。

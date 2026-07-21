@@ -47,6 +47,15 @@ final class PlanDayEditModelTests: XCTestCase {
         XCTAssertEqual(undo.undo(current: ["a"]), ["a", "x"], "min(原 index, count) 落到末尾")
     }
 
+    func testUndoAfterReorderRestoresByIndexNotAdjacency() throws {
+        // 语义锁（验收 NIT，PRD FR-PL6「交错重排后按下标还原」）：移除后用户拖动重排
+        // 幸存者，撤销仍插回原下标位——不是原相邻关系。防未来被「顺手修正」成邻接还原。
+        var undo = PlanDayEditUndoModel()
+        undo.recordRemoval(id: "b", index: 1)              // [a,b,c,d] 移除 b
+        let reordered = ["d", "a", "c"]                    // 期间用户把 d 拖到最前
+        XCTAssertEqual(undo.undo(current: reordered), ["d", "b", "a", "c"], "b 回下标 1，非跟随 a")
+    }
+
     // MARK: - 防呆：已重新加入的 id 跳过继续 pop
 
     func testUndoSkipsIdReAddedViaPicker() throws {

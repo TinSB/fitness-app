@@ -399,8 +399,10 @@ struct PlanDayEditorView: View {
 
     private func remove(_ id: String) {
         guard let idx = exerciseIds.firstIndex(of: id) else { return }
-        undoModel.recordRemoval(id: id, index: idx)  // 压栈 (id, 原 index)；swap 原位替换不入栈
+        // undoModel 变更必须在动画事务内——撤销条的插入/移除由它驱动，
+        // 事务外变更会让 .transition(.opacity) 失效（条瞬跳，验收 NIT）。
         withAnimation(.easeInOut(duration: 0.2)) {
+            undoModel.recordRemoval(id: id, index: idx)  // 压栈 (id, 原 index)；swap 原位替换不入栈
             exerciseIds.removeAll { $0 == id }
         }
         recomputeImpact()
@@ -408,8 +410,8 @@ struct PlanDayEditorView: View {
 
     /// 撤销一次移除：还原到 min(原 index, 当前 count)；期间被添加器重新加入的条目跳过继续 pop。
     private func undoRemoval() {
-        guard let restored = undoModel.undo(current: exerciseIds) else { return }
         withAnimation(.easeInOut(duration: 0.2)) {
+            guard let restored = undoModel.undo(current: exerciseIds) else { return }
             exerciseIds = restored
         }
         recomputeImpact()
@@ -417,8 +419,8 @@ struct PlanDayEditorView: View {
 
     /// 恢复默认（暂存化）：只重置工作副本、留在 sheet；落盘仍走「采纳修改」。
     private func restoreToDefault() {
-        undoModel.clear()  // 旧还原点对新基线已无意义
         withAnimation(.easeInOut(duration: 0.2)) {
+            undoModel.clear()  // 旧还原点对新基线已无意义
             exerciseIds = defaultIds
         }
         recomputeImpact()
