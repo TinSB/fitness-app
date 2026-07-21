@@ -1268,6 +1268,8 @@ Account/sync/cloud settings 不进入第一版干净实现,不得做成无能力
 
 **验收。** 策略层 9 条单测覆盖阈值上下界、每版本一次、旧版本可再问、空版本不弹与初始化钳制；端到端门控（第 3 场从空翻成当前版本号且此后不变）因 app 壳无测试 target，登记为 1.9 提交前手动验收项（TestFlight 验收清单 M1）。
 
+## 9. Share / Growth System
+
 分享系统是 Rede 的商业化增长回路,负责把训练成果、肌群等级、PR、均衡发展和可执行计划转化为用户愿意主动传播的隐私安全资产。它不是第一版社交网络,也不是公开排行榜。第一版干净实现的 S0 边界是本地生成分享卡、调用 iOS Share Sheet、附带通用 App Store / landing link;账号、云端个人页、公开 feed、归因链接、远程模板库和好友关系都属于后续 Master-approved implementation slice。
 
 > **实现状态（2026-07-07 更新，#611 S0 + #671 批次 B5）**：本节为目标契约;已落地 = **训练总结卡 + PR/里程碑卡 + Muscle Level 发展画像卡**三类（入口分别为练完态小结/同预览/Progress Development 块「分享发展画像」;Level Up / Balance Improvement 两卡依赖跨次数据节奏，推后观察真实使用）。隐私过滤（§9.3，SH2）落地方式 = **类型层结构性缺失**：`ShareSnapshot`(RedeLocalSnapshot) 只声明允许字段、禁止字段不存在;精确时长经 `ShareDurationBand` 有损分桶成区间。渲染 = app 层 `ShareCardView`(竖版 4:5) + `ImageRenderer`→UIImage,经 `SharePrivacyFilter` 唯一构造入口;触发 = 训练完成小结「分享」→ 预览 → `UIActivityViewController`(§9.4)。S0 不写 canonical、不联网、无埋点(§9.8 本地事件 deferred,守 FR-DT3)。下载 link = App Store(`ShareLinks.appStoreURL`,上架前回退搜索提示)。

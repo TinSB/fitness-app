@@ -231,24 +231,12 @@ public struct RedeStrings: Sendable {
         t("续费宽限期内　Rede Coach 保持可用",
           "Billing grace period. Rede Coach remains available")
     }
-    public var settingsSubscriptionVerified: String {
-        t("当前权益已由 Apple 验证", "Current access verified by Apple")
-    }
-    public var settingsSubscriptionRestore: String { t("恢复购买", "Restore purchases") }
     public var settingsSubscriptionManage: String { t("管理订阅", "Manage subscriptions") }
     public var settingsSubscriptionRetry: String { t("重新核对", "Check again") }
-    public var settingsSubscriptionPending: String {
-        t("购买正在等待 Apple 确认　确认前不会扣除 Rede 权益",
-          "The purchase is waiting for Apple approval. Access won't change until it completes")
-    }
-    public var settingsSubscriptionRestoreSuccess: String {
-        t("购买记录已与 Apple 同步", "Purchases synced with Apple")
-    }
     public var settingsSubscriptionOperationFailed: String {
         t("暂时无法完成　稍后再试　Free Core 不受影响",
           "Couldn't complete that right now. Try again later. Free Core is unaffected")
     }
-    public var settingsSubscriptionTerms: String { t("使用条款", "Terms of Use") }
     public var settingsSubscriptionOpenCoach: String { t("查看 Rede Coach", "View Rede Coach") }
     public var subscriptionPageCurrentPlan: String { t("当前方案", "Current plan") }
     public var subscriptionPagePreparingOverline: String { t("准备中", "In development") }

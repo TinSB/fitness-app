@@ -99,3 +99,20 @@
 - 未尽事项：[如实列]
 - SCRATCH：[路径]
 ```
+
+## 实施回执（2026-07-20 回填）
+
+- **分支与 commit**（基线 7061273）：`206115f` A 今日页更新行单行化移页底；`f19e88f` B 设置订阅区两行化+事务控件迁 Coach 页；`6112368` C「接下来」行补组次预告；`ccecf5b` D 长 ISO 归一+0kg 防线锁；`2345a40` E4 删 V1 死文案；`60a068a` 截图钩子 `-todayStartAtBottom`/`-autoOpenCoachPage`；`d908bf1` E 文档治理七项+7 张实拍；`dc77e5a` F 门禁收口。
+- **A 今日页**：单行开放行「新版本 X.Y · 查看 · 稍后」移页底 receipt 区之后，仅「查看」ember2；7 天稍后/双动作/a11y 零损失；AppUpdateRuntimeTests 检视后无需改动（13 条只断言 promptVersion 观察面，与布局解耦）。实拍 `2026-07-20-fixbatch-today-update-row-bottom-zh.png` / `-today-no-update-bottom-zh.png` / `-today-update-row-axxxl-zh.png`。
+- **B 设置页/Coach 页**：订阅区两行（方案事实 + 查看 Rede Coach）；恢复购买/条款删重、「管理订阅」迁 Coach 页（付费态页脚 + 购买面 shell 底部，同一 showsTransactionControls 门禁）；entitlement 矩阵政策与测试零改动。实拍 `-settings-subscription-two-rows-zh.png` / `-coach-paid-fixture-zh.png` / `-coach-free-production-zh.png`。
+- **C 训练页**：组数×首组次数（straight sets 合同，首组代表整动作），静态行与 a11y 同步。实拍 `-train-nextup-setsreps-zh.png`。
+- **D 加固（先红后绿 ×2）**：D1 长 ISO 输入锁测试先红（0 天/0 场 vs 期望 2/2）→ prefix(10) 归一后 RedeLocalSnapshot 196/196 绿（归一后仍走严格校验，有测试锁「归一不放松校验」）；D2 拆防线实跑红（`XCTAssertNil failed: "0.0"`）→ 提炼 internal 纯函数 WeeklyCoachLiftSignalPolicy + app-hosted 测试锁后绿。
+- **E 文档**：CHANGELOG 两条；新 FR = **FR-SE11**（全表 76 ID 撞号扫描零重复）+ 系统逻辑 §8.6 + TestFlight 清单 M1；§8.4 纠偏；V1 死文案三函数删除；premium-audit 归属登记；开闸 checklist 六项立档（grace 政策已裁定）；DEV_LOG 一条。
+- **F 门禁收口**：app-hosted 白名单 18→26 条（StoreKit/政策 8 + SessionStoreDraft 5 + AppUpdate 13），rede-ci.yml 与本地同一份清单；红测试继续排除+两处 blocker 注释。改后实跑 26/26 绿（xcresult `Test-Rede-2026.07.20_18-03-27--0400.xcresult`）。
+- **gate**：完整门禁两跑 exit 0（freeze-once：A-E 代码冻结点一次 + F 扩容后一次），尾部均 `** TEST SUCCEEDED **` / `QUALITY GATE: PASS`。
+- **未尽事项**：付费态页脚/购买面全控件可见实拍受限（生产闸关，需 Xcode StoreKitTest scheme 或开闸后验）；CI 实跑待 PR；模拟器留有本批种子数据；FR-SE11 端到端门控为 1.9 提交前手动项（清单 M1）。
+- **SCRATCH**：无 `.ai-tmp/` 产物；证据 PNG 全部入库 docs/工作记录/。
+
+## 验收附记（2026-07-20 主会话）
+
+两 lens + 对抗核验：**零 MAJOR，4 MINOR + 2 NIT 确认、0 驳回**，全部当场落地：①系统逻辑 `## 9. Share / Growth System` 章标题被 §8.6 插入误删（§9.1-9.10 悬挂）——已恢复；②PRD FR-SE11 行被空行隔出表格——已并回；③恢复购买在 unknown/checking/付费 × ready 格丢失 + 付费态条款链接丢失——今日闸关不可达，已裁定入开闸 checklist 第 ⑦ 项开闸前收口；④本批自产 6 条死文案（appUpdateSignalTitle + 5 条订阅串）——按同批 YAGNI 标准已删（grep 复核零生产调用）；⑤实施回执未回填——本节即回填。验收后补跑门禁见 PR 记录。

@@ -39,10 +39,6 @@ extension RedeStrings {
         "REDE · \(version)"
     }
 
-    public var appUpdateSignalTitle: String {
-        updateT("新版本已就绪", "A New Version Is Ready")
-    }
-
     /// 今日页页底单行更新信号的事实句（2026-07-20 收敛：三层块 → 单行开放行）。
     public func appUpdateRowTitle(version: String) -> String {
         updateT("新版本 \(version)", "New version \(version)")

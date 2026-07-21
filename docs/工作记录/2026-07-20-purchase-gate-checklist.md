@@ -36,6 +36,13 @@
 - [ ] **⑥ 定价与 founder beta 锚点对齐**：ASC 正式定价须与官网 founder beta 承诺
   （annual_5999_high 锚点系）对账——founder 报名者拿到的价格/权益不劣于公开价，
   公开价不打脸已发出的 beta 沟通；定价决定本身由 owner 拍板并留书面记录。
+- [ ] **⑦ 恢复购买与条款链接的可达性收口（2026-07-20 验收批发现）**：设置页订阅区收敛后，
+  「恢复购买」唯一入口是 Coach 页购买面——按既有 entitlement 矩阵，**unknown/checking/付费态
+  永远看不到购买面**，其中 unknown×store-ready 格最尖锐（权益无法核对的用户恰是
+  `AppStore.sync()` 强制重同步的目标人群，现仅剩语义不等价的本地「重新读取」）；付费态同时
+  失去订阅条款链接。开闸前必须落地：Coach 页 entitlement `.unavailable` 态在 store ready 时
+  补「恢复购买」入口，付费态页脚补条款链接（或另行裁定的等价方案）；今日购买闸恒 blocked
+  故不可达，不构成现网缺口。
 
 ## 完成定义
 

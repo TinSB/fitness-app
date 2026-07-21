@@ -60,7 +60,6 @@ final class RedeStringsTests: XCTestCase {
             ("appUpdateUnableToCheck", s.appUpdateUnableToCheck),
             ("appUpdateAvailable", s.appUpdateAvailable(version: "1.9")),
             ("appUpdateSignalOverline", s.appUpdateSignalOverline(version: "1.9")),
-            ("appUpdateSignalTitle", s.appUpdateSignalTitle),
             ("appUpdateRowTitle", s.appUpdateRowTitle(version: "1.9")),
             ("appUpdateViewShort", s.appUpdateViewShort),
             ("appUpdateViewUpdate", s.appUpdateViewUpdate),
@@ -76,14 +75,9 @@ final class RedeStringsTests: XCTestCase {
             ("settingsSubscriptionUnknownTier", s.settingsSubscriptionUnknownTier),
             ("settingsSubscriptionUnknown", s.settingsSubscriptionUnknown),
             ("settingsSubscriptionGrace", s.settingsSubscriptionGrace),
-            ("settingsSubscriptionVerified", s.settingsSubscriptionVerified),
-            ("settingsSubscriptionRestore", s.settingsSubscriptionRestore),
             ("settingsSubscriptionManage", s.settingsSubscriptionManage),
             ("settingsSubscriptionRetry", s.settingsSubscriptionRetry),
-            ("settingsSubscriptionPending", s.settingsSubscriptionPending),
-            ("settingsSubscriptionRestoreSuccess", s.settingsSubscriptionRestoreSuccess),
             ("settingsSubscriptionOperationFailed", s.settingsSubscriptionOperationFailed),
-            ("settingsSubscriptionTerms", s.settingsSubscriptionTerms),
             ("settingsSubscriptionOpenCoach", s.settingsSubscriptionOpenCoach),
             ("subscriptionPageCurrentPlan", s.subscriptionPageCurrentPlan),
             ("subscriptionPagePreparingOverline", s.subscriptionPagePreparingOverline),
@@ -254,8 +248,6 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertEqual(en.appUpdateCheck, "Check for Updates")
         XCTAssertEqual(zh.appUpdateWhatsNew, "本次新增")
         XCTAssertEqual(en.appUpdateWhatsNew, "What's New")
-        XCTAssertEqual(zh.appUpdateSignalTitle, "新版本已就绪")
-        XCTAssertEqual(en.appUpdateSignalTitle, "A New Version Is Ready")
         // 2026-07-20 今日页单行更新信号（三层块收敛）：事实句 + 短「查看」。
         XCTAssertEqual(zh.appUpdateRowTitle(version: "1.9"), "新版本 1.9")
         XCTAssertEqual(en.appUpdateRowTitle(version: "1.9"), "New version 1.9")
@@ -282,8 +274,6 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertEqual(en.settingsSubscriptionFreeCore, "Free Core")
         XCTAssertEqual(zh.settingsSubscriptionUnknownTier, "当前方案：暂时无法确认")
         XCTAssertEqual(en.settingsSubscriptionUnknownTier, "Current plan: unavailable")
-        XCTAssertEqual(zh.settingsSubscriptionRestore, "恢复购买")
-        XCTAssertEqual(en.settingsSubscriptionRestore, "Restore purchases")
         XCTAssertEqual(zh.subscriptionPageCurrentPlan, "当前方案")
         XCTAssertEqual(en.subscriptionPageCurrentPlan, "Current plan")
         XCTAssertEqual(zh.subscriptionPagePreparingOverline, "准备中")
@@ -430,9 +420,9 @@ final class RedeStringsTests: XCTestCase {
             zh.startTraining, zh.trainLogSet, zh.trainFinish, zh.trainHold185,
             zh.todayWhyThisCall, zh.todayHideReason,
             zh.settingsTitle, zh.settingsLanguage, zh.settingsDone,
-            zh.settingsSubscriptionSection, zh.settingsSubscriptionRestore,
+            zh.settingsSubscriptionSection,
             zh.settingsSubscriptionManage, zh.settingsSubscriptionRetry,
-            en.settingsSubscriptionSection, en.settingsSubscriptionRestore,
+            en.settingsSubscriptionSection,
             en.settingsSubscriptionManage, en.settingsSubscriptionRetry,
             zh.settingsWeeklyRestartLabel, zh.settingsWeeklyRestartNote, zh.carriedOverHeader(day: "腿 A"),
             zh.swapDayScopeOnceWeekly, en.settingsWeeklyRestartLabel, en.carriedOverHeader(day: "Legs A"),
