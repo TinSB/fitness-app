@@ -8,6 +8,8 @@ import RedeTrainingDecision
 // 2026-07-20 撤销/恢复批：移除可逐步撤回（sheet 内撤销条，纯模型 PlanDayEditUndoModel）；
 // 「恢复默认」常驻（列表==默认置灰）且暂存化——点击只重置工作副本，落盘统一走「采纳修改」，
 // 列表==默认时采纳按 PlanDayEditRules 收敛（清自定义记录 / 无操作），不写与默认等值的冗余自定义。
+// 2026-07-20 操作区批（裁定 A/B）：采纳=EmbButton 全宽唯一主操作（无改动时 disabled）+
+// 恢复默认右对齐安静文字行 + 取消上移右上 ✕（What's New 先例）；四动作系统触感（pulse 纪律）。
 // 定位「编辑教练给的计划」：起点 = 该日默认处方；引擎仍算重量/进阶（决策在前不破坏）。
 // 整面板公理：sheet 内 0 ForgedCard——开放行 + 发丝线 + 单一 ember 主操作（采纳）。
 
@@ -21,6 +23,7 @@ struct PlanDayEditorView: View {
 
     @State private var exerciseIds: [String] = []     // 工作副本（数组顺序 = 训练顺序）
     @State private var defaultIds: [String] = []      // 教练默认日序（恢复默认的暂存目标 + 置灰基线）
+    @State private var initialIds: [String] = []      // 打开时初始列表（无改动判定基线——采纳 disabled 依据）
     @State private var undoModel = PlanDayEditUndoModel() // 移除撤销栈（纯模型，见 PlanDayEditModelTests）
     @State private var wasCustomized = false
     @State private var scenario: String?
@@ -39,6 +42,10 @@ struct PlanDayEditorView: View {
     @State private var dropTargetIndex = 0
     @State private var liftPulse = 0
     @State private var movePulse = 0
+    // 2026-07-20 操作区批（裁定 B）触感脉冲：单调自增计数器（设计语言 §16 pulse 纪律）。
+    @State private var removeUndoPulse = 0   // 移除 / 撤销还原 = 轻震
+    @State private var restorePulse = 0      // 恢复默认 = 中震
+    @State private var applyPulse = 0        // 采纳成功 = success 提交确认
     private let rowHeight: CGFloat = RedeShape.controlHeight
 
     private var s: RedeStrings { localeStore.strings }
@@ -47,8 +54,14 @@ struct PlanDayEditorView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: RedeSpace.section) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(s.trainingDayName(dayCode))
-                        .font(.redeHeadline).tracking(RedeTracking.headline).foregroundStyle(Color.redeT1)
+                    // 取消上移右上 ✕ 与标题同行（What's New sheet header 先例，裁定 A）；
+                    // 底部不再有取消文字钮；下滑关面板 = 同一取消语义（暂存不落盘天然安全）。
+                    HStack(spacing: 8) {
+                        Text(s.trainingDayName(dayCode))
+                            .font(.redeHeadline).tracking(RedeTracking.headline).foregroundStyle(Color.redeT1)
+                        Spacer()
+                        closeButton
+                    }
                     Text(s.planEditSubtitle)
                         .font(.redeCaption).foregroundStyle(Color.redeT3)
                         .fixedSize(horizontal: false, vertical: true)
@@ -91,6 +104,9 @@ struct PlanDayEditorView: View {
         .presentationDragIndicator(.visible)
         .sensoryFeedback(.impact, trigger: liftPulse)     // 抓起一行 = 轻震
         .sensoryFeedback(.selection, trigger: movePulse)  // 每跨一行 = 轻 tick
+        .sensoryFeedback(.impact(weight: .light), trigger: removeUndoPulse)   // 移除/撤销还原 = 轻震
+        .sensoryFeedback(.impact(weight: .medium), trigger: restorePulse)     // 恢复默认 = 中震
+        .sensoryFeedback(.success, trigger: applyPulse)                       // 采纳成功 = 提交确认
         .task {
             if !loaded { await load() }
             // 截图/UI 验证钩子（同 PlanTabView -autoOpenPlanEditor 先例）：-autoOpenAddPicker 自动弹添加选择器。
@@ -215,27 +231,47 @@ struct PlanDayEditorView: View {
         }
     }
 
-    // MARK: 采纳 / 恢复默认 / 取消
+    // MARK: 采纳 / 恢复默认 / 取消（2026-07-20 操作区批，裁定 A）
+
+    /// 右上 ✕ 取消（What's New sheet 先例：xmark 13 semibold / t2 / controlHeight² / redePressable）。
+    private var closeButton: some View {
+        Button { undoModel.clear(); dismiss() } label: {
+            Image(systemName: "xmark")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.redeT2)
+                .frame(width: RedeShape.controlHeight, height: RedeShape.controlHeight)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.redePressable)
+        .disabled(sessionStore.isSaving)
+        .accessibilityLabel(s.planEditCancel)
+        .accessibilityIdentifier("plan-day-editor-close")
+    }
 
     private var actionRow: some View {
-        // 常驻显示（不随 wasCustomized 隐藏，防布局跳动）；列表==教练默认时置灰。
-        // 置灰须显式换色（redePressable 不自带禁用变暗；同 iconButton 口径）。
+        // 结构（自上而下）：「恢复默认」右对齐安静文字行 + 「采纳修改」EmbButton 全宽主操作。
+        // 恢复默认常驻（不随 wasCustomized 隐藏，防布局跳动）；列表==教练默认时置灰——
+        // 置灰须显式换色（redePressable 不自带禁用变暗；同 iconButton 口径）。语义=暂存：
+        // 只重置工作副本、留在 sheet，落盘仍走「采纳修改」。
         let restoreDisabled = sessionStore.isSaving || !loaded
             || PlanDayEditRules.isAtDefault(working: exerciseIds, defaults: defaultIds)
-        return HStack {
-            Button(s.planEditApply) { Task { await apply() } }
-                .font(.redeBody.weight(.semibold)).foregroundStyle(Color.redeEmber2)
-                .buttonStyle(.redePressable).disabled(sessionStore.isSaving || exerciseIds.isEmpty)
-            Spacer()
-            // 语义=暂存：只重置工作副本、留在 sheet，落盘仍走「采纳修改」（裁定 B）。
-            Button(s.planEditRestoreDefault) { restoreToDefault() }
-                .font(.redeCaption)
-                .foregroundStyle(restoreDisabled ? Color.redeT4.opacity(0.4) : Color.redeT3)
-                .buttonStyle(.redePressable)
-                .disabled(restoreDisabled)
-            Button(s.planEditCancel) { undoModel.clear(); dismiss() }
-                .font(.redeCaption).foregroundStyle(Color.redeT4)
-                .buttonStyle(.redePressable).disabled(sessionStore.isSaving)
+        // 采纳=面板唯一大 ember 面（同 What's New「继续」/设置保存先例，checkmark + 0.45 禁用透明）；
+        // 无改动（工作副本==打开时初始列表）时 disabled——无改动没有「采纳」可言。
+        let applyDisabled = sessionStore.isSaving || exerciseIds.isEmpty
+            || !PlanDayEditRules.hasChanges(working: exerciseIds, initial: initialIds)
+        return VStack(spacing: 4) {
+            HStack {
+                Spacer()
+                Button(s.planEditRestoreDefault) { restoreToDefault() }
+                    .font(.redeCaption)
+                    .foregroundStyle(restoreDisabled ? Color.redeT4.opacity(0.4) : Color.redeT3)
+                    .buttonStyle(.redePressable)
+                    .disabled(restoreDisabled)
+            }
+            .frame(minHeight: RedeShape.controlHeight)
+            EmbButton(icon: "checkmark", title: s.planEditApply) { Task { await apply() } }
+                .disabled(applyDisabled)
+                .opacity(applyDisabled ? 0.45 : 1)
         }
     }
 
@@ -322,6 +358,7 @@ struct PlanDayEditorView: View {
         // 去重保序：防历史写入含重复 id 时 ForEach(\.element) 渲染错乱（审查 M-3）。
         var seen = Set<String>()
         exerciseIds = ctx.currentExerciseIds.filter { seen.insert($0).inserted }
+        initialIds = exerciseIds   // 无改动判定基线 = 去重后的打开时列表
         defaultIds = ctx.defaultExerciseIds
         wasCustomized = ctx.isCustomized
         scenario = ctx.equipmentScenario
@@ -405,6 +442,7 @@ struct PlanDayEditorView: View {
             undoModel.recordRemoval(id: id, index: idx)  // 压栈 (id, 原 index)；swap 原位替换不入栈
             exerciseIds.removeAll { $0 == id }
         }
+        removeUndoPulse += 1   // 移除 = 轻震（裁定 B）
         recomputeImpact()
     }
 
@@ -413,6 +451,7 @@ struct PlanDayEditorView: View {
         withAnimation(.easeInOut(duration: 0.2)) {
             guard let restored = undoModel.undo(current: exerciseIds) else { return }
             exerciseIds = restored
+            removeUndoPulse += 1   // 撤销还原成功 = 轻震（无可还原不震）
         }
         recomputeImpact()
     }
@@ -423,6 +462,7 @@ struct PlanDayEditorView: View {
             undoModel.clear()  // 旧还原点对新基线已无意义
             exerciseIds = defaultIds
         }
+        restorePulse += 1   // 恢复默认 = 中震（裁定 B）
         recomputeImpact()
     }
 
@@ -454,10 +494,12 @@ struct PlanDayEditorView: View {
         switch PlanDayEditRules.applyResolution(working: exerciseIds, defaults: defaultIds, wasCustomized: wasCustomized) {
         case .noop:
             undoModel.clear()
+            applyPulse += 1   // 采纳成功 = success 确认（裁定 B；先于 dismiss 触发）
             dismiss()
         case .clearCustom:
             if await sessionStore.removeCustomDayPlan(dayCode: dayCode) {
                 undoModel.clear()
+                applyPulse += 1
                 onApplied()
                 dismiss()
             }
@@ -465,6 +507,7 @@ struct PlanDayEditorView: View {
             let items = exerciseIds.map { CustomExerciseItem(exerciseId: $0) }
             if await sessionStore.applyCustomDayPlan(dayCode: dayCode, exercises: items) {
                 undoModel.clear()
+                applyPulse += 1
                 onApplied()
                 dismiss()
             }
