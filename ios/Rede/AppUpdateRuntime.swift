@@ -334,7 +334,9 @@ final class AppUpdateModel {
 @MainActor
 enum RedeAppUpdateRuntime {
     nonisolated static let appStoreURL = URL(string: "https://apps.apple.com/us/app/rede-strength/id6780301633?uo=4")!
-    private static let bundledWhatsNewVersions: Set<String> = ["1.8"]
+    // 与 RedeL10n.appUpdateHighlights 的版本门同步维护（发版 bump 时两处同改；
+    // 门禁 testCurrentRedeMarketingVersionHasBundledReleaseNotes 会抓漂移）。
+    private static let bundledWhatsNewVersions: Set<String> = ["1.9"]
 
     static func hasBundledWhatsNew(for version: String) -> Bool {
         bundledWhatsNewVersions.contains(version)

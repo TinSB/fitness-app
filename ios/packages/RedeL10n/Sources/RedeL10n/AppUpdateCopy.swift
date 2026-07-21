@@ -67,24 +67,25 @@ extension RedeStrings {
 
     /// 版本主打句（What's New 的 hero；空串 = 该版本无内置叙事，视图回退显示版本号）。
     /// 文案纪律（基线 §5.5）：只讲已交付事实，Apple 式具体名词句，零空泛形容词。
+    /// 只保留当前发布版本的叙事（升级只会看到当前版本，旧版本文案按 YAGNI 移除）。
     public func appUpdateHeroLine(version: String) -> String {
-        guard version == "1.8" else { return "" }
-        return updateT("每块肌肉，都有自己的等级", "Every muscle earns its level")
+        guard version == "1.9" else { return "" }
+        return updateT("训练现场，顺序随你调", "Adjust your session on the spot")
     }
 
     public func appUpdateHighlights(version: String) -> [String] {
-        guard version == "1.8" else { return [] }
+        guard version == "1.9" else { return [] }
         if locale == .zh {
             return [
-                "新增「发展」板块：每块肌群的发展等级，配前后人形热力图",
-                "组间休息上锁屏：锁屏与灵动岛实时倒计时，不用回 App 看表",
-                "新增动作库：165 个动作按肌群分组，训练中也能查看要点",
+                "「接下来」可现在练：训练中把后面的动作提到当前，重量与进阶仍由系统安排",
+                "计划编辑器防误删：移除动作可逐步撤回，「恢复默认」一键回到教练方案",
+                "新版本不再错过：今日页轻量提示，设置页可检查更新、重看更新内容",
             ]
         }
         return [
-            "New Development section: a level for every muscle group, with a body heatmap",
-            "Rest reaches the Lock Screen: live countdowns on the Lock Screen and Dynamic Island",
-            "New exercise library: 165 exercises grouped by muscle, with cues mid-workout",
+            "\"Up next\" can be now: pull a later exercise into the current slot mid-workout, loads still set by the system",
+            "The plan editor forgives: undo removals step by step, or restore the coach's default in one tap",
+            "Never miss a version: a light signal on Today, with Check for Updates and What's New in Settings",
         ]
     }
 
