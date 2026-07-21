@@ -5,6 +5,9 @@ import RedeTrainingDecision
 
 // FR-PL6/PL7① 训练日编辑器（切片 S9）。从计划页点训练日下钻：
 // 增删换动作 + 同日内上移/下移重排 → 预览肌群频率影响（护栏：提示不强制）→ 采纳 / 恢复默认。
+// 2026-07-20 撤销/恢复批：移除可逐步撤回（sheet 内撤销条，纯模型 PlanDayEditUndoModel）；
+// 「恢复默认」常驻（列表==默认置灰）且暂存化——点击只重置工作副本，落盘统一走「采纳修改」，
+// 列表==默认时采纳按 PlanDayEditRules 收敛（清自定义记录 / 无操作），不写与默认等值的冗余自定义。
 // 定位「编辑教练给的计划」：起点 = 该日默认处方；引擎仍算重量/进阶（决策在前不破坏）。
 // 整面板公理：sheet 内 0 ForgedCard——开放行 + 发丝线 + 单一 ember 主操作（采纳）。
 
@@ -17,6 +20,8 @@ struct PlanDayEditorView: View {
     @Environment(SessionStore.self) private var sessionStore
 
     @State private var exerciseIds: [String] = []     // 工作副本（数组顺序 = 训练顺序）
+    @State private var defaultIds: [String] = []      // 教练默认日序（恢复默认的暂存目标 + 置灰基线）
+    @State private var undoModel = PlanDayEditUndoModel() // 移除撤销栈（纯模型，见 PlanDayEditModelTests）
     @State private var wasCustomized = false
     @State private var scenario: String?
     @State private var impact: PlanCustomizationImpact.Summary?
@@ -66,6 +71,8 @@ struct PlanDayEditorView: View {
 
                 impactSection
 
+                undoBar
+
                 if let err = sessionStore.planSaveErrorText {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(s.saveFailedLine).font(.redeCaption).foregroundStyle(Color.redeRisk)
@@ -88,6 +95,17 @@ struct PlanDayEditorView: View {
             if !loaded { await load() }
             // 截图/UI 验证钩子（同 PlanTabView -autoOpenPlanEditor 先例）：-autoOpenAddPicker 自动弹添加选择器。
             if CommandLine.arguments.contains("-autoOpenAddPicker") { showAddPicker = true }
+            // 2026-07-20 撤销/恢复批钩子（仅测试脚手架，驱动真实 remove/undo/restore/apply 路径）：
+            // -autoRemoveFirstExercise N 连移除 N 次首行；-autoUndoRemoval 撤销一次；
+            // -autoRestoreDefault 恢复默认（暂存）；-autoApplyPlanEdit 采纳（含收敛落盘）。
+            let args = CommandLine.arguments
+            if let i = args.firstIndex(of: "-autoRemoveFirstExercise"), args.indices.contains(i + 1),
+               let n = Int(args[i + 1]) {
+                for _ in 0..<n { if let first = exerciseIds.first { remove(first) } }
+            }
+            if args.contains("-autoUndoRemoval") { undoRemoval() }
+            if args.contains("-autoRestoreDefault") { restoreToDefault() }
+            if args.contains("-autoApplyPlanEdit") { await apply() }
         }
         .sheet(item: Binding(get: { swapTarget.map(SwapPick.init) }, set: { swapTarget = $0?.id })) { pick in
             swapSheet(for: pick.id)
@@ -173,20 +191,49 @@ struct PlanDayEditorView: View {
         }
     }
 
+    // MARK: 移除撤销条（2026-07-20 owner 实机反馈：误删要能一键撤回）
+
+    /// 栈非空时常驻（逐次点击逐个还原、栈空消失）；开放行式、零卡零图标零小字；
+    /// 条上唯一 ember 是「撤销」动作词，正文 t3（视觉纪律见交接件裁定 A）。
+    @ViewBuilder
+    private var undoBar: some View {
+        if let lastId = undoModel.lastRemovedId {
+            let name = localeStore.exerciseName(lastId)
+            HStack(spacing: 12) {
+                Text(s.planEditRemovedLine(name))
+                    .font(.redeCaption).foregroundStyle(Color.redeT3)
+                    .lineLimit(1)
+                Spacer()
+                Button(s.coachUndoLabel) { undoRemoval() }
+                    .font(.redeCaption.weight(.semibold)).foregroundStyle(Color.redeEmber2)
+                    .buttonStyle(.redePressable)
+                    .disabled(sessionStore.isSaving)
+                    .accessibilityLabel(s.planEditRemovedUndoA11y(name))
+            }
+            .frame(minHeight: RedeShape.controlHeight)
+            .transition(.opacity)
+        }
+    }
+
     // MARK: 采纳 / 恢复默认 / 取消
 
     private var actionRow: some View {
-        HStack {
+        // 常驻显示（不随 wasCustomized 隐藏，防布局跳动）；列表==教练默认时置灰。
+        // 置灰须显式换色（redePressable 不自带禁用变暗；同 iconButton 口径）。
+        let restoreDisabled = sessionStore.isSaving || !loaded
+            || PlanDayEditRules.isAtDefault(working: exerciseIds, defaults: defaultIds)
+        return HStack {
             Button(s.planEditApply) { Task { await apply() } }
                 .font(.redeBody.weight(.semibold)).foregroundStyle(Color.redeEmber2)
                 .buttonStyle(.redePressable).disabled(sessionStore.isSaving || exerciseIds.isEmpty)
             Spacer()
-            if wasCustomized {
-                Button(s.planEditRestoreDefault) { Task { await restore() } }
-                    .font(.redeCaption).foregroundStyle(Color.redeT3)
-                    .buttonStyle(.redePressable).disabled(sessionStore.isSaving)
-            }
-            Button(s.planEditCancel) { dismiss() }
+            // 语义=暂存：只重置工作副本、留在 sheet，落盘仍走「采纳修改」（裁定 B）。
+            Button(s.planEditRestoreDefault) { restoreToDefault() }
+                .font(.redeCaption)
+                .foregroundStyle(restoreDisabled ? Color.redeT4.opacity(0.4) : Color.redeT3)
+                .buttonStyle(.redePressable)
+                .disabled(restoreDisabled)
+            Button(s.planEditCancel) { undoModel.clear(); dismiss() }
                 .font(.redeCaption).foregroundStyle(Color.redeT4)
                 .buttonStyle(.redePressable).disabled(sessionStore.isSaving)
         }
@@ -275,6 +322,7 @@ struct PlanDayEditorView: View {
         // 去重保序：防历史写入含重复 id 时 ForEach(\.element) 渲染错乱（审查 M-3）。
         var seen = Set<String>()
         exerciseIds = ctx.currentExerciseIds.filter { seen.insert($0).inserted }
+        defaultIds = ctx.defaultExerciseIds
         wasCustomized = ctx.isCustomized
         scenario = ctx.equipmentScenario
         recomputeImpact()
@@ -350,7 +398,29 @@ struct PlanDayEditorView: View {
     }
 
     private func remove(_ id: String) {
-        exerciseIds.removeAll { $0 == id }
+        guard let idx = exerciseIds.firstIndex(of: id) else { return }
+        undoModel.recordRemoval(id: id, index: idx)  // 压栈 (id, 原 index)；swap 原位替换不入栈
+        withAnimation(.easeInOut(duration: 0.2)) {
+            exerciseIds.removeAll { $0 == id }
+        }
+        recomputeImpact()
+    }
+
+    /// 撤销一次移除：还原到 min(原 index, 当前 count)；期间被添加器重新加入的条目跳过继续 pop。
+    private func undoRemoval() {
+        guard let restored = undoModel.undo(current: exerciseIds) else { return }
+        withAnimation(.easeInOut(duration: 0.2)) {
+            exerciseIds = restored
+        }
+        recomputeImpact()
+    }
+
+    /// 恢复默认（暂存化）：只重置工作副本、留在 sheet；落盘仍走「采纳修改」。
+    private func restoreToDefault() {
+        undoModel.clear()  // 旧还原点对新基线已无意义
+        withAnimation(.easeInOut(duration: 0.2)) {
+            exerciseIds = defaultIds
+        }
         recomputeImpact()
     }
 
@@ -376,18 +446,26 @@ struct PlanDayEditorView: View {
         }
     }
 
+    /// 采纳收敛（裁定 B，纯裁定见 PlanDayEditRules）：列表==默认时不写「与默认等值的自定义」——
+    /// 已自定义走 removeCustomDayPlan 清掉记录（canonical 不留冗余覆盖）；从未自定义等价无操作直接关。
     private func apply() async {
-        let items = exerciseIds.map { CustomExerciseItem(exerciseId: $0) }
-        if await sessionStore.applyCustomDayPlan(dayCode: dayCode, exercises: items) {
-            onApplied()
+        switch PlanDayEditRules.applyResolution(working: exerciseIds, defaults: defaultIds, wasCustomized: wasCustomized) {
+        case .noop:
+            undoModel.clear()
             dismiss()
-        }
-    }
-
-    private func restore() async {
-        if await sessionStore.removeCustomDayPlan(dayCode: dayCode) {
-            onApplied()
-            dismiss()
+        case .clearCustom:
+            if await sessionStore.removeCustomDayPlan(dayCode: dayCode) {
+                undoModel.clear()
+                onApplied()
+                dismiss()
+            }
+        case .writeCustom:
+            let items = exerciseIds.map { CustomExerciseItem(exerciseId: $0) }
+            if await sessionStore.applyCustomDayPlan(dayCode: dayCode, exercises: items) {
+                undoModel.clear()
+                onApplied()
+                dismiss()
+            }
         }
     }
 }
