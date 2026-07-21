@@ -42,7 +42,7 @@ struct PlanDayEditorView: View {
     @State private var dropTargetIndex = 0
     @State private var liftPulse = 0
     @State private var movePulse = 0
-    // 2026-07-20 操作区批（裁定 B）触感脉冲：单调自增计数器（设计语言 §16 pulse 纪律）。
+    // 2026-07-20 操作区批（裁定 B）触感脉冲：单调自增计数器（设计语言 §14.2 pulse 纪律）。
     @State private var removeUndoPulse = 0   // 移除 / 撤销还原 = 轻震
     @State private var restorePulse = 0      // 恢复默认 = 中震
     @State private var applyPulse = 0        // 采纳成功 = success 提交确认

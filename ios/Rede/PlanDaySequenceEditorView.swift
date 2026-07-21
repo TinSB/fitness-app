@@ -32,7 +32,7 @@ struct PlanDaySequenceEditorView: View {
     @State private var dropTargetIndex = 0              // 当前落点下标（在 withAnimation 里更新 → 让位行平滑开槽）
     @State private var liftPulse = 0                    // 抓起触感脉冲
     @State private var movePulse = 0                    // 每跨一行的轻触感脉冲
-    // 2026-07-20 操作区批（裁定 B/C）触感脉冲：单调自增计数器（设计语言 §16 pulse 纪律）。
+    // 2026-07-20 操作区批（裁定 B/C）触感脉冲：单调自增计数器（设计语言 §14.2 pulse 纪律）。
     @State private var restorePulse = 0                 // 恢复默认 = 中震
     @State private var applyPulse = 0                   // 采纳成功 = success 提交确认
     private let rowHeight: CGFloat = RedeShape.controlHeight  // 固定行高 = 落点取整步距
