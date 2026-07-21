@@ -129,4 +129,50 @@ final class PlanDayEditModelTests: XCTestCase {
         XCTAssertFalse(PlanDayEditRules.isAtDefault(working: ["b", "a"], defaults: ["a", "b"]))
         XCTAssertFalse(PlanDayEditRules.isAtDefault(working: [], defaults: ["a", "b"]))
     }
+
+    // MARK: - 无改动判定（2026-07-20 操作区批：工作副本==打开时初始列表 → 禁采纳）
+
+    func testHasChangesFalseWhenWorkingEqualsInitial() throws {
+        // 无改动没有「采纳」可言 → 主按钮 disabled。比较内容非操作历史——改了又改回去仍算无改动。
+        XCTAssertFalse(PlanDayEditRules.hasChanges(working: ["a", "b"], initial: ["a", "b"]))
+        XCTAssertFalse(PlanDayEditRules.hasChanges(working: [], initial: []), "载入前空==空 → 同样禁采纳")
+    }
+
+    func testHasChangesTrueOnRemoveAddOrReorder() throws {
+        XCTAssertTrue(PlanDayEditRules.hasChanges(working: ["a"], initial: ["a", "b"]), "移除=有改动")
+        XCTAssertTrue(PlanDayEditRules.hasChanges(working: ["a", "b", "c"], initial: ["a", "b"]), "添加=有改动")
+        XCTAssertTrue(PlanDayEditRules.hasChanges(working: ["b", "a"], initial: ["a", "b"]), "重排=有改动（顺序即语义）")
+    }
+
+    func testRestoreStagedOnCustomizedDayCountsAsChange() throws {
+        // 已自定义日：恢复默认暂存后 working==默认 但 ≠ 打开时初始列表 → 仍是改动
+        //（采纳可点，落盘按 applyResolution 走 clearCustom）——两条裁定协同的关键路径。
+        let defaults = ["a", "b"]
+        let initial = ["b", "a"]   // 打开时 = 已自定义的顺序
+        XCTAssertTrue(PlanDayEditRules.hasChanges(working: defaults, initial: initial))
+        XCTAssertEqual(
+            PlanDayEditRules.applyResolution(working: defaults, defaults: defaults, wasCustomized: true),
+            .clearCustom
+        )
+    }
+
+    // MARK: - 日序编辑器复用合同（裁定 C：同一 [String] 纯裁定，dayCode 序列同构消费）
+
+    func testApplyResolutionReusedForDaySequence() throws {
+        // PlanDaySequenceEditorView 复用同一 applyResolution：working=日序工作副本、
+        // defaults=defaultDaySequence、clearCustom → removeCustomDaySequence。
+        let defaults = ["push-a", "pull-a", "legs-a"]
+        XCTAssertEqual(
+            PlanDayEditRules.applyResolution(working: ["legs-a", "push-a", "pull-a"], defaults: defaults, wasCustomized: false),
+            .writeCustom
+        )
+        XCTAssertEqual(
+            PlanDayEditRules.applyResolution(working: defaults, defaults: defaults, wasCustomized: true),
+            .clearCustom, "恢复默认暂存 + 采纳 → removeCustomDaySequence"
+        )
+        XCTAssertEqual(
+            PlanDayEditRules.applyResolution(working: defaults, defaults: defaults, wasCustomized: false),
+            .noop
+        )
+    }
 }
