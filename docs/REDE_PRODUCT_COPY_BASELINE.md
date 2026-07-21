@@ -415,14 +415,16 @@ Settings 里不要营销。只说事实。
 | 稍后 | 稍后 | Later |
 | What's New 主操作 | 继续 | Continue |
 
-What's New 的当前 1.8 内置叙事 = **一句 hero 主打句 + 三条具体亮点行**，不附常驻小字（2026-07-20 owner「文案太不专业」重写：亮点必须是具体名词句——写清「什么功能、在哪、给什么」，禁空泛形容词组如「更完整也更好读」；版本号只在 sheet 顶部 overline 出现一次，正文 hero 不再重复大版本数字）：
+What's New 的当前内置叙事（1.9）= **一句 hero 主打句 + 三条具体亮点行**，不附常驻小字（2026-07-20 owner「文案太不专业」立规：亮点必须是具体名词句——写清「什么功能、在哪、给什么」，禁空泛形容词组如「更完整也更好读」；版本号只在 sheet 顶部 overline 出现一次，正文 hero 不再重复大版本数字；只保留当前发布版本的叙事，旧版本按 YAGNI 移除）：
 
 | 位置 | 中文 | English |
 |---|---|---|
-| hero | 每块肌肉，都有自己的等级 | Every muscle earns its level |
-| 01 | 新增「发展」板块：每块肌群的发展等级，配前后人形热力图 | New Development section: a level for every muscle group, with a body heatmap |
-| 02 | 组间休息上锁屏：锁屏与灵动岛实时倒计时，不用回 App 看表 | Rest reaches the Lock Screen: live countdowns on the Lock Screen and Dynamic Island |
-| 03 | 新增动作库：165 个动作按肌群分组，训练中也能查看要点 | New exercise library: 165 exercises grouped by muscle, with cues mid-workout |
+| hero | 训练现场，顺序随你调 | Adjust your session on the spot |
+| 01 | 「接下来」可现在练：训练中把后面的动作提到当前，重量与进阶仍由系统安排 | "Up next" can be now: pull a later exercise into the current slot mid-workout, loads still set by the system |
+| 02 | 计划编辑器防误删：移除动作可逐步撤回，「恢复默认」一键回到教练方案 | The plan editor forgives: undo removals step by step, or restore the coach's default in one tap |
+| 03 | 新版本不再错过：今日页轻量提示，设置页可检查更新、重看更新内容 | Never miss a version: a light signal on Today, with Check for Updates and What's New in Settings |
+
+> 前版 1.8 叙事（hero「每块肌肉，都有自己的等级」+ 发展板块/锁屏倒计时/动作库三条）随 1.9 切换移除，正文存 git history。
 
 > **实现状态（2026-06-13）:** 下面的 Apple Health / HealthKit 文案是 **FF 目标表面，当前未实现**——代码里没有 HealthKit。已 ship 的 Settings 隐私串遵循「未上线不提」（HealthKit 实装时再加这段）。本段保留为 HealthKit slice 落地时的文案基线。已 ship 的设置文案以 `RedeL10n` 实际串为准。
 

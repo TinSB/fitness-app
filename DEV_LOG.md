@@ -34,6 +34,18 @@
 
 ---
 
+## 2026-07-20 · Archive 1.9 (build 26)：会话重排 + 编辑器撤销 + 更新感知上包
+
+**用户目标**：owner「准备 archive 1.9」——把 #706（Codex 批：会话重排/更新感知/评分请求/订阅地基）+ #707（What's New 专业化）+ #708（编辑器撤销/恢复默认）带上 TestFlight。
+
+**做了什么**：①MARKETING 1.8→1.9 + build 25→26（4 处）；②内置 What's New 切 1.9（hero「训练现场，顺序随你调」+ 三条具体亮点；app 侧 bundledWhatsNewVersions 注册表同步——**门禁先抓到我漏改这处**（exit 65），修后重跑绿并作废首个坏 archive 重打）；③ASC 文案改**增量口径**（1.8(25) 已于 07-17 提审等待审核）+ 审核问询三口径（匿名版本查询/无生产商品/HealthKit）；④验收清单 1.9-26 + 新增 N 组五条（重排/撤销/恢复默认/更新感知/更新行位置）。
+
+**验证**：门禁 PASS 后才打包（链式 && 保序）；PlistBuddy 五项实证：Organizer 口径 1.9/26、app+widget 同号、NSSupportsLiveActivities=true、订阅四 key 缺席（购买闸关）、签名 47K95GV3X5。`Archives/2026-07-20/Rede-1.9-26.xcarchive`。
+
+**下一步**：owner Organizer 上传 → 1.8 审核状态分支决策（等它过审再提 1.9，或取消换 1.9）→ TestFlight 过 N 组 + 存量未勾项。
+
+---
+
 ## 2026-07-20 · What's New 弹层文案专业化重写（owner「文案太不专业」）
 
 **用户目标**：owner 实机看到升级 What's New 弹层，判「文案太不专业」——三条亮点全是空泛形容词句（「更完整也更好读」说了等于没说），且版本号出现两次（顶栏 REDE · 1.8 + 正文巨大的 1.8）。

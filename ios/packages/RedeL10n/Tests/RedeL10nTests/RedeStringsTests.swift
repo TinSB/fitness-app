@@ -65,9 +65,9 @@ final class RedeStringsTests: XCTestCase {
             ("appUpdateViewUpdate", s.appUpdateViewUpdate),
             ("appUpdateLater", s.appUpdateLater),
             ("appUpdateContinue", s.appUpdateContinue),
-            ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.8", build: "25")),
-            ("appUpdateHeroLine", s.appUpdateHeroLine(version: "1.8")),
-            ("appUpdateHighlights", s.appUpdateHighlights(version: "1.8").joined(separator: " ")),
+            ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.9", build: "26")),
+            ("appUpdateHeroLine", s.appUpdateHeroLine(version: "1.9")),
+            ("appUpdateHighlights", s.appUpdateHighlights(version: "1.9").joined(separator: " ")),
             // FR-SE9 / FR-SUB2：订阅管理与诚实状态
             ("settingsSubscriptionSection", s.settingsSubscriptionSection),
             ("settingsSubscriptionFreeCore", s.settingsSubscriptionFreeCore),
@@ -257,27 +257,28 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertEqual(zh.appUpdateAvailable(version: "1.9"), "1.9 可用")
         XCTAssertEqual(en.appUpdateAvailable(version: "1.9"), "1.9 Available")
         // 2026-07-20 owner「文案太不专业」重写：hero=版本主打句，亮点=具体名词句（基线 §5.5）。
-        XCTAssertEqual(zh.appUpdateHeroLine(version: "1.8"), "每块肌肉，都有自己的等级")
-        XCTAssertEqual(en.appUpdateHeroLine(version: "1.8"), "Every muscle earns its level")
+        // 2026-07-20 archive 1.9：内置叙事切到 1.9（只保留当前发布版本，YAGNI）。
+        XCTAssertEqual(zh.appUpdateHeroLine(version: "1.9"), "训练现场，顺序随你调")
+        XCTAssertEqual(en.appUpdateHeroLine(version: "1.9"), "Adjust your session on the spot")
         XCTAssertEqual(
-            zh.appUpdateHighlights(version: "1.8"),
+            zh.appUpdateHighlights(version: "1.9"),
             [
-                "新增「发展」板块：每块肌群的发展等级，配前后人形热力图",
-                "组间休息上锁屏：锁屏与灵动岛实时倒计时，不用回 App 看表",
-                "新增动作库：165 个动作按肌群分组，训练中也能查看要点",
+                "「接下来」可现在练：训练中把后面的动作提到当前，重量与进阶仍由系统安排",
+                "计划编辑器防误删：移除动作可逐步撤回，「恢复默认」一键回到教练方案",
+                "新版本不再错过：今日页轻量提示，设置页可检查更新、重看更新内容",
             ]
         )
         XCTAssertEqual(
-            en.appUpdateHighlights(version: "1.8"),
+            en.appUpdateHighlights(version: "1.9"),
             [
-                "New Development section: a level for every muscle group, with a body heatmap",
-                "Rest reaches the Lock Screen: live countdowns on the Lock Screen and Dynamic Island",
-                "New exercise library: 165 exercises grouped by muscle, with cues mid-workout",
+                "\"Up next\" can be now: pull a later exercise into the current slot mid-workout, loads still set by the system",
+                "The plan editor forgives: undo removals step by step, or restore the coach's default in one tap",
+                "Never miss a version: a light signal on Today, with Check for Updates and What's New in Settings",
             ]
         )
-        XCTAssertTrue(zh.appUpdateHighlights(version: "1.7").isEmpty)
-        XCTAssertTrue(en.appUpdateHighlights(version: "1.9").isEmpty)
-        XCTAssertTrue(zh.appUpdateHeroLine(version: "1.9").isEmpty)
+        XCTAssertTrue(zh.appUpdateHighlights(version: "1.8").isEmpty)
+        XCTAssertTrue(en.appUpdateHighlights(version: "2.0").isEmpty)
+        XCTAssertTrue(zh.appUpdateHeroLine(version: "2.0").isEmpty)
     }
 
     func testSubscriptionCopyAnchorsAndFreeCompatibilityFloor() {
