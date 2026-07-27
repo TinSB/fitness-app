@@ -69,23 +69,23 @@ extension RedeStrings {
     /// 文案纪律（基线 §5.5）：只讲已交付事实，Apple 式具体名词句，零空泛形容词。
     /// 只保留当前发布版本的叙事（升级只会看到当前版本，旧版本文案按 YAGNI 移除）。
     public func appUpdateHeroLine(version: String) -> String {
-        guard version == "1.9.1" else { return "" }
-        return updateT("训练现场，顺序随你调", "Adjust your session on the spot")
+        guard version == "1.9.2" else { return "" }
+        return updateT("训练日怎么排，你说了算", "Your split, your call")
     }
 
     public func appUpdateHighlights(version: String) -> [String] {
-        guard version == "1.9.1" else { return [] }
+        guard version == "1.9.2" else { return [] }
         if locale == .zh {
             return [
-                "「接下来」可现在练：训练中把后面的动作提到当前，重量与进阶仍由系统安排",
-                "计划编辑器防误删：移除动作可逐步撤回，「恢复默认」一键回到教练方案",
-                "新版本不再错过：今日页轻量提示，设置页可检查更新、重看更新内容",
+                "训练日构成自己定：换类型、加一天、删一天——推拉腿之后想接推拉就接",
+                "165 个动作全部配技术要点、进阶与退阶，训练中点动作名就能看",
+                "编排随时能撤回，按「采纳修改」之前一切都不生效",
             ]
         }
         return [
-            "\"Up next\" can be now: pull a later exercise into the current slot mid-workout, loads still set by the system",
-            "The plan editor forgives: undo removals step by step, or restore the coach's default in one tap",
-            "Never miss a version: a light signal on Today, with Check for Updates and What's New in Settings",
+            "Build your own split: swap a day's type, add one, drop one — run push/pull/legs and keep going into push/pull",
+            "All 165 exercises now carry technique cues, progressions, and regressions — tap any name mid-workout",
+            "Every edit is undoable, and nothing takes effect until you tap Apply",
         ]
     }
 
