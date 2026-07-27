@@ -37,7 +37,7 @@ public enum PlanWeekProjection {
         customization: PlanCustomizationInput = .empty,
         catalog: ExerciseCatalog = .minimal
     ) -> [[PlanDayProjection]] {
-        // FR-PL7② 自定义日序（默认 nil → 现状）；与今日页 plan() 同走 resolvedDaySequence，两页永不分叉。
+        // FR-PL7②/③ 自定义日序（默认 nil → 现状）；与今日页 plan() 同走 resolvedDaySequence，两页永不分叉。
         let sequence = TodayPrescriptionEngine.resolvedDaySequence(splitType: splitType, override: customization.daySequence)
         guard !sequence.isEmpty, daysPerWeek > 0, weeks > 0, completedSessionCount >= 0 else { return [] }
         var result: [[PlanDayProjection]] = []

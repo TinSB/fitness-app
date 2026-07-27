@@ -433,7 +433,7 @@ public struct CanonicalSessionWriter {
         }
     }
 
-    /// 已批准写入类别：采纳自定义日序（FR-PL7②）。写 planCustomization.daySequence。
+    /// 已批准写入类别：采纳自定义日序（FR-PL7②/③）。写 planCustomization.daySequence。
     @discardableResult
     public func applyCustomDaySequence(_ sequence: [String]) throws -> AppData {
         guard !sequence.isEmpty, sequence.allSatisfy({ !$0.isEmpty }) else {
@@ -448,7 +448,7 @@ public struct CanonicalSessionWriter {
         }
     }
 
-    /// 已批准写入类别：移除自定义日序（FR-PL7② 恢复默认轮转）。删 daySequence 键；无则幂等。
+    /// 已批准写入类别：移除自定义日序（FR-PL7②/③ 恢复默认轮转）。删 daySequence 键；无则幂等。
     /// 删后若整个自定义全空则一并清掉容器（同 removeCustomDayPlan，与 getter 语义闭环）。
     @discardableResult
     public func removeCustomDaySequence() throws -> AppData {

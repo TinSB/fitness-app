@@ -1,12 +1,41 @@
 import Foundation
 import XCTest
 @testable import Rede
+import RedeDomain
 import RedeTrainingDecision
 
 @MainActor
 final class SessionStoreDraftTests: XCTestCase {
     private let startedAt = Date(timeIntervalSince1970: 1_784_000_000)
     private let targetId = "pec-deck"
+
+    func testMalformedRawDaySequenceFailsClosedThroughBridgeAndEngine() throws {
+        let appData = try JSONDecoder().decode(
+            AppData.self,
+            from: Data(
+                #"""
+                {
+                  "schemaVersion": 11,
+                  "programTemplate": {"splitType": "ppl-ul"},
+                  "planCustomization": {"daySequence": ["push-a", 7]}
+                }
+                """#.utf8
+            )
+        )
+
+        let input = PlanCustomizationBridge.input(from: appData.planCustomization)
+
+        XCTAssertNil(input.daySequence, "任一非字符串成员必须使整个自定义日序失效，禁止部分清洗")
+        XCTAssertEqual(
+            TodayPrescriptionEngine.nextDayCode(
+                splitType: appData.programTemplate.splitType,
+                daySequenceOverride: input.daySequence,
+                completedSessionCount: 0
+            ),
+            "push-a",
+            "raw 脏日序经 bridge 后必须整体回退 ppl-ul 默认日序"
+        )
+    }
 
     func testAcceptedDurableMoveSavesExactlyOnceBeforeReportingSuccess() throws {
         let draftStore = FakeTrainSessionDraftStore()

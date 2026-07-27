@@ -1,8 +1,9 @@
 // PlanCustomizationBridge — FR-PL6/PL7 切片 S6：域层 AppData.planCustomization →
 // 引擎 PlanCustomizationInput 的 app 层转换（持目录的这一层做，Master §8：raw 不直接进引擎）。
 //
-// 职责：结构映射 + 数值范围钳制（sets 1…10 / repMin≤repMax∈1…50 / rest 0…600）。catalog 合法性
-// （exerciseId 存在/可处方/越场景）由引擎 customSlots 防御消费（查不到即丢），此处不重复。
+// 职责：结构映射 + 数值范围钳制（sets 1…10 / repMin≤repMax∈1…50 / rest 0…600）+
+// 日序显式白名单/长度校验。catalog 合法性（exerciseId 存在/可处方/越场景）由引擎 customSlots
+// 防御消费（查不到即丢），此处不重复。
 
 import Foundation
 import RedeDomain
@@ -25,6 +26,9 @@ enum PlanCustomizationBridge {
             }
             if !specs.isEmpty { dayPlans[dayCode] = specs }
         }
-        return PlanCustomizationInput(dayPlans: dayPlans, daySequence: custom.daySequence)
+        return PlanCustomizationInput(
+            dayPlans: dayPlans,
+            daySequence: TodayPrescriptionEngine.validatedDaySequenceOverride(custom.daySequence)
+        )
     }
 }

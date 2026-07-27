@@ -25,7 +25,7 @@ struct PlanTabView: View {
     @State private var selectPulse = 0
     /// FR-PL6：正在编辑的训练日（非 nil = 弹出编辑器 sheet）。
     @State private var editingDay: PlanEditTarget?
-    /// FR-PL7②：是否打开训练日顺序编辑器 sheet。
+    /// FR-PL7②/③：是否打开训练日编排编辑器 sheet。
     @State private var showSequenceEditor = false
     /// K2：是否打开动作库浏览器 sheet（入口只在计划页——系统逻辑 §7 大型动作浏览禁入 Train）。
     @State private var showLibrary = false
@@ -45,7 +45,12 @@ struct PlanTabView: View {
                     // 真计划摘要（分化 · 天数 · 目标 + 背景 · 器械）——重做 2026-06-15「密而干净」。
                     // goal 缺失不丢整块摘要（审查 P1）：onbVerdict 内部 fallback general，同 OnboardingView。
                     VStack(alignment: .leading, spacing: 10) {
-                        Text(s.onbVerdict(splitCode: split, days: days, goalCode: facts.goal ?? "general"))
+                        Text(s.planHeroHeadline(
+                            isCustomizedDaySequence: facts.isCustomizedDaySequence,
+                            splitCode: split,
+                            days: days,
+                            goalCode: facts.goal ?? "general"
+                        ))
                             .font(.redeHeadline)
                             .tracking(RedeTracking.headline)
                             .foregroundStyle(Color.redeT1)
@@ -94,7 +99,7 @@ struct PlanTabView: View {
                         weekScheduleSection
                             .padding(.horizontal, RedeSpace.page)
                             .padding(.top, cycle != nil ? 8 : 4)
-                        // FR-PL7②：调整训练日先后顺序入口（开放行下钻顺序编辑器）。
+                        // FR-PL7②/③：训练日编排入口（开放行下钻编辑器）。
                         daySequenceEntryRow
                             .padding(.horizontal, RedeSpace.page)
                             .padding(.top, 8)
@@ -176,7 +181,7 @@ struct PlanTabView: View {
         .sheet(item: $editingDay) { target in
             PlanDayEditorView(dayCode: target.dayCode, onApplied: { Task { await reload() } })
         }
-        // FR-PL7②：训练日顺序编辑器；采纳后 reload 刷新排期。
+        // FR-PL7②/③：训练日编排编辑器；采纳后 reload 刷新排期。
         .sheet(isPresented: $showSequenceEditor) {
             PlanDaySequenceEditorView(onApplied: { Task { await reload() } })
         }
@@ -391,7 +396,7 @@ struct PlanTabView: View {
         }
     }
 
-    /// FR-PL7②：训练日顺序编辑入口（开放行，点开顺序编辑器 sheet）。
+    /// FR-PL7②/③：训练日编排入口（开放行，点开编辑器 sheet）。
     private var daySequenceEntryRow: some View {
         Button { showSequenceEditor = true } label: {
             HStack(spacing: 8) {

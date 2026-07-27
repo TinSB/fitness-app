@@ -148,7 +148,8 @@ public struct AppData: Equatable, Sendable {
 
     /// FR-PL6/PL7 用户自定义训练计划（open-bag 加性，缺=nil；不 seed、无 schema bump）。
     /// 每日动作覆盖（有序=训练顺序）+ 可选自定义日序。本层只做**结构**防御读（缺容器/脏 item 跳过、
-    /// 空清单的日丢弃、全空→nil）；**合法性**（exerciseId∈catalog、数值范围、日序须为默认日序排列）
+    /// 空清单的日丢弃、daySequence 任一成员非 String 则整段无效、全空→nil）；**合法性**
+    ///（exerciseId∈catalog、数值范围、日序 dayCode 白名单/长度）
     /// 由 RedeDataHealth/app 层 clean view 校验并优雅降级（Master §8：raw 不直接进引擎）。
     public var planCustomization: PlanCustomization? {
         guard let obj = storage["planCustomization"]?.asObject else { return nil }
@@ -171,8 +172,16 @@ public struct AppData: Equatable, Sendable {
                 if !items.isEmpty { dayPlans[dayCode] = CustomDayPlan(exercises: items) }
             }
         }
-        let rawSequence = obj["daySequence"]?.asArray?.compactMap { $0.asString }
-        let daySequence = (rawSequence?.isEmpty == false) ? rawSequence : nil
+        let daySequence: [String]? = {
+            guard let values = obj["daySequence"]?.asArray, !values.isEmpty else { return nil }
+            var codes: [String] = []
+            codes.reserveCapacity(values.count)
+            for value in values {
+                guard let code = value.asString else { return nil }
+                codes.append(code)
+            }
+            return codes
+        }()
         // 全空（无任何当日覆盖且无自定义日序）→ 视为无自定义（与缺容器同义）。
         if dayPlans.isEmpty && daySequence == nil { return nil }
         return PlanCustomization(dayPlans: dayPlans, daySequence: daySequence)
@@ -227,7 +236,7 @@ public struct CustomDayPlan: Equatable, Sendable {
 
 public struct PlanCustomization: Equatable, Sendable {
     public let dayPlans: [String: CustomDayPlan]   // dayCode → 当日动作覆盖（FR-PL6）
-    public let daySequence: [String]?              // 自定义日序（FR-PL7②）；nil = 引擎默认日序
+    public let daySequence: [String]?              // 自定义日序（FR-PL7②/③）；nil = 引擎默认日序
 
     public init(dayPlans: [String: CustomDayPlan], daySequence: [String]?) {
         self.dayPlans = dayPlans

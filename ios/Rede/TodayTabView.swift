@@ -579,8 +579,11 @@ struct TodayTabView: View {
                     .font(.redeSubhead)
                     .monospacedDigit()
                 Spacer(minLength: 8)
-                // FR-TR12「今天换一天练」入口：仅多于 1 个训练日的分化才有意义；正训练中不给换（避免改了正在练的）。
-                if (model?.daySequence.count ?? 0) > 1, sessionStore.flow == nil {
+                // FR-TR12「今天换一天练」入口：自由日序可重复，须至少有 2 种不同 dayCode；
+                // 正训练中不给换（避免改了正在练的）。只改展示判据，不动覆盖/轮转语义。
+                if DaySequencePresentationRules.shouldShowDaySwitchEntry(
+                    sequence: model?.daySequence ?? []
+                ), sessionStore.flow == nil {
                     Button(s.swapDayEntry) { showDayPicker = true }
                         .font(.redeCaption).foregroundStyle(Color.redeEmber2)
                         .buttonStyle(.redePressable)
@@ -629,8 +632,10 @@ struct TodayTabView: View {
             // ①选训练日：列本分化里今天没在练的其它训练日；点一项进入②步（就地切，不另弹层）。
             RedeChoiceSheet(
                 title: s.swapDayPickerTitle,
-                options: (model?.daySequence ?? [])
-                    .filter { $0 != model?.prescription?.dayCode }
+                options: DaySequencePresentationRules.daySwitchCandidates(
+                    sequence: model?.daySequence ?? [],
+                    currentDayCode: model?.prescription?.dayCode
+                )
                     .map { day in RedeChoiceOption(title: s.trainingDayName(day), action: { pendingDayOverride = day }) },
                 cancelLabel: s.commonCancel,
                 onCancel: { showDayPicker = false }

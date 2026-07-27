@@ -93,6 +93,128 @@ final class PlanDayEditModelTests: XCTestCase {
         XCTAssertNil(undo.undo(current: []))
     }
 
+    // MARK: - 日序草稿：重复 dayCode 用 occurrence identity 复用同一撤销栈
+
+    func testDaySequenceDraftGivesDuplicateDayCodesDistinctIdentity() {
+        let draft = PlanDaySequenceDraft(
+            codes: ["push-a", "pull-a", "push-a"]
+        )
+        XCTAssertEqual(draft.codes, ["push-a", "pull-a", "push-a"])
+        XCTAssertEqual(Set(draft.rows.map(\.id)).count, 3, "重复 dayCode 的每个位置仍有独立稳定 identity")
+    }
+
+    func testDaySequenceDraftRemovesAndUndoesDuplicateDaysInLIFOOrder() throws {
+        var draft = PlanDaySequenceDraft(
+            codes: ["push-a", "pull-a", "push-a"]
+        )
+        let firstPushID = draft.rows[0].id
+        let secondPushID = draft.rows[2].id
+
+        XCTAssertTrue(draft.remove(rowID: firstPushID))
+        XCTAssertEqual(draft.codes, ["pull-a", "push-a"])
+        XCTAssertEqual(draft.lastRemovedDayCode, "push-a")
+        XCTAssertTrue(draft.remove(rowID: secondPushID))
+        XCTAssertEqual(draft.codes, ["pull-a"])
+
+        XCTAssertTrue(draft.undoRemoval())
+        XCTAssertEqual(draft.codes, ["pull-a", "push-a"], "先还原后删的第二个推日")
+        XCTAssertTrue(draft.undoRemoval())
+        XCTAssertEqual(draft.codes, ["push-a", "pull-a", "push-a"], "再按原下标还原第一个推日")
+        XCTAssertNil(draft.lastRemovedDayCode)
+    }
+
+    func testDaySequenceDraftKeepsAtLeastOneDayAndCapsAtFourteen() throws {
+        var draft = PlanDaySequenceDraft(codes: ["push-a"])
+        let onlyID = try XCTUnwrap(draft.rows.first?.id)
+        XCTAssertFalse(draft.remove(rowID: onlyID), "至少保留 1 天")
+
+        for _ in 1..<TodayPrescriptionEngine.maximumDaySequenceLength {
+            XCTAssertTrue(draft.add(dayCode: "pull-a"))
+        }
+        XCTAssertEqual(draft.codes.count, 14)
+        XCTAssertFalse(draft.add(dayCode: "legs-a"), "到 14 天后不再添加")
+    }
+
+    func testDaySequenceDraftDoesNotRestoreRemovalAfterReturningToFourteenDays() throws {
+        // 14 天 → 删 1 天 → 加 1 天 → 撤销：撤销不得突破上限并制造一个会被引擎拒绝的假成功日序。
+        var draft = PlanDaySequenceDraft(codes: Array(repeating: "push-a", count: TodayPrescriptionEngine.maximumDaySequenceLength))
+        let removedID = try XCTUnwrap(draft.rows.first?.id)
+
+        XCTAssertTrue(draft.remove(rowID: removedID))
+        XCTAssertEqual(draft.codes.count, 13)
+        XCTAssertTrue(draft.add(dayCode: "pull-a"))
+        XCTAssertEqual(draft.codes.count, 14)
+
+        XCTAssertFalse(draft.undoRemoval(), "已回到上限时不得还原被删 occurrence")
+        XCTAssertEqual(draft.codes.count, 14, "撤销拒绝后工作副本必须保持在合法上限内")
+    }
+
+    func testDaySequenceDraftReplaceAndReorderDoNotCreateUndoEntry() throws {
+        var draft = PlanDaySequenceDraft(
+            codes: ["push-a", "pull-a", "legs-a"]
+        )
+        let firstID = try XCTUnwrap(draft.rows.first?.id)
+        XCTAssertTrue(draft.replace(rowID: firstID, with: "full-a"))
+        XCTAssertTrue(draft.move(rowID: firstID, by: 2))
+        XCTAssertEqual(draft.codes, ["pull-a", "legs-a", "full-a"])
+        XCTAssertNil(draft.lastRemovedDayCode, "换类型和拖动重排都不入撤销栈")
+        XCTAssertFalse(draft.undoRemoval())
+    }
+
+    func testDaySequenceDraftRejectsUnknownCodesAndClearsUndoOnReset() throws {
+        var draft = PlanDaySequenceDraft(
+            codes: ["push-a", "pull-a"]
+        )
+        let firstID = try XCTUnwrap(draft.rows.first?.id)
+        XCTAssertFalse(draft.replace(rowID: firstID, with: "bogus-day"))
+        XCTAssertFalse(draft.add(dayCode: "bogus-day"))
+        XCTAssertTrue(draft.remove(rowID: firstID))
+        XCTAssertNotNil(draft.lastRemovedDayCode)
+        draft.reset(codes: ["upper", "lower"])
+        XCTAssertEqual(draft.codes, ["upper", "lower"])
+        XCTAssertNil(draft.lastRemovedDayCode, "恢复默认会清掉旧撤销点")
+        XCTAssertFalse(draft.undoRemoval())
+    }
+
+    func testDaySequenceDraftResetPreservesOnlyUnchangedPositionAndDayCodeIdentities() throws {
+        var draft = PlanDaySequenceDraft(codes: ["push-a", "pull-a", "legs-a"])
+        let originalIDs = draft.rows.map(\.id)
+
+        draft.reset(codes: ["push-a", "full-a", "legs-a", "pull-a"])
+
+        XCTAssertEqual(draft.rows[0].id, originalIDs[0], "同位置同 dayCode 的行保留 identity")
+        XCTAssertNotEqual(draft.rows[1].id, originalIDs[1], "变更 dayCode 的行获取新 identity")
+        XCTAssertEqual(draft.rows[2].id, originalIDs[2], "后续同位置同 dayCode 的行也保留 identity")
+        XCTAssertNotEqual(draft.rows[3].id, originalIDs[1], "仅移动到新位置的同 code 不复用旧 occurrence identity")
+    }
+
+    // MARK: - FR-TR12 展示兼容（仅候选去重与入口判据）
+
+    func testDaySwitchCandidatesDeduplicateByCodePreservingFirstOrder() {
+        XCTAssertEqual(
+            DaySequencePresentationRules.daySwitchCandidates(
+                sequence: ["push-a", "pull-a", "push-a", "legs-a", "pull-a"],
+                currentDayCode: "push-a"
+            ),
+            ["pull-a", "legs-a"],
+            "重复 dayCode 只保留首次顺序，并继续排除当前处方日"
+        )
+    }
+
+    func testDaySwitchEntryRequiresMoreThanOneDistinctDayCode() {
+        XCTAssertFalse(
+            DaySequencePresentationRules.shouldShowDaySwitchEntry(
+                sequence: ["push-a", "push-a", "push-a"]
+            ),
+            "全同日序不显示入口，避免空选择器"
+        )
+        XCTAssertTrue(
+            DaySequencePresentationRules.shouldShowDaySwitchEntry(
+                sequence: ["push-a", "pull-a", "push-a"]
+            )
+        )
+    }
+
     // MARK: - 采纳收敛裁定（裁定 B：列表==默认时不写冗余自定义）
 
     func testApplyResolutionWritesCustomWhenDifferentFromDefault() throws {

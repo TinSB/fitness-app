@@ -25,7 +25,8 @@ public struct PlanCustomizationInput: Equatable, Sendable {
 
     /// dayCode → 该训练日的有序自定义动作清单（数组顺序 = 训练顺序，FR-PL7①）。
     public let dayPlans: [String: [ExerciseSpec]]
-    /// 自定义日序（FR-PL7②）；nil = 引擎默认 daySequence。须为默认日序的排列，否则引擎回退默认。
+    /// 自定义日序（FR-PL7③）；nil = 引擎默认 daySequence。非空、≤14 且全为显式已知
+    /// dayCode 时采用；允许重复/换成员/与 daysPerWeek 不同长度，否则引擎整体回退默认。
     public let daySequence: [String]?
 
     public init(dayPlans: [String: [ExerciseSpec]] = [:], daySequence: [String]? = nil) {
