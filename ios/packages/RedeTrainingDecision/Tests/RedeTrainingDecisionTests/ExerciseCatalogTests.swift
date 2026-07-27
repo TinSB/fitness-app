@@ -66,10 +66,12 @@ final class ExerciseCatalogTests: XCTestCase {
     //    见 front-squat=CrossFit、arnold-press=IJPHRD 掠夺性期刊）。
     // 每条 URL 均经研究 workflow 逐条 WebFetch 对抗核验 + 提交前 curl 抽检 200。
     func testCuedEntriesAreBilingualAndEvidenceWellFormed() {
-        var cuedCount = 0
+        var cuedZhCount = 0
+        var cuedEnCount = 0
         for e in ExerciseCatalog.minimal.entries {
+            if e.techniqueCuesZh != nil { cuedZhCount += 1 }
             if let en = e.techniqueCuesEn {
-                cuedCount += 1
+                cuedEnCount += 1
                 XCTAssertFalse(en.isEmpty, "\(e.id) techniqueCuesEn 空")
                 XCTAssertEqual(e.techniqueCuesZh?.count, en.count, "\(e.id) 中英要点条数不一致")
             }
@@ -81,24 +83,30 @@ final class ExerciseCatalogTests: XCTestCase {
                 XCTAssertNotNil(e.evidenceTag, "\(e.id) 有 evidenceUrl 却无 evidenceTag（孤立 URL）")
             }
         }
-        // 净新增累计：原主项/高频 51（批1=7+批2=12+批3=16+批4=16）+ 新动作批 42（wave-16/17/18
-        // 新增的 42 个动作补要点）= 93（各批为不重叠净增）。
-        XCTAssertGreaterThanOrEqual(cuedCount, 93, "技术要点累计应 ≥ 93（51 高频 + 42 新动作）")
+        // W1（2026-07-21）把目录 165/165 补齐：中英技术要点、退阶与进阶均是全量目录契约，
+        // 不得退回此前 93 条的分批覆盖状态。
+        XCTAssertEqual(cuedZhCount, 165, "中文技术要点必须覆盖全部 165 个动作")
+        XCTAssertEqual(cuedEnCount, 165, "英文技术要点必须覆盖全部 165 个动作")
     }
 
     // FR-EX2 退阶/进阶 + 注意事项（§7.1）批次无关不变量：
     //  - 退阶/进阶/安全注意三组字段各自中英成对（缺则两边都缺，绝不单边露原始码）；
-    //  - 有要点的动作（93）应同时有退阶+进阶（同批补齐）；
+    //  - 全部 165 个动作的退阶/进阶均须中英齐全（W1 2026-07-21）；
     //  - 安全注意只给有风险的动作（≥40），低风险动作 nil（诚实不臆造风险，§7.1）。
     func testScalingAndSafetyAreBilingualAndCovered() {
-        var scaled = 0, safe = 0
+        var regressionZhCount = 0, regressionEnCount = 0
+        var progressionZhCount = 0, progressionEnCount = 0
+        var safe = 0
         for e in ExerciseCatalog.minimal.entries {
             XCTAssertEqual(e.regressionZh == nil, e.regressionEn == nil, "\(e.id) 退阶中英不成对")
             XCTAssertEqual(e.progressionZh == nil, e.progressionEn == nil, "\(e.id) 进阶中英不成对")
             XCTAssertEqual(e.safetyNoteZh == nil, e.safetyNoteEn == nil, "\(e.id) 安全注意中英不成对")
             // 退阶与进阶配对出现（要么都有、要么都无；不单给一边）
             XCTAssertEqual(e.regressionZh == nil, e.progressionZh == nil, "\(e.id) 退阶/进阶未配对")
-            if e.regressionZh != nil { scaled += 1 }
+            if e.regressionZh != nil { regressionZhCount += 1 }
+            if e.regressionEn != nil { regressionEnCount += 1 }
+            if e.progressionZh != nil { progressionZhCount += 1 }
+            if e.progressionEn != nil { progressionEnCount += 1 }
             if e.safetyNoteZh != nil { safe += 1 }
             // 有要点的动作应已补退阶/进阶（同批；防止漏填）
             if e.techniqueCuesEn != nil {
@@ -107,7 +115,10 @@ final class ExerciseCatalogTests: XCTestCase {
             // 安全注意不得做成孤立空串
             if let s = e.safetyNoteZh { XCTAssertFalse(s.isEmpty, "\(e.id) safetyNoteZh 空") }
         }
-        XCTAssertGreaterThanOrEqual(scaled, 93, "退阶/进阶应覆盖 93 个有要点的动作")
+        XCTAssertEqual(regressionZhCount, 165, "中文退阶必须覆盖全部 165 个动作")
+        XCTAssertEqual(regressionEnCount, 165, "英文退阶必须覆盖全部 165 个动作")
+        XCTAssertEqual(progressionZhCount, 165, "中文进阶必须覆盖全部 165 个动作")
+        XCTAssertEqual(progressionEnCount, 165, "英文进阶必须覆盖全部 165 个动作")
         XCTAssertGreaterThanOrEqual(safe, 55, "安全注意应覆盖有风险的动作（实际 60；留小余量防降级）")
     }
 
@@ -119,20 +130,17 @@ final class ExerciseCatalogTests: XCTestCase {
         XCTAssertNil(e?.evidenceUrl, "front-squat 不应有孤立的循证 URL")
     }
 
-    // 回归：未填内容的动作 techniqueCues 为 nil（加性、零行为变化）。
-    // 样例用 db-pullover（长尾 C 档，批3/批4 都不填充，长期保持未填）。
-    func testUntouchedExerciseHasNilCues() {
+    // 内容波 W1：长尾动作已补双语技术要点和进退阶提示，但不得因此伪造循证或安全声明。
+    func testCuedExerciseKeepsEvidenceAndSafetyEmptyWhenNotVerified() {
         let e = ExerciseCatalog.minimal.entry(id: "db-pullover")
         XCTAssertNotNil(e, "样例动作应存在")
-        XCTAssertNil(e?.techniqueCuesEn)
-        XCTAssertNil(e?.techniqueCuesZh)
+        XCTAssertEqual(e?.techniqueCuesEn?.isEmpty, false)
+        XCTAssertEqual(e?.techniqueCuesZh?.isEmpty, false)
+        XCTAssertEqual(e?.techniqueCuesEn?.count, e?.techniqueCuesZh?.count)
+        XCTAssertNotNil(e?.regressionZh)
+        XCTAssertNotNil(e?.progressionEn)
         XCTAssertNil(e?.evidenceTag)
         XCTAssertNil(e?.evidenceUrl)
-        // 退阶/进阶/安全注意同属加性展示字段，长尾未填动作应全 nil（零回归）。
-        // 故意跨语言抽查（regression 查 Zh、progression 查 En）；另一半由
-        // testScalingAndSafetyAreBilingualAndCovered 的中英成对约束覆盖。
-        XCTAssertNil(e?.regressionZh)
-        XCTAssertNil(e?.progressionEn)
         XCTAssertNil(e?.safetyNoteZh)
     }
 }
