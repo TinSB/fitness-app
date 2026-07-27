@@ -4,6 +4,14 @@
 import Foundation
 
 extension RedeStrings {
+    /// 计划页 hero：用户已自由编排日序时只陈述当前循环事实，不复述已不再代表构成的模板分化名。
+    public func planHeroHeadline(isCustomizedDaySequence: Bool, splitCode: String, days: Int, goalCode: String) -> String {
+        if isCustomizedDaySequence {
+            return locale == .zh ? "自定义 · \(days) 天循环" : "Custom · \(days)-day cycle"
+        }
+        return onbVerdict(splitCode: splitCode, days: days, goalCode: goalCode)
+    }
+
     /// 计划页训练日行的「编辑这天」入口提示（无障碍）。
     public var planEditDayHint: String { locale == .zh ? "编辑这个训练日" : "Edit this training day" }
     /// 编辑器标题。

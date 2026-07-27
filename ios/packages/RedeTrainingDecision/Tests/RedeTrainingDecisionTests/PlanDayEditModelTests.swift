@@ -135,6 +135,20 @@ final class PlanDayEditModelTests: XCTestCase {
         XCTAssertFalse(draft.add(dayCode: "legs-a"), "到 14 天后不再添加")
     }
 
+    func testDaySequenceDraftDoesNotRestoreRemovalAfterReturningToFourteenDays() throws {
+        // 14 天 → 删 1 天 → 加 1 天 → 撤销：撤销不得突破上限并制造一个会被引擎拒绝的假成功日序。
+        var draft = PlanDaySequenceDraft(codes: Array(repeating: "push-a", count: TodayPrescriptionEngine.maximumDaySequenceLength))
+        let removedID = try XCTUnwrap(draft.rows.first?.id)
+
+        XCTAssertTrue(draft.remove(rowID: removedID))
+        XCTAssertEqual(draft.codes.count, 13)
+        XCTAssertTrue(draft.add(dayCode: "pull-a"))
+        XCTAssertEqual(draft.codes.count, 14)
+
+        XCTAssertFalse(draft.undoRemoval(), "已回到上限时不得还原被删 occurrence")
+        XCTAssertEqual(draft.codes.count, 14, "撤销拒绝后工作副本必须保持在合法上限内")
+    }
+
     func testDaySequenceDraftReplaceAndReorderDoNotCreateUndoEntry() throws {
         var draft = PlanDaySequenceDraft(
             codes: ["push-a", "pull-a", "legs-a"]
@@ -160,6 +174,18 @@ final class PlanDayEditModelTests: XCTestCase {
         XCTAssertEqual(draft.codes, ["upper", "lower"])
         XCTAssertNil(draft.lastRemovedDayCode, "恢复默认会清掉旧撤销点")
         XCTAssertFalse(draft.undoRemoval())
+    }
+
+    func testDaySequenceDraftResetPreservesOnlyUnchangedPositionAndDayCodeIdentities() throws {
+        var draft = PlanDaySequenceDraft(codes: ["push-a", "pull-a", "legs-a"])
+        let originalIDs = draft.rows.map(\.id)
+
+        draft.reset(codes: ["push-a", "full-a", "legs-a", "pull-a"])
+
+        XCTAssertEqual(draft.rows[0].id, originalIDs[0], "同位置同 dayCode 的行保留 identity")
+        XCTAssertNotEqual(draft.rows[1].id, originalIDs[1], "变更 dayCode 的行获取新 identity")
+        XCTAssertEqual(draft.rows[2].id, originalIDs[2], "后续同位置同 dayCode 的行也保留 identity")
+        XCTAssertNotEqual(draft.rows[3].id, originalIDs[1], "仅移动到新位置的同 code 不复用旧 occurrence identity")
     }
 
     // MARK: - FR-TR12 展示兼容（仅候选去重与入口判据）

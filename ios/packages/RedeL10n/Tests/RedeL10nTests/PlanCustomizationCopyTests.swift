@@ -71,6 +71,22 @@ final class PlanCustomizationCopyTests: XCTestCase {
         )
     }
 
+    func testPlanHeroUsesNeutralCycleFactForCustomizedDaySequence() {
+        XCTAssertEqual(
+            zh.planHeroHeadline(isCustomizedDaySequence: true, splitCode: "ppl-ul", days: 5, goalCode: "hypertrophy"),
+            "自定义 · 5 天循环"
+        )
+        XCTAssertEqual(
+            en.planHeroHeadline(isCustomizedDaySequence: true, splitCode: "ppl-ul", days: 5, goalCode: "hypertrophy"),
+            "Custom · 5-day cycle"
+        )
+        XCTAssertEqual(
+            en.planHeroHeadline(isCustomizedDaySequence: false, splitCode: "push-pull-legs", days: 5, goalCode: "strength"),
+            "Push / Pull / Legs, 5 days a week — built for strength",
+            "未自定义时保持原模板 hero"
+        )
+    }
+
     func testDaySequenceEditorReusesNeutralRemovalUndoCopy() {
         XCTAssertEqual(zh.planEditRemovedLine(zh.trainingDayName("push-b")), "已移除「推 B」")
         XCTAssertEqual(en.planEditRemovedLine(en.trainingDayName("push-b")), "Removed Push B")

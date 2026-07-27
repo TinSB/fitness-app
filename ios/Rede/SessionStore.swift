@@ -234,6 +234,7 @@ final class SessionStore {
         let goal: String?
         let level: String?
         let equipment: String?
+        let isCustomizedDaySequence: Bool
     }
 
     nonisolated static func loadTemplateFacts() -> TemplateFacts? {
@@ -241,6 +242,7 @@ final class SessionStore {
         guard let appData = try? store.load() else { return nil }
         let template = appData.programTemplate
         let profile = appData.userProfile
+        let customization = PlanCustomizationBridge.input(from: appData.planCustomization)
         // 真数据：分化/天数来自模板；目标/背景/器械统一从档案取（审查 P2：与设置页 ProfileSnapshot
         // 同源 profile.primaryGoal，避免日后改目标时模板/档案两份漂移）。FR-PL1：只展示真值，不编排期/周期。
         return TemplateFacts(
@@ -248,7 +250,11 @@ final class SessionStore {
             daysPerWeek: template.daysPerWeek,
             goal: profile.primaryGoal,
             level: profile.trainingLevel,
-            equipment: profile.equipmentScenario
+            equipment: profile.equipmentScenario,
+            isCustomizedDaySequence: TodayPrescriptionEngine.isCustomizedDaySequence(
+                splitType: template.splitType,
+                override: customization.daySequence
+            )
         )
     }
 

@@ -393,11 +393,12 @@ English:
 | 计划页入口 | 编排训练日 | Arrange training days |
 | 入口无障碍提示 | 更换、添加、移除或重排训练日 | Change, add, remove, or reorder training days |
 | 编辑器标题 | 训练日编排 | Training day sequence |
+| 自定义日序 hero | 自定义 · {天数} 天循环 | Custom · {day count}-day cycle |
 | 编辑器副标题 | 换类型、添加或移除训练日；长按一行可拖动重排，轮转按已完成场次推进 | Change, add, or remove training days; touch and hold a row to reorder. Rotation advances by completed sessions |
 | 类型选择器标题 | 选择训练日 | Choose a training day |
 | 行操作 | 更换训练日 | Change training day |
 | 添加开放行 | 添加训练日 | Add training day |
-| 选择器分组 | 推 / 拉 / 腿 / 上下肢 / 全身 | Push / Pull / Legs / Upper & Lower / Full body |
+| 选择器分组 | 推 / 拉 / 腿 / 上下肢 / 全身 | Push / Pull / Legs / Upper / Lower / Full body |
 | 中性影响事实 | 下一个训练日将变为：{训练日名} | Next training day will be: {training day name} |
 | 移除撤销（复用既有串） | 已移除「{训练日名}」　撤销 | Removed {training day name}　Undo |
 

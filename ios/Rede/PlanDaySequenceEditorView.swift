@@ -350,6 +350,7 @@ struct PlanDaySequenceEditorView: View {
     private var undoBar: some View {
         if let dayCode = draft.lastRemovedDayCode {
             let name = s.trainingDayName(dayCode)
+            let undoDisabled = sessionStore.isSaving || !draft.canAppend
             HStack(spacing: 12) {
                 Text(s.planEditRemovedLine(name))
                     .font(.redeCaption)
@@ -358,9 +359,9 @@ struct PlanDaySequenceEditorView: View {
                 Spacer()
                 Button(s.coachUndoLabel) { undoRemoval() }
                     .font(.redeCaption.weight(.semibold))
-                    .foregroundStyle(Color.redeEmber2)
+                    .foregroundStyle(undoDisabled ? Color.redeT4.opacity(0.4) : Color.redeEmber2)
                     .buttonStyle(.redePressable)
-                    .disabled(sessionStore.isSaving)
+                    .disabled(undoDisabled)
                     .accessibilityLabel(s.planEditRemovedUndoA11y(name))
             }
             .frame(minHeight: RedeShape.controlHeight)

@@ -111,6 +111,9 @@ public struct PlanDaySequenceDraft: Equatable, Sendable {
     /// 让既有撤销模型只处理 occurrence id 数组，再用 payload 目录还原对应 dayCode 行。
     @discardableResult
     public mutating func undoRemoval() -> Bool {
+        // add 和 undo 都是日序长度的写入口；满 14 天时不允许撤销把工作副本推进成
+        // 引擎会 fail-closed 的非法序列，更不能让 UI 以为可采纳。
+        guard canAppend else { return false }
         let currentIDs = rows.map(\.id)
         guard let restoredIDs = undoModel.undo(current: currentIDs) else { return false }
 
@@ -140,9 +143,17 @@ public struct PlanDaySequenceDraft: Equatable, Sendable {
         return true
     }
 
-    /// 恢复默认：新基线获得新 occurrence ids，并清掉旧撤销 payload/栈。
+    /// 恢复默认：只保留位置和 dayCode 都没变的 occurrence identity，避免 SwiftUI 将
+    /// 局部变化误判为整表替换；旧撤销 payload/栈仍全部失效。
     public mutating func reset(codes: [String]) {
-        self = PlanDaySequenceDraft(codes: codes)
+        let previousRows = rows
+        rows = codes.enumerated().map { index, dayCode in
+            if previousRows.indices.contains(index), previousRows[index].dayCode == dayCode {
+                return previousRows[index]
+            }
+            return Row(dayCode: dayCode)
+        }
+        clearUndo()
     }
 
     /// 采纳 / 取消后旧还原点失效；工作副本本身保持不变。

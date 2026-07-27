@@ -45,7 +45,12 @@ struct PlanTabView: View {
                     // 真计划摘要（分化 · 天数 · 目标 + 背景 · 器械）——重做 2026-06-15「密而干净」。
                     // goal 缺失不丢整块摘要（审查 P1）：onbVerdict 内部 fallback general，同 OnboardingView。
                     VStack(alignment: .leading, spacing: 10) {
-                        Text(s.onbVerdict(splitCode: split, days: days, goalCode: facts.goal ?? "general"))
+                        Text(s.planHeroHeadline(
+                            isCustomizedDaySequence: facts.isCustomizedDaySequence,
+                            splitCode: split,
+                            days: days,
+                            goalCode: facts.goal ?? "general"
+                        ))
                             .font(.redeHeadline)
                             .tracking(RedeTracking.headline)
                             .foregroundStyle(Color.redeT1)

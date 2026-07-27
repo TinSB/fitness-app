@@ -31,7 +31,7 @@
 3. **允许重复成员**（如 `[push-a, pull-a, legs-a, push-a, pull-a]`）——用户自由优先；dayCode 只决定处方模板，重复不破坏任何既有语义。
 4. **长度与 daysPerWeek 解耦**：序列长度不必等于每周训练天数（引擎本就按场次轮转）。规格写回时写明这点。
 5. `isCustomized` 判定：override 合法 **且 ≠ 默认序**（沿用既有口径，勿改）。
-6. **override=nil 逐字节等价现状**（golden 零回归，必须有测试证明）。
+6. **override=nil 与空 customization 参数等价**，并由既有 `GoldenPrescriptionTests` 落盘 fixture 覆盖处方回归。
 
 ## 裁定 B：日序编辑器 UI（PlanDaySequenceEditorView）
 
@@ -70,7 +70,7 @@
 
 ## 验证与证据（企业验收标准）
 
-1. **纯模型/引擎测试先红后绿**：白名单与 `slots()` case 集合同步锁、非法 code 回退、超长回退、空回退、重复成员采用、长度≠daysPerWeek 采用、override=nil 等价现状（golden）、`isCustomized` 边界。
+1. **纯模型/引擎测试先红后绿**：白名单与 `slots()` case 集合同步锁、非法 code 回退、超长回退、空回退、重复成员采用、长度≠daysPerWeek 采用、override=nil 与空 customization 参数等价、既有处方 fixture 回归、`isCustomized` 边界。
 2. **模拟器实拍**（装前必真 `xcodebuild build`；截图前确认前台是 Rede；钩子传 **canonical dayCode**）：换类型选择器、换成推拉腿推拉后的序列、加天、删天+撤销条、采纳后计划页/今日页跟随。PNG 前缀 `2026-07-21-freeseq-` 存 `docs/工作记录/`。**证据图必须互不相同（md5 查重）**——端态像素重合会产生字节级同文件，中间态才有独立证明力（前两批教训）。
 3. **canonical 实证**：采纳后读 `planCustomization.daySequence` 实际写入值；恢复默认+采纳后归 null。
 4. **每 commit 仓库根 `.claude/quality-gate.cmd` exit 0**（freeze-once：代码冻结点一次 + 文档冻结点一次）。
@@ -104,7 +104,7 @@
 ## 实施回执
 
 - 分支与 commit 清单：`codex/0721-free-day-sequence`；`7320979 feat: allow free training day sequences`（引擎、编辑器、FR-TR12 展示兼容与测试）；文档、证据与本回执由本文件所在的收尾 commit `docs: record free day sequence delivery` 提交（commit 自引用，hash 以当前 `HEAD` 为准）。未 push、未开 PR。
-- A 引擎守卫：`knownDayCodes` 显式枚举且只枚举 `push-a / push-b / pull-a / pull-b / legs-a / legs-b / upper / lower / full-a / full-b / full-c`；独立穷举 `SlotDayCode.allCases` 与白名单同步锁测试，未依赖 `slots()` 的 unknown→upper 既有兜底。override 仅在非空、长度 `1...14`、全员合法时整条采用；允许重复、换成员且长度与 `daysPerWeek` 解耦，空/超长/任一未知/原始 JSON 混入非字符串均整条回退默认，不做部分采纳。测试锁定 5 天「推拉腿推拉」、重复成员、1 与 14 边界、长度解耦、非法整体回退、每周投影、`isCustomized` 边界、白名单与 slots 同步；`override=nil` 以排序 JSON 字节 golden 证明输出逐字节等价现状。独立审查发现的 mixed-type 部分清洗 P1 已先红后绿修复，定向复审确认关闭且无新增 P0/P1/P2/P3。
+- A 引擎守卫：`knownDayCodes` 显式枚举且只枚举 `push-a / push-b / pull-a / pull-b / legs-a / legs-b / upper / lower / full-a / full-b / full-c`；独立穷举 `SlotDayCode.allCases` 与白名单同步锁测试，未依赖 `slots()` 的 unknown→upper 既有兜底。override 仅在非空、长度 `1...14`、全员合法时整条采用；允许重复、换成员且长度与 `daysPerWeek` 解耦，空/超长/任一未知/原始 JSON 混入非字符串均整条回退默认，不做部分采纳。测试锁定 5 天「推拉腿推拉」、重复成员、1 与 14 边界、长度解耦、非法整体回退、每周投影、`isCustomized` 边界、白名单与 slots 同步；`override=nil` 与空 customization 参数在当前实现等价，既有 `GoldenPrescriptionTests` 落盘 fixture 覆盖处方回归。独立审查发现的 mixed-type 部分清洗 P1 已先红后绿修复，定向复审确认关闭且无新增 P0/P1/P2/P3。
 - B 编辑器 UI：已完成逐行换类型、末尾加天、删到至少保留 1 天、复用 `PlanDayEditUndoModel` 的 LIFO 撤销条；重复 dayCode 使用 occurrence identity，换类型/添加/拖动不入撤销栈，恢复默认/采纳/取消清栈，14 天时添加禁用。装前真实 `xcodebuild build` 为 `BUILD SUCCEEDED`，截图前均确认前台为 Rede，自动化钩子传 canonical dayCode。实拍及 MD5：`2026-07-21-freeseq-01-type-picker.png`（`5173833b6b91ebc43a115356867e0096`）、`02-push-pull-legs-push-pull.png`（`8181a8871394c274dbce1ae85ebdec11`）、`03-added-full-body-day.png`（`3fa379ef00a6e4b2ac969390c4865944`）、`04-removed-with-undo.png`（`533dfa95a45086ba80c048568a013210`）、`05-applied-plan.png`（`6b90c2168343a5d7750830f0c3381a89`）、`06-relaunch-today.png`（`1bcddae399c12bbdda1b60c3eb40a3a7`）、`07-restored-default-plan.png`（`bc377a7ba8ee4f6250feca3a8ffbeea7`）、`08-undo-restored-and-reordered.png`（`77632f7e70b7b74055afded4f025c625`）；8 个 MD5 全异。canonical 实读采纳后为 `["push-a","pull-a","legs-a","push-b","pull-b"]`，杀进程重开今日页跟随；恢复默认并采纳后为 `null`。
 - C 护栏姿态：自由日序的影响预览只保留「下一个训练日将变为 X」中性事实；低频、重复或缺少某日型时不显示警告色、不说教、不劝阻、不二次确认、不阻断合法采纳。FR-TR12 只按 owner 追加裁定改展示层：候选按 dayCode 去重保序并排除当前处方日，入口按去重后种类数 `> 1` 判断；重复候选与全同序列两条测试已锁定。`applyDayOverride`、`oneTimeDayOverride`、`rotationOffset` 消费/补偿、回归协议、每周循环、撤销路由、二选一语义与文案均未改。
 - 规格写回：`docs/REDE_PRD.md` 写回 FR-PL7③、FR-PL6.1、FR-TR12 与非目标边界；`docs/REDE_iOS_SYSTEM_LOGIC.md` 写回 §6.0.1 生成规则、§6.0.1a FR-TR12、FR-PL6/PL7 engine seam、raw→clean fail-closed、§8.2 编辑器与中性护栏；`docs/REDE_PRODUCT_DESIGN_LANGUAGE.md` 写回 §12.3 分组类型选择器 idiom 与 §14.2 训练日移除触感；`docs/REDE_PRODUCT_COPY_BASELINE.md` §5.4 写回全部新中英文串及零说教红线；`CHANGELOG.md` 与 `DEV_LOG.md` 追加本批工程事实、用户可见结果、证据和边界。Master 与商业 Roadmap 经只读对账无冲突、无需改写。
@@ -118,3 +118,15 @@ QUALITY GATE: PASS
 ```
 
 - 未尽事项 / 范围外疑点：Simulator 已证明可见流程、canonical 写入、杀进程恢复与默认收敛；长按拖动的真手指手感和系统触感强弱仍留 TestFlight/实体设备复验。schema、版本号、`slots()` unknown 兜底、轮转公式、自动均衡、回归/每周循环、日编辑器均未改。无关未跟踪文件 `1` 与 `docs/工作记录/2026-07-21-exercise-content-wave-handoff.md` 未触碰、未纳入提交。
+
+## 第二轮修复回执
+
+- 分支与范围：`codex/0721-free-day-sequence`；仅处理主会话列出的 1 MAJOR、3 MINOR、2 NIT（其中两对为同题不同 lens）。FR-TR12、引擎白名单/守卫、raw→clean、写闸、版本号和日编辑器未改。
+- 必修 1（MAJOR）：`PlanDaySequenceDraft.undoRemoval()` 先守 `canAppend`，达到 14 条时返回 false；撤销条按钮同样 `.disabled`，并以 `redeT4.opacity(0.4)` 明确置灰。专用复现测试覆盖 14 → remove → add → undo：旧代码 RED 实测 `XCTAssertFalse` 失败且条数为 15；修复后 GREEN，返回 false 且条数仍为 14。写闸未动。
+- 必修 2（MINOR）：`CHANGELOG.md`、系统逻辑 §6.0.1 与本回执均改为如实表述：`override=nil` 与空 customization 参数在当前实现等价；既有 `GoldenPrescriptionTests` 落盘 fixture 覆盖处方回归。不再声称前后字节 golden。
+- 必修 3（MINOR）：自定义日序时计划页 hero 显示「自定义 · N 天循环 / Custom · N-day cycle」，未自定义继续显示原模板摘要；精确断言已锁中英文和未自定义回归。真实 Simulator 以编辑器路径写入「推 A / 拉 A / 腿 A / 推 B / 下肢 A」，前台 Rede 截图 `2026-07-21-freeseq-09-custom-cycle-hero.png` 可见「自定义 · 5 天循环」，MD5 `5157f34a3e66704a8a81d460360cb149`，与 01–08 全异。
+- 必修 4（NIT）：文案基线 §5.4 的英文分组从 `Upper & Lower` 校正为实现/精确断言使用的 `Upper / Lower`。
+- 必修 5（NIT）：`reset` 对位置与 dayCode 都相同的行保留 occurrence id，仅变化位置获得新 id；模型测试锁定，恢复默认的局部变化不再被 SwiftUI 视为整表替换。
+- 规格写回：`CHANGELOG.md`、`DEV_LOG.md`；`docs/REDE_iOS_SYSTEM_LOGIC.md` §6.0.1、§8.2；`docs/REDE_PRD.md` FR-PL7；`docs/REDE_PRODUCT_COPY_BASELINE.md` §5.4；本交接件的证据措辞与本回执。
+- 验证：定向 `PlanDayEditModelTests` 25/25 通过；`PlanCustomizationCopyTests` 7/7 通过；真 `xcodebuild -project ios/Rede.xcodeproj -scheme Rede -destination 'generic/platform=iOS Simulator' build` 为 `BUILD SUCCEEDED`；冻结 `.claude/quality-gate.cmd` exit 0，尾部为 `** TEST SUCCEEDED ** / Testing started / QUALITY GATE: PASS`。
+- 未尽事项：仅 TestFlight/实体设备尚未验证长按拖动的真手指手感和触感强度；无已知本范围 P0/P1/P2。
