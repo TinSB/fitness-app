@@ -562,7 +562,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 140
+      "rank": 140,
+      "techniqueCuesZh": [
+        "上臂和腋下始终贴稳牧师凳垫，坐好后先让肩膀放松下沉。",
+        "从接近伸直的位置平稳弯起，肘部固定在垫上，不用耸肩或身体后仰借力。",
+        "手腕保持中立，顶端收紧肱二头肌片刻，再用控制速度下放。",
+        "下放约 2–3 秒，手肘始终留在垫上；弯起时呼气、还原时吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Settle your upper arms and armpits firmly into the pad, then let the shoulders stay down before you start.",
+        "Curl smoothly from a nearly straight elbow while keeping the elbows planted on the pad; do not shrug or lean back to create momentum.",
+        "Keep your wrists neutral, squeeze the biceps briefly at the top, and lower the bar with control.",
+        "Lower for about 2–3 seconds with the elbows staying on the pad; exhale as you curl and inhale on the return."
+      ],
+      "regressionZh": "换用轻一些的曲杆或哑铃，并在舒适范围内完成；若底部拉扯明显，可缩短最后一段伸展范围。 先把重量降到能连续完成 8–10 次且手肘不移位；这样先保住肘部和肩部的位置。",
+      "regressionEn": "Use a lighter EZ bar or dumbbells and work through a comfortable range; if the bottom stretch feels too aggressive, stop short of the final part of elbow extension. First use a load you can control for 8–10 reps without the elbow moving; this preserves the elbow and shoulder position.",
+      "progressionZh": "在不抬肘、不借力的前提下逐步加重，或把下放放慢到 3 秒。 当每组能在保留 1–2 次余力的情况下完成上限次数，再增加最小可用重量。",
+      "progressionEn": "Add load only while the elbows stay planted and the torso stays quiet, or make each lowering phase about three seconds. Once you reach the top of the rep range with 1–2 reps in reserve, add the smallest available load."
     },
     {
       "id": "triceps-pushdown",
@@ -1051,7 +1067,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 270
+      "rank": 270,
+      "techniqueCuesZh": [
+        "仰卧顺躺在平凳上，双手托住一只哑铃内侧，肩胛轻轻收紧并让双脚踩稳。",
+        "手肘保持微屈，沿弧线把哑铃放到头后；肋骨不要向上翻起。",
+        "用背阔肌和胸部把哑铃拉回胸前，动作全程控制，不要甩过头。",
+        "全程让臀部留在凳上、骨盆稳定；哑铃越过额头时吸气，拉回胸前时呼气。"
+      ],
+      "techniqueCuesEn": [
+        "Lie lengthwise on a flat bench with both hands cupping the inside of one dumbbell, shoulder blades lightly set and feet planted.",
+        "Keep a soft bend in the elbows as the dumbbell travels in an arc behind your head; do not let the ribs flare up.",
+        "Bring the weight back over the chest with the lats and chest doing the work, keeping the whole arc controlled rather than swinging it.",
+        "Keep the glutes on the bench and the pelvis still throughout; inhale as the dumbbell passes the forehead and exhale as it returns over the chest."
+      ],
+      "regressionZh": "改用更轻的哑铃，并只下放到肩膀仍能稳定、肋骨不外翻的范围。 先减少到肋骨不外翻且上臂能停在耳旁后方约 10–15° 的范围，避免用腰部换深度。",
+      "regressionEn": "Choose a lighter dumbbell and stop the descent at the point where the shoulders remain stable and the ribs stay down. Reduce until the ribs stay down and the upper arms can reach about 10–15 degrees behind the ears without using the low back for depth.",
+      "progressionZh": "在弧线和躯干稳定不变的前提下小幅加重，或在头后伸展位停顿一秒。 当躯干不移动时再加最小哑铃档位，或把头后停顿增加到 2 秒。",
+      "progressionEn": "Increase the load in small steps while preserving the same arc and torso position, or add a one-second pause in the stretched position behind the head. Add the smallest dumbbell increment only with a still torso, or lengthen the behind-head pause to 2 seconds."
     },
     {
       "id": "rear-delt-fly",
@@ -1143,7 +1175,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 300
+      "rank": 300,
+      "techniqueCuesZh": [
+        "站在台阶边缘，用前脚掌踩稳，脚跟自然悬空，扶住固定物保持平衡。",
+        "先让脚跟缓慢下沉获得拉伸，再用脚掌均匀发力把身体推高。",
+        "顶端停一下感受小腿收缩，膝盖保持伸直但不要锁死。",
+        "每次在最低点停半秒再上升，避免借反弹；下放吸气、提起时缓慢呼气。"
+      ],
+      "techniqueCuesEn": [
+        "Stand with the balls of your feet secure on the edge of a step and let the heels hang freely while holding a stable support.",
+        "Lower the heels slowly for a stretch, then press evenly through the forefoot to raise your body.",
+        "Pause briefly at the top to finish the calf contraction, keeping the knees straight without forcefully locking them.",
+        "Pause for half a second in the bottom stretch before rising so you do not rebound; inhale down and exhale as you rise."
+      ],
+      "regressionZh": "先用双手扶稳并徒手完成，或在地面上做较小幅度的提踵。 先用能在最低伸展位停 1 秒的负荷；如果脚跟回弹，说明当前阻力或幅度过大。",
+      "regressionEn": "Start bodyweight-only with firm hand support, or perform a shorter range of motion on flat ground. Use a load that lets you pause one second in the bottom stretch; rebound means the resistance or range is currently too much.",
+      "progressionZh": "一只手持哑铃逐步加重，或改成单腿并在底部停顿一秒。 保持膝角不变时每侧增加最小重量，并把完整伸展和顶端收缩都保留下来。",
+      "progressionEn": "Hold a progressively heavier dumbbell in one hand, or move to single-leg reps with a one-second pause at the bottom. Add the smallest load while keeping the knee angle fixed and preserving both the full stretch and top contraction."
     },
     {
       "id": "db-floor-press",
@@ -1164,7 +1212,23 @@
       "loadType": "external",
       "loadFactor": 2.0,
       "isGuided": false,
-      "rank": 310
+      "rank": 310,
+      "techniqueCuesZh": [
+        "躺在地面上，双脚踩稳、上背贴地，哑铃在胸部两侧起始。",
+        "肩胛向后下方收紧，手腕叠在肘部上方，肘部与躯干保持约 45 度。",
+        "下放直到上臂轻触地面并短暂停住，再平稳推回；下放吸气、推起呼气。",
+        "让左右哑铃同步移动，不抢速度；触地停稳后呼气推起，下一次下放时再吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Lie on the floor with your feet planted and upper back down, starting with the dumbbells beside the chest.",
+        "Set the shoulder blades back and down, stack the wrists over the elbows, and keep the elbows about 45 degrees from the torso.",
+        "Lower until the upper arms touch the floor and pause briefly, then press smoothly back up; inhale down and exhale as you press.",
+        "Move both dumbbells together without rushing; exhale as you press from the settled floor pause and inhale on the next descent."
+      ],
+      "regressionZh": "用更轻的哑铃并放慢动作，必要时一次只练一侧来专注稳定。 先减到能以 3 秒下放完成 8 次的重量；稳定的下放比强行加幅度更重要。",
+      "regressionEn": "Use lighter dumbbells and slow the repetition down; if needed, work one arm at a time to focus on stability. First reduce to a load that allows 8 reps with a 3-second lowering; a stable descent matters more than forcing range.",
+      "progressionZh": "逐步加重，或让上臂触地后停顿一到两秒再推起。 先在同一动作幅度完成目标次数，再只加最小档位，避免为加重改变肩肘轨迹。",
+      "progressionEn": "Add load gradually, or pause for one to two seconds with the upper arms on the floor before each press. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change."
     },
     {
       "id": "chest-supported-db-row",
@@ -1185,7 +1249,23 @@
       "loadType": "external",
       "loadFactor": 2.0,
       "isGuided": false,
-      "rank": 320
+      "rank": 320,
+      "techniqueCuesZh": [
+        "把上斜凳调到能让胸口稳定贴住的位置，双脚踩地，颈部保持自然。",
+        "从肩膀下方垂直悬挂开始，先轻收肩胛，再把肘部向后下方拉。",
+        "顶端让哑铃靠近下肋位置，避免耸肩；控制下放直到肩胛自然前伸。",
+        "每次回到底部让肩胛自然前移，再重新发力；拉起呼气、下放吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Set the incline bench so your chest is firmly supported, keep both feet on the floor, and leave the neck relaxed.",
+        "Start with the dumbbells hanging below the shoulders, set the shoulder blades lightly, then drive the elbows back and down.",
+        "Row the dumbbells toward the lower ribs without shrugging, then lower under control until the shoulder blades can move forward naturally.",
+        "Let the shoulder blades glide forward at the bottom before each new pull; exhale on the row and inhale as you lower."
+      ],
+      "regressionZh": "减轻哑铃重量，或把凳子角度调高一些以获得更多支撑。 先选择能让肩胛在底部自然前移、躯干不转动的负荷，必要时缩短最后 10 厘米行程。",
+      "regressionEn": "Reduce the dumbbell load, or raise the bench angle slightly to give your torso more support. Choose a load that lets the shoulder blade reach forward at the bottom without torso rotation; if needed, shorten the final 10 cm of range.",
+      "progressionZh": "保持胸口不离凳的前提下逐步加重，或在顶端停顿一秒。 当两侧都能在顶端停半秒且躯干不借力时，再加一个最小重量档位。",
+      "progressionEn": "Increase the dumbbells while keeping the chest glued to the pad, or add a one-second squeeze at the top. Add the smallest increment only after both sides can hold the top for half a second without torso momentum."
     },
     {
       "id": "db-leg-curl",
@@ -1203,7 +1283,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 330
+      "rank": 330,
+      "techniqueCuesZh": [
+        "俯卧在平凳上，把一只哑铃夹在双脚之间，髋部贴稳凳面。",
+        "从膝盖伸直开始，脚跟向臀部卷起，保持大腿不离开凳子。",
+        "顶端停一下再缓慢放下，避免腰部抬起或让哑铃摆动。",
+        "用约 2 秒卷起、3 秒下放，双脚始终夹紧哑铃；卷起呼气、还原吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Lie face down on a flat bench with a dumbbell held securely between your feet and the hips settled into the pad.",
+        "Begin with the knees straight and curl the heels toward the glutes without lifting the thighs off the bench.",
+        "Hold the top briefly and lower slowly, avoiding any low-back lift or swinging of the dumbbell.",
+        "Use about 2 seconds to curl and 3 seconds to lower while keeping the dumbbell secure between the feet; exhale on the curl and inhale on the return."
+      ],
+      "regressionZh": "先用很轻的哑铃，或改为徒手俯卧腿弯举并缩小底部伸展范围。 先选择能让哑铃夹稳并以 3 秒下放完成 8 次的重量，不以摆髋补足范围。",
+      "regressionEn": "Begin with a very light dumbbell, or do a bodyweight prone leg curl with a shorter bottom range. Choose a load that keeps the dumbbell secure for 8 reps with a 3-second lower; do not create range by swinging the hips.",
+      "progressionZh": "在哑铃不晃动的前提下小幅加重，或把下放放慢到 3 秒。 只有在每组都能维持 3 秒回程且双脚夹稳时，再增加最小哑铃档位。",
+      "progressionEn": "Add small amounts of load only when the dumbbell stays still, or make the lowering phase last about three seconds. Add the smallest dumbbell increment only when every rep keeps a 3-second return and a secure foot grip."
     },
     {
       "id": "overhead-press",
@@ -1502,7 +1598,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 410
+      "rank": 410,
+      "techniqueCuesZh": [
+        "侧身站在滑轮旁，手握把手，肩膀放低、躯干不要侧倒。",
+        "肘部微屈固定，用上臂向外上方带动把手，抬到与肩同高即可。",
+        "顶端不要耸肩，缓慢回到身体前侧，保持绳索全程有张力。",
+        "保持 2 秒上举、2–3 秒回放的均匀节奏；抬起呼气，回程吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Stand side-on to the pulley with the shoulder down and the torso upright rather than leaning away.",
+        "Keep a soft, fixed elbow and lead the handle out and up with the upper arm until it reaches shoulder height.",
+        "Do not shrug at the top; return slowly toward the front of the body while keeping tension on the cable.",
+        "Use an even 2-second lift and 2–3-second return; exhale as the arm rises and inhale on the way back."
+      ],
+      "regressionZh": "降低配重，站得更靠近滑轮，或只做到肩高以下的舒适幅度。 把配重降到能以 2 秒发力、3 秒回程完成 10 次；先消除耸肩或躯干代偿。",
+      "regressionEn": "Lower the stack, stand closer to the pulley, or use a comfortable range below shoulder height. Lower the resistance until you can use a 2-second effort and 3-second return for 10 reps; first remove shrugging or torso compensation.",
+      "progressionZh": "在躯干不倾斜、肩膀不耸起时逐步加重，或在顶端停顿一秒。 在轨迹和关节角度不变时增加一个小档位，而不是靠缩短行程提高重量。",
+      "progressionEn": "Increase the stack only while the torso stays still and the shoulder stays down, or add a one-second top hold. Increase one small increment only with the same path and joint angle, rather than shortening range to use more weight."
     },
     {
       "id": "cable-curl",
@@ -1520,7 +1632,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 420
+      "rank": 420,
+      "techniqueCuesZh": [
+        "面对滑轮站稳，肘部贴近身体两侧，肩膀保持下沉。",
+        "握住横杆或绳索后弯曲肘部，把把手卷向上胸，不要前后摆身。",
+        "顶端收紧后缓慢伸肘，让绳索带回起点但不耸肩。",
+        "只在肘部活动，以 2 秒弯起、3 秒还原；弯起呼气，伸肘时吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Face the pulley in a stable stance with elbows close to your sides and shoulders held down.",
+        "Curl the bar or rope toward the upper chest by bending the elbows, without rocking the torso forward and back.",
+        "Squeeze at the top, then extend the elbows slowly as the cable returns to the start without letting the shoulders rise.",
+        "Move only at the elbows on a 2-second curl and 3-second return; exhale as you curl and inhale as the elbows extend."
+      ],
+      "regressionZh": "减轻配重，或改用单臂把手以更容易固定肘部。 先把重量降到能连续完成 8–10 次且手肘不移位；这样先保住肘部和肩部的位置。",
+      "regressionEn": "Reduce the stack, or use a single handle so it is easier to keep each elbow fixed. First use a load you can control for 8–10 reps without the elbow moving; this preserves the elbow and shoulder position.",
+      "progressionZh": "在不借躯干摆动的前提下加重，或把下放延长到 3 秒。 当每组能在保留 1–2 次余力的情况下完成上限次数，再增加最小可用重量。",
+      "progressionEn": "Add load without introducing torso swing, or extend the lowering phase to three seconds. Once you reach the top of the rep range with 1–2 reps in reserve, add the smallest available load."
     },
     {
       "id": "cable-overhead-triceps",
@@ -1538,7 +1666,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 430
+      "rank": 430,
+      "techniqueCuesZh": [
+        "背对低滑轮站成前后脚，双手握绳索并把上臂举到耳旁。",
+        "收紧腹部和臀部，保持肘尖朝前，避免腰部后仰。",
+        "只弯伸肘部把手臂伸直，再控制绳索回到头后。",
+        "每次伸直前略停、再用 2–3 秒回到头后；伸肘呼气、回程吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Take a staggered stance facing away from a low pulley, holding the rope with your upper arms beside your ears.",
+        "Brace the abs and glutes, keep the elbows pointing forward, and do not arch the low back.",
+        "Move only at the elbows to extend the arms, then guide the rope back behind the head under control.",
+        "Briefly settle just before lockout, then take 2–3 seconds back behind the head; exhale on extension and inhale on the return."
+      ],
+      "regressionZh": "降低配重并缩短头后下放深度，或改为绳索下压。 先选择能让上臂固定、在终点保留微屈的负荷；若肘部前后跑动就降低阻力。",
+      "regressionEn": "Lower the stack and shorten the behind-the-head range, or switch to a cable pushdown. Choose a load that keeps the upper arm fixed with a soft end range; reduce resistance if the elbows drift forward or back.",
+      "progressionZh": "在肘部位置稳定时逐步加重，或在伸直位停顿一秒。 在上臂不移位时完成目标次数后，再加一个小档位或把回程延长 1 秒。",
+      "progressionEn": "Increase the stack while the elbows stay fixed, or add a one-second pause with the arms extended. After reaching target reps without upper-arm movement, add one small increment or lengthen the return by one second."
     },
     {
       "id": "straight-arm-pulldown",
@@ -1556,7 +1700,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 440
+      "rank": 440,
+      "techniqueCuesZh": [
+        "面对高滑轮站稳，双手握直杆或绳索，髋部微屈并收紧腹部。",
+        "肘部保持微屈固定，从肩关节把把手沿弧线压向大腿。",
+        "底部感受背阔肌收紧，再缓慢让手臂回到头顶前方，避免耸肩。",
+        "躯干角度整组不变，手臂下压呼气、回到头顶前方时吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Face a high pulley in a stable stance, hold the bar or rope, hinge slightly at the hips, and brace the abs.",
+        "Keep a soft fixed bend in the elbows and pull the handle in an arc toward the thighs from the shoulders.",
+        "Feel the lats finish at the bottom, then let the arms travel back overhead slowly without shrugging.",
+        "Keep the same torso angle for the whole set; exhale as the arms pull down and inhale as they return overhead."
+      ],
+      "regressionZh": "减轻配重，缩小头顶上方的伸展范围，并用更短的绳索握距。 把配重降到能以 2 秒发力、3 秒回程完成 10 次；先消除耸肩或躯干代偿。",
+      "regressionEn": "Reduce the stack, use a shorter overhead stretch, and take a closer grip on the rope. Lower the resistance until you can use a 2-second effort and 3-second return for 10 reps; first remove shrugging or torso compensation.",
+      "progressionZh": "保持肘角不变时逐步加重，或在大腿旁的收缩位停顿一秒。 在轨迹和关节角度不变时增加一个小档位，而不是靠缩短行程提高重量。",
+      "progressionEn": "Add load while the elbow angle stays unchanged, or pause for a second beside the thighs. Increase one small increment only with the same path and joint angle, rather than shortening range to use more weight."
     },
     {
       "id": "pec-deck",
@@ -1574,7 +1734,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 450
+      "rank": 450,
+      "techniqueCuesZh": [
+        "把座椅调到握把与胸部中线大致齐平，背部和肩胛贴稳靠垫。",
+        "手肘微屈，沿机器轨迹把手臂向中间合拢，不要耸肩或含胸。",
+        "在胸前短暂停顿，再控制打开到胸部仍有拉伸但肩膀稳定的位置。",
+        "合拢用约 2 秒、打开用 3 秒，胸前短停但不让配重撞底；合拢呼气。"
+      ],
+      "techniqueCuesEn": [
+        "Set the seat so the handles line up roughly with mid-chest, with your back and shoulder blades supported by the pad.",
+        "Keep a soft bend in the elbows and bring the arms together along the machine path without shrugging or collapsing the chest.",
+        "Pause briefly in front of the chest, then open under control until you feel a chest stretch with stable shoulders.",
+        "Bring the arms together in about 2 seconds and open in 3, holding briefly without letting the weight stack touch; exhale as you close."
+      ],
+      "regressionZh": "降低配重并缩短打开幅度，先保持肩膀贴稳靠垫。 先降到能在起点和终点各控制半秒的负荷；若骨盆或肩胛离开支撑面，就缩小幅度。",
+      "regressionEn": "Lower the stack and use a shorter opening range while you learn to keep the shoulders supported. First reduce to a load you can control for half a second at both ends; if the pelvis or shoulder blades leave support, shorten the range.",
+      "progressionZh": "在肩膀稳定的前提下逐步加重，或在合拢位停顿一到两秒。 保持座椅设置不变，连续两次训练完成上限次数后再加最小档位。",
+      "progressionEn": "Add load while the shoulders stay stable, or hold the squeezed position for one to two seconds. Keep the same seat setup and add the smallest increment only after reaching the top reps in two consecutive sessions."
     },
     {
       "id": "machine-shoulder-press",
@@ -1671,7 +1847,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 480
+      "rank": 480,
+      "techniqueCuesZh": [
+        "坐好后把前脚掌放在踏板边缘，让膝盖约弯 90 度并固定不动。",
+        "先缓慢放低脚跟，再用前脚掌把阻力推到最高处。",
+        "顶端停一下收紧小腿，回程不要弹回或抬离坐垫。",
+        "用完整踝关节行程做 2 秒上、3 秒下；抬起呼气、脚跟下降时吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Set your forefeet on the edge of the platform with the knees bent around 90 degrees and held still.",
+        "Lower the heels slowly, then drive through the balls of the feet to raise the resistance.",
+        "Pause at the top to finish the calves and avoid bouncing or lifting off the seat on the return.",
+        "Use the full ankle range with a 2-second rise and 3-second lowering; exhale up and inhale as the heels descend."
+      ],
+      "regressionZh": "降低配重并缩短最低点幅度，先保持骨盆和膝盖稳定。 先用能在最低伸展位停 1 秒的负荷；如果脚跟回弹，说明当前阻力或幅度过大。",
+      "regressionEn": "Lower the load and use a shorter bottom range while keeping the pelvis and knees stable. Use a load that lets you pause one second in the bottom stretch; rebound means the resistance or range is currently too much.",
+      "progressionZh": "逐步加重，或在底部和顶端各停顿一秒。 保持膝角不变时每侧增加最小重量，并把完整伸展和顶端收缩都保留下来。",
+      "progressionEn": "Add load gradually, or pause for a second at both the bottom and top of each rep. Add the smallest load while keeping the knee angle fixed and preserving both the full stretch and top contraction."
     },
     {
       "id": "arnold-press",
@@ -1761,7 +1953,23 @@
       "loadType": "external",
       "loadFactor": 2.0,
       "isGuided": false,
-      "rank": 510
+      "rank": 510,
+      "techniqueCuesZh": [
+        "把上斜凳调低，后背贴稳，双臂自然垂在身体两侧。",
+        "肘部略在身体后方时向上弯举，始终固定上臂，不要前摆肩膀。",
+        "顶端挤紧二头肌，再缓慢下放到舒展但可控的位置。",
+        "下放时保持上臂在身体后方约 2 秒，不急着到底；弯起呼气、还原吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Use a low incline bench with your back supported and both arms hanging naturally at your sides.",
+        "Curl with the elbows slightly behind the torso, keeping the upper arms fixed instead of rolling the shoulders forward.",
+        "Squeeze the biceps at the top, then lower slowly into a long but controlled stretch.",
+        "Keep the upper arms behind the torso as you lower for about 2–3 seconds; exhale on the curl and inhale on the return."
+      ],
+      "regressionZh": "减轻哑铃，或把凳子调得更直以减少底部拉伸。 先把重量降到能连续完成 8–10 次且手肘不移位；这样先保住肘部和肩部的位置。",
+      "regressionEn": "Use lighter dumbbells, or raise the bench to reduce the stretch at the bottom. First use a load you can control for 8–10 reps without the elbow moving; this preserves the elbow and shoulder position.",
+      "progressionZh": "在不移动上臂时加重，或把下放延长到 3 秒。 当每组能在保留 1–2 次余力的情况下完成上限次数，再增加最小可用重量。",
+      "progressionEn": "Increase the dumbbells without moving the upper arms, or make the lowering phase last three seconds. Once you reach the top of the rep range with 1–2 reps in reserve, add the smallest available load."
     },
     {
       "id": "reverse-pec-deck",
@@ -1781,7 +1989,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 520
+      "rank": 520,
+      "techniqueCuesZh": [
+        "调整座椅，让握把与肩部同高，胸口贴稳靠垫、颈部放松。",
+        "手肘微屈，沿弧线向外后方打开，专注把上臂而非双手带动。",
+        "到与躯干齐平附近停住，再缓慢回到前方，避免耸肩。",
+        "双侧同步打开和回收，打开呼气、回到起点吸气；不要用后仰抢次数。"
+      ],
+      "techniqueCuesEn": [
+        "Set the seat so the handles are level with the shoulders, with the chest supported and the neck relaxed.",
+        "Keep a soft elbow and sweep the upper arms out and back along the arc instead of leading with the hands.",
+        "Stop around torso level, then return slowly to the front without shrugging.",
+        "Open and return both sides together, exhaling as you open and inhaling back to the start; do not lean back to steal reps."
+      ],
+      "regressionZh": "降低配重并缩小打开幅度，先让胸口始终贴住靠垫。 先降到能在起点和终点各控制半秒的负荷；若骨盆或肩胛离开支撑面，就缩小幅度。",
+      "regressionEn": "Lower the stack and shorten the opening range while keeping the chest against the pad. First reduce to a load you can control for half a second at both ends; if the pelvis or shoulder blades leave support, shorten the range.",
+      "progressionZh": "在肩膀不耸起时逐步加重，或在打开位停顿一秒。 保持座椅设置不变，连续两次训练完成上限次数后再加最小档位。",
+      "progressionEn": "Add load while the shoulders stay down, or pause for a second in the open position. Keep the same seat setup and add the smallest increment only after reaching the top reps in two consecutive sessions."
     },
     {
       "id": "low-cable-fly",
@@ -1801,7 +2025,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 530
+      "rank": 530,
+      "techniqueCuesZh": [
+        "把滑轮调低，身体微微前倾，双手从髋部附近向上前方握住把手。",
+        "肩胛保持轻收、肘部微屈固定，沿上斜弧线把双手合到胸前。",
+        "合拢时不要耸肩，缓慢打开到胸部有拉伸而躯干不后仰的位置。",
+        "每次合拢停半秒感受下胸收缩，再用 3 秒打开；向上合拢时呼气。"
+      ],
+      "techniqueCuesEn": [
+        "Set the pulleys low, lean forward slightly, and take the handles from near hip level toward the front of the body.",
+        "Keep the shoulder blades lightly set and elbows softly bent as the hands travel up and together in an angled arc.",
+        "Do not shrug as the hands meet; open slowly until the chest is stretched without leaning the torso back.",
+        "Hold the low-chest squeeze for half a second, then take 3 seconds to open; exhale as the handles travel up and together."
+      ],
+      "regressionZh": "降低配重并缩短打开距离，或改为蝴蝶机夹胸。 把配重降到能以 2 秒发力、3 秒回程完成 10 次；先消除耸肩或躯干代偿。",
+      "regressionEn": "Reduce the stack and shorten the opening range, or switch to a pec deck. Lower the resistance until you can use a 2-second effort and 3-second return for 10 reps; first remove shrugging or torso compensation.",
+      "progressionZh": "在肩膀稳定时小幅加重，或在胸前合拢位停顿一秒。 在轨迹和关节角度不变时增加一个小档位，而不是靠缩短行程提高重量。",
+      "progressionEn": "Increase the stack in small steps with stable shoulders, or add a one-second squeeze in front of the chest. Increase one small increment only with the same path and joint angle, rather than shortening range to use more weight."
     },
     {
       "id": "good-morning",
@@ -1860,7 +2100,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 550
+      "rank": 550,
+      "techniqueCuesZh": [
+        "调整靠垫和压腿垫，让膝盖轴线与机器转轴对齐，髋部贴住座椅。",
+        "从腿接近伸直开始，脚跟向下后方卷动，避免臀部抬起。",
+        "屈到末端时收紧腿后侧，再控制伸直，不要甩动配重。",
+        "屈膝约 2 秒、伸回约 3 秒，骨盆始终压住坐垫；卷起呼气、回程吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Adjust the pads so the knee joint lines up with the machine pivot and the hips stay anchored in the seat.",
+        "Start with the legs nearly straight and curl the heels down and back without lifting the hips.",
+        "Finish by squeezing the hamstrings, then extend under control instead of letting the stack swing.",
+        "Curl in about 2 seconds and return in 3 with the pelvis anchored to the seat; exhale as you curl and inhale on the return."
+      ],
+      "regressionZh": "降低配重并缩短伸直末端的范围，保持臀部不离开坐垫。 先降到能在起点和终点各控制半秒的负荷；若骨盆或肩胛离开支撑面，就缩小幅度。",
+      "regressionEn": "Lower the stack and shorten the final part of knee extension while keeping the hips down. First reduce to a load you can control for half a second at both ends; if the pelvis or shoulder blades leave support, shorten the range.",
+      "progressionZh": "逐步加重，或在屈腿顶端停顿一到两秒。 保持座椅设置不变，连续两次训练完成上限次数后再加最小档位。",
+      "progressionEn": "Add load gradually, or pause for one to two seconds at the fully curled position. Keep the same seat setup and add the smallest increment only after reaching the top reps in two consecutive sessions."
     },
     {
       "id": "pendlay-row",
@@ -1955,7 +2211,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 580
+      "rank": 580,
+      "techniqueCuesZh": [
+        "调好座椅和靠垫，让肩关节与机器转轴大致对齐，胸口贴稳。",
+        "肘部微屈，沿轨迹把上臂抬向两侧，到肩高附近即可。",
+        "顶端不耸肩，缓慢下放到配重轻触前保持张力。",
+        "上举到肩高约 2 秒、回放 3 秒，整组保持颈部放松；抬起呼气。"
+      ],
+      "techniqueCuesEn": [
+        "Set the seat and pad so the shoulder joint roughly lines up with the machine pivot and the chest is supported.",
+        "Keep a soft elbow and raise the upper arms along the path until about shoulder height.",
+        "Keep the shoulders down at the top, then lower slowly without losing cable tension before the stack touches.",
+        "Lift to shoulder height in about 2 seconds and return in 3 while keeping the neck relaxed; exhale as you raise."
+      ],
+      "regressionZh": "降低配重并用较小幅度练习，先让肩膀始终远离耳朵。 先降到能在起点和终点各控制半秒的负荷；若骨盆或肩胛离开支撑面，就缩小幅度。",
+      "regressionEn": "Lower the stack and use a shorter range while learning to keep the shoulders away from the ears. First reduce to a load you can control for half a second at both ends; if the pelvis or shoulder blades leave support, shorten the range.",
+      "progressionZh": "在不耸肩、不借力时逐步加重，或在顶端停顿一秒。 保持座椅设置不变，连续两次训练完成上限次数后再加最小档位。",
+      "progressionEn": "Add load only without shrugging or momentum, or hold the top for one second. Keep the same seat setup and add the smallest increment only after reaching the top reps in two consecutive sessions."
     },
     {
       "id": "close-grip-pulldown",
@@ -2052,7 +2324,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 610
+      "rank": 610,
+      "techniqueCuesZh": [
+        "躺稳后让双脚固定、肩胛后缩下沉，握距略宽于肩。",
+        "杠铃下放到下胸部，肘部适度收向身侧，手腕保持叠在肘部上方。",
+        "轻触后平稳推起，臀部不离凳；下放吸气、上推呼气。",
+        "杠铃触到下胸后稳定一拍再推，下降吸气、上推呼气，节奏不要因下斜而变快。"
+      ],
+      "techniqueCuesEn": [
+        "Set your feet, retract and depress the shoulder blades, and take a grip just outside shoulder width.",
+        "Lower the bar to the lower chest with the elbows moderately tucked and wrists stacked over the elbows.",
+        "Touch lightly and press smoothly without lifting the glutes; inhale down and exhale as you press.",
+        "Settle the bar for a beat on the lower chest before pressing; inhale down and exhale up without rushing because of the decline angle."
+      ],
+      "regressionZh": "减轻杠铃重量，或改用史密斯机和较小活动范围。 先减到能以 3 秒下放完成 8 次的重量；稳定的下放比强行加幅度更重要。",
+      "regressionEn": "Use a lighter barbell, or switch to a Smith machine with a shorter range of motion. First reduce to a load that allows 8 reps with a 3-second lowering; a stable descent matters more than forcing range.",
+      "progressionZh": "逐步加重，或在下胸触杠后停顿一秒再推。 先在同一动作幅度完成目标次数，再只加最小档位，避免为加重改变肩肘轨迹。",
+      "progressionEn": "Add load gradually, or pause for one second on the lower chest before each press. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change."
     },
     {
       "id": "high-cable-fly",
@@ -2072,7 +2360,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 620
+      "rank": 620,
+      "techniqueCuesZh": [
+        "把滑轮调高，站稳并让双手从肩部上方握住把手。",
+        "肘部微屈固定，沿向下的弧线把双手合到下胸前，胸口保持抬起。",
+        "不要用腰部后仰带动，慢慢回到高位并保持肩膀下沉。",
+        "让把手以可控弧线落向下胸，合拢呼气、慢慢上开时吸气，躯干不晃动。"
+      ],
+      "techniqueCuesEn": [
+        "Set the pulleys high, stand firmly, and take the handles from above shoulder level.",
+        "Hold a soft elbow as the hands sweep down together toward the lower chest, keeping the chest tall.",
+        "Do not lean back to create momentum; return slowly to the high position with the shoulders down.",
+        "Guide the handles in a controlled arc toward the lower chest; exhale as they meet and inhale as you open slowly without moving the torso."
+      ],
+      "regressionZh": "降低配重并缩小打开幅度，或改用蝴蝶机夹胸。 把配重降到能以 2 秒发力、3 秒回程完成 10 次；先消除耸肩或躯干代偿。",
+      "regressionEn": "Lower the stack and shorten the opening range, or use a pec deck instead. Lower the resistance until you can use a 2-second effort and 3-second return for 10 reps; first remove shrugging or torso compensation.",
+      "progressionZh": "在不后仰时加重，或在下胸前的合拢位停顿一秒。 在轨迹和关节角度不变时增加一个小档位，而不是靠缩短行程提高重量。",
+      "progressionEn": "Add load without leaning back, or pause for a second in the squeezed position at the lower chest. Increase one small increment only with the same path and joint angle, rather than shortening range to use more weight."
     },
     {
       "id": "concentration-curl",
@@ -2090,7 +2394,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 630
+      "rank": 630,
+      "techniqueCuesZh": [
+        "坐在凳边，肘部抵在同侧大腿内侧，躯干不要扭转。",
+        "从手臂接近伸直开始，只弯曲肘部把哑铃卷向肩膀。",
+        "顶端收紧后慢慢下放，手腕保持中立，不要借腿顶起重量。",
+        "每次在顶端挤压半秒，再用 3 秒下放；弯起呼气，回到伸展位吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Sit on the bench edge with the elbow braced against the inside of the same thigh and keep the torso square.",
+        "Start from a nearly straight arm and curl the dumbbell toward the shoulder by moving only at the elbow.",
+        "Squeeze at the top, then lower slowly with a neutral wrist and no help from the leg.",
+        "Squeeze for half a second at the top, then lower for 3 seconds; exhale as you curl and inhale into the stretch."
+      ],
+      "regressionZh": "换更轻的哑铃，或用另一只手轻扶工作手臂帮助稳定。 先把重量降到能连续完成 8–10 次且手肘不移位；这样先保住肘部和肩部的位置。",
+      "regressionEn": "Use a lighter dumbbell, or lightly steady the working arm with the other hand. First use a load you can control for 8–10 reps without the elbow moving; this preserves the elbow and shoulder position.",
+      "progressionZh": "在躯干不转动时逐步加重，或让下放持续 3 秒。 当每组能在保留 1–2 次余力的情况下完成上限次数，再增加最小可用重量。",
+      "progressionEn": "Add load while the torso stays square, or make the lowering phase last three seconds. Once you reach the top of the rep range with 1–2 reps in reserve, add the smallest available load."
     },
     {
       "id": "overhead-barbell-triceps",
@@ -2108,7 +2428,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 640
+      "rank": 640,
+      "techniqueCuesZh": [
+        "坐姿或站姿都先收紧腹部，双手握杠铃让上臂贴近耳侧。",
+        "保持肘尖朝前并固定，只让前臂在头后弯伸，避免塌腰。",
+        "伸直时不要猛锁肘，随后控制下放到舒适深度。",
+        "手肘位置整组固定，伸直呼气、回到头后吸气；用平稳节奏避免杠铃摆动。"
+      ],
+      "techniqueCuesEn": [
+        "Whether seated or standing, brace the abs first and hold the bar with the upper arms close to the ears.",
+        "Keep the elbows pointing forward and still, moving only the forearms behind the head without arching the low back.",
+        "Finish the extension without snapping into lockout, then lower to a comfortable depth under control.",
+        "Keep the elbows fixed for the whole set, exhaling on extension and inhaling behind the head; use a smooth rhythm so the bar does not swing."
+      ],
+      "regressionZh": "改用更轻的曲杆或绳索，并缩短头后下放深度。 先选择能让上臂固定、在终点保留微屈的负荷；若肘部前后跑动就降低阻力。",
+      "regressionEn": "Use a lighter EZ bar or cable rope and shorten the behind-the-head range. Choose a load that keeps the upper arm fixed with a soft end range; reduce resistance if the elbows drift forward or back.",
+      "progressionZh": "肘部能固定时小幅加重，或在伸直位停顿一秒。 在上臂不移位时完成目标次数后，再加一个小档位或把回程延长 1 秒。",
+      "progressionEn": "Increase the load in small steps once the elbows stay fixed, or pause for a second in extension. After reaching target reps without upper-arm movement, add one small increment or lengthen the return by one second."
     },
     {
       "id": "single-arm-cable-row",
@@ -2129,7 +2465,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 650
+      "rank": 650,
+      "techniqueCuesZh": [
+        "侧身面对低滑轮，另一只手扶住器械，身体保持方正。",
+        "先让肩胛向前伸，再把肘部贴近身体向后拉到髋部旁。",
+        "顶端不要扭腰或耸肩，慢慢伸臂让肩胛自然前移。",
+        "先完整伸展再拉，不扭转胸廓；拉肘呼气、回放吸气，每侧节奏一致。"
+      ],
+      "techniqueCuesEn": [
+        "Stand side-on to a low pulley, using the free hand for support while keeping the torso square.",
+        "Let the shoulder blade reach forward first, then pull the elbow close to the body back toward the hip.",
+        "Do not rotate or shrug at the finish; extend the arm slowly and let the shoulder blade travel forward naturally.",
+        "Reach fully before each pull without rotating the ribcage; exhale as the elbow rows back and inhale on the return, matching tempo on both sides."
+      ],
+      "regressionZh": "降低配重，缩短拉回距离，或改用双臂坐姿划船。 先选择能让肩胛在底部自然前移、躯干不转动的负荷，必要时缩短最后 10 厘米行程。",
+      "regressionEn": "Lower the stack, use a shorter pull, or switch to a two-arm seated cable row. Choose a load that lets the shoulder blade reach forward at the bottom without torso rotation; if needed, shorten the final 10 cm of range.",
+      "progressionZh": "保持躯干不旋转时逐步加重，或在髋旁停顿一秒。 当两侧都能在顶端停半秒且躯干不借力时，再加一个最小重量档位。",
+      "progressionEn": "Add load while the torso stays square, or pause for a second with the handle beside the hip. Add the smallest increment only after both sides can hold the top for half a second without torso momentum."
     },
     {
       "id": "sumo-deadlift",
@@ -2191,7 +2543,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 670
+      "rank": 670,
+      "techniqueCuesZh": [
+        "坐稳并固定大腿，握距略宽于肩，胸口轻抬、肩膀下沉。",
+        "先让肩胛下压，再把上胸拉向横杆，肘部向下侧方走。",
+        "控制上放直到手臂接近伸直，不要耸肩或把身体大幅后仰。",
+        "下拉约 2 秒、上放 3 秒，胸口轻抬而非大幅后仰；下拉呼气。"
+      ],
+      "techniqueCuesEn": [
+        "Sit tall with the thighs secured, use a grip slightly wider than the shoulders, keep the chest lifted, and set the shoulders down.",
+        "Depress the shoulder blades first, then bring the upper chest toward the bar as the elbows travel down and out.",
+        "Control the return until the arms are nearly straight without shrugging or leaning far back.",
+        "Pull down in about 2 seconds and return in 3 with the chest lightly tall rather than heavily leaned back; exhale on the pull."
+      ],
+      "regressionZh": "降低配重并改用稍窄握距，或换辅助引体机。 先用能让肩胛先下沉、全程不摆动的负荷；必要时只保留到下巴或锁骨高度的无痛行程。",
+      "regressionEn": "Lower the stack and use a slightly narrower grip, or switch to an assisted pull-up machine. Use a load that lets the shoulder blades depress first without swinging; if needed, keep only a comfortable range to chin or collarbone height.",
+      "progressionZh": "在躯干稳定时加重，或在上胸接近横杆时停顿一秒。 当每次都能在底端停半秒、回程控制 3 秒时，再加最小阻力或减少辅助。",
+      "progressionEn": "Add load with a stable torso, or pause for a second as the upper chest approaches the bar. Add the smallest resistance or reduce assistance only after every rep can hold the bottom for half a second and return for 3 seconds."
     },
     {
       "id": "cable-kickback",
@@ -2209,7 +2577,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 680
+      "rank": 680,
+      "techniqueCuesZh": [
+        "面对低滑轮微屈髋，工作上臂贴近身体并固定。",
+        "从肘部弯曲开始，把把手向后上方伸直到手臂与躯干齐平。",
+        "顶端收紧三头肌，慢慢回到起点，避免肩膀前后摆动。",
+        "髋部角度固定，伸肘呼气并在末端停半秒；回程吸气、不要让手臂垂落。"
+      ],
+      "techniqueCuesEn": [
+        "Face a low pulley with a slight hip hinge and keep the working upper arm close to the body.",
+        "From a bent elbow, extend the handle back and up until the arm is in line with the torso.",
+        "Squeeze the triceps at the finish, then return slowly without letting the shoulder swing.",
+        "Hold the hip angle still, exhale as the elbow extends and pause for half a second; inhale on the return without letting the arm drop."
+      ],
+      "regressionZh": "降低配重，或改用双手绳索下压来获得更多稳定。 把配重降到能以 2 秒发力、3 秒回程完成 10 次；先消除耸肩或躯干代偿。",
+      "regressionEn": "Lower the stack, or use a two-hand rope pushdown for more stability. Lower the resistance until you can use a 2-second effort and 3-second return for 10 reps; first remove shrugging or torso compensation.",
+      "progressionZh": "在上臂不摆动时逐步加重，或在伸直位停顿一秒。 在轨迹和关节角度不变时增加一个小档位，而不是靠缩短行程提高重量。",
+      "progressionEn": "Add load while the upper arm stays still, or pause for a second in full extension. Increase one small increment only with the same path and joint angle, rather than shortening range to use more weight."
     },
     {
       "id": "landmine-press",
@@ -2227,7 +2611,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 690
+      "rank": 690,
+      "techniqueCuesZh": [
+        "把杠铃一端固定在地雷架，双手或单手握住另一端，采用前后脚站姿。",
+        "收紧腹部和臀部，从肩前沿斜向前上方推举，肘部不要完全外张。",
+        "控制回到肩前，躯干保持直立，不要用腰部后仰借力。",
+        "每次从肩前稳定起推，推起呼气、沿同一弧线回放吸气；不要用腿借力。"
+      ],
+      "techniqueCuesEn": [
+        "Anchor one end of the bar in a landmine and take a staggered stance while holding the free end with one or both hands.",
+        "Brace the abs and glutes, then press on a diagonal path up and forward from the shoulder without flaring the elbow fully out.",
+        "Bring the bar back to the shoulder under control with an upright torso rather than leaning through the low back.",
+        "Start each rep settled at the shoulder, exhale as you press and inhale on the same arc back down; do not use leg drive."
+      ],
+      "regressionZh": "用更轻的杠铃片并改为双手推举，或缩短末端伸展。 先减到能以 3 秒下放完成 8 次的重量；稳定的下放比强行加幅度更重要。",
+      "regressionEn": "Use fewer plates and press with both hands, or shorten the final overhead range. First reduce to a load that allows 8 reps with a 3-second lowering; a stable descent matters more than forcing range.",
+      "progressionZh": "逐步加片，或改为单臂推举并在顶端停顿一秒。 先在同一动作幅度完成目标次数，再只加最小档位，避免为加重改变肩肘轨迹。",
+      "progressionEn": "Add plates gradually, or move to a single-arm press with a one-second pause at the top. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change."
     },
     {
       "id": "push-press",
@@ -2249,7 +2649,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 700
+      "rank": 700,
+      "techniqueCuesZh": [
+        "杠铃放在前肩，双脚站稳，先收紧腹部并保持胸口抬起。",
+        "做浅而垂直的屈膝下沉，再用腿部快速蹬地把杠铃送过头。",
+        "杠铃过头后身体重新站稳，核心收紧，再控制回到前肩。",
+        "屈膝与蹬地是一段干脆的节奏，杠铃过额后呼气；每次回肩前重新站稳。"
+      ],
+      "techniqueCuesEn": [
+        "Rack the bar on the front shoulders with a solid stance, braced abs, and a tall chest.",
+        "Dip straight down through a shallow knee bend, then drive hard through the legs to send the bar overhead.",
+        "Once the bar is overhead, regain a stable standing position and brace before lowering it back to the shoulders.",
+        "Dip and drive as one crisp sequence, then exhale once the bar clears the forehead; reset tall at the shoulders before each rep."
+      ],
+      "regressionZh": "改用轻杠或哑铃推举，先练不借腿的严格推举。 先减到能以 3 秒下放完成 8 次的重量；稳定的下放比强行加幅度更重要。",
+      "regressionEn": "Use a lighter bar or dumbbells and practice a strict press before adding the leg drive. First reduce to a load that allows 8 reps with a 3-second lowering; a stable descent matters more than forcing range.",
+      "progressionZh": "在每次接杠都稳定时逐步加重，或在顶端停顿一秒。 先在同一动作幅度完成目标次数，再只加最小档位，避免为加重改变肩肘轨迹。",
+      "progressionEn": "Add load once every overhead catch is stable, or pause for a second overhead. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change."
     },
     {
       "id": "meadows-row",
@@ -2264,12 +2680,28 @@
         "row"
       ],
       "startWeightKg": 20.0,
-      "nameZh": "草地划船",
+      "nameZh": "梅多斯划船",
       "nameEn": "Meadows row",
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 710
+      "rank": 710,
+      "techniqueCuesZh": [
+        "一端杠铃固定在地雷架，身体侧对杠铃并髋部后坐，空手扶住前腿。",
+        "握住粗端，先让肩胛向前伸，再把肘部向后拉向髋部。",
+        "顶端避免扭转躯干，慢慢放回并保持背部平直。",
+        "每次下放到肩胛自然前移后再拉，保持躯干角度；拉起呼气、放下吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Set one end of the bar in a landmine, stand side-on with the hips back, and brace the front leg with the free hand.",
+        "Hold the thick end, let the shoulder blade reach first, then pull the elbow back toward the hip.",
+        "Avoid twisting at the top; lower slowly while keeping the back flat.",
+        "Let the shoulder blade travel forward at the bottom before each pull while holding the torso angle; exhale on the row and inhale down."
+      ],
+      "regressionZh": "减轻杠铃片，缩短拉动幅度，或改用胸托哑铃划船。 先选择能让肩胛在底部自然前移、躯干不转动的负荷，必要时缩短最后 10 厘米行程。",
+      "regressionEn": "Remove plates, use a shorter pull, or switch to a chest-supported dumbbell row. Choose a load that lets the shoulder blade reach forward at the bottom without torso rotation; if needed, shorten the final 10 cm of range.",
+      "progressionZh": "在躯干不旋转时逐步加片，或在髋旁停顿一秒。 当两侧都能在顶端停半秒且躯干不借力时，再加一个最小重量档位。",
+      "progressionEn": "Add plates while the torso remains square, or pause for a second beside the hip. Add the smallest increment only after both sides can hold the top for half a second without torso momentum."
     },
     {
       "id": "machine-preacher-curl",
@@ -2287,7 +2719,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 720
+      "rank": 720,
+      "techniqueCuesZh": [
+        "调整座椅，让腋下和上臂完整贴住垫子，肩膀自然下沉。",
+        "弯举时肘部留在垫上，手腕中立，不要用身体后仰带动。",
+        "顶端收紧后慢慢下放，配重不要撞击。",
+        "用 2 秒弯举、3 秒回放，前臂全程贴住垫面；弯起呼气、下放吸气。"
+      ],
+      "techniqueCuesEn": [
+        "Adjust the seat so the armpits and upper arms sit fully on the pad, with the shoulders relaxed down.",
+        "Curl while the elbows stay on the pad and the wrists stay neutral; do not lean back to move the handle.",
+        "Squeeze at the top and lower slowly without letting the stack crash.",
+        "Curl in 2 seconds and return in 3 with the forearms staying on the pad; exhale up and inhale down."
+      ],
+      "regressionZh": "降低配重并缩短底部伸展范围，先保持肩膀不前移。 先把重量降到能连续完成 8–10 次且手肘不移位；这样先保住肘部和肩部的位置。",
+      "regressionEn": "Lower the stack and shorten the bottom stretch while keeping the shoulders from drifting forward. First use a load you can control for 8–10 reps without the elbow moving; this preserves the elbow and shoulder position.",
+      "progressionZh": "保持肘部贴垫时逐步加重，或把下放延长到 3 秒。 当每组能在保留 1–2 次余力的情况下完成上限次数，再增加最小可用重量。",
+      "progressionEn": "Add load with the elbows planted on the pad, or extend the lowering phase to three seconds. Once you reach the top of the rep range with 1–2 reps in reserve, add the smallest available load."
     },
     {
       "id": "leg-extension",
@@ -2385,7 +2833,23 @@
       "loadType": "external",
       "loadFactor": 2.0,
       "isGuided": false,
-      "rank": 750
+      "rank": 750,
+      "techniqueCuesZh": [
+        "双手持哑铃站直，手臂自然垂在身体两侧，颈部放松。",
+        "只把肩膀向上提向耳朵，手肘和手腕保持放松直线。",
+        "顶端停一下，再慢慢下沉到完全拉长，别绕肩。",
+        "肩膀上提和下沉各用约 2 秒，顶端呼气、底部吸气；不要绕圈耸肩。"
+      ],
+      "techniqueCuesEn": [
+        "Stand tall with dumbbells hanging at your sides and the neck relaxed.",
+        "Lift the shoulders straight toward the ears while the elbows and wrists stay relaxed and straight.",
+        "Hold the top briefly, then lower all the way into a stretch without rolling the shoulders.",
+        "Take about 2 seconds to lift and 2 seconds to lower the shoulders, exhaling at the top and inhaling at the bottom; do not roll them in circles."
+      ],
+      "regressionZh": "减轻哑铃，或先用单臂并扶住固定物保持平衡。 先减到能让肩膀直上直下、顶端停半秒的重量；不要为重量加入绕肩或屈肘。",
+      "regressionEn": "Use lighter dumbbells, or start one arm at a time while holding a stable support. Reduce to a weight that lets the shoulders travel straight up and down with a half-second top hold; do not add rolling or elbow bend for load.",
+      "progressionZh": "在不绕肩、不借腿时加重，或在顶端停顿两秒。 连续两组都能保持颈部放松和完整下沉后，再增加最小档位。",
+      "progressionEn": "Add load without shoulder rolls or leg drive, or hold the top for two seconds. Add the smallest increment only after two sets keep the neck relaxed and reach a full lower position."
     },
     {
       "id": "cable-crunch",
@@ -2437,7 +2901,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 770
+      "rank": 770,
+      "techniqueCuesZh": [
+        "调好座椅和胸垫，让骨盆和下背贴稳，双手轻握把手。",
+        "先收紧腹部并让肋骨向下，再用躯干屈曲把胸骨带向骨盆。",
+        "不要用手臂猛拉，慢慢回到起点且不让配重撞击。",
+        "卷起时缓慢呼气到肋骨下沉，回程吸气约 3 秒；不要靠惯性撞击配重。"
+      ],
+      "techniqueCuesEn": [
+        "Set the seat and chest pad so the pelvis and low back are supported, holding the handles lightly.",
+        "Brace the abs and keep the ribs down, then curl the torso by bringing the sternum toward the pelvis.",
+        "Do not yank with the arms; return slowly without letting the stack slam.",
+        "Exhale slowly as the ribs come down into the crunch, then return for about 3 seconds on an inhale; do not let the weight slam."
+      ],
+      "regressionZh": "降低配重并缩短卷起范围，先保持下背贴稳靠垫。 先缩短到能让肋骨向下、骨盆不滑动的范围；每组保留 2 次余力而非用惯性完成。",
+      "regressionEn": "Lower the stack and shorten the crunch range while keeping the low back supported. Shorten the range until the ribs stay down and the pelvis does not slide; keep 2 reps in reserve rather than using momentum.",
+      "progressionZh": "在骨盆不滑动时逐步加重，或在卷起位停顿一秒。 先稳定完成 10–12 次，再增加 1–2 秒停顿或小幅加重，不能以拉颈或摆动换强度。",
+      "progressionEn": "Add load while the pelvis stays still, or pause for a second in the curled position. First make 10–12 reps stable, then add a 1–2-second hold or small load; never trade neck pulling or swing for intensity."
     },
     {
       "id": "db-crunch",
@@ -2455,7 +2935,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 780
+      "rank": 780,
+      "techniqueCuesZh": [
+        "仰卧屈膝，哑铃轻放在胸前，双脚踩稳地面。",
+        "先让肋骨向下，再卷起上背让胸骨靠近骨盆，不要用手拉脖子。",
+        "顶端收紧腹部，慢慢回到肩胛轻触地面的位置。",
+        "每次卷起时呼气并停半秒，回落用 2–3 秒吸气；保持下背不猛拱离地面。"
+      ],
+      "techniqueCuesEn": [
+        "Lie on your back with knees bent, feet planted, and a dumbbell held lightly over the chest.",
+        "Bring the ribs down first, then curl the upper back by moving the sternum toward the pelvis without pulling on the neck.",
+        "Squeeze the abs at the top and lower slowly until the shoulder blades lightly touch down.",
+        "Exhale into each crunch and hold for half a second, then lower for 2–3 seconds on an inhale without sharply arching off the floor."
+      ],
+      "regressionZh": "去掉哑铃并缩小卷起幅度，双手可交叉放在胸前。 先缩短到能让肋骨向下、骨盆不滑动的范围；每组保留 2 次余力而非用惯性完成。",
+      "regressionEn": "Remove the dumbbell and use a smaller crunch range, with the hands crossed over the chest. Shorten the range until the ribs stay down and the pelvis does not slide; keep 2 reps in reserve rather than using momentum.",
+      "progressionZh": "逐步加重，或在顶端停顿两秒并延长下放。 先稳定完成 10–12 次，再增加 1–2 秒停顿或小幅加重，不能以拉颈或摆动换强度。",
+      "progressionEn": "Add load gradually, or hold the top for two seconds and slow the return. First make 10–12 reps stable, then add a 1–2-second hold or small load; never trade neck pulling or swing for intensity."
     },
     {
       "id": "push-up",
@@ -2557,7 +3053,23 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 820
+      "rank": 820,
+      "techniqueCuesZh": [
+        "把杠铃放在合适高度，身体保持一条直线，脚跟踩地或抬高调整难度。",
+        "先收肩胛，再把胸口拉向杠铃，肘部向后走。",
+        "控制下放到手臂接近伸直，不要塌腰或耸肩。",
+        "身体始终像木板一样移动，拉胸呼气、下放吸气；底部停稳再开始下一次。"
+      ],
+      "techniqueCuesEn": [
+        "Set the bar at a suitable height and hold a straight body line, using foot position to adjust difficulty.",
+        "Set the shoulder blades first, then pull the chest toward the bar as the elbows travel back.",
+        "Lower under control until the arms are nearly straight without sagging the hips or shrugging.",
+        "Move the body as one plank, exhaling as the chest rows up and inhaling down; settle at the bottom before the next rep."
+      ],
+      "regressionZh": "把杠铃调高并屈膝，减少身体需要拉起的重量。 先选择能让肩胛在底部自然前移、躯干不转动的负荷，必要时缩短最后 10 厘米行程。",
+      "regressionEn": "Raise the bar and bend the knees to reduce the amount of bodyweight you pull. Choose a load that lets the shoulder blade reach forward at the bottom without torso rotation; if needed, shorten the final 10 cm of range.",
+      "progressionZh": "降低杠铃高度或抬高双脚，并在顶端停顿一秒。 当两侧都能在顶端停半秒且躯干不借力时，再加一个最小重量档位。",
+      "progressionEn": "Lower the bar height or elevate the feet, adding a one-second pause at the top. Add the smallest increment only after both sides can hold the top for half a second without torso momentum."
     },
     {
       "id": "bodyweight-squat",
@@ -2577,7 +3089,23 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 830
+      "rank": 830,
+      "techniqueCuesZh": [
+        "双脚与肩同宽站稳，脚尖自然朝向膝盖会走的方向。",
+        "先向后下方坐，膝盖顺着脚尖移动，胸口保持自然抬起。",
+        "下蹲到能保持脚掌全着地的深度，再均匀蹬地站起。",
+        "下蹲约 3 秒、站起约 2 秒，底部吸气完成后蹬地呼气；不要抢节奏。"
+      ],
+      "techniqueCuesEn": [
+        "Stand with feet about shoulder width, with toes pointed in the direction the knees will travel.",
+        "Sit down and back first, letting the knees track with the toes while the chest stays naturally tall.",
+        "Descend only as deep as you can keep the whole foot down, then drive evenly through the floor to stand.",
+        "Lower for about 3 seconds and stand in 2, finishing the inhale at the bottom before exhaling through the drive; do not rush."
+      ],
+      "regressionZh": "坐到箱子或凳子上再站起，必要时扶住固定物。 先缩短到骨盆和足弓都能稳定的深度，并保留约 2 次余力；深度由控制决定。",
+      "regressionEn": "Squat to a box or bench and stand back up, using a stable support if needed. First use a depth where the pelvis and foot arches stay stable with about 2 reps in reserve; control determines depth.",
+      "progressionZh": "放慢下放、在底部停顿，或改为杯式深蹲增加负重。 当相同深度能连续完成目标次数且膝盖轨迹稳定，再增加最小阻力或 5% 以内的负荷。",
+      "progressionEn": "Slow the descent, pause at the bottom, or progress to a loaded goblet squat. When the same depth and knee tracking hold through the target reps, add the smallest resistance or no more than about 5% load."
     },
     {
       "id": "bodyweight-lunge",
@@ -2597,7 +3125,23 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 840
+      "rank": 840,
+      "techniqueCuesZh": [
+        "站稳后向前迈出可控一步，前后脚都保持脚掌稳定。",
+        "垂直下沉，让前膝顺着脚尖、后膝靠近地面，躯干保持直立。",
+        "以前脚蹬地回到起点，不要让前膝向内塌。",
+        "每次下沉时吸气、前脚蹬回时呼气，左右腿用相同深度和节奏完成。"
+      ],
+      "techniqueCuesEn": [
+        "Step forward into a controllable stride with both feet planted securely.",
+        "Lower straight down with the front knee tracking the toes and the rear knee moving toward the floor, keeping the torso tall.",
+        "Drive through the front foot to return, without letting the front knee collapse inward.",
+        "Inhale as you lower and exhale as the front foot drives you back, using the same depth and cadence on both sides."
+      ],
+      "regressionZh": "缩短步幅、扶住固定物，或改做原地分腿蹲。 先缩短到骨盆和足弓都能稳定的深度，并保留约 2 次余力；深度由控制决定。",
+      "regressionEn": "Use a shorter step, hold a stable support, or switch to a stationary split squat. First use a depth where the pelvis and foot arches stay stable with about 2 reps in reserve; control determines depth.",
+      "progressionZh": "持哑铃加重，或改为后脚抬高的分腿蹲。 当相同深度能连续完成目标次数且膝盖轨迹稳定，再增加最小阻力或 5% 以内的负荷。",
+      "progressionEn": "Add dumbbells, or progress to a rear-foot-elevated split squat. When the same depth and knee tracking hold through the target reps, add the smallest resistance or no more than about 5% load."
     },
     {
       "id": "hanging-knee-raise",
@@ -2615,7 +3159,23 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 850
+      "rank": 850,
+      "techniqueCuesZh": [
+        "悬垂时先握稳横杆，肩膀轻轻下沉，身体不要大幅摆动。",
+        "收紧腹部，让骨盆微微后卷，再把膝盖卷向胸前。",
+        "顶端停一下后缓慢放下，避免靠甩腿完成。",
+        "先静止一拍再卷骨盆，抬膝呼气、慢慢下放吸气；避免借摆动连续甩动。"
+      ],
+      "techniqueCuesEn": [
+        "Hang with a secure grip, shoulders lightly depressed, and no large body swing.",
+        "Brace the abs, tuck the pelvis slightly, and curl the knees toward the chest.",
+        "Pause at the top, then lower slowly rather than using a leg swing.",
+        "Become still for a beat before curling the pelvis, exhale as the knees rise and inhale on the slow lower; avoid chaining reps with a swing."
+      ],
+      "regressionZh": "改做仰卧屈膝举腿，或只抬到髋部高度。 先选择能以 3 秒下放完成 6–8 次的版本，必要时增加支撑或缩短行程以保持姿势。",
+      "regressionEn": "Switch to a lying knee raise, or lift only to hip height. First choose a version you can lower for 3 seconds for 6–8 reps; add support or shorten range if needed to preserve position.",
+      "progressionZh": "伸直双腿做举腿，或在顶端停顿两秒。 先把动作做成稳定的 8–12 次，再通过减少支撑、延长行程或改变杠杆进阶。",
+      "progressionEn": "Straighten the legs for hanging leg raises, or hold the top for two seconds. First make 8–12 reps stable, then progress by reducing support, lengthening range, or changing leverage."
     },
     {
       "id": "hammer-chest-press",
@@ -2636,7 +3196,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 860
+      "rank": 860,
+      "techniqueCuesZh": [
+        "调整座椅让握把对准胸部中线，双脚踩稳、肩胛贴住靠垫。",
+        "手腕叠在肘部上方，沿机器轨迹平稳推起，不要耸肩。",
+        "控制回到胸前，保持肩胛稳定且不让配重撞击。",
+        "回到起点时吸气、沿轨迹推起时呼气；每次保持 2 秒推、3 秒回的均匀节奏。"
+      ],
+      "techniqueCuesEn": [
+        "Set the seat so the handles line up with mid-chest, with feet planted and shoulder blades supported.",
+        "Stack the wrists over the elbows and press smoothly along the path without shrugging.",
+        "Return to chest level under control, keeping the shoulder blades stable and the load quiet.",
+        "Inhale as the handles return and exhale as you press along the path; use an even 2-second press and 3-second return."
+      ],
+      "regressionZh": "降低配重并缩短底部范围，先保持肩膀贴住靠垫。 先减到能以 3 秒下放完成 8 次的重量；稳定的下放比强行加幅度更重要。",
+      "regressionEn": "Lower the load and shorten the bottom range while keeping the shoulders supported. First reduce to a load that allows 8 reps with a 3-second lowering; a stable descent matters more than forcing range.",
+      "progressionZh": "逐步加片，或在底部停顿一秒再推起。 先在同一动作幅度完成目标次数，再只加最小档位，避免为加重改变肩肘轨迹。",
+      "progressionEn": "Add plates gradually, or pause for a second at the bottom before pressing. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change."
     },
     {
       "id": "incline-hammer-press",
@@ -2657,7 +3233,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 870
+      "rank": 870,
+      "techniqueCuesZh": [
+        "调好座椅，让握把从上胸前起始，背部和肩胛贴稳靠垫。",
+        "沿上斜轨迹推起，肘部略低于手腕，不要塌腰或耸肩。",
+        "缓慢回到上胸前并保持胸口和臀部接触坐垫。",
+        "肩胛始终贴稳靠背，下降吸气、推起呼气；每次回程至少控制 3 秒。"
+      ],
+      "techniqueCuesEn": [
+        "Set the seat so the handles start in front of the upper chest, with the back and shoulder blades supported.",
+        "Press along the incline path with elbows slightly below the wrists, without arching the low back or shrugging.",
+        "Return slowly to the upper chest while keeping the chest and glutes connected to the pad.",
+        "Keep the shoulder blades supported against the backrest, inhale down and exhale up; control each return for at least 3 seconds."
+      ],
+      "regressionZh": "降低配重并把座椅调得更直，缩短底部幅度。 先减到能以 3 秒下放完成 8 次的重量；稳定的下放比强行加幅度更重要。",
+      "regressionEn": "Lower the load, raise the seat angle, and shorten the bottom range. First reduce to a load that allows 8 reps with a 3-second lowering; a stable descent matters more than forcing range.",
+      "progressionZh": "在肩胛稳定时逐步加片，或在底部停顿一秒。 先在同一动作幅度完成目标次数，再只加最小档位，避免为加重改变肩肘轨迹。",
+      "progressionEn": "Add plates with stable shoulder blades, or pause for a second at the bottom. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change."
     },
     {
       "id": "hammer-row",
@@ -2678,7 +3270,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 880
+      "rank": 880,
+      "techniqueCuesZh": [
+        "胸口贴住胸垫，双脚踩稳，让手臂在肩下自然伸直。",
+        "先把肩胛轻轻收回，再把肘部向后拉向下肋。",
+        "顶端不耸肩，慢慢伸臂让肩胛自然前移。",
+        "拉到下肋时呼气并停半秒，回程吸气、让肩胛自然前移；两侧手柄同步。"
+      ],
+      "techniqueCuesEn": [
+        "Keep the chest on the pad and feet planted, starting with the arms hanging below the shoulders.",
+        "Lightly set the shoulder blades, then pull the elbows back toward the lower ribs.",
+        "Do not shrug at the finish; extend the arms slowly and let the shoulder blades move forward naturally.",
+        "Exhale and hold for half a second at the lower ribs, inhale as the shoulders reach forward, and keep both handles in sync."
+      ],
+      "regressionZh": "降低配重，缩短拉回距离，先保持胸口不离垫。 先选择能让肩胛在底部自然前移、躯干不转动的负荷，必要时缩短最后 10 厘米行程。",
+      "regressionEn": "Lower the load and use a shorter pull while keeping the chest on the pad. Choose a load that lets the shoulder blade reach forward at the bottom without torso rotation; if needed, shorten the final 10 cm of range.",
+      "progressionZh": "在胸口不离垫时加片，或在顶端停顿一秒。 当两侧都能在顶端停半秒且躯干不借力时，再加一个最小重量档位。",
+      "progressionEn": "Add plates while the chest stays on the pad, or pause for a second at the top. Add the smallest increment only after both sides can hold the top for half a second without torso momentum."
     },
     {
       "id": "hammer-pulldown",
@@ -2698,7 +3306,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 890
+      "rank": 890,
+      "techniqueCuesZh": [
+        "坐稳固定大腿，胸口轻抬，双手握住手柄并让肩膀下沉。",
+        "先下压肩胛，再把肘部向下拉到身体两侧。",
+        "控制回程到手臂接近伸直，不要用后仰甩动完成。",
+        "先稳住躯干再下拉，肘部到底时呼气；回放约 3 秒吸气，不让配重片撞击。"
+      ],
+      "techniqueCuesEn": [
+        "Sit securely with the thighs fixed, chest lightly tall, hands on the handles, and shoulders down.",
+        "Depress the shoulder blades first, then pull the elbows down to the sides of the body.",
+        "Control the return until the arms are nearly straight without rocking back to move the weight.",
+        "Set the torso before pulling, exhaling when the elbows reach the sides; return for about 3 seconds on an inhale without letting the plates collide."
+      ],
+      "regressionZh": "降低配重或缩短底部拉动范围，保持躯干稳定。 先用能让肩胛先下沉、全程不摆动的负荷；必要时只保留到下巴或锁骨高度的无痛行程。",
+      "regressionEn": "Lower the load or use a shorter pull while keeping the torso stable. Use a load that lets the shoulder blades depress first without swinging; if needed, keep only a comfortable range to chin or collarbone height.",
+      "progressionZh": "在不后仰时逐步加片，或在底端停顿一秒。 当每次都能在底端停半秒、回程控制 3 秒时，再加最小阻力或减少辅助。",
+      "progressionEn": "Add plates without leaning back, or pause for a second at the bottom. Add the smallest resistance or reduce assistance only after every rep can hold the bottom for half a second and return for 3 seconds."
     },
     {
       "id": "hammer-shoulder-press",
@@ -2718,7 +3342,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 900
+      "rank": 900,
+      "techniqueCuesZh": [
+        "调整座椅，让握把从耳朵略下方起始，背部贴稳靠垫。",
+        "收紧腹部，沿轨迹向上推到手臂接近伸直，不要耸肩。",
+        "慢慢回到起点，肘部在手腕下方、臀部不离座。",
+        "推起呼气、回到耳旁高度吸气，保持 2 秒上推和 3 秒回放的节奏。"
+      ],
+      "techniqueCuesEn": [
+        "Set the seat so the handles start just below ear level, with the back supported by the pad.",
+        "Brace the abs and press up along the path until the arms are nearly straight without shrugging.",
+        "Return slowly with elbows below the wrists and glutes staying on the seat.",
+        "Exhale as you press and inhale as the handles return near ear level, using a 2-second press and 3-second return."
+      ],
+      "regressionZh": "降低配重并缩短底部范围，或改用地雷推举。 先减到能以 3 秒下放完成 8 次的重量；稳定的下放比强行加幅度更重要。",
+      "regressionEn": "Lower the load and shorten the bottom range, or switch to a landmine press. First reduce to a load that allows 8 reps with a 3-second lowering; a stable descent matters more than forcing range.",
+      "progressionZh": "在躯干不后仰时逐步加片，或在顶端停顿一秒。 先在同一动作幅度完成目标次数，再只加最小档位，避免为加重改变肩肘轨迹。",
+      "progressionEn": "Add plates while the torso stays upright, or pause for a second at the top. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change."
     },
     {
       "id": "pendulum-squat",
@@ -2738,7 +3378,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 910
+      "rank": 910,
+      "techniqueCuesZh": [
+        "背部贴稳靠垫、脚掌踩满踏板，先用轻重量熟悉摆臂轨迹。",
+        "控制下沉，让膝盖顺着脚尖方向移动，骨盆不要卷起。",
+        "在可控深度用中足和前脚掌均匀蹬起，不要在底部弹起。",
+        "沿轨迹下沉约 3 秒到底部吸气，稳定后用脚掌蹬起呼气，避免反弹。"
+      ],
+      "techniqueCuesEn": [
+        "Keep the back supported and feet flat on the platform, starting light to learn the swing path.",
+        "Lower under control with knees tracking the toes and without the pelvis curling under.",
+        "Drive evenly through the midfoot and forefoot from a controllable depth rather than bouncing out of the bottom.",
+        "Follow the path down for about 3 seconds while inhaling at the bottom, then drive through the feet on an exhale without rebounding."
+      ],
+      "regressionZh": "降低配重并缩短下沉深度，先保持骨盆和脚掌稳定。 先缩短到骨盆和足弓都能稳定的深度，并保留约 2 次余力；深度由控制决定。",
+      "regressionEn": "Lower the load and use a shallower depth while keeping the pelvis and feet stable. First use a depth where the pelvis and foot arches stay stable with about 2 reps in reserve; control determines depth.",
+      "progressionZh": "在深度和膝盖轨迹稳定时逐步加片，或在底部停顿一秒。 当相同深度能连续完成目标次数且膝盖轨迹稳定，再增加最小阻力或 5% 以内的负荷。",
+      "progressionEn": "Add plates when depth and knee tracking stay consistent, or pause for a second at the bottom. When the same depth and knee tracking hold through the target reps, add the smallest resistance or no more than about 5% load."
     },
     {
       "id": "smith-squat",
@@ -2759,7 +3415,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 920
+      "rank": 920,
+      "techniqueCuesZh": [
+        "杠铃放在上背舒适位置，双脚略在杠铃前方，核心收紧。",
+        "沿固定轨迹竖直下沉，膝盖顺着脚尖；上背始终压住杠铃，不要前后离杠。",
+        "下到可控深度后均匀蹬地站起，不要把膝盖锁死。",
+        "沿导轨下沉约 3 秒时吸气，站起时呼气；每次都让杠铃在上背保持稳定接触。"
+      ],
+      "techniqueCuesEn": [
+        "Place the bar comfortably across the upper back with feet slightly in front of it and abs braced.",
+        "Descend vertically along the fixed path with the knees tracking the toes; keep the upper back firmly against the bar without drifting forward or backward.",
+        "Descend to a controlled depth, then drive evenly to stand without snapping the knees into lockout.",
+        "Inhale as you descend along the rails for about 3 seconds and exhale as you stand; keep the bar in stable contact with the upper back on every rep."
+      ],
+      "regressionZh": "降低杠铃重量并缩短深度，或先做徒手深蹲。 先用空杆或轻杠，在可控深度停 1 秒确认足底压力均匀；不要靠导轨掩盖失控。",
+      "regressionEn": "Use a lighter bar and a shorter depth, or begin with bodyweight squats. Start with an empty or light bar and pause one second at a controllable depth to confirm even foot pressure; do not let the rails hide a loss of control.",
+      "progressionZh": "逐步加重，或在底部停顿一秒再站起。 在导轨路径、脚位和动作深度都不变时增加最小杠铃片；不以缩短幅度换重量。",
+      "progressionEn": "Add load gradually, or pause for a second at the bottom before standing. Add the smallest plates only with the same rail path, foot position, and depth; do not trade range for weight."
     },
     {
       "id": "smith-bench-press",
@@ -2780,7 +3452,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 930
+      "rank": 930,
+      "techniqueCuesZh": [
+        "调好凳位，双脚踩稳，肩胛后缩下沉并贴住凳面。",
+        "手腕叠在肘部上方，沿固定轨迹把杠铃下放到中胸。",
+        "轻触后平稳推起，臀部不离凳；下放吸气、推起呼气。",
+        "轻触中胸后保持节奏，下降吸气、推起呼气；不要依靠导轨加快反弹。"
+      ],
+      "techniqueCuesEn": [
+        "Set the bench, plant the feet, and keep the shoulder blades retracted and down on the pad.",
+        "Stack the wrists over the elbows and lower the bar along its path to mid-chest.",
+        "Touch lightly and press smoothly without lifting the glutes; inhale down and exhale up.",
+        "Touch the mid-chest lightly while keeping the cadence, inhale down and exhale up; do not use the rails to rebound faster."
+      ],
+      "regressionZh": "减轻杠铃重量并缩短下放幅度，先保持肩胛固定。 先减到能以 3 秒下放完成 8 次的重量；稳定的下放比强行加幅度更重要。",
+      "regressionEn": "Use a lighter bar and a shorter descent while learning to keep the shoulder blades set. First reduce to a load that allows 8 reps with a 3-second lowering; a stable descent matters more than forcing range.",
+      "progressionZh": "在轨迹稳定时逐步加重，或在胸前停顿一秒。 先在同一动作幅度完成目标次数，再只加最小档位，避免为加重改变肩肘轨迹。",
+      "progressionEn": "Add load once the path stays stable, or pause for a second at the chest. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change."
     },
     {
       "id": "smith-incline-press",
@@ -2801,7 +3489,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 940
+      "rank": 940,
+      "techniqueCuesZh": [
+        "把凳子调成较低上斜，双脚踩稳，肩胛后缩下沉。",
+        "杠铃下放到上胸，肘部略收，手腕始终叠在肘部上方。",
+        "沿轨迹推回起点，避免耸肩和臀部离凳。",
+        "下放到上胸吸气、沿导轨推起呼气；每次回程约 3 秒，臀部保持不离凳。"
+      ],
+      "techniqueCuesEn": [
+        "Use a low incline, plant the feet, and keep the shoulder blades retracted and down.",
+        "Lower the bar to the upper chest with the elbows slightly tucked and wrists stacked over the elbows.",
+        "Press back along the path without shrugging or lifting the glutes from the bench.",
+        "Inhale as the bar lowers to the upper chest and exhale as it travels up the rails; take about 3 seconds on each return with the glutes on the bench."
+      ],
+      "regressionZh": "减轻重量并缩短下放幅度，或改为平板史密斯卧推。 先减到能以 3 秒下放完成 8 次的重量；稳定的下放比强行加幅度更重要。",
+      "regressionEn": "Use less load and a shorter descent, or switch to a flat Smith press. First reduce to a load that allows 8 reps with a 3-second lowering; a stable descent matters more than forcing range.",
+      "progressionZh": "逐步加重，或在上胸停顿一秒后推起。 先在同一动作幅度完成目标次数，再只加最小档位，避免为加重改变肩肘轨迹。",
+      "progressionEn": "Add load gradually, or pause for a second on the upper chest before pressing. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change."
     },
     {
       "id": "smith-overhead-press",
@@ -2822,7 +3526,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 950
+      "rank": 950,
+      "techniqueCuesZh": [
+        "杠铃在前肩高度起始，双脚站稳、臀部和腹部同时收紧。",
+        "沿竖直轨迹推过头顶，肘部在手腕下方，不要塌腰。",
+        "控制下放到下巴附近；杠铃经过额头时头部自然微微后让，随后回到中立位。",
+        "杠铃下放到下巴附近时吸气，推过头顶时呼气；头部在杠铃通过后自然回到中立位。"
+      ],
+      "techniqueCuesEn": [
+        "Start with the bar at the front shoulders, feet stable, and both glutes and abs braced.",
+        "Press vertically overhead with elbows under the wrists and no low-back arch.",
+        "Lower with control to around chin level, letting the head move back naturally and then return to neutral.",
+        "Inhale as the bar lowers near chin level and exhale as you press overhead; let the head return naturally to neutral once the bar has passed."
+      ],
+      "regressionZh": "减轻重量、缩短底部范围，或改用地雷推举。 先用空杆或轻杠，在可控深度停 1 秒确认足底压力均匀；不要靠导轨掩盖失控。",
+      "regressionEn": "Use less load and a shorter bottom range, or switch to a landmine press. Start with an empty or light bar and pause one second at a controllable depth to confirm even foot pressure; do not let the rails hide a loss of control.",
+      "progressionZh": "躯干保持直立时逐步加重，或在顶端停顿一秒。 在导轨路径、脚位和动作深度都不变时增加最小杠铃片；不以缩短幅度换重量。",
+      "progressionEn": "Add load while the torso stays upright, or pause for a second overhead. Add the smallest plates only with the same rail path, foot position, and depth; do not trade range for weight."
     },
     {
       "id": "smith-calf-raise",
@@ -2840,7 +3560,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 960
+      "rank": 960,
+      "techniqueCuesZh": [
+        "前脚掌踩稳踏板，杠铃垫在上背，双手只为保持平衡。",
+        "脚跟缓慢下降获得拉伸，再用前脚掌把身体推高。",
+        "顶端停一下，膝盖保持伸直但不猛锁。",
+        "脚跟下沉时吸气、提到最高时呼气；每次底部停半秒，避免利用杠铃反弹。"
+      ],
+      "techniqueCuesEn": [
+        "Place the forefeet securely on the platform with the bar across the upper back, using the hands only for balance.",
+        "Lower the heels slowly into a stretch, then press through the forefoot to rise.",
+        "Pause at the top with knees straight but not forcefully locked.",
+        "Inhale as the heels descend and exhale at the top; pause for half a second in the bottom stretch instead of rebounding under the bar."
+      ],
+      "regressionZh": "去掉杠铃或减轻重量，并在地面上做小幅度提踵。 先用能在最低伸展位停 1 秒的负荷；如果脚跟回弹，说明当前阻力或幅度过大。",
+      "regressionEn": "Remove the bar or reduce the load, and use a shorter range on flat ground. Use a load that lets you pause one second in the bottom stretch; rebound means the resistance or range is currently too much.",
+      "progressionZh": "逐步加重，或改成单腿并在底部停顿一秒。 保持膝角不变时每侧增加最小重量，并把完整伸展和顶端收缩都保留下来。",
+      "progressionEn": "Add load gradually, or progress to single-leg reps with a one-second bottom pause. Add the smallest load while keeping the knee angle fixed and preserving both the full stretch and top contraction."
     },
     {
       "id": "smith-shrug",
@@ -2860,7 +3596,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 970
+      "rank": 970,
+      "techniqueCuesZh": [
+        "站在杠铃下方，双手握杠但手臂自然伸直，颈部放松。",
+        "只把肩膀直线上提向耳朵，不要屈肘或绕肩。",
+        "顶端停顿后慢慢完全下沉，让斜方肌拉长。",
+        "肩膀直线上提时呼气、完全下沉时吸气；每次顶端停半秒再还原。"
+      ],
+      "techniqueCuesEn": [
+        "Stand under the bar with hands on it, arms straight, and neck relaxed.",
+        "Lift the shoulders straight toward the ears without bending the elbows or rolling the shoulders.",
+        "Pause at the top, then lower fully and slowly to lengthen the traps.",
+        "Exhale as the shoulders rise straight up and inhale as they fully lower; hold the top for half a second before returning."
+      ],
+      "regressionZh": "减轻重量，或改为哑铃耸肩以获得更自由的手位。 先减到能让肩膀直上直下、顶端停半秒的重量；不要为重量加入绕肩或屈肘。",
+      "regressionEn": "Use less load, or switch to dumbbell shrugs for a freer hand position. Reduce to a weight that lets the shoulders travel straight up and down with a half-second top hold; do not add rolling or elbow bend for load.",
+      "progressionZh": "在不借腿时逐步加重，或在顶端停顿两秒。 连续两组都能保持颈部放松和完整下沉后，再增加最小档位。",
+      "progressionEn": "Add load without leg drive, or hold the top for two seconds. Add the smallest increment only after two sets keep the neck relaxed and reach a full lower position."
     },
     {
       "id": "assisted-pull-up",
@@ -2880,7 +3632,23 @@
       "loadType": "assisted",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 980
+      "rank": 980,
+      "techniqueCuesZh": [
+        "调整辅助重量后，双手握杆、膝盖或脚稳放在垫上，先让肩膀下沉。",
+        "从肩胛下压开始，把上胸拉向横杆，肘部向下走。",
+        "控制回程到手臂接近伸直，身体不要大幅摆动。",
+        "辅助垫整组平稳运行，拉起呼气、回程吸气约 3 秒；不要用脚蹬垫抢节奏。"
+      ],
+      "techniqueCuesEn": [
+        "Set the assistance, take a secure grip, place the knees or feet firmly on the pad, and depress the shoulders first.",
+        "Initiate by driving the shoulder blades down, then pull the upper chest toward the bar as the elbows travel down.",
+        "Return under control until the arms are nearly straight without a large body swing.",
+        "Let the assistance pad move smoothly for the whole set, exhaling as you pull and inhaling through a 3-second return; do not kick the pad to gain momentum."
+      ],
+      "regressionZh": "增加辅助重量，或改用较窄的中立握把。 先用能让肩胛先下沉、全程不摆动的负荷；必要时只保留到下巴或锁骨高度的无痛行程。",
+      "regressionEn": "Use more assistance, or choose a narrower neutral grip. Use a load that lets the shoulder blades depress first without swinging; if needed, keep only a comfortable range to chin or collarbone height.",
+      "progressionZh": "逐步减少辅助重量，或在顶端停顿一秒。 当每次都能在底端停半秒、回程控制 3 秒时，再加最小阻力或减少辅助。",
+      "progressionEn": "Reduce the assistance gradually, or pause for a second at the top. Add the smallest resistance or reduce assistance only after every rep can hold the bottom for half a second and return for 3 seconds."
     },
     {
       "id": "assisted-dip",
@@ -2901,7 +3669,23 @@
       "loadType": "assisted",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 990
+      "rank": 990,
+      "techniqueCuesZh": [
+        "双手握稳把手，膝盖放在辅助垫上，肩膀下沉、胸口轻抬。",
+        "肘部向后弯曲让身体下沉，保持前臂接近竖直。",
+        "推回顶端时收紧三头肌，避免耸肩或摆动身体。",
+        "下沉吸气、推回呼气，底部短暂停住再上推；辅助垫不要撞击到底。"
+      ],
+      "techniqueCuesEn": [
+        "Grip the handles securely with knees on the assistance pad, shoulders down, and chest lightly tall.",
+        "Bend the elbows back to lower the body while keeping the forearms close to vertical.",
+        "Press back to the top with the triceps, avoiding shoulder shrugging or body swing.",
+        "Inhale as you descend and exhale as you press back, settling briefly at the bottom; do not let the assistance pad hit its stop."
+      ],
+      "regressionZh": "增加辅助重量并缩短底部深度，或改用绳索下压。 先降到能在起点和终点各控制半秒的负荷；若骨盆或肩胛离开支撑面，就缩小幅度。",
+      "regressionEn": "Use more assistance and a shorter bottom depth, or switch to a cable pushdown. First reduce to a load you can control for half a second at both ends; if the pelvis or shoulder blades leave support, shorten the range.",
+      "progressionZh": "逐步减少辅助重量，或在底部停顿一秒再推起。 保持座椅设置不变，连续两次训练完成上限次数后再加最小档位。",
+      "progressionEn": "Reduce the assistance gradually, or pause for a second at the bottom before pressing. Keep the same seat setup and add the smallest increment only after reaching the top reps in two consecutive sessions."
     },
     {
       "id": "dip",
@@ -2960,7 +3744,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 1010
+      "rank": 1010,
+      "techniqueCuesZh": [
+        "调好座椅，让膝盖轴线和机器转轴对齐，另一条腿稳踩地面。",
+        "从屈膝开始，收紧大腿前侧把工作腿平稳伸直。",
+        "顶端不猛锁膝，慢慢回到起点且骨盆不移动。",
+        "单腿用 2 秒伸直、3 秒回放，伸膝呼气、弯回吸气；左右侧采用同样节奏。"
+      ],
+      "techniqueCuesEn": [
+        "Set the seat so the working knee lines up with the machine pivot, with the other foot firmly on the floor.",
+        "Begin bent and contract the front of the thigh to extend the working leg smoothly.",
+        "Do not snap the knee into lockout; return slowly without shifting the pelvis.",
+        "Extend each leg in 2 seconds and return in 3, exhaling as the knee straightens and inhaling back; use the same cadence on both sides."
+      ],
+      "regressionZh": "降低配重并缩短最后一段伸直范围。 先用能让左右膝盖轨迹一致的阻力，并从每侧 8 次开始；不以摆髋补足范围。",
+      "regressionEn": "Lower the stack and shorten the final part of knee extension. Use resistance that gives matching knee paths left and right, beginning with 8 reps per side; do not swing the hips to create range.",
+      "progressionZh": "逐步加重，或在接近伸直位停顿一秒。 当弱侧也能完成相同次数和 3 秒回程，再加最小档位或每侧增加 1 次。",
+      "progressionEn": "Add load gradually, or pause for a second just short of full extension. Add the smallest increment or one rep per side only after the weaker side matches reps and a 3-second return."
     },
     {
       "id": "hammer-leg-extension",
@@ -2978,7 +3778,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 1020
+      "rank": 1020,
+      "techniqueCuesZh": [
+        "调整座椅和靠垫，让膝盖与转轴对齐，后背贴稳。",
+        "收紧大腿前侧把腿伸向前方，脚尖保持自然方向。",
+        "接近伸直时控制住重量，再慢慢弯回起点。",
+        "伸膝呼气、回放吸气约 3 秒，动作末端停稳但不锁膝或让配重片撞击。"
+      ],
+      "techniqueCuesEn": [
+        "Adjust the seat and pad so the knees align with the pivot and the back stays supported.",
+        "Contract the quads to extend the legs forward with the toes in a natural position.",
+        "Control the load just before full extension, then bend the knees back slowly.",
+        "Exhale as the knees extend and inhale through a roughly 3-second return, settling near the end without locking out or letting plates collide."
+      ],
+      "regressionZh": "降低配重并用较小范围，避免配重在底部撞击。 先以 8 次、3 秒回程的轻重量确认膝盖与转轴对齐，不以摆髋补足范围。",
+      "regressionEn": "Lower the load and use a shorter range, keeping the load from crashing at the bottom. First use a light load for 8 reps with a 3-second return to confirm knee-to-pivot alignment; do not create range by moving the hips.",
+      "progressionZh": "逐步加片，或在接近伸直位停顿一秒。 在座椅设置不变且连续两次训练完成上限次数后，才加最小一片。",
+      "progressionEn": "Add plates gradually, or pause for a second just short of full extension. Add the smallest plate only after two sessions reach the top reps with the same seat setup."
     },
     {
       "id": "hammer-leg-curl",
@@ -2996,7 +3812,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": true,
-      "rank": 1030
+      "rank": 1030,
+      "techniqueCuesZh": [
+        "调好胸垫和压腿垫，让膝盖对准转轴，髋部保持贴稳。",
+        "从腿接近伸直开始，把脚跟向下后方卷起。",
+        "顶端收紧腿后侧，缓慢伸回并避免臀部抬起。",
+        "卷腿呼气、伸回吸气约 3 秒，髋部持续贴稳；不要借摆动把脚跟甩上去。"
+      ],
+      "techniqueCuesEn": [
+        "Set the pads so the knees line up with the pivot and the hips remain anchored.",
+        "Start with the legs nearly straight and curl the heels down and back.",
+        "Squeeze the hamstrings at the finish, then extend slowly without lifting the hips.",
+        "Exhale as you curl and inhale through a roughly 3-second return with the hips anchored; do not swing the heels upward."
+      ],
+      "regressionZh": "降低配重并缩短底部伸展范围。 先用能让髋部持续贴稳、每次回程 3 秒的负荷，避免借摆动把脚跟甩上去。",
+      "regressionEn": "Lower the load and shorten the bottom stretch. First choose resistance that keeps the hips anchored through a 3-second return, rather than swinging the heels up.",
+      "progressionZh": "逐步加片，或在屈腿顶端停顿一到两秒。 当每组都能在顶端停 1 秒且髋部不离开垫面时，再增加最小一片。",
+      "progressionEn": "Add plates gradually, or pause for one to two seconds at the fully curled position. Add the smallest plate only when every rep can hold the top for 1 second with the hips on the pad."
     },
     {
       "id": "cable-shrug",
@@ -3016,7 +3848,23 @@
       "loadType": "external",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1040
+      "rank": 1040,
+      "techniqueCuesZh": [
+        "面对低滑轮站直，双手握住横杆或绳索，手臂自然伸直。",
+        "只把肩膀向上提向耳朵，保持肘部不弯、躯干不后仰。",
+        "顶端停顿后慢慢下沉，避免用腿弹动配重。",
+        "肩膀上提呼气、下沉吸气，顶端停半秒；每次让绳索安静回放而非撞击配重。"
+      ],
+      "techniqueCuesEn": [
+        "Face a low pulley standing tall, holding the bar or rope with arms straight.",
+        "Lift only the shoulders toward the ears, keeping the elbows straight and torso upright.",
+        "Pause at the top and lower slowly without bouncing the stack with the legs.",
+        "Exhale as the shoulders rise and inhale as they lower, holding the top for half a second; let the cable return quietly rather than striking the weight."
+      ],
+      "regressionZh": "降低配重并用较短幅度，先让颈部保持放松。 先减到能让肩膀直上直下、顶端停半秒的重量；不要为重量加入绕肩或屈肘。",
+      "regressionEn": "Lower the stack and use a shorter range while keeping the neck relaxed. Reduce to a weight that lets the shoulders travel straight up and down with a half-second top hold; do not add rolling or elbow bend for load.",
+      "progressionZh": "在不借腿时加重，或在顶端停顿两秒。 连续两组都能保持颈部放松和完整下沉后，再增加最小档位。",
+      "progressionEn": "Add load without leg drive, or hold the top for two seconds. Add the smallest increment only after two sets keep the neck relaxed and reach a full lower position."
     },
     {
       "id": "chin-up",
@@ -3036,7 +3884,23 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1050
+      "rank": 1050,
+      "techniqueCuesZh": [
+        "反握横杆，先让肩膀下沉，双腿自然垂下且身体保持安静。",
+        "把肘部向下后方拉，让胸口靠近横杆而不是伸脖子够杆。",
+        "控制下放到手臂接近伸直，避免摆腿。",
+        "身体稳定后再拉，胸口上移呼气、下放吸气约 3 秒；不要用摆腿连续借力。"
+      ],
+      "techniqueCuesEn": [
+        "Use an underhand grip, depress the shoulders first, and let the legs hang quietly.",
+        "Pull the elbows down and back to bring the chest toward the bar instead of reaching with the neck.",
+        "Lower under control until the arms are nearly straight without kicking the legs.",
+        "Pull only after the body is still, exhaling as the chest rises and inhaling through a 3-second descent; do not chain reps with leg swing."
+      ],
+      "regressionZh": "改用辅助引体机、弹力带辅助，或做反向划船。 先用能让肩胛先下沉、全程不摆动的负荷；必要时只保留到下巴或锁骨高度的无痛行程。",
+      "regressionEn": "Use an assisted pull-up machine, a band assist, or inverted rows. Use a load that lets the shoulder blades depress first without swinging; if needed, keep only a comfortable range to chin or collarbone height.",
+      "progressionZh": "在动作干净时增加次数，或在顶端停顿一秒。 当每次都能在底端停半秒、回程控制 3 秒时，再加最小阻力或减少辅助。",
+      "progressionEn": "Add repetitions once the movement stays clean, or pause for a second at the top. Add the smallest resistance or reduce assistance only after every rep can hold the bottom for half a second and return for 3 seconds."
     },
     {
       "id": "weighted-pull-up",
@@ -3056,7 +3920,23 @@
       "loadType": "bodyweight-plus",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1060
+      "rank": 1060,
+      "techniqueCuesZh": [
+        "把负重牢固挂在腰带上，握稳横杆并先下压肩胛。",
+        "肘部向下拉，让上胸靠近横杆，躯干不要后仰摆动。",
+        "控制下放到完全可控的伸展，再开始下一次。",
+        "负重不摆动后再开始，拉起呼气、下放吸气约 3 秒，底部保持可控伸展。"
+      ],
+      "techniqueCuesEn": [
+        "Secure the added load to the belt, take a firm grip, and depress the shoulder blades first.",
+        "Pull the elbows down to bring the upper chest toward the bar without rocking the torso back.",
+        "Lower into a fully controlled stretch before starting the next rep.",
+        "Begin only after the added load has stopped swinging, exhale as you pull and inhale through a 3-second lower into a controlled stretch."
+      ],
+      "regressionZh": "移除外加负重，改做自重或辅助引体。 先用能让肩胛先下沉、全程不摆动的负荷；必要时只保留到下巴或锁骨高度的无痛行程。",
+      "regressionEn": "Remove the added load and use bodyweight or assisted pull-ups. Use a load that lets the shoulder blades depress first without swinging; if needed, keep only a comfortable range to chin or collarbone height.",
+      "progressionZh": "在全程无摆动时小幅增加外加负重，或在顶端停顿一秒。 当每次都能在底端停半秒、回程控制 3 秒时，再加最小阻力或减少辅助。",
+      "progressionEn": "Add small amounts of external load once every rep is swing-free, or pause for a second at the top. Add the smallest resistance or reduce assistance only after every rep can hold the bottom for half a second and return for 3 seconds."
     },
     {
       "id": "weighted-dip",
@@ -3077,7 +3957,23 @@
       "loadType": "bodyweight-plus",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1070
+      "rank": 1070,
+      "techniqueCuesZh": [
+        "将负重牢固挂在腰带上，双手握稳双杠，肩膀先下沉。",
+        "肘部向后弯曲下沉，胸口轻微前倾、前臂尽量保持竖直。",
+        "推回顶端时收紧三头肌，控制深度且不摆动。",
+        "负重静止后下沉吸气、推回呼气，底部不弹震；每次回到顶端重新稳住。"
+      ],
+      "techniqueCuesEn": [
+        "Secure the added load to the belt, grip the bars firmly, and depress the shoulders before descending.",
+        "Bend the elbows back to lower with a slight chest lean and forearms as vertical as possible.",
+        "Press to the top with the triceps, controlling the depth and avoiding any swing.",
+        "Let the added load settle, inhale down and exhale up without bouncing at the bottom; regain a stable top position before each rep."
+      ],
+      "regressionZh": "移除负重，改做自重双杠臂屈伸或辅助双杠臂屈伸。 先选择能以 3 秒下放完成 6–8 次的版本，必要时增加支撑或缩短行程以保持姿势。",
+      "regressionEn": "Remove the added load and use bodyweight dips or assisted dips. First choose a version you can lower for 3 seconds for 6–8 reps; add support or shorten range if needed to preserve position.",
+      "progressionZh": "在深度和肩膀稳定时小幅增加外加负重，或在底部停顿一秒。 先把动作做成稳定的 8–12 次，再通过减少支撑、延长行程或改变杠杆进阶。",
+      "progressionEn": "Add small amounts of external load when depth and shoulder position stay stable, or pause for a second at the bottom. First make 8–12 reps stable, then progress by reducing support, lengthening range, or changing leverage."
     },
     {
       "id": "band-pull-apart",
@@ -3097,7 +3993,23 @@
       "loadType": "band",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1080
+      "rank": 1080,
+      "techniqueCuesZh": [
+        "双手握带站直，手臂在胸前伸直、肩膀下沉。",
+        "向两侧拉开弹力带，先让肩胛轻收，再让手臂与身体成一条直线。",
+        "顶端停顿后慢慢回到起点，避免耸肩或后仰。",
+        "拉开时呼气、回程吸气约 3 秒，弹力带全程有轻微张力，肩膀不要追着耳朵走。"
+      ],
+      "techniqueCuesEn": [
+        "Stand tall holding the band in front of the chest with straight arms and shoulders down.",
+        "Pull the band apart by lightly setting the shoulder blades and reaching the arms out in line with the body.",
+        "Pause at the finish, then return slowly without shrugging or leaning back.",
+        "Exhale as you pull apart and inhale through a roughly 3-second return, keeping light band tension without chasing the ears with the shoulders."
+      ],
+      "regressionZh": "换更轻的弹力带或缩短握距。 换成更轻的带子，并把起始位移缩短到仍能维持约 2 秒回程；带子拉得越长阻力越大。",
+      "regressionEn": "Use a lighter band or take a closer grip. Use a lighter band and shorten the starting stretch until you can still control about a 2-second return; a longer band stretch creates more resistance.",
+      "progressionZh": "换更重的弹力带，或在拉开位停顿两秒。 先在全程不松带的前提下完成目标次数，再换更重的带子或把起始距离拉远 10–20 厘米。",
+      "progressionEn": "Use a heavier band, or hold the fully open position for two seconds. First complete the target reps without slack, then use a heavier band or step 10–20 cm farther from the anchor."
     },
     {
       "id": "band-lateral-raise",
@@ -3115,7 +4027,23 @@
       "loadType": "band",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1090
+      "rank": 1090,
+      "techniqueCuesZh": [
+        "一脚踩住弹力带，另一端握在手中，站直并让肩膀下沉。",
+        "肘部微屈固定，把上臂向侧上方抬到肩高。",
+        "顶端不要耸肩，慢慢下放并保持弹力带张力。",
+        "抬臂呼气、下放吸气约 3 秒，弹力带在底部仍有轻张力；每次高度保持一致。"
+      ],
+      "techniqueCuesEn": [
+        "Stand on the band and hold the other end with shoulders down.",
+        "Keep a soft fixed elbow and raise the upper arm out to the side until shoulder height.",
+        "Do not shrug at the top; lower slowly while keeping tension on the band.",
+        "Exhale as the arm rises and inhale through a roughly 3-second lower while keeping slight bottom tension; repeat to the same height each time."
+      ],
+      "regressionZh": "改用更轻的带子或缩短站上带子的长度。 换成更轻的带子，并把起始位移缩短到仍能维持约 2 秒回程；带子拉得越长阻力越大。",
+      "regressionEn": "Use a lighter band or stand closer to the end to reduce tension. Use a lighter band and shorten the starting stretch until you can still control about a 2-second return; a longer band stretch creates more resistance.",
+      "progressionZh": "换更重的带子，或在肩高停顿一秒。 先在全程不松带的前提下完成目标次数，再换更重的带子或把起始距离拉远 10–20 厘米。",
+      "progressionEn": "Use a heavier band, or pause for a second at shoulder height. First complete the target reps without slack, then use a heavier band or step 10–20 cm farther from the anchor."
     },
     {
       "id": "band-triceps-pushdown",
@@ -3133,7 +4061,23 @@
       "loadType": "band",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1100
+      "rank": 1100,
+      "techniqueCuesZh": [
+        "把弹力带固定在高处，肘部贴近身体两侧，胸口轻抬。",
+        "从弯肘开始向下伸直手臂，保持上臂不前后移动。",
+        "底端收紧三头肌，慢慢回到起点且不要耸肩。",
+        "下压呼气、回程吸气约 3 秒，顶端停半秒而不锁死；上臂始终贴近身体。"
+      ],
+      "techniqueCuesEn": [
+        "Anchor the band high with elbows close to your sides and the chest lightly tall.",
+        "Extend the arms down from bent elbows while keeping the upper arms still.",
+        "Squeeze the triceps at the bottom, then return slowly without shrugging.",
+        "Exhale as you press down and inhale through a roughly 3-second return, pausing half a second at the bottom without snapping to lockout; keep the upper arms close."
+      ],
+      "regressionZh": "换更轻的弹力带或站得更靠近固定点。 换成更轻的带子，并把起始位移缩短到仍能维持约 2 秒回程；带子拉得越长阻力越大。",
+      "regressionEn": "Use a lighter band or stand closer to the anchor. Use a lighter band and shorten the starting stretch until you can still control about a 2-second return; a longer band stretch creates more resistance.",
+      "progressionZh": "换更重的弹力带，或在伸直位停顿一秒。 先在全程不松带的前提下完成目标次数，再换更重的带子或把起始距离拉远 10–20 厘米。",
+      "progressionEn": "Use a heavier band, or pause for a second in full extension. First complete the target reps without slack, then use a heavier band or step 10–20 cm farther from the anchor."
     },
     {
       "id": "band-curl",
@@ -3151,7 +4095,23 @@
       "loadType": "band",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1110
+      "rank": 1110,
+      "techniqueCuesZh": [
+        "踩住弹力带站稳，肘部贴近身体，肩膀保持下沉。",
+        "只弯曲肘部把双手卷向肩前，不要前后摆身体。",
+        "顶端收紧二头肌，再慢慢伸肘回到起点。",
+        "弯举呼气、下放吸气约 3 秒，底部不完全卸掉带子张力；躯干保持安静。"
+      ],
+      "techniqueCuesEn": [
+        "Stand securely on the band with elbows by your sides and shoulders down.",
+        "Curl the hands toward the shoulders by bending only the elbows, without rocking the body.",
+        "Squeeze the biceps at the top, then extend the elbows slowly back to the start.",
+        "Exhale as you curl and inhale through a roughly 3-second lower without fully unloading band tension; keep the torso quiet."
+      ],
+      "regressionZh": "换更轻的带子或缩短站上带子的长度。 换成更轻的带子，并把起始位移缩短到仍能维持约 2 秒回程；带子拉得越长阻力越大。",
+      "regressionEn": "Use a lighter band or stand closer to its end. Use a lighter band and shorten the starting stretch until you can still control about a 2-second return; a longer band stretch creates more resistance.",
+      "progressionZh": "换更重的带子，或把下放放慢到 3 秒。 先在全程不松带的前提下完成目标次数，再换更重的带子或把起始距离拉远 10–20 厘米。",
+      "progressionEn": "Use a heavier band, or make the lowering phase last three seconds. First complete the target reps without slack, then use a heavier band or step 10–20 cm farther from the anchor."
     },
     {
       "id": "band-chest-press",
@@ -3172,7 +4132,23 @@
       "loadType": "band",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1120
+      "rank": 1120,
+      "techniqueCuesZh": [
+        "把弹力带固定在身后胸部高度，双脚站稳、肩胛轻收。",
+        "从肘部弯曲开始向前推，手腕叠在肘部上方。",
+        "推到手臂接近伸直后缓慢回程，避免耸肩或塌腰。",
+        "推起呼气、回程吸气约 3 秒，回到起点仍保留张力；双脚全程稳住。"
+      ],
+      "techniqueCuesEn": [
+        "Anchor the band behind you at chest height, stand firmly, and lightly set the shoulder blades.",
+        "Press forward from bent elbows with the wrists stacked over the elbows.",
+        "Finish with the arms nearly straight, then return slowly without shrugging or arching the low back.",
+        "Exhale as you press and inhale through a roughly 3-second return while retaining start-position tension; keep both feet planted."
+      ],
+      "regressionZh": "换更轻的带子或站得更靠近固定点。 换成更轻的带子，并把起始位移缩短到仍能维持约 2 秒回程；带子拉得越长阻力越大。",
+      "regressionEn": "Use a lighter band or stand closer to the anchor. Use a lighter band and shorten the starting stretch until you can still control about a 2-second return; a longer band stretch creates more resistance.",
+      "progressionZh": "换更重的带子，或在伸直位停顿一秒。 先在全程不松带的前提下完成目标次数，再换更重的带子或把起始距离拉远 10–20 厘米。",
+      "progressionEn": "Use a heavier band, or pause for a second near full extension. First complete the target reps without slack, then use a heavier band or step 10–20 cm farther from the anchor."
     },
     {
       "id": "band-row",
@@ -3192,7 +4168,23 @@
       "loadType": "band",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1130
+      "rank": 1130,
+      "techniqueCuesZh": [
+        "把弹力带固定在前方，站稳或坐稳，先让手臂向前伸直。",
+        "先收肩胛，再把肘部向后拉向下肋，躯干保持安静。",
+        "顶端不耸肩，慢慢伸臂让肩胛自然前移。",
+        "拉肘呼气、前伸吸气约 3 秒，顶端停半秒再回放；不要用躯干后仰制造行程。"
+      ],
+      "techniqueCuesEn": [
+        "Anchor the band in front of you and stand or sit firmly with the arms extended forward.",
+        "Set the shoulder blades first, then pull the elbows back toward the lower ribs with a quiet torso.",
+        "Do not shrug at the finish; extend the arms slowly and let the shoulder blades move forward naturally.",
+        "Exhale as the elbows row back and inhale through a roughly 3-second reach, pausing half a second at the finish; do not lean back to create range."
+      ],
+      "regressionZh": "换更轻的带子或站得更靠近固定点。 换成更轻的带子，并把起始位移缩短到仍能维持约 2 秒回程；带子拉得越长阻力越大。",
+      "regressionEn": "Use a lighter band or stand closer to the anchor. Use a lighter band and shorten the starting stretch until you can still control about a 2-second return; a longer band stretch creates more resistance.",
+      "progressionZh": "换更重的带子，或在肘部最后方停顿一秒。 先在全程不松带的前提下完成目标次数，再换更重的带子或把起始距离拉远 10–20 厘米。",
+      "progressionEn": "Use a heavier band, or pause for a second with the elbows back. First complete the target reps without slack, then use a heavier band or step 10–20 cm farther from the anchor."
     },
     {
       "id": "band-lat-pulldown",
@@ -3212,7 +4204,23 @@
       "loadType": "band",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1140
+      "rank": 1140,
+      "techniqueCuesZh": [
+        "把弹力带固定在高处，跪姿或坐姿保持躯干直立，握距略宽于肩。",
+        "先下压肩胛，再把肘部向下拉到身体两侧。",
+        "控制回程到手臂接近伸直，不要后仰借力。",
+        "下拉呼气、回程吸气约 3 秒，跪姿或坐姿全程不变；手臂伸直前仍保持带子张力。"
+      ],
+      "techniqueCuesEn": [
+        "Anchor the band high and keep an upright kneeling or seated torso with a grip just outside shoulder width.",
+        "Depress the shoulder blades first, then pull the elbows down to the sides.",
+        "Control the return until the arms are nearly straight without leaning back for momentum.",
+        "Exhale as you pull down and inhale through a roughly 3-second return while keeping the same kneeling or seated position; retain tension before the arms are straight."
+      ],
+      "regressionZh": "换更轻的带子，跪姿或坐姿时把身体移近固定点以缩短带子的起始拉长；先用能让肩胛下沉、全程不摆动的负荷。",
+      "regressionEn": "Use a lighter band and, while staying kneeling or seated, move closer to the anchor to shorten the starting stretch. Choose tension that lets the shoulder blades depress first without swinging.",
+      "progressionZh": "换更重的带子，或在底端停顿一秒。 当每次都能在底端停半秒、回程控制 3 秒时，再加最小阻力或减少辅助。",
+      "progressionEn": "Use a heavier band, or pause for a second at the bottom. Add the smallest resistance or reduce assistance only after every rep can hold the bottom for half a second and return for 3 seconds."
     },
     {
       "id": "band-overhead-press",
@@ -3232,7 +4240,23 @@
       "loadType": "band",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1150
+      "rank": 1150,
+      "techniqueCuesZh": [
+        "踩住弹力带或固定在脚下，双手把带子置于肩前，腹部和臀部收紧。",
+        "沿向上轨迹推过头顶，手腕叠在肘部上方，不要塌腰。",
+        "控制回到肩前，肩膀始终远离耳朵。",
+        "推过头顶呼气、回到肩前吸气约 3 秒，顶端不耸肩；每次从稳定肩前开始。"
+      ],
+      "techniqueCuesEn": [
+        "Stand on the band or anchor it under the feet, bringing the ends to shoulder height with abs and glutes braced.",
+        "Press overhead with wrists stacked over elbows and no low-back arch.",
+        "Return to the shoulders under control, keeping the shoulders away from the ears.",
+        "Exhale as you press overhead and inhale through a roughly 3-second return to the shoulders, without shrugging at the top; start each rep from a stable shoulder position."
+      ],
+      "regressionZh": "换更轻的带子，或改为单臂地雷推举。 换成更轻的带子，并把起始位移缩短到仍能维持约 2 秒回程；带子拉得越长阻力越大。",
+      "regressionEn": "Use a lighter band, or switch to a single-arm landmine press. Use a lighter band and shorten the starting stretch until you can still control about a 2-second return; a longer band stretch creates more resistance.",
+      "progressionZh": "换更重的带子，或在顶端停顿一秒。 先在全程不松带的前提下完成目标次数，再换更重的带子或把起始距离拉远 10–20 厘米。",
+      "progressionEn": "Use a heavier band, or pause for a second overhead. First complete the target reps without slack, then use a heavier band or step 10–20 cm farther from the anchor."
     },
     {
       "id": "band-good-morning",
@@ -3253,7 +4277,23 @@
       "loadType": "band",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1160
+      "rank": 1160,
+      "techniqueCuesZh": [
+        "踩住弹力带，双手绕在上背，双脚与髋同宽、膝盖微屈。",
+        "保持背部平直，髋部向后送直到腿后侧有拉伸。",
+        "用臀部和腿后侧把髋部推回站直，不要过度后仰。",
+        "髋部后送时吸气约 3 秒，臀部推回站直时呼气；每次顶端不额外后仰。"
+      ],
+      "techniqueCuesEn": [
+        "Stand on the band with it looped over the upper back, feet hip width, and knees softly bent.",
+        "Keep the back flat and push the hips back until the hamstrings stretch.",
+        "Drive the hips forward with the glutes and hamstrings to stand tall without overextending.",
+        "Inhale as the hips travel back for about 3 seconds and exhale as the glutes drive you tall; do not add extra back extension at the top."
+      ],
+      "regressionZh": "换更轻的带子并减少前屈深度，先练髋部后送。 先把阻力降到能保持脊柱中立、髋部后送约 20–30 厘米的范围；不要用腰部补行程。",
+      "regressionEn": "Use a lighter band and a smaller hinge while learning to push the hips back. Reduce resistance until you can keep a neutral spine while sending the hips back about 20–30 cm; do not make range with the low back.",
+      "progressionZh": "换更重的带子，或把下放放慢到 3 秒。 当每次髋部后送幅度和脊柱位置一致时，再加最小重量或延长下放 1 秒。",
+      "progressionEn": "Use a heavier band, or make the lowering phase last three seconds. Add the smallest load or one extra second of lowering only when hip travel and spinal position match on every rep."
     },
     {
       "id": "band-squat",
@@ -3273,7 +4313,23 @@
       "loadType": "band",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1170
+      "rank": 1170,
+      "techniqueCuesZh": [
+        "踩住弹力带并把另一端置于肩前，双脚站稳、腹部收紧。",
+        "臀部向后下方坐，膝盖顺着脚尖，脚掌全程贴地。",
+        "在可控深度均匀蹬地站起，别让膝盖向内塌。",
+        "下蹲吸气约 3 秒、站起呼气，带子在底部保持张力；双脚压力均匀。"
+      ],
+      "techniqueCuesEn": [
+        "Stand on the band with the other end at shoulder height, feet stable, and abs braced.",
+        "Sit down and back with knees tracking the toes and the whole foot on the floor.",
+        "Stand by driving evenly through the floor from a controlled depth without letting the knees cave in.",
+        "Inhale into a roughly 3-second descent and exhale as you stand, keeping band tension at the bottom and pressure even through both feet."
+      ],
+      "regressionZh": "换更轻的带子，或先做徒手深蹲到箱子。 换成更轻的带子，并把起始位移缩短到仍能维持约 2 秒回程；带子拉得越长阻力越大。",
+      "regressionEn": "Use a lighter band, or start with bodyweight box squats. Use a lighter band and shorten the starting stretch until you can still control about a 2-second return; a longer band stretch creates more resistance.",
+      "progressionZh": "换更重的带子，或在底部停顿一秒。 先在全程不松带的前提下完成目标次数，再换更重的带子或把起始距离拉远 10–20 厘米。",
+      "progressionEn": "Use a heavier band, or pause for a second at the bottom. First complete the target reps without slack, then use a heavier band or step 10–20 cm farther from the anchor."
     },
     {
       "id": "pike-push-up",
@@ -3293,7 +4349,23 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1180
+      "rank": 1180,
+      "techniqueCuesZh": [
+        "从下犬式把双手放稳，臀部抬高，视线看向双脚附近。",
+        "屈肘让头顶朝地面下降，肘部向斜后方走，不要完全外张。",
+        "用肩部和三头肌推回起点，腹部收紧避免塌腰。",
+        "头顶下降时吸气、推回时呼气，保持约 3 秒下放；每次让髋部高度一致。"
+      ],
+      "techniqueCuesEn": [
+        "Set up from a downward-dog position with hands planted, hips high, and eyes toward the feet.",
+        "Bend the elbows diagonally back to lower the crown of the head toward the floor instead of flaring them straight out.",
+        "Press back to the start with the shoulders and triceps, keeping the abs braced so the low back does not sag.",
+        "Inhale as the crown lowers and exhale as you press back, using about a 3-second descent and the same hip height each rep."
+      ],
+      "regressionZh": "把双手放在高箱或凳子上，或缩短头部下放深度。 先选择能以 3 秒下放完成 6–8 次的版本，必要时增加支撑或缩短行程以保持姿势。",
+      "regressionEn": "Elevate the hands on a box or bench, or use a shorter head-to-floor range. First choose a version you can lower for 3 seconds for 6–8 reps; add support or shorten range if needed to preserve position.",
+      "progressionZh": "抬高双脚或放慢下放，并在底部停顿一秒。 先把动作做成稳定的 8–12 次，再通过减少支撑、延长行程或改变杠杆进阶。",
+      "progressionEn": "Elevate the feet or slow the descent, adding a one-second pause at the bottom. First make 8–12 reps stable, then progress by reducing support, lengthening range, or changing leverage."
     },
     {
       "id": "nordic-curl",
@@ -3311,7 +4383,23 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1190
+      "rank": 1190,
+      "techniqueCuesZh": [
+        "跪姿固定脚踝，身体从膝盖到头保持直线，双手可放在胸前。",
+        "缓慢把身体整体向前放，髋部不要折叠，保持腿后侧张力。",
+        "到能控制的最低点用双手辅助回起，逐渐减少手部帮助。",
+        "下放至少控制 3 秒并持续吸气，双手接地后呼气辅助回起；不要突然坠落。"
+      ],
+      "techniqueCuesEn": [
+        "Kneel with the ankles anchored and keep a straight line from knees to head, with hands ready at the chest.",
+        "Lower the whole body forward slowly without folding at the hips, keeping tension in the hamstrings.",
+        "Use the hands to assist the return from the lowest controllable point, gradually relying on them less.",
+        "Control the lowering for at least 3 seconds while inhaling, then exhale as the hands assist you back; do not drop suddenly."
+      ],
+      "regressionZh": "用更高的支撑面接住双手，或缩短下放范围。 先用高支撑把可控下放限定在约 20–30°，双手提前接住身体，不要追求一次到底。",
+      "regressionEn": "Catch yourself on a higher support, or use a shorter lowering range. Use a high support to limit the controllable lowering to about 20–30 degrees, catching with the hands early rather than chasing full depth.",
+      "progressionZh": "延长慢速下放，减少手部帮助，最终练习完整回拉。 每周只把可控下放延长约 5° 或减少一次手部帮助，避免同时增加深度和速度。",
+      "progressionEn": "Lengthen the slow lowering, use less hand assistance, and eventually work toward a full pull-back. Each week extend the controlled lowering by only about 5 degrees or remove one unit of hand help; do not increase both depth and speed together."
     },
     {
       "id": "glute-bridge",
@@ -3331,7 +4419,23 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1200
+      "rank": 1200,
+      "techniqueCuesZh": [
+        "仰卧屈膝，脚掌踩稳并让脚跟离臀部约一脚掌距离。",
+        "收紧腹部后用脚跟蹬地，把髋部抬到肩、髋、膝接近一线。",
+        "顶端夹紧臀部，不要用腰部过度后仰，慢慢放下。",
+        "抬髋呼气、下放吸气约 3 秒，顶端停一秒确认臀部收紧而非腰部顶起。"
+      ],
+      "techniqueCuesEn": [
+        "Lie on your back with knees bent, feet planted, and heels about a foot-length from the glutes.",
+        "Brace the abs and drive through the heels to lift until shoulders, hips, and knees are nearly in line.",
+        "Squeeze the glutes at the top without overextending the low back, then lower slowly.",
+        "Exhale as the hips rise and inhale through a roughly 3-second lower, holding the top for one second to confirm glutes—not the low back—finish the rep."
+      ],
+      "regressionZh": "缩短抬髋高度，或把双脚放得更靠近臀部。 先把阻力降到能保持脊柱中立、髋部后送约 20–30 厘米的范围；不要用腰部补行程。",
+      "regressionEn": "Use a shorter hip lift, or bring the feet closer to the glutes. Reduce resistance until you can keep a neutral spine while sending the hips back about 20–30 cm; do not make range with the low back.",
+      "progressionZh": "改为单腿臀桥，或在髋部顶端停顿两秒。 当每次髋部后送幅度和脊柱位置一致时，再加最小重量或延长下放 1 秒。",
+      "progressionEn": "Progress to a single-leg bridge, or hold the top hip position for two seconds. Add the smallest load or one extra second of lowering only when hip travel and spinal position match on every rep."
     },
     {
       "id": "bodyweight-calf-raise",
@@ -3349,7 +4453,23 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1210
+      "rank": 1210,
+      "techniqueCuesZh": [
+        "双脚与髋同宽站稳，必要时扶住墙或固定物。",
+        "用前脚掌均匀发力抬高脚跟，身体保持直上直下。",
+        "顶端停顿后缓慢下沉，脚跟可在台阶边缘略低于脚尖。",
+        "提起呼气、下沉吸气约 3 秒，顶端与底端各停半秒，避免连续弹跳。"
+      ],
+      "techniqueCuesEn": [
+        "Stand with feet hip width and use a wall or stable support if needed.",
+        "Press evenly through the forefoot to lift the heels while the body moves straight up and down.",
+        "Pause at the top, then lower slowly; on a step the heels may travel slightly below the toes.",
+        "Exhale as you rise and inhale through a roughly 3-second lower, pausing half a second at both ends instead of bouncing continuously."
+      ],
+      "regressionZh": "扶住固定物并在地面做较小幅度，或双脚轮流分担重量。 先用能在最低伸展位停 1 秒的负荷；如果脚跟回弹，说明当前阻力或幅度过大。",
+      "regressionEn": "Hold a stable support and use a smaller flat-ground range, or alternate the weight between both feet. Use a load that lets you pause one second in the bottom stretch; rebound means the resistance or range is currently too much.",
+      "progressionZh": "改为单腿提踵，或在顶端和底端各停顿一秒。 保持膝角不变时每侧增加最小重量，并把完整伸展和顶端收缩都保留下来。",
+      "progressionEn": "Progress to single-leg calf raises, or pause for one second at both the top and bottom. Add the smallest load while keeping the knee angle fixed and preserving both the full stretch and top contraction."
     },
     {
       "id": "sissy-squat",
@@ -3367,7 +4487,23 @@
       "loadType": "bodyweight",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1220
+      "rank": 1220,
+      "techniqueCuesZh": [
+        "扶住固定物站稳，脚跟抬起，双脚前掌踩地并让膝盖保持同向。",
+        "在躯干直立下让膝盖向前移动、身体缓慢下降，髋部不要大幅后坐。",
+        "只下到能控制的位置，再用前脚掌和大腿前侧推回站立。",
+        "下放吸气约 3 秒、回站呼气，手部支撑压力保持一致，不要突然松手。"
+      ],
+      "techniqueCuesEn": [
+        "Stand with a stable support, heels raised, and both forefeet planted with knees tracking in the same direction.",
+        "Keep the torso tall as the knees travel forward and the body lowers, without sitting the hips far back.",
+        "Descend only as far as you can control, then press through the forefoot and quads to stand.",
+        "Inhale through a roughly 3-second descent and exhale as you stand, keeping hand support consistent rather than suddenly letting go."
+      ],
+      "regressionZh": "用双手更多支撑、缩短下放深度，或改做徒手深蹲。 先缩短到骨盆和足弓都能稳定的深度，并保留约 2 次余力；深度由控制决定。",
+      "regressionEn": "Use more hand support and a shorter depth, or switch to a standard bodyweight squat. First use a depth where the pelvis and foot arches stay stable with about 2 reps in reserve; control determines depth.",
+      "progressionZh": "逐步减少手部支撑，或在底部停顿一秒。 当相同深度能连续完成目标次数且膝盖轨迹稳定，再增加最小阻力或 5% 以内的负荷。",
+      "progressionEn": "Use less hand support over time, or pause for a second at the bottom. When the same depth and knee tracking hold through the target reps, add the smallest resistance or no more than about 5% load."
     },
     {
       "id": "band-straight-arm-pulldown",
@@ -3385,7 +4521,23 @@
       "loadType": "band",
       "loadFactor": 1.0,
       "isGuided": false,
-      "rank": 1230
+      "rank": 1230,
+      "techniqueCuesZh": [
+        "把弹力带固定在高处，站稳后双手握带，髋部微屈、腹部收紧。",
+        "肘部微屈固定，从肩关节把手臂沿弧线压向大腿。",
+        "底端收紧背阔肌，缓慢回到头顶前方，不要耸肩。",
+        "下压呼气、回到头顶前方吸气约 3 秒，底部停半秒但肘角不变。"
+      ],
+      "techniqueCuesEn": [
+        "Anchor the band high, stand firmly with a slight hip hinge, and brace the abs while holding the band.",
+        "Keep a soft fixed elbow and pull the arms in an arc from the shoulders toward the thighs.",
+        "Finish by squeezing the lats, then return slowly overhead without shrugging.",
+        "Exhale as the arms pull down and inhale through a roughly 3-second return overhead, pausing half a second at the bottom without changing the elbow angle."
+      ],
+      "regressionZh": "换更轻的带子或站得更靠近固定点。 换成更轻的带子，并把起始位移缩短到仍能维持约 2 秒回程；带子拉得越长阻力越大。",
+      "regressionEn": "Use a lighter band or stand closer to the anchor. Use a lighter band and shorten the starting stretch until you can still control about a 2-second return; a longer band stretch creates more resistance.",
+      "progressionZh": "换更重的带子，或在大腿旁停顿一秒。 先在全程不松带的前提下完成目标次数，再换更重的带子或把起始距离拉远 10–20 厘米。",
+      "progressionEn": "Use a heavier band, or pause for a second beside the thighs. First complete the target reps without slack, then use a heavier band or step 10–20 cm farther from the anchor."
     },
     {
       "id": "plank",
