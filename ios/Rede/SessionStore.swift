@@ -488,7 +488,7 @@ final class SessionStore {
         return PlanCustomizationImpact.compute(weekBefore: weekBefore, weekAfter: weekAfter)
     }
 
-    // MARK: - FR-PL7② 训练日顺序编辑器上下文（切片 S10）
+    // MARK: - FR-PL7②/③ 训练日编排编辑器上下文
 
     /// 顺序编辑器起点：当前有效训练日序（自定义优先、否则默认）+ 是否已自定义日序 + 分化 + 已完成场次。
     /// completedSessionCount 供编辑器实时算「下一个训练日将变为 X」（轮转锚定完成场次）。
@@ -509,13 +509,17 @@ final class SessionStore {
         guard let input = try? CleanTrainingDecisionInput.make(from: cleanView, todayISO: fmt.string(from: now)) else { return nil }
         let split = input.program.splitType
         let override = appData.planCustomization?.daySequence
-        // 当前有效序与引擎同口径（resolvedDaySequence：合法排列用 override，否则默认）→ 编辑器永不与排期分叉。
+        // 当前有效序与引擎同口径（resolvedDaySequence：合法自由日序用 override，否则默认）
+        // → 编辑器永不与排期分叉。
         let current = TodayPrescriptionEngine.resolvedDaySequence(splitType: split, override: override)
         guard !current.isEmpty else { return nil }
-        // isCustomized：存了合法排列 override（== 当前有效序）且**顺序确实异于默认**才算已自定义。
-        // 脏 override 当未自定义；override 恰等于默认序也当未自定义（否则「恢复默认」会在已是默认时误显示=no-op 入口，审查 MAJOR）。
+        // isCustomized：合法 override 且**内容确实异于默认**才算已自定义。脏 override 与
+        // 等于默认的冗余值都不算（同引擎 public seam，测试锁边界）。
         let defaults = TodayPrescriptionEngine.defaultDaySequence(splitType: split)
-        let isCustomized = override != nil && current == override && current != defaults
+        let isCustomized = TodayPrescriptionEngine.isCustomizedDaySequence(
+            splitType: split,
+            override: override
+        )
         return DaySequenceContext(dayCodes: current, defaultDayCodes: defaults, isCustomized: isCustomized,
                                   splitType: split, completedSessionCount: projectionRotationBase(input: input, appData: appData))
     }
@@ -985,13 +989,13 @@ final class SessionStore {
         await performPlanWrite { _ = try $0.removeCustomDayPlan(dayCode: dayCode) }
     }
 
-    /// FR-PL7② 采纳自定义日序。
+    /// FR-PL7②/③ 采纳自定义日序。
     @discardableResult
     func applyCustomDaySequence(_ sequence: [String]) async -> Bool {
         await performPlanWrite { _ = try $0.applyCustomDaySequence(sequence) }
     }
 
-    /// FR-PL7② 恢复默认日序。
+    /// FR-PL7②/③ 恢复默认日序。
     @discardableResult
     func removeCustomDaySequence() async -> Bool {
         await performPlanWrite { _ = try $0.removeCustomDaySequence() }

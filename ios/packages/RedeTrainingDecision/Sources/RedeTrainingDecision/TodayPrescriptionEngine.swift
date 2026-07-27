@@ -40,6 +40,38 @@ public enum TodayPrescriptionEngine {
     private static let comebackDeepMultiplier = 0.75
     private static let deloadMultiplier = 0.8
 
+    /// FR-PL7③ 自由日序的唯一合法输入白名单。必须保持显式枚举：未知 code 不能借
+    /// `slots()` 的 upper 兜底混进 canonical 日序。
+    public static let knownDayCodes: Set<String> = [
+        "push-a", "push-b",
+        "pull-a", "pull-b",
+        "legs-a", "legs-b",
+        "upper", "lower",
+        "full-a", "full-b", "full-c",
+    ]
+
+    /// 自定义轮转的脏数据护栏；与每周训练天数无关，只限制单个轮转序列的体量。
+    public static let maximumDaySequenceLength = 14
+
+    /// `slots(dayCode:)` 的 exhaustive case 集。未知字符串仍按既有行为回退 upper；
+    /// 已知值必须先成功解析成这里的某个 case，再进入无 default 的 switch。
+    private enum SlotDayCode: String, CaseIterable {
+        case pushA = "push-a"
+        case pushB = "push-b"
+        case pullA = "pull-a"
+        case pullB = "pull-b"
+        case legsA = "legs-a"
+        case legsB = "legs-b"
+        case upper
+        case lower
+        case fullA = "full-a"
+        case fullB = "full-b"
+        case fullC = "full-c"
+    }
+
+    /// 测试 seam：把 public 白名单与 `slots()` 的 exhaustive enum case 集锁在一起。
+    static let slotCaseDayCodes = Set(SlotDayCode.allCases.map(\.rawValue))
+
     /// 槽位 = 生成规则：按 pattern（可选 kind/equipment 收窄）在 catalog
     /// 声明顺序里取第一个未用条目。
     struct Slot {
@@ -93,15 +125,15 @@ public enum TodayPrescriptionEngine {
         return ["upper", "lower"]
     }
 
-    /// FR-PL7② 日序编辑器用（public seam，同 defaultDayExerciseIds 先例）：某分化的**默认训练日轮转序**
+    /// FR-PL7②/③ 日序编辑器用（public seam，同 defaultDayExerciseIds 先例）：某分化的**默认训练日轮转序**
     /// （编辑起点 = 教练给的日序；恢复默认的目标）。纯模板默认，不含自定义覆盖。
     public static func defaultDaySequence(splitType: String?) -> [String] {
         daySequence(splitType: splitType)
     }
 
-    /// FR-PL7② 护栏预览用（public seam）：给定（可能自定义的）日序 override 与**轮换基数**，算下一个训练日。
+    /// FR-PL7 护栏预览用（public seam）：给定（可能自定义的）日序 override 与**轮换基数**，算下一个训练日。
     /// 基数必须来自 rotationBase()（含回归重启/weekly 模式）——直接传总场次在两种新模式下会与今日页分叉（审查 S2）。
-    /// override 非默认日序排列时回退默认（resolvedDaySequence 内守卫）。空序列 → nil。
+    /// override 不满足显式白名单/长度守卫时回退默认（resolvedDaySequence 内守卫）。空序列 → nil。
     public static func nextDayCode(splitType: String?, daySequenceOverride: [String]?, completedSessionCount: Int) -> String? {
         let seq = resolvedDaySequence(splitType: splitType, override: daySequenceOverride)
         guard !seq.isEmpty else { return nil }
@@ -110,14 +142,29 @@ public enum TodayPrescriptionEngine {
         return seq[count % seq.count]
     }
 
-    /// FR-PL7② 自定义日序：override 须为默认日序的**排列**（同集合、同长度、仅顺序变）才采用；否则
-    /// （nil/空/含未知 dayCode/集合不等）回退默认——优雅降级不崩。只重排已有训练日类型，不造新日。
+    /// FR-PL7③ 自由日序：override 非空、长度不超过 14、且每项都在显式 11 项白名单内即完整采用。
+    /// 允许重复、换成员及与 daysPerWeek 不同长度；任一非法则整体回退默认，不部分采纳。
     /// public：编辑器 seed 当前有效日序（自定义优先、否则默认）共用此口径，杜绝与引擎分叉。
     public static func resolvedDaySequence(splitType: String?, override: [String]?) -> [String] {
         let base = daySequence(splitType: splitType)
-        guard let override, !override.isEmpty else { return base }
-        guard override.count == base.count, Set(override) == Set(base) else { return base }
+        return validatedDaySequenceOverride(override) ?? base
+    }
+
+    /// app/clean bridge 与引擎共用的日序输入校验；只返回完整合法 override，不做部分清洗。
+    public static func validatedDaySequenceOverride(_ override: [String]?) -> [String]? {
+        guard let override, !override.isEmpty,
+              override.count <= maximumDaySequenceLength,
+              override.allSatisfy(knownDayCodes.contains)
+        else { return nil }
         return override
+    }
+
+    /// 编辑器落盘态口径：只有合法 override 且内容确实不同于教练默认序，才标「已自定义」。
+    /// 脏 override 与等于默认的冗余值都不算自定义。
+    public static func isCustomizedDaySequence(splitType: String?, override: [String]?) -> Bool {
+        guard let override else { return false }
+        let resolved = resolvedDaySequence(splitType: splitType, override: override)
+        return resolved == override && resolved != daySequence(splitType: splitType)
     }
 
     /// FR-PL6 把用户自定义动作清单转成「钉死 exerciseId 的有序槽位」。逐动作：catalog 查不到 / 已弃用 /
@@ -252,8 +299,11 @@ public enum TodayPrescriptionEngine {
     }
 
     static func slots(dayCode: String) -> [Slot] {
-        switch dayCode {
-        case "push-a":
+        // 未知 code 的既有行为保持不变：仍静默回退 upper。FR-PL7③ 的合法性判断只认
+        // `knownDayCodes`，绝不把这个兼容兜底当白名单。
+        let slotDayCode = SlotDayCode(rawValue: dayCode) ?? .upper
+        switch slotDayCode {
+        case .pushA:
             return [
                 Slot(pattern: "horizontal-press", kind: "compound", sets: 3, repMin: 6, repMax: 8, rest: 180),
                 Slot(pattern: "incline-press", sets: 3, repMin: 8, repMax: 10, rest: 120),
@@ -262,7 +312,7 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "lateral-raise", sets: 4, repMin: 12, repMax: 20, rest: 60),
                 Slot(pattern: "triceps-extension", sets: 3, repMin: 10, repMax: 15, rest: 75),
             ]
-        case "pull-a":
+        case .pullA:
             return [
                 Slot(pattern: "vertical-pull", kind: "compound", sets: 3, repMin: 8, repMax: 10, rest: 120), // kind:compound → 力量目标也塑形主拉
                 Slot(pattern: "horizontal-pull", equipment: ["cable"], sets: 3, repMin: 8, repMax: 12, rest: 120),
@@ -272,7 +322,7 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "curl", sets: 2, repMin: 10, repMax: 15, rest: 75),
                 Slot(pattern: "shrug", sets: 3, repMin: 10, repMax: 15, rest: 60),
             ]
-        case "legs-a":
+        case .legsA:
             return [
                 Slot(pattern: "squat-pattern", kind: "compound", equipment: ["barbell"], sets: 4, repMin: 5, repMax: 8, rest: 210),
                 Slot(pattern: "hinge", kind: "compound", equipment: ["barbell"], sets: 3, repMin: 6, repMax: 10, rest: 180), // kind:compound → 力量目标塑形 RDL
@@ -284,7 +334,7 @@ public enum TodayPrescriptionEngine {
             ]
         // B 日（6 天 PPL×2 的容量/变式日）：靠 equipment/kind 约束选到与 A 日不同的动作，
         // 全器械下完全区分；器械受限时优雅软化（可能与 A 重叠，可接受）。详见方案 §3。
-        case "push-b":
+        case .pushB:
             return [
                 Slot(pattern: "incline-press", equipment: ["barbell"], sets: 4, repMin: 6, repMax: 10, rest: 180), // 上斜杠铃推（主项前置；A 日用上斜哑铃）
                 Slot(pattern: "horizontal-press", kind: "compound", equipment: ["dumbbell"], sets: 3, repMin: 8, repMax: 12, rest: 120), // 哑铃平板（A 用杠铃平板）
@@ -293,7 +343,7 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "lateral-raise", equipment: ["cable"], sets: 4, repMin: 12, repMax: 20, rest: 60), // 绳索侧平（A 用哑铃侧平）
                 Slot(pattern: "triceps-extension", equipment: ["barbell"], sets: 3, repMin: 8, repMax: 12, rest: 75), // 窄距/杠铃臂屈伸（A 用绳索下压）
             ]
-        case "pull-b":
+        case .pullB:
             return [
                 Slot(pattern: "horizontal-pull", kind: "compound", equipment: ["dumbbell"], sets: 4, repMin: 8, repMax: 12, rest: 150, preferredId: "chest-supported-db-row"), // 俯身支撑哑铃划船（主项点名；A 用杠铃/绳索划船）
                 Slot(pattern: "vertical-pull", kind: "compound", sets: 3, repMin: 8, repMax: 12, rest: 120, preferredId: "wide-grip-pulldown"), // 宽握下拉（点名；A 用高位下拉）
@@ -302,7 +352,7 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "curl", equipment: ["cable"], sets: 3, repMin: 10, repMax: 15, rest: 75), // 绳索弯举（A 用哑铃弯举）
                 Slot(pattern: "shrug", equipment: ["dumbbell"], sets: 3, repMin: 10, repMax: 15, rest: 60), // 哑铃耸肩（A 用杠铃耸肩）
             ]
-        case "legs-b":
+        case .legsB:
             return [
                 Slot(pattern: "squat-pattern", kind: "compound", equipment: EquipmentRegistry.machineClasses, sets: 4, repMin: 8, repMax: 12, rest: 180), // 哈克深蹲（膝主导主项；A 用杠铃深蹲）
                 Slot(pattern: "hinge", kind: "compound", equipment: ["barbell"], sets: 3, repMin: 5, repMax: 8, rest: 210, preferredId: "deadlift"), // 硬拉（后链主项点名 + kind:compound 力量塑形；A 用 RDL）
@@ -314,7 +364,7 @@ public enum TodayPrescriptionEngine {
             ]
         // 全身 A/B/C（2-3 天全身）：每日覆盖 股四/后链/胸/背/肩/臂 全身一遍，三变式靠
         // pattern 顺序 + equipment 约束换不同动作。频率靠「每次都练全身」达成（2-3 天 = 每肌群 2-3×）。
-        case "full-a": // 深蹲 + 平板卧推 + 高位下拉（自由重量力量倾向）
+        case .fullA: // 深蹲 + 平板卧推 + 高位下拉（自由重量力量倾向）
             return [
                 Slot(pattern: "squat-pattern", kind: "compound", equipment: ["barbell"], sets: 3, repMin: 5, repMax: 8, rest: 180),
                 Slot(pattern: "horizontal-press", kind: "compound", sets: 3, repMin: 6, repMax: 10, rest: 150),
@@ -323,7 +373,7 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "vertical-press", sets: 3, repMin: 8, repMax: 12, rest: 90),
                 Slot(pattern: "curl", sets: 2, repMin: 10, repMax: 15, rest: 60),
             ]
-        case "full-b": // 哈克蹲 + 上斜 + 杠铃划船（器械/角度变式）
+        case .fullB: // 哈克蹲 + 上斜 + 杠铃划船（器械/角度变式）
             return [
                 Slot(pattern: "squat-pattern", kind: "compound", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 8, repMax: 12, rest: 150),
                 Slot(pattern: "incline-press", sets: 3, repMin: 8, repMax: 12, rest: 120),
@@ -332,7 +382,7 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "lateral-raise", sets: 3, repMin: 12, repMax: 20, rest: 60),
                 Slot(pattern: "triceps-extension", sets: 2, repMin: 10, repMax: 15, rest: 60),
             ]
-        case "full-c": // 腿举 + 哑铃平板 + 坐姿划船（容量/泵感）
+        case .fullC: // 腿举 + 哑铃平板 + 坐姿划船（容量/泵感）
             return [
                 Slot(pattern: "squat-pattern", kind: "accessory", sets: 3, repMin: 10, repMax: 15, rest: 120),
                 Slot(pattern: "hinge", equipment: ["dumbbell"], sets: 3, repMin: 8, repMax: 12, rest: 120),
@@ -342,7 +392,7 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "calf-raise", sets: 3, repMin: 10, repMax: 20, rest: 60), // 小腿（全身唯一直接小腿日，审查 M-1）
                 Slot(pattern: "core", sets: 3, repMin: 12, repMax: 20, rest: 60),
             ]
-        case "lower":
+        case .lower:
             return [
                 Slot(pattern: "squat-pattern", kind: "compound", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 6, repMax: 10, rest: 150),
                 Slot(pattern: "hinge", equipment: ["dumbbell"], sets: 3, repMin: 8, repMax: 12, rest: 120),
@@ -352,7 +402,7 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "calf-raise", sets: 4, repMin: 12, repMax: 20, rest: 60),
                 Slot(pattern: "core", sets: 3, repMin: 12, repMax: 20, rest: 60),
             ]
-        default: // "upper"
+        case .upper:
             return [
                 Slot(pattern: "horizontal-press", equipment: ["dumbbell"], sets: 3, repMin: 6, repMax: 10, rest: 150),
                 Slot(pattern: "vertical-pull", sets: 3, repMin: 8, repMax: 10, rest: 120),
@@ -389,7 +439,8 @@ public enum TodayPrescriptionEngine {
                 .map { Mesocycle.phase(blockStartISO: $0, todayISO: input.todayISO, blockLengthWeeks: blockLengthWeeks).modulation }
             : nil
 
-        // FR-PL7② 自定义日序：override 须为默认日序的排列，否则回退默认（resolvedDaySequence 内守卫）。
+        // FR-PL7③ 自由日序：非空、≤14 且全在显式白名单即采用，否则整体回退默认。
+        // 序列可重复、换成员，长度与 daysPerWeek 解耦；轮转仍按完成场次取模。
         // 默认（override=nil）逐字节等价于现状。
         let sequence = resolvedDaySequence(splitType: input.program.splitType, override: customization.daySequence)
         // 轮转 = 序列[(自最近重启点的场次数 + 偏移) % 长度]。FR-TR12 临时换天那场完成时偏移 −1

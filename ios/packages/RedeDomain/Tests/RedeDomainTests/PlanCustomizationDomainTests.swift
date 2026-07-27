@@ -1,5 +1,6 @@
 // FR-PL6/PL7 自定义训练计划域层只读视图（切片 S1）：结构防御读 + open-bag 往返无损。
-// 合法性（catalog/范围/日序排列）不在本层——本层只保证「脏数据不崩、空→nil、未知键不丢」。
+// 合法性（catalog/范围/dayCode 白名单与长度）不在本层——本层只保证
+//「脏数据不崩、daySequence 混合类型整体失效、空→nil、未知键不丢」。
 
 import Foundation
 import XCTest

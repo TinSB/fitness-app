@@ -56,18 +56,29 @@ extension RedeStrings {
         locale == .zh ? "肌群每周频率没有明显下降" : "No notable drop in weekly muscle frequency"
     }
 
-    // MARK: FR-PL7② 训练日顺序编辑器（切片 S10）
+    // MARK: FR-PL7③ 训练日自由编排
 
-    /// 计划页「调整训练日顺序」入口。
-    public var planSeqEditEntry: String { locale == .zh ? "调整训练日顺序" : "Reorder training days" }
+    /// 计划页训练日编排入口。
+    public var planSeqEditEntry: String { locale == .zh ? "编排训练日" : "Arrange training days" }
     /// 入口行无障碍提示（与 dayScheduleRow 的 planEditDayHint 对齐）。
-    public var planSeqEditEntryHint: String { locale == .zh ? "调整训练日的先后顺序" : "Reorder your training days" }
-    /// 顺序编辑器标题。
-    public var planSeqEditTitle: String { locale == .zh ? "训练日顺序" : "Training day order" }
-    public var planSeqEditSubtitle: String {
-        locale == .zh ? "长按一行拖动来调整训练日先后；轮转按已完成场次推进，所以下一个训练日可能跟着变"
-                      : "Touch and hold a row, then drag to reorder; rotation advances by sessions completed, so the next day may change"
+    public var planSeqEditEntryHint: String {
+        locale == .zh ? "更换、添加、移除或重排训练日"
+                      : "Change, add, remove, or reorder training days"
     }
+    /// 自由日序编辑器标题。
+    public var planSeqEditTitle: String { locale == .zh ? "训练日编排" : "Training day sequence" }
+    public var planSeqEditSubtitle: String {
+        locale == .zh ? "换类型、添加或移除训练日；长按一行可拖动重排，轮转按已完成场次推进"
+                      : "Change, add, or remove training days; touch and hold a row to reorder. Rotation advances by completed sessions"
+    }
+    public var planSeqChooseDay: String { locale == .zh ? "选择训练日" : "Choose a training day" }
+    public var planSeqChangeDay: String { locale == .zh ? "更换训练日" : "Change training day" }
+    public var planSeqAddDay: String { locale == .zh ? "添加训练日" : "Add training day" }
+    public var planSeqGroupPush: String { locale == .zh ? "推" : "Push" }
+    public var planSeqGroupPull: String { locale == .zh ? "拉" : "Pull" }
+    public var planSeqGroupLegs: String { locale == .zh ? "腿" : "Legs" }
+    public var planSeqGroupUpperLower: String { locale == .zh ? "上下肢" : "Upper / Lower" }
+    public var planSeqGroupFullBody: String { locale == .zh ? "全身" : "Full body" }
     /// 护栏预览：重排后下一个训练日将变为 X（诚实告知，不阻止）。day 为已本地化训练日名。
     public func planSeqNextDay(_ day: String) -> String {
         locale == .zh ? "下一个训练日将变为：\(day)" : "Next training day will be: \(day)"

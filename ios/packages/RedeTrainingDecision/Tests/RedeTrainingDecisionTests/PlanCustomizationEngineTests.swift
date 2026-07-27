@@ -23,6 +23,13 @@ final class PlanCustomizationEngineTests: XCTestCase {
         let withEmpty = TodayPrescriptionEngine.plan(input: input, verdict: verdict, customization: .empty)
         XCTAssertEqual(baseline?.dayCode, withEmpty?.dayCode)
         XCTAssertEqual(baseline?.exercises.map(\.exerciseId), withEmpty?.exercises.map(\.exerciseId), "空覆盖逐字段等价（零回归）")
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        XCTAssertEqual(
+            try encoder.encode(baseline),
+            try encoder.encode(withEmpty),
+            "override=nil 的完整处方编码须逐字节等价既有默认路径"
+        )
     }
 
     func testCustomDayPlanUsesUserListInOrderWithEngineWeights() throws {
@@ -88,7 +95,7 @@ final class PlanCustomizationEngineTests: XCTestCase {
     }
 
     func testInvalidDaySequenceFallsBackToDefault() throws {
-        let custom = PlanCustomizationInput(daySequence: ["bogus-day", "push-a"]) // 非默认日序排列
+        let custom = PlanCustomizationInput(daySequence: ["bogus-day", "push-a"]) // 含未知 dayCode
         let result = try plan(pplJSON, customization: custom)
         XCTAssertEqual(result.dayCode, "push-a", "非法日序 → 回退默认轮转")
     }
@@ -170,12 +177,19 @@ final class PlanCustomizationEngineTests: XCTestCase {
     }
 
     func testNextDayCodeInvalidOverrideFallsBackToDefault() {
-        // 非排列（缺项）→ 回退默认轮转，预览仍诚实（不崩、不用半截 override）。
-        XCTAssertEqual(TodayPrescriptionEngine.nextDayCode(splitType: "push-pull-legs", daySequenceOverride: ["pull-a", "push-a"], completedSessionCount: 0), "push-a")
+        // 含未知 code → 整体回退默认轮转，预览仍诚实（不崩、不用半截 override）。
+        XCTAssertEqual(
+            TodayPrescriptionEngine.nextDayCode(
+                splitType: "push-pull-legs",
+                daySequenceOverride: ["pull-a", "bogus-day"],
+                completedSessionCount: 0
+            ),
+            "push-a"
+        )
     }
 
     func testResolvedDaySequencePublicSeedCurrentOrder() {
-        // 编辑器 seed：合法排列 override → 返回它（用户当前自定义顺序）；非法 → 默认。
+        // 编辑器 seed：合法白名单/长度 override → 返回它（用户当前自定义构成）；非法 → 默认。
         let valid = ["legs-a", "push-a", "pull-a", "push-b", "pull-b", "legs-b"]
         XCTAssertEqual(TodayPrescriptionEngine.resolvedDaySequence(splitType: "push-pull-legs", override: valid), valid)
         XCTAssertEqual(TodayPrescriptionEngine.resolvedDaySequence(splitType: "push-pull-legs", override: ["bogus"]),
@@ -184,6 +198,166 @@ final class PlanCustomizationEngineTests: XCTestCase {
         let def = TodayPrescriptionEngine.defaultDaySequence(splitType: "push-pull-legs")
         XCTAssertEqual(TodayPrescriptionEngine.resolvedDaySequence(splitType: "push-pull-legs", override: def), def,
                        "override==默认序 → 返回默认（current==override 但 ==默认，故应判未自定义）")
+    }
+
+    // MARK: FR-PL7③ 自由日序构成
+
+    func testKnownDayCodesExactlyMatchExhaustiveSlotCases() {
+        let expected: Set<String> = [
+            "push-a", "push-b",
+            "pull-a", "pull-b",
+            "legs-a", "legs-b",
+            "upper", "lower",
+            "full-a", "full-b", "full-c",
+        ]
+        XCTAssertEqual(TodayPrescriptionEngine.knownDayCodes, expected, "合法白名单须显式且恰为 11 项")
+        XCTAssertEqual(
+            TodayPrescriptionEngine.slotCaseDayCodes,
+            expected,
+            "白名单与 slots() 的 exhaustive enum case 集必须同步"
+        )
+        XCTAssertEqual(TodayPrescriptionEngine.maximumDaySequenceLength, 14)
+    }
+
+    func testUnknownSlotCodeStillFallsBackToUpperWithoutJoiningWhitelist() {
+        XCTAssertFalse(TodayPrescriptionEngine.knownDayCodes.contains("bogus-day"))
+        XCTAssertEqual(
+            TodayPrescriptionEngine.defaultDayExerciseIds(dayCode: "bogus-day", equipmentScenario: nil),
+            TodayPrescriptionEngine.defaultDayExerciseIds(dayCode: "upper", equipmentScenario: nil),
+            "本批不改变 slots() 未知 code → upper 的既有兜底"
+        )
+    }
+
+    func testResolvedDaySequenceAcceptsDifferentMembersForFiveDayUser() {
+        let pushPullLegsPushPull = ["push-a", "pull-a", "legs-a", "push-b", "pull-b"]
+        XCTAssertEqual(
+            TodayPrescriptionEngine.resolvedDaySequence(
+                splitType: "ppl-ul",
+                override: pushPullLegsPushPull
+            ),
+            pushPullLegsPushPull,
+            "5 天用户可把默认上下肢两天换成推 B / 拉 B"
+        )
+    }
+
+    func testResolvedDaySequenceAcceptsRepeatedMembers() {
+        let repeated = ["push-a", "pull-a", "legs-a", "push-a", "pull-a"]
+        XCTAssertEqual(
+            TodayPrescriptionEngine.resolvedDaySequence(splitType: "ppl-ul", override: repeated),
+            repeated,
+            "重复日型是合法用户编排，不得被排列守卫回退"
+        )
+    }
+
+    func testResolvedDaySequenceLengthIsIndependentFromDaysPerWeek() {
+        let sixStepRotation = ["push-a", "pull-a", "legs-a", "push-b", "pull-b", "legs-b"]
+        XCTAssertEqual(
+            TodayPrescriptionEngine.resolvedDaySequence(
+                splitType: "ppl-ul",
+                override: sixStepRotation
+            ),
+            sixStepRotation,
+            "5 天/周可采用 6 元素场次轮转"
+        )
+        XCTAssertEqual(
+            TodayPrescriptionEngine.nextDayCode(
+                splitType: "ppl-ul",
+                daySequenceOverride: sixStepRotation,
+                completedSessionCount: 5
+            ),
+            "legs-b",
+            "轮转继续按已完成场次取模，不按周截断"
+        )
+    }
+
+    func testResolvedDaySequenceAcceptsOneThroughFourteenKnownDays() {
+        XCTAssertEqual(
+            TodayPrescriptionEngine.resolvedDaySequence(splitType: "ppl-ul", override: ["full-c"]),
+            ["full-c"],
+            "至少 1 天即可形成合法轮转"
+        )
+        let fourteenDays = Array(repeating: ["push-a", "pull-a", "legs-a", "full-a"], count: 4)
+            .flatMap { $0 }
+            .prefix(14)
+        XCTAssertEqual(
+            TodayPrescriptionEngine.resolvedDaySequence(
+                splitType: "ppl-ul",
+                override: Array(fourteenDays)
+            ),
+            Array(fourteenDays),
+            "14 天是自由编排上限，仍须完整采用"
+        )
+    }
+
+    func testResolvedDaySequenceRejectsEmptyUnknownAndOverFourteenAsAWhole() {
+        let defaults = TodayPrescriptionEngine.defaultDaySequence(splitType: "ppl-ul")
+        XCTAssertEqual(
+            TodayPrescriptionEngine.resolvedDaySequence(splitType: "ppl-ul", override: []),
+            defaults,
+            "空日序整体回退默认"
+        )
+        XCTAssertEqual(
+            TodayPrescriptionEngine.resolvedDaySequence(
+                splitType: "ppl-ul",
+                override: ["push-a", "bogus-day", "pull-a"]
+            ),
+            defaults,
+            "含一个未知 code 就整体回退，不部分采纳"
+        )
+        XCTAssertEqual(
+            TodayPrescriptionEngine.resolvedDaySequence(
+                splitType: "ppl-ul",
+                override: Array(repeating: "push-a", count: 15)
+            ),
+            defaults,
+            "超过 14 天整体回退默认"
+        )
+    }
+
+    func testFreeFiveDayCompositionFlowsIntoWeeklyProjection() throws {
+        let custom = PlanCustomizationInput(
+            daySequence: ["push-a", "pull-a", "legs-a", "push-b", "pull-b"]
+        )
+        let firstWeek = try XCTUnwrap(
+            PlanWeekProjection.weeks(
+                splitType: "ppl-ul",
+                daysPerWeek: 5,
+                completedSessionCount: 0,
+                weeks: 1,
+                customization: custom
+            ).first
+        )
+        XCTAssertEqual(
+            firstWeek.map(\.dayCode),
+            ["push-a", "pull-a", "legs-a", "push-b", "pull-b"],
+            "计划页周投影与今日引擎同源采用自由日序"
+        )
+    }
+
+    func testCustomizedDaySequenceRequiresValidOverrideDifferentFromDefault() {
+        let defaults = TodayPrescriptionEngine.defaultDaySequence(splitType: "ppl-ul")
+        XCTAssertFalse(
+            TodayPrescriptionEngine.isCustomizedDaySequence(splitType: "ppl-ul", override: nil),
+            "nil 从未自定义"
+        )
+        XCTAssertFalse(
+            TodayPrescriptionEngine.isCustomizedDaySequence(splitType: "ppl-ul", override: defaults),
+            "合法但等于默认不算自定义"
+        )
+        XCTAssertFalse(
+            TodayPrescriptionEngine.isCustomizedDaySequence(
+                splitType: "ppl-ul",
+                override: ["push-a", "bogus-day"]
+            ),
+            "非法 override 回退默认且不算自定义"
+        )
+        XCTAssertTrue(
+            TodayPrescriptionEngine.isCustomizedDaySequence(
+                splitType: "ppl-ul",
+                override: ["push-a", "pull-a", "legs-a", "push-b", "pull-b"]
+            ),
+            "合法且异于默认才算自定义"
+        )
     }
 
     // MARK: S9b 添加动作候选（同 pattern 族、守器械白名单、排除已用）

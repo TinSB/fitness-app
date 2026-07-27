@@ -51,6 +51,126 @@ public struct PlanDayEditUndoModel: Equatable, Sendable {
     }
 }
 
+/// FR-PL7③ 日序编辑器的薄工作副本。重复 dayCode 合法，故每个位置必须有独立 occurrence id；
+/// 撤销历史仍只由 `PlanDayEditUndoModel` 持有，本类型不另建 removal stack。
+public struct PlanDaySequenceDraft: Equatable, Sendable {
+    public struct Row: Identifiable, Equatable, Sendable {
+        public let id: String
+        public var dayCode: String
+
+        fileprivate init(id: String = UUID().uuidString, dayCode: String) {
+            self.id = id
+            self.dayCode = dayCode
+        }
+    }
+
+    public private(set) var rows: [Row]
+    private var removedRowsByID: [String: Row] = [:]
+    private var undoModel = PlanDayEditUndoModel()
+
+    public init(codes: [String]) {
+        rows = codes.map { Row(dayCode: $0) }
+    }
+
+    public var codes: [String] { rows.map(\.dayCode) }
+    public var canAppend: Bool { rows.count < TodayPrescriptionEngine.maximumDaySequenceLength }
+    public var canRemove: Bool { rows.count > 1 }
+    public var canUndo: Bool { !undoModel.isEmpty }
+
+    /// 撤销条显示最近一次被移除 occurrence 的本地化 dayCode。
+    public var lastRemovedDayCode: String? {
+        undoModel.lastRemovedId.flatMap { removedRowsByID[$0]?.dayCode }
+    }
+
+    @discardableResult
+    public mutating func replace(rowID: String, with dayCode: String) -> Bool {
+        guard TodayPrescriptionEngine.knownDayCodes.contains(dayCode),
+              let index = rows.firstIndex(where: { $0.id == rowID })
+        else { return false }
+        rows[index].dayCode = dayCode
+        return true
+    }
+
+    @discardableResult
+    public mutating func add(dayCode: String) -> Bool {
+        guard canAppend, TodayPrescriptionEngine.knownDayCodes.contains(dayCode) else { return false }
+        rows.append(Row(dayCode: dayCode))
+        return true
+    }
+
+    @discardableResult
+    public mutating func remove(rowID: String) -> Bool {
+        guard canRemove, let index = rows.firstIndex(where: { $0.id == rowID }) else { return false }
+        let row = rows[index]
+        undoModel.recordRemoval(id: row.id, index: index)
+        removedRowsByID[row.id] = row
+        rows.remove(at: index)
+        return true
+    }
+
+    /// 让既有撤销模型只处理 occurrence id 数组，再用 payload 目录还原对应 dayCode 行。
+    @discardableResult
+    public mutating func undoRemoval() -> Bool {
+        let currentIDs = rows.map(\.id)
+        guard let restoredIDs = undoModel.undo(current: currentIDs) else { return false }
+
+        var rowsByID = Dictionary(uniqueKeysWithValues: rows.map { ($0.id, $0) })
+        for (id, row) in removedRowsByID { rowsByID[id] = row }
+        let restoredRows = restoredIDs.compactMap { rowsByID[$0] }
+        guard restoredRows.count == restoredIDs.count else { return false }
+
+        rows = restoredRows
+        for id in restoredIDs { removedRowsByID[id] = nil }
+        return true
+    }
+
+    /// VoiceOver 单步移动或测试用多步移动；目标是最终下标，幸存行顺次让位。
+    @discardableResult
+    public mutating func move(rowID: String, by delta: Int) -> Bool {
+        guard let source = rows.firstIndex(where: { $0.id == rowID }) else { return false }
+        return move(from: source, to: source + delta)
+    }
+
+    /// 拖动落定：只改工作副本顺序，不进入撤销栈。
+    @discardableResult
+    public mutating func move(from source: Int, to target: Int) -> Bool {
+        guard rows.indices.contains(source), rows.indices.contains(target), source != target else { return false }
+        let row = rows.remove(at: source)
+        rows.insert(row, at: target)
+        return true
+    }
+
+    /// 恢复默认：新基线获得新 occurrence ids，并清掉旧撤销 payload/栈。
+    public mutating func reset(codes: [String]) {
+        self = PlanDaySequenceDraft(codes: codes)
+    }
+
+    /// 采纳 / 取消后旧还原点失效；工作副本本身保持不变。
+    public mutating func clearUndo() {
+        undoModel.clear()
+        removedRowsByID = [:]
+    }
+}
+
+/// 自由日序对 FR-TR12 的展示层兼容；不参与轮转、覆盖写入、offset 或撤销语义。
+public enum DaySequencePresentationRules {
+    /// 去重保序后排除当前处方日，避免重复同名候选。
+    public static func daySwitchCandidates(
+        sequence: [String],
+        currentDayCode: String?
+    ) -> [String] {
+        var seen: Set<String> = []
+        return sequence.filter { code in
+            seen.insert(code).inserted && code != currentDayCode
+        }
+    }
+
+    /// 至少有两个不同 dayCode 才有可换目标；全同序列不显示入口。
+    public static func shouldShowDaySwitchEntry(sequence: [String]) -> Bool {
+        Set(sequence).count > 1
+    }
+}
+
 /// 裁定 B：采纳时的落盘收敛（canonical 不留与默认等值的冗余自定义）。
 public enum PlanDayApplyResolution: Equatable, Sendable {
     /// 列表 ≠ 默认 → 正常写自定义（applyCustomDayPlan）。
