@@ -432,16 +432,17 @@ Settings 里不要营销。只说事实。
 | 稍后 | 稍后 | Later |
 | What's New 主操作 | 继续 | Continue |
 
-What's New 的当前内置叙事（1.9）= **一句 hero 主打句 + 三条具体亮点行**，不附常驻小字（2026-07-20 owner「文案太不专业」立规：亮点必须是具体名词句——写清「什么功能、在哪、给什么」，禁空泛形容词组如「更完整也更好读」；版本号只在 sheet 顶部 overline 出现一次，正文 hero 不再重复大版本数字；只保留当前发布版本的叙事，旧版本按 YAGNI 移除）：
+What's New 的当前内置叙事（**1.9.2**）= **一句 hero 主打句 + 三条具体亮点行**，不附常驻小字（2026-07-20 owner「文案太不专业」立规：亮点必须是具体名词句——写清「什么功能、在哪、给什么」，禁空泛形容词组如「更完整也更好读」；版本号只在 sheet 顶部 overline 出现一次，正文 hero 不再重复大版本数字；只保留当前发布版本的叙事，旧版本按 YAGNI 移除）：
 
 | 位置 | 中文 | English |
 |---|---|---|
-| hero | 训练现场，顺序随你调 | Adjust your session on the spot |
-| 01 | 「接下来」可现在练：训练中把后面的动作提到当前，重量与进阶仍由系统安排 | "Up next" can be now: pull a later exercise into the current slot mid-workout, loads still set by the system |
-| 02 | 计划编辑器防误删：移除动作可逐步撤回，「恢复默认」一键回到教练方案 | The plan editor forgives: undo removals step by step, or restore the coach's default in one tap |
-| 03 | 新版本不再错过：今日页轻量提示，设置页可检查更新、重看更新内容 | Never miss a version: a light signal on Today, with Check for Updates and What's New in Settings |
+| hero | 训练日怎么排，你说了算 | Your split, your call |
+| 01 | 训练日构成自己定：换类型、加一天、删一天——推拉腿之后想接推拉就接 | Build your own split: swap a day's type, add one, drop one — run push/pull/legs and keep going into push/pull |
+| 02 | 165 个动作全部配技术要点、进阶与退阶，训练中点动作名就能看 | All 165 exercises now carry technique cues, progressions, and regressions — tap any name mid-workout |
+| 03 | 编排随时能撤回，按「采纳修改」之前一切都不生效 | Every edit is undoable, and nothing takes effect until you tap Apply |
 
-> 前版 1.8 叙事（hero「每块肌肉，都有自己的等级」+ 发展板块/锁屏倒计时/动作库三条）随 1.9 切换移除，正文存 git history。
+> **版本门三处同改纪律（bump 必查）**：`RedeL10n.appUpdateHeroLine` / `appUpdateHighlights` 两个 guard + app 侧 `RedeAppUpdateRuntime.bundledWhatsNewVersions` 注册表——漏改任一处，门禁 `testCurrentRedeMarketingVersionHasBundledReleaseNotes` 会红（1.9 bump 时实际抓到过）。
+> 前版叙事（1.9.1「训练现场，顺序随你调」+ 接下来现在练/编辑器防误删/更新感知；1.8「每块肌肉，都有自己的等级」）随版本切换移除，正文存 git history。
 
 > **实现状态（2026-06-13）:** 下面的 Apple Health / HealthKit 文案是 **FF 目标表面，当前未实现**——代码里没有 HealthKit。已 ship 的 Settings 隐私串遵循「未上线不提」（HealthKit 实装时再加这段）。本段保留为 HealthKit slice 落地时的文案基线。已 ship 的设置文案以 `RedeL10n` 实际串为准。
 
