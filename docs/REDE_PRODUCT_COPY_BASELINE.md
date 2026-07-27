@@ -1,7 +1,7 @@
 # Rede Product Copy Baseline — 产品文案基底
 
 > **状态:** Canonical / living copy baseline
-> **最后更新:** 2026-07-18（FR-SE10 更新提示 / Settings / What's New 双语合同已实现并通过本地双语 Simulator 验收；生产购买仍关闭）
+> **最后更新:** 2026-07-27（FR-PL7③ 训练日自由编排双语合同已实现并通过本地 Simulator 验收；生产购买仍关闭）
 > **适用范围:** 产品定位、v0 / 原型生成、App Store 文案、onboarding、paywall、UI microcopy、空状态、错误、通知、双语 locale
 > **权威边界:** 本文定义 Rede 如何说话,视觉品牌与原型画面方向以 `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md` 为准。本文不授权任何新功能、网络、云、HealthKit 范围、医疗判断或 source-of-truth 变更。功能与架构边界以 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 和 `docs/REDE_iOS_SYSTEM_LOGIC.md` 为准。
 
@@ -386,11 +386,27 @@ English:
 >
 > This only changes next week. You can undo it after applying.
 
+**训练日自由编排（FR-PL7③，2026-07-27）**：这里表达用户控制权，不把教练默认频率写成规训。编辑器只显示下一训练日的中性事实；合法日序即使重复某日型或降低某肌群频率，也不用 warning / heads-up / are-you-sure 文案。
+
+| 位置 | 中文 | English |
+|---|---|---|
+| 计划页入口 | 编排训练日 | Arrange training days |
+| 入口无障碍提示 | 更换、添加、移除或重排训练日 | Change, add, remove, or reorder training days |
+| 编辑器标题 | 训练日编排 | Training day sequence |
+| 编辑器副标题 | 换类型、添加或移除训练日；长按一行可拖动重排，轮转按已完成场次推进 | Change, add, or remove training days; touch and hold a row to reorder. Rotation advances by completed sessions |
+| 类型选择器标题 | 选择训练日 | Choose a training day |
+| 行操作 | 更换训练日 | Change training day |
+| 添加开放行 | 添加训练日 | Add training day |
+| 选择器分组 | 推 / 拉 / 腿 / 上下肢 / 全身 | Push / Pull / Legs / Upper & Lower / Full body |
+| 中性影响事实 | 下一个训练日将变为：{训练日名} | Next training day will be: {training day name} |
+| 移除撤销（复用既有串） | 已移除「{训练日名}」　撤销 | Removed {training day name}　Undo |
+
 Plan 禁止:
 
 - `系统已优化你的长期计划`
 - `完美周期化训练`
 - 没有 Preview / Apply / Reject 的"建议"
+- 针对自由日序的警告色、说教、劝阻、二次确认或「建议你保持每周 2 次」
 
 ### 5.5 Settings: 信任不是卖点词,是清楚
 

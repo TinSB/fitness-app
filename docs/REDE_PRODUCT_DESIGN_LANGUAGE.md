@@ -1,7 +1,7 @@
 # Rede Product Design Language — 产品设计语言
 
 > **状态:** Canonical / living design-language baseline
-> **最后更新:** 2026-07-18（§5.5 增补 FR-SE10 的系统设置式更新行合同；§13「密而干净」、§11 dark locked tokens 与 §12 整面板公理仍在）
+> **最后更新:** 2026-07-27（§12.3 增补 FR-PL7③ 训练日类型选择器开放行 idiom；§13「密而干净」、§11 dark locked tokens 与 §12 整面板公理仍在）
 > **适用范围:** 产品视觉品牌、App UI 方向、landing page、widget、App Store 截图、v0 / 原型生成、设计 QA
 > **权威边界:** 本文只定义 Rede 应该长什么样、给人什么感觉、哪些视觉方向不能用。它不授权新功能、网络、云、账号、HealthKit 范围、订阅基础设施、source-of-truth 变更或任何 Swift package 边界变化。功能与架构边界以 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 和 `docs/REDE_iOS_SYSTEM_LOGIC.md` 为准。文案语气以 `docs/REDE_PRODUCT_COPY_BASELINE.md` 为准。
 
@@ -631,7 +631,7 @@ App 主模式深色（见 §3.3 更新）。浅色为受支持的次级 theme，
 
 ### 12.3 弹层规范
 
-sheet = 掀开的 base 锻面（`presentationBackground = base`，禁 surface/raised 整面底）+ grabber。动作列表 = 开放行（文字 + chevron + hairline），禁描边按钮堆；唯一主操作可用锻面主按钮（emb）。**编辑类 sheet 操作区通例（2026-07-20，计划日/日序编辑器统一落地）**：底部全宽 emb 主操作（disabled=0.45 透明）+ 其上右对齐**安静文字次操作行**（caption；置灰显式换色 `redeT4.opacity(0.4)`，redePressable 不自带禁用变暗）+ **右上 ✕ 取消**与标题同行（同 What's New header：xmark 13 semibold / t2 / controlHeight²）；底部不放取消文字钮——下滑关面板即取消（暂存不落盘语义下天然安全）。
+sheet = 掀开的 base 锻面（`presentationBackground = base`，禁 surface/raised 整面底）+ grabber。动作列表 = 开放行（文字 + chevron + hairline），禁描边按钮堆；唯一主操作可用锻面主按钮（emb）。**编辑类 sheet 操作区通例（2026-07-20，计划日/日序编辑器统一落地）**：底部全宽 emb 主操作（disabled=0.45 透明）+ 其上右对齐**安静文字次操作行**（caption；置灰显式换色 `redeT4.opacity(0.4)`，redePressable 不自带禁用变暗）+ **右上 ✕ 取消**与标题同行（同 What's New header：xmark 13 semibold / t2 / controlHeight²）；底部不放取消文字钮——下滑关面板即取消（暂存不落盘语义下天然安全）。**编辑器内类型选择器 idiom（2026-07-27，FR-PL7③）**：仍是掀开的 base sheet，按语义族用 overline 分组、选项用文字 + hairline 开放行，末端只放正式 SF Symbol 操作图标；不得改成卡片网格、警告面或说明小字。训练日编排的推/拉/腿/上下肢/全身五组即该 idiom 的现役实例。
 
 What's New 遵守同一 sheet 语法：版本 overline + 大标题 + 三条带序号的开放行 + 一个底部主操作。它不是 dashboard，不堆 feature 卡，不用 caption 解释算法；首次安装不自动出现，升级后只自动出现一次，设置内可重看。Today 的“新版可用”是 header 下方的扁平信号条（上下 hairline + ember 刻线 + 标题/双动作），不使用 `ForgedCard`、不抢今日判断 hero，也绝不做强制全屏门。
 
@@ -753,7 +753,7 @@ minimumScaleFactor(0.6) 收缩不截断。
 |---|---|---|
 | `.selection` | 轻选择 | 选档/切尺度/点历史行进详情/暂不/展开折叠/Hold·More·休息控件 |
 | `.success` | 成功提交 | 完成工作组、采纳/撤销教练动作、采纳/改回计划调整、普通完成小结、计划编辑器采纳修改成功 |
-| `.impact(.light)` | 轻量可逆编辑 | 计划编辑器移除动作/撤销还原（可逆单行操作，轻于恢复默认的 `.medium`） |
+| `.impact(.light)` | 轻量可逆编辑 | 计划编辑器移除动作或训练日/撤销还原（可逆单行操作，轻于恢复默认的 `.medium`） |
 | `.impact(.medium)` | 物理敲击 | 休息倒计时**自动到点**进下一组（用户多半没看屏，需可感知敲击，强于手动 `.selection`）；计划编辑器恢复默认（整列表重置，重于单行移除） |
 | `.impact(.heavy)` | 最重一击 | **破 PR**——全程最该有仪式感的时刻 |
 | `.warning` | 警示 | 登记不适 |
