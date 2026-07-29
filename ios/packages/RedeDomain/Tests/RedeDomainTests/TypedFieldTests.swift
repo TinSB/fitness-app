@@ -86,4 +86,110 @@ final class TypedFieldTests: XCTestCase {
         let empty = try JSONDecoder().decode(AppData.self, from: Data(#"{"schemaVersion": 11}"#.utf8))
         XCTAssertEqual(empty.exerciseSubstitutions, [:], "缺容器 → 空")
     }
+
+    func testPlanAdjustmentHistoryArrayIsTruthAndMalformedEntriesAreSkipped() throws {
+        let json = #"""
+        {
+          "schemaVersion": 11,
+          "planAdjustmentHistory": [
+            {"kind":"reduceFrequency","fromDaysPerWeek":5,"toDaysPerWeek":3},
+            {"kind":"broken","fromDaysPerWeek":"5","toDaysPerWeek":4},
+            {"kind":"increaseFrequency","fromDaysPerWeek":3,"toDaysPerWeek":5}
+          ],
+          "planAdjustment": {
+            "kind":"reduceFrequency","fromDaysPerWeek":6,"toDaysPerWeek":2
+          }
+        }
+        """#
+        let appData = try JSONDecoder().decode(AppData.self, from: Data(json.utf8))
+
+        XCTAssertEqual(appData.planAdjustmentHistory, [
+            PlanAdjustmentRecord(kind: "reduceFrequency", fromDaysPerWeek: 5, toDaysPerWeek: 3),
+            PlanAdjustmentRecord(kind: "increaseFrequency", fromDaysPerWeek: 3, toDaysPerWeek: 5),
+        ], "history 存在时是唯一读侧真源；脏元素跳过、旧单字段不得混入")
+    }
+
+    func testLegacyPlanAdjustmentSynthesizesOneElementHistoryWithoutWriteback() throws {
+        let json = #"""
+        {
+          "schemaVersion": 11,
+          "futureKey": {"kept": true},
+          "planAdjustment": {
+            "kind":"reduceFrequency","fromDaysPerWeek":5,"toDaysPerWeek":3
+          }
+        }
+        """#
+        let appData = try JSONDecoder().decode(AppData.self, from: Data(json.utf8))
+
+        XCTAssertEqual(appData.planAdjustmentHistory, [
+            PlanAdjustmentRecord(kind: "reduceFrequency", fromDaysPerWeek: 5, toDaysPerWeek: 3),
+        ])
+        XCTAssertNil(appData.storage["planAdjustmentHistory"],
+                     "兼容读只在内存合成，绝不能迁移写回")
+        XCTAssertNotNil(appData.storage["planAdjustment"])
+        XCTAssertEqual(appData.storage["futureKey"]?.asObject?["kept"]?.asBool, true)
+    }
+
+    func testLegacyPlanAdjustmentAcceptsFormerCleanRangeAboveNewTargetClamp() throws {
+        let json = #"""
+        {
+          "schemaVersion": 11,
+          "planAdjustment": {
+            "kind":"reduceFrequency","fromDaysPerWeek":14,"toDaysPerWeek":10
+          }
+        }
+        """#
+        let appData = try JSONDecoder().decode(AppData.self, from: Data(json.utf8))
+
+        XCTAssertEqual(appData.planAdjustmentHistory, [
+            PlanAdjustmentRecord(kind: "reduceFrequency", fromDaysPerWeek: 14, toDaysPerWeek: 10),
+        ], "旧 writer 可产出的 clean 1...14 记录必须继续兼容读；2...6 只约束新目标")
+    }
+
+    func testPlanAdjustmentHistoryDistinguishesExplicitProfileSnapshotFromLegacyInference() throws {
+        let json = #"""
+        {
+          "schemaVersion": 11,
+          "planAdjustmentHistory": [
+            {
+              "kind":"increaseFrequency",
+              "fromDaysPerWeek":3,
+              "toDaysPerWeek":4,
+              "fromProfileWeeklyTrainingDays":5,
+              "toProfileWeeklyTrainingDays":4
+            },
+            {"kind":"reduceFrequency","fromDaysPerWeek":4,"toDaysPerWeek":2}
+          ]
+        }
+        """#
+        let appData = try JSONDecoder().decode(AppData.self, from: Data(json.utf8))
+
+        XCTAssertEqual(appData.planAdjustmentHistory[0], PlanAdjustmentRecord(
+            kind: "increaseFrequency",
+            fromDaysPerWeek: 3,
+            toDaysPerWeek: 4,
+            fromProfileWeeklyTrainingDays: 5,
+            toProfileWeeklyTrainingDays: 4
+        ))
+        XCTAssertTrue(appData.planAdjustmentHistory[0].hasExplicitProfileDaysSnapshot)
+        XCTAssertEqual(appData.planAdjustmentHistory[1].fromProfileWeeklyTrainingDays, 4,
+                       "旧记录缺 profile 快照时，只能按旧 program before 推定")
+        XCTAssertFalse(appData.planAdjustmentHistory[1].hasExplicitProfileDaysSnapshot)
+    }
+
+    func testPresentEmptyHistoryDoesNotFallBackToLegacyField() throws {
+        let json = #"""
+        {
+          "schemaVersion": 11,
+          "planAdjustmentHistory": [],
+          "planAdjustment": {
+            "kind":"reduceFrequency","fromDaysPerWeek":5,"toDaysPerWeek":3
+          }
+        }
+        """#
+        let appData = try JSONDecoder().decode(AppData.self, from: Data(json.utf8))
+
+        XCTAssertEqual(appData.planAdjustmentHistory, [],
+                       "history 键一旦存在，即使为空也不得让旧字段复活")
+    }
 }

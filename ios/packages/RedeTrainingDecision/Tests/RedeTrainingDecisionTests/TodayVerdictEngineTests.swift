@@ -137,6 +137,46 @@ final class TodayVerdictEngineTests: XCTestCase {
         XCTAssertTrue(result.signals.contains(.trainedDaysThisWeek(1)))
     }
 
+    // FR-PL3 2026-07-29 明示影响链：用户采纳 3→5 后，同一周三天历史从「已达 3 天」
+    // 变为「5 天目标未达」。这是让账本追上真实行为的预期变化，不是回归。
+    func testAcceptedFrequencyIncreaseMovesWeeklyVerdictFromLightToTrain() throws {
+        let dates = ["2026-07-27", "2026-07-29", "2026-07-31"] // 周一/三/五；今天周日
+        let before = try verdict(
+            historyDates: dates, today: "2026-08-02",
+            program: #"{"daysPerWeek": 3}"#
+        )
+        let after = try verdict(
+            historyDates: dates, today: "2026-08-02",
+            program: #"{"daysPerWeek": 5}"#
+        )
+        XCTAssertEqual(before.reason, .weeklyPlanReached(days: 3, planned: 3))
+        XCTAssertEqual(before.call, .light)
+        XCTAssertEqual(after.reason, .normalProgression)
+        XCTAssertEqual(after.call, .train)
+    }
+
+    // 同一裁定的安全阈值实证：21 天 12 个训练日，计划 3 天时 12≥9 触发减载；
+    // 计划 5 天时 12<15，不再由 sustained-load 触发。两档都保留原瀑布算法。
+    func testAcceptedFrequencyIncreaseRaisesSustainedLoadThresholdFromNineToFifteen() throws {
+        let dates = [
+            "2026-07-12", "2026-07-13", "2026-07-15", "2026-07-17",
+            "2026-07-19", "2026-07-21", "2026-07-23", "2026-07-25",
+            "2026-07-27", "2026-07-29", "2026-07-31", "2026-08-01",
+        ]
+        let before = try verdict(
+            historyDates: dates, today: "2026-08-02",
+            program: #"{"daysPerWeek": 3}"#
+        )
+        let after = try verdict(
+            historyDates: dates, today: "2026-08-02",
+            program: #"{"daysPerWeek": 5}"#
+        )
+        XCTAssertEqual(before.reason, .sustainedLoadDeload(days: 21))
+        XCTAssertEqual(before.call, .deload)
+        XCTAssertEqual(after.reason, .normalProgression)
+        XCTAssertEqual(after.call, .train)
+    }
+
     // 瀑布 7：昨天练到力竭（mean RIR ≤ 0.5）→ 轻
     func testLightWhenLastSessionNearFailure() throws {
         let result = try verdict(historyDates: ["2026-06-08"], today: "2026-06-09", rir: "0")

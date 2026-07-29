@@ -70,14 +70,16 @@ public struct AppData: Equatable, Sendable {
         storage["notifications"]?.asObject?["comebackEnabled"]?.asBool ?? true
     }
 
-    /// FR-PL3/4 已采纳的计划调整记录（open-bag 加性，缺=无；不 seed、无 schema bump）。
-    /// 单条最近一次（无栈）；`fromDaysPerWeek` 供 FR-PL4 单步回滚恢复，UI 据此显示「可撤」。
-    public var planAdjustment: PlanAdjustmentRecord? {
-        guard let obj = storage["planAdjustment"]?.asObject,
-              let kind = obj["kind"]?.asString,
-              let from = obj["fromDaysPerWeek"]?.asInt,
-              let to = obj["toDaysPerWeek"]?.asInt else { return nil }
-        return PlanAdjustmentRecord(kind: kind, fromDaysPerWeek: from, toDaysPerWeek: to)
+    /// FR-PL3/4 已采纳计划调整栈（open-bag 加性，缺=空；不 seed、无 schema bump）。
+    /// 新数组一旦存在就是唯一真源，脏元素跳过；仅当新键完全缺失时，兼容读旧单字段并在内存合成一层，
+    /// 不迁移写回。数组顺序为旧→新，栈顶在 `last`。
+    public var planAdjustmentHistory: [PlanAdjustmentRecord] {
+        if let value = storage["planAdjustmentHistory"] {
+            guard let array = value.asArray else { return [] }
+            return array.compactMap { PlanAdjustmentRecord(decoding: $0) }
+        }
+        guard let legacy = storage["planAdjustment"] else { return [] }
+        return PlanAdjustmentRecord(decoding: legacy).map { [$0] } ?? []
     }
 
     /// FR-T5 换动作前瞻覆盖（schema 11）：originalId → actualId 的只读映射。
@@ -192,13 +194,92 @@ public struct AppData: Equatable, Sendable {
 /// FR-PL3/4 已采纳计划调整的类型化只读记录（canonical，open-bag 落库）。引擎提案类型在
 /// RedeTrainingDecision，本记录是域层落库镜像（plain 字段、不跨包依赖）。
 public struct PlanAdjustmentRecord: Equatable, Sendable {
-    public let kind: String            // 如 "reduceFrequency"
-    public let fromDaysPerWeek: Int    // 采纳前周计划天数（FR-PL4 回滚恢复用）
-    public let toDaysPerWeek: Int      // 采纳后周计划天数
+    public let kind: String                  // 如 "reduceFrequency"
+    public let fromDaysPerWeek: Int          // programTemplate.daysPerWeek before
+    public let toDaysPerWeek: Int            // programTemplate.daysPerWeek after
+    public let fromProfileWeeklyTrainingDays: Int? // userProfile.weeklyTrainingDays before
+    public let toProfileWeeklyTrainingDays: Int?   // userProfile.weeklyTrainingDays after
+    /// false 仅代表兼容旧 from/to 记录；此时上面两个 profile 值是按旧 program 值推定，而非历史实测。
+    public let hasExplicitProfileDaysSnapshot: Bool
+
+    /// 旧 record 结构的兼容初始化：profile before/after 只能按 program from/to 推定。
     public init(kind: String, fromDaysPerWeek: Int, toDaysPerWeek: Int) {
         self.kind = kind
         self.fromDaysPerWeek = fromDaysPerWeek
         self.toDaysPerWeek = toDaysPerWeek
+        self.fromProfileWeeklyTrainingDays = fromDaysPerWeek
+        self.toProfileWeeklyTrainingDays = toDaysPerWeek
+        self.hasExplicitProfileDaysSnapshot = false
+    }
+
+    /// 新 record 结构：program/profile 两个 canonical 字段各自记录 before/after。
+    public init(
+        kind: String,
+        fromDaysPerWeek: Int,
+        toDaysPerWeek: Int,
+        fromProfileWeeklyTrainingDays: Int?,
+        toProfileWeeklyTrainingDays: Int?
+    ) {
+        self.kind = kind
+        self.fromDaysPerWeek = fromDaysPerWeek
+        self.toDaysPerWeek = toDaysPerWeek
+        self.fromProfileWeeklyTrainingDays = fromProfileWeeklyTrainingDays
+        self.toProfileWeeklyTrainingDays = toProfileWeeklyTrainingDays
+        self.hasExplicitProfileDaysSnapshot = true
+    }
+
+    /// 防御性集中解码。旧记录只有 program from/to，可覆盖历史 clean 范围 1...14；
+    /// 新记录含 profile 双快照，before 仍按 clean 范围接纳，但 after 是本功能目标值，
+    /// 必须在 2...6 且与 program after 相同。未知键不参与类型化视图，raw 保全由写闸负责。
+    public init?(decoding value: JSONValue) {
+        guard let object = value.asObject,
+              let kind = object["kind"]?.asString,
+              let from = object["fromDaysPerWeek"]?.asInt,
+              let to = object["toDaysPerWeek"]?.asInt,
+              kind == "reduceFrequency" || kind == "increaseFrequency",
+              (1...14).contains(from),
+              (1...14).contains(to)
+        else { return nil }
+
+        let directionIsValid = kind == "reduceFrequency" ? to < from : to > from
+        guard directionIsValid else { return nil }
+
+        let profileFromKey = "fromProfileWeeklyTrainingDays"
+        let profileToKey = "toProfileWeeklyTrainingDays"
+        if object[profileFromKey] != nil || object[profileToKey] != nil {
+            guard (2...6).contains(to),
+                  let rawProfileFrom = object[profileFromKey],
+                  let rawProfileTo = object[profileToKey]
+            else { return nil }
+
+            let profileFrom: Int?
+            switch rawProfileFrom {
+            case .null:
+                profileFrom = nil
+            default:
+                guard let decoded = rawProfileFrom.asInt,
+                      (1...14).contains(decoded)
+                else { return nil }
+                profileFrom = decoded
+            }
+
+            guard let profileTo = rawProfileTo.asInt,
+                  (2...6).contains(profileTo),
+                  profileTo == to
+            else { return nil }
+
+            self.init(
+                kind: kind,
+                fromDaysPerWeek: from,
+                toDaysPerWeek: to,
+                fromProfileWeeklyTrainingDays: profileFrom,
+                toProfileWeeklyTrainingDays: profileTo
+            )
+            return
+        }
+
+        // 旧记录没有 profile 快照；兼容读只能把旧 program before/after 推定给 profile。
+        self.init(kind: kind, fromDaysPerWeek: from, toDaysPerWeek: to)
     }
 }
 

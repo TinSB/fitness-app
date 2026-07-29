@@ -1,4 +1,5 @@
-// WeeklyAdherence 派生合同：完整周计数、本周排除、空周计 0、开训前不计、maxWeeks 截断、健壮性。
+// WeeklyAdherence 派生合同：同日去重训练天数、最近 4 个完整周、本周排除、空周计 0、
+// 开训前不计、健壮性。2026-07-29 WEEK-COUNT-SPLIT 收口：不再按 completed session 场次计。
 // 固定 UTC + 已核对的 ISO 周一锚点（2026-06-15 是本周一；05-18/05-25/06-01/06-08 皆周一）。
 
 import XCTest
@@ -8,7 +9,7 @@ final class WeeklyAdherenceTests: XCTestCase {
     private let utc = TimeZone(identifier: "UTC")!
     private let today = "2026-06-20" // 周六；本周一 = 2026-06-15
 
-    private func counts(_ dates: [String], maxWeeks: Int = 8) -> [Int] {
+    private func counts(_ dates: [String], maxWeeks: Int = 4) -> [Int] {
         WeeklyAdherence.recentWeeklySessionCounts(
             sessionDatesISO: dates, todayISO: today, timeZone: utc, maxWeeks: maxWeeks
         )
@@ -40,12 +41,23 @@ final class WeeklyAdherenceTests: XCTestCase {
         XCTAssertEqual(counts(dates), [2], "起点 = 首训周，开训前不补 0")
     }
 
-    func testMaxWeeksCapsToMostRecent() {
-        // 10 个完整周各 1 次（04-06 … 06-08），maxWeeks 8 → 取最近 8 周。
+    func testDefaultWindowCapsToMostRecentFour() {
+        // 10 个完整周各 1 天（04-06 … 06-08），默认窗口只取最近 4 个完整周。
         let mondays = ["2026-04-06", "2026-04-13", "2026-04-20", "2026-04-27",
                        "2026-05-04", "2026-05-11", "2026-05-18", "2026-05-25",
                        "2026-06-01", "2026-06-08"]
-        XCTAssertEqual(counts(mondays), [1, 1, 1, 1, 1, 1, 1, 1], "截断到最近 8 周")
+        XCTAssertEqual(counts(mondays), [1, 1, 1, 1], "默认只保留最近 4 周")
+    }
+
+    func testMultipleCompletedSessionsOnSameDateCountAsOneTrainingDay() {
+        let dates = [
+            "2026-05-18", "2026-05-18", "2026-05-20", "2026-05-22",
+            "2026-05-25", "2026-05-25", "2026-05-27", "2026-05-29",
+            "2026-06-01", "2026-06-01", "2026-06-03", "2026-06-05",
+            "2026-06-08", "2026-06-08", "2026-06-10", "2026-06-12",
+        ]
+        XCTAssertEqual(counts(dates), [3, 3, 3, 3],
+                       "同日多场仍只是一天，不能误提 3→4/5 天")
     }
 
     func testOnlyCurrentWeekOrEmptyYieldsNothing() {
@@ -56,7 +68,7 @@ final class WeeklyAdherenceTests: XCTestCase {
     func testLongISOStringAndOrderIndependent() {
         let dates = ["2026-06-10T18:30:00Z", "2026-05-25", "2026-05-18T07:00:00+00:00",
                      "2026-06-08", "2026-06-01"]
-        // 周计数：05-18(1) 05-25(1) 06-01(1) 06-08(2) → [1,1,1,2]
+        // 周训练天数：05-18(1) 05-25(1) 06-01(1) 06-08(2) → [1,1,1,2]
         XCTAssertEqual(counts(dates), [1, 1, 1, 2], "长 ISO 串取前 10；输入顺序无关")
     }
 }

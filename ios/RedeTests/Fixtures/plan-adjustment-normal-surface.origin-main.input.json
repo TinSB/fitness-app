@@ -1,0 +1,28 @@
+{
+  "baselineCommit": "e4a711c658f5bb2afe004e50ec5d2c40e5275f43",
+  "today": "2026-07-29",
+  "appData": {
+    "schemaVersion": 11,
+    "userProfile": {
+      "weeklyTrainingDays": 3
+    },
+    "programTemplate": {
+      "splitType": "full-body",
+      "daysPerWeek": 3
+    },
+    "history": [
+      {"id":"plan-session-0","date":"2026-06-29","completed":true,"exercises":[]},
+      {"id":"plan-session-1","date":"2026-07-01","completed":true,"exercises":[]},
+      {"id":"plan-session-2","date":"2026-07-03","completed":true,"exercises":[]},
+      {"id":"plan-session-3","date":"2026-07-06","completed":true,"exercises":[]},
+      {"id":"plan-session-4","date":"2026-07-08","completed":true,"exercises":[]},
+      {"id":"plan-session-5","date":"2026-07-10","completed":true,"exercises":[]},
+      {"id":"plan-session-6","date":"2026-07-13","completed":true,"exercises":[]},
+      {"id":"plan-session-7","date":"2026-07-15","completed":true,"exercises":[]},
+      {"id":"plan-session-8","date":"2026-07-17","completed":true,"exercises":[]},
+      {"id":"plan-session-9","date":"2026-07-20","completed":true,"exercises":[]},
+      {"id":"plan-session-10","date":"2026-07-22","completed":true,"exercises":[]},
+      {"id":"plan-session-11","date":"2026-07-24","completed":true,"exercises":[]}
+    ]
+  }
+}

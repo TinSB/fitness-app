@@ -1176,27 +1176,29 @@ Plan：
 - 基于肌群发展等级的均衡发展建议:补足、维持、减少或暂不判断。
 - 从已确认计划派生的计划/动作分享入口。
 
-### 8.1 计划调整（PlanAdjustment · FR-PL3/4 频率提案已实现）
+### 8.1 计划调整（PlanAdjustment · FR-PL3/4 双向频率提案 + 撤销栈已实现）
 
-> **实现状态（2026-06-20）：** 路线 B 首个提案 = **频率/依从**已端到端落地（引擎 → 写入口 → 计划页 UI），用户可见。肌群级均衡（FR-PL5）仍**未落地**（依赖未实现的 MLE/贡献权重），后置接进同一框架。本节正文是**目标契约**；进度/证据看 DEV_LOG。
+> **实现状态（2026-07-29）：** 频率/依从提案已补齐降频 + 增频双向合同，并把单条回滚记录升级为最多 20 层的撤销栈。肌群级均衡已按 FR-PL5 的独立自动式合同落地，不进入本提案卡；动作选择继续由 FR-T5 教练卡负责。强度停滞阈值与周期结构提案尚未实现。本节正文是**目标契约**；进度/证据看 DEV_LOG。
 
 **分层（防混淆，呼应 §6.5.10）。** 「计划调整」是一个统一的**提案 → 预览 → 采纳 → 回滚**框架，提案可来自多个源：
 
-- **频率/依从提案（FR-PL3/4，已实现）**：当用户**持续低于周计划**时，建议把周计划降到更可持续的频率。**纯频率维度**——只读「周计划天数 + 依从历史」，**不读肌群等级**（与今日页频率补量 §6.4a 同源，§6.5.2 红线：无肌群名、无组数）。
-- **肌群级均衡提案（FR-PL5，未落地）**：补足/维持/减少某肌群，读 §6.5.10 等级语义；依赖未落地的 MLE，后置零返工接进同一框架。
+- **频率/依从提案（FR-PL3/4，已实现）**：用户持续低于周计划时建议降到可持续频率；用户持续高于周计划时建议把计划账本调到真实频率。**纯频率维度**——只读「周计划天数 + 依从历史」，**不读肌群等级**（与今日页频率补量 §6.4a 同属频率面，§6.5.2 红线：无肌群名、无组数）。
+- **肌群级均衡（FR-PL5，独立自动式，已实现）**：读 §6.5.10 等级语义后按门控给弱肌群动作 +1 组、每场最多 +2；owner 已否决提案卡形态，故不接入本框架。
+- **明确未做的提案维度**：动作选择由 FR-T5 教练卡承接，重复做会造成机制冲突；容量由 FR-PL5 自动式承接；强度停滞阈值待真实用户数据校准；周期结构与 mesocycle 深度耦合，需独立立项。
 
 **频率提案合同（FR-PL3）。**
-- **依从信号（纯派生）**：`WeeklyAdherence.recentWeeklySessionCounts(sessionDatesISO:, todayISO:, timeZone:, maxWeeks:)` 把 clean 历史摊平成「最近若干**完整周**每周完成场次」。三条公平红线：① **排除进行中的本周**（半周完成数会低估、误判落后）；② **起点不早于首训周**（开训前的空周是「还没开始」、不计 0）；③ **中间空周计 0**（练过又停正是「持续落后」要捕捉的信号）。周锚点复用 `WeekAnchor.isoWeekStart`（与 §6.4a 按周抑制同源、不分叉）。
-- **提案引擎（纯函数、零文案）**：`PlanAdjustmentEngine.frequencyProposal(plannedDaysPerWeek:, recentWeeklySessionCounts:)` → `PlanAdjustmentProposal(kind:.reduceFrequency, reasonCode:"belowPlanSustained", from, to)` 或 nil。**保守守门（起步值，待真机校准）**：planned > 下限 2、数据 ≥ 4 完整周、近况中位数 ≤ planned−1、`to = max(2, 中位数)` 且 to < planned。
+- **依从信号（纯派生，2026-07-29 行为变更）**：`WeeklyAdherence.recentWeeklySessionCounts(sessionDatesISO:, todayISO:, timeZone:, maxWeeks:)` 的历史方法名保留，但值语义统一为「每周**同日去重的训练天数**」，不再数 completed session 场次；默认与双向引擎窗口均为**最近 4 个完整 ISO 周**，旧 8 周窗退役。三条公平红线：① **排除进行中的本周**；② **起点不早于首训周**；③ **中间空周计 0**。周锚点复用 `WeekAnchor.isoWeekStart`。仅就“场次→天数”这一步，每日至多一场的历史周计数不变；依从正常且无双向新信号的单场日用户由 byte golden 锁定输出不变。4 周窗与新增增频本身仍会按本合同有意改变相应用户；同日多场用户原先可能被虚增的信号按训练天数纠正，也是预期行为变更。
+- **提案引擎（纯函数、零文案）**：只取最近 4 个完整周的训练天数整数中位数。中位数 `≤ planned−1` → `.reduceFrequency / belowPlanSustained`；中位数 `≥ planned+1` → `.increaseFrequency / abovePlanSustained`；否则 nil。目标统一钳在 `2...6`，提案保留未钳制的真实观测中位数供增频事实句使用；代码显式守卫双向信号互斥且拒绝钳制后的 no-op。
 - **预览**：用 `PlanWeekProjection.weeks(daysPerWeek: to, weeks:1)` 现算「调整后」的下一块训练日预览答「影响哪几天」（投影按每周场数分块、非日历周，UI 小标即「调整后 / After the change」，2026-07-04 Task 4 措辞修正）；提案前排期就在计划页同屏（2026-07-05 #651 起为折叠形态：分段 dayCode 序列 + 「训练日构成」每类型一次展开，`PlanScheduleDigestBuilder` 纯函数按首现去重、投影语义未动——类型行构成仍同屏可查），故不重复列 before。
 
 **采纳 / 回滚合同（FR-PL3/4）。**
-- **采纳**：经唯一写闸 `CanonicalSessionWriter.applyFrequencyAdjustment(from:to:)` 把 `programTemplate.daysPerWeek` 改成 to（= 已有的「程序配置编辑」写类别）**+ 落 open-bag 回滚记录** `planAdjustment{kind, fromDaysPerWeek, toDaysPerWeek}`（记原值供回滚）。**纯加性、不改 schema**（current=11 不变）。
-- **回滚（单步即时）**：`rollbackPlanAdjustment()` 读记录里的原值恢复 daysPerWeek、删记录；**无记录幂等**（什么都不做）。
-- **单记录无栈**：已有采纳记录时**抑制新提案**（避免二次采纳有损覆盖原始值）；UI 只显示「已调整 · 改回原计划」。
-- **诚实红线**：写失败置**计划页专属** `planSaveErrorText`（与全局 `saveErrorText` / 教练 `coachSaveErrorText` **隔离**，防跨面错误污染）、UI 如实呈现，**绝不静默假成功**；文案（RedeL10n `PlanAdjustmentCopy`，§5.4/§7.3）中性、不羞辱、强调可逆，**不报具体观测频率数**（引擎只给 to=目标值、不等于真实频率，报了会虚高）。
-- **会话级「暂不」**：`planProposalSnoozed`（不落库）——本次使用期间不再就同一提案复弹；回滚成功亦置位（尊重用户决定、不复推销）；重启后若仍符合条件可再温和提一次。
-- **0 卡公理**：计划页调整卡用 `RoundedRectangle` 面（非 `ForgedCard`），守 PlanTabView 0 预算。
+- **采纳**：经唯一写闸 `CanonicalSessionWriter.applyFrequencyAdjustment(kind:fromDaysPerWeek:toDaysPerWeek:)`；公共边界只接受两个已知 kind，current/from 接受 clean 合法范围 `1...14`，每次新 target/to 必须在 `2...6`，且 current program 与 from 一致、方向正确、非 no-op。未知 kind、越界 target、过期/缺失/脏 current、反向请求，既有 program/profile 非对象、profile 天数字段存在但不是 clean `1...14` 整数，或既有 history 不是数组，均在 backup/save 前 typed fail closed，canonical 原字节不动。合法请求在同一次 load→校验→备份→原子保存事务中从 current canonical 读取真实 before，同步写 `programTemplate.daysPerWeek = to` 与 `userProfile.weeklyTrainingDays = to`，恢复两处单一真相；同时 append open-bag `planAdjustmentHistory[{kind, fromDaysPerWeek, toDaysPerWeek, fromProfileWeeklyTrainingDays, toProfileWeeklyTrainingDays}]`，分别保存 program/profile 的 before/after（profile before 缺失以显式 null 留痕）。调整本身**不改 `splitType`、不改默认或自定义日序**；设置页日后修改器械/目标继续走既有 `completeOnboarding`，按同步后的 profile 天数重算模板（包括 splitType），该既有路径不为本功能特殊化。纯加性、不改 schema（current=11 不变）。
+- **撤销栈（FR-PL4）**：`planAdjustmentHistory` 按旧→新排列、上限 20 个 raw 元素，超出丢最旧。读侧真源是 history；仅当 history 键完全缺失且旧 `planAdjustment` 是有效记录时，内存合成单元素栈，**不迁移写回**；history 一旦存在（即使为空或类型脏）不得回退旧字段。typed 读侧跳过非对象、缺字段、未知 kind、越界、方向错误或 profile-after 不同步的脏层；写侧 append/pop 直接操作 raw 数组，不把旧层 decode→encode，因此旧层未知字段与脏 sibling 原样保留。没有有效层时撤销原样返回且不 backup/save，绝不把脏 before 写回 canonical。旧记录没有 profile 快照，兼容读接受旧 writer 可产的 clean `1...14` program from/to，只能把两值推定为 profile from/to，并明确标为 inferred，不冒充历史实测；含显式 profile 快照的新记录要求 program/profile before 为缺失或 clean `1...14`、after 为同步的 `2...6`。所有新采纳/撤销写都**停写并清除旧字段**。
+- **逐层回滚**：`rollbackPlanAdjustment()` 从 raw 数组末端寻找并只移除最后一个有效层（其后的脏 sibling 不挡路也不被删除），把该层 program/profile 各自记录的 before 分别恢复；profile before 为显式 null 时移除该键。中间即使被其他入口改过，也恢复该层快照，不做三方合并。无记录幂等且不制造空数组；旧单记录第一次真实撤销后写成空 history 并清旧字段。
+- **全链条生效面（采纳只改天数的直接后果）**：①今日 verdict 的「本 ISO 周已达计划」阈值随新计划变化（例如 3→5 后，同样本周 3 个训练日可由 light 回到 train）；②21 天持续负荷减载门槛 `训练日数 ≥ 3 × planned` 同步变化（3→5 即 9→15）；③计划页每块投影场数变化，日型仍按原 split/day sequence 轮转（全身 A/B/C 的 3→5 即 A/B/C/A/B）；④ verdict 由 light/deload 变 train 时，既有 mesocycle 相位调制与 FR-PL5 自动均衡才可能进入其原有门控，平周均衡仍每场最多 +2；⑤今日页 volumeBoost 的「本周还差几天」与上周顺延说明按新计划天数记账。每场基础处方、splitType、日序、回归协议、周期公式和均衡预算本身不变。
+- **共存与抑制**：栈顶已采纳记录与不同 kind 的新提案可同屏，顺序固定「提案卡在上、已采纳收据/撤销在下」；栈顶同 kind 沿用抑制，双向信号仍有引擎互斥守卫。会话级「暂不」与回滚后的尊重性抑制改为按 kind 记录，不落库；暂不降频不吞掉后来成立的增频，反之亦然。已采纳收据正文中的“现在每周目标”读取当前 clean program；设置页后来改过天数时，不拿历史 record.to 与计划 hero 制造双真相，历史 to 只保留为审计/撤销栈事实。
+- **诚实红线**：写失败置**计划页专属** `planSaveErrorText`（与全局 `saveErrorText` / 教练 `coachSaveErrorText` 隔离）、UI 如实呈现，绝不静默假成功。降频继续只说持续低于计划；增频可用提案中未钳制的 `observedDaysPerWeek` 精确陈述最近四周事实。两者都中性、无表扬、无说教、无感叹号、无额外负荷预告。
+- **0 卡公理**：计划页调整区使用 base surface + 顶部发丝线，不用 `ForgedCard` 或通用圆角卡，守 PlanTabView 0 预算。
 
 ### 8.2 用户自定义训练计划（PlanCustomization · FR-PL6/PL7 已实现）
 

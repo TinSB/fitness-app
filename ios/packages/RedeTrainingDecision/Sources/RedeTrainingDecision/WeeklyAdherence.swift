@@ -1,5 +1,5 @@
 // WeeklyAdherence — FR-PL3 依从信号派生：把 clean 历史的训练日期摊平成
-// 「最近若干完整周·每周完成场次」，喂 PlanAdjustmentEngine.frequencyProposal。
+// 「最近若干完整周·每周去重训练天数」，喂 PlanAdjustmentEngine.frequencyProposal。
 //
 // 纯函数（无 clock、显式注入 todayISO/timeZone），故获 SPM 单测覆盖：跨周边界、空周（gap）、
 // 进行中的本周（半周）排除、开训前空周不计。锚点复用 WeekAnchor.isoWeekStart → 与 FR-T5
@@ -13,14 +13,14 @@
 import Foundation
 
 public enum WeeklyAdherence {
-    /// 最近 `maxWeeks` 个**完整周**每周完成场次，按时间正序（旧→新）。
+    /// 最近 `maxWeeks` 个**完整周**每周去重训练天数，按时间正序（旧→新）。
     /// 入参日期任意顺序、可为更长 ISO 串（取前 10 位）；非法日期跳过。
-    /// 返回空 = 无可用完整周（数据不足，engine 自会判 < minWeeksOfData 不提案）。
+    /// 返回空 = 无可用完整周（数据不足，engine 自会判不足 4 周不提案）。
     public static func recentWeeklySessionCounts(
         sessionDatesISO: [String],
         todayISO: String,
         timeZone: TimeZone = .current,
-        maxWeeks: Int = 8
+        maxWeeks: Int = 4
     ) -> [Int] {
         guard maxWeeks > 0 else { return [] }
         var calendar = Calendar(identifier: .iso8601)
@@ -38,12 +38,12 @@ public enum WeeklyAdherence {
         guard let today = parse(todayISO), let currentWeekStart = weekStartDate(today) else { return [] }
 
         // 按周锚点分桶，并记最早的完整周（排除本周/未来脏数据）。
-        var countsByWeek: [String: Int] = [:]
+        var datesByWeek: [String: Set<String>] = [:]
         var earliestStart: Date?
         for iso in sessionDatesISO {
             guard let date = parse(iso), let ws = weekStartDate(date), ws < currentWeekStart else { continue }
             let key = WeekAnchor.isoWeekStart(date, timeZone: timeZone)
-            countsByWeek[key, default: 0] += 1
+            datesByWeek[key, default: []].insert(formatter.string(from: date))
             if earliestStart == nil || ws < earliestStart! { earliestStart = ws }
         }
 
@@ -56,7 +56,7 @@ public enum WeeklyAdherence {
         var cursor = firstStart
         while cursor <= lastCompleteStart {
             let key = WeekAnchor.isoWeekStart(cursor, timeZone: timeZone)
-            weekly.append(countsByWeek[key] ?? 0)
+            weekly.append(datesByWeek[key]?.count ?? 0)
             guard let next = calendar.date(byAdding: .weekOfYear, value: 1, to: cursor) else { break }
             cursor = next
         }
