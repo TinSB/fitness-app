@@ -130,8 +130,8 @@ final class ExerciseCatalogTests: XCTestCase {
         XCTAssertNil(e?.evidenceUrl, "front-squat 不应有孤立的循证 URL")
     }
 
-    // 内容波 W1：长尾动作已补双语技术要点和进退阶提示，但不得因此伪造循证或安全声明。
-    func testCuedExerciseKeepsEvidenceAndSafetyEmptyWhenNotVerified() {
+    // 内容波 W1/W2：无循证来源不等于无动作特异风险；安全注意仍须按风险判断，绝不借此伪造 evidence。
+    func testCuedExerciseKeepsEvidenceEmptyWhileSafetyCanBeRiskSpecific() {
         let e = ExerciseCatalog.minimal.entry(id: "db-pullover")
         XCTAssertNotNil(e, "样例动作应存在")
         XCTAssertEqual(e?.techniqueCuesEn?.isEmpty, false)
@@ -141,6 +141,7 @@ final class ExerciseCatalogTests: XCTestCase {
         XCTAssertNotNil(e?.progressionEn)
         XCTAssertNil(e?.evidenceTag)
         XCTAssertNil(e?.evidenceUrl)
-        XCTAssertNil(e?.safetyNoteZh)
+        XCTAssertNotNil(e?.safetyNoteZh)
+        XCTAssertNotNil(e?.safetyNoteEn)
     }
 }
