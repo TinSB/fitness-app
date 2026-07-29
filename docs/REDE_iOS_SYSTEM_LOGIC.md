@@ -123,7 +123,7 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 ## 6. Engine 输入
 
-训练决策、计划调整、进展分析必须从 clean data 或 typed clean input 进入。FR-TR7 / FR-SE7 的批准输入面是：`CleanTrainingSession.painDiscomfortExerciseIds`（从已完成场次的 `skippedSets` 与 `skippedExercises` 合并，同场同动作去重；当前训练 UI 只会由「跳过这一组 → 不适/疼痛」写出前者的 `painDiscomfort`，整动作跳过固定写 `other`；引擎仍保留后者读取以兼容未来输入）以及 `CleanExercise.sets[].painFlag`（只阻止该场完成被误判为恢复，不计入 4 场/2 次触发窗口）和 `CleanProfile.injuryFlags`（7 个白名单码，未知值丢弃留痕）。raw AppData 与原始 open-bag storage 仍不得直接进入处方引擎。
+训练决策、计划调整、进展分析必须从 clean data 或 typed clean input 进入。FR-TR7 / FR-SE7 的批准输入面是：`CleanTrainingSession.painDiscomfortExerciseIds`（从已完成场次的 `skippedSets` 与 `skippedExercises` 合并，同场同动作去重；训练 UI 的「跳过这一组」与「跳过这个动作」均可选择 `painDiscomfort` 并如实写入对应路径）以及 `CleanExercise.sets[].painFlag`（只阻止该场完成被误判为恢复，不计入 4 场/2 次触发窗口）和 `CleanProfile.injuryFlags`（7 个白名单码，未知值丢弃留痕）。raw AppData 与原始 open-bag storage 仍不得直接进入处方引擎。
 
 禁止：
 
