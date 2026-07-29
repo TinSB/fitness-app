@@ -160,7 +160,9 @@
       "regressionZh": "把配重销插到更轻的片数，推到接近伸直前就停，让胸部持续受力又不给肩膀添负担。",
       "regressionEn": "Drop the pin to a lighter plate and stop just short of full extension so the chest stays under tension without straining the shoulders.",
       "progressionZh": "增加一片配重，把下放过程放慢到 3 秒，在胸部拉伸的最低点稍作停顿再推回去。",
-      "progressionEn": "Add a plate and slow the lowering phase to a 3-second count, pausing briefly at the stretched position before pressing back out."
+      "progressionEn": "Add a plate and slow the lowering phase to a 3-second count, pausing briefly at the stretched position before pressing back out.",
+      "safetyNoteZh": "先把座椅调到把手对准胸部中段，肩胛贴稳靠垫；下放到手肘略过躯干即可，不要为追求幅度把手肘拉到身体后方。若肩部以往有不适，先用较轻配重并咨询专业人士。",
+      "safetyNoteEn": "Set the seat so the handles line up with mid-chest and keep your shoulder blades settled against the pad; lower only until the elbows pass the torso slightly instead of forcing them far behind you. If you have a history of shoulder discomfort, start lighter and consult a qualified professional."
     },
     {
       "id": "cable-fly",
@@ -236,7 +238,9 @@
       "regressionZh": "减轻配重，改用辅助弹力带或较舒适的中立宽握，身体略微后仰，只把把手拉到下巴高度，这样既能保持张力又不勉强。",
       "regressionEn": "Reduce the load and use an assisted band or wide neutral grip with a slight torso lean, pulling only to chin height so you can keep tension without straining.",
       "progressionZh": "加大配重，全程把把手拉到上胸位置并用 2–3 秒控制离心，或进阶到单臂绳索下拉以加强背阔肌负荷。",
-      "progressionEn": "Increase the load, pull through a full range to the upper chest with a 2–3 second controlled eccentric, or progress to single-arm cable pulldowns for greater lat demand."
+      "progressionEn": "Increase the load, pull through a full range to the upper chest with a 2–3 second controlled eccentric, or progress to single-arm cable pulldowns for greater lat demand.",
+      "safetyNoteZh": "先压紧大腿垫再开始，杠铃拉向上胸而不是颈后；躯干只需轻微后倾，不要用大幅后仰把重量甩下来。若肩或颈部以往有不适，先降低配重并咨询专业人士。",
+      "safetyNoteEn": "Secure your thighs under the pad before starting, pull the bar toward the upper chest rather than behind the neck, and use only a small lean instead of throwing the torso back to move the stack. If you have a history of shoulder or neck discomfort, reduce the load and consult a qualified professional."
     },
     {
       "id": "seated-row",
@@ -1083,7 +1087,9 @@
       "regressionZh": "改用更轻的哑铃，并只下放到肩膀仍能稳定、肋骨不外翻的范围。 先减少到肋骨不外翻且上臂能停在耳旁后方约 10–15° 的范围，避免用腰部换深度。",
       "regressionEn": "Choose a lighter dumbbell and stop the descent at the point where the shoulders remain stable and the ribs stay down. Reduce until the ribs stay down and the upper arms can reach about 10–15 degrees behind the ears without using the low back for depth.",
       "progressionZh": "在弧线和躯干稳定不变的前提下小幅加重，或在头后伸展位停顿一秒。 当躯干不移动时再加最小哑铃档位，或把头后停顿增加到 2 秒。",
-      "progressionEn": "Increase the load in small steps while preserving the same arc and torso position, or add a one-second pause in the stretched position behind the head. Add the smallest dumbbell increment only with a still torso, or lengthen the behind-head pause to 2 seconds."
+      "progressionEn": "Increase the load in small steps while preserving the same arc and torso position, or add a one-second pause in the stretched position behind the head. Add the smallest dumbbell increment only with a still torso, or lengthen the behind-head pause to 2 seconds.",
+      "safetyNoteZh": "双手托住哑铃内侧的一端并确认长凳稳固；下放时肋骨不要外翻，只到肩部仍能舒适控制的弧度，不要硬把重量压到头后很深。若肩部以往有不适，先用较轻重量并咨询专业人士。",
+      "safetyNoteEn": "Hold one end of the dumbbell securely with both hands and make sure the bench is stable; keep the ribs from flaring as you lower, and stop at an arc you can control comfortably instead of forcing the weight deep behind your head. If you have a history of shoulder discomfort, use a lighter load and consult a qualified professional."
     },
     {
       "id": "rear-delt-fly",
@@ -1750,7 +1756,9 @@
       "regressionZh": "降低配重并缩短打开幅度，先保持肩膀贴稳靠垫。 先降到能在起点和终点各控制半秒的负荷；若骨盆或肩胛离开支撑面，就缩小幅度。",
       "regressionEn": "Lower the stack and use a shorter opening range while you learn to keep the shoulders supported. First reduce to a load you can control for half a second at both ends; if the pelvis or shoulder blades leave support, shorten the range.",
       "progressionZh": "在肩膀稳定的前提下逐步加重，或在合拢位停顿一到两秒。 保持座椅设置不变，连续两次训练完成上限次数后再加最小档位。",
-      "progressionEn": "Add load while the shoulders stay stable, or hold the squeezed position for one to two seconds. Keep the same seat setup and add the smallest increment only after reaching the top reps in two consecutive sessions."
+      "progressionEn": "Add load while the shoulders stay stable, or hold the squeezed position for one to two seconds. Keep the same seat setup and add the smallest increment only after reaching the top reps in two consecutive sessions.",
+      "safetyNoteZh": "调好座椅，让把手或肘垫与肩部大致同高；打开时只到胸前有拉伸而肩膀仍稳定的幅度，不要强行把手臂拉到身体后方。若肩部以往有不适，先降低配重并咨询专业人士。",
+      "safetyNoteEn": "Adjust the seat so the handles or elbow pads sit roughly level with your shoulders; open only as far as you can feel a chest stretch while the shoulders stay stable, rather than forcing the arms behind the body. If you have a history of shoulder discomfort, lower the stack and consult a qualified professional."
     },
     {
       "id": "machine-shoulder-press",
@@ -2340,7 +2348,9 @@
       "regressionZh": "减轻杠铃重量，或改用史密斯机和较小活动范围。 先减到能以 3 秒下放完成 8 次的重量；稳定的下放比强行加幅度更重要。",
       "regressionEn": "Use a lighter barbell, or switch to a Smith machine with a shorter range of motion. First reduce to a load that allows 8 reps with a 3-second lowering; a stable descent matters more than forcing range.",
       "progressionZh": "逐步加重，或在下胸触杠后停顿一秒再推。 先在同一动作幅度完成目标次数，再只加最小档位，避免为加重改变肩肘轨迹。",
-      "progressionEn": "Add load gradually, or pause for one second on the lower chest before each press. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change."
+      "progressionEn": "Add load gradually, or pause for one second on the lower chest before each press. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change.",
+      "safetyNoteZh": "躺下前先确认挂钩和安全杠位置，大重量请安排保护者；解杠和回杠都保持肩胛贴凳、动作平稳，不要在头低位匆忙处理杠铃。若肩部以往有不适，先用较轻重量并咨询专业人士。",
+      "safetyNoteEn": "Before you lie down, check the hooks and safety stops and use a spotter for heavy sets; keep your shoulder blades on the bench and re-rack deliberately rather than rushing with the bar in the head-down position. If you have a history of shoulder discomfort, begin with a lighter load and consult a qualified professional."
     },
     {
       "id": "high-cable-fly",
@@ -2559,7 +2569,9 @@
       "regressionZh": "降低配重并改用稍窄握距，或换辅助引体机。 先用能让肩胛先下沉、全程不摆动的负荷；必要时只保留到下巴或锁骨高度的无痛行程。",
       "regressionEn": "Lower the stack and use a slightly narrower grip, or switch to an assisted pull-up machine. Use a load that lets the shoulder blades depress first without swinging; if needed, keep only a comfortable range to chin or collarbone height.",
       "progressionZh": "在躯干稳定时加重，或在上胸接近横杆时停顿一秒。 当每次都能在底端停半秒、回程控制 3 秒时，再加最小阻力或减少辅助。",
-      "progressionEn": "Add load with a stable torso, or pause for a second as the upper chest approaches the bar. Add the smallest resistance or reduce assistance only after every rep can hold the bottom for half a second and return for 3 seconds."
+      "progressionEn": "Add load with a stable torso, or pause for a second as the upper chest approaches the bar. Add the smallest resistance or reduce assistance only after every rep can hold the bottom for half a second and return for 3 seconds.",
+      "safetyNoteZh": "宽握不必宽到肩部被拉到极限，杠铃拉向上胸而不是颈后；下放时保持肩胛受控，不要在底部突然松肩或借力后仰。若肩部以往有不适，先减小握距或配重并咨询专业人士。",
+      "safetyNoteEn": "There is no need to take an ultra-wide grip that pulls the shoulders to their limit; bring the bar to the upper chest, not behind the neck, and keep the shoulder blades controlled on the way up. If you have a history of shoulder discomfort, narrow the grip or reduce the load and consult a qualified professional."
     },
     {
       "id": "cable-kickback",
@@ -2665,7 +2677,9 @@
       "regressionZh": "改用轻杠或哑铃推举，先练不借腿的严格推举。 先减到能以 3 秒下放完成 8 次的重量；稳定的下放比强行加幅度更重要。",
       "regressionEn": "Use a lighter bar or dumbbells and practice a strict press before adding the leg drive. First reduce to a load that allows 8 reps with a 3-second lowering; a stable descent matters more than forcing range.",
       "progressionZh": "在每次接杠都稳定时逐步加重，或在顶端停顿一秒。 先在同一动作幅度完成目标次数，再只加最小档位，避免为加重改变肩肘轨迹。",
-      "progressionEn": "Add load once every overhead catch is stable, or pause for a second overhead. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change."
+      "progressionEn": "Add load once every overhead catch is stable, or pause for a second overhead. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change.",
+      "safetyNoteZh": "每次借力前先收紧腹部，蹬地后让杠铃沿接近直线的路径上行；不要为了接住更重的杠铃而过度后仰或把重心追到脚尖。若腰背或肩部以往有不适，先用较轻重量并咨询专业人士。",
+      "safetyNoteEn": "Brace before each dip and drive, then let the bar travel close to vertical; do not chase a heavier bar by leaning far back or shifting onto the toes. If you have a history of lower-back or shoulder discomfort, start with a lighter load and consult a qualified professional."
     },
     {
       "id": "meadows-row",
@@ -2701,7 +2715,9 @@
       "regressionZh": "减轻杠铃片，缩短拉动幅度，或改用胸托哑铃划船。 先选择能让肩胛在底部自然前移、躯干不转动的负荷，必要时缩短最后 10 厘米行程。",
       "regressionEn": "Remove plates, use a shorter pull, or switch to a chest-supported dumbbell row. Choose a load that lets the shoulder blade reach forward at the bottom without torso rotation; if needed, shorten the final 10 cm of range.",
       "progressionZh": "在躯干不旋转时逐步加片，或在髋旁停顿一秒。 当两侧都能在顶端停半秒且躯干不借力时，再加一个最小重量档位。",
-      "progressionEn": "Add plates while the torso remains square, or pause for a second beside the hip. Add the smallest increment only after both sides can hold the top for half a second without torso momentum."
+      "progressionEn": "Add plates while the torso remains square, or pause for a second beside the hip. Add the smallest increment only after both sides can hold the top for half a second without torso momentum.",
+      "safetyNoteZh": "先把空闲手扶稳、双脚站好，再从髋部折叠进入划船；拉起时让骨盆和胸口保持朝前，不要靠扭转躯干把杠铃端甩向髋部。若下背或肩部以往有不适，先减轻重量并咨询专业人士。",
+      "safetyNoteEn": "Set the free hand and both feet securely before hinging into the row; keep the pelvis and chest facing forward as you pull instead of twisting the torso to heave the bar end to the hip. If you have a history of lower-back or shoulder discomfort, reduce the load and consult a qualified professional."
     },
     {
       "id": "machine-preacher-curl",
@@ -3069,7 +3085,9 @@
       "regressionZh": "把杠铃调高并屈膝，减少身体需要拉起的重量。 先选择能让肩胛在底部自然前移、躯干不转动的负荷，必要时缩短最后 10 厘米行程。",
       "regressionEn": "Raise the bar and bend the knees to reduce the amount of bodyweight you pull. Choose a load that lets the shoulder blade reach forward at the bottom without torso rotation; if needed, shorten the final 10 cm of range.",
       "progressionZh": "降低杠铃高度或抬高双脚，并在顶端停顿一秒。 当两侧都能在顶端停半秒且躯干不借力时，再加一个最小重量档位。",
-      "progressionEn": "Lower the bar height or elevate the feet, adding a one-second pause at the top. Add the smallest increment only after both sides can hold the top for half a second without torso momentum."
+      "progressionEn": "Lower the bar height or elevate the feet, adding a one-second pause at the top. Add the smallest increment only after both sides can hold the top for half a second without torso momentum.",
+      "safetyNoteZh": "确认横杠已被牢固固定在深蹲架或专用架上，再把身体放到杠下；只把双脚走到仍能保持头到脚跟成一直线的角度，不要在松动横杠下训练。若肩部以往有不适，先把杠调高并咨询专业人士。",
+      "safetyNoteEn": "Make sure the bar is firmly fixed in a rack or dedicated frame before positioning underneath it; walk the feet out only as far as you can keep a straight line from head to heels, and never train under a loose bar. If you have a history of shoulder discomfort, raise the bar first and consult a qualified professional."
     },
     {
       "id": "bodyweight-squat",
@@ -3212,7 +3230,9 @@
       "regressionZh": "降低配重并缩短底部范围，先保持肩膀贴住靠垫。 先减到能以 3 秒下放完成 8 次的重量；稳定的下放比强行加幅度更重要。",
       "regressionEn": "Lower the load and shorten the bottom range while keeping the shoulders supported. First reduce to a load that allows 8 reps with a 3-second lowering; a stable descent matters more than forcing range.",
       "progressionZh": "逐步加片，或在底部停顿一秒再推起。 先在同一动作幅度完成目标次数，再只加最小档位，避免为加重改变肩肘轨迹。",
-      "progressionEn": "Add plates gradually, or pause for a second at the bottom before pressing. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change."
+      "progressionEn": "Add plates gradually, or pause for a second at the bottom before pressing. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change.",
+      "safetyNoteZh": "先调好座椅和靠背，让手柄从胸部中段起始；下放时肩胛保持贴稳靠垫，不要为了更深幅度让肩膀被手柄拉到身体后方。若肩部以往有不适，先用较轻配重并咨询专业人士。",
+      "safetyNoteEn": "Set the seat and back pad so the handles start at mid-chest; keep the shoulder blades settled into the pad as you lower instead of letting the handles pull the shoulders behind the torso for extra depth. If you have a history of shoulder discomfort, begin with a lighter load and consult a qualified professional."
     },
     {
       "id": "incline-hammer-press",
@@ -3249,7 +3269,9 @@
       "regressionZh": "降低配重并把座椅调得更直，缩短底部幅度。 先减到能以 3 秒下放完成 8 次的重量；稳定的下放比强行加幅度更重要。",
       "regressionEn": "Lower the load, raise the seat angle, and shorten the bottom range. First reduce to a load that allows 8 reps with a 3-second lowering; a stable descent matters more than forcing range.",
       "progressionZh": "在肩胛稳定时逐步加片，或在底部停顿一秒。 先在同一动作幅度完成目标次数，再只加最小档位，避免为加重改变肩肘轨迹。",
-      "progressionEn": "Add plates with stable shoulder blades, or pause for a second at the bottom. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change."
+      "progressionEn": "Add plates with stable shoulder blades, or pause for a second at the bottom. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change.",
+      "safetyNoteZh": "把座椅调到手柄对准上胸而不是颈部，先让肩胛稳住再解锁手柄；固定轨迹不适合你的肩部幅度时，不要强行下放到最深。若肩部以往有不适，先降低配重并咨询专业人士。",
+      "safetyNoteEn": "Adjust the seat so the handles track toward the upper chest rather than the neck, and settle the shoulder blades before releasing the handles; if the fixed path does not suit your shoulder range, do not force the deepest position. If you have a history of shoulder discomfort, lower the load and consult a qualified professional."
     },
     {
       "id": "hammer-row",
@@ -3358,7 +3380,9 @@
       "regressionZh": "降低配重并缩短底部范围，或改用地雷推举。 先减到能以 3 秒下放完成 8 次的重量；稳定的下放比强行加幅度更重要。",
       "regressionEn": "Lower the load and shorten the bottom range, or switch to a landmine press. First reduce to a load that allows 8 reps with a 3-second lowering; a stable descent matters more than forcing range.",
       "progressionZh": "在躯干不后仰时逐步加片，或在顶端停顿一秒。 先在同一动作幅度完成目标次数，再只加最小档位，避免为加重改变肩肘轨迹。",
-      "progressionEn": "Add plates while the torso stays upright, or pause for a second at the top. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change."
+      "progressionEn": "Add plates while the torso stays upright, or pause for a second at the top. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change.",
+      "safetyNoteZh": "调好座椅，使手柄从耳朵略前方的舒适高度起始；推起时保持背部贴稳，不要用塌腰或猛锁肘来完成最后一段。若肩部以往有不适，先减轻配重并咨询专业人士。",
+      "safetyNoteEn": "Adjust the seat so the handles begin at a comfortable height just in front of the ears; keep your back settled against the pad as you press rather than arching hard or snapping the elbows straight to finish the rep. If you have a history of shoulder discomfort, reduce the load and consult a qualified professional."
     },
     {
       "id": "pendulum-squat",
@@ -3394,7 +3418,9 @@
       "regressionZh": "降低配重并缩短下沉深度，先保持骨盆和脚掌稳定。 先缩短到骨盆和足弓都能稳定的深度，并保留约 2 次余力；深度由控制决定。",
       "regressionEn": "Lower the load and use a shallower depth while keeping the pelvis and feet stable. First use a depth where the pelvis and foot arches stay stable with about 2 reps in reserve; control determines depth.",
       "progressionZh": "在深度和膝盖轨迹稳定时逐步加片，或在底部停顿一秒。 当相同深度能连续完成目标次数且膝盖轨迹稳定，再增加最小阻力或 5% 以内的负荷。",
-      "progressionEn": "Add plates when depth and knee tracking stay consistent, or pause for a second at the bottom. When the same depth and knee tracking hold through the target reps, add the smallest resistance or no more than about 5% load."
+      "progressionEn": "Add plates when depth and knee tracking stay consistent, or pause for a second at the bottom. When the same depth and knee tracking hold through the target reps, add the smallest resistance or no more than about 5% load.",
+      "safetyNoteZh": "先在空载或轻载下确认安全把手可随时够到，背部和骨盆全程贴住靠垫；骨盆开始卷起或脚掌要滑动时就在该深度止住，不要借底部反弹。若膝或腰背以往有不适，先用较浅幅度和较轻重量并咨询专业人士。",
+      "safetyNoteEn": "With no load or a light load, first confirm that you can reach the safety handles at any point and keep both back and pelvis against the pad; stop the descent when the pelvis starts to tuck or the feet begin to slip instead of bouncing from the bottom. If you have a history of knee or lower-back discomfort, use a shallower range and lighter load and consult a qualified professional."
     },
     {
       "id": "smith-squat",
@@ -3431,7 +3457,9 @@
       "regressionZh": "降低杠铃重量并缩短深度，或先做徒手深蹲。 先用空杆或轻杠，在可控深度停 1 秒确认足底压力均匀；不要靠导轨掩盖失控。",
       "regressionEn": "Use a lighter bar and a shorter depth, or begin with bodyweight squats. Start with an empty or light bar and pause one second at a controllable depth to confirm even foot pressure; do not let the rails hide a loss of control.",
       "progressionZh": "逐步加重，或在底部停顿一秒再站起。 在导轨路径、脚位和动作深度都不变时增加最小杠铃片；不以缩短幅度换重量。",
-      "progressionEn": "Add load gradually, or pause for a second at the bottom before standing. Add the smallest plates only with the same rail path, foot position, and depth; do not trade range for weight."
+      "progressionEn": "Add load gradually, or pause for a second at the bottom before standing. Add the smallest plates only with the same rail path, foot position, and depth; do not trade range for weight.",
+      "safetyNoteZh": "固定导轨不一定适合每个人的脚位：先用轻重量试出让杠铃落在中足上方、膝盖自然跟随脚尖的位置，并把安全扣设在可控深度下方。若膝或腰背以往有不适，先缩小幅度并咨询专业人士。",
+      "safetyNoteEn": "A fixed rail does not suit every foot position: use a light load first to find a stance that keeps the bar over mid-foot and the knees tracking naturally over the toes, then set the safety stops just below your controlled depth. If you have a history of knee or lower-back discomfort, shorten the range and consult a qualified professional."
     },
     {
       "id": "smith-bench-press",
@@ -3468,7 +3496,9 @@
       "regressionZh": "减轻杠铃重量并缩短下放幅度，先保持肩胛固定。 先减到能以 3 秒下放完成 8 次的重量；稳定的下放比强行加幅度更重要。",
       "regressionEn": "Use a lighter bar and a shorter descent while learning to keep the shoulder blades set. First reduce to a load that allows 8 reps with a 3-second lowering; a stable descent matters more than forcing range.",
       "progressionZh": "在轨迹稳定时逐步加重，或在胸前停顿一秒。 先在同一动作幅度完成目标次数，再只加最小档位，避免为加重改变肩肘轨迹。",
-      "progressionEn": "Add load once the path stays stable, or pause for a second at the chest. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change."
+      "progressionEn": "Add load once the path stays stable, or pause for a second at the chest. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change.",
+      "safetyNoteZh": "先调整长凳，让固定杠在中胸上方运行，并把安全扣设在你的最低可控点稍下方；不要因为导轨稳定就让手肘完全外展或失去肩胛支撑。若肩部以往有不适，先减轻重量并咨询专业人士。",
+      "safetyNoteEn": "Position the bench so the fixed bar travels over mid-chest and set the safety stops just below your lowest controlled point; rail stability is not a reason to flare the elbows fully or lose shoulder-blade support. If you have a history of shoulder discomfort, reduce the load and consult a qualified professional."
     },
     {
       "id": "smith-incline-press",
@@ -3505,7 +3535,9 @@
       "regressionZh": "减轻重量并缩短下放幅度，或改为平板史密斯卧推。 先减到能以 3 秒下放完成 8 次的重量；稳定的下放比强行加幅度更重要。",
       "regressionEn": "Use less load and a shorter descent, or switch to a flat Smith press. First reduce to a load that allows 8 reps with a 3-second lowering; a stable descent matters more than forcing range.",
       "progressionZh": "逐步加重，或在上胸停顿一秒后推起。 先在同一动作幅度完成目标次数，再只加最小档位，避免为加重改变肩肘轨迹。",
-      "progressionEn": "Add load gradually, or pause for a second on the upper chest before pressing. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change."
+      "progressionEn": "Add load gradually, or pause for a second on the upper chest before pressing. First complete the target reps at the same range, then add only the smallest increment so the shoulder and elbow path does not change.",
+      "safetyNoteZh": "先把长凳位置调到固定杠能落在上胸而不是颈部，并在开始前设好安全扣；下放只到肩胛仍能稳贴长凳的深度，不要让固定轨迹逼肩膀进入不舒服的位置。若肩部以往有不适，先减轻重量并咨询专业人士。",
+      "safetyNoteEn": "Set the bench so the fixed bar comes to the upper chest rather than the neck, and set the safety stops before starting; lower only as far as the shoulder blades stay settled on the bench instead of letting the fixed track force an uncomfortable shoulder position. If you have a history of shoulder discomfort, reduce the load and consult a qualified professional."
     },
     {
       "id": "smith-overhead-press",
@@ -3542,7 +3574,9 @@
       "regressionZh": "减轻重量、缩短底部范围，或改用地雷推举。 先用空杆或轻杠，在可控深度停 1 秒确认足底压力均匀；不要靠导轨掩盖失控。",
       "regressionEn": "Use less load and a shorter bottom range, or switch to a landmine press. Start with an empty or light bar and pause one second at a controllable depth to confirm even foot pressure; do not let the rails hide a loss of control.",
       "progressionZh": "躯干保持直立时逐步加重，或在顶端停顿一秒。 在导轨路径、脚位和动作深度都不变时增加最小杠铃片；不以缩短幅度换重量。",
-      "progressionEn": "Add load while the torso stays upright, or pause for a second overhead. Add the smallest plates only with the same rail path, foot position, and depth; do not trade range for weight."
+      "progressionEn": "Add load while the torso stays upright, or pause for a second overhead. Add the smallest plates only with the same rail path, foot position, and depth; do not trade range for weight.",
+      "safetyNoteZh": "先确认站位让杠铃能沿导轨从面前通过，并把安全扣设在下巴附近的可控高度；如果固定轨迹迫使肩膀向后或让你塌腰，不要强行把杠铃下得更低。若肩或腰背以往有不适，先减轻重量并咨询专业人士。",
+      "safetyNoteEn": "Choose a stance that lets the bar pass in front of the face on the rail and set the safety stops at a controllable height near the chin; if the fixed track forces the shoulders back or makes you arch, do not force the bar lower. If you have a history of shoulder or lower-back discomfort, reduce the load and consult a qualified professional."
     },
     {
       "id": "smith-calf-raise",
@@ -3760,7 +3794,9 @@
       "regressionZh": "降低配重并缩短最后一段伸直范围。 先用能让左右膝盖轨迹一致的阻力，并从每侧 8 次开始；不以摆髋补足范围。",
       "regressionEn": "Lower the stack and shorten the final part of knee extension. Use resistance that gives matching knee paths left and right, beginning with 8 reps per side; do not swing the hips to create range.",
       "progressionZh": "逐步加重，或在接近伸直位停顿一秒。 当弱侧也能完成相同次数和 3 秒回程，再加最小档位或每侧增加 1 次。",
-      "progressionEn": "Add load gradually, or pause for a second just short of full extension. Add the smallest increment or one rep per side only after the weaker side matches reps and a 3-second return."
+      "progressionEn": "Add load gradually, or pause for a second just short of full extension. Add the smallest increment or one rep per side only after the weaker side matches reps and a 3-second return.",
+      "safetyNoteZh": "先把座椅调到膝关节轴线与机器转轴对齐，脚踝垫贴在脚踝上方；顶端留一点余量，不要猛地把膝盖顶到锁死。若膝部以往有不适，先用较轻配重并咨询专业人士。",
+      "safetyNoteEn": "Set the seat so the knee joint lines up with the machine pivot and place the shin pad just above the ankle; leave a little room at the top instead of snapping the knee into lockout. If you have a history of knee discomfort, start with a lighter load and consult a qualified professional."
     },
     {
       "id": "hammer-leg-extension",
@@ -3794,7 +3830,9 @@
       "regressionZh": "降低配重并用较小范围，避免配重在底部撞击。 先以 8 次、3 秒回程的轻重量确认膝盖与转轴对齐，不以摆髋补足范围。",
       "regressionEn": "Lower the load and use a shorter range, keeping the load from crashing at the bottom. First use a light load for 8 reps with a 3-second return to confirm knee-to-pivot alignment; do not create range by moving the hips.",
       "progressionZh": "逐步加片，或在接近伸直位停顿一秒。 在座椅设置不变且连续两次训练完成上限次数后，才加最小一片。",
-      "progressionEn": "Add plates gradually, or pause for a second just short of full extension. Add the smallest plate only after two sessions reach the top reps with the same seat setup."
+      "progressionEn": "Add plates gradually, or pause for a second just short of full extension. Add the smallest plate only after two sessions reach the top reps with the same seat setup.",
+      "safetyNoteZh": "调整座椅和靠背，让膝关节与转轴对齐、腿垫落在脚踝上方；开始前确认锁销插稳，顶端不要用力撞向锁死。若膝部以往有不适，先降低配重并咨询专业人士。",
+      "safetyNoteEn": "Adjust the seat and back pad so the knee lines up with the pivot and the roller rests just above the ankle; make sure the selector pin is fully seated and do not drive the knee hard into lockout. If you have a history of knee discomfort, reduce the load and consult a qualified professional."
     },
     {
       "id": "hammer-leg-curl",
@@ -3900,7 +3938,9 @@
       "regressionZh": "改用辅助引体机、弹力带辅助，或做反向划船。 先用能让肩胛先下沉、全程不摆动的负荷；必要时只保留到下巴或锁骨高度的无痛行程。",
       "regressionEn": "Use an assisted pull-up machine, a band assist, or inverted rows. Use a load that lets the shoulder blades depress first without swinging; if needed, keep only a comfortable range to chin or collarbone height.",
       "progressionZh": "在动作干净时增加次数，或在顶端停顿一秒。 当每次都能在底端停半秒、回程控制 3 秒时，再加最小阻力或减少辅助。",
-      "progressionEn": "Add repetitions once the movement stays clean, or pause for a second at the top. Add the smallest resistance or reduce assistance only after every rep can hold the bottom for half a second and return for 3 seconds."
+      "progressionEn": "Add repetitions once the movement stays clean, or pause for a second at the top. Add the smallest resistance or reduce assistance only after every rep can hold the bottom for half a second and return for 3 seconds.",
+      "safetyNoteZh": "反握时先握稳横杆、让肩胛轻微下沉再开始；底部保持可控伸展，不要完全松垮悬吊或靠摆动抢次数。若肩或肘部以往有不适，先减少次数或幅度并咨询专业人士。",
+      "safetyNoteEn": "With the underhand grip, secure your hold and set the shoulder blades gently down before pulling; use a controlled stretch at the bottom instead of hanging completely slack or using a swing to steal reps. If you have a history of shoulder or elbow discomfort, reduce the reps or range and consult a qualified professional."
     },
     {
       "id": "weighted-pull-up",
@@ -3936,7 +3976,9 @@
       "regressionZh": "移除外加负重，改做自重或辅助引体。 先用能让肩胛先下沉、全程不摆动的负荷；必要时只保留到下巴或锁骨高度的无痛行程。",
       "regressionEn": "Remove the added load and use bodyweight or assisted pull-ups. Use a load that lets the shoulder blades depress first without swinging; if needed, keep only a comfortable range to chin or collarbone height.",
       "progressionZh": "在全程无摆动时小幅增加外加负重，或在顶端停顿一秒。 当每次都能在底端停半秒、回程控制 3 秒时，再加最小阻力或减少辅助。",
-      "progressionEn": "Add small amounts of external load once every rep is swing-free, or pause for a second at the top. Add the smallest resistance or reduce assistance only after every rep can hold the bottom for half a second and return for 3 seconds."
+      "progressionEn": "Add small amounts of external load once every rep is swing-free, or pause for a second at the top. Add the smallest resistance or reduce assistance only after every rep can hold the bottom for half a second and return for 3 seconds.",
+      "safetyNoteZh": "先确认腰带、挂片和横杆都固定稳妥，配重静止后再开始拉；接近力竭时不要靠摆动抢最后一次，选择能让你受控下杠的设置并提前结束。若肩或肘部以往有不适，先移除外加负重并咨询专业人士。",
+      "safetyNoteEn": "Confirm that the belt, plate, and bar are all secure, and wait for the load to settle before pulling; near failure, do not swing for one more rep—use a setup that lets you step down under control and end the set early. If you have a history of shoulder or elbow discomfort, remove the added load and consult a qualified professional."
     },
     {
       "id": "weighted-dip",
@@ -3973,7 +4015,9 @@
       "regressionZh": "移除负重，改做自重双杠臂屈伸或辅助双杠臂屈伸。 先选择能以 3 秒下放完成 6–8 次的版本，必要时增加支撑或缩短行程以保持姿势。",
       "regressionEn": "Remove the added load and use bodyweight dips or assisted dips. First choose a version you can lower for 3 seconds for 6–8 reps; add support or shorten range if needed to preserve position.",
       "progressionZh": "在深度和肩膀稳定时小幅增加外加负重，或在底部停顿一秒。 先把动作做成稳定的 8–12 次，再通过减少支撑、延长行程或改变杠杆进阶。",
-      "progressionEn": "Add small amounts of external load when depth and shoulder position stay stable, or pause for a second at the bottom. First make 8–12 reps stable, then progress by reducing support, lengthening range, or changing leverage."
+      "progressionEn": "Add small amounts of external load when depth and shoulder position stay stable, or pause for a second at the bottom. First make 8–12 reps stable, then progress by reducing support, lengthening range, or changing leverage.",
+      "safetyNoteZh": "先确认腰带和挂片固定、双杠不晃动，等配重静止再下放；接近力竭时不要从底部弹起或勉强多做一次，选择可获得协助或能受控下杠的设置。若肩或肘部以往有不适，先移除外加负重并咨询专业人士。",
+      "safetyNoteEn": "Check that the belt and plate are secure and the bars do not move, then wait for the load to settle before lowering; near failure, do not bounce from the bottom or force an extra rep—use a setup with assistance available or one that lets you step down under control. If you have a history of shoulder or elbow discomfort, remove the added load and consult a qualified professional."
     },
     {
       "id": "band-pull-apart",
@@ -4148,7 +4192,9 @@
       "regressionZh": "换更轻的带子或站得更靠近固定点。 换成更轻的带子，并把起始位移缩短到仍能维持约 2 秒回程；带子拉得越长阻力越大。",
       "regressionEn": "Use a lighter band or stand closer to the anchor. Use a lighter band and shorten the starting stretch until you can still control about a 2-second return; a longer band stretch creates more resistance.",
       "progressionZh": "换更重的带子，或在伸直位停顿一秒。 先在全程不松带的前提下完成目标次数，再换更重的带子或把起始距离拉远 10–20 厘米。",
-      "progressionEn": "Use a heavier band, or pause for a second near full extension. First complete the target reps without slack, then use a heavier band or step 10–20 cm farther from the anchor."
+      "progressionEn": "Use a heavier band, or pause for a second near full extension. First complete the target reps without slack, then use a heavier band or step 10–20 cm farther from the anchor.",
+      "safetyNoteZh": "先把固定点设在胸部高度并用轻拉确认不会移动，再开始正式组；每次回程都握住把手或带子，不要在拉紧时直接松手让带子回弹。若肩部以往有不适，先缩短幅度并咨询专业人士。",
+      "safetyNoteEn": "Set the anchor at chest height and test it with a light pull before your working set; keep hold of the handles or band through every return instead of releasing it under tension. If you have a history of shoulder discomfort, shorten the range and consult a qualified professional."
     },
     {
       "id": "band-row",
@@ -4184,7 +4230,9 @@
       "regressionZh": "换更轻的带子或站得更靠近固定点。 换成更轻的带子，并把起始位移缩短到仍能维持约 2 秒回程；带子拉得越长阻力越大。",
       "regressionEn": "Use a lighter band or stand closer to the anchor. Use a lighter band and shorten the starting stretch until you can still control about a 2-second return; a longer band stretch creates more resistance.",
       "progressionZh": "换更重的带子，或在肘部最后方停顿一秒。 先在全程不松带的前提下完成目标次数，再换更重的带子或把起始距离拉远 10–20 厘米。",
-      "progressionEn": "Use a heavier band, or pause for a second with the elbows back. First complete the target reps without slack, then use a heavier band or step 10–20 cm farther from the anchor."
+      "progressionEn": "Use a heavier band, or pause for a second with the elbows back. First complete the target reps without slack, then use a heavier band or step 10–20 cm farther from the anchor.",
+      "safetyNoteZh": "先用轻拉确认固定点稳固，再让躯干站稳后划船；回程时不要突然松带或后仰猛拉，让手肘受控回到身体前方。若下背或肩部以往有不适，先降低张力并咨询专业人士。",
+      "safetyNoteEn": "Test that the anchor is solid with a light pull, then set your torso before rowing; do not suddenly release the band or jerk backward on the return—let the elbows travel forward under control. If you have a history of lower-back or shoulder discomfort, reduce the tension and consult a qualified professional."
     },
     {
       "id": "band-lat-pulldown",
@@ -4220,7 +4268,9 @@
       "regressionZh": "换更轻的带子，跪姿或坐姿时把身体移近固定点以缩短带子的起始拉长；先用能让肩胛下沉、全程不摆动的负荷。",
       "regressionEn": "Use a lighter band and, while staying kneeling or seated, move closer to the anchor to shorten the starting stretch. Choose tension that lets the shoulder blades depress first without swinging.",
       "progressionZh": "换更重的带子，或在底端停顿一秒。 当每次都能在底端停半秒、回程控制 3 秒时，再加最小阻力或减少辅助。",
-      "progressionEn": "Use a heavier band, or pause for a second at the bottom. Add the smallest resistance or reduce assistance only after every rep can hold the bottom for half a second and return for 3 seconds."
+      "progressionEn": "Use a heavier band, or pause for a second at the bottom. Add the smallest resistance or reduce assistance only after every rep can hold the bottom for half a second and return for 3 seconds.",
+      "safetyNoteZh": "高位固定点必须牢固，先用轻拉确认再开始；把带子拉向上胸而不是颈后，回程保持肩胛受控，不要直接松手让带子回弹。若肩或颈部以往有不适，先降低张力并咨询专业人士。",
+      "safetyNoteEn": "The high anchor must be secure, so test it with a light pull before starting; pull the band toward the upper chest rather than behind the neck, and keep the shoulder blades controlled on the return instead of releasing the tension. If you have a history of shoulder or neck discomfort, reduce the tension and consult a qualified professional."
     },
     {
       "id": "band-overhead-press",
@@ -4256,7 +4306,9 @@
       "regressionZh": "换更轻的带子，或改为单臂地雷推举。 换成更轻的带子，并把起始位移缩短到仍能维持约 2 秒回程；带子拉得越长阻力越大。",
       "regressionEn": "Use a lighter band, or switch to a single-arm landmine press. Use a lighter band and shorten the starting stretch until you can still control about a 2-second return; a longer band stretch creates more resistance.",
       "progressionZh": "换更重的带子，或在顶端停顿一秒。 先在全程不松带的前提下完成目标次数，再换更重的带子或把起始距离拉远 10–20 厘米。",
-      "progressionEn": "Use a heavier band, or pause for a second overhead. First complete the target reps without slack, then use a heavier band or step 10–20 cm farther from the anchor."
+      "progressionEn": "Use a heavier band, or pause for a second overhead. First complete the target reps without slack, then use a heavier band or step 10–20 cm farther from the anchor.",
+      "safetyNoteZh": "双脚均匀踩住带子并确认两侧长度一致，再开始过头推；全程收住肋骨，不要靠塌腰把手举过头顶，也不要在拉紧时松开带子。若肩或腰背以往有不适，先降低张力并咨询专业人士。",
+      "safetyNoteEn": "Pin the band evenly under both feet and make sure both sides are the same length before pressing overhead; keep the ribs down rather than arching to finish the rep, and do not let go while the band is under tension. If you have a history of shoulder or lower-back discomfort, reduce the tension and consult a qualified professional."
     },
     {
       "id": "band-good-morning",
@@ -4293,7 +4345,9 @@
       "regressionZh": "换更轻的带子并减少前屈深度，先练髋部后送。 先把阻力降到能保持脊柱中立、髋部后送约 20–30 厘米的范围；不要用腰部补行程。",
       "regressionEn": "Use a lighter band and a smaller hinge while learning to push the hips back. Reduce resistance until you can keep a neutral spine while sending the hips back about 20–30 cm; do not make range with the low back.",
       "progressionZh": "换更重的带子，或把下放放慢到 3 秒。 当每次髋部后送幅度和脊柱位置一致时，再加最小重量或延长下放 1 秒。",
-      "progressionEn": "Use a heavier band, or make the lowering phase last three seconds. Add the smallest load or one extra second of lowering only when hip travel and spinal position match on every rep."
+      "progressionEn": "Use a heavier band, or make the lowering phase last three seconds. Add the smallest load or one extra second of lowering only when hip travel and spinal position match on every rep.",
+      "safetyNoteZh": "开始前检查带子没有裂纹、双脚把带子压稳，再把带子固定在上背；下放只到能保持脊柱中立的深度，不要用腰部弯曲去换更多行程。若下背以往有不适，先用更轻的带子并咨询专业人士。",
+      "safetyNoteEn": "Before starting, check the band for tears, pin it securely under both feet, and settle it across the upper back; lower only as far as you can keep a neutral spine instead of bending through the low back for extra range. If you have a history of lower-back discomfort, use a lighter band and consult a qualified professional."
     },
     {
       "id": "band-squat",
@@ -4365,7 +4419,9 @@
       "regressionZh": "把双手放在高箱或凳子上，或缩短头部下放深度。 先选择能以 3 秒下放完成 6–8 次的版本，必要时增加支撑或缩短行程以保持姿势。",
       "regressionEn": "Elevate the hands on a box or bench, or use a shorter head-to-floor range. First choose a version you can lower for 3 seconds for 6–8 reps; add support or shorten range if needed to preserve position.",
       "progressionZh": "抬高双脚或放慢下放，并在底部停顿一秒。 先把动作做成稳定的 8–12 次，再通过减少支撑、延长行程或改变杠杆进阶。",
-      "progressionEn": "Elevate the feet or slow the descent, adding a one-second pause at the bottom. First make 8–12 reps stable, then progress by reducing support, lengthening range, or changing leverage."
+      "progressionEn": "Elevate the feet or slow the descent, adding a one-second pause at the bottom. First make 8–12 reps stable, then progress by reducing support, lengthening range, or changing leverage.",
+      "safetyNoteZh": "双手放在肩宽或略宽的位置，头部从两手之间向前下方移动；不要让头顶承重，也不要在肩膀失去控制后继续下放。若肩或手腕以往有不适，先把脚放低或缩短幅度并咨询专业人士。",
+      "safetyNoteEn": "Place the hands at about shoulder width or a little wider and move the head forward and down between them; do not load the crown of the head or keep descending once the shoulders lose control. If you have a history of shoulder or wrist discomfort, lower the feet or shorten the range and consult a qualified professional."
     },
     {
       "id": "nordic-curl",
@@ -4399,7 +4455,9 @@
       "regressionZh": "用更高的支撑面接住双手，或缩短下放范围。 先用高支撑把可控下放限定在约 20–30°，双手提前接住身体，不要追求一次到底。",
       "regressionEn": "Catch yourself on a higher support, or use a shorter lowering range. Use a high support to limit the controllable lowering to about 20–30 degrees, catching with the hands early rather than chasing full depth.",
       "progressionZh": "延长慢速下放，减少手部帮助，最终练习完整回拉。 每周只把可控下放延长约 5° 或减少一次手部帮助，避免同时增加深度和速度。",
-      "progressionEn": "Lengthen the slow lowering, use less hand assistance, and eventually work toward a full pull-back. Each week extend the controlled lowering by only about 5 degrees or remove one unit of hand help; do not increase both depth and speed together."
+      "progressionEn": "Lengthen the slow lowering, use less hand assistance, and eventually work toward a full pull-back. Each week extend the controlled lowering by only about 5 degrees or remove one unit of hand help; do not increase both depth and speed together.",
+      "safetyNoteZh": "先确认脚踝固定点和膝下垫子稳妥；用双手承接你还控制不了的下放，不要直接坠到底部或一次同时加深幅度、加快速度。若大腿后侧或膝部以往有不适，先缩短行程并咨询专业人士。",
+      "safetyNoteEn": "First make sure the ankle anchor and padding under the knees are secure; use your hands to catch the portion of the descent you cannot yet control instead of dropping to the bottom or increasing both depth and speed at once. If you have a history of hamstring or knee discomfort, shorten the range and consult a qualified professional."
     },
     {
       "id": "glute-bridge",
@@ -4503,7 +4561,9 @@
       "regressionZh": "用双手更多支撑、缩短下放深度，或改做徒手深蹲。 先缩短到骨盆和足弓都能稳定的深度，并保留约 2 次余力；深度由控制决定。",
       "regressionEn": "Use more hand support and a shorter depth, or switch to a standard bodyweight squat. First use a depth where the pelvis and foot arches stay stable with about 2 reps in reserve; control determines depth.",
       "progressionZh": "逐步减少手部支撑，或在底部停顿一秒。 当相同深度能连续完成目标次数且膝盖轨迹稳定，再增加最小阻力或 5% 以内的负荷。",
-      "progressionEn": "Use less hand support over time, or pause for a second at the bottom. When the same depth and knee tracking hold through the target reps, add the smallest resistance or no more than about 5% load."
+      "progressionEn": "Use less hand support over time, or pause for a second at the bottom. When the same depth and knee tracking hold through the target reps, add the smallest resistance or no more than about 5% load.",
+      "safetyNoteZh": "始终扶住固定支撑物，并只下到膝盖能顺着脚尖、脚跟支撑仍稳的深度；不要突然松手，也不要为了更深让膝盖向内塌。若膝部以往有不适，先增加手部支撑、缩短幅度并咨询专业人士。",
+      "safetyNoteEn": "Keep hold of a fixed support and descend only as far as the knees can track with the toes while the heel support stays solid; do not let go suddenly or let the knees collapse inward for extra depth. If you have a history of knee discomfort, use more hand support, shorten the range, and consult a qualified professional."
     },
     {
       "id": "band-straight-arm-pulldown",
@@ -5524,7 +5584,9 @@
       "regressionZh": "用弹力带或同伴在身前辅助，并把动作幅度限制在上半段（更直立的区间），让你能控制下放、不至于直接砸下去。",
       "regressionEn": "Use band or partner assistance and limit the range to the upper, more upright portion so you can control the descent without collapsing.",
       "progressionZh": "把杠铃片抱在胸前增加负荷，或把下放过程放慢到 3-4 秒的离心、并做满全程幅度。",
-      "progressionEn": "Hold a weight plate at your chest or slow the lowering phase to a 3-4 second eccentric through full range."
+      "progressionEn": "Hold a weight plate at your chest or slow the lowering phase to a 3-4 second eccentric through full range.",
+      "safetyNoteZh": "先把脚踝和大腿垫调到能固定身体、但不压到膝盖的位置；下放时髋部保持贴垫，躯干与大腿成一直线即可，不要用腰部反弓去追求更高。若下背或膝部以往有不适，先缩短幅度并咨询专业人士。",
+      "safetyNoteEn": "Set the ankle and thigh pads to secure your body without pressing into the knees; keep the hips on the pad as you lower, and finish when the torso is in line with the thighs rather than arching the low back for extra height. If you have a history of lower-back or knee discomfort, shorten the range and consult a qualified professional."
     },
     {
       "id": "wrist-curl",
@@ -5962,7 +6024,9 @@
       "regressionZh": "减掉配重片、缩小底部下沉幅度，用双脚前掌缓慢可控地推蹬，降低难度。",
       "regressionEn": "Strip plates to lighten the load and limit the bottom stretch, pressing through the balls of both feet with a slow, controlled tempo.",
       "progressionZh": "加配重片并做满全程——脚跟充分下沉拉伸、推到顶峰完全踮起并在顶端停顿——或改为单腿交替进行。",
-      "progressionEn": "Add plates and use the full range—dropping the heels for a deep stretch, then driving to a full toe-point with a pause at the top—or perform one leg at a time."
+      "progressionEn": "Add plates and use the full range—dropping the heels for a deep stretch, then driving to a full toe-point with a pause at the top—or perform one leg at a time.",
+      "safetyNoteZh": "先用双腿稳稳托住踏板、确认安全锁能重新挂回，再只让踝关节活动；膝盖保持微屈，前脚掌一旦开始打滑就停止该组，不要在锁死膝盖或脚位不稳时继续。若膝或脚踝以往有不适，先降低配重并咨询专业人士。",
+      "safetyNoteEn": "First support the sled securely with both legs and confirm that you can re-engage the safety stops, then move only at the ankles; keep a soft knee and end the set if the forefoot starts to slip rather than continuing with locked knees or an unstable foot position. If you have a history of knee or ankle discomfort, reduce the load and consult a qualified professional."
     },
     {
       "id": "decline-db-press",
