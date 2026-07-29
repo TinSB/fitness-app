@@ -166,6 +166,22 @@ extension RedeStrings {
                   "Building up \(joined). Extra sets added today")
     }
 
+    /// FR-TR7 / FR-SE7：只描述系统本次不自动加重，不作诊断或保护承诺。
+    public var progressionPausePainLine: String {
+        t2(
+            "上次这个动作报过不适，这次先不加重",
+            "Discomfort was noted for this exercise last time, so the load stays the same today"
+        )
+    }
+
+    public func progressionPauseInjuryLine(bodyPartCode: String) -> String {
+        let part = settingsBodyPartName(bodyPartCode)
+        return t2(
+            "你标记了\(part)，这个动作先不加重",
+            "You marked your \(part.lowercased()), so the load stays the same today"
+        )
+    }
+
     /// 收据结论句。gapDays 供回归分档（默认 nil = 既有调用不变）。
     public func receiptConclusion(call: String, reasonCode: String, gapDays: Int? = nil) -> String {
         switch (call, reasonCode) {

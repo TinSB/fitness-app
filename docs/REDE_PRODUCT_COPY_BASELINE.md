@@ -1,7 +1,7 @@
 # Rede Product Copy Baseline — 产品文案基底
 
 > **状态:** Canonical / living copy baseline
-> **最后更新:** 2026-07-27（FR-PL7③ 训练日自由编排双语合同已实现并通过本地 Simulator 验收；生产购买仍关闭）
+> **最后更新:** 2026-07-29（FR-TR7 / FR-SE7 自动进阶暂停双语合同已实现并通过本地 Simulator 验收；生产购买仍关闭）
 > **适用范围:** 产品定位、v0 / 原型生成、App Store 文案、onboarding、paywall、UI microcopy、空状态、错误、通知、双语 locale
 > **权威边界:** 本文定义 Rede 如何说话,视觉品牌与原型画面方向以 `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md` 为准。本文不授权任何新功能、网络、云、HealthKit 范围、医疗判断或 source-of-truth 变更。功能与架构边界以 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 和 `docs/REDE_iOS_SYSTEM_LOGIC.md` 为准。
 
@@ -51,7 +51,7 @@ Rede 每个关键文案都应落在四个锚点之一:
 |---|---|---|
 | 冷静 | 今天可以练。推力 A 保留,肩上推举降级。 | 今天状态超棒,让我们燃起来! |
 | 有判断 | 这周卧推动作还在进步,不用换计划。 | 根据智能分析,系统为你优化了计划。 |
-| 可解释 | 肩部不适出现 2 次,今天避开高风险推举。 | AI 判断今天不适合高强度。 |
+| 可解释 | 上次这个动作报过不适，这次先不加重 | AI 判断今天不适合高强度。 |
 | 尊重用户 | 采纳 / 暂不处理 / 换动作 | 系统已为你安排最佳方案。 |
 | 商业化但克制 | Rede Coach 只增加已明确列出的新教练能力 | 解锁你的全部潜能。 |
 
@@ -103,7 +103,7 @@ Rede 每个关键文案都应落在四个锚点之一:
 
 - `今天可以练。推力 A 保留,强度略降。`
 - `先做卧推。目标 3 组,每组 5 次。`
-- `肩部不适出现 2 次,今天避开高风险推举。`
+- `上次这个动作报过不适，这次先不加重`
 - `这周训练量偏低,下周补一组背部拉力。`
 
 避免:
@@ -134,7 +134,7 @@ Examples:
 
 - `You can train today. Push A stays, with pressing volume capped.`
 - `Bench first. 3 sets of 5.`
-- `Shoulder discomfort showed up twice this week, so overhead work is scaled back.`
+- `Discomfort was noted for this exercise last time, so it won't increase today`
 - `Back volume is low this week. Add one pull set next session.`
 
 Avoid:
@@ -216,13 +216,13 @@ English:
 
 中文:
 
-- `肩部不适出现 2 次,所以今天避开高风险推举。`
+- `你标记了肩膀，这个动作先不加重`
 - `上次卧推完成度高,今天保留原重量,先看第 1 组速度。`
 - `本周背部训练量偏低,下次训练补一组拉力。`
 
 English:
 
-- `Shoulder discomfort showed up twice, so high-risk pressing is out today.`
+- `You marked your shoulder, so this exercise won't increase today`
 - `Your last bench session was clean. Keep the load and watch the first set.`
 - `Back volume is low this week. Add one pull set next session.`
 
@@ -308,15 +308,24 @@ Today 不应像 dashboard。它要像训练前 30 秒的判断。
 
 中文:
 
-> 今天可以练。推力 A 保留,肩上推举降级。
+> 今天可以练。推力 A 保留。
 >
-> 肩部不适出现 2 次,所以今天把高风险推举换成更稳的替代动作。
+> 上次这个动作报过不适，这次先不加重
 
 English:
 
-> You can train today. Push A stays, overhead work is scaled back.
+> You can train today. Push A stays.
 >
-> Shoulder discomfort showed up twice, so high-risk pressing is replaced today.
+> Discomfort was noted for this exercise last time, so the load stays the same today
+
+**FR-TR7 / FR-SE7 处方行精确文案（2026-07-29）**：
+
+| 来源 | 中文 | English |
+|---|---|---|
+| 该动作 pain 信号触发 | 上次这个动作报过不适，这次先不加重 | Discomfort was noted for this exercise last time, so the load stays the same today |
+| 身体部位标记命中（肩膀示例） | 你标记了肩膀，这个动作先不加重 | You marked your shoulder, so the load stays the same today |
+
+只在该动作的 FR-TR7 / FR-SE7 实际钳制更难负荷进阶时显示；当日原计划已经持平/变轻、首练、只走自重/弹力带次数轴或换成孪生动作时不显示理由句。不把阈值、算法、诊断、休息或换动作写进 UI，不弹额外提示。
 
 Today 禁止:
 
@@ -412,6 +421,14 @@ Plan 禁止:
 ### 5.5 Settings: 信任不是卖点词,是清楚
 
 Settings 里不要营销。只说事实。
+
+**FR-SE7 身体状况（2026-07-29）**：入口位于「训练背景」，行值为已选部位或 `—`；sheet 允许多选/全不选，只有一行行为说明，不写医学推断。
+
+| 位置 | 中文 | English |
+|---|---|---|
+| 设置行 / sheet 标题 | 身体状况 | Body areas |
+| 唯一说明 | 选了的部位，相关动作不会自动加重 | Exercises related to selected areas won't increase automatically |
+| 部位 | 膝盖 / 肩膀 / 下背 / 手肘 / 手腕 / 脚踝 / 颈部 | Knee / Shoulder / Lower back / Elbow / Wrist / Ankle / Neck |
 
 **常驻副文门禁（2026-07-18 owner 拍板）:** 自解释的设置项只显示分区、行标题、当前值或控件，不在其下常驻一行“解释这个界面”的 caption。`导出训练数据`、`Free Core` 和可点击的训练背景行已经足够清楚，因此不再附“数据保存在本机 / 可导出”“此版本所有功能均包含在 Free Core”“点任意一行修改”等小字。这个门禁只删除冗余常驻副文；真实错误、购买核对状态、保存结果等即时反馈必须保留。训练背景行继续向 VoiceOver 提供自解释的“字段名 + 当前值”，但不再追加“点任意一行修改 / Tap any row to change it”提示。
 
@@ -566,6 +583,8 @@ English examples:
 
 ### 7.1 医疗与伤病
 
+FR-TR7 / FR-SE7 只描述系统行为：禁止写「你受伤了 / You are injured」「为了保护你 / To protect you」，禁止诊断、治疗、防伤或无痛保证，也不在处方行追加休息、就医或换动作建议。允许的用户可见理由只采用 §5.1 的精确中性句；Settings 只采用 §5.5 的唯一行为说明。动作详情里的独立通用注意事项仍按其已批准合同处理，不得反向扩成疼痛/身体状况功能的处置建议。
+
 不要说:
 
 - `预防受伤`
@@ -576,7 +595,7 @@ English examples:
 - `pain-free`
 - `doctor-grade recovery`
 
-改成:
+其它已批准场景可改成:
 
 - `降低训练强度`
 - `选择更保守的训练日`

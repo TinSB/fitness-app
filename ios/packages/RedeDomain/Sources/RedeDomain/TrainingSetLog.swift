@@ -17,6 +17,7 @@ public struct TrainingSetLog: Equatable, Sendable {
     public var weight: Double? { storage["weight"]?.asDouble }
     public var reps: Int? { storage["reps"]?.asInt }
     public var rir: Double? { storage["rir"]?.asDouble }
+    public var painFlag: Bool? { storage["painFlag"]?.asBool }
     public var completedAt: String? { storage["completedAt"]?.asString }
     public var done: Bool? { storage["done"]?.asBool }
     public var completionStatus: String? { storage["completionStatus"]?.asString }

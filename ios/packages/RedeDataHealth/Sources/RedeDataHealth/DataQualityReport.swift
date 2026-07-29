@@ -41,7 +41,7 @@ public struct DataQualityReport: Equatable, Sendable {
     public let droppedSessionCount: Int
     public let droppedExerciseCount: Int
     public let droppedSetCount: Int
-    /// 被忽略的字段（set/profile/program 级）总数。
+    /// 被忽略的字段（session/set/profile/program 级）总数。
     public let ignoredFieldCount: Int
     /// 时序（日期升序、同日保输入序）→ 动作出现序 → 组序。
     public let suspectSets: [SuspectSet]
@@ -71,7 +71,8 @@ public enum DataQualityReportBuilder {
             case .sessionDropped: droppedSessions += 1
             case .exerciseDropped: droppedExercises += 1
             case .setDropped: droppedSets += 1
-            case .setFieldIgnored, .profileFieldIgnored, .programFieldIgnored: ignoredFields += 1
+            case .sessionFieldIgnored, .setFieldIgnored, .profileFieldIgnored, .programFieldIgnored:
+                ignoredFields += 1
             }
         }
 

@@ -706,7 +706,18 @@ struct TodayTabView: View {
                     .foregroundStyle(Color.redeT4)
                     .accessibilityHidden(true); Spacer() }
             }
-            .padding(.vertical, 16)
+            .padding(.top, 16)
+            .padding(.bottom, progressionPauseLine(ex) == nil ? 16 : 7)
+            if let line = progressionPauseLine(ex) {
+                Text(line)
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, 16)
+                    .padding(.trailing, 8)
+                    .padding(.bottom, 16)
+            }
             Rectangle().fill(Color.redeHair2).frame(height: 1)
         }
     }
@@ -751,8 +762,30 @@ struct TodayTabView: View {
                         .accessibilityHidden(true) // 装饰性线索；行的可点性已由 Button + hint 表达
                 }
             }
-            .padding(.vertical, 11)
+            .padding(.top, 11)
+            .padding(.bottom, progressionPauseLine(ex) == nil ? 11 : 6)
+            if let line = progressionPauseLine(ex) {
+                Text(line)
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, 13)
+                    .padding(.trailing, 8)
+                    .padding(.bottom, 11)
+            }
             Rectangle().fill(Color.redeHair2).frame(height: 1)
+        }
+    }
+
+    private func progressionPauseLine(_ ex: ExercisePrescriptionPlan) -> String? {
+        switch ex.progressionPauseReason {
+        case .painDiscomfort:
+            return s.progressionPausePainLine
+        case .injuryFlag(let code):
+            return s.progressionPauseInjuryLine(bodyPartCode: code)
+        case nil:
+            return nil
         }
     }
 

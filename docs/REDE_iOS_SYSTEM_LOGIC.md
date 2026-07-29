@@ -1,6 +1,6 @@
 # Rede iOS — 系统逻辑全景
 
-> **活文档 · 系统逻辑主文档**。本文定义 Rede 干净重写的产品、系统逻辑和工程合同。干净 iOS 实现(`ios/Rede` + 10 个干净包)已是活跃实现并 shipping 到 M6，订阅基础设施以 fail-closed 形态在开发版中存在，首个 post-1.8 Paid Coach 能力“每周教练复盘”与下一公开版本的更新感知均已完成本地实现和 Simulator 验收。已退役的旧 IronPath/PWA 代码仅作参考。架构边界、source-of-truth、平台权限和禁用系统以 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 为最高契约。
+> **活文档 · 系统逻辑主文档**。本文定义 Rede 干净重写的产品、系统逻辑和工程合同。干净 iOS 实现(`ios/Rede` + 10 个干净包)已是活跃实现并 shipping 到 M6；截至 2026-07-29，FR-TR7 疼痛信号与 FR-SE7 身体状况标记已进入今日处方的负荷进阶判定并完成本地 Simulator 验收。订阅基础设施以 fail-closed 形态在开发版中存在，首个 post-1.8 Paid Coach 能力“每周教练复盘”与下一公开版本的更新感知均已完成本地实现和 Simulator 验收。已退役的旧 IronPath/PWA 代码仅作参考。架构边界、source-of-truth、平台权限和禁用系统以 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 为最高契约。
 
 ## 0. 干净重写基线
 
@@ -92,7 +92,7 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 - HealthKit imported workout sample append 到 display-only derived storage。
 - Profile scalar edit。
 - Unit setting edit。
-- Screening list edit。
+- Screening / injury-flags list edit。
 - Program config scalar edit。
 - History set correction。
 - Saved-session exercise replacement（换动作前瞻覆盖，FR-T5）。
@@ -109,6 +109,8 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 > 教练动作的采纳、暂不处理及撤销都经同一 gated writer，撤销 = 单步即时反向写（不另起 undo 栈）。**UI 撤销入口只接了换动作 / 补量两类**（`removeExerciseSubstitution` / `removeVolumeBoost`）；「暂不处理」是单向降频信号——写闸层有反向口（`removeCoachActionDismissal`）但不暴露 UI 撤销，卡按降频策略自然再现。引擎契约见 §6.4a。
 
+> **FR-SE7 身体状况写入（2026-07-29 已实现）。** Settings 的多选结果只经 `CanonicalSessionWriter.applyInjuryFlags` → `performGatedMutation` 写既有 open-bag `userProfile.injuryFlags`，不改 schema。writer 在写入前校验 7 个允许码，任一未知码都整次拒绝且原文件字节不变；若 canonical 已有 `userProfile` 但其值不是 object，则抛出 `ScreeningWriteError.profileNotObject`，在 validation / backup / save 之前终止并保持原文件逐字节不变，绝不把原值覆盖为空 profile。合法值按 `knee / shoulder / lowerBack / elbow / wrist / ankle / neck` 固定顺序落盘，清空时显式写 `[]`，并保留 profile 其它未知字段。DataHealth 读侧按同一白名单净化、去重和固定排序，未知值以 `profileFieldIgnored(field: "injuryFlags")` 留痕；UI 保存成功后必须从 canonical 重读，不作乐观假成功。
+
 写入必须满足：
 
 - 不 fake success。
@@ -121,7 +123,7 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 ## 6. Engine 输入
 
-训练决策、计划调整、进展分析必须从 clean data 或 typed clean input 进入。
+训练决策、计划调整、进展分析必须从 clean data 或 typed clean input 进入。FR-TR7 / FR-SE7 的批准输入面是：`CleanTrainingSession.painDiscomfortExerciseIds`（从已完成场次的 `skippedSets` 与 `skippedExercises` 合并，同场同动作去重；当前训练 UI 只会由「跳过这一组 → 不适/疼痛」写出前者的 `painDiscomfort`，整动作跳过固定写 `other`；引擎仍保留后者读取以兼容未来输入）以及 `CleanExercise.sets[].painFlag`（只阻止该场完成被误判为恢复，不计入 4 场/2 次触发窗口）和 `CleanProfile.injuryFlags`（7 个白名单码，未知值丢弃留痕）。raw AppData 与原始 open-bag storage 仍不得直接进入处方引擎。
 
 禁止：
 
@@ -161,7 +163,20 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 **入口合同**：吃 `CleanTrainingDecisionInput` + M2-1 的 `TodayVerdict`（处方不重复判断练不练）；rest 裁决 → 无处方。纯函数、无 clock/IO、输出永不写回 AppData。
 
-**输出合同**：`TodayPrescription{dayCode, exercises[], dayReasons[]}`；每动作 `{exerciseId, sets, restSeconds, rep 区间, targetReps, targetWeightKg(kg 口径), targetRir(增肌默认 2；力量目标复合主项 1，见 §6.0.1a), previousWeightKg, previousTopReps, nextProjectedWeightKg, change(start/increase/hold/ease), reason}`。全 typed 零文案：dayCode/reason code 是 RedeL10n 模板挂点；**lb 换算归渲染层（FR-SE1），但渲染层不是裸换算——必须把每个可配重量吸附到「器械×当前单位」真实梯子的最近格再显示（见 `REDE_EXERCISE_CONTENT_SYSTEM` §8 LoadGrid 显示吸附契约）；禁止 ×2.2046 直转。**previous→target→change 三元组同时喂 Receipt Change 行、训练页 why 行与 Rail。**里程摘要（wave-12，owner 拍板 B）**：今日页 Receipt Change 行只渲染**头牌动作**（exercises.first）；非头牌动作的**转折性 `reason`**（bandCeilingReached 换带 / bodyweightCeilingReached 加配重 / assistedGraduated 毕业 / bodyweightPlusDegraded 回退）另由今日页**里程摘要**扫全表单列于头牌行下方（配件类如弹力带永远排不到首位，否则其里程提示被吞）；只列转折性 reason、不列普通进阶（高信号），复用同一 `changeLine(for:)` 文案，纯文本不占卡预算。
+**输出合同**：`TodayPrescription{dayCode, exercises[], dayReasons[]}`；每动作 `{exerciseId, sets, restSeconds, rep 区间, targetReps, targetWeightKg(kg 口径), targetRir(增肌默认 2；力量目标复合主项 1，见 §6.0.1a), previousWeightKg, previousTopReps, nextProjectedWeightKg, change(start/increase/hold/ease), reason, progressionPauseReason?}`。`progressionPauseReason` 只在 FR-TR7 / FR-SE7 实际把更难负荷进阶钳回时存在，取 `.painDiscomfort` 或 `.injuryFlag(code)`；持平/变轻、首练、自重/弹力带次数进阶及换成孪生动作时必须为 nil，不能显示与该行结果矛盾的来源理由。无信号时为 nil 且编码省略该 key，保持既有处方字节。全 typed 零文案：dayCode/reason code 是 RedeL10n 模板挂点；**lb 换算归渲染层（FR-SE1），但渲染层不是裸换算——必须把每个可配重量吸附到「器械×当前单位」真实梯子的最近格再显示（见 `REDE_EXERCISE_CONTENT_SYSTEM` §8 LoadGrid 显示吸附契约）；禁止 ×2.2046 直转。**previous→target→change 三元组同时喂 Receipt Change 行、训练页 why 行与 Rail。**里程摘要（wave-12，owner 拍板 B）**：今日页 Receipt Change 行只渲染**头牌动作**（exercises.first）；非头牌动作的**转折性 `reason`**（bandCeilingReached 换带 / bodyweightCeilingReached 加配重 / assistedGraduated 毕业 / bodyweightPlusDegraded 回退）另由今日页**里程摘要**扫全表单列于头牌行下方（配件类如弹力带永远排不到首位，否则其里程提示被吞）；只列转折性 reason、不列普通进阶（高信号），复用同一 `changeLine(for:)` 文案，纯文本不占卡预算。
+
+**FR-TR7 / FR-SE7 自动进阶暂停（2026-07-29 已实现；行为边界即合同）。**
+
+- **疼痛窗口**：先把 clean 已完成场次按日历日排序，同一日保留 canonical append 顺序；只取全局最近 4 场。对每个 `exerciseId` 统计含 `painDiscomfort` 跳过的不同场次，同场的跳过组/跳过整动作合并去重；≥2 场进入保守态，1 场不触发，无关场次照样占窗口。某场既有正常完成组又有 pain 跳过时仍算 pain 场。
+- **恢复**：保守态已经由两次 pain 触发后，该动作一次无 `painDiscomfort` 跳过且完成组均未带 `painFlag` 的正常完成立即清除保守态，并把更早证据隔在恢复点之前；`painFlag` 仅否定恢复，不计入 4 场/2 次触发窗口。恢复后 1 次新 pain 不触发、2 次新 pain 再触发。触发阈值之前夹着的一次正常完成不能抹掉尚未成形的两次信号；活跃信号也会随全局四场窗口滚出而自然消失。
+- **同日表现顺序**：`lastPerformance` 以 `(日历日, canonical append offset)` 选最后一场；同日多场时，后 append 的正常完成既是恢复事实，也是下一次处方的上次重量来源，不能被同日更早一场覆盖。
+- **唯一行为**：只阻止“比上次更难”的自动负荷变化——external / bodyweight-plus 仅在本次目标重量高于上次时夹回上次重量，assisted 仅在本次计划减少辅助重量时夹回上次辅助；真实 `change` 变为 hold，Rail 的 `nextProjectedWeightKg` 仍显示被暂停的下一档。light / deload / 回归或周期相位已经给出的更轻重量绝不能被抬回；bodyweight / band 的次数进阶不属于负荷加重，保持原样；assisted 毕业会暂停，但 bodyweight-plus 的回退仍可发生。动作、组数、次数目标、RIR、原有 progression reason、用户手动调重能力与其它动作均不变；不替换、不删除、不弹提示/警告/确认。
+- **伤病部位映射**：映射是引擎包内可单测纯函数，只组合 catalog 既有 `exerciseId / equipment / movementPattern`，不新增目录字段。四个部位按 pattern 粗匹配：`knee` = `squat-pattern / lunge / knee-extension / knee-flexion`；`shoulder` = `vertical-press / horizontal-press / incline-press / lateral-raise / rear-delt`；`elbow` = `triceps-extension / curl`；`ankle` = `calf-raise / squat-pattern`。手腕、下背、颈部执行下列窄映射：
+  - `wrist`：`equipment == barbell` 且 pattern 为 `vertical-press / horizontal-press / incline-press / curl`；或 id 含 `front-squat`；或 id 含 `push-up`。哑铃、machine、cable、band 与悬垂类 bodyweight 不因粗 pattern 命中。
+  - `lowerBack`：pattern 为 catalog 现有原始值 `hinge`（对应产品语义 hip-hinge）的动作全部命中；在判定 `squat-pattern` 之前，先以 id 的 `chest-supported / seated / machine / cable / leg-press / hack` 排除词拦截，之后 `squat-pattern` 只命中 barbell 或 id 含 `smith-squat`；`horizontal-pull` 再只命中 id 含 `bent-over-row / barbell-row / t-bar-row / pendlay-row / meadows-row` 的无支撑俯身划船。
+  - `neck`：pattern 为 `shrug`，或 id 含 `behind-neck`。
+
+若多个部位同时命中，按 canonical flag 顺序选择理由，pain 原因永远优先于 injury flag。ID 命名无法由上述白名单关键词稳定识别时宁可不命中，也不得扩大匹配；当前 catalog 没有 `behind-neck` id，因此颈部现阶段实际只命中 shrug。
 
 **生成规则（FR-ON3：不锁死硬编码模板，可重算）**：日计划 = 槽位规则 × catalog（`ExerciseCatalog.minimal` 现已解码整本 `exercises.json` 目录，当前 165 条（catalogVersion wave-18）、随内容 wave 增长；开放决策 #1 已拍板。新增动作均纯加性、Golden 处方/裁决守零行为变化，但**两条防线机制不同**：wave-17 引入的 hip-abduction/hip-adduction/front-raise/upright-row/wrist-curl 是**无模板槽引用的惰性 pattern**（任何 rank 都进不了处方）；wave-18 的 11 个动作**沿用现有 pattern（这些 pattern 有模板槽）**，零行为变化**纯靠高 rank**（1550–1650 > 全部现役 max rank 1540，按 (rank,id) 升序永排末位、不被选中）——故改模板槽前必须核 rank 顺序，不能假设这些动作"天然进不了处方"）按 (rank,id) 升序取第一个未用且匹配（pattern + 可选 kind/equipment）；槽位无法匹配时记 `slotUnfilled` 留痕，不静默。轮转 = **自最近重启点的** session 数对 split 日序列取模（重启点=与前一场日期差 ≥21 天的场,无状态从历史扫描;无重启点=全量场次数,等价旧口径。今天本身停练 ≥21 天时直接出序列头,用户「今天换一天练」仍最优先——回归协议 v1 2026-07-08）。**每周循环模式（2026-07-08 owner 拍板「两个都做,设置里切换」）**: 设置 opt-in「每周重新开始循环」——开启后轮换 index = 本 ISO 周完成场次 % 长度（跨周自动回序列头,忽略 rotationOffset——换天补偿是顺延型概念）;默认关 = 顺延（序列型,现状）。顺延模式下「新周 + 上周未练满 + 指针非序列头」时今日页出透明化副句「上周的 X 顺延到今天　想重新开一轮可以换一天练」（carriedOverFromLastWeek dayReason,决策仍在用户）。**轮换基数单一真源** `rotationBase()`: 今日页/Plan 排期投影/日序编辑器预览/提案预览共用（审查 S2: 投影曾用旧总场次公式与今日页分叉;防再分叉测试锁第一位一致）（见 §6.0.1a）。
 
@@ -191,7 +206,7 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 **最小渐进（goldens 锁定）**：双重渐进三分支，RIR 一律取 **min 口径**（最差一组；任何一组打到力竭就不加重——安全优先于抗噪，2026-06-09 审查后显式拍板）——全组打满 repMax 且 min RIR ≥1.0(含 1.0；无 RIR 数据视为有余力) → +2.5kg、次数重置 repMin；上次力竭(min RIR≤0.5) 或最高组未到 repMin → −2.5kg；否则持平冲 repMax。加重无上限（有意为之）。裁决调制在渐进后：light ×0.9；deload ×0.8 且组数 −1(下限 2)。**重量按「器械×用户单位」真实梯子取整**（§8 LoadGrid：公斤自由重量 2.5kg 等距、磅哑铃分段 2.5/5/10lb 梯子等），下限一档；**调制后若取整弹回原重量且原重量 > 一档，强制下调一格**（轻练/减载必须真减，小重量动作不得被取整吃掉）。**重量口径**：哑铃/单边动作 = 单只哑铃重量；杠铃 = 总杠重（含杆）；plate-loaded = 配重片读数；cable = 配重栈读数（美国习惯，引擎内部按手上有效推进）——**渲染层据此口径吸附梯子最近格显示，非裸换算**（§8 显示吸附契约）。
 
-**catalog limitation（§6.1 红线如实声明）**：MVP catalog 缺**肌群贡献权重**——肌群级高置信分析（肌群等级/瓶颈识别）在补齐前不得基于本 catalog 产出；双语展示名归 RedeL10n。**注意事项（原"禁忌提示"）已落地为展示层**（FR-EX2：`safetyNoteZh/En`，按 §7.1 fitness≠medical 措辞——保守训练注意 + 条件句 +「咨询专业人士」，绝不诊断/治疗/防伤承诺；只给有风险动作、低风险诚实不加；经安全合规对抗审查）——它是**展示提示、不是引擎输入**，不参与处方/降级决策（疼痛驱动的保守调整仍走 §6.4 实时信号，与本字段独立）。组形（top/backoff）归 M3-1 后续学习层；restSeconds 已在 M3-1 落地（slot 生成参数）。
+**catalog limitation（§6.1 红线如实声明）**：MVP catalog 缺**肌群贡献权重**——肌群级高置信分析（肌群等级/瓶颈识别）在补齐前不得基于本 catalog 产出；双语展示名归 RedeL10n。**注意事项（原"禁忌提示"）已落地为展示层**（FR-EX2：`safetyNoteZh/En`，按 §7.1 fitness≠medical 措辞——保守训练注意 + 条件句 +「咨询专业人士」，绝不诊断/治疗/防伤承诺；只给有风险动作、低风险诚实不加；经安全合规对抗审查）——它是**展示提示、不是引擎输入**，不参与处方/降级决策（FR-TR7 / FR-SE7 的窄幅自动进阶暂停只走本节上方合同，与本字段独立）。组形（top/backoff）归 M3-1 后续学习层；restSeconds 已在 M3-1 落地（slot 生成参数）。
 
 ### 6.0.2 逐组处方与下一组建议（M3-1 已实现 · §6.3 的确定性最小子集）
 
@@ -396,6 +411,8 @@ public struct NextSetRecommendation: Equatable, Sendable {
 - unknown selectorized machine 不产生高置信跨器械进步结论。
 
 ### 6.4 纠偏、主训练、功能性分配自动化
+
+> **实现边界（2026-07-29 对账）**：本节的自动纠偏、替代动作与功能性分配仍是未来目标，**不是** FR-TR7 / FR-SE7 当前实现。当前疼痛/身体状况信号只按 §6.0.1 暂停相关动作更难的自动负荷进阶，不创建纠偏动作、不替换/删除动作、不改 RIR/组数/次数，也不弹提示。
 
 Rede 保留纠偏、主训练、功能性三类训练状态,但不能让用户在 onboarding 里回答大量偏好问题。系统必须通过行为学习和安全边界动态分配。
 
@@ -1433,6 +1450,7 @@ S0 只要求本地可验证分享链路,不得为了归因引入账号、云端�
 | Exercise catalog | ✅ 已实现（内容 P0 + wave-1~18，目录 165 条） | 目录 JSON 化 + rank 匹配 + 覆盖矩阵 golden 已 ship;`TemplateGenerator`（肌群贡献权重生成）仍未做（FF）。 |
 | Equipment 感知 / calibration | 🟡 部分（FR-EQ1 已实现 2026-06-11 + LoadGrid 档位） | 器械场景白名单过滤 + 真实档位已 ship;完整 `GymEquipmentPack`/`MachineProfile`/unknown-machine 校准仍未做。 |
 | In-session prescription / warm-up | 🟡 部分（M3-1 + FR-TR10 已实现） | 逐组处方 + next-set recommendation 已 ship;warm-up generator 已 ship（FR-TR10 #566-568：流内临时引导、不落库、保守阶梯起步值待校准，§6.3）;skip-learning（friction/tolerance 偏好学习）仍后置。 |
+| Pain / injury progression hold | ✅ 已实现（FR-TR7 / FR-SE7，2026-07-29） | 跳过事实与 7 部位标记经 clean input 进入处方；最近 4 场至少 2 次 pain 或部位映射命中时只暂停更难的自动负荷进阶，正常完成一次/清除部位后恢复。完整 support-allocation / 自动纠偏仍未实现。 |
 | Support allocation | ⬜ 未实现 | 先补 planned/completed/skipped/reason/safety lock 和 `SupportAllocationDecision`。 |
 | Muscle level estimator | ✅ 已实现（MLE 批次 A #659-666 + 批次 B #667-672 + mle-v2 校准 #675） | 两包引擎（types/estimator/assembler/composer/memory/milestone catalog）+ Development 块（FR-PR6）+ 发展画像分享卡全上线;剩余=FR-PL5 提案式/Level Up 卡/pain-safety 喂数/器械校准维（批次 C 候选）。 |
 | Share / growth system | 🟡 部分（S0 #611 + Muscle Level 卡 #671） | 本地 `ShareSnapshot` + `SharePrivacyFilter` + Share Sheet 已 ship（训练总结/PR/发展画像三卡）;Level Up / Balance 卡与 §9.8 本地事件仍后置;无账号无云无 feed（红线不变）。 |

@@ -63,6 +63,11 @@ public enum PreferencesWriteError: Error, Equatable {
     case unknownSex(String)
 }
 
+public enum ScreeningWriteError: Error, Equatable {
+    case unknownInjuryFlag(String)
+    case profileNotObject
+}
+
 public enum CoachActionWriteError: Error, Equatable {
     case emptyExerciseId
     case substitutionToSelf(String)
@@ -214,6 +219,34 @@ public struct CanonicalSessionWriter {
             var storage = current.storage
             var profile = storage["userProfile"]?.asObject ?? [:]
             profile["sex"] = sex.map { .string($0) }
+            storage["userProfile"] = .object(profile)
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
+    /// FR-SE7：身体部位筛查多选。仅接受 RedeDomain 白名单，空数组代表显式清除；
+    /// open-bag 合并 userProfile，绝不改动其它资料字段。
+    @discardableResult
+    public func applyInjuryFlags(_ flags: [String]) throws -> AppData {
+        if let unknown = flags.first(where: { InjuryFlag(rawValue: $0) == nil }) {
+            throw ScreeningWriteError.unknownInjuryFlag(unknown)
+        }
+        let selected = Set(flags)
+        let stableFlags = InjuryFlag.allCases
+            .filter { selected.contains($0.rawValue) }
+            .map(\.rawValue)
+        return try performGatedMutation { current in
+            var storage = current.storage
+            var profile: [String: JSONValue]
+            if let existing = storage["userProfile"] {
+                guard let object = existing.asObject else {
+                    throw ScreeningWriteError.profileNotObject
+                }
+                profile = object
+            } else {
+                profile = [:]
+            }
+            profile["injuryFlags"] = .array(stableFlags.map { .string($0) })
             storage["userProfile"] = .object(profile)
             return try AppData(decoding: .object(storage))
         }

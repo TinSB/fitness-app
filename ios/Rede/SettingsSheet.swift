@@ -1,4 +1,5 @@
 import SwiftUI
+import RedeDomain
 import RedeEntitlements
 import RedeL10n
 import RedeTrainingDecision
@@ -185,7 +186,8 @@ struct SettingsSheet: View {
             notifComebackOn = notif.comeback
             notifPermissionDenied = false
             await health.loadSilently() // 静默尝试读（不弹框）：之前授权过则直接显示体重
-            // 截图钩子（沿 -autoOpenSettings 先例）：-editPlateQuestion <goal|days|equipment|level|sex>
+            // 截图钩子（沿 -autoOpenSettings 先例）：
+            // -editPlateQuestion <goal|days|equipment|level|sex|injury>
             // 直接打开单题编辑页；未知值忽略
             let args = ProcessInfo.processInfo.arguments
             if let idx = args.firstIndex(of: "-editPlateQuestion"), args.indices.contains(idx + 1),
@@ -608,6 +610,16 @@ struct SettingsSheet: View {
                     plateRow(s.settingsSelfReportedBackgroundLabel, profile?.trainingLevel.map { s.onbLevelOption($0).title }, question: .level)  // 自报输入≠系统等级（FR-PR6 上线后区分，§6.5.14）
                     plateDivider
                     plateRow(s.settingsSexLabel, profile?.sex.map { s.settingsSexOption($0).title }, question: .sex)  // 可选（批次 D：仅相对力量标准用；未设显示 —）
+                    plateDivider
+                    plateRow(
+                        s.settingsBodyConditionLabel,
+                        profile.map {
+                            $0.injuryFlags.isEmpty
+                                ? nil
+                                : s.settingsBodyConditionValue($0.injuryFlags)
+                        },
+                        question: .injury
+                    )
                 }
                 .padding(.vertical, 5)
                 .padding(.horizontal, 16)
@@ -621,6 +633,7 @@ struct SettingsSheet: View {
                     .padding(.top, 10)
             }
         }
+        .id("background")
     }
 
     /// 四答齐全才允许行内编辑（异常档案保持只读铭牌，不进编辑流）。
@@ -635,7 +648,7 @@ struct SettingsSheet: View {
 
     private func plateRow(_ label: String, _ value: String??, question: PlateQuestion) -> some View {
         Button {
-            guard profileComplete else { return }
+            guard profileComplete || question == .injury else { return }
             editing = question
         } label: {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -646,7 +659,7 @@ struct SettingsSheet: View {
                     .monospacedDigit()
                     .foregroundStyle(Color.redeT1)
                 // 审查 NIT-1：档案不完整时铭牌只读，不显示「能点」的暗示
-                if profileComplete {
+                if profileComplete || question == .injury {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(Color.redeT4)
@@ -1301,7 +1314,7 @@ private struct ExportActivityView: UIViewControllerRepresentable {
 // MARK: - 行内单题编辑（方向 A 拍板 2026-06-10）
 
 enum PlateQuestion: String, Identifiable, Hashable {
-    case goal, days, equipment, level, sex
+    case goal, days, equipment, level, sex, injury
     var id: String { rawValue }
 }
 
@@ -1322,6 +1335,7 @@ struct PlateQuestionEditView: View {
     @State private var equipment: String?
     @State private var level: String?
     @State private var sexCode: String = "not-set"   // 批次 D：三值编码（male/female/not-set）
+    @State private var injuryFlags: Set<String>
     @State private var saving = false
     @State private var failed = false
     @State private var selectionPulse = 0
@@ -1336,12 +1350,14 @@ struct PlateQuestionEditView: View {
         _equipment = State(initialValue: snapshot?.equipmentScenario)
         _level = State(initialValue: snapshot?.trainingLevel)
         _sexCode = State(initialValue: snapshot?.sex ?? "not-set")
+        _injuryFlags = State(initialValue: Set(snapshot?.injuryFlags ?? []))
     }
 
     private var s: RedeStrings { localeStore.strings }
 
     private var dirty: Bool {
         if question == .sex { return sexCode != (snapshot?.sex ?? "not-set") }
+        if question == .injury { return injuryFlags != Set(snapshot?.injuryFlags ?? []) }
         return goal != snapshot?.primaryGoal || days != snapshot?.weeklyTrainingDays
             || equipment != snapshot?.equipmentScenario || level != snapshot?.trainingLevel
     }
@@ -1350,7 +1366,9 @@ struct PlateQuestionEditView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Overline(text: s.settingsBackground)
+                    if question != .injury {
+                        Overline(text: s.settingsBackground)
+                    }
                     Text(questionLabel)
                         .font(.redeHeadline)
                         .tracking(RedeTracking.headline)
@@ -1413,6 +1431,7 @@ struct PlateQuestionEditView: View {
         case .equipment: s.onbEquipLabel
         case .level: s.onbLevelLabel
         case .sex: s.settingsSexLabel
+        case .injury: s.settingsBodyConditionLabel
         }
     }
 
@@ -1449,7 +1468,50 @@ struct PlateQuestionEditView: View {
                 .padding(.top, 4)
             OnbOptionRows(codes: ["male", "female", "not-set"],
                           selected: sexCode, option: s.settingsSexOption) { sexCode = $0; selectionPulse += 1 }
+        case .injury:
+            Text(s.settingsBodyConditionNote)
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT4)
+                .fixedSize(horizontal: false, vertical: true)
+            injuryOptionRows
         }
+    }
+
+    private var injuryOptionRows: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(InjuryFlag.allCases.enumerated()), id: \.element.rawValue) { index, flag in
+                if index > 0 {
+                    Rectangle().fill(Color.redeHair2).frame(height: 1)
+                }
+                Button {
+                    if injuryFlags.contains(flag.rawValue) {
+                        injuryFlags.remove(flag.rawValue)
+                    } else {
+                        injuryFlags.insert(flag.rawValue)
+                    }
+                    selectionPulse += 1
+                } label: {
+                    HStack(spacing: 12) {
+                        Text(s.settingsBodyPartName(flag.rawValue))
+                            .font(.redeCallout)
+                            .foregroundStyle(Color.redeT1)
+                        Spacer()
+                        if injuryFlags.contains(flag.rawValue) {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(Color.redeEmber)
+                        }
+                    }
+                    .frame(minHeight: 46)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.redePressableRow)
+                .accessibilityAddTraits(
+                    injuryFlags.contains(flag.rawValue) ? .isSelected : []
+                )
+            }
+        }
+        .padding(.top, 10)
     }
 
     private func editTitle(_ text: String) -> some View {
@@ -1460,6 +1522,26 @@ struct PlateQuestionEditView: View {
 
     private func save() {
         guard !saving else { return }
+        if question == .injury {
+            saving = true
+            failed = false
+            let selected = InjuryFlag.allCases
+                .filter { injuryFlags.contains($0.rawValue) }
+                .map(\.rawValue)
+            Task {
+                let ok = await sessionStore.saveInjuryFlags(selected)
+                saving = false
+                if ok {
+                    let receipt = receiptLine()
+                    let fresh = await Task.detached { SessionStore.loadProfileSnapshot() }.value
+                    onSaved(receipt, fresh)
+                    dismiss()
+                } else {
+                    failed = true
+                }
+            }
+            return
+        }
         if question == .sex {
             // 单字段 scalar 写（applySexPreference），不走四答全量重写
             saving = true
@@ -1503,6 +1585,16 @@ struct PlateQuestionEditView: View {
 
     /// 变更收据：「频率 每周 5 天 → 每周 6 天」；分化随之变化时追加「上下分化 → 推拉腿」。
     private func receiptLine() -> String {
+        if question == .injury {
+            let oldValue = snapshot.map {
+                $0.injuryFlags.isEmpty ? "—" : s.settingsBodyConditionValue($0.injuryFlags)
+            } ?? "—"
+            let selected = InjuryFlag.allCases
+                .filter { injuryFlags.contains($0.rawValue) }
+                .map(\.rawValue)
+            let newValue = selected.isEmpty ? "—" : s.settingsBodyConditionValue(selected)
+            return "\(s.settingsBodyConditionLabel) \(oldValue) → \(newValue)"
+        }
         if question == .sex {
             let oldTitle = snapshot?.sex.map { s.settingsSexOption($0).title }
             let newTitle = s.settingsSexOption(sexCode).title

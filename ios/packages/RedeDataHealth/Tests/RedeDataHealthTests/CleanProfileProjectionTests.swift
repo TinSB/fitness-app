@@ -101,11 +101,31 @@ final class CleanProfileProjectionTests: XCTestCase {
         XCTAssertEqual(view.issues, [.profileFieldIgnored(field: "unitSystem")])
     }
 
+    func testKnownInjuryFlagsPassThroughInStableOrder() throws {
+        let view = try makeView(profileJSON: #"{"injuryFlags": ["knee", "shoulder", "lowerBack", "elbow", "wrist", "ankle", "neck"]}"#)
+        XCTAssertEqual(
+            view.profile.injuryFlags,
+            ["knee", "shoulder", "lowerBack", "elbow", "wrist", "ankle", "neck"]
+        )
+        XCTAssertTrue(view.issues.isEmpty)
+    }
+
+    func testUnknownInjuryFlagIsDroppedAndLeavesIssue() throws {
+        let view = try makeView(profileJSON: #"{"injuryFlags": ["wrist", "knee", "wrist", "space-knee", "shoulder"]}"#)
+        XCTAssertEqual(
+            view.profile.injuryFlags,
+            ["knee", "shoulder", "wrist"],
+            "合法值去重并按 InjuryFlag 固定顺序投影"
+        )
+        XCTAssertEqual(view.issues, [.profileFieldIgnored(field: "injuryFlags")])
+    }
+
     func testMissingProfileYieldsEmptyCleanProfileWithoutIssues() throws {
         let appData = try JSONDecoder().decode(AppData.self, from: Data(#"{"schemaVersion": 8}"#.utf8))
         let view = CleanAppDataViewBuilder.build(from: appData)
         XCTAssertNil(view.profile.trainingLevel)
         XCTAssertNil(view.profile.age)
+        XCTAssertEqual(view.profile.injuryFlags, [])
         XCTAssertTrue(view.issues.isEmpty)
     }
 }

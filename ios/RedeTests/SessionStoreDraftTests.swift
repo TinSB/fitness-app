@@ -1,13 +1,55 @@
 import Foundation
 import XCTest
 @testable import Rede
+import RedeDataHealth
 import RedeDomain
+import RedePersistence
 import RedeTrainingDecision
+
+private struct SessionStoreTestDataHealthGate: AppDataWriteGate {
+    func validate(candidate: AppData, replacing current: AppData?) throws {
+        try CanonicalWriteValidation.validate(candidate: candidate, replacing: current)
+    }
+}
 
 @MainActor
 final class SessionStoreDraftTests: XCTestCase {
     private let startedAt = Date(timeIntervalSince1970: 1_784_000_000)
     private let targetId = "pec-deck"
+
+    func testProfileSnapshotReadsMixedInjuryArrayThroughCleanProjection() throws {
+        let appData = try JSONDecoder().decode(
+            AppData.self,
+            from: Data(
+                #"{"schemaVersion":8,"userProfile":{"injuryFlags":["wrist",42,"knee","shoulder"]}}"#.utf8
+            )
+        )
+
+        let snapshot = SessionStore.profileSnapshot(from: appData)
+
+        XCTAssertEqual(snapshot.injuryFlags, ["knee", "shoulder", "wrist"])
+    }
+
+    func testInjuryFlagsWriteReloadAndCleanProjectionUseTheRealValidationGate() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rede-injury-gate-\(UUID().uuidString)", isDirectory: true)
+        let fileURL = directory.appendingPathComponent("app-data.json")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try Data(
+            #"{"schemaVersion":8,"futureKey":{"kept":true},"userProfile":{"name":"样例"}}"#.utf8
+        ).write(to: fileURL)
+        let store = JSONFileAppDataStore(fileURL: fileURL)
+        let writer = CanonicalSessionWriter(store: store, gate: SessionStoreTestDataHealthGate())
+
+        try writer.applyInjuryFlags(["wrist", "knee"])
+        let reloaded = try XCTUnwrap(try store.load())
+        let clean = CleanAppDataViewBuilder.build(from: reloaded)
+
+        XCTAssertEqual(clean.profile.injuryFlags, ["knee", "wrist"])
+        XCTAssertEqual(reloaded.userProfile.name, "样例")
+        XCTAssertEqual(reloaded.storage["futureKey"]?.asObject?["kept"]?.asBool, true)
+    }
 
     func testMalformedRawDaySequenceFailsClosedThroughBridgeAndEngine() throws {
         let appData = try JSONDecoder().decode(

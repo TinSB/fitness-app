@@ -14,11 +14,14 @@ public struct CleanLoggedSet: Equatable, Sendable {
     public let reps: Int
     /// 0...15 之外或非数值投影为 nil。
     public let rir: Double?
+    /// 训练中由用户登记的不适事实；只阻止它被误判为一次“正常完成”。
+    public let painFlag: Bool
 
-    public init(weight: Double, reps: Int, rir: Double?) {
+    public init(weight: Double, reps: Int, rir: Double?, painFlag: Bool = false) {
         self.weight = weight
         self.reps = reps
         self.rir = rir
+        self.painFlag = painFlag
     }
 }
 
@@ -36,11 +39,19 @@ public struct CleanTrainingSession: Equatable, Sendable {
     public let id: String
     public let date: String
     public let exercises: [CleanExercise]
+    /// 本场因 painDiscomfort 跳过过组或整动作的动作 id；同场去重。
+    public let painDiscomfortExerciseIds: Set<String>
 
-    public init(id: String, date: String, exercises: [CleanExercise]) {
+    public init(
+        id: String,
+        date: String,
+        exercises: [CleanExercise],
+        painDiscomfortExerciseIds: Set<String> = []
+    ) {
         self.id = id
         self.date = date
         self.exercises = exercises
+        self.painDiscomfortExerciseIds = painDiscomfortExerciseIds
     }
 }
 
@@ -57,6 +68,8 @@ public struct CleanProfile: Equatable, Sendable {
     /// 重量单位（kg/lb，builder 校验未知→nil）：引擎按单位选真实档位（LoadGrid，
     /// 2026-06-13）——磅用户处方落 5lb 真实格子，不再报配不出的 49.5lb。
     public let unitSystem: String?
+    /// FR-SE7 身体部位筛查；只含 InjuryFlag 白名单 code，未知项丢弃留痕。
+    public let injuryFlags: [String]
 
     public init(
         trainingLevel: String? = nil,
@@ -66,7 +79,8 @@ public struct CleanProfile: Equatable, Sendable {
         weightKg: Double? = nil,
         weeklyTrainingDays: Int? = nil,
         equipmentScenario: String? = nil,
-        unitSystem: String? = nil
+        unitSystem: String? = nil,
+        injuryFlags: [String] = []
     ) {
         self.trainingLevel = trainingLevel
         self.sex = sex
@@ -76,6 +90,7 @@ public struct CleanProfile: Equatable, Sendable {
         self.weeklyTrainingDays = weeklyTrainingDays
         self.equipmentScenario = equipmentScenario
         self.unitSystem = unitSystem
+        self.injuryFlags = injuryFlags
     }
 }
 
