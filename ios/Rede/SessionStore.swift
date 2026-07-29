@@ -129,9 +129,17 @@ final class SessionStore {
     /// 设置类写入（通知偏好/单位语言/周期开关）失败的如实呈现，与训练 saveErrorText 隔离——
     /// 设置页只读它，杜绝设置写失败错配到训练小结/引导语境（审计 MAJOR：跨域错误污染）。
     var settingsSaveErrorText: String?
-    /// FR-PL3：本次 app 会话内「暂不」了频率提案（会话级、不落库——存活于切 tab，重启后清。
-    /// 建议仍有效故重启可再提，但同一会话内不再反复弹，避免每次进计划页都催）。
-    var planProposalSnoozed = false
+    /// FR-PL3：本次 app 会话内按 kind 记「暂不」（会话级、不落库——存活于切 tab，重启后清）。
+    /// 不同方向互不压制：暂不降频不能吞掉后来成立的增频提案，反之亦然。
+    private var snoozedPlanProposalKinds: Set<PlanAdjustmentProposal.Kind> = []
+
+    func snoozePlanProposal(_ kind: PlanAdjustmentProposal.Kind) {
+        snoozedPlanProposalKinds.insert(kind)
+    }
+
+    func isPlanProposalSnoozed(_ kind: PlanAdjustmentProposal.Kind) -> Bool {
+        snoozedPlanProposalKinds.contains(kind)
+    }
     /// 保存进行中（防双击双写；MainActor 上同步置位）。
     var isSaving = false
     var todayModel: TodayModel? {
@@ -380,15 +388,17 @@ final class SessionStore {
 
     // MARK: - FR-PL3/4 计划调整提案 / 已采纳态（计划页只读派生）
 
-    /// 计划页调整卡所需状态：要么有一条**待采纳提案**（含 before/after 本周训练日预览），
-    /// 要么有一条**已采纳记录**（可撤）；二者互斥——已采纳时抑制新提案（单记录无栈，避免有损覆盖，
-    /// owner 拍板）。无提案且无记录 → `.none`，计划页不显示调整区。
+    /// 计划页调整卡所需状态：待采纳提案（含 after 训练日预览）与栈顶已采纳记录（可撤）可共存。
+    /// 同 kind 沿用已采纳抑制；不同 kind 不抑制，支持「先降频→后增频」继续入栈。
     struct PlanAdjustmentState: Equatable {
         var proposal: PlanAdjustmentProposal?     // 待采纳（nil = 无）
+        var activeKind: PlanAdjustmentProposal.Kind? // 栈顶已采纳方向（旧/未知 kind 防御为 nil）
         var activeTo: Int?                          // 已采纳记录的现频率（非 nil = 可撤）
         var proposedWeekDays: [PlanDayProjection]   // 提案后下一块训练日（预览，答「影响哪几天」；投影非日历周）
 
-        static let none = PlanAdjustmentState(proposal: nil, activeTo: nil, proposedWeekDays: [])
+        static let none = PlanAdjustmentState(
+            proposal: nil, activeKind: nil, activeTo: nil, proposedWeekDays: []
+        )
     }
 
     /// 计划页调整状态（FR-PL3 提案 + FR-PL4 可撤）。走与处方同一 clean pipeline。
@@ -396,32 +406,63 @@ final class SessionStore {
     nonisolated static func loadPlanAdjustmentState(now: Date = Date()) -> PlanAdjustmentState {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         guard let appData = try? store.load() else { return .none }
-        let activeTo = appData.planAdjustment?.toDaysPerWeek
-        // 已有采纳记录 → 只给撤销，抑制新提案（单记录无栈，二次采纳会有损覆盖原值）。
-        if activeTo != nil {
-            return PlanAdjustmentState(proposal: nil, activeTo: activeTo, proposedWeekDays: [])
-        }
+        return planAdjustmentState(from: appData, now: now, timeZone: .current)
+    }
+
+    /// 可测纯派生 seam：显式注入 canonical 快照 / 时钟 / 时区，不做 IO。
+    nonisolated static func planAdjustmentState(
+        from appData: AppData,
+        now: Date,
+        timeZone: TimeZone
+    ) -> PlanAdjustmentState {
+        let activeRecord = appData.planAdjustmentHistory.last
+        let activeKind = activeRecord.flatMap { PlanAdjustmentProposal.Kind(rawValue: $0.kind) }
+        let recordedActiveTo = activeRecord?.toDaysPerWeek
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
+        formatter.timeZone = timeZone
         formatter.dateFormat = "yyyy-MM-dd"
         let todayISO = formatter.string(from: now)
         let cleanView = CleanAppDataViewBuilder.build(from: appData)
         guard let input = try? CleanTrainingDecisionInput.make(from: cleanView, todayISO: todayISO),
-              let planned = input.program.daysPerWeek else { return .none }
+              let planned = input.program.daysPerWeek else {
+            return PlanAdjustmentState(
+                proposal: nil,
+                activeKind: activeKind,
+                activeTo: recordedActiveTo,
+                proposedWeekDays: []
+            )
+        }
+        // 收据正文说的是“现在”的目标；设置页后来改过天数时必须跟当前 clean program，
+        // 历史 record.to 只保留作撤销审计，不能制造 hero/收据双真相。
+        let activeTo = activeRecord == nil ? nil : planned
         let counts = WeeklyAdherence.recentWeeklySessionCounts(
-            sessionDatesISO: input.sessions.map(\.date), todayISO: todayISO
+            sessionDatesISO: input.sessions.map(\.date),
+            todayISO: todayISO,
+            timeZone: timeZone
         )
-        guard let proposal = PlanAdjustmentEngine.frequencyProposal(
+        let candidate = PlanAdjustmentEngine.frequencyProposal(
             plannedDaysPerWeek: planned, recentWeeklySessionCounts: counts
-        ) else { return .none }
+        )
+        // 栈顶同 kind 沿用既有抑制；相反方向可以与撤销收据同屏并继续 append。
+        let proposal = candidate?.kind == activeKind ? nil : candidate
+        guard let proposal else {
+            return PlanAdjustmentState(
+                proposal: nil, activeKind: activeKind, activeTo: activeTo, proposedWeekDays: []
+            )
+        }
         // 提案后本周训练日（同投影口径，weeks:1 取本周；与今日页处方/计划排期同源、不分叉）——
         // 答「影响哪几天」。提案前的完整排期就在调整区下方，故不再重复列 before。
         let proposed = PlanWeekProjection.weeks(
             splitType: input.program.splitType, daysPerWeek: proposal.toDaysPerWeek,
             completedSessionCount: projectionRotationBase(input: input, appData: appData), weeks: 1
         ).first ?? []
-        return PlanAdjustmentState(proposal: proposal, activeTo: nil, proposedWeekDays: proposed)
+        return PlanAdjustmentState(
+            proposal: proposal,
+            activeKind: activeKind,
+            activeTo: activeTo,
+            proposedWeekDays: proposed
+        )
     }
 
     /// 周期化开关当前持久态（设置页开关初值）；unreadable/缺失 → false（默认关）。
@@ -829,10 +870,14 @@ final class SessionStore {
 
     // MARK: - FR-PL3/4 计划频率调整 采纳 / 回滚
 
-    /// 采纳频率调整（FR-PL3）：经写闸改 daysPerWeek + 落回滚记录 → 重载今日（plan 投影/处方吃新值）。
+    /// 采纳频率调整（FR-PL3）：经写闸同步 program/profile 天数 + append history → 重载今日。
     /// 失败如实置 planSaveErrorText 返 false（计划页专属错误面，隔离于全局）。isSaving 互斥（同写闸单调用方合同）。
     @discardableResult
-    func applyFrequencyAdjustment(fromDaysPerWeek: Int, toDaysPerWeek: Int) async -> Bool {
+    func applyFrequencyAdjustment(
+        kind: PlanAdjustmentProposal.Kind,
+        fromDaysPerWeek: Int,
+        toDaysPerWeek: Int
+    ) async -> Bool {
         guard !isSaving else { return false }
         isSaving = true
         planSaveErrorText = nil // 开写即清旧错（每次尝试干净起步，成功后不残留）
@@ -846,7 +891,11 @@ final class SessionStore {
                 let writer = CanonicalSessionWriter(
                     store: JSONFileAppDataStore(fileURL: fileURL), gate: DataHealthGate()
                 )
-                try writer.applyFrequencyAdjustment(fromDaysPerWeek: fromDaysPerWeek, toDaysPerWeek: toDaysPerWeek)
+                try writer.applyFrequencyAdjustment(
+                    kind: kind.rawValue,
+                    fromDaysPerWeek: fromDaysPerWeek,
+                    toDaysPerWeek: toDaysPerWeek
+                )
                 return .success(())
             } catch {
                 return .failure(error)
@@ -862,7 +911,7 @@ final class SessionStore {
         }
     }
 
-    /// 回滚最近一次计划调整（FR-PL4，单步即时）：经写闸恢复原 daysPerWeek + 删记录 → 重载今日。无记录幂等。
+    /// 回滚最近一层计划调整（FR-PL4）：经写闸同步恢复该层 before + pop history → 重载今日。
     @discardableResult
     func rollbackPlanAdjustment() async -> Bool {
         guard !isSaving else { return false }

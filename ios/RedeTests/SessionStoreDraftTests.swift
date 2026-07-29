@@ -14,8 +14,29 @@ private struct SessionStoreTestDataHealthGate: AppDataWriteGate {
 
 @MainActor
 final class SessionStoreDraftTests: XCTestCase {
+    private struct PlanAdjustmentSurfaceGoldenInput: Decodable {
+        let baselineCommit: String
+        let today: String
+        let appData: JSONValue
+    }
+
     private let startedAt = Date(timeIntervalSince1970: 1_784_000_000)
     private let targetId = "pec-deck"
+
+    private func planAdjustmentFixtureURL(_ name: String) -> URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .appendingPathComponent("Fixtures")
+            .appendingPathComponent(name)
+    }
+
+    private func expectedPlanAdjustmentGoldenBytes(_ name: String) throws -> Data {
+        var data = try Data(contentsOf: planAdjustmentFixtureURL(name))
+        while let last = data.last, last == 0x0A || last == 0x0D {
+            data.removeLast()
+        }
+        return data
+    }
 
     func testProfileSnapshotReadsMixedInjuryArrayThroughCleanProjection() throws {
         let appData = try JSONDecoder().decode(
@@ -153,6 +174,210 @@ final class SessionStoreDraftTests: XCTestCase {
         store.enqueueSave(ordinary)
         store.clear()
         XCTAssertNil(store.load(), "clear must drain a still-queued write before deleting the draft")
+    }
+
+    func testPlanAdjustmentStateShowsIncreaseProposalAboveExistingReduceUndo() throws {
+        let dates = [
+            "2026-06-29", "2026-06-30", "2026-07-01", "2026-07-02", "2026-07-03",
+            "2026-07-06", "2026-07-07", "2026-07-08", "2026-07-09", "2026-07-10",
+            "2026-07-13", "2026-07-14", "2026-07-15", "2026-07-16", "2026-07-17",
+            "2026-07-20", "2026-07-21", "2026-07-22", "2026-07-23", "2026-07-24",
+        ]
+        let appData = try makePlanAdjustmentAppData(
+            programDays: 3,
+            historyDates: dates,
+            adjustmentHistory: [
+                PlanAdjustmentRecord(kind: "reduceFrequency",
+                                     fromDaysPerWeek: 5, toDaysPerWeek: 3),
+            ]
+        )
+        let utc = try XCTUnwrap(TimeZone(identifier: "UTC"))
+        let now = try date("2026-07-29", timeZone: utc)
+
+        let state = SessionStore.planAdjustmentState(from: appData, now: now, timeZone: utc)
+
+        XCTAssertEqual(state.proposal?.kind.rawValue, "increaseFrequency",
+                       "既有 reduce 记录不得压掉不同 kind 的 increase 提案")
+        XCTAssertEqual(state.proposal?.toDaysPerWeek, 5)
+        XCTAssertEqual(state.activeKind?.rawValue, "reduceFrequency",
+                       "同屏下方仍保留栈顶已采纳收据与撤销")
+        XCTAssertEqual(state.activeTo, 3)
+        XCTAssertEqual(state.proposedWeekDays.count, 5)
+    }
+
+    func testPlanProposalSnoozeIsScopedByKind() {
+        let store = SessionStore(draftStore: FakeTrainSessionDraftStore())
+
+        store.snoozePlanProposal(.reduceFrequency)
+
+        XCTAssertTrue(store.isPlanProposalSnoozed(.reduceFrequency))
+        XCTAssertFalse(store.isPlanProposalSnoozed(.increaseFrequency),
+                       "暂不降频不能压掉之后的增频提案")
+    }
+
+    func testPlanAdjustmentStateSuppressesSameKindWhileKeepingUndo() throws {
+        let dates = [
+            "2026-06-29", "2026-07-01",
+            "2026-07-06", "2026-07-08",
+            "2026-07-13", "2026-07-15",
+            "2026-07-20", "2026-07-22",
+        ]
+        let appData = try makePlanAdjustmentAppData(
+            programDays: 3,
+            historyDates: dates,
+            adjustmentHistory: [
+                PlanAdjustmentRecord(kind: "reduceFrequency",
+                                     fromDaysPerWeek: 5, toDaysPerWeek: 3),
+            ]
+        )
+        let utc = try XCTUnwrap(TimeZone(identifier: "UTC"))
+
+        let state = SessionStore.planAdjustmentState(
+            from: appData, now: try date("2026-07-29", timeZone: utc), timeZone: utc
+        )
+
+        XCTAssertNil(state.proposal, "栈顶已采纳 reduce 时，同 kind 的新 reduce 信号继续抑制")
+        XCTAssertEqual(state.activeKind, .reduceFrequency)
+        XCTAssertEqual(state.activeTo, 3, "抑制提案不能吞掉既有撤销入口")
+    }
+
+    func testPlanAdjustmentReceiptUsesCurrentProgramDaysAfterSettingsEdit() throws {
+        let appData = try makePlanAdjustmentAppData(
+            programDays: 4,
+            historyDates: [],
+            adjustmentHistory: [
+                PlanAdjustmentRecord(
+                    kind: "reduceFrequency",
+                    fromDaysPerWeek: 5,
+                    toDaysPerWeek: 3
+                ),
+            ]
+        )
+        let utc = try XCTUnwrap(TimeZone(identifier: "UTC"))
+
+        let state = SessionStore.planAdjustmentState(
+            from: appData,
+            now: try date("2026-07-29", timeZone: utc),
+            timeZone: utc
+        )
+
+        XCTAssertEqual(state.activeTo, 4,
+                       "设置页后来改为 4 天后，收据的“现在”必须跟当前计划，不能继续显示历史 to=3")
+    }
+
+    func testNormalPlanAdjustmentSurfaceMatchesOriginMainByteGolden() throws {
+        // fixture 固定本分支起点 origin/main 的旧 PlanAdjustmentState 共有 surface；
+        // activeKind 是本批新增字段，另由 kind 共存测试锁定，不伪装成旧基线字段。
+        let inputData = try Data(contentsOf: planAdjustmentFixtureURL(
+            "plan-adjustment-normal-surface.origin-main.input.json"
+        ))
+        let input = try JSONDecoder().decode(PlanAdjustmentSurfaceGoldenInput.self, from: inputData)
+        XCTAssertEqual(input.baselineCommit, "e4a711c658f5bb2afe004e50ec5d2c40e5275f43")
+        let appData = try AppData(decoding: input.appData)
+        let utc = try XCTUnwrap(TimeZone(identifier: "UTC"))
+        let state = SessionStore.planAdjustmentState(
+            from: appData,
+            now: try date(input.today, timeZone: utc),
+            timeZone: utc
+        )
+        var payload: [String: Any] = [
+            "proposedWeekDays": state.proposedWeekDays.map(\.dayCode),
+        ]
+        if let proposal = state.proposal {
+            payload["proposal"] = [
+                "kind": proposal.kind.rawValue,
+                "from": proposal.fromDaysPerWeek,
+                "to": proposal.toDaysPerWeek,
+            ]
+        } else {
+            payload["proposal"] = NSNull()
+        }
+        if let activeTo = state.activeTo {
+            payload["activeTo"] = activeTo
+        } else {
+            payload["activeTo"] = NSNull()
+        }
+        let bytes = try JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys])
+
+        XCTAssertEqual(
+            bytes,
+            try expectedPlanAdjustmentGoldenBytes(
+                "plan-adjustment-normal-surface.origin-main.expected.json"
+            ),
+            "正常依从的旧 Plan surface 必须与 origin/main fixture 逐字节等价"
+        )
+    }
+
+    func testFrequencyAdoptionSynchronizesBothTruthsWithoutChangingSplitAndVerdictFollows() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rede-plan-adjustment-app-\(UUID().uuidString)", isDirectory: true)
+        let fileURL = directory.appendingPathComponent("app-data.json")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let dates = ["2026-07-27", "2026-07-29", "2026-07-31"]
+        let before = try makePlanAdjustmentAppData(
+            programDays: 3, historyDates: dates, adjustmentHistory: []
+        )
+        try JSONEncoder().encode(before).write(to: fileURL)
+        let writer = CanonicalSessionWriter(
+            store: JSONFileAppDataStore(fileURL: fileURL),
+            gate: SessionStoreTestDataHealthGate()
+        )
+        let after = try writer.applyFrequencyAdjustment(
+            kind: "increaseFrequency", fromDaysPerWeek: 3, toDaysPerWeek: 5
+        )
+
+        let beforeInput = try CleanTrainingDecisionInput.make(
+            from: CleanAppDataViewBuilder.build(from: before), todayISO: "2026-08-02"
+        )
+        let afterInput = try CleanTrainingDecisionInput.make(
+            from: CleanAppDataViewBuilder.build(from: after), todayISO: "2026-08-02"
+        )
+        XCTAssertEqual(TodayVerdictEngine.evaluate(beforeInput).call, .light)
+        XCTAssertEqual(TodayVerdictEngine.evaluate(afterInput).call, .train)
+        XCTAssertEqual(after.programTemplate.daysPerWeek, 5)
+        XCTAssertEqual(after.userProfile.weeklyTrainingDays, 5)
+        XCTAssertEqual(after.programTemplate.splitType, "full-body")
+    }
+
+    private func makePlanAdjustmentAppData(
+        programDays: Int,
+        historyDates: [String],
+        adjustmentHistory: [PlanAdjustmentRecord]
+    ) throws -> AppData {
+        let sessions: [JSONValue] = historyDates.enumerated().map { index, date in
+            .object([
+                "id": .string("plan-session-\(index)"),
+                "date": .string(date),
+                "completed": .bool(true),
+                "exercises": .array([]),
+            ])
+        }
+        let records: [JSONValue] = adjustmentHistory.map { record in
+            .object([
+                "kind": .string(record.kind),
+                "fromDaysPerWeek": .int(Int64(record.fromDaysPerWeek)),
+                "toDaysPerWeek": .int(Int64(record.toDaysPerWeek)),
+            ])
+        }
+        return try AppData(decoding: .object([
+            "schemaVersion": .int(Int64(SchemaVersion.current)),
+            "userProfile": .object(["weeklyTrainingDays": .int(Int64(programDays))]),
+            "programTemplate": .object([
+                "splitType": .string("full-body"),
+                "daysPerWeek": .int(Int64(programDays)),
+            ]),
+            "history": .array(sessions),
+            "planAdjustmentHistory": .array(records),
+        ]))
+    }
+
+    private func date(_ iso: String, timeZone: TimeZone) throws -> Date {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = timeZone
+        formatter.dateFormat = "yyyy-MM-dd"
+        return try XCTUnwrap(formatter.date(from: iso))
     }
 
     private func makeSessionStore(draftStore: FakeTrainSessionDraftStore) -> SessionStore {

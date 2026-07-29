@@ -81,6 +81,17 @@ public enum PlanCustomizationWriteError: Error, Equatable {
     case emptyDaySequence
 }
 
+public enum PlanAdjustmentWriteError: Error, Equatable {
+    case unknownKind(String)
+    case invalidDays(Int)
+    case invalidProfileDays
+    case staleFromDays(expected: Int, actual: Int?)
+    case invalidDirection(kind: String, from: Int, to: Int)
+    case programTemplateNotObject
+    case userProfileNotObject
+    case historyNotArray
+}
+
 public struct CanonicalSessionWriter {
     private let store: AppDataStore
     private let gate: AppDataWriteGate
@@ -297,41 +308,181 @@ public struct CanonicalSessionWriter {
         }
     }
 
-    /// 已批准写入类别：计划频率调整采纳（FR-PL3，= 既有「程序配置编辑」类别）。open-bag：写
-    /// programTemplate.daysPerWeek = toDaysPerWeek + 落 planAdjustment 回滚记录（记 fromDaysPerWeek），
-    /// 其余顶层/programTemplate 键原样保留；无 schema bump。owner 拍板「采纳允许改 program 结构」。
+    /// 已批准写入类别：计划频率调整采纳（FR-PL3，= 既有「程序配置编辑」类别）。同一写闸同步
+    /// programTemplate.daysPerWeek 与 userProfile.weeklyTrainingDays，并把记录 append 到
+    /// planAdjustmentHistory（旧→新、最多 20 个 raw 元素）；写侧停写并清旧 planAdjustment。其余 open-bag
+    /// 字段原样保留、无 schema bump，且不重算 splitType / 日序。
     @discardableResult
-    public func applyFrequencyAdjustment(fromDaysPerWeek: Int, toDaysPerWeek: Int) throws -> AppData {
+    public func applyFrequencyAdjustment(
+        kind: String,
+        fromDaysPerWeek: Int,
+        toDaysPerWeek: Int
+    ) throws -> AppData {
+        guard kind == "reduceFrequency" || kind == "increaseFrequency" else {
+            throw PlanAdjustmentWriteError.unknownKind(kind)
+        }
+        guard (1...14).contains(fromDaysPerWeek) else {
+            throw PlanAdjustmentWriteError.invalidDays(fromDaysPerWeek)
+        }
+        guard (2...6).contains(toDaysPerWeek) else {
+            throw PlanAdjustmentWriteError.invalidDays(toDaysPerWeek)
+        }
         return try performGatedMutation { current in
             var storage = current.storage
-            var template = storage["programTemplate"]?.asObject ?? [:]
+            var template: [String: JSONValue]
+            if let rawTemplate = storage["programTemplate"] {
+                guard let object = rawTemplate.asObject else {
+                    throw PlanAdjustmentWriteError.programTemplateNotObject
+                }
+                template = object
+            } else {
+                template = [:]
+            }
+            var profile: [String: JSONValue]
+            if let rawProfile = storage["userProfile"] {
+                guard let object = rawProfile.asObject else {
+                    throw PlanAdjustmentWriteError.userProfileNotObject
+                }
+                profile = object
+            } else {
+                profile = [:]
+            }
+
+            guard let programBefore = template["daysPerWeek"]?.asInt,
+                  (1...14).contains(programBefore),
+                  programBefore == fromDaysPerWeek else {
+                throw PlanAdjustmentWriteError.staleFromDays(
+                    expected: fromDaysPerWeek,
+                    actual: template["daysPerWeek"]?.asInt
+                )
+            }
+            let profileBefore: Int?
+            if let rawProfileBefore = profile["weeklyTrainingDays"] {
+                guard let decoded = rawProfileBefore.asInt,
+                      (1...14).contains(decoded)
+                else {
+                    throw PlanAdjustmentWriteError.invalidProfileDays
+                }
+                profileBefore = decoded
+            } else {
+                profileBefore = nil
+            }
+            let directionIsValid = kind == "reduceFrequency"
+                ? toDaysPerWeek < programBefore
+                : toDaysPerWeek > programBefore
+            guard directionIsValid else {
+                throw PlanAdjustmentWriteError.invalidDirection(
+                    kind: kind,
+                    from: programBefore,
+                    to: toDaysPerWeek
+                )
+            }
+
+            var history: [JSONValue]
+            if let rawHistory = storage["planAdjustmentHistory"] {
+                guard let array = rawHistory.asArray else {
+                    throw PlanAdjustmentWriteError.historyNotArray
+                }
+                history = array
+            } else if let legacy = storage["planAdjustment"],
+                      PlanAdjustmentRecord(decoding: legacy) != nil {
+                history = [legacy]
+            } else {
+                history = []
+            }
+
             template["daysPerWeek"] = .int(Int64(toDaysPerWeek))
             storage["programTemplate"] = .object(template)
-            storage["planAdjustment"] = .object([
-                "kind": .string("reduceFrequency"),
-                "fromDaysPerWeek": .int(Int64(fromDaysPerWeek)),
-                "toDaysPerWeek": .int(Int64(toDaysPerWeek)),
-            ])
+            profile["weeklyTrainingDays"] = .int(Int64(toDaysPerWeek))
+            storage["userProfile"] = .object(profile)
+
+            history.append(Self.encodePlanAdjustmentRecord(PlanAdjustmentRecord(
+                kind: kind,
+                fromDaysPerWeek: programBefore,
+                toDaysPerWeek: toDaysPerWeek,
+                fromProfileWeeklyTrainingDays: profileBefore,
+                toProfileWeeklyTrainingDays: toDaysPerWeek
+            )))
+            storage["planAdjustmentHistory"] = .array(Array(history.suffix(20)))
+            storage["planAdjustment"] = nil
             return try AppData(decoding: .object(storage))
         }
     }
 
-    /// 已批准写入类别：计划调整单步回滚（FR-PL4）。读 planAdjustment.fromDaysPerWeek 恢复 daysPerWeek、
-    /// 删记录；无记录 = 幂等 no-op。反向 gated 写（写前备份），不另起 undo 栈。
+    /// 已批准写入类别：计划调整逐层回滚（FR-PL4）。从 raw history 尾端移除最后一个有效层，
+    /// 把该层 before 同步恢复到 program/profile 两处；旧单字段经兼容读也可撤。
+    /// 真实写入后 canonical 只留新数组、清旧字段，脏 sibling 与旧层未知字段原样保留。
+    /// 无记录 = 幂等 no-op。
     @discardableResult
     public func rollbackPlanAdjustment() throws -> AppData {
-        return try performGatedMutation { current in
+        return try performGatedMutation(skipSaveIfUnchanged: true) { current in
             var storage = current.storage
-            guard let record = storage["planAdjustment"]?.asObject,
-                  let from = record["fromDaysPerWeek"]?.asInt else {
-                return current // 无记录：幂等
+            var history: [JSONValue]
+            if let rawHistory = storage["planAdjustmentHistory"] {
+                guard let array = rawHistory.asArray else {
+                    return current // 新键存在即读侧真源；类型脏时 fail closed、不唤醒 legacy
+                }
+                history = array
+            } else if let legacy = storage["planAdjustment"],
+                      PlanAdjustmentRecord(decoding: legacy) != nil {
+                history = [legacy]
+            } else {
+                return current // 无有效记录：幂等
             }
-            var template = storage["programTemplate"]?.asObject ?? [:]
-            template["daysPerWeek"] = .int(Int64(from))
+
+            guard let recordIndex = history.indices.reversed().first(where: {
+                PlanAdjustmentRecord(decoding: history[$0]) != nil
+            }), let record = PlanAdjustmentRecord(decoding: history[recordIndex]) else {
+                return current // 脏 sibling 原样留存；无有效层不触发 backup/save
+            }
+
+            var template: [String: JSONValue]
+            if let rawTemplate = storage["programTemplate"] {
+                guard let object = rawTemplate.asObject else {
+                    throw PlanAdjustmentWriteError.programTemplateNotObject
+                }
+                template = object
+            } else {
+                template = [:]
+            }
+            var profile: [String: JSONValue]
+            if let rawProfile = storage["userProfile"] {
+                guard let object = rawProfile.asObject else {
+                    throw PlanAdjustmentWriteError.userProfileNotObject
+                }
+                profile = object
+            } else {
+                profile = [:]
+            }
+
+            history.remove(at: recordIndex)
+            template["daysPerWeek"] = .int(Int64(record.fromDaysPerWeek))
             storage["programTemplate"] = .object(template)
+            if let profileBefore = record.fromProfileWeeklyTrainingDays {
+                profile["weeklyTrainingDays"] = .int(Int64(profileBefore))
+            } else {
+                profile["weeklyTrainingDays"] = nil
+            }
+            storage["userProfile"] = .object(profile)
+            storage["planAdjustmentHistory"] = .array(history)
             storage["planAdjustment"] = nil
             return try AppData(decoding: .object(storage))
         }
+    }
+
+    private static func encodePlanAdjustmentRecord(_ record: PlanAdjustmentRecord) -> JSONValue {
+        var object: [String: JSONValue] = [
+            "kind": .string(record.kind),
+            "fromDaysPerWeek": .int(Int64(record.fromDaysPerWeek)),
+            "toDaysPerWeek": .int(Int64(record.toDaysPerWeek)),
+        ]
+        if record.hasExplicitProfileDaysSnapshot {
+            object["fromProfileWeeklyTrainingDays"] = record.fromProfileWeeklyTrainingDays
+                .map { .int(Int64($0)) } ?? .null
+            object["toProfileWeeklyTrainingDays"] = record.toProfileWeeklyTrainingDays
+                .map { .int(Int64($0)) } ?? .null
+        }
+        return .object(object)
     }
 
     /// 已批准写入类别：换动作前瞻覆盖采纳（FR-T5 saved-session exercise replacement，schema 11）。
@@ -591,6 +742,7 @@ public struct CanonicalSessionWriter {
 
     /// 唯一的 gated 编排。current 为 nil（首写）时引导最小 canonical 文档。
     private func performGatedMutation(
+        skipSaveIfUnchanged: Bool = false,
         _ mutate: (_ current: AppData) throws -> AppData
     ) throws -> AppData {
         let current = try store.load()
@@ -600,6 +752,9 @@ public struct CanonicalSessionWriter {
         ]))
 
         let candidate = try mutate(base)
+        if skipSaveIfUnchanged, candidate == base {
+            return base
+        }
         try gate.validate(candidate: candidate, replacing: current)
         try store.backupExisting()
         try store.save(candidate)

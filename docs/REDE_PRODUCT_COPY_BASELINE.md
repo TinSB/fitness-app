@@ -1,7 +1,7 @@
 # Rede Product Copy Baseline — 产品文案基底
 
 > **状态:** Canonical / living copy baseline
-> **最后更新:** 2026-07-29（FR-TR7 / FR-SE7 自动进阶暂停双语合同已实现并通过本地 Simulator 验收；生产购买仍关闭）
+> **最后更新:** 2026-07-29（FR-PL3/PL4 双向频率提案与撤销栈文案合同已实现；生产购买仍关闭）
 > **适用范围:** 产品定位、v0 / 原型生成、App Store 文案、onboarding、paywall、UI microcopy、空状态、错误、通知、双语 locale
 > **权威边界:** 本文定义 Rede 如何说话,视觉品牌与原型画面方向以 `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md` 为准。本文不授权任何新功能、网络、云、HealthKit 范围、医疗判断或 source-of-truth 变更。功能与架构边界以 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 和 `docs/REDE_iOS_SYSTEM_LOGIC.md` 为准。
 
@@ -394,6 +394,16 @@ English:
 > Next week stays at 3 training days. Push day lowers shoulder stress; pull day adds one back set.
 >
 > This only changes next week. You can undo it after applying.
+
+**频率调整（FR-PL3/PL4，2026-07-29）**：单位统一为「训练天 / training days」。增频理由只陈述最近四个完整 ISO 周的真实训练天数中位数、当前计划和动作；即使目标因上限钳到 6，也不把 6 冒充观测值。不加表扬、劝告、负荷预告或感叹号。不同方向的新提案可放在既有收据/撤销行上方，不增加说明文字或「还可撤 N 层」。
+
+| 位置 | 中文 | English |
+|---|---|---|
+| 降频理由 | 最近几周你的训练频率持续低于每周 {from} 天的计划。把目标调到每周 {to} 天会更贴合你现在的节奏——随时可以改回来。 | Your recent training has stayed below your {from}-day plan for a few weeks. Setting the target to {to} days a week fits your current rhythm better — you can switch back anytime. |
+| 增频理由 | 最近四周你每周练 {observed} 天　计划是 {from} 天。把计划调到 {to} 天。 | Over the last four weeks, you trained {observed} days a week. Your plan is {from} days. Adjust the plan to {to} days. |
+| 对比行 | 每周 {from} 天 → 每周 {to} 天 | {from} days/wk → {to} days/wk |
+| 已采纳收据 | 现在每周目标 {to} 天。 | Your target is now {to} days a week. |
+| 动作 | 调整计划 / 暂不 / 改回原计划 | Adjust plan / Not now / Restore plan |
 
 **训练日自由编排（FR-PL7③，2026-07-27）**：这里表达用户控制权，不把教练默认频率写成规训。编辑器只显示下一训练日的中性事实；合法日序即使重复某日型或降低某肌群频率，也不用 warning / heads-up / are-you-sure 文案。
 

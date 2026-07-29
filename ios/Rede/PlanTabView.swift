@@ -236,20 +236,25 @@ struct PlanTabView: View {
 
     // MARK: - 计划调整（FR-PL3 提案 / FR-PL4 可撤）
 
-    /// 已采纳记录永远展示（撤销入口）；待采纳提案在本会话「暂不」后隐藏。
+    /// 已采纳栈顶永远展示（撤销入口）；待采纳提案按 kind 在本会话「暂不」后隐藏。
     private var showsAdjustmentCard: Bool {
         if adjustment.activeTo != nil { return true }
-        if adjustment.proposal != nil { return !sessionStore.planProposalSnoozed }
+        if let proposal = adjustment.proposal {
+            return !sessionStore.isPlanProposalSnoozed(proposal.kind)
+        }
         return false
     }
 
     @ViewBuilder
     private var adjustmentSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if let activeTo = adjustment.activeTo {
-                adjustmentActiveCard(to: activeTo)
-            } else if let proposal = adjustment.proposal {
+            // 裁定：提案在上、已采纳收据/撤销在下；不同 kind 可同屏。
+            if let proposal = adjustment.proposal,
+               !sessionStore.isPlanProposalSnoozed(proposal.kind) {
                 adjustmentProposalCard(proposal)
+            }
+            if let activeTo = adjustment.activeTo {
+                adjustmentActiveCard(to: activeTo, kind: adjustment.activeKind)
             }
             // 写失败如实呈现（FR-TR8 红线：绝不静默假成功）；读计划专属字段，隔离于全局/教练错误。
             if let errorText = sessionStore.planSaveErrorText {
@@ -276,7 +281,7 @@ struct PlanTabView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(s.planAdjustOverline)
                             .font(.redeSubhead).foregroundStyle(Color.redeT1)
-                        Text(s.planAdjustReduceBody(from: p.fromDaysPerWeek, to: p.toDaysPerWeek))
+                        Text(proposalBody(p))
                             .font(.redeCaption).foregroundStyle(Color.redeT3)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -297,7 +302,9 @@ struct PlanTabView: View {
                     Button(s.planAdjustAdopt) {
                         Task {
                             if await sessionStore.applyFrequencyAdjustment(
-                                fromDaysPerWeek: p.fromDaysPerWeek, toDaysPerWeek: p.toDaysPerWeek
+                                kind: p.kind,
+                                fromDaysPerWeek: p.fromDaysPerWeek,
+                                toDaysPerWeek: p.toDaysPerWeek
                             ) {
                                 commitPulse += 1
                                 await reload()
@@ -309,7 +316,7 @@ struct PlanTabView: View {
                     Spacer()
                     Button(s.planAdjustDismiss) {
                         selectPulse += 1
-                        sessionStore.planProposalSnoozed = true
+                        sessionStore.snoozePlanProposal(p.kind)
                     }
                     .font(.redeCaption).foregroundStyle(Color.redeT4)
                     .buttonStyle(.redePressable).disabled(sessionStore.isSaving)
@@ -318,8 +325,24 @@ struct PlanTabView: View {
         }
     }
 
-    /// 已采纳态卡：现状 + 改回原计划（单步即时回滚）。
-    private func adjustmentActiveCard(to: Int) -> some View {
+    private func proposalBody(_ proposal: PlanAdjustmentProposal) -> String {
+        switch proposal.kind {
+        case .reduceFrequency:
+            s.planAdjustReduceBody(
+                from: proposal.fromDaysPerWeek,
+                to: proposal.toDaysPerWeek
+            )
+        case .increaseFrequency:
+            s.planAdjustIncreaseBody(
+                observed: proposal.observedDaysPerWeek,
+                from: proposal.fromDaysPerWeek,
+                to: proposal.toDaysPerWeek
+            )
+        }
+    }
+
+    /// 已采纳态卡：现状 + 改回原计划（每次 pop 一层）。
+    private func adjustmentActiveCard(to: Int, kind: PlanAdjustmentProposal.Kind?) -> some View {
         adjustmentCardSurface {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(alignment: .top, spacing: 9) {
@@ -338,8 +361,8 @@ struct PlanTabView: View {
                 Button(s.planAdjustUndo) {
                     Task {
                         if await sessionStore.rollbackPlanAdjustment() {
-                            // 回滚 = 用户明确否决本次建议 → 本会话不再就同一提案复弹（尊重决定，不复推销）。
-                            sessionStore.planProposalSnoozed = true
+                            // 回滚 = 用户明确否决该方向；只 snooze 被弹出的 kind，不吞掉反向提案。
+                            if let kind { sessionStore.snoozePlanProposal(kind) }
                             commitPulse += 1
                             await reload()
                         }

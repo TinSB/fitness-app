@@ -170,6 +170,34 @@ final class RedeStringsTests: XCTestCase {
         }
     }
 
+    func testPlanAdjustmentIncreaseCopyIsExactNeutralAndUsesTrainingDays() {
+        XCTAssertEqual(
+            zh.planAdjustIncreaseBody(observed: 7, from: 3, to: 6),
+            "最近四周你每周练 7 天　计划是 3 天。把计划调到 6 天。"
+        )
+        XCTAssertEqual(
+            en.planAdjustIncreaseBody(observed: 7, from: 3, to: 6),
+            "Over the last four weeks, you trained 7 days a week. Your plan is 3 days. Adjust the plan to 6 days."
+        )
+        XCTAssertEqual(
+            zh.planAdjustReduceBody(from: 4, to: 2),
+            "最近几周你的训练频率持续低于每周 4 天的计划。把目标调到每周 2 天会更贴合你现在的节奏——随时可以改回来。"
+        )
+        XCTAssertEqual(zh.planAdjustFromTo(from: 3, to: 5), "每周 3 天 → 每周 5 天")
+        XCTAssertEqual(zh.planAdjustActiveBody(to: 5), "现在每周目标 5 天。")
+        XCTAssertEqual(en.planAdjustFromTo(from: 3, to: 5), "3 days/wk → 5 days/wk")
+
+        for line in [
+            zh.planAdjustIncreaseBody(observed: 5, from: 3, to: 5),
+            en.planAdjustIncreaseBody(observed: 5, from: 3, to: 5),
+        ] {
+            XCTAssertFalse(line.contains("坚持得很好"))
+            XCTAssertFalse(line.lowercased().contains("great job"))
+            XCTAssertFalse(line.contains("!"))
+            XCTAssertFalse(line.contains("！"))
+        }
+    }
+
     // M2 空态修正（2026-07-06）：计划页无模板兜底态的腐烂承诺清除——FR-PL2/3/4
     // 均已上线，「计划视图还在路上/将在后续版本加入」对 1.0 用户是假话。
     // 防回潮：兜底文案禁再出现「后续版本 / 还在路上 / later version / on its way」。
