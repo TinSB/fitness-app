@@ -316,16 +316,16 @@ English:
 
 > You can train today. Push A stays.
 >
-> Discomfort was noted for this exercise last time, so it won't increase today
+> Discomfort was noted for this exercise last time, so the load stays the same today
 
 **FR-TR7 / FR-SE7 处方行精确文案（2026-07-29）**：
 
 | 来源 | 中文 | English |
 |---|---|---|
-| 该动作 pain 信号触发 | 上次这个动作报过不适，这次先不加重 | Discomfort was noted for this exercise last time, so it won't increase today |
-| 身体部位标记命中（肩膀示例） | 你标记了肩膀，这个动作先不加重 | You marked your shoulder, so this exercise won't increase today |
+| 该动作 pain 信号触发 | 上次这个动作报过不适，这次先不加重 | Discomfort was noted for this exercise last time, so the load stays the same today |
+| 身体部位标记命中（肩膀示例） | 你标记了肩膀，这个动作先不加重 | You marked your shoulder, so the load stays the same today |
 
-只在该动作的 FR-TR7 / FR-SE7 保守态活跃时显示；当日原计划已经持平/变轻或只走自重/弹力带次数轴时仍可如实显示来源，但不得因此改变这些既有结果。不把阈值、算法、诊断、休息或换动作写进 UI，不弹额外提示。
+只在该动作的 FR-TR7 / FR-SE7 实际钳制更难负荷进阶时显示；当日原计划已经持平/变轻、首练、只走自重/弹力带次数轴或换成孪生动作时不显示理由句。不把阈值、算法、诊断、休息或换动作写进 UI，不弹额外提示。
 
 Today 禁止:
 

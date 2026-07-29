@@ -12,7 +12,7 @@ final class PainInjuryCopyTests: XCTestCase {
         )
         XCTAssertEqual(
             en.progressionPausePainLine,
-            "Discomfort was noted for this exercise last time, so it won't increase today"
+            "Discomfort was noted for this exercise last time, so the load stays the same today"
         )
         XCTAssertEqual(
             zh.progressionPauseInjuryLine(bodyPartCode: "shoulder"),
@@ -20,7 +20,7 @@ final class PainInjuryCopyTests: XCTestCase {
         )
         XCTAssertEqual(
             en.progressionPauseInjuryLine(bodyPartCode: "shoulder"),
-            "You marked your shoulder, so this exercise won't increase today"
+            "You marked your shoulder, so the load stays the same today"
         )
     }
 

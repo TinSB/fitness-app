@@ -208,6 +208,10 @@ public struct ExercisePrescriptionPlan: Equatable, Sendable, Codable {
         } else {
             heldWeight = nil
         }
+        let assistedAdvanceWasHeld = loadType == "assisted"
+            && previousWeightKg == targetWeightKg
+            && change == .hold
+            && reason == .repCeilingReached
         return ExercisePrescriptionPlan(
             exerciseId: exerciseId,
             sets: sets,
@@ -225,7 +229,7 @@ public struct ExercisePrescriptionPlan: Equatable, Sendable, Codable {
             reason: reason,
             loadType: loadType,
             equipment: equipment,
-            progressionPauseReason: pauseReason
+            progressionPauseReason: (heldWeight != nil || assistedAdvanceWasHeld) ? pauseReason : nil
         )
     }
 }

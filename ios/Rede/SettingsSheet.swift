@@ -1366,7 +1366,9 @@ struct PlateQuestionEditView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Overline(text: question == .injury ? s.settingsBodyConditionLabel : s.settingsBackground)
+                    if question != .injury {
+                        Overline(text: s.settingsBackground)
+                    }
                     Text(questionLabel)
                         .font(.redeHeadline)
                         .tracking(RedeTracking.headline)

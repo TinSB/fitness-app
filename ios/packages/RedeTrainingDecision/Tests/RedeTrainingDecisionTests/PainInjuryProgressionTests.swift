@@ -54,12 +54,14 @@ final class PainInjuryProgressionTests: XCTestCase {
         date: String,
         pain: PainRecord? = nil,
         completedSets: Bool = true,
+        painFlag: Bool = false,
         weight: Double = 30,
         reps: Int = 10,
         rir: Int = 2
     ) -> String {
+        let painFlagField = painFlag ? ",\"painFlag\":true" : ""
         let exercises = completedSets
-            ? #""exercises":[{"exerciseId":"db-bench-press","sets":[{"weight":\#(weight),"reps":\#(reps),"rir":\#(rir)},{"weight":\#(weight),"reps":\#(reps),"rir":\#(rir)},{"weight":\#(weight),"reps":\#(reps),"rir":\#(rir)}]}]"#
+            ? #""exercises":[{"exerciseId":"db-bench-press","sets":[{"weight":\#(weight),"reps":\#(reps),"rir":\#(rir)\#(painFlagField)},{"weight":\#(weight),"reps":\#(reps),"rir":\#(rir)},{"weight":\#(weight),"reps":\#(reps),"rir":\#(rir)}]}]"#
             : #""exercises":[] "#
         let painField: String
         switch pain {
@@ -173,6 +175,18 @@ final class PainInjuryProgressionTests: XCTestCase {
         XCTAssertNil(result.progressionPauseReason)
         XCTAssertEqual(result.targetWeightKg, 32.5)
         XCTAssertEqual(result.change, .increase)
+    }
+
+    func testPainFlaggedCompletionDoesNotClearAnActivePainPause() throws {
+        let result = try bench(in: upperPlan(sessions: [
+            benchSession(id: "pain-set", date: "2026-07-20", pain: .skippedSet),
+            benchSession(id: "pain-exercise", date: "2026-07-22", pain: .skippedExercise, completedSets: false),
+            benchSession(id: "pain-flagged-completion", date: "2026-07-24", painFlag: true),
+        ]))
+
+        XCTAssertEqual(result.progressionPauseReason, .painDiscomfort)
+        XCTAssertEqual(result.targetWeightKg, 30)
+        XCTAssertEqual(result.change, .hold)
     }
 
     func testNormalCompletionOnlyClearsAfterThePauseHasActuallyTriggered() throws {
@@ -315,12 +329,12 @@ final class PainInjuryProgressionTests: XCTestCase {
         XCTAssertFalse(try injuryMatches("knee", exerciseId: "romanian-deadlift"))
     }
 
-    func testShoulderMappingIncludesRearDeltAndExcludesInclinePattern() throws {
+    func testShoulderMappingIncludesRearDeltAndInclinePress() throws {
         XCTAssertTrue(try injuryMatches("shoulder", exerciseId: "overhead-press"))
         XCTAssertTrue(try injuryMatches("shoulder", exerciseId: "db-bench-press"))
         XCTAssertTrue(try injuryMatches("shoulder", exerciseId: "lateral-raise"))
         XCTAssertTrue(try injuryMatches("shoulder", exerciseId: "face-pull"))
-        XCTAssertFalse(try injuryMatches("shoulder", exerciseId: "incline-db-press"))
+        XCTAssertTrue(try injuryMatches("shoulder", exerciseId: "incline-db-press"))
         XCTAssertFalse(try injuryMatches("shoulder", exerciseId: "romanian-deadlift"))
     }
 
@@ -339,7 +353,7 @@ final class PainInjuryProgressionTests: XCTestCase {
     func testWristMappingMatchesBarbellFixedWristFrontRackAndPushUpsOnly() throws {
         for id in [
             "overhead-press", "bench-press", "barbell-curl",
-            "front-squat", "push-up", "diamond-push-up", "pike-push-up",
+            "incline-barbell-press", "front-squat", "push-up", "diamond-push-up", "pike-push-up",
         ] {
             XCTAssertTrue(try injuryMatches("wrist", exerciseId: id), id)
         }
@@ -389,12 +403,12 @@ final class PainInjuryProgressionTests: XCTestCase {
         XCTAssertTrue(ProgressionPausePolicy.injuryFlag("neck", matches: futureBehindNeck))
     }
 
-    func testOverlappingInjuryFlagsUseFixedBodyPartPrecedence() throws {
+    func testOverlappingInjuryFlagsDoNotRenderAReasonBeforeAnyLoadCanBeHeld() throws {
         let result = try XCTUnwrap(
             upperPlan(sessions: [], injuryFlags: ["wrist", "shoulder"])
                 .exercises.first { $0.exerciseId == "shoulder-press" }
         )
-        XCTAssertEqual(result.progressionPauseReason, .injuryFlag("shoulder"))
+        XCTAssertNil(result.progressionPauseReason)
     }
 
     func testKneeFlagPausesSquatButLeavesUnrelatedHingePrescriptionUnchanged() throws {
@@ -569,9 +583,10 @@ final class PainInjuryProgressionTests: XCTestCase {
         XCTAssertEqual(degraded.targetWeightKg, 0)
         XCTAssertEqual(degraded.reason, .bodyweightPlusDegraded)
         XCTAssertEqual(degraded.change, .start)
+        XCTAssertNil(degraded.progressionPauseReason, "回退到孪生自重动作时不得把原动作理由贴过去")
     }
 
-    func testPainSignalDoesNotBlockBandRepProgression() throws {
+    func testPainSignalDoesNotRenderAPauseReasonWhenBandRepProgressionIsNotHeld() throws {
         let band = ExerciseCatalogEntry(
             id: "t-band-lateral",
             nameZh: "测试弹力带侧平举",
@@ -608,6 +623,6 @@ final class PainInjuryProgressionTests: XCTestCase {
         XCTAssertEqual(result.targetReps, 14, "保守态只冻结加重，不冻结弹力带次数进阶")
         XCTAssertEqual(result.change, .increase)
         XCTAssertEqual(result.reason, .holdProgressing)
-        XCTAssertEqual(result.progressionPauseReason, .painDiscomfort)
+        XCTAssertNil(result.progressionPauseReason, "没有冻结负荷进阶时不得显示暂停理由")
     }
 }

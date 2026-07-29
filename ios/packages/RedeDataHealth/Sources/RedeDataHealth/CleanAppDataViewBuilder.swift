@@ -158,7 +158,12 @@ public enum CleanAppDataViewBuilder {
                     ))
                     rir = nil
                 }
-                sets.append(CleanLoggedSet(weight: weight, reps: reps, rir: rir))
+                sets.append(CleanLoggedSet(
+                    weight: weight,
+                    reps: reps,
+                    rir: rir,
+                    painFlag: set.painFlag == true
+                ))
             }
             result.append(CleanExercise(exerciseId: exerciseId, sets: sets))
         }

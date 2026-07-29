@@ -151,3 +151,16 @@ sheet 内一句说明（**唯一允许的说明文字**）：「选了的部位�
 - gate：冻结点 1（最终源码、代码提交前）与冻结点 2（本回执内容冻结后、文档提交前）均在仓库根执行 `.claude/quality-gate.cmd`，exit 0；每次覆盖 10 个 Swift 包 1035 tests + app-hosted 29 tests，共 1064 tests，且 generic iOS Simulator build 成功。尾部原文均为 `** TEST SUCCEEDED **`、`Testing started`、`QUALITY GATE: PASS`。另在安装实拍前独立真跑 `xcodebuild -project ios/Rede.xcodeproj -scheme Rede -destination 'generic/platform=iOS Simulator' build`，结果 `** BUILD SUCCEEDED **`。
 - 实拍：均为最终源码构建安装到专用 iPhone 17 Pro Simulator，截图前已确认 Simulator 窗口为 `Rede PainSignal Final 20260729` 且前台 App 为 Rede；5 张均为 1206×2622，md5 互异：`2026-07-27-painsignal-settings-row.png` = `c12b585bc69154ea8a327d7bcac716e2`；`2026-07-27-painsignal-injury-picker.png` = `8b0427006d33f6834aececd740e9a273`；`2026-07-27-painsignal-knee-squat.png` = `5e3f2b138d5fa9efbe345126394da3ad`；`2026-07-27-painsignal-pain-hold.png` = `47f3c0dd1b9d8d6540c53b1b4eb5dfa6`；`2026-07-27-painsignal-recovery.png` = `8f0af826243afae71b0d0de398478bcc`。画面分别证明设置行、多选与唯一说明、膝盖→深蹲 60kg 保持、两次 pain→卧推 60kg 保持、正常完成一次→卧推 62.5kg 恢复加重；专用临时 Simulator 验收后删除。
 - 未尽事项 / 范围外疑点：catalog 的髋铰链 raw pattern 实际名为 `hinge`，实现按该现有事实精确匹配；当前 catalog 未发现 `behind-neck` ID，因此颈部现阶段实际只命中 shrug。手腕 push-up 与下背无支撑划船依赖批准的窄 ID 关键词，命名不规范的动作宁可暂不命中，不扩大为可能误伤的粗匹配；若未来 catalog 改名或新增变体，应以独立目录维护批次补正测试。FR-TR6 换动作、自动均衡、轮转、回归协议、每周循环、自定义计划、订阅、schema 与版本号均未改；版本保持 1.9.2 (28)。独立审查结论 0 P0 / 0 P1 / 0 P2。并行会话的未跟踪文件 `docs/工作记录/2026-07-29-safety-note-wave-handoff.md` 未读取、未修改、未暂存。
+
+## 第二轮修复回执（2026-07-29）
+
+- 理由句：处方只在保守态实际钳住更难的负荷进阶时返回 `progressionPauseReason`；首练、未发生负荷钳制的自重/弹力带次数进阶，以及 bodyweight-plus 降级到孪生动作时均不显示。避免同一行同时出现「进阶」与「这次先不加重」，也不再把原动作理由贴到孪生动作。
+- 英文文案：两条英文理由明确改为 `the load stays the same today`，不再让 `it won't increase` 指向不适或身体状态；中文只描述系统不加重，无同类承诺歧义。
+- painFlag：Clean 输入保留已完成组的既有 `painFlag`。带该标记的完成不算正常完成，因此不会解除已激活的保守态；它仍不是 4 场/至少 2 场触发窗口的输入。没有 painFlag 的正常完成仍会恢复。
+- 跳过原因事实：当前只有「跳过这一组 → 不适/疼痛」能写入疼痛原因；「跳过这个动作」仍一律记录为 `other`。引擎对 `skippedExercises.painDiscomfort` 的读取保留作前向兼容。本轮未改训练页交互；整动作跳过的原因选择须由已立的独立任务处理。TestFlight 验收应连续两次走「跳过这一组 → 不适/疼痛」，不能用整动作跳过验证。
+- 映射与 UI：肩膀映射加入 `incline-press`；手腕的杠铃规则也覆盖该 pattern。身体状况编辑页移除重复的同义页头。下背排除词的规格措辞改为与代码一致：先于 squat-pattern 和 horizontal-pull 命中生效。
+- 先红后绿：RED 命令 `swift test --filter 'PainInjuryProgressionTests/(testPainSignalDoesNotRenderAPauseReasonWhenBandRepProgressionIsNotHeld|testPainFlaggedCompletionDoesNotClearAnActivePainPause)'`。修复前分别得到非空 `painDiscomfort` 理由，以及 painFlag 完成后保守态被清除、重量从 30 加至 32.5。GREEN 后这两条与辅助负重、首练重叠伤病理由范围用例均通过；相关映射、孪生动作与文案精确断言一并通过。
+- gate 与 golden：仓库根 `.claude/quality-gate.cmd` exit 0，尾部为 `** TEST SUCCEEDED **` 与 `QUALITY GATE: PASS`；`GoldenPrescriptionTests.testAllPrescriptionGoldens` 覆盖 5 份 fixture，5/5 逐字节通过。
+- 规格写回：`docs/REDE_PRD.md` FR-TR7、`docs/REDE_iOS_SYSTEM_LOGIC.md`、`docs/REDE_PRODUCT_COPY_BASELINE.md`、`CHANGELOG.md` 和 `DEV_LOG.md` 均已按上述当前事实修正；包括 painFlag 边界、整动作跳过边界、上斜推映射和下背排除顺序。
+- 实拍：未完成。Computer Use 读取 Simulator 状态两次均返回 `timeoutReached`，无法可靠打开并验证最终 App 行；因此没有生成或伪造 `2026-07-29-painfix-` PNG，也无法声明 md5 差异。代码级验收、包测试和通用 iOS Simulator 构建已由 quality gate 完成，但这不替代所要求的前台实拍。
+- Git 与范围：本轮已作本地提交 `fix: tighten pain progression holds`；未改版本号、FR-TR6、自动均衡、轮转、回归协议、每周循环、自定义计划、订阅面或 schema；未 push、未开 PR。工作区内未发现 `ZZProbeTests.swift`。并行会话的未跟踪 `docs/工作记录/2026-07-29-safety-note-wave-handoff.md` 未读取、未修改、不会暂存。

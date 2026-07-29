@@ -123,7 +123,7 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 ## 6. Engine 输入
 
-训练决策、计划调整、进展分析必须从 clean data 或 typed clean input 进入。FR-TR7 / FR-SE7 的批准输入面是：`CleanTrainingSession.painDiscomfortExerciseIds`（从已完成场次的 `skippedSets` 与 `skippedExercises` 合并，同场同动作去重；已知非疼痛原因不进入，未知/畸形 reason 丢弃并以 `sessionFieldIgnored` 留痕）以及 `CleanProfile.injuryFlags`（7 个白名单码，未知值丢弃留痕）。raw AppData 与原始 open-bag storage 仍不得直接进入处方引擎。
+训练决策、计划调整、进展分析必须从 clean data 或 typed clean input 进入。FR-TR7 / FR-SE7 的批准输入面是：`CleanTrainingSession.painDiscomfortExerciseIds`（从已完成场次的 `skippedSets` 与 `skippedExercises` 合并，同场同动作去重；当前训练 UI 只会由「跳过这一组 → 不适/疼痛」写出前者的 `painDiscomfort`，整动作跳过固定写 `other`；引擎仍保留后者读取以兼容未来输入）以及 `CleanExercise.sets[].painFlag`（只阻止该场完成被误判为恢复，不计入 4 场/2 次触发窗口）和 `CleanProfile.injuryFlags`（7 个白名单码，未知值丢弃留痕）。raw AppData 与原始 open-bag storage 仍不得直接进入处方引擎。
 
 禁止：
 
@@ -163,17 +163,17 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 **入口合同**：吃 `CleanTrainingDecisionInput` + M2-1 的 `TodayVerdict`（处方不重复判断练不练）；rest 裁决 → 无处方。纯函数、无 clock/IO、输出永不写回 AppData。
 
-**输出合同**：`TodayPrescription{dayCode, exercises[], dayReasons[]}`；每动作 `{exerciseId, sets, restSeconds, rep 区间, targetReps, targetWeightKg(kg 口径), targetRir(增肌默认 2；力量目标复合主项 1，见 §6.0.1a), previousWeightKg, previousTopReps, nextProjectedWeightKg, change(start/increase/hold/ease), reason, progressionPauseReason?}`。`progressionPauseReason` 在 FR-TR7 / FR-SE7 保守态活跃时存在，取 `.painDiscomfort` 或 `.injuryFlag(code)`；即使当日原计划已经持平/变轻或只走自重/弹力带次数轴，也如实保留来源理由，但数值只按下方“唯一行为”规则钳制。无信号时为 nil 且编码省略该 key，保持既有处方字节。全 typed 零文案：dayCode/reason code 是 RedeL10n 模板挂点；**lb 换算归渲染层（FR-SE1），但渲染层不是裸换算——必须把每个可配重量吸附到「器械×当前单位」真实梯子的最近格再显示（见 `REDE_EXERCISE_CONTENT_SYSTEM` §8 LoadGrid 显示吸附契约）；禁止 ×2.2046 直转。**previous→target→change 三元组同时喂 Receipt Change 行、训练页 why 行与 Rail。**里程摘要（wave-12，owner 拍板 B）**：今日页 Receipt Change 行只渲染**头牌动作**（exercises.first）；非头牌动作的**转折性 `reason`**（bandCeilingReached 换带 / bodyweightCeilingReached 加配重 / assistedGraduated 毕业 / bodyweightPlusDegraded 回退）另由今日页**里程摘要**扫全表单列于头牌行下方（配件类如弹力带永远排不到首位，否则其里程提示被吞）；只列转折性 reason、不列普通进阶（高信号），复用同一 `changeLine(for:)` 文案，纯文本不占卡预算。
+**输出合同**：`TodayPrescription{dayCode, exercises[], dayReasons[]}`；每动作 `{exerciseId, sets, restSeconds, rep 区间, targetReps, targetWeightKg(kg 口径), targetRir(增肌默认 2；力量目标复合主项 1，见 §6.0.1a), previousWeightKg, previousTopReps, nextProjectedWeightKg, change(start/increase/hold/ease), reason, progressionPauseReason?}`。`progressionPauseReason` 只在 FR-TR7 / FR-SE7 实际把更难负荷进阶钳回时存在，取 `.painDiscomfort` 或 `.injuryFlag(code)`；持平/变轻、首练、自重/弹力带次数进阶及换成孪生动作时必须为 nil，不能显示与该行结果矛盾的来源理由。无信号时为 nil 且编码省略该 key，保持既有处方字节。全 typed 零文案：dayCode/reason code 是 RedeL10n 模板挂点；**lb 换算归渲染层（FR-SE1），但渲染层不是裸换算——必须把每个可配重量吸附到「器械×当前单位」真实梯子的最近格再显示（见 `REDE_EXERCISE_CONTENT_SYSTEM` §8 LoadGrid 显示吸附契约）；禁止 ×2.2046 直转。**previous→target→change 三元组同时喂 Receipt Change 行、训练页 why 行与 Rail。**里程摘要（wave-12，owner 拍板 B）**：今日页 Receipt Change 行只渲染**头牌动作**（exercises.first）；非头牌动作的**转折性 `reason`**（bandCeilingReached 换带 / bodyweightCeilingReached 加配重 / assistedGraduated 毕业 / bodyweightPlusDegraded 回退）另由今日页**里程摘要**扫全表单列于头牌行下方（配件类如弹力带永远排不到首位，否则其里程提示被吞）；只列转折性 reason、不列普通进阶（高信号），复用同一 `changeLine(for:)` 文案，纯文本不占卡预算。
 
 **FR-TR7 / FR-SE7 自动进阶暂停（2026-07-29 已实现；行为边界即合同）。**
 
 - **疼痛窗口**：先把 clean 已完成场次按日历日排序，同一日保留 canonical append 顺序；只取全局最近 4 场。对每个 `exerciseId` 统计含 `painDiscomfort` 跳过的不同场次，同场的跳过组/跳过整动作合并去重；≥2 场进入保守态，1 场不触发，无关场次照样占窗口。某场既有正常完成组又有 pain 跳过时仍算 pain 场。
-- **恢复**：保守态已经由两次 pain 触发后，该动作一次无 pain 的正常完成立即清除保守态，并把更早证据隔在恢复点之前；恢复后 1 次新 pain 不触发、2 次新 pain 再触发。触发阈值之前夹着的一次正常完成不能抹掉尚未成形的两次信号；活跃信号也会随全局四场窗口滚出而自然消失。
+- **恢复**：保守态已经由两次 pain 触发后，该动作一次无 `painDiscomfort` 跳过且完成组均未带 `painFlag` 的正常完成立即清除保守态，并把更早证据隔在恢复点之前；`painFlag` 仅否定恢复，不计入 4 场/2 次触发窗口。恢复后 1 次新 pain 不触发、2 次新 pain 再触发。触发阈值之前夹着的一次正常完成不能抹掉尚未成形的两次信号；活跃信号也会随全局四场窗口滚出而自然消失。
 - **同日表现顺序**：`lastPerformance` 以 `(日历日, canonical append offset)` 选最后一场；同日多场时，后 append 的正常完成既是恢复事实，也是下一次处方的上次重量来源，不能被同日更早一场覆盖。
 - **唯一行为**：只阻止“比上次更难”的自动负荷变化——external / bodyweight-plus 仅在本次目标重量高于上次时夹回上次重量，assisted 仅在本次计划减少辅助重量时夹回上次辅助；真实 `change` 变为 hold，Rail 的 `nextProjectedWeightKg` 仍显示被暂停的下一档。light / deload / 回归或周期相位已经给出的更轻重量绝不能被抬回；bodyweight / band 的次数进阶不属于负荷加重，保持原样；assisted 毕业会暂停，但 bodyweight-plus 的回退仍可发生。动作、组数、次数目标、RIR、原有 progression reason、用户手动调重能力与其它动作均不变；不替换、不删除、不弹提示/警告/确认。
-- **伤病部位映射**：映射是引擎包内可单测纯函数，只组合 catalog 既有 `exerciseId / equipment / movementPattern`，不新增目录字段。四个部位按 pattern 粗匹配：`knee` = `squat-pattern / lunge / knee-extension / knee-flexion`；`shoulder` = `vertical-press / horizontal-press / lateral-raise / rear-delt`；`elbow` = `triceps-extension / curl`；`ankle` = `calf-raise / squat-pattern`。手腕、下背、颈部执行下列窄映射：
-  - `wrist`：`equipment == barbell` 且 pattern 为 `vertical-press / horizontal-press / curl`；或 id 含 `front-squat`；或 id 含 `push-up`。哑铃、machine、cable、band 与悬垂类 bodyweight 不因粗 pattern 命中。
-  - `lowerBack`：pattern 为 catalog 现有原始值 `hinge`（对应产品语义 hip-hinge）的动作全部命中；`squat-pattern` 只命中 barbell 或 id 含 `smith-squat`；`horizontal-pull` 先排除 id 含 `chest-supported / seated / machine / cable / leg-press / hack`，再只命中 id 含 `bent-over-row / barbell-row / t-bar-row / pendlay-row / meadows-row` 的无支撑俯身划船。
+- **伤病部位映射**：映射是引擎包内可单测纯函数，只组合 catalog 既有 `exerciseId / equipment / movementPattern`，不新增目录字段。四个部位按 pattern 粗匹配：`knee` = `squat-pattern / lunge / knee-extension / knee-flexion`；`shoulder` = `vertical-press / horizontal-press / incline-press / lateral-raise / rear-delt`；`elbow` = `triceps-extension / curl`；`ankle` = `calf-raise / squat-pattern`。手腕、下背、颈部执行下列窄映射：
+  - `wrist`：`equipment == barbell` 且 pattern 为 `vertical-press / horizontal-press / incline-press / curl`；或 id 含 `front-squat`；或 id 含 `push-up`。哑铃、machine、cable、band 与悬垂类 bodyweight 不因粗 pattern 命中。
+  - `lowerBack`：pattern 为 catalog 现有原始值 `hinge`（对应产品语义 hip-hinge）的动作全部命中；在判定 `squat-pattern` 之前，先以 id 的 `chest-supported / seated / machine / cable / leg-press / hack` 排除词拦截，之后 `squat-pattern` 只命中 barbell 或 id 含 `smith-squat`；`horizontal-pull` 再只命中 id 含 `bent-over-row / barbell-row / t-bar-row / pendlay-row / meadows-row` 的无支撑俯身划船。
   - `neck`：pattern 为 `shrug`，或 id 含 `behind-neck`。
 
 若多个部位同时命中，按 canonical flag 顺序选择理由，pain 原因永远优先于 injury flag。ID 命名无法由上述白名单关键词稳定识别时宁可不命中，也不得扩大匹配；当前 catalog 没有 `behind-neck` id，因此颈部现阶段实际只命中 shrug。

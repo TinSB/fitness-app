@@ -170,7 +170,7 @@ extension RedeStrings {
     public var progressionPausePainLine: String {
         t2(
             "上次这个动作报过不适，这次先不加重",
-            "Discomfort was noted for this exercise last time, so it won't increase today"
+            "Discomfort was noted for this exercise last time, so the load stays the same today"
         )
     }
 
@@ -178,7 +178,7 @@ extension RedeStrings {
         let part = settingsBodyPartName(bodyPartCode)
         return t2(
             "你标记了\(part)，这个动作先不加重",
-            "You marked your \(part.lowercased()), so this exercise won't increase today"
+            "You marked your \(part.lowercased()), so the load stays the same today"
         )
     }
 

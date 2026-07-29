@@ -14,11 +14,14 @@ public struct CleanLoggedSet: Equatable, Sendable {
     public let reps: Int
     /// 0...15 之外或非数值投影为 nil。
     public let rir: Double?
+    /// 训练中由用户登记的不适事实；只阻止它被误判为一次“正常完成”。
+    public let painFlag: Bool
 
-    public init(weight: Double, reps: Int, rir: Double?) {
+    public init(weight: Double, reps: Int, rir: Double?, painFlag: Bool = false) {
         self.weight = weight
         self.reps = reps
         self.rir = rir
+        self.painFlag = painFlag
     }
 }
 

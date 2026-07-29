@@ -25,7 +25,7 @@ import RedeDataHealth
 /// FR-TR7 / FR-SE7 的单一保守态判定。只消费 Clean 输入，不接触 raw AppData。
 enum ProgressionPausePolicy {
     private static let wristBarbellPatterns: Set<String> = [
-        "vertical-press", "horizontal-press", "curl",
+        "vertical-press", "horizontal-press", "incline-press", "curl",
     ]
     private static let lowerBackExcludedIdFragments = [
         "chest-supported", "seated", "machine", "cable",
@@ -44,7 +44,7 @@ enum ProgressionPausePolicy {
             return ["squat-pattern", "lunge", "knee-extension", "knee-flexion"]
                 .contains(entry.movementPattern)
         case "shoulder":
-            return ["vertical-press", "horizontal-press", "lateral-raise", "rear-delt"]
+            return ["vertical-press", "horizontal-press", "incline-press", "lateral-raise", "rear-delt"]
                 .contains(entry.movementPattern)
         case "elbow":
             return ["triceps-extension", "curl"].contains(entry.movementPattern)
@@ -111,7 +111,9 @@ enum ProgressionPausePolicy {
             let session = pair.element
             let hadPain = session.painDiscomfortExerciseIds.contains(exerciseId)
             let completedNormally = !hadPain && session.exercises.contains {
-                $0.exerciseId == exerciseId && !$0.sets.isEmpty
+                $0.exerciseId == exerciseId
+                    && !$0.sets.isEmpty
+                    && !$0.sets.contains(where: \.painFlag)
             }
             recent.append((index: index, hadPain: hadPain))
             if recent.count > 4 {
@@ -648,7 +650,7 @@ public enum TodayPrescriptionEngine {
                 phase: phase,
                 progressionPaused: progressionPauseReason != nil
             )
-            if let progressionPauseReason {
+            if let progressionPauseReason, item.exerciseId == entry.id {
                 item = item.pausingAutomaticProgression(for: progressionPauseReason)
             }
             // 自动均衡（批次 E，owner 拍板「不要建议直接自动改计划」）：正在补足的肌群
