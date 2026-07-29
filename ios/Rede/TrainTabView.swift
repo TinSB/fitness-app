@@ -63,6 +63,9 @@ struct TrainTabView: View {
     @Environment(\.requestReview) private var requestReview
     @AppStorage("reviewPrompt.lastRequestedVersion") private var reviewLastRequestedVersion = ""
     @State private var showMoreSheet = false
+    /// 「更多」面板内的第二步：整动作跳过先选原因，再发既有 typed event。
+    /// 手势收起由 more sheet 的 onDismiss 复位，故取消不会写入任何 skip 事实。
+    @State private var choosingExerciseSkipReason = false
     @State private var showSwapSheet = false
     @State private var showSessionOrderSheet = false
     @State private var sessionOrderUpdateFailed = false
@@ -171,7 +174,9 @@ struct TrainTabView: View {
         .sheet(item: $trainDetail) { item in
             ExerciseDetailSheet(exerciseId: item.id)
         }
-        .sheet(isPresented: $showMoreSheet) { moreSheet }
+        .sheet(isPresented: $showMoreSheet, onDismiss: {
+            choosingExerciseSkipReason = false
+        }) { moreSheet }
         .sheet(isPresented: $showSwapSheet) { swapSheet }
         .sheet(
             isPresented: $showSessionOrderSheet,
@@ -1298,19 +1303,30 @@ struct TrainTabView: View {
 
     private var moreSheet: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Overline(text: s.skipSetAction)
-                .padding(.top, 18)
-            VStack(spacing: 0) {
-                ForEach(Array(["equipmentBusy", "painDiscomfort", "fatigue", "timeShort"].enumerated()), id: \.element) { idx, code in
-                    sheetActionRow(s.skipReasonLabel(code), divider: idx < 3) { skipSet(code) }
+            if choosingExerciseSkipReason {
+                Overline(text: s.skipExerciseAction)
+                    .padding(.top, 18)
+                VStack(spacing: 0) {
+                    ForEach(Array(["equipmentBusy", "painDiscomfort", "fatigue", "timeShort"].enumerated()), id: \.element) { idx, code in
+                        sheetActionRow(s.skipReasonLabel(code), divider: idx < 3) { skipExercise(code) }
+                    }
                 }
-            }
-            .padding(.top, 4)
-            EngraveDivider().padding(.vertical, 12)
-            sheetActionRow(s.skipExerciseAction) { skipExercise() }
-            sheetActionRow(s.swapExerciseAction, divider: false) {
-                showMoreSheet = false
-                showSwapSheet = true
+                .padding(.top, 4)
+            } else {
+                Overline(text: s.skipSetAction)
+                    .padding(.top, 18)
+                VStack(spacing: 0) {
+                    ForEach(Array(["equipmentBusy", "painDiscomfort", "fatigue", "timeShort"].enumerated()), id: \.element) { idx, code in
+                        sheetActionRow(s.skipReasonLabel(code), divider: idx < 3) { skipSet(code) }
+                    }
+                }
+                .padding(.top, 4)
+                EngraveDivider().padding(.vertical, 12)
+                sheetActionRow(s.skipExerciseAction) { choosingExerciseSkipReason = true }
+                sheetActionRow(s.swapExerciseAction, divider: false) {
+                    showMoreSheet = false
+                    showSwapSheet = true
+                }
             }
             Spacer()
         }
@@ -1740,11 +1756,12 @@ struct TrainTabView: View {
         sessionStore.apply(.skipSet(reason))
     }
 
-    private func skipExercise() {
+    private func skipExercise(_ code: String) {
+        guard let reason = SetSkipReason(rawValue: code) else { return }
         showMoreSheet = false
         painToastVisible = false
         clearAdjustment()
-        sessionStore.apply(.skipExercise(.other))
+        sessionStore.apply(.skipExercise(reason))
     }
 
     private func finishRest(auto: Bool = false) {
