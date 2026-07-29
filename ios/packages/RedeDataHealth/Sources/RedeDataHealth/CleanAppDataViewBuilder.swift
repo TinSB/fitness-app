@@ -12,6 +12,10 @@ public enum CleanAppDataViewBuilder {
     private static let knownTrainingLevels: Set<String> = ["beginner", "intermediate", "advanced"]
     private static let knownEquipmentScenarios: Set<String> = ["commercial-gym", "home-dumbbell", "minimal"]
     private static let knownUnitSystems: Set<String> = ["kg", "lb"]
+    private static let knownSessionSkipReasons: Set<String> = [
+        "equipmentBusy", "painDiscomfort", "fatigue", "timeShort", "other",
+    ]
+    private static let knownInjuryFlags = Set(InjuryFlag.allCases.map(\.rawValue))
 
     public static func build(from appData: AppData) -> CleanAppDataView {
         var issues: [DataHealthIssue] = []
@@ -52,7 +56,18 @@ public enum CleanAppDataViewBuilder {
                 dateISO: dateISO,
                 issues: &issues
             )
-            sessions.append(CleanTrainingSession(id: id, date: date, exercises: exercises))
+            let painDiscomfortExerciseIds = cleanPainDiscomfortExerciseIds(
+                of: session,
+                sessionId: id,
+                dateISO: dateISO,
+                issues: &issues
+            )
+            sessions.append(CleanTrainingSession(
+                id: id,
+                date: date,
+                exercises: exercises,
+                painDiscomfortExerciseIds: painDiscomfortExerciseIds
+            ))
         }
 
         let profile = cleanProfile(appData.userProfile, issues: &issues)
@@ -150,6 +165,67 @@ public enum CleanAppDataViewBuilder {
         return result
     }
 
+    /// FR-TR7：只把处方需要的 painDiscomfort 场次信号提升到 clean 层。
+    /// 组跳过与整动作跳过同场去重；其它已知原因不是本决策输入，未知原因丢弃留痕。
+    private static func cleanPainDiscomfortExerciseIds(
+        of session: TrainingSession,
+        sessionId: String,
+        dateISO: String,
+        issues: inout [DataHealthIssue]
+    ) -> Set<String> {
+        var result: Set<String> = []
+
+        func consume(_ key: String, requiresSetIndex: Bool) {
+            guard let stored = session.storage[key] else { return }
+            guard let values = stored.asArray else {
+                issues.append(.sessionFieldIgnored(
+                    sessionId: sessionId,
+                    dateISO: dateISO,
+                    field: key
+                ))
+                return
+            }
+            for value in values {
+                guard let object = value.asObject,
+                      let exerciseId = object["exerciseId"]?.asString,
+                      !exerciseId.isEmpty
+                else {
+                    issues.append(.sessionFieldIgnored(
+                        sessionId: sessionId,
+                        dateISO: dateISO,
+                        field: key
+                    ))
+                    continue
+                }
+                if requiresSetIndex, (object["setIndex"]?.asInt ?? 0) < 1 {
+                    issues.append(.sessionFieldIgnored(
+                        sessionId: sessionId,
+                        dateISO: dateISO,
+                        field: "\(key).setIndex"
+                    ))
+                    continue
+                }
+                guard let reason = object["reason"]?.asString,
+                      knownSessionSkipReasons.contains(reason)
+                else {
+                    issues.append(.sessionFieldIgnored(
+                        sessionId: sessionId,
+                        dateISO: dateISO,
+                        field: "\(key).reason"
+                    ))
+                    continue
+                }
+                if reason == "painDiscomfort" {
+                    result.insert(exerciseId)
+                }
+            }
+        }
+
+        consume("skippedSets", requiresSetIndex: true)
+        consume("skippedExercises", requiresSetIndex: false)
+        return result
+    }
+
     private static func cleanProfile(
         _ profile: UserProfile,
         issues: inout [DataHealthIssue]
@@ -191,6 +267,24 @@ public enum CleanAppDataViewBuilder {
             sex = nil
         }
 
+        var selectedInjuryFlags: Set<String> = []
+        if let raw = profile.storage["injuryFlags"] {
+            if let values = raw.asArray {
+                for value in values {
+                    guard let code = value.asString, knownInjuryFlags.contains(code) else {
+                        issues.append(.profileFieldIgnored(field: "injuryFlags"))
+                        continue
+                    }
+                    selectedInjuryFlags.insert(code)
+                }
+            } else {
+                issues.append(.profileFieldIgnored(field: "injuryFlags"))
+            }
+        }
+        let injuryFlags = InjuryFlag.allCases
+            .filter { selectedInjuryFlags.contains($0.rawValue) }
+            .map(\.rawValue)
+
         return CleanProfile(
             trainingLevel: trainingLevel,
             sex: sex,
@@ -199,7 +293,8 @@ public enum CleanAppDataViewBuilder {
             weightKg: scalar(profile.weightKg, 20...400, "weightKg"),
             weeklyTrainingDays: scalar(profile.weeklyTrainingDays, 1...14, "weeklyTrainingDays"),
             equipmentScenario: equipmentScenario,
-            unitSystem: unitSystem
+            unitSystem: unitSystem,
+            injuryFlags: injuryFlags
         )
     }
 }

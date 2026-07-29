@@ -1,5 +1,6 @@
 // M2-2 goldens：固定输入 → 锁定处方（走完整链：AppData JSON → DataHealth →
-// branded input → 裁决 → 处方）。改渐进规则/轮转/调制必先让这里红。
+// branded input → 裁决 → 处方）。*.expected.json 从本分支起点 origin/main
+// b634d2c885c6897fe563f69524270a61a8f437cb 的旧引擎输出捕获；改规则必先让这里红。
 
 import Foundation
 import XCTest
@@ -29,7 +30,20 @@ final class GoldenPrescriptionTests: XCTestCase {
         "golden-prescription-legs-day",
     ]
 
+    private static let progressionPauseReasonKey = Data(#""progressionPauseReason""#.utf8)
+
+    private static func expectedPrescriptionData(for name: String) throws -> Data {
+        var data = try Data(contentsOf: TestSupport.fixtureURL("\(name).expected.json"))
+        while let last = data.last, last == 0x0A || last == 0x0D {
+            data.removeLast()
+        }
+        return data
+    }
+
     func testAllPrescriptionGoldens() throws {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+
         for name in Self.goldenNames {
             let data = try Data(contentsOf: TestSupport.fixtureURL("\(name).json"))
             let golden = try JSONDecoder().decode(Golden.self, from: data)
@@ -46,6 +60,18 @@ final class GoldenPrescriptionTests: XCTestCase {
             let prescription = try XCTUnwrap(
                 TodayPrescriptionEngine.plan(input: input, verdict: verdict),
                 "\(name): 期望有处方"
+            )
+            let encoded = try encoder.encode(prescription)
+            let expectedData = try Self.expectedPrescriptionData(for: name)
+
+            XCTAssertEqual(encoded, expectedData, "\(name): 完整处方 JSON bytes 漂移")
+            XCTAssertTrue(
+                prescription.exercises.allSatisfy { $0.progressionPauseReason == nil },
+                "\(name): baseline progressionPauseReason 应为 nil"
+            )
+            XCTAssertNil(
+                encoded.range(of: Self.progressionPauseReasonKey),
+                "\(name): nil progressionPauseReason 不得进入 JSON"
             )
 
             XCTAssertEqual(prescription.dayCode, golden.expected.dayCode, "\(name): dayCode 漂移")

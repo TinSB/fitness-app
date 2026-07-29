@@ -22,6 +22,117 @@
 import Foundation
 import RedeDataHealth
 
+/// FR-TR7 / FR-SE7 的单一保守态判定。只消费 Clean 输入，不接触 raw AppData。
+enum ProgressionPausePolicy {
+    private static let wristBarbellPatterns: Set<String> = [
+        "vertical-press", "horizontal-press", "curl",
+    ]
+    private static let lowerBackExcludedIdFragments = [
+        "chest-supported", "seated", "machine", "cable",
+        "leg-press", "hack",
+    ]
+    private static let unsupportedRowIdFragments = [
+        "bent-over-row", "barbell-row", "t-bar-row", "pendlay-row", "meadows-row",
+    ]
+
+    /// FR-SE7 部位→动作窄映射。只读目录既有事实，不新增字段；无法由稳定
+    /// id/equipment/pattern 识别的动作默认不命中，宁可漏一个也不扩大误命中。
+    static func injuryFlag(_ flag: String, matches entry: ExerciseCatalogEntry) -> Bool {
+        let id = entry.id.lowercased()
+        switch flag {
+        case "knee":
+            return ["squat-pattern", "lunge", "knee-extension", "knee-flexion"]
+                .contains(entry.movementPattern)
+        case "shoulder":
+            return ["vertical-press", "horizontal-press", "lateral-raise", "rear-delt"]
+                .contains(entry.movementPattern)
+        case "elbow":
+            return ["triceps-extension", "curl"].contains(entry.movementPattern)
+        case "ankle":
+            return ["calf-raise", "squat-pattern"].contains(entry.movementPattern)
+        case "wrist":
+            if entry.equipment == "barbell",
+               wristBarbellPatterns.contains(entry.movementPattern) {
+                return true
+            }
+            return id.contains("front-squat") || id.contains("push-up")
+        case "lowerBack":
+            if entry.movementPattern == "hinge" {
+                return true
+            }
+            if lowerBackExcludedIdFragments.contains(where: id.contains) {
+                return false
+            }
+            if entry.movementPattern == "squat-pattern" {
+                return entry.equipment == "barbell" || id.contains("smith-squat")
+            }
+            guard entry.movementPattern == "horizontal-pull" else { return false }
+            return unsupportedRowIdFragments.contains(where: id.contains)
+        case "neck":
+            return entry.movementPattern == "shrug" || id.contains("behind-neck")
+        default:
+            return false
+        }
+    }
+
+    static func reason(
+        entry: ExerciseCatalogEntry,
+        input: CleanTrainingDecisionInput
+    ) -> ProgressionPauseReason? {
+        if painDiscomfortIsActive(exerciseId: entry.id, sessions: input.sessions) {
+            return .painDiscomfort
+        }
+        if let flag = input.profile.injuryFlags.first(where: {
+            injuryFlag($0, matches: entry)
+        }) {
+            return .injuryFlag(flag)
+        }
+        return nil
+    }
+
+    /// 顺序重放完成历史：任一时点最近四场内累计到 2 才进入保守态；只有已经
+    /// 进入保守态后的一次正常完成才建立恢复地板，触发前的普通完成不抹证据。
+    private static func painDiscomfortIsActive(
+        exerciseId: String,
+        sessions: [CleanTrainingSession]
+    ) -> Bool {
+        let chronological = sessions.enumerated()
+            .sorted {
+                let lhsDay = TrainingDay.dayNumber(fromISO: $0.element.date) ?? Int.min
+                let rhsDay = TrainingDay.dayNumber(fromISO: $1.element.date) ?? Int.min
+                if lhsDay == rhsDay { return $0.offset < $1.offset }
+                return lhsDay < rhsDay
+            }
+
+        var recent: [(index: Int, hadPain: Bool)] = []
+        var active = false
+        var recoveryFloor = -1
+        for (index, pair) in chronological.enumerated() {
+            let session = pair.element
+            let hadPain = session.painDiscomfortExerciseIds.contains(exerciseId)
+            let completedNormally = !hadPain && session.exercises.contains {
+                $0.exerciseId == exerciseId && !$0.sets.isEmpty
+            }
+            recent.append((index: index, hadPain: hadPain))
+            if recent.count > 4 {
+                recent.removeFirst()
+            }
+
+            if active && completedNormally {
+                active = false
+                recoveryFloor = index
+                continue
+            }
+
+            let painSessionCount = recent.reduce(into: 0) { count, item in
+                if item.index > recoveryFloor && item.hadPain { count += 1 }
+            }
+            active = painSessionCount >= 2
+        }
+        return active
+    }
+}
+
 public enum TodayPrescriptionEngine {
     private static let nearFailureMeanRir = 0.5
     private static let progressMinMeanRir = 1.0
@@ -524,7 +635,22 @@ public enum TodayPrescriptionEngine {
                     .flatMap { target in candidates.first { $0.id == target } } ?? basePick
             }
             usedIds.insert(entry.id)
-            var item = prescribe(entry: entry, slot: slot, input: input, verdict: verdict, catalog: catalog, phase: phase)
+            let progressionPauseReason = ProgressionPausePolicy.reason(
+                entry: entry,
+                input: input
+            )
+            var item = prescribe(
+                entry: entry,
+                slot: slot,
+                input: input,
+                verdict: verdict,
+                catalog: catalog,
+                phase: phase,
+                progressionPaused: progressionPauseReason != nil
+            )
+            if let progressionPauseReason {
+                item = item.pausingAutomaticProgression(for: progressionPauseReason)
+            }
             // 自动均衡（批次 E，owner 拍板「不要建议直接自动改计划」）：正在补足的肌群
             // 为主的动作 +1 组。门控全让位——只 train 态（deload 本身 -1 组，无脑加只会
             // 抵消=假让位；light/comeback 安全网优先）、周期相位平周（deload 周不加、
@@ -573,7 +699,8 @@ public enum TodayPrescriptionEngine {
         input: CleanTrainingDecisionInput,
         verdict: TodayVerdict,
         catalog: ExerciseCatalog,
-        phase: PhaseModulation?
+        phase: PhaseModulation?,
+        progressionPaused: Bool
     ) -> ExercisePrescriptionPlan {
         let last = lastPerformance(exerciseId: entry.id, sessions: input.sessions)
 
@@ -597,7 +724,16 @@ public enum TodayPrescriptionEngine {
         // 挣扎/力竭=加辅助、轻练/减载=加辅助、新手冷启动=更多辅助、降到最小一片
         // 还有余力=毕业换自重孪生。绝不把 external 减重瀑布套上去（安全方向反转红线）。
         if entry.loadType == "assisted" {
-            return prescribeAssisted(entry: entry, slot: slot, last: last, input: input, verdict: verdict, phase: phase, catalog: catalog)
+            return prescribeAssisted(
+                entry: entry,
+                slot: slot,
+                last: last,
+                input: input,
+                verdict: verdict,
+                phase: phase,
+                catalog: catalog,
+                progressionPaused: progressionPaused
+            )
         }
 
         // 负重自重分支（wave-11，owner 拍板）：重量轴=外挂负重(≥0)，方向同 external
@@ -809,7 +945,8 @@ public enum TodayPrescriptionEngine {
         input: CleanTrainingDecisionInput,
         verdict: TodayVerdict,
         phase: PhaseModulation?,
-        catalog: ExerciseCatalog
+        catalog: ExerciseCatalog,
+        progressionPaused: Bool
     ) -> ExercisePrescriptionPlan {
         let step = LoadGrid.stepKg(
             equipment: entry.equipment,
@@ -835,7 +972,14 @@ public enum TodayPrescriptionEngine {
                       verdict.longGapDays == nil {
                 // 回归压制（2026-07-08 审查 S1）：减辅助=变难，与收据句「重量先回落」矛盾
                 let nextAssist = last.topWeightKg - step     // 变强 → 减辅助一档
-                if nextAssist < step {
+                if progressionPaused {
+                    // 信号保守态在毕业分支前截住：保留辅助动作和上次辅助量，
+                    // 不允许先换成自重孪生再事后改重量。
+                    baseAssist = last.topWeightKg
+                    targetReps = slot.repMin
+                    change = .hold
+                    reason = .repCeilingReached
+                } else if nextAssist < step {
                     // 减到最小一片以下 = 不再需要辅助 → 自动毕业换自重孪生
                     if let twin = graduationTwin(for: entry, catalog: catalog) {
                         let twinLast = lastPerformance(exerciseId: twin.id, sessions: input.sessions)
@@ -1165,13 +1309,21 @@ public enum TodayPrescriptionEngine {
         exerciseId: String,
         sessions: [CleanTrainingSession]
     ) -> LastPerformance? {
-        let candidates = sessions.compactMap { session -> (day: Int, sets: [CleanLoggedSet])? in
+        let candidates = sessions.enumerated().compactMap {
+            canonicalOffset, session -> (day: Int, canonicalOffset: Int, sets: [CleanLoggedSet])? in
             guard let day = TrainingDay.dayNumber(fromISO: session.date) else { return nil }
             let sets = session.exercises.filter { $0.exerciseId == exerciseId }.flatMap(\.sets)
             guard !sets.isEmpty else { return nil }
-            return (day, sets)
+            return (day, canonicalOffset, sets)
         }
-        guard let latest = candidates.max(by: { $0.day < $1.day }) else { return nil }
+        guard let latest = candidates.max(by: {
+            if $0.day == $1.day {
+                return $0.canonicalOffset < $1.canonicalOffset
+            }
+            return $0.day < $1.day
+        }) else {
+            return nil
+        }
 
         let reps = latest.sets.map(\.reps)
         let rirs = latest.sets.compactMap(\.rir)

@@ -79,6 +79,13 @@ public enum DayPrescriptionReason: Equatable, Sendable, Codable {
     }
 }
 
+/// FR-TR7 / FR-SE7：独立于原渐进理由的“本次不自动进阶”来源。
+/// nil 必须保持旧输出逐字节不变；关联值只携带已净化的 InjuryFlag code。
+public enum ProgressionPauseReason: Equatable, Sendable, Codable {
+    case painDiscomfort
+    case injuryFlag(String)
+}
+
 public struct ExercisePrescriptionPlan: Equatable, Sendable, Codable {
     public let exerciseId: String
     public let sets: Int
@@ -108,6 +115,8 @@ public struct ExercisePrescriptionPlan: Equatable, Sendable, Codable {
     /// 器械类（dumbbell/barbell/cable/…）：渲染层据此取「器械×单位真实梯子」吸附显示重量
     /// （§8 显示吸附契约）。默认 dumbbell 兼容旧 draft。
     public let equipment: String
+    /// 有信号时只暂停本次自动加重；原动作、组次、RIR 与原渐进理由均保留。
+    public let progressionPauseReason: ProgressionPauseReason?
 
     /// 自动均衡（批次 E）：+1 组副本——**瞬时调制**，不落库不写回自定义槽
     ///（planCustomization 的 sets 会被 customSlots 当新常数 → 渐进漂移红线）。
@@ -118,7 +127,8 @@ public struct ExercisePrescriptionPlan: Equatable, Sendable, Codable {
             targetReps: targetReps, targetWeightKg: targetWeightKg, targetRir: targetRir,
             previousWeightKg: previousWeightKg, previousTopReps: previousTopReps,
             nextProjectedWeightKg: nextProjectedWeightKg, progressionStepKg: progressionStepKg,
-            change: change, reason: reason, loadType: loadType, equipment: equipment)
+            change: change, reason: reason, loadType: loadType, equipment: equipment,
+            progressionPauseReason: progressionPauseReason)
     }
 
     public init(
@@ -127,7 +137,8 @@ public struct ExercisePrescriptionPlan: Equatable, Sendable, Codable {
         previousWeightKg: Double?, previousTopReps: Int?, nextProjectedWeightKg: Double,
         progressionStepKg: Double,   // 无默认值：忘传=编译错（同 rank 的 M2 教训）；decode 缺省仅为旧 draft 兼容
         change: ChangeDirection, reason: PrescriptionReason, loadType: String = "external",
-        equipment: String = "dumbbell"
+        equipment: String = "dumbbell",
+        progressionPauseReason: ProgressionPauseReason? = nil
     ) {
         self.exerciseId = exerciseId
         self.sets = sets
@@ -145,12 +156,14 @@ public struct ExercisePrescriptionPlan: Equatable, Sendable, Codable {
         self.reason = reason
         self.loadType = loadType
         self.equipment = equipment
+        self.progressionPauseReason = progressionPauseReason
     }
 
     enum CodingKeys: String, CodingKey {
         case exerciseId, sets, restSeconds, repLowerBound, repUpperBound
         case targetReps, targetWeightKg, targetRir, previousWeightKg, previousTopReps
         case nextProjectedWeightKg, progressionStepKg, change, reason, loadType, equipment
+        case progressionPauseReason
     }
 
     /// 自定义解码仅为 progressionStepKg 缺省 2.5：当日旧 draft（升级前落盘）
@@ -173,6 +186,47 @@ public struct ExercisePrescriptionPlan: Equatable, Sendable, Codable {
         reason = try c.decode(PrescriptionReason.self, forKey: .reason)
         loadType = try c.decodeIfPresent(String.self, forKey: .loadType) ?? "external"
         equipment = try c.decodeIfPresent(String.self, forKey: .equipment) ?? "dumbbell"
+        progressionPauseReason = try c.decodeIfPresent(
+            ProgressionPauseReason.self,
+            forKey: .progressionPauseReason
+        )
+    }
+
+    /// 只钳制“自动加重”分支；正在持平/回退/首练的处方不改数值或 change。
+    /// nextProjectedWeightKg 是原引擎的未来投影，亦保持不变。
+    func pausingAutomaticProgression(for pauseReason: ProgressionPauseReason) -> ExercisePrescriptionPlan {
+        let heldWeight: Double?
+        if let previousWeightKg {
+            switch loadType {
+            case "assisted":
+                heldWeight = targetWeightKg < previousWeightKg ? previousWeightKg : nil
+            case "external", "bodyweight-plus":
+                heldWeight = targetWeightKg > previousWeightKg ? previousWeightKg : nil
+            default:
+                heldWeight = nil
+            }
+        } else {
+            heldWeight = nil
+        }
+        return ExercisePrescriptionPlan(
+            exerciseId: exerciseId,
+            sets: sets,
+            restSeconds: restSeconds,
+            repLowerBound: repLowerBound,
+            repUpperBound: repUpperBound,
+            targetReps: targetReps,
+            targetWeightKg: heldWeight ?? targetWeightKg,
+            targetRir: targetRir,
+            previousWeightKg: previousWeightKg,
+            previousTopReps: previousTopReps,
+            nextProjectedWeightKg: heldWeight == nil ? nextProjectedWeightKg : targetWeightKg,
+            progressionStepKg: progressionStepKg,
+            change: heldWeight == nil ? change : .hold,
+            reason: reason,
+            loadType: loadType,
+            equipment: equipment,
+            progressionPauseReason: pauseReason
+        )
     }
 }
 

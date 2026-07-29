@@ -193,6 +193,104 @@ final class CleanSessionProjectionTests: XCTestCase {
         XCTAssertEqual(view.issues.count, 2)
     }
 
+    func testPainSkipSignalsProjectFromSkippedSetAndSkippedExercise() throws {
+        let view = try makeView(#"""
+        {"schemaVersion": 8, "history": [
+          {"id": "s1", "date": "2026-06-01", "completed": true,
+           "exercises": [],
+           "skippedSets": [
+             {"exerciseId": "bench-press", "setIndex": 2, "reason": "painDiscomfort"},
+             {"exerciseId": "bench-press", "setIndex": 3, "reason": "painDiscomfort"},
+             {"exerciseId": "row", "setIndex": 1, "reason": "equipmentBusy"}
+           ],
+           "skippedExercises": [
+             {"exerciseId": "squat", "reason": "painDiscomfort"},
+             {"exerciseId": "bench-press", "reason": "painDiscomfort"}
+           ]}
+        ]}
+        """#)
+
+        XCTAssertEqual(
+            view.sessions.first?.painDiscomfortExerciseIds,
+            Set(["bench-press", "squat"])
+        )
+        XCTAssertTrue(view.issues.isEmpty)
+    }
+
+    func testUnknownSkipReasonsAreDroppedAndLeaveIssues() throws {
+        let view = try makeView(#"""
+        {"schemaVersion": 8, "history": [
+          {"id": "s1", "date": "2026-06-01", "completed": true,
+           "exercises": [],
+           "skippedSets": [
+             {"exerciseId": "bench-press", "setIndex": 2, "reason": "mystery"}
+           ],
+           "skippedExercises": [
+             {"exerciseId": "squat", "reason": "unknown"}
+           ]}
+        ]}
+        """#)
+
+        XCTAssertEqual(view.sessions.first?.painDiscomfortExerciseIds, [])
+        XCTAssertEqual(view.issues, [
+            .sessionFieldIgnored(
+                sessionId: "s1",
+                dateISO: "2026-06-01",
+                field: "skippedSets.reason"
+            ),
+            .sessionFieldIgnored(
+                sessionId: "s1",
+                dateISO: "2026-06-01",
+                field: "skippedExercises.reason"
+            ),
+        ])
+        XCTAssertTrue(view.issues.allSatisfy { !$0.isDroppedTrainingData })
+    }
+
+    func testMissingAndNonStringSkipReasonsAreIgnoredWithTraceableIssues() throws {
+        let view = try makeView(#"""
+        {"schemaVersion": 8, "history": [
+          {"id": "s1", "date": "2026-06-01", "completed": true,
+           "exercises": [],
+           "skippedSets": [
+             {"exerciseId": "bench-press", "setIndex": 2},
+             {"exerciseId": "row", "setIndex": 1, "reason": 42}
+           ],
+           "skippedExercises": [
+             {"exerciseId": "squat"},
+             {"exerciseId": "curl", "reason": false}
+           ]}
+        ]}
+        """#)
+
+        XCTAssertEqual(view.sessions.first?.painDiscomfortExerciseIds, [])
+        XCTAssertEqual(view.issues, [
+            .sessionFieldIgnored(sessionId: "s1", dateISO: "2026-06-01", field: "skippedSets.reason"),
+            .sessionFieldIgnored(sessionId: "s1", dateISO: "2026-06-01", field: "skippedSets.reason"),
+            .sessionFieldIgnored(sessionId: "s1", dateISO: "2026-06-01", field: "skippedExercises.reason"),
+            .sessionFieldIgnored(sessionId: "s1", dateISO: "2026-06-01", field: "skippedExercises.reason"),
+        ])
+        XCTAssertTrue(view.issues.allSatisfy { !$0.isDroppedTrainingData })
+    }
+
+    func testMalformedSkipContainersAreIgnoredWithTraceableIssues() throws {
+        let view = try makeView(#"""
+        {"schemaVersion": 8, "history": [
+          {"id": "s1", "date": "2026-06-01", "completed": true,
+           "exercises": [],
+           "skippedSets": {"exerciseId": "bench-press", "setIndex": 1, "reason": "painDiscomfort"},
+           "skippedExercises": "painDiscomfort"}
+        ]}
+        """#)
+
+        XCTAssertEqual(view.sessions.first?.painDiscomfortExerciseIds, [])
+        XCTAssertEqual(view.issues, [
+            .sessionFieldIgnored(sessionId: "s1", dateISO: "2026-06-01", field: "skippedSets"),
+            .sessionFieldIgnored(sessionId: "s1", dateISO: "2026-06-01", field: "skippedExercises"),
+        ])
+        XCTAssertTrue(view.issues.allSatisfy { !$0.isDroppedTrainingData })
+    }
+
     func testExerciseWithAllSetsDroppedSurvivesWithEmptySets() throws {
         // 设计声明：exerciseId 有效但全部 set 无效时，exercise 保留（sets=[]）——
         // 让 M2 引擎能区分「没做这个动作」和「做了但数据全脏」。

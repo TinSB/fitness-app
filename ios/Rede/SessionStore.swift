@@ -212,18 +212,25 @@ final class SessionStore {
         let equipmentScenario: String?
         let trainingLevel: String?
         let sex: String?          // 批次 D：可选，仅相对力量标准用
+        let injuryFlags: [String]
     }
 
     nonisolated static func loadProfileSnapshot() -> ProfileSnapshot? {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         guard let appData = try? store.load() else { return nil }
+        return profileSnapshot(from: appData)
+    }
+
+    nonisolated static func profileSnapshot(from appData: AppData) -> ProfileSnapshot {
         let profile = appData.userProfile
+        let cleanProfile = CleanAppDataViewBuilder.build(from: appData).profile
         return ProfileSnapshot(
             primaryGoal: profile.primaryGoal,
             weeklyTrainingDays: profile.weeklyTrainingDays,
             equipmentScenario: profile.equipmentScenario,
             trainingLevel: profile.trainingLevel,
-            sex: profile.sex
+            sex: profile.sex,
+            injuryFlags: cleanProfile.injuryFlags
         )
     }
 
@@ -780,6 +787,39 @@ final class SessionStore {
         }.value
         switch result {
         case .success:
+            return true
+        case .failure(let error):
+            settingsSaveErrorText = String(describing: error)
+            return false
+        }
+    }
+
+    /// FR-SE7 身体部位筛查：复用 canonical 写闸；成功后重载 Today，让同一设置会话
+    /// 关闭后立刻看到处方的暂停进阶结果。
+    func saveInjuryFlags(_ flags: [String]) async -> Bool {
+        guard !isSaving else { return false }
+        isSaving = true
+        settingsSaveErrorText = nil
+        defer { isSaving = false }
+        let fileURL = TodayModel.canonicalFileURL()
+        let result: Result<Void, Error> = await Task.detached(priority: .userInitiated) {
+            do {
+                try FileManager.default.createDirectory(
+                    at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true
+                )
+                let writer = CanonicalSessionWriter(
+                    store: JSONFileAppDataStore(fileURL: fileURL),
+                    gate: DataHealthGate()
+                )
+                try writer.applyInjuryFlags(flags)
+                return .success(())
+            } catch {
+                return .failure(error)
+            }
+        }.value
+        switch result {
+        case .success:
+            await loadToday()
             return true
         case .failure(let error):
             settingsSaveErrorText = String(describing: error)

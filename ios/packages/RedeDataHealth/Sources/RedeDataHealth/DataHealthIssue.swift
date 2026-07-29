@@ -26,6 +26,8 @@ public enum DataHealthIssue: Equatable, Hashable, Sendable {
     case sessionDropped(id: String?, dateISO: String?, reason: SessionDropReason)
     case exerciseDropped(sessionId: String, dateISO: String, reason: ExerciseDropReason)
     case setDropped(sessionId: String, dateISO: String, exerciseId: String, reason: SetDropReason)
+    /// open-bag session 字段内的单条记录无法安全投影；原 session 其余事实仍可用。
+    case sessionFieldIgnored(sessionId: String, dateISO: String, field: String)
     case setFieldIgnored(sessionId: String, dateISO: String, exerciseId: String, field: String)
     case profileFieldIgnored(field: String)
     case programFieldIgnored(field: String)
@@ -36,7 +38,7 @@ public enum DataHealthIssue: Equatable, Hashable, Sendable {
         switch self {
         case .sessionDropped, .exerciseDropped, .setDropped:
             true
-        case .setFieldIgnored, .profileFieldIgnored, .programFieldIgnored:
+        case .sessionFieldIgnored, .setFieldIgnored, .profileFieldIgnored, .programFieldIgnored:
             false
         }
     }
@@ -51,7 +53,7 @@ public enum DataHealthIssue: Equatable, Hashable, Sendable {
             dateISO
         case .setDropped(_, let dateISO, _, _):
             dateISO
-        case .setFieldIgnored, .profileFieldIgnored, .programFieldIgnored:
+        case .sessionFieldIgnored, .setFieldIgnored, .profileFieldIgnored, .programFieldIgnored:
             nil
         }
     }

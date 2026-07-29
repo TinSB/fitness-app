@@ -187,6 +187,28 @@ public struct RedeStrings: Sendable {
     public var settingsDone: String { t("完成", "Done") }
     public var settingsUnit: String { t("单位", "Units") }
     public var settingsBackground: String { t("训练背景", "Training background") }
+    public var settingsBodyConditionLabel: String { t("身体状况", "Body areas") }
+    public var settingsBodyConditionNote: String {
+        t(
+            "选了的部位，相关动作不会自动加重",
+            "Exercises related to selected areas won't increase automatically"
+        )
+    }
+    public func settingsBodyPartName(_ code: String) -> String {
+        switch code {
+        case "knee": return t("膝盖", "Knee")
+        case "shoulder": return t("肩膀", "Shoulder")
+        case "lowerBack": return t("下背", "Lower back")
+        case "elbow": return t("手肘", "Elbow")
+        case "wrist": return t("手腕", "Wrist")
+        case "ankle": return t("脚踝", "Ankle")
+        case "neck": return t("颈部", "Neck")
+        default: return code
+        }
+    }
+    public func settingsBodyConditionValue(_ codes: [String]) -> String {
+        codes.map(settingsBodyPartName).joined(separator: locale == .zh ? "、" : ", ")
+    }
     /// 每周天数行值："每周 4 天" / "4 days a week"。
     public func settingsDaysValue(_ days: Int) -> String {
         t("每周 \(days) 天", "\(days) days a week")
