@@ -33,7 +33,7 @@ public enum MuscleDevelopmentDecision: String, CaseIterable, Equatable, Sendable
     case prioritize, maintain, reduce, recover, insufficientData
 }
 
-public enum TrainingTier: String, CaseIterable, Equatable, Sendable {
+public enum TrainingTier: String, CaseIterable, Equatable, Sendable, Codable {
     case calibrating, beginner, novicePlus, intermediate, advanced, elite
 }
 
@@ -42,7 +42,7 @@ public enum EstimateConfidence: String, CaseIterable, Equatable, Sendable {
     case low, medium, high
 }
 
-public enum LevelBreakthroughKind: String, CaseIterable, Equatable, Sendable {
+public enum LevelBreakthroughKind: String, CaseIterable, Equatable, Sendable, Codable {
     case muscleLevel, trainingTier, strengthMilestone, balanceMilestone, consistencyMilestone
 }
 
@@ -51,7 +51,7 @@ public enum StrengthMilestoneAchievementMethod: String, CaseIterable, Equatable,
 }
 
 /// 等级依据条目（零文案：引擎产 code，UI 层翻译——同 reasonCode 模式）。
-public struct MuscleLevelEvidence: Equatable, Sendable {
+public struct MuscleLevelEvidence: Equatable, Sendable, Codable {
     public let code: String
     public let muscleId: MuscleGroupID?
     public init(code: String, muscleId: MuscleGroupID? = nil) {
@@ -131,7 +131,7 @@ public struct StrengthMilestoneAchievement: Equatable, Sendable {
     }
 }
 
-public struct LevelBreakthrough: Equatable, Sendable {
+public struct LevelBreakthrough: Equatable, Sendable, Codable {
     public let kind: LevelBreakthroughKind
     public let targetId: String
     public let fromLevel: Int?
@@ -140,10 +140,14 @@ public struct LevelBreakthrough: Equatable, Sendable {
     public let toTier: TrainingTier?
     public let evidence: [MuscleLevelEvidence]
     public let achievedAtIso: String
+    /// 首次进入 pending 时的 MLE 原始事实。optional 保持 schema v1 / 旧事件兼容；
+    /// 缺失时消费方 fail closed（事实可见，但不得生成分享卡）。
+    public let eventFacts: LevelBreakthroughEventFacts?
 
     public init(kind: LevelBreakthroughKind, targetId: String, fromLevel: Int?, toLevel: Int?,
                 fromTier: TrainingTier?, toTier: TrainingTier?,
-                evidence: [MuscleLevelEvidence], achievedAtIso: String) {
+                evidence: [MuscleLevelEvidence], achievedAtIso: String,
+                eventFacts: LevelBreakthroughEventFacts? = nil) {
         self.kind = kind
         self.targetId = targetId
         self.fromLevel = fromLevel
@@ -152,6 +156,27 @@ public struct LevelBreakthrough: Equatable, Sendable {
         self.toTier = toTier
         self.evidence = evidence
         self.achievedAtIso = achievedAtIso
+        self.eventFacts = eventFacts
+    }
+}
+
+/// B1 分享资格的事件时事实；不落资格布尔，纯策略可从这些 raw 值稳定复算。
+public struct LevelBreakthroughEventFacts: Equatable, Sendable, Codable {
+    public let confidenceAtEventRaw: String
+    public let decisionRawsAtEvent: [String]
+    public let limitationCodesAtEvent: [String]
+    public let recoveryPenaltyAtEvent: Double
+
+    public init(
+        confidenceAtEventRaw: String,
+        decisionRawsAtEvent: [String],
+        limitationCodesAtEvent: [String],
+        recoveryPenaltyAtEvent: Double
+    ) {
+        self.confidenceAtEventRaw = confidenceAtEventRaw
+        self.decisionRawsAtEvent = decisionRawsAtEvent
+        self.limitationCodesAtEvent = limitationCodesAtEvent
+        self.recoveryPenaltyAtEvent = recoveryPenaltyAtEvent
     }
 }
 

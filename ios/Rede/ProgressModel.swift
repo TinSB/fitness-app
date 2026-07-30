@@ -87,6 +87,11 @@ struct ProgressModel {
     let muscleProfile: MuscleDevelopmentProfile
     /// 子肌群等级（钻取层 2026-07-09；详情页读——back/shoulders 有值，其余空）。
     let subLevelsByMuscle: [RedeLocalSnapshot.MuscleGroupID: [MuscleSubLevel]]
+    /// 当天可分享的 MLE 事件卡（升级 / 均衡改善）。pending 读取不等于消费，
+    /// 过天由纯 builder 自然过滤；Today 与 Progress 共用同一组卡，避免入口漂移。
+    let eventShareSnapshots: [ShareSnapshot]
+    /// 当天 MLE 原始事件事实。与分享资格分开，供 Today 对低置信/旧事件保留纯文本行。
+    let todayBreakthroughs: [LevelBreakthrough]
 
     static func loadOutcomeAsync(now: Date = Date()) async -> LoadOutcome? {
         // 批次 D：HealthKit 体重静默读（async 边界在此；未授权/无数据返回 nil 不弹框），
@@ -105,6 +110,25 @@ struct ProgressModel {
     }
 
     static func loadOutcome(now: Date = Date(), healthKitWeightKg: Double? = nil) -> LoadOutcome? {
+        let memoryStore = MuscleLevelMemoryStore(fileURL: muscleLevelMemoryFileURL())
+        return memoryStore.withExclusiveAccess { previousMemory in
+            loadOutcomeExclusively(
+                now: now,
+                healthKitWeightKg: healthKitWeightKg,
+                memoryStore: memoryStore,
+                previousMemory: previousMemory
+            )
+        }
+    }
+
+    /// canonical 读取也在共享 memory 临界区内：否则较旧 session 投影可能在较新投影
+    /// 之后进入并回写，令 B2 reference/candidate 倒退。
+    private static func loadOutcomeExclusively(
+        now: Date,
+        healthKitWeightKg: Double?,
+        memoryStore: MuscleLevelMemoryStore,
+        previousMemory: MuscleLevelMemory?
+    ) -> LoadOutcome? {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         let appData: AppData
         do {
@@ -213,8 +237,6 @@ struct ProgressModel {
         // MLE 跨次记忆（B2）：peak 只升不降 / breakthrough 对比 / previousTier 的持久侧。
         // derived-only（canonical 同目录、非 gated、坏文件=如实从零校准）；内容变才写，
         // 写失败静默不阻断渲染（同 widget 快照 best-effort 教义）。
-        let memoryStore = MuscleLevelMemoryStore(fileURL: muscleLevelMemoryFileURL())
-        let previousMemory = memoryStore.load()
         // 批次 D 相对力量标准输入：体重 HealthKit 最新优先（调用侧 async 读好传入）
         // → profile.weightKg 兜底 → nil 如实退化；性别只从档案读（设置页可填）。
         let bodyweightKg = healthKitWeightKg ?? cleanView.profile.weightKg
@@ -238,10 +260,32 @@ struct ProgressModel {
                 parentConfidence: estimate.confidence,
                 nowISO: todayISO, config: .current)
         }
-        let nextMemory = MuscleLevelMemory.extract(from: muscleProfile, atIso: todayISO)
-        if MuscleLevelMemory.shouldPersist(previous: previousMemory, next: nextMemory) {
-            try? memoryStore.saveReconciling(nextMemory)   // 写前 peaks max 合并（并发竞写对策）
+        let nextMemory = MuscleLevelMemory.advancing(
+            from: muscleProfile,
+            previous: previousMemory,
+            completedSessionCount: records.count,
+            atIso: todayISO
+        )
+        // 事务内 previousMemory 即盘上值：reconcile 保留「盘上有而本轮 extract 无」的
+        // peaks 键（肌群回退校准时历史 peak 不被抹掉），对既有键是幂等 max。
+        let effectiveMemory = nextMemory.reconcilingPeaks(with: previousMemory)
+        if MuscleLevelMemory.shouldPersist(previous: previousMemory, next: effectiveMemory) {
+            // derived-only best effort：写失败不阻断进度页，本轮 UI 仍见刚产生的事实。
+            try? memoryStore.save(effectiveMemory)
         }
+        let recentTrainingDays = MuscleEventShareBuilder.recentTrainingDayCount(
+            dateISOs: records.map(\.dateISO),
+            throughISO: todayISO
+        )
+        let eventShareSnapshots = MuscleEventShareBuilder.snapshots(
+            pending: effectiveMemory.pendingBreakthroughs ?? [],
+            generatedDateISO: todayISO,
+            recentTrainingDays: recentTrainingDays
+        )
+        let todayBreakthroughs = MuscleEventShareBuilder.todayEvents(
+            pending: effectiveMemory.pendingBreakthroughs ?? [],
+            generatedDateISO: todayISO
+        )
         return .ready(ProgressModel(
             snapshot: snapshot,
             quality: quality,
@@ -255,7 +299,9 @@ struct ProgressModel {
             continuity: continuity,
             milestones: milestones,
             muscleProfile: muscleProfile,
-            subLevelsByMuscle: subLevelsByMuscle
+            subLevelsByMuscle: subLevelsByMuscle,
+            eventShareSnapshots: eventShareSnapshots,
+            todayBreakthroughs: todayBreakthroughs
         ))
     }
 

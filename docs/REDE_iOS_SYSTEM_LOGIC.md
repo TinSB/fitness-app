@@ -976,7 +976,13 @@ V1 实现收敛(2026-07-07 批次 B3,对上表示例样式的三处拍板,交接
 
 #### 6.5.12 与分享系统的连接
 
-V1 落地状态(2026-07-07 批次 B5): **Muscle Level 卡已上线**——`ShareSnapshot.Content.muscleLevel` + `SharePrivacyFilter.muscleLevel` 唯一构造入口(等级降序/截断 6/balance 取整钳 0-100/tier 校准中不出卡);入口=Development 块「分享发展画像」(仅有已解锁肌群时出现,§9.4 用户主动触发)。对下方契约 projection 的 V1 收敛(交接件拍板②留痕): **confidenceLabel 结构性缺失**(字段不存在于卡类型,比契约 String? nil 更硬——§3.4 置信度零读数);levelProgress/safeEvidenceSummary/milestoneBadge V1 不进卡(版面克制,里程碑面归 PR 卡);trend 只映射 rising/declining 箭头(detraining 无箭头=不编信号)。Level Up / Balance Improvement 卡推后(依赖跨次数据节奏,观察真实使用后加)。
+实现状态(2026-07-30 MLE consumption): **Muscle Level、Level Up 与 Balance Improvement 三个 MLE 卡面均已上线**。发展画像仍由 `SharePrivacyFilter.muscleLevel` 唯一构造(等级降序/截断 6/balance 取整钳 0-100/tier 校准中不出卡)，入口为 Development 块「分享发展画像」。对下方 projection 的 V1 收敛不变：**confidenceLabel 结构性缺失**(字段不存在于卡类型,比契约 String? nil 更硬——§3.4 置信度零读数)；levelProgress/safeEvidenceSummary 不进卡；trend 只映射 rising/declining 箭头(detraining 无箭头=不编信号)。力量里程碑归 PR 卡家族版式，但使用独立 `strengthMilestone` 数据 case，原样保留 source threshold / unit / isEstimated，不编造 PR case 必需而里程碑没有的 reps，也不做 kg/lb 互转。
+
+**事件留存与资格时点。** `MuscleLevelMemory` schema 仍为 v1，仅用 additive optional 的 `pendingBreakthroughs` 与 `balanceImprovementState` 保存 derived 事实；读取 pending 不是消费回执，最多保留最近 20 条。app 进程内从 canonical 读取、memory load、profile compose/advance 到 save 的完整同步路径由共享锁串行，避免四个 `loadOutcome` 调用点竞写丢事件或让较旧 B2 状态覆盖较新状态。Today 练完态只展示 `achievedAtIso == 今天` 的事实：符合资格者为可点分享行；low confidence、旧文件缺 event facts 或其它门槛未过者仍显示同一事实，但为无图标、无 chevron、不可点的纯文本。
+
+Level Up 的 confidence / safety / recovery 资格只从事件**首次 append 时**写入 `LevelBreakthrough.eventFacts` 的 MLE profile 原始事实纯函数推导，之后不看消费时 profile、也不持久化资格布尔；相同 pending 去重键保留首次事实，旧事件缺 facts 永久 fail closed。V1 只锁当前 MLE 已有的 confidence、decision、limitation code 与 recoveryPenalty；pain/safety 尚未进入 MLE，禁止为分享跨界读取 raw AppData，完整 pain-safety 喂数仍是后续独立切片。
+
+**Balance Improvement 确认合同。** 分数与展示 `balanceScore` 同源，判定使用未取整 `Double`，stable reference 只在确认事件或当前分数跌破 reference 的 trough 时更新；无事件的上升途中不覆盖，因此渐进 `+4、+4、+4` 可累计。reference / 当前观察 contributor 集合必须相同，两侧 contributor confidence 的低侧中位都至少 medium；首次 raw delta `>= 10.0` 且方向成立只写 candidate，只有已完成场次数严格增加的下一次观察仍满足才确认事件。同一 session 的重复读取不算第二次观察，不满足则清 candidate。方向必须至少有一个 reference 时低于 contributor 中位等级的肌群等级上升、当前 trend=rising 且自身 confidence 至少 medium；仅由强侧回落造成的分数改善拒绝，卡面按涨幅最多列 1–2 个补足方向。
 
 分享系统只消费脱敏 projection:
 
@@ -1012,16 +1018,18 @@ public struct MuscleLevelShareProjection: Equatable, Sendable {
 Level Up Card 触发条件:
 
 - `currentLevel` 跨过新等级阈值。
-- confidence 至少 medium,或用户明确允许 low-confidence 成就提示。
+- 首次 append 时锁定的 confidence 至少 medium；缺 event facts 或 low confidence 不生成分享卡，但当天事实仍显示为不可点文本。
 - 不是由单次异常数据造成。
-- 没有 safety/recovery limitation 阻止庆祝式文案。
+- 首次 append 时的 MLE facts 没有 safety/recovery limitation；未知 limitation fail closed，recovery decision / penalty 阻止卡面。
 - milestone card 必须标明 actual 或 estimated,不得把 e1RM 估算写成真实完成。
+
+**Widget 只读等级投影(2026-07-30)。** 主 App 通过 `ReadinessWidgetSnapshot` 既有 `rows` 通道只读 `muscle-level-memory.json`，按 current level 降序取前两个已解锁肌群，写入本地化肌群名 + `Lv.N`；tier calibrating、无 levels、缺文件、坏文件或未知 memory schema 时写 `[]`，与旧 widget 完全一致。widget snapshot schema 保持 v1，extension 只渲染字符串、不读取 memory；因为 memory 在 Progress / 练完态加载后推进，桌面等级允许相对最近训练滞后一拍。
 
 #### 6.5.13 Rewrite Parity Slices
 
 等级系统必须按可验收 rewrite slice 实现。每片先定义目标行为、输入输出、fixtures、Swift tests 和 UI 验收,再写 runtime;旧代码只作为参考,不作为完成证明。
 
-实际排片对照(2026-07-07 批次 A #659-#666 + 批次 B #667-#671 收口): 下表 MLE-0/1 → 批次 A 的 D1+MLE-0~3(类型/config/映射/聚合/计分/组装,PR #660-#664);MLE-4(目录)→ 批次 A MLE-4(#665,契约版 MuscleMilestoneCatalog 与 FR-PR7 简化版并存);MLE-3(贡献 snapshot)→ 降维——目录已有 primary/secondary 字段,无需独立 snapshot 层;MLE-5(Progress 接入)→ 批次 B B1 喂数(#668)+B2 记忆(#669)+B3 UI(#670);MLE-2(tier 统一)→ 并入批次 A MLE-3 组装(TrainingTierProjector 语义由 assembler 实现,无独立类型;旧 AutoTrainingLevel 未再接新消费方,自报背景在设置页已改「自报背景」标签区分);MLE-6(Plan/CoachAction)→ **部分落地**(展示级 decision 语义行,提案式批次 C);MLE-7(Share)→ 批次 B B5(#671,仅 Muscle Level 卡);MLE-8(校准精修)→ 首轮已做(#675 mle-v2:无基线 0 分/暴露锚 20/置信封顶/balance 用 curveLevel;二轮等真实用户数据)。
+实际排片对照(2026-07-07 批次 A #659-#666 + 批次 B #667-#671，2026-07-30 consumption 收口): 下表 MLE-0/1 → 批次 A 的 D1+MLE-0~3(类型/config/映射/聚合/计分/组装,PR #660-#664);MLE-4(目录)→ 批次 A MLE-4(#665,契约版 MuscleMilestoneCatalog 与 FR-PR7 简化版并存);MLE-3(贡献 snapshot)→ 降维——目录已有 primary/secondary 字段,无需独立 snapshot 层;MLE-5(Progress 接入)→ 批次 B B1 喂数(#668)+B2 记忆(#669)+B3 UI(#670);MLE-2(tier 统一)→ 并入批次 A MLE-3 组装(TrainingTierProjector 语义由 assembler 实现,无独立类型;旧 AutoTrainingLevel 未再接新消费方,自报背景在设置页已改「自报背景」标签区分);MLE-6(Plan/CoachAction)→ **部分落地**(展示级 decision 语义行；FR-PL5 自动式已另行完成，不进入提案卡);MLE-7(Share)→发展画像 + 当天升级/均衡改善卡已落地，力量里程碑以独立 typed case 进入同一预览;MLE-8(校准精修)→ 首轮已做(#675 mle-v2:无基线 0 分/暴露锚 20/置信封顶/balance 用 curveLevel;二轮等真实用户数据)。
 
 | Slice | 内容 | 验收 |
 |---|---|---|
@@ -1293,7 +1301,7 @@ Account/sync/cloud settings 不进入第一版干净实现,不得做成无能力
 
 分享系统是 Rede 的商业化增长回路,负责把训练成果、肌群等级、PR、均衡发展和可执行计划转化为用户愿意主动传播的隐私安全资产。它不是第一版社交网络,也不是公开排行榜。第一版干净实现的 S0 边界是本地生成分享卡、调用 iOS Share Sheet、附带通用 App Store / landing link;账号、云端个人页、公开 feed、归因链接、远程模板库和好友关系都属于后续 Master-approved implementation slice。
 
-> **实现状态（2026-07-07 更新，#611 S0 + #671 批次 B5）**：本节为目标契约;已落地 = **训练总结卡 + PR/里程碑卡 + Muscle Level 发展画像卡**三类（入口分别为练完态小结/同预览/Progress Development 块「分享发展画像」;Level Up / Balance Improvement 两卡依赖跨次数据节奏，推后观察真实使用）。隐私过滤（§9.3，SH2）落地方式 = **类型层结构性缺失**：`ShareSnapshot`(RedeLocalSnapshot) 只声明允许字段、禁止字段不存在;精确时长经 `ShareDurationBand` 有损分桶成区间。渲染 = app 层 `ShareCardView`(竖版 4:5) + `ImageRenderer`→UIImage,经 `SharePrivacyFilter` 唯一构造入口;触发 = 训练完成小结「分享」→ 预览 → `UIActivityViewController`(§9.4)。S0 不写 canonical、不联网、无埋点(§9.8 本地事件 deferred,守 FR-DT3)。下载 link = App Store(`ShareLinks.appStoreURL`,上架前回退搜索提示)。
+> **实现状态（2026-07-30，#611 S0 + #671 Muscle Level + MLE consumption）**：本节为目标契约；已落地 6 个 typed data cases / 5 个用户可见视觉家族：训练总结、PR/力量里程碑、Muscle Level 发展画像、Level Up、Balance Improvement。力量里程碑因没有 reps 使用独立 `strengthMilestone` case，但版式归 PR 家族。入口分别为练完态小结、Progress Development、Today 当天合格事件与 Progress 里程碑开放行。隐私过滤（§9.3，SH2）落地方式 = **类型层结构性缺失**：`ShareSnapshot`(RedeLocalSnapshot) 只声明允许字段、禁止字段不存在；精确时长经 `ShareDurationBand` 有损分桶成区间。渲染 = app 层 `ShareCardView`(竖版 4:5) + `ImageRenderer`→UIImage，经 `SharePrivacyFilter` 唯一构造入口；预览后由 `UIActivityViewController` 打开系统 Share Sheet(§9.4)。全部现有卡面属 Free Core，不写 canonical、不联网、无埋点(§9.8 本地事件 deferred,守 FR-DT3)。下载 link = App Store(`ShareLinks.appStoreURL`,上架前回退搜索提示)。
 
 ### 9.1 产品目标
 
@@ -1310,9 +1318,9 @@ Account/sync/cloud settings 不进入第一版干净实现,不得做成无能力
 |---|---|---|---|---|
 | Workout Summary Card | 完成训练后 | 训练类型、完成动作数、总组数、训练时长区间、当日亮点 | 高频、低门槛、让用户形成分享习惯 | 隐藏健身房、精确时间、疼痛、notes、RIR 细节 |
 | Muscle Level Card ✅#671 | Progress 中肌群等级解锁后（Development 块入口） | 肌群 Lv、趋势、整体级别、均衡度（置信度**不进卡**——结构性缺失,§3.4;「下一步方向」V1 不进卡） | Rede 差异化最高,适合身份表达和复访 | 不显示原始重量和身体数据 |
-| Level Up Card | 某肌群升级时 | `Back Lv.8 -> Lv.9`、升级原因摘要、近期训练一致性 | 强成就感,最适合 Story/Reels/短视频封面 | 不显示完整训练记录 |
-| PR / e1RM Card | PR 或 e1RM 置信提升时 | 动作、PR/e1RM 摘要、进步幅度、置信度 | 美国力量训练用户容易理解 | 重量默认可见但可隐藏 |
-| Balance Improvement Card | 推/拉、上下肢或肌群均衡度改善时 | 均衡度变化、补足方向、计划执行度 | 比单纯晒重量更专业,降低羞辱感 | 不显示低等级羞辱式文案 |
+| Level Up Card ✅ 2026-07-30 | 某肌群或整体 tier 升级且首次 append 时资格通过 | `Back Lv.8 -> Lv.9`、近期 4 周训练天数；同日最多两项 | 强成就感,最适合 Story/Reels/短视频封面 | 不显示完整训练记录、confidence 或 event facts |
+| PR / e1RM / Strength Milestone family ✅ | PR、e1RM 或 Progress 力量里程碑 | PR/e1RM 摘要；里程碑原样 threshold + unit，估算明确标注 | 美国力量训练用户容易理解 | 里程碑不编 reps、不做 kg/lb 互转 |
+| Balance Improvement Card ✅ 2026-07-30 | stable reference 后满足阈值、补足方向与两次独立观察确认 | 均衡度变化 + 最多两个正在补足方向 | 比单纯晒重量更专业,降低羞辱感 | 不显示低等级、confidence 或完整 contributor 数据 |
 | Plan / Routine Card | 用户确认计划后 | 训练天数、目标、核心动作模式、适合人群 | 能带来导入和转化,是下一阶段增长资产 | 不包含用户历史表现和私人 notes |
 
 ### 9.3 ShareSnapshot 合同
@@ -1332,7 +1340,7 @@ Account/sync/cloud settings 不进入第一版干净实现,不得做成无能力
 - app brand / card type / generated date。
 - workout category、动作模式、完成组数、训练时长区间。
 - PR/e1RM 摘要和用户选择公开的重量单位。
-- 肌群等级、趋势、置信度、均衡度和行动摘要。
+- 肌群等级、趋势、等级变化、均衡度、补足方向和中性训练一致性事实；confidence 不进入任何现役卡结构。
 - 计划目标、训练天数、动作模式和导入提示。
 - 通用下载/落地页 URL。
 
@@ -1388,7 +1396,7 @@ S0 分享实现不写 share event 到 canonical AppData。若未来需要本地�
 
 ### 9.7 商业化规则
 
-- Rede 1.8 已有的训练总结、PR/里程碑和发展画像分享卡属于 Free Core，不得加 paywall；这也保护传播回路。
+- 全部现有本地分享卡——训练总结、PR/力量里程碑、发展画像、等级变化与均衡改善——均属于 Free Core，不得加 paywall；这也保护传播回路。
 - 未来新建的更长周期对比卡、全新计划导入适配或视觉模板只可作为 Paid Coach 候选，须先写入 PRD 并真实实现；现有肌群等级解释与必要隐私控制永久免费。
 - 分享卡必须保留适度 Rede 品牌和下载入口;付费用户可以减少视觉水印强度,但不应完全切断增长回流。
 - 分享系统的成功指标不是分享次数本身,而是外部触达后的 first workout、plan import、D7 retention 和 paid conversion。
@@ -1454,8 +1462,8 @@ S0 只要求本地可验证分享链路,不得为了归因引入账号、云端�
 | In-session prescription / warm-up | 🟡 部分（M3-1 + FR-TR10 已实现） | 逐组处方 + next-set recommendation 已 ship;warm-up generator 已 ship（FR-TR10 #566-568：流内临时引导、不落库、保守阶梯起步值待校准，§6.3）;skip-learning（friction/tolerance 偏好学习）仍后置。 |
 | Pain / injury progression hold | ✅ 已实现（FR-TR7 / FR-SE7，2026-07-29） | 跳过事实与 7 部位标记经 clean input 进入处方；最近 4 场至少 2 次 pain 或部位映射命中时只暂停更难的自动负荷进阶，正常完成一次/清除部位后恢复。完整 support-allocation / 自动纠偏仍未实现。 |
 | Support allocation | ⬜ 未实现 | 先补 planned/completed/skipped/reason/safety lock 和 `SupportAllocationDecision`。 |
-| Muscle level estimator | ✅ 已实现（MLE 批次 A #659-666 + 批次 B #667-672 + mle-v2 校准 #675） | 两包引擎（types/estimator/assembler/composer/memory/milestone catalog）+ Development 块（FR-PR6）+ 发展画像分享卡全上线;剩余=FR-PL5 提案式/Level Up 卡/pain-safety 喂数/器械校准维（批次 C 候选）。 |
-| Share / growth system | 🟡 部分（S0 #611 + Muscle Level 卡 #671） | 本地 `ShareSnapshot` + `SharePrivacyFilter` + Share Sheet 已 ship（训练总结/PR/发展画像三卡）;Level Up / Balance 卡与 §9.8 本地事件仍后置;无账号无云无 feed（红线不变）。 |
+| Muscle level estimator | ✅ 已实现（MLE 批次 A #659-666 + 批次 B #667-672 + mle-v2 校准 #675 + 2026-07-30 consumption） | 两包引擎（types/estimator/assembler/composer/memory/milestone catalog）+ Development 块（FR-PR6）+ Today 升级事实 + 发展画像/等级变化/均衡改善卡 + widget 等级 rows 已上线；FR-PL5 已是独立自动式、不是提案候选。剩余候选仅含 pain-safety 喂 MLE、器械校准维、置信/identity 稳定维与 exposure v3 衰减等明确后续。 |
+| Share / growth system | 🟡 部分（S0 #611 + Muscle Level #671 + 2026-07-30 MLE consumption） | 本地 `ShareSnapshot` + `SharePrivacyFilter` + Share Sheet 已 ship（6 个 typed data cases / 5 个视觉家族，含 Level Up、Balance 与独立 StrengthMilestone case）；§9.8 本地事件仍后置，无账号无云无 feed（红线不变）。 |
 | Backup/export | 🟡 本地导出已实现（2026-07-16 K7）；独立备份未实现 | 设置页可原样导出 canonical JSON；自动/独立备份系统仍需单独 SPEC 与架构切片。 |
 | App update awareness | ✅ 本地实现与 Simulator 验收完成（2026-07-18） | Apple 公共版本查询、24h 自动节流、七天按版本稍后、Today 非阻断提示、Settings 三入口与内置 What's New 已落地；无 push、强更、服务器或 analytics。实时 Apple 目录与 TestFlight 仍待发布链验证。 |
 | Subscription entitlement | 🟡 企业级基础 runtime 已实现；生产收费 No-Go（2026-07-18） | `RedeEntitlements`、Settings 方案态、StoreKit 2 adapter/UI wrapper、到期/前台复核、查询竞态/混合信任/交易确认保护、显式恢复、入口级 fail-closed launch gate、独立测试 scheme、双语本地月/年 fixture 与 XCTest target 已落地；生产 product IDs / paid capability / 当前 Privacy+Terms 仍为空。25 项 policy/state/config 测试、generic build 与 production fail-closed app test 已进入权威门禁并通过；Xcode 26.6 + iOS 26.5 Simulator 的 `SKTestSession` 保存配置仍报 `SKInternalErrorDomain Code=3`，所以购买/续订/退款全链和 Sandbox/TestFlight 尚未验收，禁止提交收费版本。 |

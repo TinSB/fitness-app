@@ -90,6 +90,11 @@ extension RedeStrings {
     /// 等级显示（Lv.N 两语通用，语义留函数便于未来分语言）。
     public func developmentLevel(_ level: Int) -> String { "Lv.\(level)" }
 
+    /// 今日练完态同日多项等级变化的事实式折叠尾句。
+    public func todayBreakthroughMore(total: Int) -> String {
+        tML("等 \(max(0, total)) 处", "\(max(0, total)) updates total")
+    }
+
     /// decision 语义标签（仅 prioritize/recover，见文件头拍板）。
     public func muscleDecisionLabel(_ decision: MuscleDecisionLabel) -> String {
         switch decision {

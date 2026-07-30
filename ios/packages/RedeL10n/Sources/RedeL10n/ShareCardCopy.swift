@@ -12,6 +12,12 @@ extension RedeStrings {
     public var shareCardPRBadge: String { locale == .zh ? "刷新纪录" : "New PR" }
     /// e1RM 估算微标（诚实标注，非实测）。
     public var shareCardEstimated: String { locale == .zh ? "估算" : "Estimated" }
+    /// 肌群 / 整体等级变化卡标题（观察式，不做庆祝评价）。
+    public var shareCardLevelUpTitle: String { locale == .zh ? "等级变化" : "Level update" }
+    /// 均衡改善卡标题（只陈述改善，不点名最弱项）。
+    public var shareCardBalanceTitle: String { locale == .zh ? "均衡改善" : "Balance improved" }
+    /// 力量里程碑卡标题（与 PR 共视觉家族、数据 case 独立）。
+    public var shareCardMilestoneTitle: String { locale == .zh ? "力量里程碑" : "Strength milestone" }
 
     public var shareCardStatExercises: String { locale == .zh ? "动作" : "Exercises" }
     public var shareCardStatSets: String { locale == .zh ? "组" : "Sets" }
@@ -44,6 +50,22 @@ extension RedeStrings {
     public var shareCardShareAction: String { locale == .zh ? "分享" : "Share" }
     /// 预览无内容兜底。
     public var shareCardNothing: String { locale == .zh ? "暂无可分享的内容" : "Nothing to share yet" }
+
+    /// 升级卡的中性一致性事实；不暴露置信度或逐场明细。
+    public func shareCardRecentTrainingDays(_ days: Int) -> String {
+        locale == .zh
+            ? "近 4 周训练 \(max(0, days)) 天"
+            : "\(max(0, days)) training days in 4 weeks"
+    }
+
+    public func shareCardBalanceChange(from: Int, to: Int) -> String {
+        locale == .zh ? "均衡度 \(from) → \(to)" : "Balance \(from) → \(to)"
+    }
+
+    public func shareCardImprovingDirection(_ muscleNames: [String]) -> String {
+        let names = muscleNames.joined(separator: " · ")
+        return locale == .zh ? "正在补足 \(names)" : "Building \(names)"
+    }
 }
 
 /// RedeL10n 不依赖 RedeLocalSnapshot，故用本地镜像枚举传递时长档（app 层从

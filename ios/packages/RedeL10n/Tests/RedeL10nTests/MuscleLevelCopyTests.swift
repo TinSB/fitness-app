@@ -149,4 +149,15 @@ final class MuscleLevelCopyTests: XCTestCase {
             }
         }
     }
+
+    func testTodayBreakthroughMoreCopyExactAndNeutral() {
+        XCTAssertEqual(zh.todayBreakthroughMore(total: 3), "等 3 处")
+        XCTAssertEqual(en.todayBreakthroughMore(total: 3), "3 updates total")
+        for text in [zh.todayBreakthroughMore(total: 3), en.todayBreakthroughMore(total: 3)] {
+            XCTAssertFalse(text.contains("。") || text.contains("——") || text.hasSuffix("."))
+            for word in ["恭喜", "最弱", "置信度", "congrat", "weakest", "confidence"] {
+                XCTAssertFalse(text.lowercased().contains(word.lowercased()))
+            }
+        }
+    }
 }
