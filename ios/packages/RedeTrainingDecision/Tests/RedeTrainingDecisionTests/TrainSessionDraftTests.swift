@@ -130,6 +130,57 @@ final class TrainSessionDraftTests: XCTestCase {
         XCTAssertEqual(restored.plan.exercises.map(\.exerciseId), flow.plan.exercises.map(\.exerciseId))
     }
 
+    func testSessionEditEventsCodableRoundTripAndReplayResolvedPayloadWithoutHistoryLookup() throws {
+        var flow = try makeFlow()
+        let payload = ExerciseSetPlan(
+            exerciseId: "db-bench-press",
+            restSeconds: 90,
+            repLowerBound: 8,
+            repUpperBound: 12,
+            stepKg: 2.5,
+            loadType: "external",
+            sets: (1...3).map {
+                PlannedSet(index: $0, targetWeightKg: 31.25, targetReps: 10, targetRir: 2)
+            }
+        )
+        flow.addExercise(payload)
+        let removal = try XCTUnwrap(flow.removal(at: 3))
+        flow.removeExercise(removal)
+        flow.adjustRemainingSets(1)
+
+        let draft = TrainSessionDraft(
+            dateISO: "2026-06-10",
+            startedAt: Date(timeIntervalSince1970: 1_780_000_000),
+            prescription: flow.prescription,
+            events: flow.events
+        )
+        let data = try JSONEncoder().encode(draft)
+        let decoded = try JSONDecoder().decode(TrainSessionDraft.self, from: data)
+        let restored = try XCTUnwrap(decoded.restoreFlow())
+
+        XCTAssertEqual(restored, flow)
+        XCTAssertEqual(restored.plan.exercises[1], payload)
+        XCTAssertEqual(restored.currentExercise?.sets.count, 4)
+        XCTAssertEqual(restored.removedExercises, [removal])
+    }
+
+    func testSessionEditReplayFailsClosedForTamperedRemovalSnapshotAndInvalidSetDelta() throws {
+        let flow = try makeFlow()
+        let tampered = SessionExerciseRemoval(
+            index: 2,
+            exercise: flow.plan.exercises[1],
+            action: .remove
+        )
+        XCTAssertNil(TrainFlowState.restore(
+            prescription: flow.prescription,
+            events: [.removeExercise(tampered)]
+        ))
+        XCTAssertNil(TrainFlowState.restore(
+            prescription: flow.prescription,
+            events: [.adjustRemainingSets(2)]
+        ))
+    }
+
     // 无效目标、或在已经记录正式事实后才出现的 move 事件，恢复必须整体失败而不是部分重放。
     func testRestoreFailsClosedForInvalidMoveEvent() throws {
         let flow = try makeFlow()

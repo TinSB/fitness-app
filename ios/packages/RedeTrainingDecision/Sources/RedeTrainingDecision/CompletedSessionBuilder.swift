@@ -81,6 +81,26 @@ public enum CompletedSessionBuilder {
                 .object(["exerciseId": .string(skip.exerciseId), "reason": .string(skip.reason.rawValue)])
             })
         }
+        if !flow.addedExercises.isEmpty || !flow.removedExercises.isEmpty {
+            var edits: [String: JSONValue] = [:]
+            if !flow.addedExercises.isEmpty {
+                edits["added"] = .array(flow.addedExercises.map { addition in
+                    .object([
+                        "exerciseId": .string(addition.exerciseId),
+                        "position": .int(Int64(addition.position)),
+                    ])
+                })
+            }
+            if !flow.removedExercises.isEmpty {
+                edits["removed"] = .array(flow.removedExercises.map { removal in
+                    .object([
+                        "exerciseId": .string(removal.exercise.exerciseId),
+                        "position": .int(Int64(removal.index)),
+                    ])
+                })
+            }
+            storage["sessionEdits"] = .object(edits)
+        }
         return TrainingSession(storage: storage)
     }
 

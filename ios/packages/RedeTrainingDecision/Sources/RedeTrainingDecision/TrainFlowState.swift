@@ -6,6 +6,38 @@
 // 跳过/替换/疼痛是 typed 留痕事实，M3-3 随完成写入经唯一写闸落盘。
 // 无 IO/clock：休息倒计时的「时间流逝」由 app 层驱动，这里只存计划秒数。
 
+public struct SessionExerciseAddition: Equatable, Sendable {
+    public let exerciseId: String
+    /// 0-based 会话队列位置；只作 completed-session open-bag 审计。
+    public let position: Int
+}
+
+public struct SessionExerciseRemoval: Equatable, Sendable, Codable {
+    public enum Action: String, Equatable, Sendable, Codable {
+        case remove
+        case restore
+    }
+
+    /// 0-based 会话队列位置；快照 + 位置共同防止重复 id 被整批误删。
+    public let index: Int
+    public let exercise: ExerciseSetPlan
+    public let action: Action
+
+    public init(index: Int, exercise: ExerciseSetPlan, action: Action) {
+        self.index = index
+        self.exercise = exercise
+        self.action = action
+    }
+
+    public var restoring: SessionExerciseRemoval {
+        SessionExerciseRemoval(index: index, exercise: exercise, action: .restore)
+    }
+
+    fileprivate var removing: SessionExerciseRemoval {
+        SessionExerciseRemoval(index: index, exercise: exercise, action: .remove)
+    }
+}
+
 /// 训练流事件（draft = 处方 + 事件日志；恢复 = 重放，M3-4/FR-TR9）。
 public enum TrainFlowEvent: Equatable, Sendable, Codable {
     case logSet(CompletedSetObservation)
@@ -14,6 +46,9 @@ public enum TrainFlowEvent: Equatable, Sendable, Codable {
     case skipExercise(SetSkipReason)
     case replaceExercise(String)
     case moveExerciseToCurrent(String)
+    case addExercise(ExerciseSetPlan)
+    case removeExercise(SessionExerciseRemoval)
+    case adjustRemainingSets(Int)
     case reportPain
     case toggleHold
     case requestFinish
@@ -62,6 +97,9 @@ public struct TrainFlowState: Equatable, Sendable {
     public private(set) var skippedSets: [SkippedSet] = []
     public private(set) var skippedExercises: [SkippedExercise] = []
     public private(set) var replacements: [Replacement] = []
+    /// FR-TR14 S2：仅作本场完成落盘 open-bag 审计；不进入处方/轮转/verdict。
+    public private(set) var addedExercises: [SessionExerciseAddition] = []
+    public private(set) var removedExercises: [SessionExerciseRemoval] = []
     public private(set) var endReason: SessionEndReason?
     /// Hold = 暂停引擎微调、按计划值；跨组延续、不跨动作。
     public private(set) var isHolding: Bool = false
@@ -343,6 +381,101 @@ public struct TrainFlowState: Equatable, Sendable {
         warmupPointer = 0
     }
 
+    /// 临时加动作：payload 已在事件创建前解析完成；replay 不重查 canonical 历史。
+    /// 插入永远紧跟当前动作，同一 exercise id 在本场只允许一份。
+    public mutating func addExercise(_ exercise: ExerciseSetPlan) {
+        guard phase == .activeSet,
+              plan.exercises.indices.contains(exerciseIndex),
+              !plan.exercises.contains(where: { $0.exerciseId == exercise.exerciseId }),
+              isValidAdHocPayload(exercise)
+        else { return }
+
+        let insertionIndex = exerciseIndex + 1
+        var exercises = plan.exercises
+        exercises.insert(exercise, at: insertionIndex)
+        events.append(.addExercise(exercise))
+        addedExercises.append(SessionExerciseAddition(
+            exerciseId: exercise.exerciseId,
+            position: insertionIndex
+        ))
+        plan = SessionSetPlan(dayCode: plan.dayCode, exercises: exercises)
+    }
+
+    /// 只为 activeSet 的未来位置生成精确快照；当前/完成前缀/缺失位置一律不可移除。
+    public func removal(at index: Int) -> SessionExerciseRemoval? {
+        guard phase == .activeSet,
+              index > exerciseIndex,
+              plan.exercises.indices.contains(index)
+        else { return nil }
+        return SessionExerciseRemoval(index: index, exercise: plan.exercises[index], action: .remove)
+    }
+
+    /// remove 与 sheet 内立即 undo 共用同一 typed event 类；restore 只接受最后一层
+    /// 精确快照，保持单层/LIFO。关 sheet 或进程终止后 UI 不再暴露 restoring event。
+    public mutating func removeExercise(_ removal: SessionExerciseRemoval) {
+        guard phase == .activeSet, removal.index > exerciseIndex else { return }
+        var exercises = plan.exercises
+        switch removal.action {
+        case .remove:
+            guard exercises.indices.contains(removal.index),
+                  exercises[removal.index] == removal.exercise
+            else { return }
+            exercises.remove(at: removal.index)
+            removedExercises.append(removal)
+        case .restore:
+            guard removal.index <= exercises.count,
+                  removedExercises.last == removal.removing
+            else { return }
+            exercises.insert(removal.exercise, at: removal.index)
+            removedExercises.removeLast()
+        }
+        events.append(.removeExercise(removal))
+        plan = SessionSetPlan(dayCode: plan.dayCode, exercises: exercises)
+    }
+
+    /// 当前动作剩余组 ±1：只裁剪/复制未完成尾部，已完成/已跳过前缀永不变；
+    /// 至少保留 1 个剩余组，总组数最多 8。
+    public mutating func adjustRemainingSets(_ delta: Int) {
+        guard phase == .activeSet,
+              delta == -1 || delta == 1,
+              plan.exercises.indices.contains(exerciseIndex),
+              var exercise = currentExercise
+        else { return }
+
+        let pointer = completedInCurrentExercise.count + skippedInCurrentExercise
+        let remaining = exercise.sets.count - pointer
+        var sets = exercise.sets
+        if delta < 0 {
+            guard remaining > 1 else { return }
+            sets.removeLast()
+        } else {
+            guard sets.count < 8, !sets.isEmpty else { return }
+            let sourceIndex = min(pointer, sets.count - 1)
+            let source = sets[sourceIndex]
+            let recommendation = currentRecommendation
+            sets.append(PlannedSet(
+                index: sets.count + 1,
+                targetWeightKg: currentTargetWeightKg ?? source.targetWeightKg,
+                targetReps: recommendation?.targetReps ?? source.targetReps,
+                targetRir: recommendation?.targetRir ?? source.targetRir
+            ))
+        }
+
+        exercise = ExerciseSetPlan(
+            exerciseId: exercise.exerciseId,
+            restSeconds: exercise.restSeconds,
+            repLowerBound: exercise.repLowerBound,
+            repUpperBound: exercise.repUpperBound,
+            stepKg: exercise.stepKg,
+            loadType: exercise.loadType,
+            sets: sets
+        )
+        var exercises = plan.exercises
+        exercises[exerciseIndex] = exercise
+        events.append(.adjustRemainingSets(delta))
+        plan = SessionSetPlan(dayCode: plan.dayCode, exercises: exercises)
+    }
+
     public mutating func toggleHold() {
         guard phase == .activeSet || phase == .resting else { return }
         events.append(.toggleHold)
@@ -393,6 +526,9 @@ public struct TrainFlowState: Equatable, Sendable {
             case .skipExercise(let reason): state.skipExercise(reason: reason)
             case .replaceExercise(let id): state.replaceCurrentExercise(with: id)
             case .moveExerciseToCurrent(let id): state.moveExerciseToCurrent(id)
+            case .addExercise(let exercise): state.addExercise(exercise)
+            case .removeExercise(let removal): state.removeExercise(removal)
+            case .adjustRemainingSets(let delta): state.adjustRemainingSets(delta)
             case .reportPain: state.reportPain()
             case .toggleHold: state.toggleHold()
             case .requestFinish: state.requestFinish()
@@ -405,6 +541,26 @@ public struct TrainFlowState: Equatable, Sendable {
     }
 
     // MARK: - 私有
+
+    private func isValidAdHocPayload(_ exercise: ExerciseSetPlan) -> Bool {
+        guard let entry = catalog.entry(id: exercise.exerciseId),
+              !entry.deprecated,
+              EquipmentRegistry.prescribableLoadTypes.contains(entry.loadType),
+              allowedEquipment == nil || allowedEquipment!.contains(entry.equipment),
+              entry.loadType == exercise.loadType,
+              exercise.restSeconds > 0,
+              exercise.repLowerBound > 0,
+              exercise.repUpperBound >= exercise.repLowerBound,
+              exercise.sets.count == SessionExerciseEditPlanner.adHocSetCount
+        else { return false }
+        return exercise.sets.enumerated().allSatisfy { offset, set in
+            set.index == offset + 1
+                && set.targetWeightKg.isFinite
+                && set.targetWeightKg >= 0
+                && set.targetReps > 0
+                && set.targetRir.isFinite
+        }
+    }
 
     private mutating func advanceExercise() {
         exerciseIndex += 1

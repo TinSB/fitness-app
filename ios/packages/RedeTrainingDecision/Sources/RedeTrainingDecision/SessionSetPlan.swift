@@ -4,7 +4,7 @@
 // top-backoff/wave、SetExecutionModel）与热身生成明示后置，本层只做确定性
 // 展开。全 typed、kg 口径、零文案；输出纯派生，永不写回 AppData。
 
-public struct PlannedSet: Equatable, Sendable {
+public struct PlannedSet: Equatable, Sendable, Codable {
     /// 1 起算的组号。
     public let index: Int
     public let targetWeightKg: Double
@@ -19,7 +19,7 @@ public struct PlannedSet: Equatable, Sendable {
     }
 }
 
-public struct ExerciseSetPlan: Equatable, Sendable {
+public struct ExerciseSetPlan: Equatable, Sendable, Codable {
     public let exerciseId: String
     public let restSeconds: Int
     public let repLowerBound: Int
@@ -43,7 +43,7 @@ public struct ExerciseSetPlan: Equatable, Sendable {
     }
 }
 
-public struct SessionSetPlan: Equatable, Sendable {
+public struct SessionSetPlan: Equatable, Sendable, Codable {
     public let dayCode: String
     public let exercises: [ExerciseSetPlan]
 

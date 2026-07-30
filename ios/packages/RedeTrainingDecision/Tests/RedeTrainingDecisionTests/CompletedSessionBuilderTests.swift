@@ -162,4 +162,81 @@ final class CompletedSessionBuilderTests: XCTestCase {
         XCTAssertTrue(flow.skippedSets.isEmpty)
         XCTAssertTrue(flow.skippedExercises.isEmpty)
     }
+
+    func testSessionEditsPersistAddedAndRemovedAuditWithoutCallingRemovalASkip() throws {
+        let input = try TestSupport.makeInput(
+            appDataJSON: #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}}"#,
+            todayISO: "2026-06-09"
+        )
+        let verdict = TodayVerdictEngine.evaluate(input)
+        let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict))
+        var flow = TrainFlowState(prescription: prescription)
+        let added = ExerciseSetPlan(
+            exerciseId: "db-bench-press",
+            restSeconds: 90,
+            repLowerBound: 8,
+            repUpperBound: 12,
+            stepKg: 2.5,
+            loadType: "external",
+            sets: (1...3).map {
+                PlannedSet(index: $0, targetWeightKg: 30, targetReps: 10, targetRir: 2)
+            }
+        )
+        flow.addExercise(added)
+        let removed = try XCTUnwrap(flow.removal(at: 3))
+        flow.removeExercise(removed)
+        flow.skipExercise(reason: .timeShort)
+        flow.logSet(CompletedSetObservation(weightKg: 30, reps: 10, rir: 2, painReported: false))
+        flow.requestFinish()
+        flow.confirmEnd(reason: .timeUp)
+
+        let session = CompletedSessionBuilder.build(
+            from: flow, sessionId: "session-edit", dateISO: "2026-06-09",
+            startedAtISO: "t0", finishedAtISO: "t1", durationMinutes: 8
+        )
+
+        XCTAssertEqual(session.exercises.map(\.exerciseId), ["db-bench-press"])
+        XCTAssertEqual(
+            session.storage["sessionEdits"],
+            .object([
+                "added": .array([
+                    .object(["exerciseId": .string("db-bench-press"), "position": .int(1)]),
+                ]),
+                "removed": .array([
+                    .object([
+                        "exerciseId": .string(removed.exercise.exerciseId),
+                        "position": .int(Int64(removed.index)),
+                    ]),
+                ]),
+            ])
+        )
+        XCTAssertEqual(
+            session.storage["skippedExercises"],
+            .array([.object(["exerciseId": .string("bench-press"), "reason": .string("timeShort")])])
+        )
+        XCTAssertFalse(
+            session.storage["skippedExercises"]?.asArray?.contains {
+                $0.asObject?["exerciseId"] == .string(removed.exercise.exerciseId)
+            } ?? true,
+            "neutral removal must never become a skipped exercise"
+        )
+    }
+
+    func testNoSessionEditLeavesCompletedSessionStorageByteEquivalentWithoutNewField() throws {
+        let flow = try finishedFlow()
+        let session = CompletedSessionBuilder.build(
+            from: flow,
+            sessionId: "session-test-1",
+            dateISO: "2026-06-09",
+            startedAtISO: "2026-06-09T10:00:00Z",
+            finishedAtISO: "2026-06-09T10:47:00Z",
+            durationMinutes: 47
+        )
+        XCTAssertNil(session.storage["sessionEdits"])
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let encoded = try encoder.encode(session.storage)
+        let expected = try encoder.encode(session.storage.filter { $0.key != "sessionEdits" })
+        XCTAssertEqual(encoded, expected)
+    }
 }
