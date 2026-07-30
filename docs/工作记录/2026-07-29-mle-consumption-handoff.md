@@ -59,8 +59,13 @@ MLE 批次 A+B 把肌群等级做完了，但用户升级时**毫无感知**：�
 
 ### B2 均衡改善卡（Balance Improvement Card）
 
-- `MuscleLevelMemory` 加性 optional 存 previous balanceScore（同 A1 一批实现）。
-- 改善事件判定：新旧 balanceScore 对比，**阈值由你基于 balanceScore 实际刻度提出并在回执论证**，硬边界：必须能防单次波动（对比基线=上次持久化值）、双侧 confidence 门槛不低于 medium、判定为纯函数可测。产 `balanceMilestone` kind 的 breakthrough 进同一 pending 管道。
+- `MuscleLevelMemory` 保持 schema v1，只加 additive optional：raw `balanceScore` reference、reference contributor IDs / 等级 / confidence 事实、candidate 分数与独立观察 session 指纹（已完成场次数或最新场 id）。旧文件缺键时只播种 reference，不产事件、不写 candidate。
+- **Reference 语义（2026-07-30 owner 修订裁定）：**只在两类时点变动：(a) `balanceMilestone` 事件确认触发时 `reference := 当前值`；(b) 当前 raw balanceScore 低于 reference 时 `reference := 当前值`（trough 跟踪，回落即下调）。无事件的上升途中绝不覆盖 reference，因此 `+4、+4、+4` 渐进改善可累计；一次 `+10` 尖峰不得立即发卡。
+- **两次独立观察确认：**首次满足全部门槛只写 candidate；下一次已完成场次数严格增加（或最新场 id 已变化）的观察仍满足，才产 `balanceMilestone` breakthrough 进入同一 pending 管道并重置 reference；不满足则清 candidate。四个 `loadOutcome` 对同一份数据的重复读取不算第二次观察。
+- **Confidence 门槛：**reference 建立侧与确认观察侧均要求 contributor confidence **中位数 ≥ medium**（与 tier 同一惯例）；用于方向门槛的每个「在涨的低侧肌群」自身 confidence 还必须 ≥ medium。不得改成全体 contributor 最低 confidence ≥ medium，避免低置信附属肌群令卡实际不可达。
+- **Contributor 可比性：**新旧 contributor 集合不同（含新解锁）时本次不可比：不产事件、不写 candidate，reference 重置为当前值，作为新口径起点。
+- **方向门槛：**至少一个在 reference 时低于 contributor 中位等级的肌群，当前等级较 reference 上升、当前 trend 为 `rising`，且自身 confidence ≥ medium；若分数上升仅由强侧回落造成则拒绝。卡面「补足方向」只取这些在涨低侧肌群，多个时按涨幅降序最多列 1–2 个。
+- **锁定阈值：**使用与展示 `balanceScore` 同源的全部已解锁肌群口径，以未取整 `Double` 判定 raw delta `>= 10.0`；不得另造第二套分数真相。两次独立观察确认负责过滤一次尖峰。
 - 卡内容照 §9.2 :1315：均衡度变化 + 补足方向（哪个肌群在涨），**禁羞辱**：不点名「最弱」，只说改善事实。
 - 入口与升级卡一致（当天有事件时预览追加该卡页）。
 
@@ -152,3 +157,8 @@ MLE 批次 A+B 把肌群等级做完了，但用户升级时**毫无感知**：�
   3. 推荐采用“两次独立观察确认”而不是一次越线即发：首次满足写 candidate，后续独立训练观察仍满足才产 `balanceMilestone`；回落则清 candidate。四个 `loadOutcome` 对同一份数据的重复读取不得算第二次观察。
   4. 明确 `+4、+4、+4` 是应累计到稳定 reference 后触发，还是按每次覆盖永不触发；这是产品行为裁定，实施方不代拍。
 - **恢复条件。** owner 回写并批准上述 reference/candidate 语义（或明确接受较弱的一次越线语义及其误报风险）后，才可重新开始本批 RED→GREEN；其余 A/C/D 虽可独立实现，本轮按交接件“触停止条件即结束”纪律没有绕过 B2 继续。
+
+### 停止解除（2026-07-30 · owner 裁定）
+
+- owner 已逐条确认停止回报中的四项问题成立，并批准上方 B2 的 stable reference、两次独立观察、confidence 中位口径、contributor 集合重置、低侧上升方向门槛与 raw delta `>= 10.0`。
+- 前次 STOP 保留为历史证据；本批自本记录起恢复 RED→GREEN。其余 A / B1 / C / D 裁定与全部红线不变；若实施证据表明 confidence 中位口径仍不足以支撑可靠判定，必须再次停止，不得静默降级或隐藏功能。
