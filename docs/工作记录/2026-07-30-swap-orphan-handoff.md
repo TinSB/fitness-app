@@ -109,3 +109,11 @@
 - **未自行扩大裁定。** 一条审查意见认为同一 occurrence 内 done→skip 应显示 `[done, skipped, active]`；owner 本轮已明确写死 `rowStatuses` 使用 `skippedInCurrentExercise` 且“跳过恒在头部”，所以实施方不采纳该相反语义，也不把它列为阻断。真正阻断仅为连续零事实替换的链数据与热身继承。
 - **待 owner 裁定。** 是否授权把“已有 slot 事实”的 split 上下文跨越一个或多个零事实替换继续传递，直到最终实际产生事实的动作，并让该最终 occurrence 获得足以稳定重建完整替换链的 link，同时保持独立的零事实换动作历史逐字节不变？若不授权该传播，请明确连续零事实再次换动作应被禁止，或 sticky/热身应采用何种其它产品语义。裁定前不继续改 reducer/builder/DataHealth/engine，不更新发布 GO。
 - **工作树与安全边界。** 前五项 findings 的候选 GREEN 实现仍留在工作树、未提交；新 RED 已单独提交。既有历史未迁移未清洗，schema、版本、package manifest、`project.pbxproj` 均未改；未 push、未开 PR。
+
+## 回报段（方案一获批后的第三形态停线，2026-07-30）
+
+- **方案一已收到但尚未落实现，当前仍为 NO-GO。** owner 已批准 split 上下文跨任意数量的零事实中转 hop 传递；只读设计确认可把 sealed 根 occurrence 与当前终点折叠成一条直接、对称、唯一的 root→terminal link，typed events 保留中转操作，builder 不生成 B/C 元素，独立全零事实路径继续原字节。多跳与 draft RED 已补齐，独立全零事实多跳 frozen JSON 当前即为 GREEN。
+- **发现并证实第三形态：最终 actual 只有跳过组。** 最短复现为 A 完成 1 组 → A→B → B 只执行一次 `skipSet` → 提前结束。reducer 把 skip 计入当前 occurrence 事实并为 B 建立 `.actual(A,B)` link；但 `CompletedSessionBuilder` 的保留条件只接受“有 observations”或“skip-only 且带 original role”，因此把 skip-only actual B 整段丢掉。定向跨层测试 `testReplacementTerminalWithOnlySkippedSetStillCarriesActualChainEndpoint` exit `1`：完成场动作实际仅 `[bench-press]`，期望 `[bench-press, db-bench-press]`，actual 端点无法 unwrap。若直接实施多跳传播，A 侧仍会形成悬空 link，消费端无法唯一配对。
+- **RED 证据提交。** `74a2fd7` 新增：A→(B)→(C)→D 多跳唯一端点与 sticky RED（1 项 8 个失败）、同序列 draft 重放 RED（1 项 5 个失败）、skip-only actual 端点 RED（1 项 2 个失败），以及独立全零事实 A→B→C terminal-only 完整 JSON 字节 golden（1/1 GREEN）。上一轮 A→(B)→C 停线 RED 仍为 `2a94bf7`。
+- **待 owner 精确补充裁定。** 本项目既有定义把完成组与跳过组都计为 slot fact。是否批准：只要最终替代动作产生至少一个 `skipSet`，就允许 builder 保留一个 **sets 为空但有真实顶层 skippedSets 归属**的 actual occurrence，用与 sealed 根端完全一致、role 相反的直接 link 配对；这不是为零事实中转动作造元素，B 是有跳过事实的真实终点。普通无 replacement 的 skip-only 历史与纯零事实替换字节均不改。若不批准，请明确 skip-only 终点不参与 sticky，并说明 sealed 根 link 应如何避免悬空。
+- **停线纪律。** 未自行修改 `PendingSegmentReplacement` 或 builder 保留条件；五项 findings 候选 GREEN 仍未提交，最终 gate、规格回写和 N15 GO 均未继续。未迁移历史、未改 schema/版本/manifest/工程文件，未 push、未开 PR。
