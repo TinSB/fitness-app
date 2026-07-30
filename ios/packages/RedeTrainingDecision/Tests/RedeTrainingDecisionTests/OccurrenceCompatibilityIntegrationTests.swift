@@ -212,6 +212,124 @@ final class OccurrenceCompatibilityIntegrationTests: XCTestCase {
         )
     }
 
+    func testMultipleZeroFactHopsCollapseToOneStableSealedTerminalLink() throws {
+        var flow = try pushFlow()
+        flow.logSet(CompletedSetObservation(
+            weightKg: 60, reps: 8, rir: 2, painReported: false
+        ))
+        flow.restFinished()
+
+        for terminalId in ["db-bench-press", "smith-bench-press", "push-up"] {
+            XCTAssertTrue(
+                flow.replacementCandidates.contains(terminalId),
+                "fixture requires \(terminalId) to be a legal same-family replacement"
+            )
+            flow.replaceCurrentExercise(with: terminalId)
+            XCTAssertFalse(
+                flow.isWarmingUp,
+                "split context must survive every zero-fact transit hop"
+            )
+        }
+        flow.logSet(CompletedSetObservation(
+            weightKg: 0, reps: 12, rir: 2, painReported: false
+        ))
+        flow.requestFinish()
+        flow.confirmEnd(reason: .timeUp)
+
+        let session = completedSession(
+            from: flow,
+            id: "sticky-split-multiple-zero-fact-hops",
+            dateISO: "2026-07-24"
+        )
+        XCTAssertEqual(
+            session.exercises.map(\.exerciseId),
+            ["bench-press", "push-up"],
+            "B and C never produced facts and must not manufacture exercise occurrences"
+        )
+        let sealed = try XCTUnwrap(session.exercises.first)
+        let terminal = try XCTUnwrap(session.exercises.last)
+        for exercise in [sealed, terminal] {
+            XCTAssertEqual(exercise.storage["originalExerciseId"], .string("bench-press"))
+            XCTAssertEqual(exercise.storage["actualExerciseId"], .string("push-up"))
+        }
+        XCTAssertEqual(sealed.storage["replacementRole"], .string("original"))
+        XCTAssertEqual(terminal.storage["replacementRole"], .string("actual"))
+
+        let input = try decisionInput(
+            history: [.object(session.storage)],
+            todayISO: "2026-07-29"
+        )
+        let cleanExercises = try XCTUnwrap(input.sessions.first?.exercises)
+        let expectedOriginal = CleanExerciseReplacementLink(
+            originalExerciseId: "bench-press",
+            actualExerciseId: "push-up",
+            role: .original
+        )
+        let expectedActual = CleanExerciseReplacementLink(
+            originalExerciseId: "bench-press",
+            actualExerciseId: "push-up",
+            role: .actual
+        )
+        XCTAssertEqual(cleanExercises[0].replacementLinks, [expectedOriginal])
+        XCTAssertEqual(cleanExercises[1].replacementLinks, [expectedActual])
+
+        let next = try XCTUnwrap(TodayPrescriptionEngine.plan(
+            input: input,
+            verdict: trainVerdict,
+            dayCodeOverride: "full-a"
+        ))
+        let horizontalPress = try XCTUnwrap(next.exercises.first {
+            ExerciseCatalog.minimal.entry(id: $0.exerciseId)?.movementPattern
+                == "horizontal-press"
+        })
+        XCTAssertEqual(horizontalPress.exerciseId, "push-up")
+    }
+
+    func testReplacementTerminalWithOnlySkippedSetStillCarriesActualChainEndpoint() throws {
+        var flow = try pushFlow()
+        flow.logSet(CompletedSetObservation(
+            weightKg: 60, reps: 8, rir: 2, painReported: false
+        ))
+        flow.restFinished()
+        flow.replaceCurrentExercise(with: "db-bench-press")
+        flow.skipSet(reason: .equipmentBusy)
+        flow.requestFinish()
+        flow.confirmEnd(reason: .timeUp)
+
+        let session = completedSession(
+            from: flow,
+            id: "sticky-split-skip-only-terminal",
+            dateISO: "2026-07-24"
+        )
+        XCTAssertEqual(
+            session.exercises.map(\.exerciseId),
+            ["bench-press", "db-bench-press"],
+            "a skipped set is a real occurrence fact and must retain the actual chain endpoint"
+        )
+        let terminal = try XCTUnwrap(
+            session.exercises.first { $0.exerciseId == "db-bench-press" }
+        )
+        XCTAssertTrue(terminal.sets.isEmpty)
+        XCTAssertEqual(terminal.storage["originalExerciseId"], .string("bench-press"))
+        XCTAssertEqual(terminal.storage["actualExerciseId"], .string("db-bench-press"))
+        XCTAssertEqual(terminal.storage["replacementRole"], .string("actual"))
+
+        let input = try decisionInput(
+            history: [.object(session.storage)],
+            todayISO: "2026-07-29"
+        )
+        let next = try XCTUnwrap(TodayPrescriptionEngine.plan(
+            input: input,
+            verdict: trainVerdict,
+            dayCodeOverride: "full-a"
+        ))
+        let horizontalPress = try XCTUnwrap(next.exercises.first {
+            ExerciseCatalog.minimal.entry(id: $0.exerciseId)?.movementPattern
+                == "horizontal-press"
+        })
+        XCTAssertEqual(horizontalPress.exerciseId, "db-bench-press")
+    }
+
     func testAdHocSamePatternExerciseDoesNotTakeOverReplacementStickySlot() throws {
         var flow = try pushFlow()
         flow.addExercise(adHocExercisePlan())

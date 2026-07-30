@@ -473,6 +473,35 @@ final class CompletedSessionBuilderTests: XCTestCase {
         )
     }
 
+    func testMultipleZeroFactReplacementsKeepFrozenTerminalOnlyBytes() throws {
+        let input = try TestSupport.makeInput(
+            appDataJSON: #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}}"#,
+            todayISO: "2026-06-09"
+        )
+        let verdict = TodayVerdictEngine.evaluate(input)
+        let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict))
+        var flow = TrainFlowState(prescription: prescription)
+        flow.replaceCurrentExercise(with: "db-bench-press")
+        flow.replaceCurrentExercise(with: "smith-bench-press")
+        flow.logSet(CompletedSetObservation(
+            weightKg: 50, reps: 8, rir: 2, painReported: false
+        ))
+        flow.requestFinish()
+        flow.confirmEnd(reason: .fatigue)
+
+        let session = CompletedSessionBuilder.build(
+            from: flow, sessionId: "s", dateISO: "2026-06-09",
+            startedAtISO: "t0", finishedAtISO: "t1", durationMinutes: 10
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        XCTAssertEqual(
+            try encoder.encode(session.storage),
+            Data(#"{"completed":true,"date":"2026-06-09","durationMin":10,"endReason":"fatigue","exercises":[{"actualExerciseId":"smith-bench-press","exerciseId":"smith-bench-press","id":"s-smith-bench-press","originalExerciseId":"db-bench-press","sets":[{"completionStatus":"completed","done":true,"exerciseId":"smith-bench-press","id":"s-smith-bench-press-1","reps":8,"rir":2,"setIndex":1,"weight":50}]}],"finishedAt":"t1","id":"s","startedAt":"t0","templateId":"push-a"}"#.utf8),
+            "a slot with no prior facts keeps the existing terminal-only zero-fact bytes"
+        )
+    }
+
     // 重排是队列事实而非动作替换：完成记录按实际执行顺序输出，且不产生替换/跳过审计。
     func testMovedExerciseBuildsInExecutionOrderWithoutReplacementOrSkipAudit() throws {
         let input = try TestSupport.makeInput(

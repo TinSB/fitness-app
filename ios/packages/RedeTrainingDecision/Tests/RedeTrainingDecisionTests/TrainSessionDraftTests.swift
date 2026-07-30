@@ -139,6 +139,51 @@ final class TrainSessionDraftTests: XCTestCase {
         XCTAssertEqual(session.exercises.map { $0.sets.count }, [1, 1, 1])
     }
 
+    func testDraftReplayPreservesSplitAcrossMultipleZeroFactReplacementHops() throws {
+        var flow = try makeFlow()
+        flow.logSet(obs(60, 6))
+        flow.restFinished()
+        flow.replaceCurrentExercise(with: "db-bench-press")
+        flow.replaceCurrentExercise(with: "smith-bench-press")
+        flow.replaceCurrentExercise(with: "push-up")
+        XCTAssertFalse(flow.isWarmingUp)
+
+        let draft = TrainSessionDraft(
+            dateISO: "2026-06-10",
+            startedAt: Date(timeIntervalSince1970: 1_780_000_000),
+            prescription: flow.prescription,
+            events: flow.events
+        )
+        let bytes = try JSONEncoder().encode(draft)
+        let decoded = try JSONDecoder().decode(TrainSessionDraft.self, from: bytes)
+        var restored = try XCTUnwrap(decoded.restoreFlow())
+
+        XCTAssertEqual(restored, flow)
+        XCTAssertFalse(
+            restored.isWarmingUp,
+            "typed-event replay must reconstruct the inherited split warm-up gate"
+        )
+        restored.logSet(obs(0, 12))
+        restored.requestFinish()
+        restored.confirmEnd(reason: .timeUp)
+
+        let session = CompletedSessionBuilder.build(
+            from: restored,
+            sessionId: "draft-zero-fact-hops",
+            dateISO: "2026-06-10",
+            startedAtISO: "t0",
+            finishedAtISO: "t1",
+            durationMinutes: 10
+        )
+        XCTAssertEqual(session.exercises.map(\.exerciseId), ["bench-press", "push-up"])
+        XCTAssertEqual(session.exercises[0].storage["originalExerciseId"], .string("bench-press"))
+        XCTAssertEqual(session.exercises[0].storage["actualExerciseId"], .string("push-up"))
+        XCTAssertEqual(session.exercises[0].storage["replacementRole"], .string("original"))
+        XCTAssertEqual(session.exercises[1].storage["originalExerciseId"], .string("bench-press"))
+        XCTAssertEqual(session.exercises[1].storage["actualExerciseId"], .string("push-up"))
+        XCTAssertEqual(session.exercises[1].storage["replacementRole"], .string("actual"))
+    }
+
     // resting 态切 Hold 的重放等值（guard 允许 resting）
     func testToggleHoldDuringRestReplays() throws {
         var flow = try makeFlow()
