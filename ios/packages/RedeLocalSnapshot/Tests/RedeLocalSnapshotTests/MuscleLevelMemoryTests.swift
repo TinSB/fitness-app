@@ -30,6 +30,75 @@ final class MuscleLevelMemoryTests: XCTestCase {
             .appendingPathComponent("muscle-level-memory.json")
     }
 
+    private func levelEvent(
+        muscle: String = "back",
+        from: Int = 8,
+        to: Int = 9,
+        at date: String = "2026-07-29"
+    ) -> LevelBreakthrough {
+        LevelBreakthrough(
+            kind: .muscleLevel,
+            targetId: muscle,
+            fromLevel: from,
+            toLevel: to,
+            fromTier: nil,
+            toTier: nil,
+            evidence: [],
+            achievedAtIso: date
+        )
+    }
+
+    private var zeroScore: MuscleLevelScoreBreakdown {
+        MuscleLevelScoreBreakdown(
+            exposureScore: 0,
+            performanceScore: 0,
+            milestoneScore: 0,
+            progressionScore: 0,
+            coverageScore: 0,
+            consistencyScore: 0,
+            recoveryPenalty: 0,
+            goalAdjustment: 0
+        )
+    }
+
+    private func estimate(
+        _ muscle: MuscleGroupID,
+        level: Int,
+        trend: MuscleLevelTrend = .stable,
+        confidence: EstimateConfidence = .medium
+    ) -> MuscleLevelEstimate {
+        MuscleLevelEstimate(
+            muscleId: muscle,
+            currentLevel: level,
+            peakLevel: level,
+            levelProgress: 0,
+            trend: trend,
+            confidence: confidence,
+            decision: .maintain,
+            score: zeroScore,
+            evidence: [],
+            limitations: []
+        )
+    }
+
+    private func profile(
+        estimates: [MuscleLevelEstimate],
+        balanceScore: Double? = nil,
+        breakthroughs: [LevelBreakthrough] = []
+    ) -> MuscleDevelopmentProfile {
+        MuscleDevelopmentProfile(
+            estimates: estimates,
+            overallTier: .novicePlus,
+            balanceScore: balanceScore,
+            strongestMuscleIds: [],
+            priorityMuscleIds: [],
+            strengthMilestones: [],
+            breakthroughs: breakthroughs,
+            generatedAtIso: "2026-07-29",
+            modelVersion: "test-only"
+        )
+    }
+
     func testExtractRecordsOnlyUnlockedMuscles() {
         let profile = seededProfile()   // chest 解锁、其余 9 块校准中
         let memory = MuscleLevelMemory.extract(from: profile, atIso: "2026-07-07")
@@ -171,4 +240,211 @@ final class MuscleLevelMemoryTests: XCTestCase {
         let encoded = try MuscleLevelMemoryCodec.encode(carried)
         XCTAssertEqual(try MuscleLevelMemoryCodec.decode(encoded).priorityMuscles, ["back"])
     }
+
+    // MARK: - MLE 消费面：pending breakthroughs（schema v1 additive optional）
+
+    func testLegacyFileWithoutPendingBreakthroughsDecodesAsNil() throws {
+        let legacy = #"{"schemaVersion":1,"levels":{"back":8},"peaks":{"back":9},"tierRaw":"novicePlus","updatedAtIso":"2026-07-28"}"#
+        let decoded = try MuscleLevelMemoryCodec.decode(Data(legacy.utf8))
+        XCTAssertNil(decoded.pendingBreakthroughs)
+        XCTAssertEqual(decoded.schemaVersion, 1)
+    }
+
+    func testPendingBreakthroughMergeDeduplicatesByApprovedKey() {
+        let event = levelEvent()
+        let sameKeyDifferentFrom = levelEvent(from: 7)
+        let differentDay = levelEvent(from: 8, at: "2026-07-30")
+
+        let merged = MuscleLevelMemory.mergingPending(
+            existing: [event],
+            new: [sameKeyDifferentFrom, differentDay]
+        )
+
+        XCTAssertEqual(merged, [event, differentDay])
+    }
+
+    func testPendingBreakthroughMergeCapsAtTwentyAndDropsOldest() {
+        let events = (1...22).map { index in
+            levelEvent(
+                muscle: "muscle-\(index)",
+                from: index,
+                to: index + 1,
+                at: String(format: "2026-07-%02d", index)
+            )
+        }
+
+        let merged = MuscleLevelMemory.mergingPending(existing: [], new: events)
+
+        XCTAssertEqual(merged.count, 20)
+        XCTAssertEqual(merged.first?.targetId, "muscle-3")
+        XCTAssertEqual(merged.last?.targetId, "muscle-22")
+    }
+
+    func testSaveReconcilingMergesDiskPendingWithoutDuplicatingSecondReader() throws {
+        let url = tempURL()
+        let store = MuscleLevelMemoryStore(fileURL: url)
+        let first = levelEvent()
+        try store.save(MuscleLevelMemory(
+            levels: ["back": 9],
+            peaks: ["back": 9],
+            tierRaw: "novicePlus",
+            pendingBreakthroughs: [first],
+            updatedAtIso: "2026-07-29"
+        ))
+
+        // 第二个 loadOutcome 从旧输入算出同一事件；写前必须并盘去重，同时保留先写者的新事实。
+        let secondReader = MuscleLevelMemory(
+            levels: ["back": 9],
+            peaks: ["back": 9],
+            tierRaw: "novicePlus",
+            pendingBreakthroughs: [first],
+            updatedAtIso: "2026-07-29"
+        )
+        try store.saveReconciling(secondReader)
+
+        XCTAssertEqual(store.load()?.pendingBreakthroughs, [first])
+        try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
+    }
+
+    func testSaveReconcilingCarriesForeignDiskPendingAndShouldPersistDetectsPendingChange() throws {
+        let url = tempURL()
+        let store = MuscleLevelMemoryStore(fileURL: url)
+        let diskEvent = levelEvent(muscle: "back")
+        let writerEvent = levelEvent(muscle: "quads")
+        let base = MuscleLevelMemory(
+            levels: ["back": 9],
+            peaks: ["back": 9],
+            tierRaw: "novicePlus",
+            pendingBreakthroughs: [diskEvent],
+            updatedAtIso: "2026-07-29"
+        )
+        try store.save(base)
+        let writer = MuscleLevelMemory(
+            levels: ["back": 9],
+            peaks: ["back": 9],
+            tierRaw: "novicePlus",
+            pendingBreakthroughs: [writerEvent],
+            updatedAtIso: "2026-07-29"
+        )
+
+        XCTAssertTrue(MuscleLevelMemory.shouldPersist(previous: base, next: writer))
+        try store.saveReconciling(writer)
+        XCTAssertEqual(store.load()?.pendingBreakthroughs, [diskEvent, writerEvent])
+        try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
+    }
+
+    func testAdvanceAppendsComputedBreakthroughAndRepeatedReaderDoesNotDuplicate() {
+        let event = levelEvent()
+        let currentProfile = profile(
+            estimates: [estimate(.back, level: 9)],
+            breakthroughs: [event]
+        )
+        let previous = MuscleLevelMemory(
+            levels: ["back": 8],
+            peaks: ["back": 8],
+            tierRaw: "novicePlus",
+            updatedAtIso: "2026-07-28"
+        )
+
+        let first = MuscleLevelMemory.advancing(
+            from: currentProfile,
+            previous: previous,
+            completedSessionCount: 8,
+            atIso: "2026-07-29"
+        )
+        let second = MuscleLevelMemory.advancing(
+            from: currentProfile,
+            previous: first,
+            completedSessionCount: 8,
+            atIso: "2026-07-29"
+        )
+
+        XCTAssertEqual(first.pendingBreakthroughs, [event])
+        XCTAssertEqual(second.pendingBreakthroughs, [event])
+    }
+
+    func testLegacyBalanceStateSeedsReferenceWithoutEventOrCandidate() throws {
+        let legacy = #"{"schemaVersion":1,"levels":{"chest":2,"back":6,"quads":10},"peaks":{"chest":2,"back":6,"quads":10},"tierRaw":"novicePlus","updatedAtIso":"2026-07-28"}"#
+        let previous = try MuscleLevelMemoryCodec.decode(Data(legacy.utf8))
+        XCTAssertNil(previous.balanceImprovementState)
+        let currentProfile = profile(
+            estimates: [
+                estimate(.chest, level: 2),
+                estimate(.back, level: 6),
+                estimate(.quads, level: 10),
+            ],
+            balanceScore: 50
+        )
+
+        let next = MuscleLevelMemory.advancing(
+            from: currentProfile,
+            previous: previous,
+            completedSessionCount: 9,
+            atIso: "2026-07-29"
+        )
+
+        XCTAssertEqual(next.balanceImprovementState?.reference?.score, 50)
+        XCTAssertNil(next.balanceImprovementState?.candidate)
+        XCTAssertNil(next.pendingBreakthroughs)
+    }
+
+    func testBalanceCandidateNeedsStrictlyNewSessionThenAppendsMilestone() {
+        let reference = BalanceImprovementReference(
+            score: 50,
+            levelsByContributorID: ["chest": 2, "back": 6, "quads": 10],
+            medianConfidence: .medium
+        )
+        let previous = MuscleLevelMemory(
+            levels: ["chest": 2, "back": 6, "quads": 10],
+            peaks: ["chest": 2, "back": 6, "quads": 10],
+            tierRaw: "novicePlus",
+            balanceImprovementState: .init(reference: reference, candidate: nil),
+            updatedAtIso: "2026-07-28"
+        )
+        let improved = profile(
+            estimates: [
+                estimate(.chest, level: 3, trend: .rising),
+                estimate(.back, level: 6),
+                estimate(.quads, level: 10),
+            ],
+            balanceScore: 60
+        )
+
+        let candidate = MuscleLevelMemory.advancing(
+            from: improved,
+            previous: previous,
+            completedSessionCount: 10,
+            atIso: "2026-07-29"
+        )
+        XCTAssertEqual(candidate.balanceImprovementState?.candidate?.completedSessionCount, 10)
+        XCTAssertNil(candidate.pendingBreakthroughs)
+
+        let repeated = MuscleLevelMemory.advancing(
+            from: improved,
+            previous: candidate,
+            completedSessionCount: 10,
+            atIso: "2026-07-29"
+        )
+        XCTAssertEqual(repeated.balanceImprovementState, candidate.balanceImprovementState)
+        XCTAssertNil(repeated.pendingBreakthroughs)
+
+        let confirmed = MuscleLevelMemory.advancing(
+            from: improved,
+            previous: repeated,
+            completedSessionCount: 11,
+            atIso: "2026-07-29"
+        )
+        let event = confirmed.pendingBreakthroughs?.only
+        XCTAssertEqual(event?.kind, .balanceMilestone)
+        XCTAssertEqual(event?.fromLevel, 50)
+        XCTAssertEqual(event?.toLevel, 60)
+        XCTAssertEqual(event?.targetId, "chest")
+        XCTAssertEqual(event?.evidence.map(\.muscleId), [.chest])
+        XCTAssertEqual(confirmed.balanceImprovementState?.reference?.score, 60)
+        XCTAssertNil(confirmed.balanceImprovementState?.candidate)
+    }
+}
+
+private extension Array {
+    var only: Element? { count == 1 ? first : nil }
 }

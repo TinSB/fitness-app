@@ -26,22 +26,38 @@ public struct MuscleLevelMemory: Codable, Equatable, Sendable {
     /// detraining/recover；今日页读此名单喂处方引擎加量）。optional：schema 1 加性
     /// 字段，旧文件缺省 nil = 空（零迁移）。
     public let priorityMuscles: [String]?
+    /// 尚待消费的跨次突破事实。optional 保持 schema v1 旧文件零迁移；消费面只按日期
+    /// 派生展示，不把读取当回执清空，最多保留 20 条。
+    public let pendingBreakthroughs: [LevelBreakthrough]?
+    /// 均衡改善的 stable reference / candidate 状态。optional 保持 schema v1 旧文件
+    /// 零迁移；raw score、contributor reference level 与 confidence 事实都封在纯策略类型。
+    public let balanceImprovementState: BalanceImprovementState?
     public let updatedAtIso: String
 
     public init(schemaVersion: Int = MuscleLevelMemory.currentSchemaVersion,
                 levels: [String: Int], peaks: [String: Int],
-                tierRaw: String?, priorityMuscles: [String]? = nil, updatedAtIso: String) {
+                tierRaw: String?, priorityMuscles: [String]? = nil,
+                pendingBreakthroughs: [LevelBreakthrough]? = nil,
+                balanceImprovementState: BalanceImprovementState? = nil,
+                updatedAtIso: String) {
         self.schemaVersion = schemaVersion
         self.levels = levels
         self.peaks = peaks
         self.tierRaw = tierRaw
         self.priorityMuscles = priorityMuscles
+        self.pendingBreakthroughs = pendingBreakthroughs
+        self.balanceImprovementState = balanceImprovementState
         self.updatedAtIso = updatedAtIso
     }
 
     /// 从组装产物提取下一次的记忆：只记已解锁肌群（decision != insufficientData ⇔
     /// 已解锁，assembler 契约）；tier calibrating 也如实记（下次 previousTier 语义一致）。
-    public static func extract(from profile: MuscleDevelopmentProfile, atIso: String) -> MuscleLevelMemory {
+    public static func extract(
+        from profile: MuscleDevelopmentProfile,
+        pendingBreakthroughs: [LevelBreakthrough]? = nil,
+        balanceImprovementState: BalanceImprovementState? = nil,
+        atIso: String
+    ) -> MuscleLevelMemory {
         var levels: [String: Int] = [:]
         var peaks: [String: Int] = [:]
         for estimate in profile.estimates where estimate.decision != .insufficientData {
@@ -51,6 +67,8 @@ public struct MuscleLevelMemory: Codable, Equatable, Sendable {
         return MuscleLevelMemory(levels: levels, peaks: peaks,
                                  tierRaw: profile.overallTier.rawValue,
                                  priorityMuscles: profile.priorityMuscleIds.map(\.rawValue),
+                                 pendingBreakthroughs: pendingBreakthroughs,
+                                 balanceImprovementState: balanceImprovementState,
                                  updatedAtIso: atIso)
     }
 
@@ -62,6 +80,93 @@ public struct MuscleLevelMemory: Codable, Equatable, Sendable {
             || previous.peaks != next.peaks
             || previous.tierRaw != next.tierRaw
             || (previous.priorityMuscles ?? []) != (next.priorityMuscles ?? [])
+            || (previous.pendingBreakthroughs ?? []) != (next.pendingBreakthroughs ?? [])
+            || previous.balanceImprovementState != next.balanceImprovementState
+    }
+
+    /// 既有 pending 在前、本轮新事实在后；按裁定键去重并自然滚动到最近 20 条。
+    /// fromLevel/fromTier 不进键：同一目标、kind、终点与日期就是同一突破事实。
+    public static func mergingPending(
+        existing: [LevelBreakthrough],
+        new: [LevelBreakthrough],
+        limit: Int = 20
+    ) -> [LevelBreakthrough] {
+        guard limit > 0 else { return [] }
+        var seen = Set<PendingBreakthroughKey>()
+        let merged = (existing + new).filter { event in
+            seen.insert(PendingBreakthroughKey(event)).inserted
+        }
+        return Array(merged.suffix(limit))
+    }
+
+    /// profile → 下一份 derived memory 的唯一推进点：先让 B2 纯策略评估，再把确认事件
+    /// 与上游 muscle/tier breakthrough 一并 append 进同一 pending 管道。
+    public static func advancing(
+        from profile: MuscleDevelopmentProfile,
+        previous: MuscleLevelMemory?,
+        completedSessionCount: Int,
+        atIso: String
+    ) -> MuscleLevelMemory {
+        var balanceState = previous?.balanceImprovementState
+        var balanceEvent: LevelBreakthrough?
+
+        if let score = profile.balanceScore {
+            let contributors = profile.estimates
+                .filter { $0.decision != .insufficientData }
+                .map {
+                    BalanceImprovementContributor(
+                        id: $0.muscleId.rawValue,
+                        level: $0.currentLevel,
+                        trend: $0.trend,
+                        confidence: $0.confidence
+                    )
+                }
+            let result = BalanceImprovementPolicy.evaluate(
+                previousState: balanceState ?? BalanceImprovementState(),
+                observation: BalanceImprovementObservation(
+                    score: score,
+                    completedSessionCount: completedSessionCount,
+                    contributors: contributors
+                )
+            )
+            balanceState = result.state.reference == nil && result.state.candidate == nil
+                ? nil
+                : result.state
+            if let event = result.confirmedEvent,
+               let targetId = event.directionIDs.first {
+                balanceEvent = LevelBreakthrough(
+                    kind: .balanceMilestone,
+                    targetId: targetId,
+                    fromLevel: Int(event.fromScore.rounded()),
+                    toLevel: Int(event.toScore.rounded()),
+                    fromTier: nil,
+                    toTier: nil,
+                    evidence: event.directionIDs.compactMap { raw in
+                        MuscleGroupID(rawValue: raw).map {
+                            MuscleLevelEvidence(code: "balanceImproved", muscleId: $0)
+                        }
+                    },
+                    achievedAtIso: atIso
+                )
+            }
+        }
+
+        var newEvents = profile.breakthroughs
+        if let balanceEvent { newEvents.append(balanceEvent) }
+        let hadPendingField = previous?.pendingBreakthroughs != nil
+        let pending = hadPendingField || !newEvents.isEmpty
+            ? mergingPending(
+                existing: previous?.pendingBreakthroughs ?? [],
+                new: newEvents
+            )
+            : nil
+
+        return extract(
+            from: profile,
+            pendingBreakthroughs: pending,
+            balanceImprovementState: balanceState,
+            atIso: atIso
+        )
     }
 
     /// peaks 写入合并（审查 M1/m3）：对盘上现值取 max、盘上有而本轮无的键保留。
@@ -75,9 +180,36 @@ public struct MuscleLevelMemory: Codable, Equatable, Sendable {
         for (muscle, diskPeak) in disk.peaks {
             mergedPeaks[muscle] = max(mergedPeaks[muscle] ?? diskPeak, diskPeak)
         }
+        let hasPendingField = pendingBreakthroughs != nil || disk.pendingBreakthroughs != nil
+        let mergedPending = hasPendingField
+            ? Self.mergingPending(
+                existing: disk.pendingBreakthroughs ?? [],
+                new: pendingBreakthroughs ?? []
+            )
+            : nil
+        let mergedBalanceState = balanceImprovementState ?? disk.balanceImprovementState
         return MuscleLevelMemory(schemaVersion: schemaVersion, levels: levels,
                                  peaks: mergedPeaks, tierRaw: tierRaw,
-                                 priorityMuscles: priorityMuscles, updatedAtIso: updatedAtIso)
+                                 priorityMuscles: priorityMuscles,
+                                 pendingBreakthroughs: mergedPending,
+                                 balanceImprovementState: mergedBalanceState,
+                                 updatedAtIso: updatedAtIso)
+    }
+}
+
+private struct PendingBreakthroughKey: Hashable {
+    let targetId: String
+    let kindRaw: String
+    let toLevel: Int?
+    let toTierRaw: String?
+    let achievedAtIso: String
+
+    init(_ event: LevelBreakthrough) {
+        targetId = event.targetId
+        kindRaw = event.kind.rawValue
+        toLevel = event.toLevel
+        toTierRaw = event.toTier?.rawValue
+        achievedAtIso = event.achievedAtIso
     }
 }
 

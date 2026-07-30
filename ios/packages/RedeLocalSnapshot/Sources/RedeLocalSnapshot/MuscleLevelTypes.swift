@@ -33,7 +33,7 @@ public enum MuscleDevelopmentDecision: String, CaseIterable, Equatable, Sendable
     case prioritize, maintain, reduce, recover, insufficientData
 }
 
-public enum TrainingTier: String, CaseIterable, Equatable, Sendable {
+public enum TrainingTier: String, CaseIterable, Equatable, Sendable, Codable {
     case calibrating, beginner, novicePlus, intermediate, advanced, elite
 }
 
@@ -42,7 +42,7 @@ public enum EstimateConfidence: String, CaseIterable, Equatable, Sendable {
     case low, medium, high
 }
 
-public enum LevelBreakthroughKind: String, CaseIterable, Equatable, Sendable {
+public enum LevelBreakthroughKind: String, CaseIterable, Equatable, Sendable, Codable {
     case muscleLevel, trainingTier, strengthMilestone, balanceMilestone, consistencyMilestone
 }
 
@@ -51,7 +51,7 @@ public enum StrengthMilestoneAchievementMethod: String, CaseIterable, Equatable,
 }
 
 /// 等级依据条目（零文案：引擎产 code，UI 层翻译——同 reasonCode 模式）。
-public struct MuscleLevelEvidence: Equatable, Sendable {
+public struct MuscleLevelEvidence: Equatable, Sendable, Codable {
     public let code: String
     public let muscleId: MuscleGroupID?
     public init(code: String, muscleId: MuscleGroupID? = nil) {
@@ -131,7 +131,7 @@ public struct StrengthMilestoneAchievement: Equatable, Sendable {
     }
 }
 
-public struct LevelBreakthrough: Equatable, Sendable {
+public struct LevelBreakthrough: Equatable, Sendable, Codable {
     public let kind: LevelBreakthroughKind
     public let targetId: String
     public let fromLevel: Int?
