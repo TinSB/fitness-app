@@ -40,7 +40,10 @@ final class OccurrenceCompatibilityIntegrationTests: XCTestCase {
         )
     }
 
-    private func adHocExercisePlan(id: String = "db-bench-press") -> ExerciseSetPlan {
+    private func adHocExercisePlan(
+        id: String = "db-bench-press",
+        targetWeightKg: Double = 30
+    ) -> ExerciseSetPlan {
         ExerciseSetPlan(
             exerciseId: id,
             restSeconds: 90,
@@ -51,7 +54,7 @@ final class OccurrenceCompatibilityIntegrationTests: XCTestCase {
             sets: (1...3).map {
                 PlannedSet(
                     index: $0,
-                    targetWeightKg: 30,
+                    targetWeightKg: targetWeightKg,
                     targetReps: 10,
                     targetRir: 2
                 )
@@ -328,6 +331,90 @@ final class OccurrenceCompatibilityIntegrationTests: XCTestCase {
                 == "horizontal-press"
         })
         XCTAssertEqual(horizontalPress.exerciseId, "db-bench-press")
+    }
+
+    func testRemovedReplacementTerminalCannotLeakItsChainIntoReaddedAdHocOccurrence() throws {
+        var flow = try pushFlow()
+        flow.logSet(CompletedSetObservation(
+            weightKg: 60, reps: 8, rir: 2, painReported: false
+        ))
+        flow.restFinished()
+        flow.replaceCurrentExercise(with: "db-bench-press")
+
+        let movedExerciseId = flow.plan.exercises[2].exerciseId
+        flow.moveExerciseToCurrent(movedExerciseId)
+        let replacementIndex = try XCTUnwrap(
+            flow.plan.exercises.firstIndex { $0.exerciseId == "db-bench-press" }
+        )
+        let removal = try XCTUnwrap(flow.removal(at: replacementIndex))
+        flow.removeExercise(removal)
+        flow.addExercise(adHocExercisePlan(targetWeightKg: 40))
+        flow.moveExerciseToCurrent("db-bench-press")
+
+        XCTAssertEqual(flow.currentExercise?.exerciseId, "db-bench-press")
+        XCTAssertFalse(flow.warmupStepsForCurrentExercise.isEmpty)
+        XCTAssertTrue(
+            flow.isWarmingUp,
+            "remove + ad-hoc add is not an exact restore and must not inherit the removed terminal's split gate"
+        )
+
+        let draft = TrainSessionDraft(
+            dateISO: "2026-07-24",
+            startedAt: Date(timeIntervalSince1970: 1_780_000_000),
+            prescription: flow.prescription,
+            events: flow.events
+        )
+        let draftBytes = try JSONEncoder().encode(draft)
+        let decoded = try JSONDecoder().decode(TrainSessionDraft.self, from: draftBytes)
+        var restored = try XCTUnwrap(decoded.restoreFlow())
+        XCTAssertEqual(restored, flow)
+        XCTAssertTrue(
+            restored.isWarmingUp,
+            "typed-event replay must not resurrect the removed replacement terminal context"
+        )
+
+        restored.logSet(CompletedSetObservation(
+            weightKg: 40, reps: 10, rir: 2, painReported: false
+        ))
+        restored.requestFinish()
+        restored.confirmEnd(reason: .timeUp)
+
+        let session = completedSession(
+            from: restored,
+            id: "removed-terminal-readded-ad-hoc",
+            dateISO: "2026-07-24"
+        )
+        let readded = try XCTUnwrap(
+            session.exercises.first { $0.exerciseId == "db-bench-press" }
+        )
+        XCTAssertNil(readded.storage["replacementRole"])
+        XCTAssertNil(readded.storage["replacementLinks"])
+
+        let input = try decisionInput(
+            history: [.object(session.storage)],
+            todayISO: "2026-07-29"
+        )
+        let cleanReadded = try XCTUnwrap(
+            input.sessions.first?.exercises.first { $0.exerciseId == "db-bench-press" }
+        )
+        XCTAssertTrue(
+            cleanReadded.replacementLinks.isEmpty,
+            "DataHealth must not expose the re-added ad-hoc occurrence as a replacement endpoint"
+        )
+        let next = try XCTUnwrap(TodayPrescriptionEngine.plan(
+            input: input,
+            verdict: trainVerdict,
+            dayCodeOverride: "full-a"
+        ))
+        let horizontalPress = try XCTUnwrap(next.exercises.first {
+            ExerciseCatalog.minimal.entry(id: $0.exerciseId)?.movementPattern
+                == "horizontal-press"
+        })
+        XCTAssertEqual(
+            horizontalPress.exerciseId,
+            "bench-press",
+            "FR-TR14 ad-hoc work must not impersonate the removed FR-TR6 replacement chain"
+        )
     }
 
     func testAdHocSamePatternExerciseDoesNotTakeOverReplacementStickySlot() throws {
