@@ -40,6 +40,25 @@ final class OccurrenceCompatibilityIntegrationTests: XCTestCase {
         )
     }
 
+    private func adHocExercisePlan(id: String = "db-bench-press") -> ExerciseSetPlan {
+        ExerciseSetPlan(
+            exerciseId: id,
+            restSeconds: 90,
+            repLowerBound: 8,
+            repUpperBound: 12,
+            stepKg: 2.5,
+            loadType: "external",
+            sets: (1...3).map {
+                PlannedSet(
+                    index: $0,
+                    targetWeightKg: 30,
+                    targetReps: 10,
+                    targetRir: 2
+                )
+            }
+        )
+    }
+
     private func decisionInput(
         history: [JSONValue],
         todayISO: String,
@@ -94,7 +113,7 @@ final class OccurrenceCompatibilityIntegrationTests: XCTestCase {
         return .object(session)
     }
 
-    func testMidExerciseSwapFeedsFinalPatternOccurrenceIntoNextPrescriptionSticky() throws {
+    func testMidExerciseSwapFeedsReplacementChainTerminalIntoNextPrescriptionSticky() throws {
         var flow = try pushFlow()
         flow.logSet(CompletedSetObservation(
             weightKg: 60, reps: 8, rir: 2, painReported: false
@@ -138,6 +157,116 @@ final class OccurrenceCompatibilityIntegrationTests: XCTestCase {
             "db-bench-press",
             "the next same-pattern slot must retain the action actually used last in the session"
         )
+    }
+
+    func testAdHocSamePatternExerciseDoesNotTakeOverReplacementStickySlot() throws {
+        var flow = try pushFlow()
+        flow.addExercise(adHocExercisePlan())
+        XCTAssertEqual(
+            Array(flow.plan.exercises.prefix(2).map(\.exerciseId)),
+            ["bench-press", "db-bench-press"],
+            "fixture must add another same-pattern action without creating a replacement"
+        )
+
+        for _ in 0..<3 {
+            flow.logSet(CompletedSetObservation(
+                weightKg: 60, reps: 8, rir: 2, painReported: false
+            ))
+            flow.restFinished()
+        }
+        XCTAssertEqual(flow.currentExercise?.exerciseId, "db-bench-press")
+        flow.logSet(CompletedSetObservation(
+            weightKg: 30, reps: 10, rir: 2, painReported: false
+        ))
+        flow.restFinished()
+        flow.requestFinish()
+        flow.confirmEnd(reason: .timeUp)
+
+        let session = completedSession(
+            from: flow,
+            id: "same-pattern-ad-hoc",
+            dateISO: "2026-07-24"
+        )
+        XCTAssertEqual(
+            session.exercises.map(\.exerciseId),
+            ["bench-press", "db-bench-press"]
+        )
+        XCTAssertTrue(
+            session.exercises.allSatisfy {
+                $0.storage["replacementRole"] == nil
+                    && $0.storage["replacementLinks"] == nil
+            },
+            "FR-TR14 ad-hoc work must remain a non-replacement occurrence"
+        )
+
+        let input = try decisionInput(
+            history: [.object(session.storage)],
+            todayISO: "2026-07-29"
+        )
+        let next = try XCTUnwrap(TodayPrescriptionEngine.plan(
+            input: input,
+            verdict: trainVerdict,
+            dayCodeOverride: "full-a"
+        ))
+        let horizontalPress = try XCTUnwrap(next.exercises.first {
+            ExerciseCatalog.minimal.entry(id: $0.exerciseId)?.movementPattern
+                == "horizontal-press"
+        })
+
+        XCTAssertEqual(
+            horizontalPress.exerciseId,
+            "bench-press",
+            "same-pattern ad-hoc work is not FR-TR6 replacement memory and must not steal the slot"
+        )
+    }
+
+    func testReplacementChainReturningToOriginalSticksToTerminalOriginal() throws {
+        var flow = try pushFlow()
+        flow.logSet(CompletedSetObservation(
+            weightKg: 60, reps: 8, rir: 2, painReported: false
+        ))
+        flow.restFinished()
+        flow.replaceCurrentExercise(with: "db-bench-press")
+        flow.logSet(CompletedSetObservation(
+            weightKg: 30, reps: 10, rir: 2, painReported: false
+        ))
+        flow.restFinished()
+        flow.replaceCurrentExercise(with: "bench-press")
+        flow.logSet(CompletedSetObservation(
+            weightKg: 60, reps: 9, rir: 2, painReported: false
+        ))
+        flow.requestFinish()
+        flow.confirmEnd(reason: .timeUp)
+
+        let session = completedSession(
+            from: flow,
+            id: "sticky-swap-back",
+            dateISO: "2026-07-24"
+        )
+        XCTAssertEqual(
+            session.exercises.map(\.exerciseId),
+            ["bench-press", "db-bench-press", "bench-press"]
+        )
+        XCTAssertNotNil(
+            session.exercises[1].storage["replacementLinks"],
+            "the middle occurrence must retain both links needed to reconstruct A→B→A"
+        )
+
+        let input = try decisionInput(
+            history: [.object(session.storage)],
+            todayISO: "2026-07-29"
+        )
+        let next = try XCTUnwrap(TodayPrescriptionEngine.plan(
+            input: input,
+            verdict: trainVerdict,
+            dayCodeOverride: "full-a"
+        ))
+        let horizontalPress = try XCTUnwrap(next.exercises.first {
+            ExerciseCatalog.minimal.entry(id: $0.exerciseId)?.movementPattern
+                == "horizontal-press"
+        })
+
+        XCTAssertEqual(horizontalPress.exerciseId, "bench-press")
     }
 
     func testPainFlagAcrossRepeatedOccurrenceDoesNotClearActivePainConservativeState() throws {

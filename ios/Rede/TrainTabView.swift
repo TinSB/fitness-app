@@ -947,14 +947,14 @@ struct TrainTabView: View {
 
     /// 行状态：跳过的组（按 setIndex 留痕）原位显示跳过标记；完成的组按顺序
     /// 映射到未跳过的行；指针行高亮（MAJOR 修复：跳过后不再错位挂数据）。
-    private enum RowStatus {
+    enum RowStatus: Equatable {
         case done(CompletedSetObservation)
         case skipped
         case active
         case pending
     }
 
-    private func rowStatuses(_ flow: TrainFlowState) -> [RowStatus] {
+    static func rowStatuses(_ flow: TrainFlowState) -> [RowStatus] {
         guard let exercise = flow.currentExercise else { return [] }
         let skippedIndices = Set(
             flow.skippedSets.filter { $0.exerciseId == exercise.exerciseId }.map(\.setIndex)
@@ -976,7 +976,7 @@ struct TrainTabView: View {
 
     private func setTable(_ flow: TrainFlowState) -> some View {
         let exercise = flow.currentExercise
-        let statuses = rowStatuses(flow)
+        let statuses = Self.rowStatuses(flow)
         return VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Overline(text: s.trainColSet).frame(width: 44, alignment: .leading)

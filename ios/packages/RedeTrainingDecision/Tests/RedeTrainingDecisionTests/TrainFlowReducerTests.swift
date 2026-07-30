@@ -179,6 +179,40 @@ final class TrainFlowReducerTests: XCTestCase {
         )
     }
 
+    func testReplacingAfterFactsStartsCleanOccurrenceWithoutRestartingWarmup() throws {
+        var state = try makeState()
+
+        state.skipAllWarmup()
+        XCTAssertGreaterThan(state.warmupPointer, 0, "fixture must first consume the original exercise warm-up")
+        XCTAssertFalse(state.isWarmingUp)
+        state.logSet(obs(60, 6))
+        state.restFinished()
+        XCTAssertEqual(state.progress.setNumber, 2)
+
+        state.reportPain()
+        state.toggleHold()
+        XCTAssertTrue(state.painReportedForCurrentSet)
+        XCTAssertTrue(state.isHolding)
+
+        state.replaceCurrentExercise(with: "db-bench-press")
+
+        XCTAssertEqual(state.currentExercise?.exerciseId, "db-bench-press")
+        XCTAssertEqual(state.progress.setNumber, 1, "the replacement occurrence starts from its own first set")
+        XCTAssertFalse(state.painReportedForCurrentSet, "pre-registered pain belongs to the abandoned old set")
+        XCTAssertFalse(state.isHolding, "hold must not cross into a different exercise occurrence")
+        XCTAssertEqual(state.warmupPointer, 0, "the new occurrence resets exercise-scoped warm-up progress")
+        XCTAssertFalse(state.isWarmingUp, "a fact-bearing mid-exercise swap must not reopen warm-up")
+
+        state.logSet(obs(30, 8))
+
+        XCTAssertEqual(state.observationsByExercise["bench-press"]?.first?.painReported, false)
+        XCTAssertEqual(
+            state.observationsByExercise["db-bench-press"]?.first?.painReported,
+            false,
+            "old-set pain must not be attached to the replacement occurrence's first set"
+        )
+    }
+
     func testReplacingAfterAllPlannedSetsIsRejectedBeforeItCanCreateZeroRemainingWork() throws {
         var state = try makeState()
         for index in 0..<3 {

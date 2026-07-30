@@ -811,6 +811,129 @@ final class SessionStoreDraftTests: XCTestCase {
         XCTAssertEqual(after.programTemplate.splitType, "full-body")
     }
 
+    func testTrainRowsTreatSwapBackAsANewOccurrenceAfterSkippedSet() {
+        let prescription = TodayPrescription(
+            dayCode: "push-a",
+            exercises: [makeExercise(id: "bench-press", weightKg: 60, sets: 2)],
+            dayReasons: []
+        )
+        var flow = TrainFlowState(prescription: prescription)
+
+        flow.skipSet(reason: .equipmentBusy)
+        flow.replaceCurrentExercise(with: "db-bench-press")
+        flow.replaceCurrentExercise(with: "bench-press")
+
+        XCTAssertEqual(flow.currentExercise?.sets.count, 1, "fixture must return to one remaining A set")
+        XCTAssertEqual(
+            TrainTabView.rowStatuses(flow),
+            [.active],
+            "the skipped row belongs to the first A occurrence and must not stain swap-back A"
+        )
+    }
+
+    func testTodayRailLastFallsBackPastLatestEmptyOccurrenceOfSameExercise() throws {
+        let olderRealSet = CleanLoggedSet(weight: 80, reps: 6, rir: 2)
+        let model = try makeTodayModel(
+            equipmentScenario: nil,
+            unitSystem: "kg",
+            sessions: [
+                CleanTrainingSession(
+                    id: "older-real-a",
+                    date: "2026-07-20",
+                    exercises: [
+                        CleanExercise(exerciseId: "bench-press", sets: [olderRealSet]),
+                    ]
+                ),
+                CleanTrainingSession(
+                    id: "newer-skip-then-replace",
+                    date: "2026-07-22",
+                    exercises: [
+                        CleanExercise(exerciseId: "bench-press", sets: []),
+                        CleanExercise(
+                            exerciseId: "db-bench-press",
+                            sets: [CleanLoggedSet(weight: 30, reps: 10, rir: 2)]
+                        ),
+                    ]
+                ),
+            ]
+        )
+
+        let rail = try XCTUnwrap(
+            model.railLast,
+            "an empty latest A occurrence must fall back to the earlier real A performance"
+        )
+        XCTAssertEqual(rail.dateISO, "2026-07-20")
+        XCTAssertEqual(rail.weightKg, 80)
+        XCTAssertEqual(rail.reps, 6)
+    }
+
+    func testTodayRailLastKeepsOrdinaryMostRecentHistoryBehavior() throws {
+        let model = try makeTodayModel(
+            equipmentScenario: nil,
+            unitSystem: "kg",
+            sessions: [
+                CleanTrainingSession(
+                    id: "older-a",
+                    date: "2026-07-20",
+                    exercises: [
+                        CleanExercise(
+                            exerciseId: "bench-press",
+                            sets: [CleanLoggedSet(weight: 80, reps: 6, rir: 2)]
+                        ),
+                    ]
+                ),
+                CleanTrainingSession(
+                    id: "newer-a",
+                    date: "2026-07-22",
+                    exercises: [
+                        CleanExercise(
+                            exerciseId: "bench-press",
+                            sets: [
+                                CleanLoggedSet(weight: 82.5, reps: 8, rir: 2),
+                                CleanLoggedSet(weight: 85, reps: 5, rir: 1),
+                            ]
+                        ),
+                    ]
+                ),
+            ]
+        )
+
+        let rail = try XCTUnwrap(model.railLast)
+        XCTAssertEqual(rail.dateISO, "2026-07-22")
+        XCTAssertEqual(rail.weightKg, 85)
+        XCTAssertEqual(rail.reps, 5)
+    }
+
+    func testProgressSessionScaleAggregatesRepeatedExerciseOccurrencesIntoOnePRBar() {
+        let record = SnapshotSessionRecord(
+            id: "a-b-a",
+            dateISO: "2026-07-30",
+            exercises: [
+                SnapshotExerciseRecord(
+                    exerciseId: "bench-press",
+                    sets: [SnapshotSetRecord(weightKg: 100, reps: 5)]
+                ),
+                SnapshotExerciseRecord(
+                    exerciseId: "cable-row",
+                    sets: [SnapshotSetRecord(weightKg: 50, reps: 10)]
+                ),
+                SnapshotExerciseRecord(
+                    exerciseId: "bench-press",
+                    sets: [SnapshotSetRecord(weightKg: 80, reps: 8)]
+                ),
+            ]
+        )
+
+        let items = ProgressTabView.sessionScaleItems(
+            record: record,
+            prExerciseIds: ["bench-press"]
+        )
+
+        XCTAssertEqual(items.map(\.exerciseId), ["bench-press", "cable-row"])
+        XCTAssertEqual(items.first?.volumeKg, 1_140)
+        XCTAssertEqual(items.filter(\.isPR).count, 1)
+    }
+
     private func makePlanAdjustmentAppData(
         programDays: Int,
         historyDates: [String],
@@ -908,10 +1031,14 @@ final class SessionStoreDraftTests: XCTestCase {
         )
     }
 
-    private func makeExercise(id: String, weightKg: Double) -> ExercisePrescriptionPlan {
+    private func makeExercise(
+        id: String,
+        weightKg: Double,
+        sets: Int = 3
+    ) -> ExercisePrescriptionPlan {
         ExercisePrescriptionPlan(
             exerciseId: id,
-            sets: 3,
+            sets: sets,
             restSeconds: 90,
             repLowerBound: 8,
             repUpperBound: 12,
@@ -943,7 +1070,8 @@ final class SessionStoreDraftTests: XCTestCase {
 
     private func makeTodayModel(
         equipmentScenario: String?,
-        unitSystem: String?
+        unitSystem: String?,
+        sessions: [CleanTrainingSession] = []
     ) throws -> TodayModel {
         let raw = try JSONDecoder().decode(
             AppData.self,
@@ -951,7 +1079,7 @@ final class SessionStoreDraftTests: XCTestCase {
         )
         let cleanView = CleanAppDataView(
             raw: raw,
-            sessions: [],
+            sessions: sessions,
             profile: CleanProfile(
                 equipmentScenario: equipmentScenario,
                 unitSystem: unitSystem
