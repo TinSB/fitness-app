@@ -42,6 +42,19 @@ enum TrainSessionEditEntryPolicy {
     }
 }
 
+enum TrainSessionEditRemovalPolicy {
+    static func removal(
+        in flow: TrainFlowState,
+        at position: Int,
+        expectedExercise: ExerciseSetPlan
+    ) -> SessionExerciseRemoval? {
+        guard let removal = flow.removal(at: position),
+              removal.exercise == expectedExercise
+        else { return nil }
+        return removal
+    }
+}
+
 struct TrainTabView: View {
     var onGoToday: () -> Void = {}
 
@@ -121,6 +134,9 @@ struct TrainTabView: View {
     /// 不进入 draft；进程终止等同关闭编辑面。
     @State private var showingSessionEditPicker = false
     @State private var latestSessionRemoval: SessionExerciseRemoval?
+    /// durable remove/undo 同步提交期间锁住重复手势；完整快照校验另防陈旧回调
+    /// 在首项移除后误删同一位置新移入的动作。
+    @State private var isSessionEditRemovalInFlight = false
     @State private var painToastVisible = false
     @State private var sharePreview: SharePreviewItem?   // FR-SH1：训练总结分享卡预览
     /// K1 待机仪表（2026-07-16）：最近一场事实（快照链与今日页 loadCompletedDigest 同源）+
@@ -1722,6 +1738,7 @@ struct TrainTabView: View {
         }
         .foregroundStyle(Color.redeEmber)
         .buttonStyle(.redePressable)
+        .disabled(isSessionEditRemovalInFlight)
         .accessibilityIdentifier("train-session-edit-undo")
     }
 
@@ -1740,7 +1757,7 @@ struct TrainTabView: View {
                         .foregroundStyle(Color.redeT2)
                         .fixedSize(horizontal: false, vertical: true)
                     sessionEditFutureActions(
-                        exerciseId: exercise.exerciseId,
+                        exercise: exercise,
                         name: name,
                         position: position,
                         canMove: canMove
@@ -1755,7 +1772,7 @@ struct TrainTabView: View {
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 6)
                     sessionEditFutureActions(
-                        exerciseId: exercise.exerciseId,
+                        exercise: exercise,
                         name: name,
                         position: position,
                         canMove: canMove
@@ -1771,7 +1788,7 @@ struct TrainTabView: View {
 
     @ViewBuilder
     private func sessionEditFutureActions(
-        exerciseId: String,
+        exercise: ExerciseSetPlan,
         name: String,
         position: Int,
         canMove: Bool
@@ -1783,22 +1800,22 @@ struct TrainTabView: View {
         case .horizontal:
             HStack(spacing: 12) {
                 sessionEditMoveButton(
-                    exerciseId: exerciseId,
+                    exerciseId: exercise.exerciseId,
                     name: name,
                     position: position,
                     canMove: canMove
                 )
-                sessionEditRemoveButton(position: position, name: name)
+                sessionEditRemoveButton(exercise: exercise, position: position, name: name)
             }
         case .vertical:
             VStack(alignment: .leading, spacing: 0) {
                 sessionEditMoveButton(
-                    exerciseId: exerciseId,
+                    exerciseId: exercise.exerciseId,
                     name: name,
                     position: position,
                     canMove: canMove
                 )
-                sessionEditRemoveButton(position: position, name: name)
+                sessionEditRemoveButton(exercise: exercise, position: position, name: name)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -1828,9 +1845,13 @@ struct TrainTabView: View {
         }
     }
 
-    private func sessionEditRemoveButton(position: Int, name: String) -> some View {
+    private func sessionEditRemoveButton(
+        exercise: ExerciseSetPlan,
+        position: Int,
+        name: String
+    ) -> some View {
         Button {
-            removeSessionExercise(at: position, name: name)
+            removeSessionExercise(exercise: exercise, at: position, name: name)
         } label: {
             Text(s.sessionEditRemove)
                 .font(.redeCallout)
@@ -1839,6 +1860,7 @@ struct TrainTabView: View {
         }
         .foregroundStyle(Color.redeT3)
         .buttonStyle(.redePressable)
+        .disabled(isSessionEditRemovalInFlight)
         .accessibilityLabel(s.sessionEditRemoveA11y(name: name))
         .accessibilityIdentifier("train-session-edit-remove-\(position)")
     }
@@ -2104,10 +2126,22 @@ struct TrainTabView: View {
         showSessionOrderSheet = false
     }
 
-    private func removeSessionExercise(at position: Int, name: String) {
-        guard let removal = flow?.removal(at: position),
-              sessionStore.applyDurably(.removeExercise(removal))
-        else {
+    private func removeSessionExercise(
+        exercise expectedExercise: ExerciseSetPlan,
+        at position: Int,
+        name: String
+    ) {
+        guard !isSessionEditRemovalInFlight,
+              let flow,
+              let removal = TrainSessionEditRemovalPolicy.removal(
+                in: flow,
+                at: position,
+                expectedExercise: expectedExercise
+              )
+        else { return }
+        isSessionEditRemovalInFlight = true
+        defer { releaseSessionEditRemovalGate() }
+        guard sessionStore.applyDurably(.removeExercise(removal)) else {
             reportSessionEditFailure()
             return
         }
@@ -2118,9 +2152,12 @@ struct TrainTabView: View {
     }
 
     private func undoSessionRemoval(_ removal: SessionExerciseRemoval, name: String) {
-        guard latestSessionRemoval == removal,
-              sessionStore.applyDurably(.removeExercise(removal.restoring))
-        else {
+        guard !isSessionEditRemovalInFlight,
+              latestSessionRemoval == removal
+        else { return }
+        isSessionEditRemovalInFlight = true
+        defer { releaseSessionEditRemovalGate() }
+        guard sessionStore.applyDurably(.removeExercise(removal.restoring)) else {
             reportSessionEditFailure()
             return
         }
@@ -2128,6 +2165,13 @@ struct TrainTabView: View {
         latestSessionRemoval = nil
         actionPulse += 1
         postSessionEditAnnouncement(s.sessionEditRestoredAnnouncement(name: name))
+    }
+
+    private func releaseSessionEditRemovalGate() {
+        // 留到下一轮主队列再开闸，吞掉同一点击波次中已排队的重复回调。
+        DispatchQueue.main.async {
+            isSessionEditRemovalInFlight = false
+        }
     }
 
     private func addSessionExercise(_ entry: ExerciseCatalogEntry) {

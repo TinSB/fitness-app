@@ -531,6 +531,28 @@ final class SessionStoreDraftTests: XCTestCase {
         XCTAssertTrue(TrainSessionEditEntryPolicy.canOpen(lastExerciseFlow))
     }
 
+    func testStaleRemoveCallbackCannotRetargetExerciseShiftedIntoTheSamePosition() throws {
+        var flow = TrainFlowState(prescription: makePrescription())
+        let originalTarget = try XCTUnwrap(flow.plan.exercises.dropFirst().first)
+        let removal = try XCTUnwrap(TrainSessionEditRemovalPolicy.removal(
+            in: flow,
+            at: 1,
+            expectedExercise: originalTarget
+        ))
+
+        flow.removeExercise(removal)
+
+        XCTAssertNil(
+            TrainSessionEditRemovalPolicy.removal(
+                in: flow,
+                at: 1,
+                expectedExercise: originalTarget
+            ),
+            "a queued second tap must not remove the next exercise that shifted into the old position"
+        )
+        XCTAssertNotEqual(flow.plan.exercises[1], originalTarget)
+    }
+
     func testEverySessionEditRollsBackExactlyWhenDurableSaveFails() throws {
         let eventBuilders: [(SessionStore) throws -> TrainFlowEvent] = [
             { _ in .addExercise(self.makeAdHocExercisePlan()) },
