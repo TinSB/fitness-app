@@ -6,11 +6,50 @@ import XCTest
 @testable import RedeTrainingDecision
 
 final class SessionSetPlanTests: XCTestCase {
+    private struct SessionSetPlanGoldenInput: Decodable {
+        let baselineCommit: String
+        let appDataJSON: String
+        let todayISO: String
+    }
+
     private func makePlan(appDataJSON: String = #"{"schemaVersion": 8}"#, today: String = "2026-06-09") throws -> SessionSetPlan {
         let input = try TestSupport.makeInput(appDataJSON: appDataJSON, todayISO: today)
         let verdict = TodayVerdictEngine.evaluate(input)
         let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict))
         return SessionSetPlanner.expand(prescription)
+    }
+
+    private func fullSurfaceBytes(_ plan: SessionSetPlan) throws -> Data {
+        let payload: [String: Any] = [
+            "dayCode": plan.dayCode,
+            "exercises": plan.exercises.map { exercise in
+                [
+                    "exerciseId": exercise.exerciseId,
+                    "restSeconds": exercise.restSeconds,
+                    "repLowerBound": exercise.repLowerBound,
+                    "repUpperBound": exercise.repUpperBound,
+                    "stepKg": exercise.stepKg,
+                    "loadType": exercise.loadType,
+                    "sets": exercise.sets.map { set in
+                        [
+                            "index": set.index,
+                            "targetWeightKg": set.targetWeightKg,
+                            "targetReps": set.targetReps,
+                            "targetRir": set.targetRir,
+                        ]
+                    },
+                ]
+            },
+        ]
+        return try JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys])
+    }
+
+    private func expectedGoldenBytes(_ name: String) throws -> Data {
+        var data = try Data(contentsOf: TestSupport.fixtureURL(name))
+        while let last = data.last, last == 0x0A || last == 0x0D {
+            data.removeLast()
+        }
+        return data
     }
 
     func testStraightSetExpansionForFirstExposureUpperDay() throws {
@@ -41,6 +80,23 @@ final class SessionSetPlanTests: XCTestCase {
 
     func testExpansionIsDeterministic() throws {
         XCTAssertEqual(try makePlan(), try makePlan())
+    }
+
+    func testNoSessionEditMatchesOriginMainSessionSetPlanByteGolden() throws {
+        let inputData = try Data(contentsOf: TestSupport.fixtureURL(
+            "session-set-plan-no-edits.origin-main.input.json"
+        ))
+        let input = try JSONDecoder().decode(SessionSetPlanGoldenInput.self, from: inputData)
+        XCTAssertEqual(
+            input.baselineCommit,
+            "420a8d60816a8624bde9e26341ae85f7fef6698a"
+        )
+        let plan = try makePlan(appDataJSON: input.appDataJSON, today: input.todayISO)
+        XCTAssertEqual(
+            try fullSurfaceBytes(plan),
+            try expectedGoldenBytes("session-set-plan-no-edits.origin-main.expected.json"),
+            "no-edit SessionSetPlanner full surface must stay byte-identical to origin/main"
+        )
     }
 
     func testSetCountsFollowPrescription() throws {

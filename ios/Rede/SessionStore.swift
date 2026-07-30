@@ -1289,7 +1289,7 @@ final class SessionStore {
         guard let flow, todayModel != nil else { return [] }
         return SessionExerciseEditPlanner.availableExercises(
             sessionPlan: flow.plan,
-            allowedEquipment: allowedEquipment
+            allowedEquipment: flow.sessionAllowedEquipment
         )
     }
 
@@ -1302,8 +1302,8 @@ final class SessionStore {
             sessionPlan: flow.plan,
             currentExerciseIndex: flow.exerciseIndex,
             sessions: sessions,
-            allowedEquipment: allowedEquipment,
-            loadUnit: loadUnit
+            allowedEquipment: flow.sessionAllowedEquipment,
+            loadUnit: flow.sessionLoadUnit
         )
     }
 
@@ -1475,7 +1475,9 @@ final class SessionStore {
             startedAt: sessionStartedAt ?? Date(),
             prescription: flow.prescription,
             events: flow.events,
-            catalogVersion: ExerciseCatalog.minimal.catalogVersion
+            catalogVersion: ExerciseCatalog.minimal.catalogVersion,
+            sessionAllowedEquipment: flow.sessionAllowedEquipment,
+            sessionLoadUnit: flow.sessionLoadUnit
         )
     }
 

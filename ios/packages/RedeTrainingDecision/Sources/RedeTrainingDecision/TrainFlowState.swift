@@ -136,6 +136,11 @@ public struct TrainFlowState: Equatable, Sendable {
         plan.exercises.indices.contains(exerciseIndex) ? plan.exercises[exerciseIndex] : nil
     }
 
+    /// 开训时冻结的会话配置。App 层 picker / payload planner 必须与 reducer 同源；
+    /// Settings 在训练中变化只影响下一场。
+    public var sessionAllowedEquipment: Set<String>? { allowedEquipment }
+    public var sessionLoadUnit: LoadUnit { loadUnit }
+
     public var currentRecommendation: NextSetRecommendation? {
         guard let exercise = effectiveCurrentExercise else { return nil }
         return NextSetEngine.recommend(plan: exercise, completed: completedInCurrentExercise)

@@ -13,6 +13,20 @@ import RedeDomain
 // 登记不适/更多按钮、空态卡仍为保守样式待设计确认。
 // 完成落盘归 M3-3；本页到小结为止（FR-TR8 前半）。
 
+/// 训练卡当前组的纯展示暂存。组数 ±1 只改 flow 的未完成尾部，不得清空本组
+/// 已选 weight / reps / RIR；明确策略让 app-hosted 测试直接锁住该生命周期。
+struct TrainQuickAdjustmentState: Equatable {
+    let isStaged: Bool
+    let weightKg: Double
+    let reps: Int
+    let rir: Int?
+
+    func preservingAfterSetCountChange(_ delta: Int) -> Self {
+        precondition(delta == -1 || delta == 1)
+        return self
+    }
+}
+
 struct TrainTabView: View {
     var onGoToday: () -> Void = {}
 
@@ -37,6 +51,24 @@ struct TrainTabView: View {
     /// 重量直接输入（精细调节；提交时解析并钳制）。
     @State private var adjustWeightText = ""
     @State private var showExactField = false
+
+    private var quickAdjustmentState: TrainQuickAdjustmentState {
+        get {
+            TrainQuickAdjustmentState(
+                isStaged: hasAdjustment,
+                weightKg: adjustWeight,
+                reps: adjustReps,
+                rir: adjustRir
+            )
+        }
+        nonmutating set {
+            hasAdjustment = newValue.isStaged
+            adjustWeight = newValue.weightKg
+            adjustReps = newValue.reps
+            adjustRir = newValue.rir
+        }
+    }
+
     /// 触感词汇表（拍板 2026-06-10）：选档 selection / 撞钳制 error / 打勾 success。
     /// selectionPulse 只在用户主动选档时递增——面板打开初始化赋值不触发（审查 MINOR-3）。
     @State private var selectionPulse = 0
@@ -1015,47 +1047,59 @@ struct TrainTabView: View {
     private func nextUpLine(_ flow: TrainFlowState) -> some View {
         let next = flow.plan.exercises.indices.contains(flow.exerciseIndex + 1)
             ? flow.plan.exercises[flow.exerciseIndex + 1] : nil
-        if let next {
-            let name = localeStore.exerciseName(next.exerciseId)
-            // 组次预告「3 × 8」（2026-07-20 NIT 回补）：straight sets 展开，全组同次数，
-            // 取组数 × 首组目标次数；纯数字无文案，中英同形。空组保守不显示。
-            let setsPreview = next.sets.first.map { "\(next.sets.count) × \($0.targetReps)" }
-            let canOpen = flow.phase == .activeSet
-            let a11yLabel = setsPreview.map { "\(s.sessionOrderEntry), \(name), \($0)" }
-                ?? "\(s.sessionOrderEntry), \(name)"
-            if canOpen {
-                Button(action: {
-                    openSessionEdit()
-                    actionPulse += 1
-                }) {
-                    sessionOrderEntryContent(name: name, setsPreview: setsPreview, showsDisclosure: true)
-                }
-                .buttonStyle(.redePressableRow)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(a11yLabel)
-                .accessibilityHint(s.sessionOrderOpenHint)
-                .accessibilityIdentifier("train-session-order-open")
-            } else {
-                sessionOrderEntryContent(name: name, setsPreview: setsPreview, showsDisclosure: false)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(a11yLabel)
-                    .accessibilityIdentifier("train-session-order-next-static")
+        let name = next.map { localeStore.exerciseName($0.exerciseId) }
+        // 组次预告「3 × 8」（2026-07-20 NIT 回补）：straight sets 展开，全组同次数，
+        // 取组数 × 首组目标次数；纯数字无文案，中英同形。空组保守不显示。
+        let setsPreview = next.flatMap { exercise in
+            exercise.sets.first.map { "\(exercise.sets.count) × \($0.targetReps)" }
+        }
+        let a11yLabel = name.map { nextName in
+            setsPreview.map { "\(s.sessionOrderEntry), \(nextName), \($0)" }
+                ?? "\(s.sessionOrderEntry), \(nextName)"
+        } ?? s.sessionOrderEntry
+
+        if flow.phase == .activeSet {
+            Button(action: {
+                openSessionEdit()
+                actionPulse += 1
+            }) {
+                sessionOrderEntryContent(
+                    name: name,
+                    setsPreview: setsPreview,
+                    showsDisclosure: true
+                )
             }
+            .buttonStyle(.redePressableRow)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(a11yLabel)
+            .accessibilityHint(s.sessionOrderOpenHint)
+            .accessibilityIdentifier("train-session-order-open")
+        } else if name != nil {
+            sessionOrderEntryContent(
+                name: name,
+                setsPreview: setsPreview,
+                showsDisclosure: false
+            )
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(a11yLabel)
+            .accessibilityIdentifier("train-session-order-next-static")
         }
     }
 
     @ViewBuilder
-    private func sessionOrderEntryContent(name: String, setsPreview: String?, showsDisclosure: Bool) -> some View {
+    private func sessionOrderEntryContent(name: String?, setsPreview: String?, showsDisclosure: Bool) -> some View {
         if dynamicTypeSize.isAccessibilitySize {
             VStack(alignment: .leading, spacing: 4) {
                 Text(s.sessionOrderEntry)
                     .font(.redeCaption)
                     .foregroundStyle(Color.redeT4)
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(name)
-                        .font(.redeBody)
-                        .foregroundStyle(Color.redeT2)
-                        .fixedSize(horizontal: false, vertical: true)
+                    if let name {
+                        Text(name)
+                            .font(.redeBody)
+                            .foregroundStyle(Color.redeT2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     if let setsPreview {
                         Text("· \(setsPreview)")
                             .font(.redeCaption).monospacedDigit()
@@ -1076,11 +1120,13 @@ struct TrainTabView: View {
                     .foregroundStyle(Color.redeT4)
                     .fixedSize(horizontal: true, vertical: false)
                 Spacer(minLength: 8)
-                Text(name)
-                    .font(.redeBody)
-                    .foregroundStyle(Color.redeT2)
-                    .multilineTextAlignment(.trailing)
-                    .fixedSize(horizontal: false, vertical: true)
+                if let name {
+                    Text(name)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT2)
+                        .multilineTextAlignment(.trailing)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 if let setsPreview {
                     Text("· \(setsPreview)")
                         .font(.redeCaption).monospacedDigit()
@@ -1622,10 +1668,15 @@ struct TrainTabView: View {
                 .foregroundStyle(Color.redeT3)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 8)
-            Button(s.sessionEditUndo) { undoSessionRemoval(removal, name: name) }
-                .font(.redeCallout)
+            Button {
+                undoSessionRemoval(removal, name: name)
+            } label: {
+                Text(s.sessionEditUndo)
+                    .font(.redeCallout)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+            }
                 .foregroundStyle(Color.redeEmber)
-                .frame(minHeight: 44)
                 .buttonStyle(.redePressable)
                 .accessibilityIdentifier("train-session-edit-undo")
         }
@@ -1685,23 +1736,29 @@ struct TrainTabView: View {
     ) -> some View {
         HStack(spacing: 12) {
             if canMove {
-                Button(s.sessionOrderTrainNow) {
+                Button {
                     moveExerciseToCurrent(id: exerciseId, name: name)
+                } label: {
+                    Text(s.sessionOrderTrainNow)
+                        .font(.redeCallout)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
                 }
-                .font(.redeCallout)
                 .foregroundStyle(Color.redeEmber)
-                .frame(minHeight: 44)
                 .buttonStyle(.redePressable)
                 .accessibilityLabel(s.sessionOrderMoveA11y(name: name))
                 .accessibilityHint(s.sessionOrderMoveHint)
                 .accessibilityIdentifier("train-session-edit-move-\(position)")
             }
-            Button(s.sessionEditRemove) {
+            Button {
                 removeSessionExercise(at: position, name: name)
+            } label: {
+                Text(s.sessionEditRemove)
+                    .font(.redeCallout)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
             }
-            .font(.redeCallout)
             .foregroundStyle(Color.redeT3)
-            .frame(minHeight: 44)
             .buttonStyle(.redePressable)
             .accessibilityLabel(s.sessionEditRemoveA11y(name: name))
             .accessibilityIdentifier("train-session-edit-remove-\(position)")
@@ -2012,6 +2069,7 @@ struct TrainTabView: View {
     }
 
     private func adjustRemainingSets(_ delta: Int) {
+        let quickAdjustmentBeforeSetEdit = quickAdjustmentState
         guard sessionStore.applyDurably(.adjustRemainingSets(delta)),
               let flow = sessionStore.flow,
               let current = flow.currentExercise
@@ -2020,6 +2078,8 @@ struct TrainTabView: View {
             return
         }
         // Owner 裁定：组数编辑不清当前组 quick-adjust；只改变/裁剪未完成尾部。
+        quickAdjustmentState = quickAdjustmentBeforeSetEdit
+            .preservingAfterSetCountChange(delta)
         let completed = flow.completedInCurrentExercise.count + flow.skippedInCurrentExercise
         let remaining = max(0, current.sets.count - completed)
         sessionOrderUpdateFailed = false

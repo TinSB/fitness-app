@@ -344,6 +344,155 @@ final class SessionStoreDraftTests: XCTestCase {
         XCTAssertEqual(sessionStore.flow?.currentExercise?.sets.count, 4)
     }
 
+    func testDurableRemoveThenUndoPersistsBothStatesAndRestoresRemovalAudit() throws {
+        let draftStore = FakeTrainSessionDraftStore()
+        let sessionStore = makeSessionStore(draftStore: draftStore)
+        let original = try XCTUnwrap(sessionStore.flow)
+        let removal = try XCTUnwrap(sessionStore.flow?.removal(at: 2))
+
+        XCTAssertTrue(sessionStore.applyDurably(.removeExercise(removal)))
+        XCTAssertTrue(sessionStore.applyDurably(.removeExercise(removal.restoring)))
+
+        XCTAssertEqual(draftStore.saveKinds, [.durable, .durable])
+        XCTAssertEqual(draftStore.attemptedDrafts.map(\.events), [
+            [.removeExercise(removal)],
+            [.removeExercise(removal), .removeExercise(removal.restoring)],
+        ])
+        XCTAssertEqual(sessionStore.flow?.plan, original.plan)
+        XCTAssertTrue(sessionStore.flow?.removedExercises.isEmpty ?? false)
+    }
+
+    func testDurableUndoFailureRollsBackToRemovedStateWithoutFakeSuccess() throws {
+        let draftStore = FakeTrainSessionDraftStore(saveResults: [true, false])
+        let sessionStore = makeSessionStore(draftStore: draftStore)
+        let removal = try XCTUnwrap(sessionStore.flow?.removal(at: 2))
+
+        XCTAssertTrue(sessionStore.applyDurably(.removeExercise(removal)))
+        let removedState = try XCTUnwrap(sessionStore.flow)
+        XCTAssertFalse(sessionStore.applyDurably(.removeExercise(removal.restoring)))
+
+        XCTAssertEqual(sessionStore.flow, removedState)
+        XCTAssertEqual(sessionStore.flow?.removedExercises, [removal])
+        XCTAssertEqual(draftStore.saveKinds, [.durable, .durable])
+        XCTAssertEqual(
+            draftStore.attemptedDrafts.last?.events,
+            [.removeExercise(removal), .removeExercise(removal.restoring)],
+            "failed durable save must still expose the exact attempted replay log"
+        )
+    }
+
+    func testSessionEditFreezesNarrowerEquipmentAndPoundGridWhenLiveSettingsBroaden() throws {
+        let frozenEquipment = try XCTUnwrap(EquipmentAccess.allowed(for: "home-dumbbell"))
+        let draftStore = FakeTrainSessionDraftStore()
+        let sessionStore = SessionStore(draftStore: draftStore)
+        sessionStore.flow = TrainFlowState(
+            prescription: makePrescription(),
+            allowedEquipment: frozenEquipment,
+            loadUnit: .lb
+        )
+        sessionStore.sessionStartedAt = startedAt
+        sessionStore.todayOutcome = .ready(try makeTodayModel(
+            equipmentScenario: nil,
+            unitSystem: "kg"
+        ))
+
+        let candidates = sessionStore.sessionEditCandidates
+        XCTAssertFalse(candidates.isEmpty)
+        XCTAssertTrue(
+            candidates.allSatisfy { frozenEquipment.contains($0.equipment) },
+            "broader live Settings must not leak new equipment into an active session"
+        )
+        let dumbbell = try XCTUnwrap(candidates.first(where: { $0.equipment == "dumbbell" }))
+        let plan = try XCTUnwrap(sessionStore.makeSessionEditExercisePlan(exerciseId: dumbbell.id))
+        XCTAssertEqual(
+            plan.stepKg,
+            LoadGrid.stepKg(equipment: dumbbell.equipment, unit: .lb),
+            accuracy: 0.000_001,
+            "payload planning must keep the pound grid captured at session start"
+        )
+    }
+
+    func testSessionEditKeepsBroaderEquipmentAndKgGridWhenLiveSettingsNarrow() throws {
+        let liveEquipment = try XCTUnwrap(EquipmentAccess.allowed(for: "home-dumbbell"))
+        let draftStore = FakeTrainSessionDraftStore()
+        let sessionStore = SessionStore(draftStore: draftStore)
+        sessionStore.flow = TrainFlowState(
+            prescription: makePrescription(),
+            allowedEquipment: nil,
+            loadUnit: .kg
+        )
+        sessionStore.sessionStartedAt = startedAt
+        sessionStore.todayOutcome = .ready(try makeTodayModel(
+            equipmentScenario: "home-dumbbell",
+            unitSystem: "lb"
+        ))
+
+        let candidates = sessionStore.sessionEditCandidates
+        let commercialOnly = try XCTUnwrap(candidates.first(where: {
+            !liveEquipment.contains($0.equipment)
+        }))
+        let plan = try XCTUnwrap(sessionStore.makeSessionEditExercisePlan(
+            exerciseId: commercialOnly.id
+        ))
+        XCTAssertEqual(
+            plan.stepKg,
+            LoadGrid.stepKg(equipment: commercialOnly.equipment, unit: .kg),
+            accuracy: 0.000_001,
+            "narrower live Settings must not remove equipment or change the kg grid mid-session"
+        )
+    }
+
+    func testDraftRoundTripRestoresSessionScopedEquipmentAndUnitInsteadOfLiveSettings() throws {
+        let frozenEquipment = try XCTUnwrap(EquipmentAccess.allowed(for: "home-dumbbell"))
+        let savingStore = FakeTrainSessionDraftStore()
+        let sessionStore = SessionStore(draftStore: savingStore)
+        sessionStore.flow = TrainFlowState(
+            prescription: makePrescription(),
+            allowedEquipment: frozenEquipment,
+            loadUnit: .lb
+        )
+        sessionStore.sessionStartedAt = startedAt
+        sessionStore.todayOutcome = .ready(try makeTodayModel(
+            equipmentScenario: nil,
+            unitSystem: "kg"
+        ))
+        XCTAssertTrue(sessionStore.applyDurably(.adjustRemainingSets(1)))
+
+        let saved = try XCTUnwrap(savingStore.attemptedDrafts.last)
+        let bytes = try JSONEncoder().encode(saved)
+        let decoded = try JSONDecoder().decode(TrainSessionDraft.self, from: bytes)
+        let restoringStore = SessionStore(draftStore: FakeTrainSessionDraftStore())
+        restoringStore.todayOutcome = .ready(try makeTodayModel(
+            equipmentScenario: nil,
+            unitSystem: "kg"
+        ))
+        restoringStore.pendingDraft = decoded
+        restoringStore.restorePendingDraft()
+
+        let candidates = restoringStore.sessionEditCandidates
+        XCTAssertTrue(candidates.allSatisfy { frozenEquipment.contains($0.equipment) })
+        let dumbbell = try XCTUnwrap(candidates.first(where: { $0.equipment == "dumbbell" }))
+        let plan = try XCTUnwrap(restoringStore.makeSessionEditExercisePlan(exerciseId: dumbbell.id))
+        XCTAssertEqual(
+            plan.stepKg,
+            LoadGrid.stepKg(equipment: dumbbell.equipment, unit: .lb),
+            accuracy: 0.000_001,
+            "draft replay must restore the original session grid, not current Settings"
+        )
+    }
+
+    func testSetCountChangesPreserveStagedQuickAdjustmentForBothDirections() {
+        let staged = TrainQuickAdjustmentState(
+            isStaged: true,
+            weightKg: 37.5,
+            reps: 11,
+            rir: 1
+        )
+
+        XCTAssertEqual(staged.preservingAfterSetCountChange(-1), staged)
+        XCTAssertEqual(staged.preservingAfterSetCountChange(1), staged)
+    }
+
     func testEverySessionEditRollsBackExactlyWhenDurableSaveFails() throws {
         let eventBuilders: [(SessionStore) throws -> TrainFlowEvent] = [
             { _ in .addExercise(self.makeAdHocExercisePlan()) },
@@ -687,6 +836,39 @@ final class SessionStoreDraftTests: XCTestCase {
             }
         )
     }
+
+    private func makeTodayModel(
+        equipmentScenario: String?,
+        unitSystem: String?
+    ) throws -> TodayModel {
+        let raw = try JSONDecoder().decode(
+            AppData.self,
+            from: Data(#"{"schemaVersion":11}"#.utf8)
+        )
+        let cleanView = CleanAppDataView(
+            raw: raw,
+            sessions: [],
+            profile: CleanProfile(
+                equipmentScenario: equipmentScenario,
+                unitSystem: unitSystem
+            ),
+            program: CleanProgram(splitType: "push-pull-legs"),
+            issues: []
+        )
+        return TodayModel(
+            verdict: TodayVerdict(call: .train, reason: .normalProgression, signals: []),
+            prescription: makePrescription(),
+            cleanView: cleanView,
+            now: startedAt,
+            coachActions: [],
+            substitutions: [:],
+            oneTimeSubstitutions: [:],
+            equipmentScenario: equipmentScenario,
+            daySequence: ["push-a", "pull-a", "legs-a"],
+            scheduledDayCode: "push-a",
+            weeklyCycleRestart: false
+        )
+    }
 }
 
 private enum DraftSaveKind: Equatable {
@@ -695,14 +877,21 @@ private enum DraftSaveKind: Equatable {
 }
 
 private final class FakeTrainSessionDraftStore: TrainSessionDraftStoring {
-    private let saveResult: Bool
+    private let fallbackSaveResult: Bool
+    private var saveResults: [Bool]
     private(set) var clearCallCount = 0
     private(set) var saveKinds: [DraftSaveKind] = []
     private(set) var attemptedDrafts: [TrainSessionDraft] = []
     var loadedDraft: TrainSessionDraft?
 
     init(saveResult: Bool = true) {
-        self.saveResult = saveResult
+        self.fallbackSaveResult = saveResult
+        self.saveResults = []
+    }
+
+    init(saveResults: [Bool]) {
+        self.fallbackSaveResult = saveResults.last ?? true
+        self.saveResults = saveResults
     }
 
     func load() -> TrainSessionDraft? {
@@ -717,7 +906,8 @@ private final class FakeTrainSessionDraftStore: TrainSessionDraftStoring {
     func saveDurably(_ draft: TrainSessionDraft) -> Bool {
         saveKinds.append(.durable)
         attemptedDrafts.append(draft)
-        return saveResult
+        guard !saveResults.isEmpty else { return fallbackSaveResult }
+        return saveResults.removeFirst()
     }
 
     func clear() {
