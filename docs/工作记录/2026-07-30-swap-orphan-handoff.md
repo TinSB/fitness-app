@@ -51,7 +51,7 @@
 2. golden 零回归：零事实换动作 + 不换动作路径落盘逐字节等价现状（origin/main 冻结基线）。
 3. canonical 实证：模拟器实走「2 组后换动作」落盘实读。
 4. 实拍（前缀 `2026-07-30-swaporphan-`）：换后动作卡（第 1 组起）+ 历史里两个动作各自的组。
-5. 门禁 exit 0；规格写回：系统逻辑 §6.1（换动作落盘语义）、写入合同、PRD FR-TR6 状态注、CHANGELOG/DEV_LOG；TestFlight 清单补验法。
+5. 门禁 exit 0；规格写回：系统逻辑 §5 / §6.0.1 / §6.0.2 / §6.1（occurrence 与换动作落盘语义）、写入合同、PRD FR-TR6 / FR-TR7 状态注、CHANGELOG/DEV_LOG；TestFlight 清单补验法。
 
 ## Git 纪律
 
@@ -80,21 +80,23 @@
 
 ## 实施回执（若证实）
 
-- **分支与 commit**：`codex/0730-swap-orphan`，基线 `origin/main@b91a615`；交接件 `76708fd`，RED 回归锁 `f181281`，核心修复 `c33a86a`，规格与本回执由本次收尾提交承载。提交前均检查 `git status`，只用明确 pathspec 暂存；未使用 `git add -A`。
+- **分支与 commit**：`codex/0730-swap-orphan`，基线 `origin/main@b91a615`；交接件 `76708fd`，原始孤儿化 RED 锁 `f181281`，拆分落盘 `c33a86a`，红线停止记录 `ff4a77b`，跨层 occurrence RED 锁 `0893fdb`，窄下游兼容 `ab16e9d`，规格与本回执由本次收尾提交承载。提交前均检查 `git status`，只用明确 pathspec 暂存；未使用 `git add -A`。
 - **拆分落盘**：`TrainFlowState` 按事件发生顺序维护内部 exercise fact segments，完成、跳过和 `painFlag` 永远留在发生时的 id；`CompletedSessionBuilder` 按 segment occurrence 顺序组装历史，不再按最终 plan 聚合。换前旧动作与换后新动作分别进入 `exercises[]`；open-bag `originalExerciseId` / `actualExerciseId` / `replacementRole`（`original` / `actual`）标记两边，同一中间 occurrence 同时承接两次替换时用 `replacementLinks[]` 保全入/出两条关系。A→B→A 以三段顺序落盘；只有同 id 真正出现多个落盘 occurrence 时，record/set id 才加 `-occurrence-N`。
 - **剩余量守恒与 UI**：有事实换动作时，新动作剩余组数为 `max(1, 原计划组数 − 已完成/已跳过数)`，组索引从 1 重排；existing external / assisted / bodyweight 重量变换原样复用。动作 slot 与「动作 N/M」不变；`overallSetTotal` 把已封存旧 occurrence 事实计入分母，避免进度凭空跳动。2/3 换得到新动作 1/1；3/3 后换按裁定最低仍给 1 组。
 - **draft 恢复与换序组合**：draft 格式、版本与 source of truth 未变，仍只编码 typed events；重放会重建相同 segments、替换关系与总量。另加回归覆盖换后把该动作通过 FR-TR14「现在练」移后再练，延迟替换上下文仍会在实际 occurrence 出现时消费；连续零事实替换会清掉陈旧中间上下文。
-- **golden 与边界**：零事实换动作继续只落替代动作，不新增 `replacementRole`，既有字节 fixture 保持；完全不换动作路径同样保持 origin-main frozen bytes。完成+跳过混合、疼痛归属、A→B→A、重复 id、最低 1 组、draft 编码恢复与进度守恒均有直接测试。既有历史未迁移、未清洗；schema、版本、`Package.swift`、`project.pbxproj` 均未改，处方引擎、轮转、verdict、自动进阶、疼痛保守态及「只换这次 / 以后都换」范围语义零改动。
-- **测试与 gate**：修复后的 `RedeTrainingDecision` 为 473/473；仓库根权威 `.claude/quality-gate.cmd` exit `0`，10 个 Swift 包合计 1,140/1,140，App 宿主 54/54（`SessionStoreDraftTests` 33、`AppUpdateRuntimeTests` 13、`StoreKitEntitlementsTests` 8），通用 Simulator `BUILD SUCCEEDED`，尾部为 `TEST SUCCEEDED` / `QUALITY GATE: PASS`。`git diff --check` 与 `git diff --check origin/main` 均 exit `0`；retired Web 扫描确认没有根 `package.json`、Vite 配置或 Web `src/` runtime。
+- **golden 与边界**：零事实换动作继续只落替代动作，不新增 `replacementRole`，既有字节 fixture 保持；完全不换动作路径同样保持 origin-main frozen bytes。完成+跳过混合、疼痛归属、A→B→A、重复 id、最低 1 组、draft 编码恢复与进度守恒均有直接测试。窄兼容再锁住单 occurrence 完整 `TodayPrescription` 对象及 sorted JSON 编码等价。既有历史未迁移、未清洗；schema、版本、`Package.swift`、`project.pbxproj` 均未改；只改 sticky 与疼痛恢复两个事实消费点，轮转、verdict、自动均衡、相对力量、周口径、进阶阈值及「只换这次 / 以后都换」范围语义均未动。
+- **测试与 gate**：最终 `RedeTrainingDecision` 为 476/476；仓库根权威 `.claude/quality-gate.cmd` exit `0`，10 个 Swift 包全过，App 宿主 54/54（`SessionStoreDraftTests` 33、`AppUpdateRuntimeTests` 13、`StoreKitEntitlementsTests` 8），通用 Simulator `BUILD SUCCEEDED`，尾部为 `TEST SUCCEEDED` / `QUALITY GATE: PASS`。`git diff --check` 与 `git diff --check origin/main` 均 exit `0`；retired Web 扫描确认没有根 `package.json`、Vite 配置或 Web `src/` runtime。
 - **真实 Simulator / canonical**：在隔离的 `Rede SwapOrphan 20260730`（iPhone 17 Pro / iOS 26.5）安装本分支 build，以最小 canonical 配置开训。平板卧推完成 2/3 后经「更多 → 换一个动作 → 哑铃卧推」，AX 实读为「动作 1/6 · 第 1/1 组」。强制终止 App 后重开，今日页出现「继续进行中的训练？上次训练没有完成，已完成的组都还在」；继续并跳过重新派生的替代动作热身后，仍为哑铃卧推 1/1。完成保存后，进展历史详情显示平板卧推第 1、2 组及哑铃卧推第 1 组。canonical 最新完成场实读为 `bench-press:2:[1,2]:original` 与 `db-bench-press:1:[1]:actual`，布尔断言命令 exit `0`、输出 `true`。
 - **实拍**：`.ai-tmp/swap-orphan/2026-07-30-swaporphan-after-swap-first-set.png`（MD5 `51493bf0d51a33c054738fc85c0034e6`）记录换后哑铃卧推第 1/1 组；`.ai-tmp/swap-orphan/2026-07-30-swaporphan-history-both-exercises.png`（MD5 `3ab67b181f881a33a0d980a86cd96f80`）记录历史里平板卧推 2 组与哑铃卧推 1 组。
-- **规格写回**：已同步 `docs/REDE_iOS_SYSTEM_LOGIC.md` §5 / §6.0.2 / §6.1、`docs/REDE_PRD.md` FR-TR6、`CHANGELOG.md`、`DEV_LOG.md`，并在 TestFlight 清单新增 N15 真机复验法；Master 边界与写入路径没有改变，所以未改 Master。
-- **未尽事项**：本批专用 Simulator 已完成代码可验证的 UI、强杀恢复、历史与 canonical 验收，但独立终审随后触发下述两项 P1 红线；因此本回执只证明 orphan 修复局部行为成立，不构成可交付结论。未 push、未开 PR。
+- **规格写回**：已同步 `docs/REDE_iOS_SYSTEM_LOGIC.md` §5 / §6.0.1 / §6.0.2 / §6.1、`docs/REDE_PRD.md` FR-TR6 / FR-TR7、`CHANGELOG.md`、`DEV_LOG.md`，并在 TestFlight 清单新增 N15 真机复验法；Master 边界与写入路径没有改变，所以未改 Master。
+- **未尽事项**：本批专用 Simulator 已完成代码可验证的 UI、强杀恢复、历史与 canonical 验收；两个终审 P1 已按 owner 窄兼容裁定关闭，原 NO-GO 解除，TestFlight N15 恢复进入发布验收但尚未在 TestFlight 真机打勾。数据质量提示在同场同 id 多 occurrence 时可能出现重复“第 1 组”定位文案，过滤、计数和引擎结果正确且当前没有逐组修正入口，不构成本批阻断。未 push、未开 PR。
 
-## 回报段（触红线后停止，2026-07-30）
+## 回报段（owner 裁定后解除，2026-07-30）
 
-- **当前结论：NO-GO，已停止生产代码修改。** occurrence 拆分本身通过测试与真实落盘，但它与两个既有下游对 `session.exercises` 的单元素假设冲突。交接件明确规定“拆分落盘与 clean / 统计既有对账冲突即停”及“处方引擎、疼痛保守态判定逻辑零改动”；继续自行兼容会直接越过红线。
-- **P1-1 — sticky 会粘回换前动作。** 新 builder 在 `CompletedSessionBuilder.swift:29-34` 按事实发生顺序落 `[bench-press, db-bench-press]`。`TodayPrescriptionEngine.lastActualByPattern` 在 `TodayPrescriptionEngine.swift:1199-1207` 先按最新场排序、再在场内正序遍历，并以该 movement pattern 的第一个 id 锁定结果。因此下一次同 pattern 处方会取 `bench-press`，而修复前该场只有 `db-bench-press`，sticky 会正确保留换入动作。局部 builder tests 与完整 gate 没有 builder → DataHealth clean → `plan()` 的跨层场景，所以未发现这项语义回归。
-- **P1-2 — A→B→A 可能提前解除疼痛保守态。** DataHealth 在 `CleanAppDataViewBuilder.swift:121-169` 保序保留同 id 多 occurrence。`painDiscomfortIsActive` 在 `TodayPrescriptionEngine.swift:113-117` 用 `session.exercises.contains` 判断正常完成：同场只要任一 A occurrence 有组且无 `painFlag` 就返回 true。拆分后若一个 A occurrence 带 pain、另一个 A occurrence 无 pain，active 状态可能被当场清除；修复前同 id sets 聚合在一个 exercise 元素中，任一 painFlag 会阻止该场成为正常恢复。这改变了既有疼痛判定，正中红线。
-- **需要 owner 新裁定后才能继续。** 必须明确授权其中一种边界：允许一个窄的下游兼容批（sticky 按场内最后 occurrence；疼痛恢复先按同场同 id 聚合全部 sets 再判断），并新增两条 builder → clean → plan RED 集成回归；或改订 occurrence 的 canonical 表示/顺序合同以保持现有消费者语义。当前实施方不选择方案、不改判定。
-- **分支状态**：`f181281` RED 锁与 `c33a86a` 局部修复提交保留作复现和方案输入；它们不是合并建议。规格已标注 NO-GO，TestFlight N15 暂不进入发布验收。独立审查在确认这两项 P1 后按停止纪律终止，未声称对其余组合完成穷尽式放行。
+- **裁定已执行，当前结论：GO。** 实施方先按原红线停止；owner 随后批准方案一“窄下游兼容批”，明确立法意图为“用户可见引擎行为不变”：事实继续按发生时动作归属，消费端按语义聚合，不得扭曲 canonical 去迁就旧的一场一元素假设。
+- **跨层 RED 真实成立。** 在 `c33a86a` 的生产行为上新增 `OccurrenceCompatibilityIntegrationTests`，完整经过 `TrainFlowState → CompletedSessionBuilder → AppData → CleanAppDataViewBuilder → CleanTrainingDecisionInput → TodayPrescriptionEngine.plan()`。`swift test --filter OccurrenceCompatibilityIntegrationTests` exit `1`：sticky 场景实际 `bench-press`、期望 `db-bench-press`；疼痛场景实际 `62.5 / increase / nil`、期望 `60 / hold / painDiscomfort`。同批单 occurrence 完整处方等价测试已先行通过。RED 以 `0893fdb` 独立提交。
+- **P1-1 已关闭。** `lastActualByPattern` 仍先取最新 session，只把场内遍历改为 reverse；因此同 movement pattern 取事实顺序的最后 occurrence，即用户本场最终实际使用的动作。单 occurrence 历史最后=第一个。下一场 sticky 集成回归转绿。
+- **P1-2 已关闭。** `painDiscomfortIsActive` 的状态机、四场窗口、阈值和恢复地板均未改；只把正常完成输入改为同场 filter 同 id 后 flatMap 全部 sets，再要求聚合非空且无任何 `painFlag`。A（带 pain）→B→A（无 pain）不再提前清保守态，集成回归转绿。
+- **兼容边界与邻接回归。** 独立只读扫描覆盖 `lastPerformance`、临时加动作借重、Today“上次”、verdict RIR、DataHealth、DataQuality、Progress/MLE/分享卡，未发现第三个 occurrence 行为消费冲突。全包首次运行仅暴露一条既有 bodyweight-plus fixture 把“最终负重失败”放在“自重历史”之前；这仍是同一个 sticky 语义，不是第三消费点。fixture 改为真实发生顺序 `pull-up → t-weighted`，原回退断言未放宽并恢复通过。
+- **GREEN 与发布状态。** 聚焦兼容测试 3/3，`RedeTrainingDecision` 476/476；权威门禁 exit `0`，10 包全过、App 宿主 54/54、Simulator build/test 成功并输出 `QUALITY GATE: PASS`。规格已补 occurrence 立法意图与两处解读规则，FR-TR6 状态恢复已实现；TestFlight N15 已从“先不要进入”改为“恢复进入发布验收”，仍待真机实际打勾。
+- **安全与 Git**：没有迁移、清洗或重写任何既有历史；schema、版本、package manifest、`project.pbxproj`、轮转、verdict、自动均衡、相对力量、周口径均未改。提交前均检查 status，明确 pathspec 暂存，未用 `git add -A`；未 push、未开 PR。

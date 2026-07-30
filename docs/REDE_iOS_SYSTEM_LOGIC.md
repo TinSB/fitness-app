@@ -105,9 +105,9 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 > **FR-TR6「只换这次」临时换动作（2026-06-26）。** 点替代项后二选一：「以后都换」= 永久（写 `exerciseSubstitutions`，FR-T5 原路径）；「只换这次」= 临时（写 `oneTimeSubstitutions[原]={换成,dateISO}`，**只今天有效、次日自动失效**）。两表均 open-bag 加性、**无 schema bump**。**引擎零改动**是关键：在 app 层（`TodayModel`）把「永久 + 今天的临时（按 todayISO 过滤）」**合并成一张 substitutions 表再喂 `plan()`（临时优先）**，引擎不区分二者 → golden 零回归；临时项只今天混入、绝不落进永久表。写闸 `applyOneTimeSubstitution` 顺手清掉非今天的陈旧项（容器永远只留当天，自动 GC）。撤销同 FR-T5（单步即时反向写 `removeOneTimeSubstitution`）。诚实：换后若 `plan()` 因替代非本槽合法候选优雅回退（处方没变），honest-check 清掉死覆盖、不假报成功（同 FR-T5）。UI：处方行微标「今天换」（vs 永久「已换」）、detail sheet 撤销入口文案标明次日自动恢复。
 
-> **FR-TR6 训练中途换动作的完成事实（2026-07-30）。** 同一 slot 已有完成组或跳过组后再换动作时，完成训练仍只经既有 append 写闸写一条 `TrainingSession`，但 `exercises[]` 必须按事实发生时的 occurrence 拆分：旧动作保存换前全部 observations、skips 与 `painFlag`，新动作从第 1 组开始，保存换后事实。新动作剩余组数 = 换前原计划组数 − 已完成/已跳过组数，最低 1 组；重量继续沿用既有 external / assisted / bodyweight replace 规则。拆分元素使用 open-bag `originalExerciseId`、`actualExerciseId`、`replacementRole`（`original` / `actual`）保留替换关系；同一 occurrence 同时承接前后两次替换时，以 `replacementLinks[]` 完整保存两条关系。只有同一 `exerciseId` 在一场内出现多个落盘 occurrence 时，record/set id 才加 `-occurrence-N` 防冲突。零事实换动作保持既有落盘字节：继续沿用原有 original / actual 两字段，不新增 `replacementRole` / `replacementLinks`。该修复不迁移既有历史、不 bump schema；轮转、verdict、进阶、疼痛保守态和「只换这次 / 以后都换」范围语义均不消费这些标记、不改变判定。
+> **FR-TR6 训练中途换动作的完成事实（2026-07-30）。** 同一 slot 已有完成组或跳过组后再换动作时，完成训练仍只经既有 append 写闸写一条 `TrainingSession`，但 `exercises[]` 必须按事实发生时的 occurrence 拆分：旧动作保存换前全部 observations、skips 与 `painFlag`，新动作从第 1 组开始，保存换后事实。新动作剩余组数 = 换前原计划组数 − 已完成/已跳过组数，最低 1 组；重量继续沿用既有 external / assisted / bodyweight replace 规则。拆分元素使用 open-bag `originalExerciseId`、`actualExerciseId`、`replacementRole`（`original` / `actual`）保留替换关系；同一 occurrence 同时承接前后两次替换时，以 `replacementLinks[]` 完整保存两条关系。只有同一 `exerciseId` 在一场内出现多个落盘 occurrence 时，record/set id 才加 `-occurrence-N` 防冲突。零事实换动作保持既有落盘字节：继续沿用原有 original / actual 两字段，不新增 `replacementRole` / `replacementLinks`。该修复不迁移既有历史、不 bump schema；轮转、verdict、自动均衡、相对力量、周口径和「只换这次 / 以后都换」范围语义均不消费这些替换标记。
 >
-> **实现状态（2026-07-30）：NO-GO，合同未改。** 本地分支已证明上述拆分能保全 canonical 事实，但独立终审发现现有下游仍把 `exercises[]` 当作“一场同 pattern / 同 id 只有一个元素”：正序 sticky 会取换前 occurrence，疼痛恢复的 `contains` 会把同 id 多 occurrence 中任一无痛元素当成整场正常完成。两项均会改变既有判定结果，已按交接红线停止；本段保留 owner 已裁定的目标合同，不代表该分支可合并。待 owner 另行授权兼容策略前，不得发布这一实现。
+> **实现状态（2026-07-30）：GO，原 NO-GO 已按 owner 裁定解除。** owner 明确红线意图是“用户可见的引擎行为不因 canonical 从单元素变为 occurrence 列而漂移”，并批准窄下游兼容：sticky 读取同场同 pattern 的最后 occurrence；疼痛恢复先聚合同场同 id 的全部 sets，任一 occurrence 有 `painFlag` 就不算该动作本场正常恢复。两条 builder → DataHealth clean → `TodayPrescriptionEngine.plan()` 集成测试先在拆分实现上真实 RED，再由仅此两处的兼容修改转 GREEN；单 occurrence 完整处方编码保持等价。未发现第三个 occurrence 消费冲突。
 
 > 本地通知（FR-NT1 休息结束 + FR-NT2 每周）由 `RedeNotifications` 纯策略 + `#if os(iOS)` UNUserNotificationCenter 适配器调度：**派生临时、绝不落 canonical**（只把开关偏好当只读输入）；无 remote push（Master §9）；策略产 typed code、文案归 RedeL10n（§7.3 中性、禁断签/羞辱/施压）。FR-NT1 在休息生命周期 schedule/cancel（rest-begin 排、rest-finished/收尾/放弃取消）；FR-NT2 固定 2 条（周一上午「新周」/周四傍晚「保持节奏」，UNCalendarTrigger repeats，幂等重注册，可关）。授权价值先行（首次开开关时请求），被拒不影响核心功能。阶梯外的频率/时间为 MVP 起步值待校准；按 daysPerWeek 缩放 + 用户自选时间后置。
 >
@@ -174,8 +174,9 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 **FR-TR7 / FR-SE7 自动进阶暂停（2026-07-29 已实现；行为边界即合同）。**
 
 - **疼痛窗口**：先把 clean 已完成场次按日历日排序，同一日保留 canonical append 顺序；只取全局最近 4 场。对每个 `exerciseId` 统计含 `painDiscomfort` 跳过的不同场次，同场的跳过组/跳过整动作合并去重；≥2 场进入保守态，1 场不触发，无关场次照样占窗口。某场既有正常完成组又有 pain 跳过时仍算 pain 场。
-- **恢复**：保守态已经由两次 pain 触发后，该动作一次无 `painDiscomfort` 跳过且完成组均未带 `painFlag` 的正常完成立即清除保守态，并把更早证据隔在恢复点之前；`painFlag` 仅否定恢复，不计入 4 场/2 次触发窗口。恢复后 1 次新 pain 不触发、2 次新 pain 再触发。触发阈值之前夹着的一次正常完成不能抹掉尚未成形的两次信号；活跃信号也会随全局四场窗口滚出而自然消失。
+- **恢复**：保守态已经由两次 pain 触发后，该动作一次无 `painDiscomfort` 跳过且完成组均未带 `painFlag` 的正常完成立即清除保守态，并把更早证据隔在恢复点之前。同场同 `exerciseId` 有多个 occurrence 时，必须先聚合它们的全部 sets 再判整场：聚合非空且任一 set 带 `painFlag`，整场都不算该动作的正常恢复；不能用另一个无痛 occurrence 提前清除。`painFlag` 仅否定恢复，不计入 4 场/2 次触发窗口。恢复后 1 次新 pain 不触发、2 次新 pain 再触发。触发阈值之前夹着的一次正常完成不能抹掉尚未成形的两次信号；活跃信号也会随全局四场窗口滚出而自然消失。
 - **同日表现顺序**：`lastPerformance` 以 `(日历日, canonical append offset)` 选最后一场；同日多场时，后 append 的正常完成既是恢复事实，也是下一次处方的上次重量来源，不能被同日更早一场覆盖。
+- **occurrence 兼容立法意图**：**事实按发生归属，消费端按语义聚合。** `exercises[]` 的顺序是场内实际发生顺序；sticky 在最新含该 pattern 的场内取该 pattern **最后一个 occurrence**，即用户本场最终使用的动作。`lastPerformance`、疼痛恢复及其它同动作表现消费则按同场同 `exerciseId` 聚合全部 occurrence 的 sets。对既有单 occurrence 历史，“最后一个 = 第一个、聚合 = 原 sets”，处方输出逐项及编码等价。这里只修复事实表示变化后的解读，不改轮转、verdict、进阶阈值、自动均衡、相对力量或周口径。
 - **唯一行为**：只阻止“比上次更难”的自动负荷变化——external / bodyweight-plus 仅在本次目标重量高于上次时夹回上次重量，assisted 仅在本次计划减少辅助重量时夹回上次辅助；真实 `change` 变为 hold，Rail 的 `nextProjectedWeightKg` 仍显示被暂停的下一档。light / deload / 回归或周期相位已经给出的更轻重量绝不能被抬回；bodyweight / band 的次数进阶不属于负荷加重，保持原样；assisted 毕业会暂停，但 bodyweight-plus 的回退仍可发生。动作、组数、次数目标、RIR、原有 progression reason、用户手动调重能力与其它动作均不变；不替换、不删除、不弹提示/警告/确认。
 - **伤病部位映射**：映射是引擎包内可单测纯函数，只组合 catalog 既有 `exerciseId / equipment / movementPattern`，不新增目录字段。四个部位按 pattern 粗匹配：`knee` = `squat-pattern / lunge / knee-extension / knee-flexion`；`shoulder` = `vertical-press / horizontal-press / incline-press / lateral-raise / rear-delt`；`elbow` = `triceps-extension / curl`；`ankle` = `calf-raise / squat-pattern`。手腕、下背、颈部执行下列窄映射：
   - `wrist`：`equipment == barbell` 且 pattern 为 `vertical-press / horizontal-press / incline-press / curl`；或 id 含 `front-squat`；或 id 含 `push-up`。哑铃、machine、cable、band 与悬垂类 bodyweight 不因粗 pattern 命中。
@@ -207,7 +208,7 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 - **点名主项（`Slot.preferredId`，2026-06-16）**：模板可指定具体动作 id（突破「同 pattern 取 rank 最小」限制，如硬拉 vs RDL、宽握 vs 高位下拉）。选材优先级：**sticky（用户上次换的）> preferredId（模板点名）> rank 最小默认**；点名须通过候选过滤（器械白名单/未弃用/可处方），否则优雅回退 rank（器械受限不会卡空）。
 - **全身 A/B/C（2-3 天）**：每变式 6-7 槽覆盖 股四/后链/胸/背/肩 全身一遍，三变式靠 pattern 顺序+equipment 换不同主项（A 深蹲+平板+下拉 / B 哈克蹲+上斜+杠铃划船 / C 腿举+哑铃平板+坐姿划船+小腿）。**频率口径（审查 M-1 校正）**：主要肌群（腿/胸/背/肩）每日命中 → 2-3×/周；**小肌群（二头/三头/小腿）以复合间接 + 单变式直接为主（约 1× 直接）**——6-7 槽全身日的合理取舍，非每肌群都 2×。
 - **力量/增肌两套（primaryGoal）**：默认增肌（§6.0.1 渐进口径不变）；`primaryGoal=strength` 时 `strengthShaped` 只重塑**显式复合主项**（kind=="compound"）→ 3-6 次 / RIR 1 / 休息 ≥180s（孤立与二级保持增肌区间——「重主项+增肌辅助」结构，循证可接受）。
-- **sticky（粘住上次换的动作）当前为 pattern 全局**：同 pattern 跨 A/B 且换入动作满足两天约束时会跨日粘住；新用户无换动作时 A/B 由槽位约束天然区分。dayCode 级精确化需会话存 dayCode 真值（templateId），留作后续。
+- **sticky（粘住上次换的动作）当前为 pattern 全局**：先取最新含该 pattern 的场，再按该场事实顺序取最后 occurrence，代表用户本场最终使用的动作；单 occurrence 历史与旧行为等价。同 pattern 跨 A/B 且换入动作满足两天约束时会跨日粘住；新用户无换动作时 A/B 由槽位约束天然区分。dayCode 级精确化需会话存 dayCode 真值（templateId），留作后续。
 - 日名（dayCode→双语）：`RedeL10n.trainingDayName`（A 日/upper/lower 复用 legacy parity map；新 push-b/pull-b/legs-b/full-a/b/c 就近映射，不污染 parity-locked `Formatters.templateNameMap`）。
 
 **最小渐进（goldens 锁定）**：双重渐进三分支，RIR 一律取 **min 口径**（最差一组；任何一组打到力竭就不加重——安全优先于抗噪，2026-06-09 审查后显式拍板）——全组打满 repMax 且 min RIR ≥1.0(含 1.0；无 RIR 数据视为有余力) → +2.5kg、次数重置 repMin；上次力竭(min RIR≤0.5) 或最高组未到 repMin → −2.5kg；否则持平冲 repMax。加重无上限（有意为之）。裁决调制在渐进后：light ×0.9；deload ×0.8 且组数 −1(下限 2)。**重量按「器械×用户单位」真实梯子取整**（§8 LoadGrid：公斤自由重量 2.5kg 等距、磅哑铃分段 2.5/5/10lb 梯子等），下限一档；**调制后若取整弹回原重量且原重量 > 一档，强制下调一格**（轻练/减载必须真减，小重量动作不得被取整吃掉）。**重量口径**：哑铃/单边动作 = 单只哑铃重量；杠铃 = 总杠重（含杆）；plate-loaded = 配重片读数；cable = 配重栈读数（美国习惯，引擎内部按手上有效推进）——**渲染层据此口径吸附梯子最近格显示，非裸换算**（§8 显示吸附契约）。
@@ -240,7 +241,7 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 训练计划不能依赖一组锁死的默认模板。Rede 的训练内容必须拆成三层:
 
-动作事实权威也适用于一次训练内的替换：实际完成、跳过与疼痛事实永远归属于事件发生时的 `exerciseId`，不能因为该 slot 后来换成另一个 catalog 动作而回写、聚合或改名。换前已有事实时，旧/新动作按 occurrence 独立进入历史，并用加性替换关系字段追溯；没有事实时保持原本单一替代动作输出。这一归属修复只让既有统计、lastPerformance 与疼痛窗口读到完整真实事实，不改变它们的任何判定规则。
+动作事实权威也适用于一次训练内的替换：实际完成、跳过与疼痛事实永远归属于事件发生时的 `exerciseId`，不能因为该 slot 后来换成另一个 catalog 动作而回写、聚合或改名。换前已有事实时，旧/新动作按 occurrence 独立进入历史，并用加性替换关系字段追溯；没有事实时保持原本单一替代动作输出。立法意图是“事实按发生归属，消费端按语义聚合”：场内最后实际动作由 occurrence 顺序表达，同 id 表现/疼痛由消费端聚合全部 occurrence；不得为了迁就“一场一元素”的旧假设扭曲 canonical 事实，也不得借兼容之名改动既有阈值和判定。
 
 | 层 | 权威职责 | 不允许 |
 |---|---|---|
