@@ -498,6 +498,13 @@ final class OccurrenceCompatibilityIntegrationTests: XCTestCase {
         let removal = try XCTUnwrap(flow.removal(at: replacementIndex))
         flow.removeExercise(removal)
         flow.addExercise(adHocExercisePlan(targetWeightKg: 40))
+        let readdedAdHoc = flow
+        flow.removeExercise(removal.restoring)
+        XCTAssertEqual(
+            flow,
+            readdedAdHoc,
+            "same-id add is a new occurrence, so the old removal is no longer exactly restorable"
+        )
         flow.moveExerciseToCurrent("db-bench-press")
 
         XCTAssertEqual(flow.currentExercise?.exerciseId, "db-bench-press")

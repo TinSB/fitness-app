@@ -96,6 +96,9 @@ public struct TrainFlowState: Equatable, Sendable {
         let exerciseId: String
         var observations: [CompletedSetObservation]
         var skippedSets: [SkippedSet]
+        /// occurrence 已离开可执行 plan 后，其既有事实仍须计入总进度并可独立落盘；
+        /// replacement link 可因 future terminal 被移除而溶解，不能再兼任 sealed 标记。
+        var isSealed: Bool
         /// 零事实替换后新段沿用既有 original/actual 审计，但不产生 split role。
         let replacementAudit: Replacement?
         var replacementLinks: [SegmentReplacementLink]
@@ -157,6 +160,9 @@ public struct TrainFlowState: Equatable, Sendable {
     /// 当前连续发生段；换动作、换序或推进动作时清空，确保同 id 回换也创建新 occurrence。
     private var currentFactSegmentIndex: Int?
     private var deferredSegmentReplacements: [String: PendingSegmentReplacement] = [:]
+    /// 与 removedExercises 严格同栈：remove 摘下 pending；仅同一 removal 的 LIFO
+    /// restore 才能恢复。nil 表示该次普通移除没有 replacement occurrence 身份。
+    private var removedSegmentReplacementContexts: [PendingSegmentReplacement?] = []
 
     public init(prescription: TodayPrescription, catalog: ExerciseCatalog = .minimal, allowedEquipment: Set<String>? = nil, loadUnit: LoadUnit = .kg) {
         self.prescription = prescription
@@ -228,9 +234,7 @@ public struct TrainFlowState: Equatable, Sendable {
     public var overallSetTotal: Int {
         let currentPlanTotal = plan.exercises.reduce(0) { $0 + $1.sets.count }
         let sealedFactTotal = exerciseFactSegments.reduce(0) { total, segment in
-            guard segment.replacementLinks.contains(where: { $0.role == .original }) else {
-                return total
-            }
+            guard segment.isSealed else { return total }
             return total + segment.observations.count + segment.skippedSets.count
         }
         return currentPlanTotal + sealedFactTotal
@@ -417,6 +421,7 @@ public struct TrainFlowState: Equatable, Sendable {
             )
             exerciseFactSegments[segmentIndex].replacementLinks[linkIndex] =
                 SegmentReplacementLink(replacement: collapsed, role: .original)
+            exerciseFactSegments[segmentIndex].isSealed = true
             pendingReplacement = PendingSegmentReplacement(
                 replacement: collapsed,
                 splitsFacts: true,
@@ -428,6 +433,7 @@ public struct TrainFlowState: Equatable, Sendable {
             exerciseFactSegments[currentFactSegmentIndex].replacementLinks.append(
                 SegmentReplacementLink(replacement: replacement, role: .original)
             )
+            exerciseFactSegments[currentFactSegmentIndex].isSealed = true
             pendingReplacement = PendingSegmentReplacement(
                 replacement: replacement,
                 splitsFacts: true,
@@ -568,14 +574,34 @@ public struct TrainFlowState: Equatable, Sendable {
             guard exercises.indices.contains(removal.index),
                   exercises[removal.index] == removal.exercise
             else { return }
+            let detached = detachDeferredSegmentReplacement(
+                for: removal.exercise.exerciseId
+            )
+            guard detached.accepted else { return }
             exercises.remove(at: removal.index)
             removedExercises.append(removal)
+            removedSegmentReplacementContexts.append(detached.pending)
         case .restore:
             guard removal.index <= exercises.count,
-                  removedExercises.last == removal.removing
+                  removedExercises.last == removal.removing,
+                  removedSegmentReplacementContexts.count == removedExercises.count
             else { return }
+            let contextIndex = removedSegmentReplacementContexts.index(
+                before: removedSegmentReplacementContexts.endIndex
+            )
+            let detached = removedSegmentReplacementContexts[contextIndex]
+            guard canRestoreDeferredSegmentReplacement(
+                detached,
+                for: removal.exercise.exerciseId,
+                exercises: exercises
+            ) else { return }
+            restoreDeferredSegmentReplacement(
+                detached,
+                for: removal.exercise.exerciseId
+            )
             exercises.insert(removal.exercise, at: removal.index)
             removedExercises.removeLast()
+            removedSegmentReplacementContexts.removeLast()
         }
         events.append(.removeExercise(removal))
         plan = SessionSetPlan(dayCode: plan.dayCode, exercises: exercises)
@@ -690,6 +716,80 @@ public struct TrainFlowState: Equatable, Sendable {
 
     // MARK: - 私有
 
+    private mutating func detachDeferredSegmentReplacement(
+        for exerciseId: String
+    ) -> (accepted: Bool, pending: PendingSegmentReplacement?) {
+        guard let pending = deferredSegmentReplacements[exerciseId] else {
+            return (true, nil)
+        }
+
+        if pending.splitsFacts {
+            guard let segmentIndex = pending.sealedSegmentIndex,
+                  let linkIndex = pending.sealedLinkIndex,
+                  exerciseFactSegments.indices.contains(segmentIndex),
+                  exerciseFactSegments[segmentIndex].replacementLinks.indices.contains(linkIndex),
+                  exerciseFactSegments[segmentIndex].replacementLinks[linkIndex]
+                    == SegmentReplacementLink(
+                        replacement: pending.replacement,
+                        role: .original
+                    )
+            else { return (false, nil) }
+            exerciseFactSegments[segmentIndex].replacementLinks.remove(at: linkIndex)
+        } else {
+            guard pending.sealedSegmentIndex == nil,
+                  pending.sealedLinkIndex == nil
+            else { return (false, nil) }
+        }
+
+        deferredSegmentReplacements.removeValue(forKey: exerciseId)
+        return (true, pending)
+    }
+
+    private func canRestoreDeferredSegmentReplacement(
+        _ pending: PendingSegmentReplacement?,
+        for exerciseId: String,
+        exercises: [ExerciseSetPlan]
+    ) -> Bool {
+        guard let pending else { return true }
+        guard deferredSegmentReplacements[exerciseId] == nil,
+              !exercises.contains(where: { $0.exerciseId == exerciseId })
+        else { return false }
+
+        if pending.splitsFacts {
+            guard let segmentIndex = pending.sealedSegmentIndex,
+                  let linkIndex = pending.sealedLinkIndex,
+                  exerciseFactSegments.indices.contains(segmentIndex),
+                  linkIndex <= exerciseFactSegments[segmentIndex].replacementLinks.count
+            else { return false }
+            let link = SegmentReplacementLink(
+                replacement: pending.replacement,
+                role: .original
+            )
+            return !exerciseFactSegments[segmentIndex].replacementLinks.contains(link)
+        }
+        return pending.sealedSegmentIndex == nil
+            && pending.sealedLinkIndex == nil
+    }
+
+    private mutating func restoreDeferredSegmentReplacement(
+        _ pending: PendingSegmentReplacement?,
+        for exerciseId: String
+    ) {
+        guard let pending else { return }
+        if pending.splitsFacts,
+           let segmentIndex = pending.sealedSegmentIndex,
+           let linkIndex = pending.sealedLinkIndex {
+            exerciseFactSegments[segmentIndex].replacementLinks.insert(
+                SegmentReplacementLink(
+                    replacement: pending.replacement,
+                    role: .original
+                ),
+                at: linkIndex
+            )
+        }
+        deferredSegmentReplacements[exerciseId] = pending
+    }
+
     private mutating func factSegmentIndex(for exerciseId: String) -> Int {
         if let currentFactSegmentIndex,
            exerciseFactSegments.indices.contains(currentFactSegmentIndex),
@@ -711,6 +811,7 @@ public struct TrainFlowState: Equatable, Sendable {
             exerciseId: exerciseId,
             observations: [],
             skippedSets: [],
+            isSealed: false,
             replacementAudit: deferredReplacement?.replacement,
             replacementLinks: replacementLinks
         ))
