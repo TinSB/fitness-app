@@ -8,6 +8,25 @@ import RedeDomain
 @testable import RedeTrainingDecision
 
 final class CompletedSessionBuilderTests: XCTestCase {
+    private struct CompletedSessionGoldenInput: Decodable {
+        let baselineCommit: String
+        let appDataJSON: String
+        let todayISO: String
+        let sessionId: String
+        let dateISO: String
+        let startedAtISO: String
+        let finishedAtISO: String
+        let durationMinutes: Int
+    }
+
+    private func expectedGoldenBytes(_ name: String) throws -> Data {
+        var data = try Data(contentsOf: TestSupport.fixtureURL(name))
+        while let last = data.last, last == 0x0A || last == 0x0D {
+            data.removeLast()
+        }
+        return data
+    }
+
     private func finishedFlow() throws -> TrainFlowState {
         let input = try TestSupport.makeInput(
             appDataJSON: #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}}"#,
@@ -161,5 +180,169 @@ final class CompletedSessionBuilderTests: XCTestCase {
         XCTAssertTrue(flow.replacements.isEmpty)
         XCTAssertTrue(flow.skippedSets.isEmpty)
         XCTAssertTrue(flow.skippedExercises.isEmpty)
+    }
+
+    func testSessionEditsPersistAddedAndRemovedAuditWithoutCallingRemovalASkip() throws {
+        let input = try TestSupport.makeInput(
+            appDataJSON: #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}}"#,
+            todayISO: "2026-06-09"
+        )
+        let verdict = TodayVerdictEngine.evaluate(input)
+        let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict))
+        var flow = TrainFlowState(prescription: prescription)
+        let added = ExerciseSetPlan(
+            exerciseId: "db-bench-press",
+            restSeconds: 90,
+            repLowerBound: 8,
+            repUpperBound: 12,
+            stepKg: 2.5,
+            loadType: "external",
+            sets: (1...3).map {
+                PlannedSet(index: $0, targetWeightKg: 30, targetReps: 10, targetRir: 2)
+            }
+        )
+        flow.addExercise(added)
+        let removed = try XCTUnwrap(flow.removal(at: 3))
+        flow.removeExercise(removed)
+        flow.skipExercise(reason: .timeShort)
+        flow.logSet(CompletedSetObservation(weightKg: 30, reps: 10, rir: 2, painReported: false))
+        flow.requestFinish()
+        flow.confirmEnd(reason: .timeUp)
+
+        let session = CompletedSessionBuilder.build(
+            from: flow, sessionId: "session-edit", dateISO: "2026-06-09",
+            startedAtISO: "t0", finishedAtISO: "t1", durationMinutes: 8
+        )
+
+        XCTAssertEqual(session.exercises.map(\.exerciseId), ["db-bench-press"])
+        XCTAssertEqual(
+            session.storage["sessionEdits"],
+            .object([
+                "added": .array([
+                    .object(["exerciseId": .string("db-bench-press"), "position": .int(1)]),
+                ]),
+                "removed": .array([
+                    .object([
+                        "exerciseId": .string(removed.exercise.exerciseId),
+                        "position": .int(Int64(removed.index)),
+                    ]),
+                ]),
+            ])
+        )
+        XCTAssertEqual(
+            session.storage["skippedExercises"],
+            .array([.object(["exerciseId": .string("bench-press"), "reason": .string("timeShort")])])
+        )
+        XCTAssertFalse(
+            session.storage["skippedExercises"]?.asArray?.contains {
+                $0.asObject?["exerciseId"] == .string(removed.exercise.exerciseId)
+            } ?? true,
+            "neutral removal must never become a skipped exercise"
+        )
+    }
+
+    func testDuplicateExerciseIdMayAuditOneRemovedOccurrenceAndSkipAnother() throws {
+        let input = try TestSupport.makeInput(
+            appDataJSON: #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}}"#,
+            todayISO: "2026-06-09"
+        )
+        let verdict = TodayVerdictEngine.evaluate(input)
+        let base = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict))
+        let repeated = try XCTUnwrap(base.exercises.first)
+        let trailing = try XCTUnwrap(base.exercises.dropFirst().first)
+        var flow = TrainFlowState(prescription: TodayPrescription(
+            dayCode: base.dayCode,
+            exercises: [repeated, repeated, trailing],
+            dayReasons: base.dayReasons
+        ))
+        let removal = try XCTUnwrap(flow.removal(at: 1))
+
+        flow.removeExercise(removal)
+        flow.skipExercise(reason: .timeShort)
+        flow.requestFinish()
+        flow.confirmEnd(reason: .timeUp)
+
+        let session = CompletedSessionBuilder.build(
+            from: flow,
+            sessionId: "duplicate-occurrence",
+            dateISO: "2026-06-09",
+            startedAtISO: "t0",
+            finishedAtISO: "t1",
+            durationMinutes: 2
+        )
+
+        XCTAssertEqual(
+            session.storage["sessionEdits"],
+            .object([
+                "removed": .array([
+                    .object([
+                        "exerciseId": .string(repeated.exerciseId),
+                        "position": .int(1),
+                    ]),
+                ]),
+            ])
+        )
+        XCTAssertEqual(
+            session.storage["skippedExercises"],
+            .array([
+                .object([
+                    "exerciseId": .string(repeated.exerciseId),
+                    "reason": .string("timeShort"),
+                ]),
+            ]),
+            "event-level mutual exclusion permits another occurrence with the same id to be skipped"
+        )
+    }
+
+    func testNoSessionEditMatchesOriginMainCompletedSessionByteGolden() throws {
+        let inputData = try Data(contentsOf: TestSupport.fixtureURL(
+            "completed-session-no-edits.origin-main.input.json"
+        ))
+        let golden = try JSONDecoder().decode(CompletedSessionGoldenInput.self, from: inputData)
+        XCTAssertEqual(
+            golden.baselineCommit,
+            "420a8d60816a8624bde9e26341ae85f7fef6698a"
+        )
+        let input = try TestSupport.makeInput(
+            appDataJSON: golden.appDataJSON,
+            todayISO: golden.todayISO
+        )
+        let verdict = TodayVerdictEngine.evaluate(input)
+        let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(
+            input: input,
+            verdict: verdict
+        ))
+        var flow = TrainFlowState(prescription: prescription)
+        flow.logSet(CompletedSetObservation(
+            weightKg: 60, reps: 6, rir: 2, painReported: false
+        ))
+        flow.restFinished()
+        flow.skipSet(reason: .equipmentBusy)
+        flow.logSet(CompletedSetObservation(
+            weightKg: 60, reps: 7, rir: 1, painReported: true
+        ))
+        flow.restFinished()
+        flow.logSet(CompletedSetObservation(
+            weightKg: 22.5, reps: 8, rir: 2, painReported: false
+        ))
+        flow.requestFinish()
+        flow.confirmEnd(reason: .timeUp)
+        let session = CompletedSessionBuilder.build(
+            from: flow,
+            sessionId: golden.sessionId,
+            dateISO: golden.dateISO,
+            startedAtISO: golden.startedAtISO,
+            finishedAtISO: golden.finishedAtISO,
+            durationMinutes: golden.durationMinutes
+        )
+        XCTAssertNil(session.storage["sessionEdits"])
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let encoded = try encoder.encode(session.storage)
+        XCTAssertEqual(
+            encoded,
+            try expectedGoldenBytes("completed-session-no-edits.origin-main.expected.json"),
+            "no-edit completed-session bytes must stay identical to the frozen origin/main output"
+        )
     }
 }

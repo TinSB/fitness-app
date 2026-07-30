@@ -13,6 +13,54 @@ import RedeDomain
 // 登记不适/更多按钮、空态卡仍为保守样式待设计确认。
 // 完成落盘归 M3-3；本页到小结为止（FR-TR8 前半）。
 
+/// 训练卡当前组的纯展示暂存。组数 ±1 只改 flow 的未完成尾部，不得清空本组
+/// 已选 weight / reps / RIR；明确策略让 app-hosted 测试直接锁住该生命周期。
+struct TrainQuickAdjustmentState: Equatable {
+    let isStaged: Bool
+    let weightKg: Double
+    let reps: Int
+    let rir: Int?
+
+    func preservingAfterSetCountChange(_ delta: Int) -> Self {
+        precondition(delta == -1 || delta == 1)
+        return self
+    }
+}
+
+enum TrainSessionEditActionLayout: Equatable {
+    case horizontal
+    case vertical
+
+    static func resolve(isAccessibilitySize: Bool) -> Self {
+        isAccessibilitySize ? .vertical : .horizontal
+    }
+}
+
+enum TrainSessionEditEntryPolicy {
+    static func canOpen(_ flow: TrainFlowState) -> Bool {
+        flow.phase == .activeSet
+    }
+}
+
+enum TrainSessionEditRemovalPolicy {
+    /// expectedOccurrenceCount = 渲染时该 id 在队列中的份数。同 id 同内容的重复
+    /// occurrence 下，第一击移除后份数变化，跨主队列轮次的陈旧第二击即 fail closed
+    /// ——快照逐字段相等时仅靠「位置+快照」拦不住连删两份。
+    static func removal(
+        in flow: TrainFlowState,
+        at position: Int,
+        expectedExercise: ExerciseSetPlan,
+        expectedOccurrenceCount: Int
+    ) -> SessionExerciseRemoval? {
+        guard let removal = flow.removal(at: position),
+              removal.exercise == expectedExercise,
+              flow.plan.exercises.filter({ $0.exerciseId == expectedExercise.exerciseId })
+                  .count == expectedOccurrenceCount
+        else { return nil }
+        return removal
+    }
+}
+
 struct TrainTabView: View {
     var onGoToday: () -> Void = {}
 
@@ -37,6 +85,24 @@ struct TrainTabView: View {
     /// 重量直接输入（精细调节；提交时解析并钳制）。
     @State private var adjustWeightText = ""
     @State private var showExactField = false
+
+    private var quickAdjustmentState: TrainQuickAdjustmentState {
+        get {
+            TrainQuickAdjustmentState(
+                isStaged: hasAdjustment,
+                weightKg: adjustWeight,
+                reps: adjustReps,
+                rir: adjustRir
+            )
+        }
+        nonmutating set {
+            hasAdjustment = newValue.isStaged
+            adjustWeight = newValue.weightKg
+            adjustReps = newValue.reps
+            adjustRir = newValue.rir
+        }
+    }
+
     /// 触感词汇表（拍板 2026-06-10）：选档 selection / 撞钳制 error / 打勾 success。
     /// selectionPulse 只在用户主动选档时递增——面板打开初始化赋值不触发（审查 MINOR-3）。
     @State private var selectionPulse = 0
@@ -70,6 +136,13 @@ struct TrainTabView: View {
     @State private var showSessionOrderSheet = false
     @State private var sessionOrderUpdateFailed = false
     @State private var pendingSessionOrderAnnouncement: String?
+    /// FR-TR14 S2 编辑面内的瞬态：picker 模式与单层移除撤销均随本次 sheet 关闭失效，
+    /// 不进入 draft；进程终止等同关闭编辑面。
+    @State private var showingSessionEditPicker = false
+    @State private var latestSessionRemoval: SessionExerciseRemoval?
+    /// durable remove/undo 同步提交期间锁住重复手势；完整快照校验另防陈旧回调
+    /// 在首项移除后误删同一位置新移入的动作。
+    @State private var isSessionEditRemovalInFlight = false
     @State private var painToastVisible = false
     @State private var sharePreview: SharePreviewItem?   // FR-SH1：训练总结分享卡预览
     /// K1 待机仪表（2026-07-16）：最近一场事实（快照链与今日页 loadCompletedDigest 同源）+
@@ -80,8 +153,8 @@ struct TrainTabView: View {
     @State private var trainDetail: ExerciseDetailItem?
     /// 截图钩子 -autoOpenTrainExerciseDetail 只自动开一次（防换动作后重弹）。
     @State private var didAutoOpenTrainDetail = false
-    /// S1 模拟器验收钩子只自动开一次（移动后 current id 变化不得重弹）。
-    @State private var didAutoOpenSessionOrder = false
+    /// FR-TR14 模拟器验收钩子只自动开一次（编辑后 flow 变化不得重弹）。
+    @State private var didAutoOpenSessionEdit = false
 
     private var s: RedeStrings { localeStore.strings }
 
@@ -161,13 +234,19 @@ struct TrainTabView: View {
                 trainDetail = ExerciseDetailItem(id: id)
             }
         }
-        // S1 一次性模拟器验收钩子：必须等自动开训建立 flow 与可移动候选后才呈现。
-        .task(id: flow?.currentExercise?.exerciseId) {
-            if CommandLine.arguments.contains("-autoOpenSessionOrder"), !didAutoOpenSessionOrder,
-               !(flow?.moveToCurrentCandidates.isEmpty ?? true) {
-                didAutoOpenSessionOrder = true
-                sessionOrderUpdateFailed = false
-                showSessionOrderSheet = true
+        // FR-TR14 一次性模拟器验收钩子：旧 S1 参数继续兼容；新参数可直接打开
+        // 编辑面或任务型 picker。必须等 flow 与 clean history 都可用后才呈现。
+        // 无钩子参数时 id 恒定——不让生产路径每次渲染都为触发条件全量过滤目录。
+        .task(id: sessionEditHookTaskID) {
+            let arguments = CommandLine.arguments
+            let openEditor = arguments.contains("-autoOpenSessionOrder")
+                || arguments.contains("-autoOpenSessionEdit")
+            let openPicker = arguments.contains("-autoOpenSessionEditPicker")
+            if (openEditor || openPicker), !didAutoOpenSessionEdit,
+               flow.map(TrainSessionEditEntryPolicy.canOpen) == true,
+               (!openPicker || !sessionStore.sessionEditCandidates.isEmpty) {
+                didAutoOpenSessionEdit = true
+                openSessionEdit(showPicker: openPicker)
             }
         }
         // K2c：训练中当前动作的只读详情（共享件；换动作仍走「更多 → 换个动作」流）。
@@ -180,7 +259,7 @@ struct TrainTabView: View {
         .sheet(isPresented: $showSwapSheet) { swapSheet }
         .sheet(
             isPresented: $showSessionOrderSheet,
-            onDismiss: announcePendingSessionOrderMove
+            onDismiss: closeSessionEditPresentation
         ) { sessionOrderSheet }
         .sheet(isPresented: confirmBinding) { confirmSheet }
         .sheet(isPresented: summaryBinding) { summarySheet }
@@ -1007,48 +1086,59 @@ struct TrainTabView: View {
     private func nextUpLine(_ flow: TrainFlowState) -> some View {
         let next = flow.plan.exercises.indices.contains(flow.exerciseIndex + 1)
             ? flow.plan.exercises[flow.exerciseIndex + 1] : nil
-        if let next {
-            let name = localeStore.exerciseName(next.exerciseId)
-            // 组次预告「3 × 8」（2026-07-20 NIT 回补）：straight sets 展开，全组同次数，
-            // 取组数 × 首组目标次数；纯数字无文案，中英同形。空组保守不显示。
-            let setsPreview = next.sets.first.map { "\(next.sets.count) × \($0.targetReps)" }
-            let canOpen = !flow.moveToCurrentCandidates.isEmpty
-            let a11yLabel = setsPreview.map { "\(s.sessionOrderEntry), \(name), \($0)" }
-                ?? "\(s.sessionOrderEntry), \(name)"
-            if canOpen {
-                Button(action: {
-                    sessionOrderUpdateFailed = false
-                    showSessionOrderSheet = true
-                    actionPulse += 1
-                }) {
-                    sessionOrderEntryContent(name: name, setsPreview: setsPreview, showsDisclosure: true)
-                }
-                .buttonStyle(.redePressableRow)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(a11yLabel)
-                .accessibilityHint(s.sessionOrderOpenHint)
-                .accessibilityIdentifier("train-session-order-open")
-            } else {
-                sessionOrderEntryContent(name: name, setsPreview: setsPreview, showsDisclosure: false)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(a11yLabel)
-                    .accessibilityIdentifier("train-session-order-next-static")
+        let name = next.map { localeStore.exerciseName($0.exerciseId) }
+        // 组次预告「3 × 8」（2026-07-20 NIT 回补）：straight sets 展开，全组同次数，
+        // 取组数 × 首组目标次数；纯数字无文案，中英同形。空组保守不显示。
+        let setsPreview = next.flatMap { exercise in
+            exercise.sets.first.map { "\(exercise.sets.count) × \($0.targetReps)" }
+        }
+        let a11yLabel = name.map { nextName in
+            setsPreview.map { "\(s.sessionOrderEntry), \(nextName), \($0)" }
+                ?? "\(s.sessionOrderEntry), \(nextName)"
+        } ?? s.sessionOrderEntry
+
+        if TrainSessionEditEntryPolicy.canOpen(flow) {
+            Button(action: {
+                openSessionEdit()
+                actionPulse += 1
+            }) {
+                sessionOrderEntryContent(
+                    name: name,
+                    setsPreview: setsPreview,
+                    showsDisclosure: true
+                )
             }
+            .buttonStyle(.redePressableRow)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(a11yLabel)
+            .accessibilityHint(s.sessionOrderOpenHint)
+            .accessibilityIdentifier("train-session-order-open")
+        } else if name != nil {
+            sessionOrderEntryContent(
+                name: name,
+                setsPreview: setsPreview,
+                showsDisclosure: false
+            )
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(a11yLabel)
+            .accessibilityIdentifier("train-session-order-next-static")
         }
     }
 
     @ViewBuilder
-    private func sessionOrderEntryContent(name: String, setsPreview: String?, showsDisclosure: Bool) -> some View {
+    private func sessionOrderEntryContent(name: String?, setsPreview: String?, showsDisclosure: Bool) -> some View {
         if dynamicTypeSize.isAccessibilitySize {
             VStack(alignment: .leading, spacing: 4) {
                 Text(s.sessionOrderEntry)
                     .font(.redeCaption)
                     .foregroundStyle(Color.redeT4)
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(name)
-                        .font(.redeBody)
-                        .foregroundStyle(Color.redeT2)
-                        .fixedSize(horizontal: false, vertical: true)
+                    if let name {
+                        Text(name)
+                            .font(.redeBody)
+                            .foregroundStyle(Color.redeT2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                     if let setsPreview {
                         Text("· \(setsPreview)")
                             .font(.redeCaption).monospacedDigit()
@@ -1069,11 +1159,13 @@ struct TrainTabView: View {
                     .foregroundStyle(Color.redeT4)
                     .fixedSize(horizontal: true, vertical: false)
                 Spacer(minLength: 8)
-                Text(name)
-                    .font(.redeBody)
-                    .foregroundStyle(Color.redeT2)
-                    .multilineTextAlignment(.trailing)
-                    .fixedSize(horizontal: false, vertical: true)
+                if let name {
+                    Text(name)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT2)
+                        .multilineTextAlignment(.trailing)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 if let setsPreview {
                     Text("· \(setsPreview)")
                         .font(.redeCaption).monospacedDigit()
@@ -1323,9 +1415,13 @@ struct TrainTabView: View {
                 .padding(.top, 4)
                 EngraveDivider().padding(.vertical, 12)
                 sheetActionRow(s.skipExerciseAction) { choosingExerciseSkipReason = true }
-                sheetActionRow(s.swapExerciseAction, divider: false) {
+                sheetActionRow(s.swapExerciseAction) {
                     showMoreSheet = false
                     showSwapSheet = true
+                }
+                sheetActionRow(s.sessionOrderEntry, divider: false) {
+                    showMoreSheet = false
+                    openSessionEdit()
                 }
             }
             Spacer()
@@ -1368,46 +1464,158 @@ struct TrainTabView: View {
     }
 
     private var sessionOrderSheet: some View {
-        let currentName = flow?.currentExercise
-            .map { localeStore.exerciseName($0.exerciseId) } ?? ""
-        let candidates = flow?.moveToCurrentCandidates ?? []
-        return VStack(alignment: .leading, spacing: 0) {
-            Overline(text: s.sessionOrderTitle)
-                .padding(.top, 18)
-                .accessibilityIdentifier("train-session-order-sheet")
-
-            sessionOrderCurrentRow(name: currentName)
-                .padding(.top, 4)
-
-            if sessionOrderUpdateFailed {
-                Text(s.sessionOrderUpdateError)
-                    .font(.redeCallout)
-                    .foregroundStyle(Color.redeRisk)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 12)
-                    .accessibilityIdentifier("train-session-order-error")
-            }
-
-            Overline(text: s.sessionOrderLater)
-                .padding(.top, 18)
-
-            ScrollView {
-                VStack(spacing: 0) {
-                    ForEach(Array(candidates.enumerated()), id: \.element) { index, id in
-                        sessionOrderMoveRow(
-                            id: id,
-                            name: localeStore.exerciseName(id),
-                            divider: index < candidates.count - 1
-                        )
-                    }
-                }
-                .padding(.top, 4)
+        Group {
+            if showingSessionEditPicker {
+                sessionEditPicker
+            } else {
+                sessionEditOverview
             }
         }
         .padding(.horizontal, 20)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .presentationBackground(Color.redeBase)
+    }
+
+    @ViewBuilder
+    private var sessionEditOverview: some View {
+        if let flow, let current = flow.currentExercise {
+            let currentName = localeStore.exerciseName(current.exerciseId)
+            let future = Array(flow.plan.exercises.dropFirst(flow.exerciseIndex + 1))
+            let moveCandidates = Set(flow.moveToCurrentCandidates)
+
+            VStack(alignment: .leading, spacing: 0) {
+                Overline(text: s.sessionOrderTitle)
+                    .padding(.top, 18)
+                    .accessibilityIdentifier("train-session-edit-sheet")
+
+                sessionOrderCurrentRow(name: currentName)
+                    .padding(.top, 4)
+                sessionEditSetControls(flow)
+
+                sessionEditError
+
+                if let removal = latestSessionRemoval {
+                    sessionEditUndoRow(removal)
+                        .padding(.top, 10)
+                }
+
+                if !future.isEmpty {
+                    Overline(text: s.sessionOrderLater)
+                        .padding(.top, 18)
+
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            ForEach(Array(future.enumerated()), id: \.offset) { offset, exercise in
+                                let position = flow.exerciseIndex + 1 + offset
+                                sessionEditFutureRow(
+                                    exercise: exercise,
+                                    position: position,
+                                    canMove: moveCandidates.contains(exercise.exerciseId),
+                                    divider: offset < future.count - 1
+                                )
+                            }
+                        }
+                        .padding(.top, 4)
+                    }
+                } else {
+                    Spacer(minLength: 12)
+                }
+
+                EngraveDivider().padding(.top, 10)
+                sheetActionRow(s.sessionEditAddExercise, divider: false) {
+                    sessionOrderUpdateFailed = false
+                    showingSessionEditPicker = true
+                    actionPulse += 1
+                }
+                .accessibilityIdentifier("train-session-edit-add")
+            }
+        }
+    }
+
+    private var sessionEditPicker: some View {
+        let groups = sessionEditCandidateGroups
+        return VStack(alignment: .leading, spacing: 0) {
+            Overline(text: s.sessionEditAddExercise)
+                .padding(.top, 18)
+                .accessibilityIdentifier("train-session-edit-picker")
+
+            Button(action: {
+                sessionOrderUpdateFailed = false
+                showingSessionEditPicker = false
+            }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 11, weight: .medium))
+                        .accessibilityHidden(true)
+                    Text(s.sessionEditPickerBack)
+                        .font(.redeCallout)
+                }
+                .foregroundStyle(Color.redeT3)
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.redePressableRow)
+            .accessibilityIdentifier("train-session-edit-picker-back")
+
+            sessionEditError
+
+            if groups.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(s.sessionEditPickerEmptyTitle)
+                        .font(.redeHeadline)
+                        .foregroundStyle(Color.redeT1)
+                    Text(s.sessionEditPickerEmptyNote)
+                        .font(.redeCallout)
+                        .foregroundStyle(Color.redeT3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.top, 20)
+                Spacer()
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(groups.enumerated()), id: \.offset) { groupIndex, group in
+                            Overline(text: s.muscleLabel(group.muscle))
+                                .padding(.top, groupIndex == 0 ? 12 : 20)
+                            VStack(spacing: 0) {
+                                ForEach(Array(group.exercises.enumerated()), id: \.element.id) { index, entry in
+                                    sessionEditAddRow(
+                                        entry,
+                                        divider: index < group.exercises.count - 1
+                                    )
+                                }
+                            }
+                            .padding(.top, 4)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var sessionEditCandidateGroups: [(muscle: String, exercises: [ExerciseCatalogEntry])] {
+        var groups: [(muscle: String, exercises: [ExerciseCatalogEntry])] = []
+        for entry in sessionStore.sessionEditCandidates {
+            if groups.last?.muscle == entry.primaryMuscle {
+                groups[groups.count - 1].exercises.append(entry)
+            } else {
+                groups.append((entry.primaryMuscle, [entry]))
+            }
+        }
+        return groups
+    }
+
+    @ViewBuilder
+    private var sessionEditError: some View {
+        if sessionOrderUpdateFailed {
+            Text(s.sessionOrderUpdateError)
+                .font(.redeCallout)
+                .foregroundStyle(Color.redeRisk)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 12)
+                .accessibilityIdentifier("train-session-edit-error")
+        }
     }
 
     @ViewBuilder
@@ -1449,36 +1657,239 @@ struct TrainTabView: View {
         }
     }
 
-    private func sessionOrderMoveRow(id: String, name: String, divider: Bool) -> some View {
-        Button(action: { moveExerciseToCurrent(id: id, name: name) }) {
-            Group {
-                if dynamicTypeSize.isAccessibilitySize {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(name)
-                            .font(.redeBody)
-                            .foregroundStyle(Color.redeT2)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Text(s.sessionOrderTrainNow)
-                            .font(.redeCallout)
-                            .foregroundStyle(Color.redeEmber)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 8)
-                } else {
-                    HStack(alignment: .firstTextBaseline, spacing: 12) {
-                        Text(name)
-                            .font(.redeBody)
-                            .foregroundStyle(Color.redeT2)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Spacer(minLength: 8)
-                        Text(s.sessionOrderTrainNow)
-                            .font(.redeCallout)
-                            .foregroundStyle(Color.redeEmber)
-                            .fixedSize(horizontal: true, vertical: false)
-                        sessionOrderChevron
-                    }
+    private func sessionEditSetControls(_ flow: TrainFlowState) -> some View {
+        let total = flow.currentExercise?.sets.count ?? 0
+        let completed = flow.completedInCurrentExercise.count + flow.skippedInCurrentExercise
+        let remaining = max(0, total - completed)
+        let canDecrease = flow.phase == .activeSet && remaining > 1
+        let canIncrease = flow.phase == .activeSet && total < 8
+        return HStack(spacing: 12) {
+            Button(action: { adjustRemainingSets(-1) }) {
+                Image(systemName: "minus")
+                    .font(.system(size: 15, weight: .semibold))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.redePressable)
+            .foregroundStyle(canDecrease ? Color.redeT2 : Color.redeT4)
+            .disabled(!canDecrease)
+            .accessibilityLabel(s.sessionEditDecreaseSetA11y)
+            .accessibilityIdentifier("train-session-edit-set-minus")
+
+            Text(s.sessionEditSetCount(remaining))
+                .font(.redeBody)
+                .monospacedDigit()
+                .foregroundStyle(Color.redeT2)
+                .frame(maxWidth: .infinity)
+                .accessibilityIdentifier("train-session-edit-set-count")
+
+            Button(action: { adjustRemainingSets(1) }) {
+                Image(systemName: "plus")
+                    .font(.system(size: 15, weight: .semibold))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.redePressable)
+            .foregroundStyle(canIncrease ? Color.redeT2 : Color.redeT4)
+            .disabled(!canIncrease)
+            .accessibilityLabel(s.sessionEditIncreaseSetA11y)
+            .accessibilityIdentifier("train-session-edit-set-plus")
+        }
+        .frame(minHeight: 44)
+        .overlay(alignment: .bottom) { Rectangle().fill(Color.redeHair2).frame(height: 1) }
+    }
+
+    private func sessionEditUndoRow(_ removal: SessionExerciseRemoval) -> some View {
+        let name = localeStore.exerciseName(removal.exercise.exerciseId)
+        let layout = TrainSessionEditActionLayout.resolve(
+            isAccessibilitySize: dynamicTypeSize.isAccessibilitySize
+        )
+        return Group {
+            switch layout {
+            case .horizontal:
+                HStack(spacing: 12) {
+                    sessionEditRemovedLabel(name: name)
+                    Spacer(minLength: 8)
+                    sessionEditUndoButton(removal, name: name)
                 }
+            case .vertical:
+                VStack(alignment: .leading, spacing: 0) {
+                    sessionEditRemovedLabel(name: name)
+                    sessionEditUndoButton(removal, name: name)
+                }
+                .padding(.vertical, 8)
+            }
+        }
+        .frame(minHeight: 44)
+        .overlay(alignment: .bottom) { Rectangle().fill(Color.redeHair2).frame(height: 1) }
+    }
+
+    private func sessionEditRemovedLabel(name: String) -> some View {
+        Text(s.sessionEditRemoved(name: name))
+            .font(.redeCallout)
+            .foregroundStyle(Color.redeT3)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func sessionEditUndoButton(
+        _ removal: SessionExerciseRemoval,
+        name: String
+    ) -> some View {
+        Button {
+            undoSessionRemoval(removal, name: name)
+        } label: {
+            Text(s.sessionEditUndo)
+                .font(.redeCallout)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .foregroundStyle(Color.redeEmber)
+        .buttonStyle(.redePressable)
+        .disabled(isSessionEditRemovalInFlight)
+        .accessibilityIdentifier("train-session-edit-undo")
+    }
+
+    private func sessionEditFutureRow(
+        exercise: ExerciseSetPlan,
+        position: Int,
+        canMove: Bool,
+        divider: Bool
+    ) -> some View {
+        let name = localeStore.exerciseName(exercise.exerciseId)
+        return Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(name)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT2)
+                        .fixedSize(horizontal: false, vertical: true)
+                    sessionEditFutureActions(
+                        exercise: exercise,
+                        name: name,
+                        position: position,
+                        canMove: canMove
+                    )
+                }
+                .padding(.vertical, 8)
+            } else {
+                HStack(alignment: .center, spacing: 10) {
+                    Text(name)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT2)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 6)
+                    sessionEditFutureActions(
+                        exercise: exercise,
+                        name: name,
+                        position: position,
+                        canMove: canMove
+                    )
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        .overlay(alignment: .bottom) {
+            if divider { Rectangle().fill(Color.redeHair2).frame(height: 1) }
+        }
+    }
+
+    @ViewBuilder
+    private func sessionEditFutureActions(
+        exercise: ExerciseSetPlan,
+        name: String,
+        position: Int,
+        canMove: Bool
+    ) -> some View {
+        let layout = TrainSessionEditActionLayout.resolve(
+            isAccessibilitySize: dynamicTypeSize.isAccessibilitySize
+        )
+        switch layout {
+        case .horizontal:
+            HStack(spacing: 12) {
+                sessionEditMoveButton(
+                    exerciseId: exercise.exerciseId,
+                    name: name,
+                    position: position,
+                    canMove: canMove
+                )
+                sessionEditRemoveButton(exercise: exercise, position: position, name: name)
+            }
+        case .vertical:
+            VStack(alignment: .leading, spacing: 0) {
+                sessionEditMoveButton(
+                    exerciseId: exercise.exerciseId,
+                    name: name,
+                    position: position,
+                    canMove: canMove
+                )
+                sessionEditRemoveButton(exercise: exercise, position: position, name: name)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    @ViewBuilder
+    private func sessionEditMoveButton(
+        exerciseId: String,
+        name: String,
+        position: Int,
+        canMove: Bool
+    ) -> some View {
+        if canMove {
+            Button {
+                moveExerciseToCurrent(id: exerciseId, name: name)
+            } label: {
+                Text(s.sessionOrderTrainNow)
+                    .font(.redeCallout)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .foregroundStyle(Color.redeEmber)
+            .buttonStyle(.redePressable)
+            .accessibilityLabel(s.sessionOrderMoveA11y(name: name))
+            .accessibilityHint(s.sessionOrderMoveHint)
+            .accessibilityIdentifier("train-session-edit-move-\(position)")
+        }
+    }
+
+    private func sessionEditRemoveButton(
+        exercise: ExerciseSetPlan,
+        position: Int,
+        name: String
+    ) -> some View {
+        // 渲染时捕获该 id 的份数，供陈旧回调防线比对（重复 occurrence 防连删）。
+        let occurrenceCount = flow?.plan.exercises
+            .filter { $0.exerciseId == exercise.exerciseId }.count ?? 0
+        return Button {
+            removeSessionExercise(
+                exercise: exercise, at: position,
+                occurrenceCount: occurrenceCount, name: name
+            )
+        } label: {
+            Text(s.sessionEditRemove)
+                .font(.redeCallout)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .foregroundStyle(Color.redeT3)
+        .buttonStyle(.redePressable)
+        .disabled(isSessionEditRemovalInFlight)
+        .accessibilityLabel(s.sessionEditRemoveA11y(name: name))
+        .accessibilityIdentifier("train-session-edit-remove-\(position)")
+    }
+
+    private func sessionEditAddRow(_ entry: ExerciseCatalogEntry, divider: Bool) -> some View {
+        Button(action: { addSessionExercise(entry) }) {
+            HStack(spacing: 12) {
+                Text(localeStore.exerciseName(entry.id))
+                    .font(.redeBody)
+                    .foregroundStyle(Color.redeT2)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 8)
+                Image(systemName: "plus")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.redeEmber)
+                    .accessibilityHidden(true)
             }
             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
             .contentShape(Rectangle())
@@ -1487,10 +1898,8 @@ struct TrainTabView: View {
             }
         }
         .buttonStyle(.redePressableRow)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(s.sessionOrderMoveA11y(name: name))
-        .accessibilityHint(s.sessionOrderMoveHint)
-        .accessibilityIdentifier("train-session-order-move-\(id)")
+        .accessibilityLabel(s.sessionEditAddA11y(name: localeStore.exerciseName(entry.id)))
+        .accessibilityIdentifier("train-session-edit-add-\(entry.id)")
     }
 
     private var confirmBinding: Binding<Bool> {
@@ -1691,14 +2100,45 @@ struct TrainTabView: View {
         showExactField = false
     }
 
+    private var sessionEditHookTaskID: String {
+        let arguments = CommandLine.arguments
+        guard arguments.contains("-autoOpenSessionOrder")
+            || arguments.contains("-autoOpenSessionEdit")
+            || arguments.contains("-autoOpenSessionEditPicker")
+        else { return "hook-off" }
+        return "\(flow?.currentExercise?.exerciseId ?? "")|\(sessionStore.sessionEditCandidates.count)"
+    }
+
+    private func openSessionEdit(showPicker: Bool = false) {
+        latestSessionRemoval = nil
+        sessionOrderUpdateFailed = false
+        showingSessionEditPicker = showPicker
+        showSessionOrderSheet = true
+    }
+
+    /// 关 sheet = 单次编辑面生命周期结束；移除撤销入口不进 draft、不跨进程恢复。
+    private func closeSessionEditPresentation() {
+        latestSessionRemoval = nil
+        showingSessionEditPicker = false
+        sessionOrderUpdateFailed = false
+        announcePendingSessionOrderMove()
+    }
+
+    private func reportSessionEditFailure() {
+        sessionOrderUpdateFailed = true
+        postSessionEditAnnouncement(s.sessionOrderUpdateError)
+    }
+
+    private func postSessionEditAnnouncement(_ announcement: String) {
+        DispatchQueue.main.async {
+            UIAccessibility.post(notification: .announcement, argument: announcement)
+        }
+    }
+
     /// S1：只有 reducer 接受且同步 draft 落盘后才关闭；失败留在 sheet 内如实提示。
     private func moveExerciseToCurrent(id: String, name: String) {
         guard sessionStore.applyDurably(.moveExerciseToCurrent(id)) else {
-            sessionOrderUpdateFailed = true
-            let announcement = s.sessionOrderUpdateError
-            DispatchQueue.main.async {
-                UIAccessibility.post(notification: .announcement, argument: announcement)
-            }
+            reportSessionEditFailure()
             return
         }
         clearAdjustment()
@@ -1706,6 +2146,91 @@ struct TrainTabView: View {
         pendingSessionOrderAnnouncement = s.sessionOrderMovedAnnouncement(name: name)
         actionPulse += 1
         showSessionOrderSheet = false
+    }
+
+    private func removeSessionExercise(
+        exercise expectedExercise: ExerciseSetPlan,
+        at position: Int,
+        occurrenceCount: Int,
+        name: String
+    ) {
+        guard !isSessionEditRemovalInFlight,
+              let flow,
+              let removal = TrainSessionEditRemovalPolicy.removal(
+                in: flow,
+                at: position,
+                expectedExercise: expectedExercise,
+                expectedOccurrenceCount: occurrenceCount
+              )
+        else { return }
+        isSessionEditRemovalInFlight = true
+        defer { releaseSessionEditRemovalGate() }
+        guard sessionStore.applyDurably(.removeExercise(removal)) else {
+            reportSessionEditFailure()
+            return
+        }
+        sessionOrderUpdateFailed = false
+        latestSessionRemoval = removal
+        actionPulse += 1
+        postSessionEditAnnouncement(s.sessionEditRemoved(name: name))
+    }
+
+    private func undoSessionRemoval(_ removal: SessionExerciseRemoval, name: String) {
+        guard !isSessionEditRemovalInFlight,
+              latestSessionRemoval == removal
+        else { return }
+        isSessionEditRemovalInFlight = true
+        defer { releaseSessionEditRemovalGate() }
+        guard sessionStore.applyDurably(.removeExercise(removal.restoring)) else {
+            reportSessionEditFailure()
+            return
+        }
+        sessionOrderUpdateFailed = false
+        latestSessionRemoval = nil
+        actionPulse += 1
+        postSessionEditAnnouncement(s.sessionEditRestoredAnnouncement(name: name))
+    }
+
+    private func releaseSessionEditRemovalGate() {
+        // 留到下一轮主队列再开闸，吞掉同一点击波次中已排队的重复回调。
+        DispatchQueue.main.async {
+            isSessionEditRemovalInFlight = false
+        }
+    }
+
+    private func addSessionExercise(_ entry: ExerciseCatalogEntry) {
+        let name = localeStore.exerciseName(entry.id)
+        guard let plan = sessionStore.makeSessionEditExercisePlan(exerciseId: entry.id),
+              sessionStore.applyDurably(.addExercise(plan))
+        else {
+            reportSessionEditFailure()
+            return
+        }
+        // 另一编辑发生后不再暴露旧 remove 的「立即撤销」，也避免同 id 重新加回后再恢复成重复动作。
+        latestSessionRemoval = nil
+        sessionOrderUpdateFailed = false
+        showingSessionEditPicker = false
+        actionPulse += 1
+        postSessionEditAnnouncement(s.sessionEditAddedAnnouncement(name: name))
+    }
+
+    private func adjustRemainingSets(_ delta: Int) {
+        let quickAdjustmentBeforeSetEdit = quickAdjustmentState
+        guard sessionStore.applyDurably(.adjustRemainingSets(delta)),
+              let flow = sessionStore.flow,
+              let current = flow.currentExercise
+        else {
+            reportSessionEditFailure()
+            return
+        }
+        // Owner 裁定：组数编辑不清当前组 quick-adjust；只改变/裁剪未完成尾部。
+        quickAdjustmentState = quickAdjustmentBeforeSetEdit
+            .preservingAfterSetCountChange(delta)
+        let completed = flow.completedInCurrentExercise.count + flow.skippedInCurrentExercise
+        let remaining = max(0, current.sets.count - completed)
+        sessionOrderUpdateFailed = false
+        actionPulse += 1
+        postSessionEditAnnouncement(s.sessionEditSetCountAnnouncement(remaining))
     }
 
     /// VoiceOver 等 sheet 真正退场后再播报，避免转场吞掉成功反馈；手势关闭没有 pending，不会误报。

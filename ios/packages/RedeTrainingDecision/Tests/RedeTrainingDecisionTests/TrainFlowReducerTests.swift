@@ -32,6 +32,37 @@ final class TrainFlowReducerTests: XCTestCase {
         XCTAssertEqual(state, before, "rejected move must not mutate state or append an event", file: file, line: line)
     }
 
+    private func adHocPlan(
+        id: String = "db-bench-press",
+        setCount: Int = 3,
+        stepKg: Double = 2.5
+    ) -> ExerciseSetPlan {
+        ExerciseSetPlan(
+            exerciseId: id,
+            restSeconds: 90,
+            repLowerBound: 8,
+            repUpperBound: 12,
+            stepKg: stepKg,
+            loadType: "external",
+            sets: (1...setCount).map {
+                PlannedSet(index: $0, targetWeightKg: 30, targetReps: 10, targetRir: 2)
+            }
+        )
+    }
+
+    func testAddExerciseRejectsNonFiniteOrNegativeStep() throws {
+        // stepKg 是活跃计算输入（NextSetEngine 方向算术 + 重量 ± rail）；
+        // 损坏/篡改 draft 里的 NaN/负步长不得经 replay 进入会话。
+        var state = try makeState()
+        let before = state
+
+        state.addExercise(adHocPlan(stepKg: .nan))
+        XCTAssertEqual(state, before, "NaN step must be rejected")
+
+        state.addExercise(adHocPlan(stepKg: -2.5))
+        XCTAssertEqual(state, before, "negative step must be rejected")
+    }
+
     // 初始：push-a 第 1 动作第 1 组，phase = activeSet
     func testInitialStatePointsAtFirstSet() throws {
         let state = try makeState()
@@ -273,6 +304,121 @@ final class TrainFlowReducerTests: XCTestCase {
         summary.confirmEnd(reason: .timeUp)
         XCTAssertEqual(summary.phase, .summary)
         assertMoveRejected(&summary, targetExerciseId: summaryTarget)
+    }
+
+    func testAddExerciseInsertsResolvedPayloadAfterCurrentAndRejectsDuplicateOrFrozenPhase() throws {
+        var state = try makeState()
+        let payload = adHocPlan()
+        let original = state.plan.exercises
+
+        state.addExercise(payload)
+
+        XCTAssertEqual(state.plan.exercises[1], payload)
+        XCTAssertEqual(state.plan.exercises[0], original[0])
+        XCTAssertEqual(Array(state.plan.exercises.dropFirst(2)), Array(original.dropFirst()))
+        XCTAssertEqual(state.events, [.addExercise(payload)])
+        XCTAssertEqual(state.addedExercises.map(\.exerciseId), [payload.exerciseId])
+
+        let accepted = state
+        state.addExercise(payload)
+        XCTAssertEqual(state, accepted, "same exercise id cannot be added twice")
+
+        state.requestFinish()
+        let frozen = state
+        state.addExercise(adHocPlan(id: "db-floor-press"))
+        XCTAssertEqual(state, frozen, "confirm-end phase must reject session edits")
+    }
+
+    func testRemoveFutureExerciseUsesPositionSnapshotAndUndoRestoresOnlyLatestRemoval() throws {
+        let source = try makeState().prescription
+        let repeated = source.exercises[1]
+        var state = TrainFlowState(prescription: TodayPrescription(
+            dayCode: source.dayCode,
+            exercises: [source.exercises[0], repeated, repeated, source.exercises[2]],
+            dayReasons: source.dayReasons
+        ))
+        let original = state.plan.exercises
+        let removal = try XCTUnwrap(state.removal(at: 2))
+
+        state.removeExercise(removal)
+
+        XCTAssertEqual(state.plan.exercises, [original[0], original[1], original[3]],
+                       "duplicate ids must remove only the snapshotted position")
+        XCTAssertEqual(state.removedExercises, [removal])
+        XCTAssertTrue(state.skippedExercises.isEmpty)
+        XCTAssertTrue(state.skippedSets.isEmpty)
+
+        let wrongSnapshot = SessionExerciseRemoval(
+            index: 1,
+            exercise: original[3],
+            action: .remove
+        )
+        let afterRemove = state
+        state.removeExercise(wrongSnapshot)
+        XCTAssertEqual(state, afterRemove, "snapshot mismatch must fail closed")
+
+        state.removeExercise(removal.restoring)
+        XCTAssertEqual(state.plan.exercises, original)
+        XCTAssertTrue(state.removedExercises.isEmpty)
+        XCTAssertEqual(state.events, [.removeExercise(removal), .removeExercise(removal.restoring)])
+    }
+
+    func testRemoveRejectsCurrentCompletedPrefixAndAnyNonActivePhaseWithoutChangingFacts() throws {
+        var state = try makeState()
+        XCTAssertNil(state.removal(at: 0), "current exercise is never removable")
+        state.logSet(obs(60, 6))
+        let resting = state
+        XCTAssertNil(state.removal(at: 2))
+        let forged = SessionExerciseRemoval(
+            index: 2,
+            exercise: state.plan.exercises[2],
+            action: .remove
+        )
+        state.removeExercise(forged)
+        XCTAssertEqual(state, resting)
+
+        state.restFinished()
+        for _ in 1..<state.currentExercise!.sets.count {
+            state.logSet(obs(60, 6))
+            state.restFinished()
+        }
+        XCTAssertEqual(state.exerciseIndex, 1)
+        XCTAssertNil(state.removal(at: 0), "completed prefix is immutable")
+        let observations = state.observationsByExercise
+        let removal = try XCTUnwrap(state.removal(at: 3))
+        state.removeExercise(removal)
+        XCTAssertEqual(state.observationsByExercise, observations)
+    }
+
+    func testAdjustRemainingSetsPreservesCompletedFactsAndEnforcesOneRemainingAndEightTotal() throws {
+        var state = try makeState()
+        let originalFirstTarget = try XCTUnwrap(state.currentExercise?.sets.first)
+
+        state.adjustRemainingSets(-1)
+        state.adjustRemainingSets(-1)
+        XCTAssertEqual(state.currentExercise?.sets.count, 1)
+        let lowerBound = state
+        state.adjustRemainingSets(-1)
+        XCTAssertEqual(state, lowerBound, "at least one remaining set must stay")
+
+        for _ in 1..<8 { state.adjustRemainingSets(1) }
+        XCTAssertEqual(state.currentExercise?.sets.count, 8)
+        XCTAssertEqual(state.currentExercise?.sets.last?.targetWeightKg, originalFirstTarget.targetWeightKg)
+        let upperBound = state
+        state.adjustRemainingSets(1)
+        XCTAssertEqual(state, upperBound, "total set count must never exceed eight")
+
+        var partial = try makeState()
+        partial.logSet(obs(60, 6))
+        partial.restFinished()
+        let completed = partial.completedInCurrentExercise
+        partial.adjustRemainingSets(-1)
+        XCTAssertEqual(partial.completedInCurrentExercise, completed)
+        XCTAssertEqual(partial.currentExercise?.sets.count, 2)
+        let oneRemaining = partial
+        partial.adjustRemainingSets(-1)
+        XCTAssertEqual(partial, oneRemaining, "completed groups are immutable and one future set remains")
+        XCTAssertEqual(partial.events.suffix(1), [.adjustRemainingSets(-1)])
     }
 
     // 档位系统（2026-06-13）：换动作后步长按「换入动作器械 × 用户单位」重算

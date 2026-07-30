@@ -1262,11 +1262,17 @@ final class SessionStore {
         enqueueDraftSave()
     }
 
-    /// FR-TR14 S1 的持久化提交：仅允许本次顺序 move。
+    /// FR-TR14 的持久化提交：仅允许本次顺序 / 动作 / 组数编辑。
     /// reducer 接受且同步 draft 保存成功才提交；任何失败都恢复逐字段完全相同的 flow。
     @discardableResult
     func applyDurably(_ event: TrainFlowEvent) -> Bool {
-        guard case .moveExerciseToCurrent = event, let before = flow else { return false }
+        switch event {
+        case .moveExerciseToCurrent, .addExercise, .removeExercise, .adjustRemainingSets:
+            break
+        default:
+            return false
+        }
+        guard let before = flow else { return false }
         guard reduce(event) else {
             flow = before
             return false
@@ -1276,6 +1282,29 @@ final class SessionStore {
             return false
         }
         return true
+    }
+
+    /// FR-TR14 S2 任务型 picker：只暴露当前器械白名单内、且本场尚未排入的目录动作。
+    var sessionEditCandidates: [ExerciseCatalogEntry] {
+        guard let flow, todayModel != nil else { return [] }
+        return SessionExerciseEditPlanner.availableExercises(
+            sessionPlan: flow.plan,
+            allowedEquipment: flow.sessionAllowedEquipment
+        )
+    }
+
+    /// 事件创建时一次性解析完整会话计划 payload；draft replay 只重放 payload，
+    /// 不再查询可能变化的 canonical 历史。
+    func makeSessionEditExercisePlan(exerciseId: String) -> ExerciseSetPlan? {
+        guard let flow, let sessions = todayModel?.cleanView.sessions else { return nil }
+        return SessionExerciseEditPlanner.makeAdHocPlan(
+            exerciseId: exerciseId,
+            sessionPlan: flow.plan,
+            currentExerciseIndex: flow.exerciseIndex,
+            sessions: sessions,
+            allowedEquipment: flow.sessionAllowedEquipment,
+            loadUnit: flow.sessionLoadUnit
+        )
     }
 
     /// TrainFlowEvent → reducer 的唯一 app 层接线。返回值只表示 typed event 是否被接受。
@@ -1290,6 +1319,9 @@ final class SessionStore {
         case .skipExercise(let reason): flow?.skipExercise(reason: reason)
         case .replaceExercise(let id): flow?.replaceCurrentExercise(with: id)
         case .moveExerciseToCurrent(let id): flow?.moveExerciseToCurrent(id)
+        case .addExercise(let plan): flow?.addExercise(plan)
+        case .removeExercise(let removal): flow?.removeExercise(removal)
+        case .adjustRemainingSets(let delta): flow?.adjustRemainingSets(delta)
         case .reportPain: flow?.reportPain()
         case .toggleHold: flow?.toggleHold()
         case .requestFinish: flow?.requestFinish()
@@ -1443,7 +1475,9 @@ final class SessionStore {
             startedAt: sessionStartedAt ?? Date(),
             prescription: flow.prescription,
             events: flow.events,
-            catalogVersion: ExerciseCatalog.minimal.catalogVersion
+            catalogVersion: ExerciseCatalog.minimal.catalogVersion,
+            sessionAllowedEquipment: flow.sessionAllowedEquipment,
+            sessionLoadUnit: flow.sessionLoadUnit
         )
     }
 
@@ -1453,7 +1487,7 @@ final class SessionStore {
         draftStore.enqueueSave(draft)
     }
 
-    /// 仅关键顺序调整使用：在同一队列等待此前普通写完成，再同步确认最终快照落盘。
+    /// 本次训练关键编辑使用：在同一队列等待此前普通写完成，再同步确认最终快照落盘。
     private func saveDraftDurably() -> Bool {
         guard let draft = currentDraft() else { return false }
         return draftStore.saveDurably(draft)
