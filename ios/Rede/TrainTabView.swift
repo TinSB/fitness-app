@@ -43,13 +43,19 @@ enum TrainSessionEditEntryPolicy {
 }
 
 enum TrainSessionEditRemovalPolicy {
+    /// expectedOccurrenceCount = 渲染时该 id 在队列中的份数。同 id 同内容的重复
+    /// occurrence 下，第一击移除后份数变化，跨主队列轮次的陈旧第二击即 fail closed
+    /// ——快照逐字段相等时仅靠「位置+快照」拦不住连删两份。
     static func removal(
         in flow: TrainFlowState,
         at position: Int,
-        expectedExercise: ExerciseSetPlan
+        expectedExercise: ExerciseSetPlan,
+        expectedOccurrenceCount: Int
     ) -> SessionExerciseRemoval? {
         guard let removal = flow.removal(at: position),
-              removal.exercise == expectedExercise
+              removal.exercise == expectedExercise,
+              flow.plan.exercises.filter({ $0.exerciseId == expectedExercise.exerciseId })
+                  .count == expectedOccurrenceCount
         else { return nil }
         return removal
     }
@@ -230,7 +236,8 @@ struct TrainTabView: View {
         }
         // FR-TR14 一次性模拟器验收钩子：旧 S1 参数继续兼容；新参数可直接打开
         // 编辑面或任务型 picker。必须等 flow 与 clean history 都可用后才呈现。
-        .task(id: "\(flow?.currentExercise?.exerciseId ?? "")|\(sessionStore.sessionEditCandidates.count)") {
+        // 无钩子参数时 id 恒定——不让生产路径每次渲染都为触发条件全量过滤目录。
+        .task(id: sessionEditHookTaskID) {
             let arguments = CommandLine.arguments
             let openEditor = arguments.contains("-autoOpenSessionOrder")
                 || arguments.contains("-autoOpenSessionEdit")
@@ -1850,8 +1857,14 @@ struct TrainTabView: View {
         position: Int,
         name: String
     ) -> some View {
-        Button {
-            removeSessionExercise(exercise: exercise, at: position, name: name)
+        // 渲染时捕获该 id 的份数，供陈旧回调防线比对（重复 occurrence 防连删）。
+        let occurrenceCount = flow?.plan.exercises
+            .filter { $0.exerciseId == exercise.exerciseId }.count ?? 0
+        return Button {
+            removeSessionExercise(
+                exercise: exercise, at: position,
+                occurrenceCount: occurrenceCount, name: name
+            )
         } label: {
             Text(s.sessionEditRemove)
                 .font(.redeCallout)
@@ -2087,6 +2100,15 @@ struct TrainTabView: View {
         showExactField = false
     }
 
+    private var sessionEditHookTaskID: String {
+        let arguments = CommandLine.arguments
+        guard arguments.contains("-autoOpenSessionOrder")
+            || arguments.contains("-autoOpenSessionEdit")
+            || arguments.contains("-autoOpenSessionEditPicker")
+        else { return "hook-off" }
+        return "\(flow?.currentExercise?.exerciseId ?? "")|\(sessionStore.sessionEditCandidates.count)"
+    }
+
     private func openSessionEdit(showPicker: Bool = false) {
         latestSessionRemoval = nil
         sessionOrderUpdateFailed = false
@@ -2129,6 +2151,7 @@ struct TrainTabView: View {
     private func removeSessionExercise(
         exercise expectedExercise: ExerciseSetPlan,
         at position: Int,
+        occurrenceCount: Int,
         name: String
     ) {
         guard !isSessionEditRemovalInFlight,
@@ -2136,7 +2159,8 @@ struct TrainTabView: View {
               let removal = TrainSessionEditRemovalPolicy.removal(
                 in: flow,
                 at: position,
-                expectedExercise: expectedExercise
+                expectedExercise: expectedExercise,
+                expectedOccurrenceCount: occurrenceCount
               )
         else { return }
         isSessionEditRemovalInFlight = true

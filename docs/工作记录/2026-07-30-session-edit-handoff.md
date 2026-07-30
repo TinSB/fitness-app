@@ -226,3 +226,15 @@ FR-TR14 S1 只做了「后续动作现在练」。用户在训练现场的真实
   - Apple 不在 Simulator 提供 VoiceOver；本轮两台登记 iPhone 均离线。因此 VoiceOver 实听/焦点、真手空白命中、触感及长列表滚动手感仍保留在 TestFlight N14，未伪报通过。代码已有稳定 identifier、完整双语 label/hint、成功 announcement、44pt 几何与最大字号布局。
   - 训练结束后显式「存回计划」仍是后续独立批；本批没有入口。
   - 主 Simulator 字号已恢复 `large`；本轮临时 iPhone SE 3 Simulator 与临时 checkout/build 目录已按精确目标删除。未 push、未开 PR。
+
+## 验收闭合（2026-07-30，主会话）
+
+三 lens 对抗验收（0 驳回）：1 MAJOR + 2 MINOR + 2 NIT，全部当场闭合：
+
+- **MAJOR**：add 路径重量链缺 loadType 防线——自重/弹力带脏历史重量（80kg 教训形态）会被借入 ad-hoc 目标并经 reps-only UI 不可见地回写 canonical。修复：`makeAdHocPlan` 按 loadType 分流，bodyweight/band 恒 0 不查历史（与 prescribeBodyweight/replace 同口径），先红后绿。
+- **MINOR**：`isValidAdHocPayload` 漏校验 stepKg（NaN/负值可经损坏 draft replay 进会话）→ 补 `isFinite && >= 0` 守卫，先红后绿。
+- **MINOR**：借值链分支 1 测试 fixture 与众数分支输出全同、无法钉住「donor 优先/取队列第一个」→ 重写 fixture（异肌群当前动作 + 双 donor + 众数指向不同值，四元组逐项断言）。
+- **NIT**：同 id 同内容重复 occurrence 下跨轮次双击可连删两份 → `TrainSessionEditRemovalPolicy` 增 `expectedOccurrenceCount`（渲染时捕获份数）第三道防线，正反例测试。
+- **NIT**：验收钩子 .task id 令生产路径每次渲染全量过滤目录 → 无钩子参数时 id 恒定。
+
+闭合后：RedeTrainingDecision 463/463（+3）；权威门禁复跑 exit 0。范围外既有疑点（replaceCurrentExercise 中途换动作孤儿化已完成组，main 既有）已立独立任务。

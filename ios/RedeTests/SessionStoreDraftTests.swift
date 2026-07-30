@@ -537,7 +537,8 @@ final class SessionStoreDraftTests: XCTestCase {
         let removal = try XCTUnwrap(TrainSessionEditRemovalPolicy.removal(
             in: flow,
             at: 1,
-            expectedExercise: originalTarget
+            expectedExercise: originalTarget,
+            expectedOccurrenceCount: 1
         ))
 
         flow.removeExercise(removal)
@@ -546,11 +547,54 @@ final class SessionStoreDraftTests: XCTestCase {
             TrainSessionEditRemovalPolicy.removal(
                 in: flow,
                 at: 1,
-                expectedExercise: originalTarget
+                expectedExercise: originalTarget,
+                expectedOccurrenceCount: 1
             ),
             "a queued second tap must not remove the next exercise that shifted into the old position"
         )
         XCTAssertNotEqual(flow.plan.exercises[1], originalTarget)
+    }
+
+    func testStaleRemoveCallbackCannotDeleteSecondIdenticalDuplicateOccurrence() throws {
+        // 自由日序允许同 id 重复 occurrence 且逐字段相同：位置+快照双匹配拦不住
+        // 「第一击移除后第二份上移到同位置、跨主队列轮次的第二击」——
+        // 渲染时捕获的份数是第三道防线。
+        let base = makePrescription()
+        let duplicated = TodayPrescription(
+            dayCode: base.dayCode,
+            exercises: base.exercises + [base.exercises[1]],
+            dayReasons: base.dayReasons
+        )
+        var flow = TrainFlowState(prescription: duplicated)
+        let target = flow.plan.exercises[1]
+        XCTAssertEqual(flow.plan.exercises[3], target, "fixture needs identical duplicate")
+
+        let removal = try XCTUnwrap(TrainSessionEditRemovalPolicy.removal(
+            in: flow,
+            at: 3,
+            expectedExercise: target,
+            expectedOccurrenceCount: 2
+        ))
+        flow.removeExercise(removal)
+
+        XCTAssertNil(
+            TrainSessionEditRemovalPolicy.removal(
+                in: flow,
+                at: 1,
+                expectedExercise: target,
+                expectedOccurrenceCount: 2
+            ),
+            "after the first removal the occurrence count changed; a stale double-tap must fail closed"
+        )
+        XCTAssertNotNil(
+            TrainSessionEditRemovalPolicy.removal(
+                in: flow,
+                at: 1,
+                expectedExercise: target,
+                expectedOccurrenceCount: 1
+            ),
+            "a freshly rendered row carrying the current count may still legitimately remove the survivor"
+        )
     }
 
     func testEverySessionEditRollsBackExactlyWhenDurableSaveFails() throws {

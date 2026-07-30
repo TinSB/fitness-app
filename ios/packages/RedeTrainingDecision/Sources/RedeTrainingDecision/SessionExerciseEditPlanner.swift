@@ -50,8 +50,13 @@ public enum SessionExerciseEditPlanner {
         else { return nil }
 
         let stepKg = loadStep(for: entry, unit: loadUnit)
-        let targetWeightKg = latestWorkingWeight(exerciseId: exerciseId, sessions: sessions)
-            ?? conservativeStartWeight(entry: entry, stepKg: stepKg)
+        // 自重/弹力带无重量轴：与 prescribeBodyweight/replace 同口径恒 0，且不查历史——
+        // canonical 里修复前遗留的脏自重重量不得经 add 路径借入再回写（80kg 教训）。
+        let targetWeightKg: Double =
+            entry.loadType == "bodyweight" || entry.loadType == "band"
+            ? 0
+            : latestWorkingWeight(exerciseId: exerciseId, sessions: sessions)
+                ?? conservativeStartWeight(entry: entry, stepKg: stepKg)
         let sets = (1...adHocSetCount).map {
             PlannedSet(
                 index: $0,

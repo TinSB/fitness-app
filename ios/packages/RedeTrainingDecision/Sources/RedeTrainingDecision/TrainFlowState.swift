@@ -553,6 +553,8 @@ public struct TrainFlowState: Equatable, Sendable {
               EquipmentRegistry.prescribableLoadTypes.contains(entry.loadType),
               allowedEquipment == nil || allowedEquipment!.contains(entry.equipment),
               entry.loadType == exercise.loadType,
+              exercise.stepKg.isFinite,
+              exercise.stepKg >= 0,
               exercise.restSeconds > 0,
               exercise.repLowerBound > 0,
               exercise.repUpperBound >= exercise.repLowerBound,

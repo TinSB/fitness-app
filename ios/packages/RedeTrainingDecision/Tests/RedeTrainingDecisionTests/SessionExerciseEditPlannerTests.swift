@@ -4,14 +4,22 @@ import RedeDataHealth
 
 final class SessionExerciseEditPlannerTests: XCTestCase {
     func testSamePrimaryMuscleBorrowsFirstQueuedTargetsAndFullRepRange() throws {
+        // Fixture 有意让分支 1 与众数分支输出全不同（钉住「donor 优先」），
+        // 并放两个同肌群 donor（钉住「取当日队列第一个」）：
+        // reps 众数 = 12（平票前即多数）≠ donor1 的 6；rest 众数 = 60 ≠ donor1 的 180；
+        // 当前动作是异肌群（biceps），其 RIR=3 ≠ donor1 的 1。
         let catalog = makeCatalog([
+            entry("arms-current", muscle: "biceps", start: 10),
             entry("chest-first", muscle: "chest", start: 20),
-            entry("arms-second", muscle: "biceps", start: 10),
+            entry("chest-second", muscle: "chest", start: 25),
+            entry("arms-tail", muscle: "triceps", start: 15),
             entry("chest-new", muscle: "chest", start: 12.5),
         ])
         let sessionPlan = SessionSetPlan(dayCode: "test", exercises: [
+            plan("arms-current", reps: 12, rir: 3, rest: 60, lower: 10, upper: 15, weight: 10),
             plan("chest-first", reps: 6, rir: 1, rest: 180, lower: 5, upper: 8, weight: 40),
-            plan("arms-second", reps: 12, rir: 3, rest: 60, lower: 10, upper: 15, weight: 10),
+            plan("chest-second", reps: 10, rir: 2, rest: 90, lower: 8, upper: 12, weight: 30),
+            plan("arms-tail", reps: 12, rir: 3, rest: 60, lower: 10, upper: 15, weight: 15),
         ])
 
         let result = try XCTUnwrap(SessionExerciseEditPlanner.makeAdHocPlan(
@@ -25,12 +33,12 @@ final class SessionExerciseEditPlannerTests: XCTestCase {
         ))
 
         XCTAssertEqual(result.exerciseId, "chest-new")
-        XCTAssertEqual(result.restSeconds, 180)
-        XCTAssertEqual(result.repLowerBound, 5)
+        XCTAssertEqual(result.restSeconds, 180, "must borrow donor #1 rest, not mode 60")
+        XCTAssertEqual(result.repLowerBound, 5, "must borrow donor #1 range, not mode donor 8-12")
         XCTAssertEqual(result.repUpperBound, 8)
         XCTAssertEqual(result.sets.count, 3)
-        XCTAssertEqual(result.sets.map(\.targetReps), [6, 6, 6])
-        XCTAssertEqual(result.sets.map(\.targetRir), [1, 1, 1])
+        XCTAssertEqual(result.sets.map(\.targetReps), [6, 6, 6], "must borrow donor #1 reps, not mode 12")
+        XCTAssertEqual(result.sets.map(\.targetRir), [1, 1, 1], "must borrow donor #1 RIR, not current exercise 3")
         XCTAssertEqual(result.sets.map(\.targetWeightKg), [12.5, 12.5, 12.5])
     }
 
@@ -104,6 +112,36 @@ final class SessionExerciseEditPlannerTests: XCTestCase {
         ))
         XCTAssertEqual(assisted.stepKg, 5)
         XCTAssertEqual(assisted.sets.map(\.targetWeightKg), [35, 35, 35])
+    }
+
+    func testBodyweightAndBandDirtyHistoryNeverBorrowsWeight() throws {
+        // 防线与 prescribeBodyweight/replace 同口径：自重/弹力带无重量轴，
+        // 即使 canonical 里有修复前遗留的脏重量（「自重 80kg」审计 MAJOR 形态），
+        // add 路径也必须恒 0，不许把污染循环重新打开。
+        let catalog = makeCatalog([
+            entry("bodyweight-new", muscle: "chest", equipment: "bodyweight", start: 0, loadType: "bodyweight"),
+            entry("band-new", muscle: "back", equipment: "band", start: 0, loadType: "band"),
+            entry("donor", muscle: "arms", start: 10),
+        ])
+        let sessionPlan = SessionSetPlan(dayCode: "test", exercises: [
+            plan("donor", reps: 10, rir: 2, rest: 75, lower: 8, upper: 12),
+        ])
+        let dirty = [
+            session("dirty-bw", date: "2026-07-20", exerciseId: "bodyweight-new", weights: [80]),
+            session("dirty-band", date: "2026-07-21", exerciseId: "band-new", weights: [35]),
+        ]
+
+        let bodyweight = try XCTUnwrap(SessionExerciseEditPlanner.makeAdHocPlan(
+            exerciseId: "bodyweight-new", sessionPlan: sessionPlan, currentExerciseIndex: 0,
+            sessions: dirty, catalog: catalog, allowedEquipment: nil, loadUnit: .kg
+        ))
+        XCTAssertEqual(bodyweight.sets.map(\.targetWeightKg), [0, 0, 0])
+
+        let band = try XCTUnwrap(SessionExerciseEditPlanner.makeAdHocPlan(
+            exerciseId: "band-new", sessionPlan: sessionPlan, currentExerciseIndex: 0,
+            sessions: dirty, catalog: catalog, allowedEquipment: nil, loadUnit: .kg
+        ))
+        XCTAssertEqual(band.sets.map(\.targetWeightKg), [0, 0, 0])
     }
 
     func testCandidatesExcludeScheduledUnsupportedDeprecatedAndUnavailableEquipment() {

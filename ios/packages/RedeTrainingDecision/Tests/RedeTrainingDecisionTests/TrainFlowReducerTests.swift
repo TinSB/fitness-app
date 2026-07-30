@@ -34,19 +34,33 @@ final class TrainFlowReducerTests: XCTestCase {
 
     private func adHocPlan(
         id: String = "db-bench-press",
-        setCount: Int = 3
+        setCount: Int = 3,
+        stepKg: Double = 2.5
     ) -> ExerciseSetPlan {
         ExerciseSetPlan(
             exerciseId: id,
             restSeconds: 90,
             repLowerBound: 8,
             repUpperBound: 12,
-            stepKg: 2.5,
+            stepKg: stepKg,
             loadType: "external",
             sets: (1...setCount).map {
                 PlannedSet(index: $0, targetWeightKg: 30, targetReps: 10, targetRir: 2)
             }
         )
+    }
+
+    func testAddExerciseRejectsNonFiniteOrNegativeStep() throws {
+        // stepKg 是活跃计算输入（NextSetEngine 方向算术 + 重量 ± rail）；
+        // 损坏/篡改 draft 里的 NaN/负步长不得经 replay 进入会话。
+        var state = try makeState()
+        let before = state
+
+        state.addExercise(adHocPlan(stepKg: .nan))
+        XCTAssertEqual(state, before, "NaN step must be rejected")
+
+        state.addExercise(adHocPlan(stepKg: -2.5))
+        XCTAssertEqual(state, before, "negative step must be rejected")
     }
 
     // 初始：push-a 第 1 动作第 1 组，phase = activeSet
