@@ -110,11 +110,12 @@ enum ProgressionPausePolicy {
         for (index, pair) in chronological.enumerated() {
             let session = pair.element
             let hadPain = session.painDiscomfortExerciseIds.contains(exerciseId)
-            let completedNormally = !hadPain && session.exercises.contains {
-                $0.exerciseId == exerciseId
-                    && !$0.sets.isEmpty
-                    && !$0.sets.contains(where: \.painFlag)
-            }
+            let sets = session.exercises
+                .filter { $0.exerciseId == exerciseId }
+                .flatMap(\.sets)
+            let completedNormally = !hadPain
+                && !sets.isEmpty
+                && !sets.contains(where: \.painFlag)
             recent.append((index: index, hadPain: hadPain))
             if recent.count > 4 {
                 recent.removeFirst()
@@ -1201,7 +1202,7 @@ public enum TodayPrescriptionEngine {
         }.sorted { $0.day > $1.day }   // 最新在前
         var result: [String: String] = [:]
         for (_, session) in ordered {
-            for ex in session.exercises {
+            for ex in session.exercises.reversed() {
                 guard let pattern = catalog.entry(id: ex.exerciseId)?.movementPattern else { continue }
                 if result[pattern] == nil { result[pattern] = ex.exerciseId }
             }
