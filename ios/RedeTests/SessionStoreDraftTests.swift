@@ -3,8 +3,11 @@ import XCTest
 @testable import Rede
 import RedeDataHealth
 import RedeDomain
+import RedeL10n
+import RedeLocalSnapshot
 import RedePersistence
 import RedeTrainingDecision
+import RedeWidgetShared
 
 private struct SessionStoreTestDataHealthGate: AppDataWriteGate {
     func validate(candidate: AppData, replacing current: AppData?) throws {
@@ -36,6 +39,100 @@ final class SessionStoreDraftTests: XCTestCase {
             data.removeLast()
         }
         return data
+    }
+
+    func testMissingMuscleLevelMemoryKeepsLegacyWidgetSnapshotBytesStable() throws {
+        let rows = try widgetRows(memory: nil, strings: RedeStrings(locale: .en))
+        let snapshot = ReadinessWidgetSnapshot(
+            generatedAtIso: "2026-07-30T00:00:00Z",
+            headline: "Ready",
+            advice: "Proceed",
+            rows: rows,
+            locale: "en"
+        )
+
+        let bytes = try ReadinessWidgetSnapshotCodec.encode(snapshot)
+        let legacyBytes = Data(
+            #"{"advice":"Proceed","generatedAtIso":"2026-07-30T00:00:00Z","headline":"Ready","locale":"en","rows":[],"schemaVersion":1}"#.utf8
+        )
+
+        XCTAssertEqual(bytes, legacyBytes, "无派生 memory 时必须逐字节保持旧版 rows=[] 快照")
+    }
+
+    func testWidgetMuscleLevelRowsFailClosedForUnavailableTiersAndEmptyLevels() throws {
+        for tierRaw in [String?("calibrating"), "unknown", nil] {
+            let rows = try widgetRows(memory: makeMuscleLevelMemory(
+                levels: ["back": 8],
+                peaks: ["back": 10],
+                tierRaw: tierRaw
+            ))
+            XCTAssertTrue(rows.isEmpty, "tier=\(tierRaw ?? "nil") 不得向 widget 暴露等级")
+        }
+
+        let emptyLevelRows = try widgetRows(memory: makeMuscleLevelMemory(
+            levels: [:],
+            peaks: ["back": 10],
+            tierRaw: "intermediate"
+        ))
+        XCTAssertTrue(emptyLevelRows.isEmpty, "peaks 不能替代空 levels 生成 widget rows")
+    }
+
+    func testWidgetMuscleLevelRowsFilterSortCapAndLocalizeCurrentLevels() throws {
+        let memory = makeMuscleLevelMemory(
+            levels: [
+                "chest": 8,
+                "back": 8,
+                "shoulders": 10,
+                "not-a-muscle": 99,
+                "core": 7,
+            ],
+            peaks: [
+                "biceps": 99,
+                "shoulders": 20,
+            ],
+            tierRaw: "intermediate"
+        )
+
+        XCTAssertEqual(
+            try widgetRows(memory: memory, strings: RedeStrings(locale: .zh)),
+            [
+                ReadinessWidgetRow(label: "肩部", value: "Lv.10"),
+                ReadinessWidgetRow(label: "背部", value: "Lv.8"),
+            ],
+            "只按 levels 排序；同级按 raw 升序；非法 raw 与 peaks-only 肌群必须过滤；最多两行"
+        )
+        XCTAssertEqual(
+            try widgetRows(memory: memory, strings: RedeStrings(locale: .en)),
+            [
+                ReadinessWidgetRow(label: "Shoulders", value: "Lv.10"),
+                ReadinessWidgetRow(label: "Back", value: "Lv.8"),
+            ],
+            "label 必须走现有 RedeL10n 本地化"
+        )
+    }
+
+    func testWidgetMuscleLevelRowsUseLevelsNotPeaksAndMalformedMemoryFailsClosed() throws {
+        let rows = try widgetRows(memory: makeMuscleLevelMemory(
+            levels: ["back": 4],
+            peaks: ["back": 10, "chest": 99],
+            tierRaw: "intermediate"
+        ))
+        XCTAssertEqual(rows, [ReadinessWidgetRow(label: "Back", value: "Lv.4")])
+
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rede-widget-memory-malformed-\(UUID().uuidString)", isDirectory: true)
+        let fileURL = directory.appendingPathComponent("muscle-level-memory.json")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try Data(#"{"schemaVersion":1,"levels":"not-an-object"}"#.utf8).write(to: fileURL)
+
+        XCTAssertTrue(
+            SessionStore.widgetMuscleLevelRows(
+                memoryURL: fileURL,
+                strings: RedeStrings(locale: .en)
+            ).isEmpty,
+            "读盘或解码失败必须退回 rows=[]"
+        )
     }
 
     func testProfileSnapshotReadsMixedInjuryArrayThroughCleanProjection() throws {
@@ -378,6 +475,34 @@ final class SessionStoreDraftTests: XCTestCase {
         formatter.timeZone = timeZone
         formatter.dateFormat = "yyyy-MM-dd"
         return try XCTUnwrap(formatter.date(from: iso))
+    }
+
+    private func makeMuscleLevelMemory(
+        levels: [String: Int],
+        peaks: [String: Int],
+        tierRaw: String?
+    ) -> MuscleLevelMemory {
+        MuscleLevelMemory(
+            levels: levels,
+            peaks: peaks,
+            tierRaw: tierRaw,
+            updatedAtIso: "2026-07-30"
+        )
+    }
+
+    private func widgetRows(
+        memory: MuscleLevelMemory?,
+        strings: RedeStrings = RedeStrings(locale: .en)
+    ) throws -> [ReadinessWidgetRow] {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rede-widget-memory-\(UUID().uuidString)", isDirectory: true)
+        let fileURL = directory.appendingPathComponent("muscle-level-memory.json")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        if let memory {
+            try MuscleLevelMemoryStore(fileURL: fileURL).save(memory)
+        }
+        return SessionStore.widgetMuscleLevelRows(memoryURL: fileURL, strings: strings)
     }
 
     private func makeSessionStore(draftStore: FakeTrainSessionDraftStore) -> SessionStore {

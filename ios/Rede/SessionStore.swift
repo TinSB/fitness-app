@@ -2,6 +2,7 @@ import Foundation
 import RedeDataHealth
 import RedeDomain
 import RedeL10n
+import RedeLocalSnapshot
 import RedeNotifications
 import RedePersistence
 import RedeTrainingDecision
@@ -176,13 +177,16 @@ final class SessionStore {
         Task.detached(priority: .utility) {
             let strings = SessionStore.resolveWidgetStrings()
             let dayName = dayCode.map(strings.trainingDayName) ?? ""
-            // FR-WD1：只回答「该不该练」+ 训练日名 + 短理由；rows 留空（V1 小尺寸够用）。
+            let rows = SessionStore.widgetMuscleLevelRows(
+                memoryURL: ProgressModel.muscleLevelMemoryFileURL(),
+                strings: strings
+            )
             let snapshot = ReadinessWidgetSnapshot(
                 generatedAtIso: ISO8601DateFormatter().string(from: now),
                 headline: strings.widgetHeadline(call: call, dayName: dayName, hasPlan: hasPlan),
                 advice: strings.widgetAdvice(call: call, reasonCode: reason, dayName: dayName,
                                              gapDays: gapDays, consecutiveDays: consecutiveDays, hasPlan: hasPlan),
-                rows: [],
+                rows: rows,
                 locale: strings.locale.rawValue // widget 端给空态/脚注选语言（FR-WD1 中英混杂修复）
             )
             do {
@@ -191,6 +195,38 @@ final class SessionStore {
             } catch {
                 // App Group 不可用 / 写失败：不 reload、不报错——保留上次好快照或诚实占位。
             }
+        }
+    }
+
+    /// 裁定 D：只读 derived muscle-level-memory，将已解锁等级投影进现成 rows 通道。
+    /// 任一门槛/读盘失败都回空；不写 memory、不改 widget schema。nonisolated 允许沿用
+    /// refreshWidgetSnapshot 的 detached IO 边界，不把文件读取带回 MainActor。
+    nonisolated static func widgetMuscleLevelRows(
+        memoryURL: URL,
+        strings: RedeStrings
+    ) -> [ReadinessWidgetRow] {
+        guard let memory = MuscleLevelMemoryStore(fileURL: memoryURL).load(),
+              let tierRaw = memory.tierRaw,
+              let tier = TrainingTier(rawValue: tierRaw),
+              tier != .calibrating,
+              !memory.levels.isEmpty
+        else {
+            return []
+        }
+
+        var candidates: [(raw: String, level: Int, label: MuscleGroupLabel)] = []
+        for (raw, level) in memory.levels {
+            guard let label = MuscleGroupLabel(rawValue: raw) else { continue }
+            candidates.append((raw: raw, level: level, label: label))
+        }
+        candidates.sort { lhs, rhs in
+            lhs.level == rhs.level ? lhs.raw < rhs.raw : lhs.level > rhs.level
+        }
+        return candidates.prefix(2).map { candidate in
+            ReadinessWidgetRow(
+                label: strings.muscleGroupName(candidate.label),
+                value: strings.developmentLevel(candidate.level)
+            )
         }
     }
 
