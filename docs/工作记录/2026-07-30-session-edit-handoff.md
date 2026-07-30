@@ -27,8 +27,8 @@ FR-TR14 S1 只做了「后续动作现在练」。用户在训练现场的真实
 ## 裁定 A：统一入口 =「本次训练」编辑面（S1 sheet 演进）
 
 - S1 的 session-order sheet 升级为本次训练编辑面：每个后续动作行保留「现在练」，**新增「移除」**；底部**「加一个动作」**入口 → 任务型选择器（FR-PL6 picker 形态复用：按肌群分组紧凑列表、器械白名单过滤、排除当日已排；**不是**目录浏览器——无详情、无搜索、无图片）。
-- 不新增 tab、不弹窗、当前动作行不在编辑面出现（当前动作的语义出口=跳过/换动作，已有）。
-- 入口可达性沿 S1 既有规则；触感/动画与既有 sheet 一致。
+- 不新增 tab、不弹窗。**2026-07-30 S2 有意演进**：统一开放行在任意 `activeSet` 都保持可点，避免用户练完第一组后必须改走 More 的第二入口；sheet 内「现在练」仍沿 S1 既有守卫做**行级降级**，当前动作已有事实时该行不可点。
+- sheet 保留只读的当前动作身份行与剩余组数控件，为 stepper 提供明确上下文；当前动作仍不可移除，「跳过 / 换动作」继续走既有出口。触感/动画与既有 sheet 一致。
 
 ## 裁定 B：临时加动作
 
@@ -42,15 +42,16 @@ FR-TR14 S1 只做了「后续动作现在练」。用户在训练现场的真实
      3. 理论兜底 → 取当前动作首组 `targetReps` / `targetRir` 与 `restSeconds`（当前动作永存在，链条必然终止）。
    - rep 区间同样零发明：同主肌群分支与当前动作兜底分支借各自 donor 的完整 `repLowerBound` / `repUpperBound`；众数分支先按上条规则求 `targetReps` 众数，再取当日队列中第一个“首组 `targetReps` 等于该众数”的动作作为区间 donor，借其完整上下限。
    - `addExercise` typed event 在创建时一次性携带按上述重量与借值链解析完成的完整 `ExerciseSetPlan` payload；draft replay 只重放 payload，不重查 canonical 历史。
+   - 器械白名单与重量单位在开训时冻结为 session-scoped 配置；picker、payload planner、reducer 与 draft restore 必须读取同一份 `TrainFlowState` / draft 捕获值，训练中 Settings 变化只影响下一场训练。
    - ⛔ 禁止任何无出处的魔法数字出现在处方行。
 3. **落盘**：以既有 exercises 元素字段正常落盘（真实事实进统计/MLE/引擎，replace 先例已证明下游容忍）；另加 open-bag 标记留痕（如元素内 `"adHocAdded": true` 或 storage 级 `sessionEdits`——形态你定，**不 bump schema**，回执写明）。审计口径：临时加的动作不参与轮转/verdict/计划对账的任何「计划 vs 实际」偏差告警（如有）。
 4. 引擎处方逻辑零改动——加动作是会话内事实，下次处方由引擎照常从 clean sessions 读取。
 
 ## 裁定 C：移除动作
 
-1. **语义 = 中性移除**，与跳过严格区分：不问四码原因、**不写 skippedExercises、不进疼痛信号**、不算完成也不算跳过。
+1. **语义 = 中性移除**，与跳过按事件严格区分：remove event 不问四码原因、**不产生 skip event、不进疼痛信号**、不算完成也不算跳过。同一 `exerciseId` 的另一个 occurrence 可合法进入 `skippedExercises`；`sessionEdits.removed.position` 只审计移除发生的位置，不承诺跨数组仅凭 id 唯一归因。严格 occurrence identity 留给未来「存回计划」切片。
 2. 仅可移除**尚无任何事实**（零完成组、零跳过、零疼痛登记）的**后续**动作；当前动作不可移除（跳过/换动作已覆盖）；按**位置**移除（自由日序可有重复 id，不得整 id 误删）。
-3. 落盘 open-bag 留痕（如 `sessionEdits.removed`：exerciseId + 原位置），供统计诚实与将来「存回计划」批使用；移除的动作不出现在 exercises 数组。
+3. 落盘 open-bag 留痕（如 `sessionEdits.removed`：exerciseId + 原位置），供统计诚实与将来「存回计划」批使用；被移除 occurrence 不出现在 exercises 数组，remove event 本身不写 `skippedExercises`。
 4. **sheet 内单层撤销**：错删立即可撤（轻量 local state 即可，不必上 PlanDayEditUndoModel 全栈）；关 sheet 后不再提供撤销（重新加回即可）。**进程终止等同关闭 sheet**：恢复队列与移除事实，不恢复撤销入口。
 5. 全部移除后剩余动作数下限 = 1？——**不设专门下限**：只能移除后续动作，当前动作永在，天然 ≥1。
 
@@ -67,6 +68,7 @@ FR-TR14 S1 只做了「后续动作现在练」。用户在训练现场的真实
 1. ⛔ **已完成事实不可变**：任何编辑不得改名、删除、重排已完成/已跳过的组或动作（PRD 原文红线）。
 2. ⛔ 处方引擎（TodayPrescriptionEngine）、轮转、verdict、周口径、自动均衡、疼痛保守态零改动；TrainFlowState 属会话状态机可改。
 3. ⛔ 三类新事件必须全走既有 durable draft barrier：杀进程恢复后**队列、完整目标 payload、组数与移除事实**一致；撤销入口属于编辑面单次呈现生命周期，进程终止/关 sheet 即失效。
+   - 开训时捕获的器械白名单与重量单位属于该 draft/flow 的会话配置；picker、payload planner 与 reducer 不得改读训练中变化的实时 Settings。
 4. ⛔ 不搬计划编辑器/目录浏览器进 Train（任务型窄选择器）；「练完存回计划」本批不做。
 5. ⛔ 零弹窗、零确认框、零说教；新串走 RedeL10n + 精确断言 + 无句号红线。
 6. ⛔ 不 bump schema；落盘只加 open-bag 字段。版本号不动。不 push、不开 PR。
@@ -83,7 +85,7 @@ FR-TR14 S1 只做了「后续动作现在练」。用户在训练现场的真实
 ## 验证与证据
 
 1. **测试先红后绿**：三个新事件的 reducer 全矩阵（守卫边界：有事实不可移除/当前不可移除/重复 id 按位置/组数上下限/暂存交互）、draft 杀进程恢复（三类事件各自+组合）、加动作目标生成三分支（有历史/无历史/bodyweight 归 0）正反例、落盘留痕与 skippedExercises 互斥。
-2. **golden 零回归**：不使用编辑功能时 SessionSetPlanner.expand 与落盘输出逐字节等价现状。
+2. **golden 零回归**：不使用编辑功能时 SessionSetPlanner.expand 与落盘输出必须对照 `origin/main` 冻结字节基线逐字节等价；禁止用同源结果删字段后自比较。
 3. **canonical 实证**：加动作落盘元素 + 留痕字段实读；移除留痕实读且 skippedExercises 不含它。
 4. **模拟器实拍**（装前真 build、前台确认、md5 互异）：①编辑面（移除+加入口）②任务型选择器 ③加入后的动作卡（目标可见）④组数调整前后 ⑤强杀恢复后的队列。PNG 前缀 `2026-07-30-sessionedit-`。新钩子（如 -autoOpenSessionEdit）自定并写回执。
 5. 仓库根 `.claude/quality-gate.cmd` exit 0。
@@ -133,10 +135,11 @@ FR-TR14 S1 只做了「后续动作现在练」。用户在训练现场的真实
 - 新阻断——完整 `ExerciseSetPlan` 还必须包含 `repLowerBound` / `repUpperBound`，但解除裁定只定义了 `targetReps` / `targetRir` / `restSeconds` 的借值链。该字段不是无害填充：`NextSetEngine` 真实使用 `repLowerBound` 判断“低于次数下限”并触发下一组保守降重；实施方若自行令上下限等于 `targetReps`、借某一动作区间或另设固定范围，都会改变组内安全行为。
   - 建议 owner 明确采用：同主肌群与当前动作兜底分支直接借 donor 的完整 `repLowerBound` / `repUpperBound`；众数分支先按已裁定规则求 `targetReps`，再从当日队列中取**第一个首组 `targetReps` 等于该众数**的动作作为区间 donor，借其完整上下限。这样所有值仍来自今天引擎真实输出、零发明，且平票规则不变。若不采用，请给出另一条完整上下限规则。
 
-### 三次停止回报（待 owner 裁定）
+### 三次停止回报（owner 已裁定解除）
 
 - 时间：2026-07-30
 - 状态：**STOP，停在最终独立审查；不回填完成回执。** 当前已完成并提交 reducer / 借值链 / draft barrier / UI / L10n / canonical 规格写回；权威 `.claude/quality-gate.cmd` 已 exit 0，尾部为 `** TEST SUCCEEDED ** / Testing started / QUALITY GATE: PASS`，真实 Simulator 的增删/撤销/组数/新增目标/强杀恢复也已通过。独立 reviewer 给出 0 P0、0 P1、6 P2；以下三项会实质改变用户结果或既有裁定，实施方未猜值继续。
+- 解除：owner 裁定 **①2 事件级互斥、②1 冻结开训时配置、③2 S2 统一入口有意演进**；原文已并入裁定 A/B/C、红线与 golden 验证口径。严格 occurrence identity 留给未来「存回计划」切片；训练中 Settings 变化下场生效；统一开放行任意 `activeSet` 可点而「现在练」只做行级降级。
 
 #### 阻断 1——重复 exercise id 的 occurrence 审计口径未定义
 
@@ -160,7 +163,7 @@ FR-TR14 S1 只做了「后续动作现在练」。用户在训练现场的真实
   1. **严格沿原裁定（建议按字面）**：S1 开放行继续按原守卫退静态；半程 S2 从既有 More →「本次训练」进入；sheet 不显示当前动作身份行，只保留获批的剩余组数控件。
   2. **批准当前统一入口**：任意 activeSet 都可从开放行进入，sheet 保留只读当前动作身份 + 组数控件；同步改裁定 A、PRD / 系统逻辑与 TestFlight N1。
 
-#### 已确定但因 STOP 未继续修的验收缺口
+#### owner 要求解除后全部补完的验收缺口
 
 - 「移除」「撤销」目前只有 `minHeight: 44`，没有明确 `minWidth: 44` / `contentShape`；中文两字按钮可能小于 44pt。解除后须补命中框与窄屏 / 最大 Dynamic Type / VoiceOver 验收。
 - PRD 当前写“增删不改推荐学习”，与裁定“新增动作真实完成事实正常进入统计/MLE/引擎”矛盾；应改成“不改推荐算法或长期计划，新增动作的真实完成事实仍按普通历史参与后续处方”。
