@@ -183,3 +183,15 @@ MLE 批次 A+B 把肌群等级做完了，但用户升级时**毫无感知**：�
 
 - owner 已批准：低置信升级事实仍显示但为不可点纯文本；B1 confidence / safety / recovery 资格在事件首次 append 时由原始事实锁定，旧文件缺事实不出卡；app 进程内完整 memory 读改写必须串行，并用 barrier 双 writer 测试证明 pending 与较新 B2 state 均不丢。
 - 前次 STOP 保留为审查证据；本批自本记录起恢复定向 RED → 修复 → GREEN、规格写回、Simulator 直接验收与实施回执收口。其余裁定与全部红线不变。
+
+## 实施回执（2026-07-30 收口；实施=Codex sol+ultra，收尾=主会话——Codex 用量额度耗尽至 8/5，剩余收尾按代决授权由主会话完成并如实标注）
+
+- 分支与 commit 清单：`codex/0729-mle-consumption`（基线 origin/main 3ca6c3f）。Codex：`7f00f15` widget 等级 rows、`eae17ef` 突破留存+均衡状态（A1/B2 引擎）、`bddb51b` 反馈行+三卡+里程碑接线（A2/B1/C）、`f9653d4` 事件事实锁定（第二停裁定②③落地：eventFacts + 串行事务）、`84669ed`/`6d466bb`/`15fec45`/`405446d` 裁定与停止文档。主会话：`4842b0a`（计划调整批遗留）外另有 `docs: MLE 消费面规格写回` 与 P2 修复 `fix: nil balanceScore 清空 B2 状态`（先红后绿，RedeLocalSnapshot 237/237）。
+- A 留存+反馈：pendingBreakthroughs 加性 optional（去重键=muscle+kind+终点+日期、上限 20 丢最旧）；app 进程内 load→advance→save 同一串行事务（barrier 双 writer 测试锁定不丢 pending/不倒退 B2 state）；今日页练完态渲染当天事件，合格行=分享图标+chevron 可点，低置信/旧事件=纯文本不可点（两种语义分开、VoiceOver 纯文本）。
+- B 两卡：分享资格锁定在事件首次 append 时的 eventFacts（存事实非结论布尔；旧事件缺 facts 永久 fail closed）；均衡确认合同=stable/trough reference + raw Δ≥10.0 + contributor 集合可比 + 中位置信≥medium + 低侧上涨方向门槛 + 两次独立场次观察（同场重复读不算）；两卡 Free Core、Mirror 禁字段哨兵、无置信度读数。
+- C 里程碑：独立 strengthMilestone case（不编 reps、kg/lb 禁互转）；行改 Button ≥44pt；合并行→实测/估算各一页，估算页卡面带描边「估算」微标。
+- D widget：复用 rows 通道写前 2 肌群等级，calibrating/无数据→[]，schemaVersion 仍 1。
+- 停止条件触发 2 次（B2 阈值语义 / A2-B1 资格冲突+并发写），均高质量，裁定后恢复；主会话按裁定验收。
+- 独立门禁：`.claude/quality-gate.cmd` exit 0（QUALITY GATE: PASS，主会话独立跑）。
+- 实拍与实证（md5 六张互异）：today-upgrade-line（合格可点行）/ level-up-card / balance-improvement（均衡度 71→82+补足方向）/ level-up / **legacy-failclosed-line（最终 build 上同样事实变纯文本——修复前后对照）** / milestone-estimated（140 kg+估算微标）。widget 快照 App Group 实读：rows=[胸部 Lv.16, 肩部 Lv.16]、schemaVersion 1；memory 实读：pending 2 条+balance reference 落盘、旧键全保留。
+- 未尽事项：①里程碑预览合并行两页 tab 标题均为「力量里程碑」，无法在选卡时区分实测/估算（卡面有标注）——MINOR，交验收定夺；②widget 时间线真机实拍与 VoiceOver 实听归 TestFlight N10-N13；③Codex 原计划的最终 Simulator 五路径复验因额度中断，由主会话以最终 build 补齐上述实拍。
