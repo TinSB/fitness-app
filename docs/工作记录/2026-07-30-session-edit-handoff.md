@@ -36,7 +36,11 @@ FR-TR14 S1 只做了「后续动作现在练」。用户在训练现场的真实
 2. **目标生成（写死，按优先级）**：
    - canonical 有该动作历史 → 最近一场该动作的工作组重量（同日多场按 canonical append 顺序取最后，与 lastPerformance 口径一致）；
    - 无历史 → 复用 replace 的保守公式：`startWeightKg` 对齐 LoadGrid 步长（下限守护）；bodyweight/band 归 0；assisted 同 replace 语义。
-   - 组数 3、目标次数 = 目录 rep 区间下界、RIR 2（保守首练口径）；restSeconds 沿用当日多数动作值（无则目录/全局默认）。
+   - 组数固定 3；`targetReps` / `targetRir` / `restSeconds` 只走以下**借值链**，全部来自今天引擎已经产出的真实 `ExerciseSetPlan`，不读目录不存在的字段、不发明默认数字：
+     1. 当日会话存在同 `primaryMuscle` 的已排动作 → 按当日队列顺序借第一个同主肌群动作的首组 `targetReps` / `targetRir` 与该动作 `restSeconds`；
+     2. 无同主肌群动作 → `targetReps` 取当日全部已排动作首组值的众数（平票取更小值），`restSeconds` 同法取众数（平票取更大值），`targetRir` 取当前动作首组值；
+     3. 理论兜底 → 取当前动作首组 `targetReps` / `targetRir` 与 `restSeconds`（当前动作永存在，链条必然终止）。
+   - `addExercise` typed event 在创建时一次性携带按上述重量与借值链解析完成的完整 `ExerciseSetPlan` payload；draft replay 只重放 payload，不重查 canonical 历史。
    - ⛔ 禁止任何无出处的魔法数字出现在处方行。
 3. **落盘**：以既有 exercises 元素字段正常落盘（真实事实进统计/MLE/引擎，replace 先例已证明下游容忍）；另加 open-bag 标记留痕（如元素内 `"adHocAdded": true` 或 storage 级 `sessionEdits`——形态你定，**不 bump schema**，回执写明）。审计口径：临时加的动作不参与轮转/verdict/计划对账的任何「计划 vs 实际」偏差告警（如有）。
 4. 引擎处方逻辑零改动——加动作是会话内事实，下次处方由引擎照常从 clean sessions 读取。
@@ -46,7 +50,7 @@ FR-TR14 S1 只做了「后续动作现在练」。用户在训练现场的真实
 1. **语义 = 中性移除**，与跳过严格区分：不问四码原因、**不写 skippedExercises、不进疼痛信号**、不算完成也不算跳过。
 2. 仅可移除**尚无任何事实**（零完成组、零跳过、零疼痛登记）的**后续**动作；当前动作不可移除（跳过/换动作已覆盖）；按**位置**移除（自由日序可有重复 id，不得整 id 误删）。
 3. 落盘 open-bag 留痕（如 `sessionEdits.removed`：exerciseId + 原位置），供统计诚实与将来「存回计划」批使用；移除的动作不出现在 exercises 数组。
-4. **sheet 内单层撤销**：错删立即可撤（轻量 local state 即可，不必上 PlanDayEditUndoModel 全栈）；关 sheet 后不再提供撤销（重新加回即可）。
+4. **sheet 内单层撤销**：错删立即可撤（轻量 local state 即可，不必上 PlanDayEditUndoModel 全栈）；关 sheet 后不再提供撤销（重新加回即可）。**进程终止等同关闭 sheet**：恢复队列与移除事实，不恢复撤销入口。
 5. 全部移除后剩余动作数下限 = 1？——**不设专门下限**：只能移除后续动作，当前动作永在，天然 ≥1。
 
 ## 裁定 D：改剩余组数
@@ -61,7 +65,7 @@ FR-TR14 S1 只做了「后续动作现在练」。用户在训练现场的真实
 
 1. ⛔ **已完成事实不可变**：任何编辑不得改名、删除、重排已完成/已跳过的组或动作（PRD 原文红线）。
 2. ⛔ 处方引擎（TodayPrescriptionEngine）、轮转、verdict、周口径、自动均衡、疼痛保守态零改动；TrainFlowState 属会话状态机可改。
-3. ⛔ 三类新事件必须全走既有 durable draft barrier：杀进程恢复后队列、目标、组数、撤销状态一致。
+3. ⛔ 三类新事件必须全走既有 durable draft barrier：杀进程恢复后**队列、完整目标 payload、组数与移除事实**一致；撤销入口属于编辑面单次呈现生命周期，进程终止/关 sheet 即失效。
 4. ⛔ 不搬计划编辑器/目录浏览器进 Train（任务型窄选择器）；「练完存回计划」本批不做。
 5. ⛔ 零弹窗、零确认框、零说教；新串走 RedeL10n + 精确断言 + 无句号红线。
 6. ⛔ 不 bump schema；落盘只加 open-bag 字段。版本号不动。不 push、不开 PR。
@@ -71,7 +75,7 @@ FR-TR14 S1 只做了「后续动作现在练」。用户在训练现场的真实
 1. 训练中打开编排面 → 能移除一个还没练的动作；手滑删错能立刻撤回
 2. 「加一个动作」→ 选个哑铃弯举 → 它排在当前动作后面，重量是我上次练它的重量（没练过就是保守起步值），能正常练正常记
 3. 当前动作练到一半觉得今天状态好 → 加一组；状态差 → 减一组（至少留一组）
-4. 全程强杀 App 重开 → 加的/删的/改的组数全都还在
+4. 全程强杀 App 重开 → 加的/删的/改的组数全都还在（撤销条本身不恢复）
 5. 练完落盘：加的动作在历史里、删的动作不算跳过；下次处方不因为我临时编辑就变魔怔
 6. 不用这些功能的用户一切照旧
 
@@ -109,3 +113,14 @@ FR-TR14 S1 只做了「后续动作现在练」。用户在训练现场的真实
 - 实拍：[文件名 + md5 + 新钩子]
 - 未尽事项：[如实列]
 ```
+
+## 停止回报（owner 已裁定解除）
+
+- 时间：2026-07-30
+- 状态：**STOP，未进入 RED 测试或实现。** 当前分支仍为 `codex/0730-session-edit`，基线 `origin/main@420a8d6`；本轮未修改 runtime、测试、引擎、schema、版本号或处方逻辑。
+- 解除：owner 随后明确选择确定性“借值链”，并裁定“进程终止等同关闭编辑面”；上述裁定已写回 B/C、红线与验收标准，实施可继续。
+- 阻断 1——加动作的次数与休息真值不存在：裁定 B 要求“目标次数 = 目录 rep 区间下界”，并在当日动作没有多数休息值时回退“目录/全局默认”；但当前 `ExerciseCatalogEntry` 与 `Resources/exercises.json` 均没有 rep range 或 rest 字段，`TodayPrescriptionEngine` 的 rep/rest 只存在于私有日程 slot 中，任务型全库 picker 又不对应唯一 slot。另有多个休息值并列时也未写平票规则。实施方若自行按动作 kind、movement pattern、当前动作或固定数字推导，都会新增未获裁定的处方行为，违反“裁定写死 / 处方逻辑零改动 / 禁止无出处魔法数字”。
+  - 建议 owner 二选一并写回裁定：A. 给动作目录补充明确的 session-edit rep/rest 事实及迁移/默认规则；B. 明确一套仅供临时加动作使用的确定性映射（含每个分支的具体值、休息多数值平票规则与全局 fallback）。在裁定前不建议复用私有 slot 或凭实现方经验猜值。
+- 阻断 2——“sheet-local 单层撤销”与“强杀后撤销状态一致”不能同时由现有 draft 表达：当前 `TrainSessionDraft` 只保存原处方与 `TrainFlowEvent`；sheet 是否关闭、local undo 是否仍有效都不在 draft/event 中。若撤销只放 `@State`，强杀后必丢；若从最后一次 remove event 自动恢复，实施方又无法知道 sheet 是否已关闭，会违反“关 sheet 后不再提供撤销”。
+  - 建议 owner 二选一并写回裁定：A. 把 remove/undo/关闭编辑面清除 undo 的生命周期都定义为可重放、durable 的 typed state/event（并明确这是否允许超过当前“三类新事件”的字面范围）；B. 明确“强杀等同关闭 sheet”，允许恢复队列与移除事实但不恢复撤销入口，同时相应收窄“撤销状态一致”红线。
+- 已确认的非阻断边界：Master Architecture 允许把改动限制在 `RedeTrainingDecision` 会话 reducer、非 canonical draft 与 `CompletedSessionBuilder` 顶层 `sessionEdits` open-bag；无需修改 `CanonicalSessionWriter`、AppData schema 或 `TodayPrescriptionEngine`。未来继续时，加动作 event 应携带已解析的完整会话计划 payload，draft replay 不应再次查询可能变化的历史。
