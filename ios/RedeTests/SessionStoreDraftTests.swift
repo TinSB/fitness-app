@@ -493,6 +493,44 @@ final class SessionStoreDraftTests: XCTestCase {
         XCTAssertEqual(staged.preservingAfterSetCountChange(1), staged)
     }
 
+    func testSessionEditActionsStackOnlyForAccessibilityDynamicType() {
+        XCTAssertEqual(
+            TrainSessionEditActionLayout.resolve(isAccessibilitySize: false),
+            .horizontal
+        )
+        XCTAssertEqual(
+            TrainSessionEditActionLayout.resolve(isAccessibilitySize: true),
+            .vertical
+        )
+    }
+
+    func testUnifiedSessionEditEntryStaysOpenAfterCurrentFactsAndOnLastExercise() throws {
+        var flowWithFacts = TrainFlowState(prescription: makePrescription())
+        flowWithFacts.logSet(CompletedSetObservation(
+            weightKg: 40,
+            reps: 8,
+            rir: 2,
+            painReported: false
+        ))
+        flowWithFacts.restFinished()
+
+        XCTAssertEqual(flowWithFacts.phase, .activeSet)
+        XCTAssertTrue(flowWithFacts.moveToCurrentCandidates.isEmpty)
+        XCTAssertTrue(
+            TrainSessionEditEntryPolicy.canOpen(flowWithFacts),
+            "S1 move rows degrade after facts, but the unified S2 editor entry remains open"
+        )
+
+        let original = makePrescription()
+        let lastOnly = TodayPrescription(
+            dayCode: original.dayCode,
+            exercises: [try XCTUnwrap(original.exercises.last)],
+            dayReasons: original.dayReasons
+        )
+        let lastExerciseFlow = TrainFlowState(prescription: lastOnly)
+        XCTAssertTrue(TrainSessionEditEntryPolicy.canOpen(lastExerciseFlow))
+    }
+
     func testEverySessionEditRollsBackExactlyWhenDurableSaveFails() throws {
         let eventBuilders: [(SessionStore) throws -> TrainFlowEvent] = [
             { _ in .addExercise(self.makeAdHocExercisePlan()) },

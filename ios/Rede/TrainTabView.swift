@@ -27,6 +27,21 @@ struct TrainQuickAdjustmentState: Equatable {
     }
 }
 
+enum TrainSessionEditActionLayout: Equatable {
+    case horizontal
+    case vertical
+
+    static func resolve(isAccessibilitySize: Bool) -> Self {
+        isAccessibilitySize ? .vertical : .horizontal
+    }
+}
+
+enum TrainSessionEditEntryPolicy {
+    static func canOpen(_ flow: TrainFlowState) -> Bool {
+        flow.phase == .activeSet
+    }
+}
+
 struct TrainTabView: View {
     var onGoToday: () -> Void = {}
 
@@ -204,7 +219,8 @@ struct TrainTabView: View {
             let openEditor = arguments.contains("-autoOpenSessionOrder")
                 || arguments.contains("-autoOpenSessionEdit")
             let openPicker = arguments.contains("-autoOpenSessionEditPicker")
-            if (openEditor || openPicker), !didAutoOpenSessionEdit, flow?.phase == .activeSet,
+            if (openEditor || openPicker), !didAutoOpenSessionEdit,
+               flow.map(TrainSessionEditEntryPolicy.canOpen) == true,
                (!openPicker || !sessionStore.sessionEditCandidates.isEmpty) {
                 didAutoOpenSessionEdit = true
                 openSessionEdit(showPicker: openPicker)
@@ -1058,7 +1074,7 @@ struct TrainTabView: View {
                 ?? "\(s.sessionOrderEntry), \(nextName)"
         } ?? s.sessionOrderEntry
 
-        if flow.phase == .activeSet {
+        if TrainSessionEditEntryPolicy.canOpen(flow) {
             Button(action: {
                 openSessionEdit()
                 actionPulse += 1
@@ -1662,26 +1678,51 @@ struct TrainTabView: View {
 
     private func sessionEditUndoRow(_ removal: SessionExerciseRemoval) -> some View {
         let name = localeStore.exerciseName(removal.exercise.exerciseId)
-        return HStack(spacing: 12) {
-            Text(s.sessionEditRemoved(name: name))
-                .font(.redeCallout)
-                .foregroundStyle(Color.redeT3)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 8)
-            Button {
-                undoSessionRemoval(removal, name: name)
-            } label: {
-                Text(s.sessionEditUndo)
-                    .font(.redeCallout)
-                    .frame(minWidth: 44, minHeight: 44)
-                    .contentShape(Rectangle())
+        let layout = TrainSessionEditActionLayout.resolve(
+            isAccessibilitySize: dynamicTypeSize.isAccessibilitySize
+        )
+        return Group {
+            switch layout {
+            case .horizontal:
+                HStack(spacing: 12) {
+                    sessionEditRemovedLabel(name: name)
+                    Spacer(minLength: 8)
+                    sessionEditUndoButton(removal, name: name)
+                }
+            case .vertical:
+                VStack(alignment: .leading, spacing: 0) {
+                    sessionEditRemovedLabel(name: name)
+                    sessionEditUndoButton(removal, name: name)
+                }
+                .padding(.vertical, 8)
             }
-                .foregroundStyle(Color.redeEmber)
-                .buttonStyle(.redePressable)
-                .accessibilityIdentifier("train-session-edit-undo")
         }
         .frame(minHeight: 44)
         .overlay(alignment: .bottom) { Rectangle().fill(Color.redeHair2).frame(height: 1) }
+    }
+
+    private func sessionEditRemovedLabel(name: String) -> some View {
+        Text(s.sessionEditRemoved(name: name))
+            .font(.redeCallout)
+            .foregroundStyle(Color.redeT3)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func sessionEditUndoButton(
+        _ removal: SessionExerciseRemoval,
+        name: String
+    ) -> some View {
+        Button {
+            undoSessionRemoval(removal, name: name)
+        } label: {
+            Text(s.sessionEditUndo)
+                .font(.redeCallout)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .foregroundStyle(Color.redeEmber)
+        .buttonStyle(.redePressable)
+        .accessibilityIdentifier("train-session-edit-undo")
     }
 
     private func sessionEditFutureRow(
@@ -1728,41 +1769,78 @@ struct TrainTabView: View {
         }
     }
 
+    @ViewBuilder
     private func sessionEditFutureActions(
         exerciseId: String,
         name: String,
         position: Int,
         canMove: Bool
     ) -> some View {
-        HStack(spacing: 12) {
-            if canMove {
-                Button {
-                    moveExerciseToCurrent(id: exerciseId, name: name)
-                } label: {
-                    Text(s.sessionOrderTrainNow)
-                        .font(.redeCallout)
-                        .frame(minWidth: 44, minHeight: 44)
-                        .contentShape(Rectangle())
-                }
-                .foregroundStyle(Color.redeEmber)
-                .buttonStyle(.redePressable)
-                .accessibilityLabel(s.sessionOrderMoveA11y(name: name))
-                .accessibilityHint(s.sessionOrderMoveHint)
-                .accessibilityIdentifier("train-session-edit-move-\(position)")
+        let layout = TrainSessionEditActionLayout.resolve(
+            isAccessibilitySize: dynamicTypeSize.isAccessibilitySize
+        )
+        switch layout {
+        case .horizontal:
+            HStack(spacing: 12) {
+                sessionEditMoveButton(
+                    exerciseId: exerciseId,
+                    name: name,
+                    position: position,
+                    canMove: canMove
+                )
+                sessionEditRemoveButton(position: position, name: name)
             }
+        case .vertical:
+            VStack(alignment: .leading, spacing: 0) {
+                sessionEditMoveButton(
+                    exerciseId: exerciseId,
+                    name: name,
+                    position: position,
+                    canMove: canMove
+                )
+                sessionEditRemoveButton(position: position, name: name)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    @ViewBuilder
+    private func sessionEditMoveButton(
+        exerciseId: String,
+        name: String,
+        position: Int,
+        canMove: Bool
+    ) -> some View {
+        if canMove {
             Button {
-                removeSessionExercise(at: position, name: name)
+                moveExerciseToCurrent(id: exerciseId, name: name)
             } label: {
-                Text(s.sessionEditRemove)
+                Text(s.sessionOrderTrainNow)
                     .font(.redeCallout)
                     .frame(minWidth: 44, minHeight: 44)
                     .contentShape(Rectangle())
             }
-            .foregroundStyle(Color.redeT3)
+            .foregroundStyle(Color.redeEmber)
             .buttonStyle(.redePressable)
-            .accessibilityLabel(s.sessionEditRemoveA11y(name: name))
-            .accessibilityIdentifier("train-session-edit-remove-\(position)")
+            .accessibilityLabel(s.sessionOrderMoveA11y(name: name))
+            .accessibilityHint(s.sessionOrderMoveHint)
+            .accessibilityIdentifier("train-session-edit-move-\(position)")
         }
+    }
+
+    private func sessionEditRemoveButton(position: Int, name: String) -> some View {
+        Button {
+            removeSessionExercise(at: position, name: name)
+        } label: {
+            Text(s.sessionEditRemove)
+                .font(.redeCallout)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .foregroundStyle(Color.redeT3)
+        .buttonStyle(.redePressable)
+        .accessibilityLabel(s.sessionEditRemoveA11y(name: name))
+        .accessibilityIdentifier("train-session-edit-remove-\(position)")
     }
 
     private func sessionEditAddRow(_ entry: ExerciseCatalogEntry, divider: Bool) -> some View {
