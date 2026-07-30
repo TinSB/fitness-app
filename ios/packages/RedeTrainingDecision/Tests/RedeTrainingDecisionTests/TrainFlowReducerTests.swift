@@ -445,9 +445,14 @@ final class TrainFlowReducerTests: XCTestCase {
 
     func testStaleUndoCannotDuplicateOrdinarySameIdAdHocOrReplay() throws {
         var state = try makeState()
-        let removal = try XCTUnwrap(state.removal(at: 2))
+        let removal = try XCTUnwrap(state.removal(at: 1))
         state.removeExercise(removal)
-        state.addExercise(removal.exercise)
+        state.addExercise(adHocPlan(id: removal.exercise.exerciseId))
+        XCTAssertEqual(
+            state.addedExercises.last?.exerciseId,
+            removal.exercise.exerciseId,
+            "the precondition must create a real same-id ad-hoc lifecycle"
+        )
         let readdedAdHoc = state
 
         let forgedDraft = TrainSessionDraft(

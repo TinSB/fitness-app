@@ -115,6 +115,14 @@ public struct TrainFlowState: Equatable, Sendable {
         let sealedLinkIndex: Int?
     }
 
+    private struct RemovedExerciseRestoreContext: Equatable, Sendable {
+        let pendingReplacement: PendingSegmentReplacement?
+        /// remove 时该 id 的生命周期代次；同 id 后续 add/replace 会推进代次，使旧 Undo 永久失效。
+        let lifecycleGeneration: Int
+        /// 允许原计划本就有重复 id；restore 只接受 remove 后同 id 数量未被其它事件改变的精确状态。
+        let sameIdCountAfterRemoval: Int
+    }
+
     public struct Progress: Equatable, Sendable {
         public let exerciseNumber: Int
         public let exerciseTotal: Int
@@ -160,9 +168,11 @@ public struct TrainFlowState: Equatable, Sendable {
     /// 当前连续发生段；换动作、换序或推进动作时清空，确保同 id 回换也创建新 occurrence。
     private var currentFactSegmentIndex: Int?
     private var deferredSegmentReplacements: [String: PendingSegmentReplacement] = [:]
-    /// 与 removedExercises 严格同栈：remove 摘下 pending；仅同一 removal 的 LIFO
-    /// restore 才能恢复。nil 表示该次普通移除没有 replacement occurrence 身份。
-    private var removedSegmentReplacementContexts: [PendingSegmentReplacement?] = []
+    /// 仅内存/replay 派生的 occurrence 代次；不进 typed event 或 canonical。
+    private var exerciseLifecycleGenerations: [String: Int] = [:]
+    /// 与 removedExercises 严格同栈：remove 摘下 pending 并冻结 occurrence 代次；
+    /// 仅未被同 id 新生命周期作废的同一 removal LIFO restore 才能恢复。
+    private var removedExerciseRestoreContexts: [RemovedExerciseRestoreContext] = []
 
     public init(prescription: TodayPrescription, catalog: ExerciseCatalog = .minimal, allowedEquipment: Set<String>? = nil, loadUnit: LoadUnit = .kg) {
         self.prescription = prescription
@@ -404,6 +414,7 @@ public struct TrainFlowState: Equatable, Sendable {
         }
 
         events.append(.replaceExercise(newExerciseId))
+        beginNewExerciseLifecycle(for: newExerciseId)
         let replacement = Replacement(
             originalExerciseId: exercise.exerciseId,
             actualExerciseId: newExerciseId
@@ -548,6 +559,7 @@ public struct TrainFlowState: Equatable, Sendable {
         var exercises = plan.exercises
         exercises.insert(exercise, at: insertionIndex)
         events.append(.addExercise(exercise))
+        beginNewExerciseLifecycle(for: exercise.exerciseId)
         addedExercises.append(SessionExerciseAddition(
             exerciseId: exercise.exerciseId,
             position: insertionIndex
@@ -580,28 +592,36 @@ public struct TrainFlowState: Equatable, Sendable {
             guard detached.accepted else { return }
             exercises.remove(at: removal.index)
             removedExercises.append(removal)
-            removedSegmentReplacementContexts.append(detached.pending)
+            removedExerciseRestoreContexts.append(RemovedExerciseRestoreContext(
+                pendingReplacement: detached.pending,
+                lifecycleGeneration: lifecycleGeneration(
+                    for: removal.exercise.exerciseId
+                ),
+                sameIdCountAfterRemoval: exercises.lazy.filter {
+                    $0.exerciseId == removal.exercise.exerciseId
+                }.count
+            ))
         case .restore:
             guard removal.index <= exercises.count,
                   removedExercises.last == removal.removing,
-                  removedSegmentReplacementContexts.count == removedExercises.count
+                  removedExerciseRestoreContexts.count == removedExercises.count
             else { return }
-            let contextIndex = removedSegmentReplacementContexts.index(
-                before: removedSegmentReplacementContexts.endIndex
+            let contextIndex = removedExerciseRestoreContexts.index(
+                before: removedExerciseRestoreContexts.endIndex
             )
-            let detached = removedSegmentReplacementContexts[contextIndex]
-            guard canRestoreDeferredSegmentReplacement(
-                detached,
+            let context = removedExerciseRestoreContexts[contextIndex]
+            guard canRestoreRemovedExercise(
+                context,
                 for: removal.exercise.exerciseId,
                 exercises: exercises
             ) else { return }
             restoreDeferredSegmentReplacement(
-                detached,
+                context.pendingReplacement,
                 for: removal.exercise.exerciseId
             )
             exercises.insert(removal.exercise, at: removal.index)
             removedExercises.removeLast()
-            removedSegmentReplacementContexts.removeLast()
+            removedExerciseRestoreContexts.removeLast()
         }
         events.append(.removeExercise(removal))
         plan = SessionSetPlan(dayCode: plan.dayCode, exercises: exercises)
@@ -716,6 +736,14 @@ public struct TrainFlowState: Equatable, Sendable {
 
     // MARK: - 私有
 
+    private func lifecycleGeneration(for exerciseId: String) -> Int {
+        exerciseLifecycleGenerations[exerciseId] ?? 0
+    }
+
+    private mutating func beginNewExerciseLifecycle(for exerciseId: String) {
+        exerciseLifecycleGenerations[exerciseId, default: 0] += 1
+    }
+
     private mutating func detachDeferredSegmentReplacement(
         for exerciseId: String
     ) -> (accepted: Bool, pending: PendingSegmentReplacement?) {
@@ -745,15 +773,17 @@ public struct TrainFlowState: Equatable, Sendable {
         return (true, pending)
     }
 
-    private func canRestoreDeferredSegmentReplacement(
-        _ pending: PendingSegmentReplacement?,
+    private func canRestoreRemovedExercise(
+        _ context: RemovedExerciseRestoreContext,
         for exerciseId: String,
         exercises: [ExerciseSetPlan]
     ) -> Bool {
-        guard let pending else { return true }
-        guard deferredSegmentReplacements[exerciseId] == nil,
-              !exercises.contains(where: { $0.exerciseId == exerciseId })
+        guard lifecycleGeneration(for: exerciseId) == context.lifecycleGeneration,
+              exercises.lazy.filter({ $0.exerciseId == exerciseId }).count
+                == context.sameIdCountAfterRemoval,
+              deferredSegmentReplacements[exerciseId] == nil
         else { return false }
+        guard let pending = context.pendingReplacement else { return true }
 
         if pending.splitsFacts {
             guard let segmentIndex = pending.sealedSegmentIndex,
