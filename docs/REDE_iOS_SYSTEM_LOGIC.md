@@ -105,6 +105,10 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 > **FR-TR6「只换这次」临时换动作（2026-06-26）。** 点替代项后二选一：「以后都换」= 永久（写 `exerciseSubstitutions`，FR-T5 原路径）；「只换这次」= 临时（写 `oneTimeSubstitutions[原]={换成,dateISO}`，**只今天有效、次日自动失效**）。两表均 open-bag 加性、**无 schema bump**。**引擎零改动**是关键：在 app 层（`TodayModel`）把「永久 + 今天的临时（按 todayISO 过滤）」**合并成一张 substitutions 表再喂 `plan()`（临时优先）**，引擎不区分二者 → golden 零回归；临时项只今天混入、绝不落进永久表。写闸 `applyOneTimeSubstitution` 顺手清掉非今天的陈旧项（容器永远只留当天，自动 GC）。撤销同 FR-T5（单步即时反向写 `removeOneTimeSubstitution`）。诚实：换后若 `plan()` 因替代非本槽合法候选优雅回退（处方没变），honest-check 清掉死覆盖、不假报成功（同 FR-T5）。UI：处方行微标「今天换」（vs 永久「已换」）、detail sheet 撤销入口文案标明次日自动恢复。
 
+> **FR-TR6 训练中途换动作的完成事实（2026-07-30）。** 同一 slot 已有完成组或跳过组后再换动作时，完成训练仍只经既有 append 写闸写一条 `TrainingSession`，但 `exercises[]` 必须按事实发生时的 occurrence 拆分：旧动作保存换前全部 observations、skips 与 `painFlag`，新动作从第 1 组开始，保存换后事实。新动作剩余组数 = 换前原计划组数 − 已完成/已跳过组数，最低 1 组；重量继续沿用既有 external / assisted / bodyweight replace 规则。拆分元素使用 open-bag `originalExerciseId`、`actualExerciseId`、`replacementRole`（`original` / `actual`）保留替换关系；同一 occurrence 同时承接前后两次替换时，以 `replacementLinks[]` 完整保存两条关系。只有同一 `exerciseId` 在一场内出现多个落盘 occurrence 时，record/set id 才加 `-occurrence-N` 防冲突。零事实换动作保持既有落盘字节：继续沿用原有 original / actual 两字段，不新增 `replacementRole` / `replacementLinks`。该修复不迁移既有历史、不 bump schema；轮转、verdict、进阶、疼痛保守态和「只换这次 / 以后都换」范围语义均不消费这些标记、不改变判定。
+>
+> **实现状态（2026-07-30）：NO-GO，合同未改。** 本地分支已证明上述拆分能保全 canonical 事实，但独立终审发现现有下游仍把 `exercises[]` 当作“一场同 pattern / 同 id 只有一个元素”：正序 sticky 会取换前 occurrence，疼痛恢复的 `contains` 会把同 id 多 occurrence 中任一无痛元素当成整场正常完成。两项均会改变既有判定结果，已按交接红线停止；本段保留 owner 已裁定的目标合同，不代表该分支可合并。待 owner 另行授权兼容策略前，不得发布这一实现。
+
 > 本地通知（FR-NT1 休息结束 + FR-NT2 每周）由 `RedeNotifications` 纯策略 + `#if os(iOS)` UNUserNotificationCenter 适配器调度：**派生临时、绝不落 canonical**（只把开关偏好当只读输入）；无 remote push（Master §9）；策略产 typed code、文案归 RedeL10n（§7.3 中性、禁断签/羞辱/施压）。FR-NT1 在休息生命周期 schedule/cancel（rest-begin 排、rest-finished/收尾/放弃取消）；FR-NT2 固定 2 条（周一上午「新周」/周四傍晚「保持节奏」，UNCalendarTrigger repeats，幂等重注册，可关）。授权价值先行（首次开开关时请求），被拒不影响核心功能。阶梯外的频率/时间为 MVP 起步值待校准；按 daysPerWeek 缩放 + 用户自选时间后置。
 >
 > **送达正确性（2026-06-20 真机 bug 修复，关键契约）**：① **前台必须显式呈现**——App 设 `UNUserNotificationCenter` delegate（启动即接管）+ `willPresent` 返回 banner/sound，否则 iOS 在前台静默丢弃本地通知（"开了权限却没收到"的根因）。② **取消只清待发（pending），不动已送达（delivered）**——否则锁屏期间已弹出、解锁回 App 时会把已送达那条也抹掉。③ **休息自然到点（倒计时归零）不取消通知**——它正该此刻送达（`apply(.restFinished, restCompletedNaturally:)` 区分：自然到点不取消 / 手动「下一组」提前结束或收尾才取消）；后台锁屏时 `runRestTimer` 不运行、`finishRest` 不触发，故通知不被取消、由系统按 time-interval 触发器送达。④ **加时（+30）/ 暂停-继续必须按新剩余重排**（暂停撤回、继续/加时重排），否则 time-interval 触发器仍按原时点弹、早于实际结束。⑤ scheduleRest 排程前清同 id 已送达历史（离触发尚远、不误删新条），避免通知中心堆叠。⑥ **休息 + 每周提醒都用 `.timeSensitive` 抢占级别**（需 `com.apple.developer.usernotifications.time-sensitive` entitlement）——默认 `.active` 在用户忙于别的 App / 开专注模式时会被降级成"静默进通知中心、不弹横幅"；改时效性后在别的 App 前台 / 专注模式时也强弹（owner 2026-06-20 拍板休息+每周都要弹）。文案仍中性（§7.3 管语气、本条管送达）；如每周觉太扰可单独降回 `.active`。**这些是 iOS 运行时行为，host SPM 单测覆盖不到——靠真机 TestFlight 验收。**
@@ -216,7 +220,7 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 **下一组建议**：`NextSetEngine.recommend(plan, completed[]) → NextSetRecommendation?`。原则 = 尊重 session 内执行事实：上一组实际重量是下一组基线（用户第一组完成 85 → 第二组建议继续 85；完全按计划执行 → 保持计划形状）。安全瀑布（先命中先裁决）：疼痛上报 → safety flag + −2.5kg；上组 RIR ≤0.5 → −2.5kg；上组次数 < 区间下限 → −2.5kg；否则延续基线。减重下限 2.5kg；无 RIR 数据不猜不触发力竭规则；全部计划组完成 → nil。输出全 typed（reason/safety code），文案归 RedeL10n。
 
-**跳过/替换/收尾模型**：`SetSkipReason`（equipmentBusy/painDiscomfort/fatigue/timeShort/other）、`SessionEndReason`（completedAll/timeUp/fatigue/pain/other）——rawValue 即留痕 code；`ExerciseReplacementEngine.candidates(for:)` = catalog 同替代族按声明顺序排除自身（FR-TR6 地基）。这些是引擎输入事实，M3-3 已经唯一写闸落盘：`CompletedSessionBuilder` 只记录用户事实（实际组/跳过/替换审计/收尾原因，engine 输出不落盘），写前 gate 的真实现为 `RedeDataHealth.CanonicalWriteValidation`（clean 视图不丢 session + 新 session 必须通过净化）。
+**跳过/替换/收尾模型**：`SetSkipReason`（equipmentBusy/painDiscomfort/fatigue/timeShort/other）、`SessionEndReason`（completedAll/timeUp/fatigue/pain/other）——rawValue 即留痕 code；`ExerciseReplacementEngine.candidates(for:)` = catalog 同替代族按声明顺序排除自身（FR-TR6 地基）。这些是引擎输入事实，M3-3 已经唯一写闸落盘：`CompletedSessionBuilder` 只记录用户事实（实际组/跳过/替换审计/收尾原因，engine 输出不落盘），写前 gate 的真实现为 `RedeDataHealth.CanonicalWriteValidation`（clean 视图不丢 session + 新 session 必须通过净化）。训练中途换动作不能把换前事实按最终 plan id 重命名或丢弃：flow 以事件发生顺序保留动作 occurrence 事实段，draft 仍只保存并重放 typed events；完成时 builder 按事实段顺序组装旧/新动作，跳过与疼痛也各归其发生时 id。换动作本身仍占同一动作 slot，所以 UI 的「动作 N/M」不变；总组进度分母同时计入已封存旧 occurrence 的事实，新动作组指示从 1 开始。
 
 ### 6.0.3 本次训练编排（FR-TR14）
 
@@ -235,6 +239,8 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 ### 6.1 动作库、模板生成与动作事实权威
 
 训练计划不能依赖一组锁死的默认模板。Rede 的训练内容必须拆成三层:
+
+动作事实权威也适用于一次训练内的替换：实际完成、跳过与疼痛事实永远归属于事件发生时的 `exerciseId`，不能因为该 slot 后来换成另一个 catalog 动作而回写、聚合或改名。换前已有事实时，旧/新动作按 occurrence 独立进入历史，并用加性替换关系字段追溯；没有事实时保持原本单一替代动作输出。这一归属修复只让既有统计、lastPerformance 与疼痛窗口读到完整真实事实，不改变它们的任何判定规则。
 
 | 层 | 权威职责 | 不允许 |
 |---|---|---|
