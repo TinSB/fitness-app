@@ -36,12 +36,14 @@ MLE 批次 A+B 把肌群等级做完了，但用户升级时**毫无感知**：�
 
 - 任何 `loadOutcome` 计算出非空 breakthroughs 时，**append 进 pending**（按 `muscle+kind+toLevel/toTier+achievedAtIso` 去重；上限 20，超限丢最旧）。
 - 这样 4 个调用点谁先跑都只是「第一个记录者」，不再是「消费者」——升级事实持久化，不会被训练页待机加载吃掉。
+- **重叠调用也必须安全（2026-07-30 owner 第二次裁定）：**app 进程内完整的 memory `load → advance/reconcile → save` 必须进入同一串行事务（actor 或锁）；atomic replace 只负责文件完整性，不能代替读改写串行化。widget 保持只读。用 barrier 双 writer 测试证明 pending 与较新的 B2 candidate/reference 均不丢。
 - 不新建文件、不进 canonical app-data、不进 App Group。
 
 ### A2 反馈面 = 今日页练完态总结块，一行事实
 
 - `TodayTabView` 练完态总结块（该路径已拿到完整 ProgressModel）渲染**当天**（`achievedAtIso == 今天`）的 pending 升级事件：一行观察式事实——中文样式「背部 Lv.8 → Lv.9」，多肌群同天升级合并展示（最多列 2 个，更多折叠为「等 N 处」）。tierUp 同格式（如「进阶 → 中阶」用现有 tier 文案）。
 - 该行自带分享入口（chevron 形态沿 Development 块先例）→ 打开分享预览，含本批新增的升级卡。
+- **事实与分享资格拆开（2026-07-30 owner 第二次裁定）：**当天 pending 升级事实无论分享资格如何都如实显示。低置信或其它 B1 门槛不通过时，渲染为纯事实行——无 chevron、无分享图标、不可点，a11y 只读纯文本；通过 B1 事件时资格的事实行才保留分享入口。诚实事实面不因传播质量门槛而消失。
 - **过天即不再渲染**（练完态块本来只存在于当天）；pending 里的旧事件留着不清（上限自然滚动）——**不需要已读回执**，天然一次性。
 - ❌ 不弹窗、不加 badge、不做庆祝动画、不在进展页加横幅（等级本身在 Development 块可见）。
 - 措辞 Apple 风格观察式（owner 文案品味基准）：只有事实，无表扬词、无感叹号、无句号。
@@ -55,6 +57,7 @@ MLE 批次 A+B 把肌群等级做完了，但用户升级时**毫无感知**：�
 - 新 `ShareSnapshot.Content` case（5 处 exhaustive switch 同步 + Mirror 禁字段哨兵 + 隐私结构性缺失）。
 - 内容照 §9.2 :1313 契约：肌群名 + `Lv.8 → Lv.9` + 近期一致性事实行（用已有可导出的中性事实，如近 4 周训练天数/该肌群有效组数——**不得出现置信度读数**）。
 - 触发照 §1012-1017 五条：confidence ≥ medium（低置信升级不出卡）、非单次异常（上游已排可疑组，测试锁定）、无 safety/recovery limitation 时才用庆祝式排版（本批文案全部事实式，此条自然满足）。
+- **资格锁定时点（2026-07-30 owner 第二次裁定）：**confidence / safety / recovery 全部门槛以突破事件被**首次 append** 时的 profile 为准，落盘后不随消费时 profile 漂移。持久化事件时的原始事实而非 `isEligible` 布尔，资格由纯函数推导并锁测试；优先给 `LevelBreakthrough` 增 additive optional 事实字段，若 Codable 兼容性不干净才可回退为 `MuscleLevelMemory` 内按 pending 去重键索引的并行 map，并在回执说明。旧文件缺资格事实只显示事实行、不出卡（保守）。
 - 入口：A2 升级行的分享入口；进展页 Development 块既有「分享发展画像」预览在**当天有 pending 升级**时追加升级卡页（segmented Picker 已支持多卡）。
 
 ### B2 均衡改善卡（Balance Improvement Card）
@@ -175,3 +178,8 @@ MLE 批次 A+B 把肌群等级做完了，但用户升级时**毫无感知**：�
 - **问题 2 建议实现边界。** 不改变任何产品裁定，批准把 app 进程内完整的 memory `load → advance/reconcile → save` 放进同一串行事务（同一 actor 或锁；widget 仍只读，未发现第二写进程），并用 barrier 双 writer 测试证明 pending 与较新 B2 state 都不丢。若 owner 认为 A1 只要求顺序多读、明确不要求重叠调用安全，也请写明接受残余丢写风险；实施方不自行弱化“谁先跑都不会吃掉事件”的现有表述。
 - **其余审查结果。** 未发现 `mle-v2` 常量 / `modelVersion`、memory/widget schemaVersion、paywall、`SessionShareSnapshotBuilder`、里程碑单位同源等红线被触碰。canonical docs、CHANGELOG / DEV_LOG、TestFlight 清单、最终 gate 与实施回执尚未收口，按 STOP 纪律不绕过上述歧义继续。
 - **恢复条件。** owner 明确裁定：①低置信当天事实行是否显示、显示时是否可点；②分享资格的锁定时点与允许落盘的 additive optional 结构；③A1 是否要求重叠调用的串行事务。三项写回后，才恢复定向 RED → 修复 → GREEN、规格与实施回执收尾。
+
+### 停止解除（2026-07-30 · owner 第二次裁定）
+
+- owner 已批准：低置信升级事实仍显示但为不可点纯文本；B1 confidence / safety / recovery 资格在事件首次 append 时由原始事实锁定，旧文件缺事实不出卡；app 进程内完整 memory 读改写必须串行，并用 barrier 双 writer 测试证明 pending 与较新 B2 state 均不丢。
+- 前次 STOP 保留为审查证据；本批自本记录起恢复定向 RED → 修复 → GREEN、规格写回、Simulator 直接验收与实施回执收口。其余裁定与全部红线不变。
