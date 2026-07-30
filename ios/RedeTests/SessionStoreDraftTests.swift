@@ -848,10 +848,27 @@ final class SessionStoreDraftTests: XCTestCase {
                     id: "newer-skip-then-replace",
                     date: "2026-07-22",
                     exercises: [
-                        CleanExercise(exerciseId: "bench-press", sets: []),
                         CleanExercise(
                             exerciseId: "db-bench-press",
-                            sets: [CleanLoggedSet(weight: 30, reps: 10, rir: 2)]
+                            sets: [CleanLoggedSet(weight: 30, reps: 10, rir: 2)],
+                            replacementLinks: [
+                                CleanExerciseReplacementLink(
+                                    originalExerciseId: "db-bench-press",
+                                    actualExerciseId: "bench-press",
+                                    role: .original
+                                ),
+                            ]
+                        ),
+                        CleanExercise(
+                            exerciseId: "bench-press",
+                            sets: [],
+                            replacementLinks: [
+                                CleanExerciseReplacementLink(
+                                    originalExerciseId: "db-bench-press",
+                                    actualExerciseId: "bench-press",
+                                    role: .actual
+                                ),
+                            ]
                         ),
                     ]
                 ),
@@ -920,6 +937,10 @@ final class SessionStoreDraftTests: XCTestCase {
                 SnapshotExerciseRecord(
                     exerciseId: "bench-press",
                     sets: [SnapshotSetRecord(weightKg: 80, reps: 8)]
+                ),
+                SnapshotExerciseRecord(
+                    exerciseId: "skip-only-terminal",
+                    sets: []
                 ),
             ]
         )

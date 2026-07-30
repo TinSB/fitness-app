@@ -1185,10 +1185,15 @@ public enum TodayPrescriptionEngine {
         let minRir: Double?
     }
 
+    private struct StickyReplacementKey: Hashable {
+        let originalExerciseId: String
+        let actualExerciseId: String
+    }
+
     /// 最近一次包含该动作的 session（按天序号最大者）的工作组摘要。
     /// sticky swaps（wave-9，owner 拍板）：每个 movementPattern → 最近一场含该 pattern
-    /// 的 session 里实际做的 exerciseId（含换动作换入的实际动作）。读「实际做了什么」
-    /// 故自然 un-stick——换回默认即恢复默认。供 plan() 唯一出现的 pattern 槽位消费。
+    /// 的 session 里第一个槽位代表。FR-TR6 替换链以终点 actual id 代表链首槽位；
+    /// 普通计划动作与 FR-TR14 临时加练仍各自代表自身，保持旧「第一个」语义。
     private static func lastActualByPattern(
         sessions: [CleanTrainingSession],
         catalog: ExerciseCatalog
@@ -1202,12 +1207,60 @@ public enum TodayPrescriptionEngine {
         }.sorted { $0.day > $1.day }   // 最新在前
         var result: [String: String] = [:]
         for (_, session) in ordered {
-            for ex in session.exercises.reversed() {
-                guard let pattern = catalog.entry(id: ex.exerciseId)?.movementPattern else { continue }
-                if result[pattern] == nil { result[pattern] = ex.exerciseId }
+            for exerciseId in stickyRepresentatives(in: session.exercises) {
+                guard let pattern = catalog.entry(id: exerciseId)?.movementPattern else { continue }
+                if result[pattern] == nil { result[pattern] = exerciseId }
             }
         }
         return result
+    }
+
+    /// occurrence 原序扫描替换边：同一边的 original 端与其后第一个未消费 actual 端
+    /// FIFO 配对。链代表放在链首位置、取终点 occurrence id；没有成对替换边的元素
+    /// 保持自身，因而同 pattern 临时加练不会冒充 FR-TR6 sticky。
+    private static func stickyRepresentatives(in exercises: [CleanExercise]) -> [String] {
+        var pendingOriginals: [StickyReplacementKey: [Int]] = [:]
+        var successorByIndex: [Int: Int] = [:]
+        var indicesWithPredecessor = Set<Int>()
+
+        for (index, exercise) in exercises.enumerated() {
+            // 中间 occurrence 先承接上一跳，再登记下一跳，避免 A→B→A 的 B 自配对。
+            for link in exercise.replacementLinks where link.role == .actual {
+                guard !indicesWithPredecessor.contains(index) else { continue }
+                let key = StickyReplacementKey(
+                    originalExerciseId: link.originalExerciseId,
+                    actualExerciseId: link.actualExerciseId
+                )
+                guard var sources = pendingOriginals[key] else { continue }
+                while let source = sources.first {
+                    sources.removeFirst()
+                    guard successorByIndex[source] == nil else { continue }
+                    successorByIndex[source] = index
+                    indicesWithPredecessor.insert(index)
+                    break
+                }
+                pendingOriginals[key] = sources
+            }
+
+            for link in exercise.replacementLinks where link.role == .original {
+                let key = StickyReplacementKey(
+                    originalExerciseId: link.originalExerciseId,
+                    actualExerciseId: link.actualExerciseId
+                )
+                pendingOriginals[key, default: []].append(index)
+            }
+        }
+
+        var representatives: [String] = []
+        for index in exercises.indices where !indicesWithPredecessor.contains(index) {
+            var terminal = index
+            var visited: Set<Int> = [index]
+            while let next = successorByIndex[terminal], visited.insert(next).inserted {
+                terminal = next
+            }
+            representatives.append(exercises[terminal].exerciseId)
+        }
+        return representatives
     }
 
     /// 「今天本来该练什么」单一真源（无用户覆盖时的轮换结果；含回归重启与每周

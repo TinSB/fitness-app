@@ -89,8 +89,15 @@ final class TodayCompletedDigestTests: XCTestCase {
         // 边界（审查 MINOR）：动作条目在、但全部组被质量清洗剔除 → setCount=0。
         // occurrence 兼容口径：动作数也只计聚合后仍有真实组的 id，因此如实显示
         //「0 动作 · 0 组 · 总量 0」（丑但不编数据、不崩），不整体退化。
+        let filteredRecord = SnapshotSessionRecord(
+            id: "s1",
+            dateISO: today,
+            exercises: (0..<3).map {
+                SnapshotExerciseRecord(exerciseId: "ex\($0)", sets: [])
+            }
+        )
         let digest = TodayCompletedDigestBuilder.digest(
-            latest: entry(dateISO: today, volume: 0, sets: 0), record: record(exercises: 3),
+            latest: entry(dateISO: today, volume: 0, sets: 0), record: filteredRecord,
             dayCode: nil, durationMinutes: 40, patterns: [])
         XCTAssertNotNil(digest)
         XCTAssertEqual(digest?.setCount, 0)

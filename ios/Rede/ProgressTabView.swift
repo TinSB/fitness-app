@@ -336,18 +336,29 @@ struct ProgressTabView: View {
         record: SnapshotSessionRecord?,
         prExerciseIds: [String]
     ) -> [SessionScaleItem] {
-        let volumes: [(id: String, volume: Double)] = (record?.exercises ?? []).map { exercise in
-            (exercise.exerciseId, exercise.sets.reduce(0) { $0 + $1.weightKg * Double($1.reps) })
+        var orderedIds: [String] = []
+        var volumeById: [String: Double] = [:]
+        var setCountById: [String: Int] = [:]
+        for exercise in record?.exercises ?? [] {
+            if volumeById[exercise.exerciseId] == nil {
+                orderedIds.append(exercise.exerciseId)
+            }
+            volumeById[exercise.exerciseId, default: 0] += exercise.sets.reduce(0) {
+                $0 + $1.weightKg * Double($1.reps)
+            }
+            setCountById[exercise.exerciseId, default: 0] += exercise.sets.count
         }
-        let shown = Array(volumes.prefix(Self.barChartWindow))
         let prSet = Set(prExerciseIds)
-        return shown.map {
-            SessionScaleItem(
-                exerciseId: $0.id,
-                volumeKg: $0.volume,
-                isPR: prSet.contains($0.id)
-            )
-        }
+        return orderedIds
+            .filter { setCountById[$0, default: 0] > 0 }
+            .prefix(Self.barChartWindow)
+            .map {
+                SessionScaleItem(
+                    exerciseId: $0,
+                    volumeKg: volumeById[$0] ?? 0,
+                    isPR: prSet.contains($0)
+                )
+            }
     }
 
     private func sessionScale(_ model: ProgressModel) -> ScaleView {

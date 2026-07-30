@@ -49,14 +49,34 @@ struct TodayModel {
 
     var railLast: RailLast? {
         guard let first = prescription?.exercises.first else { return nil }
-        // 纯展示查找（最近含该动作的 session 的顶组实绩）；批量投影归 M4 进展层。
-        let candidates = cleanView.sessions
-            .filter { session in session.exercises.contains { $0.exerciseId == first.exerciseId } }
-            .sorted { $0.date < $1.date }
-        guard let session = candidates.last else { return nil }
-        let sets = session.exercises.filter { $0.exerciseId == first.exerciseId }.flatMap(\.sets)
-        guard let top = sets.max(by: { $0.weight < $1.weight }) else { return nil }
-        return RailLast(weightKg: top.weight, reps: top.reps, dateISO: session.date)
+        // 纯展示查找：先在每场聚合同 id occurrence，空 occurrence 不得遮住更早真绩；
+        // 再取最近非空场的顶组。批量投影归 M4 进展层。
+        var candidates: [(
+            dayISO: String,
+            canonicalOffset: Int,
+            dateISO: String,
+            sets: [CleanLoggedSet]
+        )] = []
+        for (canonicalOffset, session) in cleanView.sessions.enumerated() {
+            let sets = session.exercises
+                .filter { $0.exerciseId == first.exerciseId }
+                .flatMap(\.sets)
+            guard !sets.isEmpty else { continue }
+            candidates.append((
+                String(session.date.prefix(10)),
+                canonicalOffset,
+                session.date,
+                sets
+            ))
+        }
+        guard let candidate = candidates.max(by: {
+            $0.dayISO == $1.dayISO
+                ? $0.canonicalOffset < $1.canonicalOffset
+                : $0.dayISO < $1.dayISO
+        }),
+              let top = candidate.sets.max(by: { $0.weight < $1.weight })
+        else { return nil }
+        return RailLast(weightKg: top.weight, reps: top.reps, dateISO: candidate.dateISO)
     }
 
     /// canonical 路径：Application Support/RedeData/app-data.json（每装机一份）。

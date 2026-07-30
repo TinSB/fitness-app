@@ -25,13 +25,43 @@ public struct CleanLoggedSet: Equatable, Sendable {
     }
 }
 
+/// 一次训练内的替换边。role 表示当前 occurrence 位于边的哪一端；DataHealth
+/// 只投影字段完整且 occurrence id 与端点一致的边，供 FR-TR6 sticky 重建替换链。
+public struct CleanExerciseReplacementLink: Equatable, Hashable, Sendable {
+    public enum Role: String, Equatable, Hashable, Sendable {
+        case original
+        case actual
+    }
+
+    public let originalExerciseId: String
+    public let actualExerciseId: String
+    public let role: Role
+
+    public init(
+        originalExerciseId: String,
+        actualExerciseId: String,
+        role: Role
+    ) {
+        self.originalExerciseId = originalExerciseId
+        self.actualExerciseId = actualExerciseId
+        self.role = role
+    }
+}
+
 public struct CleanExercise: Equatable, Sendable {
     public let exerciseId: String
     public let sets: [CleanLoggedSet]
+    /// replacementRole + replacementLinks 的去重、保序窄投影；普通计划动作与临时加练为空。
+    public let replacementLinks: [CleanExerciseReplacementLink]
 
-    public init(exerciseId: String, sets: [CleanLoggedSet]) {
+    public init(
+        exerciseId: String,
+        sets: [CleanLoggedSet],
+        replacementLinks: [CleanExerciseReplacementLink] = []
+    ) {
         self.exerciseId = exerciseId
         self.sets = sets
+        self.replacementLinks = replacementLinks
     }
 }
 

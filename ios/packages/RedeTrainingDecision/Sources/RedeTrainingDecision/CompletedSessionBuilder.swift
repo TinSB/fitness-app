@@ -17,10 +17,12 @@ public enum CompletedSessionBuilder {
         durationMinutes: Int
     ) -> TrainingSession {
         var exercises: [JSONValue] = []
+        // skipSet 也是 occurrence 事实：split 两端即使没有完成组，也必须作为 link
+        // carrier 落盘；普通 skip-only 动作没有 replacement link，仍沿用旧的顶层留痕。
         let persistedSegments = flow.exerciseFactSegments.filter { segment in
             !segment.observations.isEmpty
                 || (!segment.skippedSets.isEmpty
-                    && segment.replacementLinks.contains(where: { $0.role == .original }))
+                    && !segment.replacementLinks.isEmpty)
         }
         let occurrenceCounts = Dictionary(grouping: persistedSegments, by: \.exerciseId)
             .mapValues(\.count)

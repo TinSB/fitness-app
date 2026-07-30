@@ -29,7 +29,8 @@ public struct TodayCompletedDigest: Equatable, Sendable {
 }
 
 public enum TodayCompletedDigestBuilder {
-    /// 口径留痕（审查 MINOR 2026-07-05）：exerciseCount 用 record（**完成落盘**的动作数）；
+    /// 口径留痕：exerciseCount 用 record 中聚合后至少有一组的唯一动作 id 数；
+    /// 同 id 的 A→B→A occurrence 只算一个动作，零组 occurrence 不算完成。
     /// 训练小结当场分享卡用处方数（SessionShareSnapshotBuilder「今天这套练什么」）——跳过
     /// 动作时两处数字有意不同：当场卡说这套、事后总结说实际完成。
     /// 输入契约：prExerciseIds 非空时 topSet 必非 nil（生产唯一数据源 ProgressSnapshotBuilder
@@ -45,12 +46,17 @@ public enum TodayCompletedDigestBuilder {
             return nil
         }
 
+        let exerciseCount = Set(
+            record.exercises.compactMap { exercise in
+                exercise.sets.isEmpty ? nil : exercise.exerciseId
+            }
+        ).count
         var snapshots: [ShareSnapshot] = []
         if let durationMinutes {
             snapshots.append(SharePrivacyFilter.workoutSummary(
                 generatedDateISO: String(latest.dateISO.prefix(10)),
                 dayCode: dayCode,
-                exerciseCount: record.exercises.count,
+                exerciseCount: exerciseCount,
                 setCount: latest.setCount,
                 durationSeconds: durationMinutes * 60,
                 patterns: patterns,
@@ -72,7 +78,7 @@ public enum TodayCompletedDigestBuilder {
         return TodayCompletedDigest(
             dateISO: String(latest.dateISO.prefix(10)),
             dayCode: dayCode,
-            exerciseCount: record.exercises.count,
+            exerciseCount: exerciseCount,
             setCount: latest.setCount,
             totalVolumeKg: latest.totalVolumeKg,
             durationBand: durationMinutes.map { ShareDurationBand.from(seconds: $0 * 60) },

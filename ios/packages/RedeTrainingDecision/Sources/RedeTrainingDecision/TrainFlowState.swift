@@ -102,8 +102,14 @@ public struct TrainFlowState: Equatable, Sendable {
     }
 
     struct PendingSegmentReplacement: Equatable, Sendable {
+        /// split 场景中始终折叠为「sealed 根 occurrence → 当前终点」；独立零事实
+        /// 替换仍只保存当前 hop，保持既有落盘字节。
         let replacement: Replacement
         let splitsFacts: Bool
+        /// sealed 根段及其 original link 的精确位置。fact segments 只 append 不删除，
+        /// 因而零事实中转可原位把 A→B 更新成 A→C→… 的最终端点。
+        let sealedSegmentIndex: Int?
+        let sealedLinkIndex: Int?
     }
 
     public struct Progress: Equatable, Sendable {
@@ -277,7 +283,10 @@ public struct TrainFlowState: Equatable, Sendable {
     /// 是否处于热身：动作开头（尚未做/跳任何工作组）且热身未走完。phase 仍是 .activeSet——
     /// 热身是 UI 叠加引导、不改状态机相位，UI 据此先渲染热身卡再渲染首个工作组。
     public var isWarmingUp: Bool {
-        phase == .activeSet
+        guard let exercise = currentExercise,
+              deferredSegmentReplacements[exercise.exerciseId]?.splitsFacts != true
+        else { return false }
+        return phase == .activeSet
             && completedInCurrentExercise.isEmpty
             && skippedInCurrentExercise == 0
             && warmupPointer < warmupStepsForCurrentExercise.count
@@ -372,6 +381,24 @@ public struct TrainFlowState: Equatable, Sendable {
         guard phase == .activeSet, let exercise = currentExercise,
               replacementCandidates.contains(newExerciseId) else { return }
         let priorFactCount = completedInCurrentExercise.count + skippedInCurrentExercise
+        let inheritedPending = deferredSegmentReplacements[exercise.exerciseId]
+        if priorFactCount > 0 {
+            guard currentFactSegmentIndex != nil else { return }
+        }
+        if let inheritedPending, inheritedPending.splitsFacts {
+            guard priorFactCount == 0,
+                  let segmentIndex = inheritedPending.sealedSegmentIndex,
+                  let linkIndex = inheritedPending.sealedLinkIndex,
+                  exerciseFactSegments.indices.contains(segmentIndex),
+                  exerciseFactSegments[segmentIndex].replacementLinks.indices.contains(linkIndex),
+                  exerciseFactSegments[segmentIndex].replacementLinks[linkIndex]
+                    == SegmentReplacementLink(
+                        replacement: inheritedPending.replacement,
+                        role: .original
+                    )
+            else { return }
+        }
+
         events.append(.replaceExercise(newExerciseId))
         let replacement = Replacement(
             originalExerciseId: exercise.exerciseId,
@@ -379,9 +406,40 @@ public struct TrainFlowState: Equatable, Sendable {
         )
         deferredSegmentReplacements.removeValue(forKey: exercise.exerciseId)
         replacements.append(replacement)
-        if priorFactCount > 0, let currentFactSegmentIndex {
+
+        let pendingReplacement: PendingSegmentReplacement
+        if let inheritedPending, inheritedPending.splitsFacts,
+           let segmentIndex = inheritedPending.sealedSegmentIndex,
+           let linkIndex = inheritedPending.sealedLinkIndex {
+            let collapsed = Replacement(
+                originalExerciseId: inheritedPending.replacement.originalExerciseId,
+                actualExerciseId: newExerciseId
+            )
+            exerciseFactSegments[segmentIndex].replacementLinks[linkIndex] =
+                SegmentReplacementLink(replacement: collapsed, role: .original)
+            pendingReplacement = PendingSegmentReplacement(
+                replacement: collapsed,
+                splitsFacts: true,
+                sealedSegmentIndex: segmentIndex,
+                sealedLinkIndex: linkIndex
+            )
+        } else if priorFactCount > 0, let currentFactSegmentIndex {
+            let linkIndex = exerciseFactSegments[currentFactSegmentIndex].replacementLinks.count
             exerciseFactSegments[currentFactSegmentIndex].replacementLinks.append(
                 SegmentReplacementLink(replacement: replacement, role: .original)
+            )
+            pendingReplacement = PendingSegmentReplacement(
+                replacement: replacement,
+                splitsFacts: true,
+                sealedSegmentIndex: currentFactSegmentIndex,
+                sealedLinkIndex: linkIndex
+            )
+        } else {
+            pendingReplacement = PendingSegmentReplacement(
+                replacement: replacement,
+                splitsFacts: false,
+                sealedSegmentIndex: nil,
+                sealedLinkIndex: nil
             )
         }
         let newEntry = catalog.entry(id: newExerciseId)
@@ -438,15 +496,15 @@ public struct TrainFlowState: Equatable, Sendable {
             sets: newSets
         )
         plan = SessionSetPlan(dayCode: plan.dayCode, exercises: exercises)
+        painReportedForCurrentSet = false
+        isHolding = false
+        warmupPointer = 0
         if priorFactCount > 0 {
             completedInCurrentExercise = []
             skippedInCurrentExercise = 0
         }
         currentFactSegmentIndex = nil
-        deferredSegmentReplacements[newExerciseId] = PendingSegmentReplacement(
-            replacement: replacement,
-            splitsFacts: priorFactCount > 0
-        )
+        deferredSegmentReplacements[newExerciseId] = pendingReplacement
     }
 
     /// 把一个尚未开始的后续已排动作稳定移动到当前位置。

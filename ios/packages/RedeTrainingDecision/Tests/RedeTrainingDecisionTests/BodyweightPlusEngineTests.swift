@@ -71,8 +71,9 @@ final class BodyweightPlusEngineTests: XCTestCase {
     /// 审查 MAJOR-2：回退提示对**已有自重历史**的正常阶梯用户也要出现（不能学 assisted 用
     /// twinLast==nil 条件——正常阶梯是 自重→负重，回退时必有自重历史，那样提示永不触发）。
     func testDegradationFiresEvenWithBodyweightHistory() throws {
-        // occurrence 顺序就是场内实际顺序：先有自重历史，最终使用负重版且在最低档力竭。
-        let s = #"{"id":"s0","date":"2026-06-10","completed":true,"exercises":[{"exerciseId":"pull-up","sets":[{"weight":0,"reps":15,"rir":2}]},{"exerciseId":"t-weighted","sets":[{"weight":2.5,"reps":8,"rir":0}]}]}"#
+        // 无 replacement 元数据的同 pattern 双动作沿用旧「第一个」sticky 语义；
+        // 负重版排在首位，既保留已有自重历史，也让本用例只验证退阶提示。
+        let s = #"{"id":"s0","date":"2026-06-10","completed":true,"exercises":[{"exerciseId":"t-weighted","sets":[{"weight":2.5,"reps":8,"rir":0}]},{"exerciseId":"pull-up","sets":[{"weight":0,"reps":15,"rir":2}]}]}"#
         let json = #"{"schemaVersion":8,"userProfile":{"trainingLevel":"intermediate"},"history":[\#(s)],"programTemplate":{"splitType":"push-pull-legs","daysPerWeek":6}}"#
         let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-13")
         let p = try XCTUnwrap(
