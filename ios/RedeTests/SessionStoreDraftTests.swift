@@ -41,6 +41,74 @@ final class SessionStoreDraftTests: XCTestCase {
         return data
     }
 
+    func testTodayBreakthroughPresentationSeparatesShareableAndFactOnlyRows() {
+        let lowFacts = LevelBreakthroughEventFacts(
+            confidenceAtEventRaw: "low",
+            decisionRawsAtEvent: ["maintain"],
+            limitationCodesAtEvent: [],
+            recoveryPenaltyAtEvent: 0
+        )
+        let mediumFacts = LevelBreakthroughEventFacts(
+            confidenceAtEventRaw: "medium",
+            decisionRawsAtEvent: ["maintain"],
+            limitationCodesAtEvent: ["noBaselineWindow"],
+            recoveryPenaltyAtEvent: 0
+        )
+        let lowBack = LevelBreakthrough(
+            kind: .muscleLevel,
+            targetId: "back",
+            fromLevel: 8,
+            toLevel: 9,
+            fromTier: nil,
+            toTier: nil,
+            evidence: [],
+            achievedAtIso: "2026-07-30",
+            eventFacts: lowFacts
+        )
+        let mediumChest = LevelBreakthrough(
+            kind: .muscleLevel,
+            targetId: "chest",
+            fromLevel: 7,
+            toLevel: 8,
+            fromTier: nil,
+            toTier: nil,
+            evidence: [],
+            achievedAtIso: "2026-07-30",
+            eventFacts: mediumFacts
+        )
+
+        let rows = TodayBreakthroughPresentation.rows(
+            events: [lowBack, mediumChest],
+            strings: RedeStrings(locale: .zh)
+        )
+
+        XCTAssertEqual(rows, [
+            .shareable("胸部 Lv.7 → Lv.8"),
+            .factOnly("背部 Lv.8 → Lv.9"),
+        ])
+    }
+
+    func testTodayBreakthroughPresentationTreatsLegacyMissingFactsAsFactOnly() {
+        let legacy = LevelBreakthrough(
+            kind: .muscleLevel,
+            targetId: "back",
+            fromLevel: 8,
+            toLevel: 9,
+            fromTier: nil,
+            toTier: nil,
+            evidence: [],
+            achievedAtIso: "2026-07-30"
+        )
+
+        XCTAssertEqual(
+            TodayBreakthroughPresentation.rows(
+                events: [legacy],
+                strings: RedeStrings(locale: .zh)
+            ),
+            [.factOnly("背部 Lv.8 → Lv.9")]
+        )
+    }
+
     func testMissingMuscleLevelMemoryKeepsLegacyWidgetSnapshotBytesStable() throws {
         let rows = try widgetRows(memory: nil, strings: RedeStrings(locale: .en))
         let snapshot = ReadinessWidgetSnapshot(

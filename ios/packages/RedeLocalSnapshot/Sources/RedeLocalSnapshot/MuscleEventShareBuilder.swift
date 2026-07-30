@@ -4,15 +4,17 @@
 public enum MuscleEventShareBuilder {
     public static func snapshots(
         pending: [LevelBreakthrough],
-        profile: MuscleDevelopmentProfile,
         generatedDateISO: String,
         recentTrainingDays: Int
     ) -> [ShareSnapshot] {
-        let todaysEvents = pending.filter { $0.achievedAtIso == generatedDateISO }
+        let todaysEvents = todayEvents(
+            pending: pending,
+            generatedDateISO: generatedDateISO
+        )
         var snapshots: [ShareSnapshot] = []
 
         let levelChanges = todaysEvents.compactMap { event in
-            shareableLevelChange(event, profile: profile)
+            shareableLevelChange(event)
         }
         if !levelChanges.isEmpty {
             snapshots.append(SharePrivacyFilter.levelUp(
@@ -42,6 +44,22 @@ public enum MuscleEventShareBuilder {
         return snapshots
     }
 
+    /// 当天事实面与分享资格分离：此处只做日期/支持种类过滤，绝不拿资格删事实。
+    public static func todayEvents(
+        pending: [LevelBreakthrough],
+        generatedDateISO: String
+    ) -> [LevelBreakthrough] {
+        pending.filter {
+            guard $0.achievedAtIso == generatedDateISO else { return false }
+            switch $0.kind {
+            case .muscleLevel, .trainingTier, .balanceMilestone:
+                return true
+            case .strengthMilestone, .consistencyMilestone:
+                return false
+            }
+        }
+    }
+
     /// 近 4 周 = 截止日及向前 27 个 civil day；同日多场只算一个训练日。
     public static func recentTrainingDayCount(
         dateISOs: [String],
@@ -58,19 +76,15 @@ public enum MuscleEventShareBuilder {
     }
 
     private static func shareableLevelChange(
-        _ event: LevelBreakthrough,
-        profile: MuscleDevelopmentProfile
+        _ event: LevelBreakthrough
     ) -> ShareSnapshot.LevelUp.Change? {
+        guard LevelBreakthroughShareEligibility.isEligible(event) else { return nil }
         switch event.kind {
         case .muscleLevel:
             guard let muscle = MuscleGroupID(rawValue: event.targetId),
                   let from = event.fromLevel,
                   let to = event.toLevel,
-                  to > from,
-                  let estimate = profile.estimates.first(where: {
-                      $0.muscleId == muscle && $0.decision != .insufficientData
-                  }),
-                  confidenceRank(estimate.confidence) >= confidenceRank(.medium)
+                  to > from
             else { return nil }
             return .init(
                 muscleRaw: muscle.rawValue,
@@ -82,8 +96,7 @@ public enum MuscleEventShareBuilder {
         case .trainingTier:
             guard let from = event.fromTier,
                   let to = event.toTier,
-                  from != to,
-                  medianConfidence(profile.estimates) != .low
+                  from != to
             else { return nil }
             return .init(
                 muscleRaw: nil,
@@ -96,22 +109,63 @@ public enum MuscleEventShareBuilder {
             return nil
         }
     }
+}
 
-    /// 与 MuscleProfileAssembler tier 惯例一致：只看已解锁 contributor，
-    /// 排序后偶数取低侧中位（保守）。
-    private static func medianConfidence(
-        _ estimates: [MuscleLevelEstimate]
-    ) -> EstimateConfidence {
-        let ranks = estimates
-            .filter { $0.decision != .insufficientData }
-            .map { confidenceRank($0.confidence) }
-            .sorted()
-        guard !ranks.isEmpty else { return .low }
-        switch ranks[(ranks.count - 1) / 2] {
-        case 2: return .high
-        case 1: return .medium
-        default: return .low
+/// B1 资格只由首次 append 时落盘的 raw facts 纯推导；nil/未知值一律 fail closed。
+public enum LevelBreakthroughShareEligibility {
+    private static let eligibleDecisionRaws: Set<String> = [
+        MuscleDevelopmentDecision.maintain.rawValue,
+        MuscleDevelopmentDecision.prioritize.rawValue,
+    ]
+    private static let nonSafetyLimitationCodes: Set<String> = [
+        "shortHistory",
+        "noStrengthSignal",
+        "noRecentWindow",
+        "noBaselineWindow",
+    ]
+
+    public static func isEligible(_ event: LevelBreakthrough) -> Bool {
+        switch event.kind {
+        case .muscleLevel:
+            guard let from = event.fromLevel,
+                  let to = event.toLevel,
+                  to > from,
+                  MuscleGroupID(rawValue: event.targetId) != nil
+            else { return false }
+            return factsPass(event.eventFacts)
+        case .trainingTier:
+            guard let from = event.fromTier,
+                  let to = event.toTier,
+                  tierRank(to) > tierRank(from)
+            else { return false }
+            return factsPass(event.eventFacts)
+        case .balanceMilestone:
+            guard let from = event.fromLevel,
+                  let to = event.toLevel
+            else { return false }
+            return to > from
+        case .strengthMilestone, .consistencyMilestone:
+            return false
         }
+    }
+
+    private static func factsPass(_ facts: LevelBreakthroughEventFacts?) -> Bool {
+        guard let facts,
+              let confidence = EstimateConfidence(
+                  rawValue: facts.confidenceAtEventRaw
+              ),
+              confidenceRank(confidence) >= confidenceRank(.medium),
+              facts.recoveryPenaltyAtEvent.isFinite,
+              facts.recoveryPenaltyAtEvent == 0,
+              !facts.decisionRawsAtEvent.isEmpty,
+              facts.decisionRawsAtEvent.allSatisfy(
+                  eligibleDecisionRaws.contains
+              ),
+              facts.limitationCodesAtEvent.allSatisfy(
+                  nonSafetyLimitationCodes.contains
+              )
+        else { return false }
+        return true
     }
 
     private static func confidenceRank(_ confidence: EstimateConfidence) -> Int {
@@ -119,6 +173,17 @@ public enum MuscleEventShareBuilder {
         case .low: return 0
         case .medium: return 1
         case .high: return 2
+        }
+    }
+
+    private static func tierRank(_ tier: TrainingTier) -> Int {
+        switch tier {
+        case .calibrating: return 0
+        case .beginner: return 1
+        case .novicePlus: return 2
+        case .intermediate: return 3
+        case .advanced: return 4
+        case .elite: return 5
         }
     }
 }

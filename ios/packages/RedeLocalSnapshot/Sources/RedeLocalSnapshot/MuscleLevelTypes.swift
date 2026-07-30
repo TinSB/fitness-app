@@ -140,10 +140,14 @@ public struct LevelBreakthrough: Equatable, Sendable, Codable {
     public let toTier: TrainingTier?
     public let evidence: [MuscleLevelEvidence]
     public let achievedAtIso: String
+    /// 首次进入 pending 时的 MLE 原始事实。optional 保持 schema v1 / 旧事件兼容；
+    /// 缺失时消费方 fail closed（事实可见，但不得生成分享卡）。
+    public let eventFacts: LevelBreakthroughEventFacts?
 
     public init(kind: LevelBreakthroughKind, targetId: String, fromLevel: Int?, toLevel: Int?,
                 fromTier: TrainingTier?, toTier: TrainingTier?,
-                evidence: [MuscleLevelEvidence], achievedAtIso: String) {
+                evidence: [MuscleLevelEvidence], achievedAtIso: String,
+                eventFacts: LevelBreakthroughEventFacts? = nil) {
         self.kind = kind
         self.targetId = targetId
         self.fromLevel = fromLevel
@@ -152,6 +156,27 @@ public struct LevelBreakthrough: Equatable, Sendable, Codable {
         self.toTier = toTier
         self.evidence = evidence
         self.achievedAtIso = achievedAtIso
+        self.eventFacts = eventFacts
+    }
+}
+
+/// B1 分享资格的事件时事实；不落资格布尔，纯策略可从这些 raw 值稳定复算。
+public struct LevelBreakthroughEventFacts: Equatable, Sendable, Codable {
+    public let confidenceAtEventRaw: String
+    public let decisionRawsAtEvent: [String]
+    public let limitationCodesAtEvent: [String]
+    public let recoveryPenaltyAtEvent: Double
+
+    public init(
+        confidenceAtEventRaw: String,
+        decisionRawsAtEvent: [String],
+        limitationCodesAtEvent: [String],
+        recoveryPenaltyAtEvent: Double
+    ) {
+        self.confidenceAtEventRaw = confidenceAtEventRaw
+        self.decisionRawsAtEvent = decisionRawsAtEvent
+        self.limitationCodesAtEvent = limitationCodesAtEvent
+        self.recoveryPenaltyAtEvent = recoveryPenaltyAtEvent
     }
 }
 

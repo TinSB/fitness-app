@@ -151,7 +151,9 @@ public struct MuscleLevelMemory: Codable, Equatable, Sendable {
             }
         }
 
-        var newEvents = profile.breakthroughs
+        var newEvents = profile.breakthroughs.map {
+            stampingEventFacts(on: $0, from: profile)
+        }
         if let balanceEvent { newEvents.append(balanceEvent) }
         let hadPendingField = previous?.pendingBreakthroughs != nil
         let pending = hadPendingField || !newEvents.isEmpty
@@ -167,6 +169,79 @@ public struct MuscleLevelMemory: Codable, Equatable, Sendable {
             balanceImprovementState: balanceState,
             atIso: atIso
         )
+    }
+
+    /// 资格事实只在事件首次进入 pending 前取样；mergingPending 既有项优先，因此同一
+    /// 去重键后续重算不会把 low 改成 medium，也不会让旧文件缺失事实的事件突然可分享。
+    private static func stampingEventFacts(
+        on event: LevelBreakthrough,
+        from profile: MuscleDevelopmentProfile
+    ) -> LevelBreakthrough {
+        guard event.eventFacts == nil else { return event }
+
+        let contributors: [MuscleLevelEstimate]
+        switch event.kind {
+        case .muscleLevel:
+            contributors = profile.estimates.filter {
+                $0.muscleId.rawValue == event.targetId
+                    && $0.decision != .insufficientData
+            }
+        case .trainingTier:
+            contributors = profile.estimates.filter {
+                $0.decision != .insufficientData
+            }
+        case .strengthMilestone, .balanceMilestone, .consistencyMilestone:
+            return event
+        }
+        guard !contributors.isEmpty else { return event }
+
+        let confidence = conservativeMedianConfidence(
+            contributors.map(\.confidence)
+        )
+        let facts = LevelBreakthroughEventFacts(
+            confidenceAtEventRaw: confidence.rawValue,
+            decisionRawsAtEvent: Array(
+                Set(contributors.map { $0.decision.rawValue })
+            ).sorted(),
+            limitationCodesAtEvent: Array(
+                Set(contributors.flatMap { $0.limitations.map(\.code) })
+            ).sorted(),
+            recoveryPenaltyAtEvent: contributors
+                .map(\.score.recoveryPenalty)
+                .max() ?? 0
+        )
+        return LevelBreakthrough(
+            kind: event.kind,
+            targetId: event.targetId,
+            fromLevel: event.fromLevel,
+            toLevel: event.toLevel,
+            fromTier: event.fromTier,
+            toTier: event.toTier,
+            evidence: event.evidence,
+            achievedAtIso: event.achievedAtIso,
+            eventFacts: facts
+        )
+    }
+
+    /// 与 tier / B2 约定一致：偶数样本取排序后的低侧中位。
+    private static func conservativeMedianConfidence(
+        _ values: [EstimateConfidence]
+    ) -> EstimateConfidence {
+        let ranks = values.map(confidenceRank).sorted()
+        guard !ranks.isEmpty else { return .low }
+        switch ranks[(ranks.count - 1) / 2] {
+        case 2: return .high
+        case 1: return .medium
+        default: return .low
+        }
+    }
+
+    private static func confidenceRank(_ confidence: EstimateConfidence) -> Int {
+        switch confidence {
+        case .low: return 0
+        case .medium: return 1
+        case .high: return 2
+        }
     }
 
     /// peaks 写入合并（审查 M1/m3）：对盘上现值取 max、盘上有而本轮无的键保留。
@@ -238,8 +313,23 @@ public enum MuscleLevelMemoryError: Error, Equatable {
 /// 文件 store（fileURL 注入=可测）。load 任何失败一律 nil：坏文件/缺文件/坏版本
 /// 都是「无记忆」，引擎从零校准——绝不因一个坏 JSON 崩掉进度页。
 public struct MuscleLevelMemoryStore: Sendable {
+    /// 所有实例共享：app 的四个 loadOutcome 调用点虽然各自创建 store，仍须进入同一
+    /// 进程级事务；实例锁无法阻止不同 store 竞写同一文件。
+    private static let transactionLock = NSLock()
+
     public let fileURL: URL
     public init(fileURL: URL) { self.fileURL = fileURL }
+
+    /// 串行化完整的 read → derive/reconcile → write。closure 内写入必须调用 `save`
+    /// 而非再次进入本方法；调用方可把 canonical 读取与投影也放进同一闭包，避免旧
+    /// session 观察在较新观察之后回写 B2 reference/candidate。
+    public func withExclusiveAccess<T>(
+        _ body: (MuscleLevelMemory?) throws -> T
+    ) rethrows -> T {
+        Self.transactionLock.lock()
+        defer { Self.transactionLock.unlock() }
+        return try body(load())
+    }
 
     public func load() -> MuscleLevelMemory? {
         guard let data = try? Data(contentsOf: fileURL) else { return nil }
@@ -253,10 +343,11 @@ public struct MuscleLevelMemoryStore: Sendable {
         try data.write(to: fileURL, options: .atomic)
     }
 
-    /// 写前重读盘上值并做 peaks max 合并（并发竞写对策，见 reconcilingPeaks 注释）。
-    /// load 与 write 间仍有毫秒级窗口，但 peak 合并语义保证连续任意两轮都不丢
-    /// 已见峰值；完全序列化（actor）等 UI 消费节奏明确后再议（YAGNI，留痕）。
+    /// 包外只需提交一份 memory 时的安全入口；ProgressModel 的完整事务已经持锁，
+    /// 因而在闭包内直接调用 `save`，避免重入非递归锁。
     public func saveReconciling(_ memory: MuscleLevelMemory) throws {
-        try save(memory.reconcilingPeaks(with: load()))
+        try withExclusiveAccess { disk in
+            try save(memory.reconcilingPeaks(with: disk))
+        }
     }
 }

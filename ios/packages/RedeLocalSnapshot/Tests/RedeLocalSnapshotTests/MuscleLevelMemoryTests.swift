@@ -3,6 +3,7 @@
 // 坏文件/缺文件 load=nil 不崩（诚实「无记忆」）；atomic round-trip；端到端两轮
 // compose：第一轮记忆喂回第二轮后 peak 不随等级回落（max 单调跨次生效）。
 
+import Dispatch
 import XCTest
 @testable import RedeLocalSnapshot
 
@@ -34,7 +35,8 @@ final class MuscleLevelMemoryTests: XCTestCase {
         muscle: String = "back",
         from: Int = 8,
         to: Int = 9,
-        at date: String = "2026-07-29"
+        at date: String = "2026-07-29",
+        eventFacts: LevelBreakthroughEventFacts? = nil
     ) -> LevelBreakthrough {
         LevelBreakthrough(
             kind: .muscleLevel,
@@ -44,7 +46,8 @@ final class MuscleLevelMemoryTests: XCTestCase {
             fromTier: nil,
             toTier: nil,
             evidence: [],
-            achievedAtIso: date
+            achievedAtIso: date,
+            eventFacts: eventFacts
         )
     }
 
@@ -65,19 +68,32 @@ final class MuscleLevelMemoryTests: XCTestCase {
         _ muscle: MuscleGroupID,
         level: Int,
         trend: MuscleLevelTrend = .stable,
-        confidence: EstimateConfidence = .medium
+        confidence: EstimateConfidence = .medium,
+        decision: MuscleDevelopmentDecision = .maintain,
+        recoveryPenalty: Double = 0,
+        limitations: [MuscleLevelLimitation] = []
     ) -> MuscleLevelEstimate {
-        MuscleLevelEstimate(
+        let score = MuscleLevelScoreBreakdown(
+            exposureScore: 0,
+            performanceScore: 0,
+            milestoneScore: 0,
+            progressionScore: 0,
+            coverageScore: 0,
+            consistencyScore: 0,
+            recoveryPenalty: recoveryPenalty,
+            goalAdjustment: 0
+        )
+        return MuscleLevelEstimate(
             muscleId: muscle,
             currentLevel: level,
             peakLevel: level,
             levelProgress: 0,
             trend: trend,
             confidence: confidence,
-            decision: .maintain,
-            score: zeroScore,
+            decision: decision,
+            score: score,
             evidence: [],
-            limitations: []
+            limitations: limitations
         )
     }
 
@@ -250,6 +266,26 @@ final class MuscleLevelMemoryTests: XCTestCase {
         XCTAssertEqual(decoded.schemaVersion, 1)
     }
 
+    func testLegacyPendingEventWithoutAppendFactsStaysFactOnlyAndNeverShares() throws {
+        let legacy = #"{"schemaVersion":1,"levels":{"back":9},"peaks":{"back":9},"tierRaw":"novicePlus","pendingBreakthroughs":[{"kind":"muscleLevel","targetId":"back","fromLevel":8,"toLevel":9,"evidence":[],"achievedAtIso":"2026-07-29"}],"updatedAtIso":"2026-07-29"}"#
+        let decoded = try MuscleLevelMemoryCodec.decode(Data(legacy.utf8))
+        let event = try XCTUnwrap(decoded.pendingBreakthroughs?.first)
+
+        XCTAssertNil(event.eventFacts)
+        XCTAssertEqual(
+            MuscleEventShareBuilder.todayEvents(
+                pending: decoded.pendingBreakthroughs ?? [],
+                generatedDateISO: "2026-07-29"
+            ),
+            [event],
+            "旧事件仍是当天事实"
+        )
+        XCTAssertFalse(
+            LevelBreakthroughShareEligibility.isEligible(event),
+            "缺事件时事实必须 fail closed，不得补看当前 profile"
+        )
+    }
+
     func testPendingBreakthroughMergeDeduplicatesByApprovedKey() {
         let event = levelEvent()
         let sameKeyDifferentFrom = levelEvent(from: 7)
@@ -336,7 +372,13 @@ final class MuscleLevelMemoryTests: XCTestCase {
     func testAdvanceAppendsComputedBreakthroughAndRepeatedReaderDoesNotDuplicate() {
         let event = levelEvent()
         let currentProfile = profile(
-            estimates: [estimate(.back, level: 9)],
+            estimates: [estimate(
+                .back,
+                level: 9,
+                confidence: .high,
+                decision: .prioritize,
+                limitations: [MuscleLevelLimitation(code: "noBaselineWindow")]
+            )],
             breakthroughs: [event]
         )
         let previous = MuscleLevelMemory(
@@ -359,8 +401,136 @@ final class MuscleLevelMemoryTests: XCTestCase {
             atIso: "2026-07-29"
         )
 
-        XCTAssertEqual(first.pendingBreakthroughs, [event])
-        XCTAssertEqual(second.pendingBreakthroughs, [event])
+        let appended = first.pendingBreakthroughs?.only
+        XCTAssertEqual(appended?.targetId, event.targetId)
+        XCTAssertEqual(appended?.eventFacts?.confidenceAtEventRaw, "high")
+        XCTAssertEqual(appended?.eventFacts?.decisionRawsAtEvent, ["prioritize"])
+        XCTAssertEqual(appended?.eventFacts?.limitationCodesAtEvent, ["noBaselineWindow"])
+        XCTAssertEqual(appended?.eventFacts?.recoveryPenaltyAtEvent, 0)
+        XCTAssertTrue(appended.map(LevelBreakthroughShareEligibility.isEligible) ?? false)
+        XCTAssertEqual(second.pendingBreakthroughs, first.pendingBreakthroughs)
+    }
+
+    func testFirstAppendFactsStayLockedWhenSameEventIsObservedWithHigherConfidence() {
+        let lowFacts = LevelBreakthroughEventFacts(
+            confidenceAtEventRaw: "low",
+            decisionRawsAtEvent: ["maintain"],
+            limitationCodesAtEvent: [],
+            recoveryPenaltyAtEvent: 0
+        )
+        let mediumFacts = LevelBreakthroughEventFacts(
+            confidenceAtEventRaw: "medium",
+            decisionRawsAtEvent: ["maintain"],
+            limitationCodesAtEvent: [],
+            recoveryPenaltyAtEvent: 0
+        )
+
+        let first = levelEvent(eventFacts: lowFacts)
+        let laterSameKey = levelEvent(eventFacts: mediumFacts)
+        let merged = MuscleLevelMemory.mergingPending(existing: [first], new: [laterSameKey])
+
+        XCTAssertEqual(merged, [first])
+        XCTAssertEqual(merged.first?.eventFacts?.confidenceAtEventRaw, "low")
+    }
+
+    func testExclusiveMemoryTransactionSerializesBarrierWritersWithoutLosingPendingOrNewerBalanceState() throws {
+        let url = tempURL()
+        defer { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+        let firstStore = MuscleLevelMemoryStore(fileURL: url)
+        let secondStore = MuscleLevelMemoryStore(fileURL: url)
+        try firstStore.save(MuscleLevelMemory(
+            levels: ["back": 8],
+            peaks: ["back": 8],
+            tierRaw: "novicePlus",
+            updatedAtIso: "2026-07-28"
+        ))
+
+        let reference = BalanceImprovementReference(
+            score: 50,
+            levelsByContributorID: ["back": 4, "chest": 8, "quads": 10],
+            medianConfidence: .medium
+        )
+        let olderState = BalanceImprovementState(
+            reference: reference,
+            candidate: BalanceImprovementCandidate(score: 60, completedSessionCount: 10)
+        )
+        let newerState = BalanceImprovementState(
+            reference: BalanceImprovementReference(
+                score: 60,
+                levelsByContributorID: ["back": 5, "chest": 8, "quads": 10],
+                medianConfidence: .medium
+            ),
+            candidate: nil
+        )
+        let firstEvent = levelEvent(muscle: "back")
+        let secondEvent = levelEvent(muscle: "quads")
+        let firstEntered = expectation(description: "first writer entered transaction")
+        let secondAttempted = expectation(description: "second writer attempted transaction")
+        let writersDone = expectation(description: "both writers completed")
+        writersDone.expectedFulfillmentCount = 2
+        let allowFirstToProbe = DispatchSemaphore(value: 0)
+        let secondEntered = DispatchSemaphore(value: 0)
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            defer { writersDone.fulfill() }
+            do {
+                try firstStore.withExclusiveAccess { current in
+                    firstEntered.fulfill()
+                    _ = allowFirstToProbe.wait(timeout: .now() + 3)
+                    XCTAssertEqual(
+                        secondEntered.wait(timeout: .now() + 0.25),
+                        .timedOut,
+                        "second writer must not enter while the first transaction is open"
+                    )
+                    try firstStore.save(MuscleLevelMemory(
+                        levels: ["back": 9],
+                        peaks: ["back": 9],
+                        tierRaw: "novicePlus",
+                        pendingBreakthroughs: MuscleLevelMemory.mergingPending(
+                            existing: current?.pendingBreakthroughs ?? [],
+                            new: [firstEvent]
+                        ),
+                        balanceImprovementState: olderState,
+                        updatedAtIso: "2026-07-29"
+                    ))
+                }
+            } catch {
+                XCTFail("first writer failed: \(error)")
+            }
+        }
+
+        wait(for: [firstEntered], timeout: 2)
+        DispatchQueue.global(qos: .userInitiated).async {
+            defer { writersDone.fulfill() }
+            secondAttempted.fulfill()
+            do {
+                try secondStore.withExclusiveAccess { current in
+                    secondEntered.signal()
+                    XCTAssertEqual(current?.balanceImprovementState, olderState)
+                    try secondStore.save(MuscleLevelMemory(
+                        levels: ["back": 9, "quads": 9],
+                        peaks: ["back": 9, "quads": 9],
+                        tierRaw: "novicePlus",
+                        pendingBreakthroughs: MuscleLevelMemory.mergingPending(
+                            existing: current?.pendingBreakthroughs ?? [],
+                            new: [secondEvent]
+                        ),
+                        balanceImprovementState: newerState,
+                        updatedAtIso: "2026-07-29"
+                    ))
+                }
+            } catch {
+                XCTFail("second writer failed: \(error)")
+            }
+        }
+
+        wait(for: [secondAttempted], timeout: 2)
+        allowFirstToProbe.signal()
+        wait(for: [writersDone], timeout: 5)
+
+        let final = try XCTUnwrap(firstStore.load())
+        XCTAssertEqual(final.pendingBreakthroughs?.map(\.targetId), ["back", "quads"])
+        XCTAssertEqual(final.balanceImprovementState, newerState)
     }
 
     func testLegacyBalanceStateSeedsReferenceWithoutEventOrCandidate() throws {

@@ -90,6 +90,8 @@ struct ProgressModel {
     /// 当天可分享的 MLE 事件卡（升级 / 均衡改善）。pending 读取不等于消费，
     /// 过天由纯 builder 自然过滤；Today 与 Progress 共用同一组卡，避免入口漂移。
     let eventShareSnapshots: [ShareSnapshot]
+    /// 当天 MLE 原始事件事实。与分享资格分开，供 Today 对低置信/旧事件保留纯文本行。
+    let todayBreakthroughs: [LevelBreakthrough]
 
     static func loadOutcomeAsync(now: Date = Date()) async -> LoadOutcome? {
         // 批次 D：HealthKit 体重静默读（async 边界在此；未授权/无数据返回 nil 不弹框），
@@ -108,6 +110,25 @@ struct ProgressModel {
     }
 
     static func loadOutcome(now: Date = Date(), healthKitWeightKg: Double? = nil) -> LoadOutcome? {
+        let memoryStore = MuscleLevelMemoryStore(fileURL: muscleLevelMemoryFileURL())
+        return memoryStore.withExclusiveAccess { previousMemory in
+            loadOutcomeExclusively(
+                now: now,
+                healthKitWeightKg: healthKitWeightKg,
+                memoryStore: memoryStore,
+                previousMemory: previousMemory
+            )
+        }
+    }
+
+    /// canonical 读取也在共享 memory 临界区内：否则较旧 session 投影可能在较新投影
+    /// 之后进入并回写，令 B2 reference/candidate 倒退。
+    private static func loadOutcomeExclusively(
+        now: Date,
+        healthKitWeightKg: Double?,
+        memoryStore: MuscleLevelMemoryStore,
+        previousMemory: MuscleLevelMemory?
+    ) -> LoadOutcome? {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         let appData: AppData
         do {
@@ -216,8 +237,6 @@ struct ProgressModel {
         // MLE 跨次记忆（B2）：peak 只升不降 / breakthrough 对比 / previousTier 的持久侧。
         // derived-only（canonical 同目录、非 gated、坏文件=如实从零校准）；内容变才写，
         // 写失败静默不阻断渲染（同 widget 快照 best-effort 教义）。
-        let memoryStore = MuscleLevelMemoryStore(fileURL: muscleLevelMemoryFileURL())
-        let previousMemory = memoryStore.load()
         // 批次 D 相对力量标准输入：体重 HealthKit 最新优先（调用侧 async 读好传入）
         // → profile.weightKg 兜底 → nil 如实退化；性别只从档案读（设置页可填）。
         let bodyweightKg = healthKitWeightKg ?? cleanView.profile.weightKg
@@ -250,8 +269,8 @@ struct ProgressModel {
         var effectiveMemory = nextMemory
         if MuscleLevelMemory.shouldPersist(previous: previousMemory, next: nextMemory) {
             do {
-                try memoryStore.saveReconciling(nextMemory)   // 写前 peaks/pending 合并（并发竞写对策）
-                effectiveMemory = memoryStore.load() ?? nextMemory
+                try memoryStore.save(nextMemory)
+                effectiveMemory = nextMemory
             } catch {
                 // derived-only best effort：写失败不阻断进度页，且本轮 UI 仍看见刚产生的事实。
                 effectiveMemory = nextMemory
@@ -263,9 +282,12 @@ struct ProgressModel {
         )
         let eventShareSnapshots = MuscleEventShareBuilder.snapshots(
             pending: effectiveMemory.pendingBreakthroughs ?? [],
-            profile: muscleProfile,
             generatedDateISO: todayISO,
             recentTrainingDays: recentTrainingDays
+        )
+        let todayBreakthroughs = MuscleEventShareBuilder.todayEvents(
+            pending: effectiveMemory.pendingBreakthroughs ?? [],
+            generatedDateISO: todayISO
         )
         return .ready(ProgressModel(
             snapshot: snapshot,
@@ -281,7 +303,8 @@ struct ProgressModel {
             milestones: milestones,
             muscleProfile: muscleProfile,
             subLevelsByMuscle: subLevelsByMuscle,
-            eventShareSnapshots: eventShareSnapshots
+            eventShareSnapshots: eventShareSnapshots,
+            todayBreakthroughs: todayBreakthroughs
         ))
     }
 

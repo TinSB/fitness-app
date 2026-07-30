@@ -3,6 +3,74 @@ import RedeL10n
 import RedeLocalSnapshot
 import RedeTrainingDecision
 
+enum TodayBreakthroughPresentation {
+    enum Row: Equatable {
+        case shareable(String)
+        case factOnly(String)
+    }
+
+    /// 混合资格必须拆行，否则低置信事实会继承 Button 语义。仍维持 A2 全局最多
+    /// 展示两项；两类同时存在时各保留一项，其余用既有「等 N 处」收束。
+    static func rows(
+        events: [LevelBreakthrough],
+        strings: RedeStrings
+    ) -> [Row] {
+        let presentable = events.compactMap { event -> (String, Bool)? in
+            guard let text = text(for: event, strings: strings) else { return nil }
+            return (text, LevelBreakthroughShareEligibility.isEligible(event))
+        }
+        let shareable = presentable.filter(\.1)
+        let factOnly = presentable.filter { !$0.1 }
+
+        var selected: [(String, Bool)] = []
+        if !shareable.isEmpty, !factOnly.isEmpty {
+            selected = [shareable[0], factOnly[0]]
+        } else {
+            selected = Array(presentable.prefix(2))
+        }
+        if presentable.count > selected.count, let last = selected.indices.last {
+            selected[last].0 += " · \(strings.todayBreakthroughMore(total: presentable.count))"
+        }
+        return selected.map { text, isShareable in
+            isShareable ? .shareable(text) : .factOnly(text)
+        }
+    }
+
+    private static func text(
+        for event: LevelBreakthrough,
+        strings: RedeStrings
+    ) -> String? {
+        switch event.kind {
+        case .muscleLevel:
+            guard let from = event.fromLevel,
+                  let to = event.toLevel,
+                  to > from
+            else { return nil }
+            let name = MuscleGroupLabel(rawValue: event.targetId)
+                .map(strings.muscleGroupName) ?? event.targetId
+            return "\(name) \(strings.developmentLevel(from)) → \(strings.developmentLevel(to))"
+        case .trainingTier:
+            guard let from = event.fromTier,
+                  let to = event.toTier,
+                  from != to
+            else { return nil }
+            let fromName = TrainingTierLabel(rawValue: from.rawValue)
+                .map(strings.trainingTierName) ?? from.rawValue
+            let toName = TrainingTierLabel(rawValue: to.rawValue)
+                .map(strings.trainingTierName) ?? to.rawValue
+            return "\(fromName) → \(toName)"
+        case .balanceMilestone:
+            guard let from = event.fromLevel,
+                  let to = event.toLevel,
+                  to > from
+            else { return nil }
+            return strings.shareCardBalanceChange(from: from, to: to)
+        case .strengthMilestone, .consistencyMilestone:
+            return nil
+        }
+    }
+}
+
 // Today — 按 rede-app.html #s-today 复原。
 // M2-3：引擎真数据接入（裁决+处方），视觉与 M0-2 静态复原完全一致、只换数据源。
 // 文案走 RedeL10n 双语 key/模板（引擎零文案）；重量 kg 口径（FR-SE1 落地前不硬编码 lb）。
@@ -58,6 +126,8 @@ struct TodayTabView: View {
     @State private var sharePreview: SharePreviewItem?
     /// 当天 MLE 事件卡（pending 派生；读取不清空）。只在「今天这场」总结块显示事实行。
     @State private var eventShareSnapshots: [ShareSnapshot] = []
+    /// 当天 MLE 原始事件；低置信/旧事件仍由此渲染事实，不从分享卡反推。
+    @State private var todayBreakthroughs: [LevelBreakthrough] = []
     /// K8 周一「上周收官」行（PRD-4 周初叙事雏形；nil = 非周一/上周零训练/数据缺 → 不渲染）。
     @State private var weekReview: WeekReview?
 
@@ -861,11 +931,13 @@ struct TodayTabView: View {
     private func loadCompletedDigest() async {
         guard showsRestBranch else { return }
         eventShareSnapshots = []
+        todayBreakthroughs = []
         // 下一场（现成只读投影；练完态含今日场 → 轮转已推进到下一日，与计划页排期同源）
         nextSession = await Task.detached { SessionStore.loadPlanProjection().first?.first }.value
         let outcome = await ProgressModel.loadOutcomeAsync()
         guard case let .ready(pm) = outcome else { return }
         eventShareSnapshots = pm.eventShareSnapshots
+        todayBreakthroughs = pm.todayBreakthroughs
         // K8：周一收官行与本 digest 同批取自同一 snapshot（禁新增独立 IO 链路）；
         // 在 history 空守卫之前算——零历史时 computeWeekReview 自会落 nil。
         computeWeekReview(snapshot: pm.snapshot)
@@ -957,6 +1029,9 @@ struct TodayTabView: View {
         // K3 区头分流：场次日期 == 今天 → 「今天这场」（练完态语义不变）；
         // 否则「上一场 · 日期」（休息日/回归日，日期用 s.shortDate——不编成今天）。
         let isTodaySession = digest.dateISO == Self.isoDay(model?.now ?? Date())
+        let breakthroughRows = isTodaySession
+            ? TodayBreakthroughPresentation.rows(events: todayBreakthroughs, strings: s)
+            : []
         return VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Overline(text: isTodaySession
@@ -996,27 +1071,41 @@ struct TodayTabView: View {
             Text(metaLine(digest))
                 .font(.redeCallout).monospacedDigit()
                 .foregroundStyle(Color.redeT2)
-            if isTodaySession, let eventLine = breakthroughLine(eventShareSnapshots) {
-                Button {
-                    sharePreview = SharePreviewItem(snapshots: eventShareSnapshots)
-                } label: {
+            ForEach(breakthroughRows.indices, id: \.self) { index in
+                switch breakthroughRows[index] {
+                case let .shareable(eventLine):
+                    Button {
+                        sharePreview = SharePreviewItem(snapshots: eventShareSnapshots)
+                    } label: {
+                        HStack(spacing: 7) {
+                            Text(eventLine)
+                                .font(.redeCallout)
+                                .foregroundStyle(Color.redeT1)
+                                .lineLimit(2)
+                            Spacer(minLength: 8)
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.redeCaption)
+                                .foregroundStyle(Color.redeEmber2)
+                            Image(systemName: "chevron.right")
+                                .font(.redeCaption)
+                                .foregroundStyle(Color.redeT4)
+                        }
+                        .frame(minHeight: RedeShape.controlHeight)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.redePressableRow)
+                case let .factOnly(eventLine):
                     HStack(spacing: 7) {
                         Text(eventLine)
                             .font(.redeCallout)
                             .foregroundStyle(Color.redeT1)
                             .lineLimit(2)
                         Spacer(minLength: 8)
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.redeCaption)
-                            .foregroundStyle(Color.redeEmber2)
-                        Image(systemName: "chevron.right")
-                            .font(.redeCaption)
-                            .foregroundStyle(Color.redeT4)
                     }
                     .frame(minHeight: RedeShape.controlHeight)
-                    .contentShape(Rectangle())
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(eventLine)
                 }
-                .buttonStyle(.redePressableRow)
             }
             if !digest.shareSnapshots.isEmpty {
                 Button {
@@ -1039,7 +1128,7 @@ struct TodayTabView: View {
         .padding(RedeSpace.card)
         .background(RoundedRectangle(cornerRadius: RedeShape.cardRadius).fill(Color.redeSurface))
         .overlay(RoundedRectangle(cornerRadius: RedeShape.cardRadius).stroke(Color.redeHair, lineWidth: 1))
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
     }
 
     /// K3「下一场」预告行：ember 竖标 + 训练日名 · 动作数 + chevron，点击跳计划页。
@@ -1076,42 +1165,6 @@ struct TodayTabView: View {
             parts.append("\(s.shareCardDurationBandValue(label)) \(s.shareCardDurationUnit)")
         }
         return parts.joined(separator: " · ")
-    }
-
-    /// A2 事实行：优先列同日等级变化（最多 2 项，更多折叠）；只有均衡事件时显示
-    /// balance 同源变化。这里只翻译已过纯 builder 门槛的卡，不重做 confidence 判断。
-    private func breakthroughLine(_ snapshots: [ShareSnapshot]) -> String? {
-        if let levelUp = snapshots.compactMap({ snapshot -> ShareSnapshot.LevelUp? in
-            guard case let .levelUp(card) = snapshot.content else { return nil }
-            return card
-        }).first {
-            var parts = levelUp.changes.compactMap { change -> String? in
-                if let raw = change.muscleRaw,
-                   let from = change.fromLevel,
-                   let to = change.toLevel {
-                    let name = MuscleGroupLabel(rawValue: raw).map(s.muscleGroupName) ?? raw
-                    return "\(name) \(s.developmentLevel(from)) → \(s.developmentLevel(to))"
-                }
-                if let fromRaw = change.fromTierRaw,
-                   let toRaw = change.toTierRaw {
-                    let from = TrainingTierLabel(rawValue: fromRaw).map(s.trainingTierName) ?? fromRaw
-                    let to = TrainingTierLabel(rawValue: toRaw).map(s.trainingTierName) ?? toRaw
-                    return "\(from) → \(to)"
-                }
-                return nil
-            }
-            if levelUp.totalChangeCount > levelUp.changes.count {
-                parts.append(s.todayBreakthroughMore(total: levelUp.totalChangeCount))
-            }
-            if !parts.isEmpty { return parts.joined(separator: " · ") }
-        }
-        if let balance = snapshots.compactMap({ snapshot -> ShareSnapshot.BalanceImprovement? in
-            guard case let .balanceImprovement(card) = snapshot.content else { return nil }
-            return card
-        }).first {
-            return s.shareCardBalanceChange(from: balance.fromScore, to: balance.toScore)
-        }
-        return nil
     }
 
     // 仅 rest/light/deload 等无动作清单态调用（isUnreadable 已被 unreadableBlock 独占，审查 [2]）

@@ -2,53 +2,24 @@ import XCTest
 @testable import RedeLocalSnapshot
 
 final class MuscleEventShareBuilderTests: XCTestCase {
-    private let zeroScore = MuscleLevelScoreBreakdown(
-        exposureScore: 0,
-        performanceScore: 0,
-        milestoneScore: 0,
-        progressionScore: 0,
-        coverageScore: 0,
-        consistencyScore: 0,
-        recoveryPenalty: 0,
-        goalAdjustment: 0
-    )
-
-    private func estimate(
-        _ muscle: MuscleGroupID,
-        confidence: EstimateConfidence,
-        level: Int = 9
-    ) -> MuscleLevelEstimate {
-        MuscleLevelEstimate(
-            muscleId: muscle,
-            currentLevel: level,
-            peakLevel: level,
-            levelProgress: 0,
-            trend: .rising,
-            confidence: confidence,
-            decision: .maintain,
-            score: zeroScore,
-            evidence: [],
-            limitations: []
-        )
-    }
-
-    private func profile(_ estimates: [MuscleLevelEstimate]) -> MuscleDevelopmentProfile {
-        MuscleDevelopmentProfile(
-            estimates: estimates,
-            overallTier: .novicePlus,
-            balanceScore: 80,
-            strongestMuscleIds: [],
-            priorityMuscleIds: [],
-            strengthMilestones: [],
-            breakthroughs: [],
-            generatedAtIso: "2026-07-29",
-            modelVersion: "test-only"
+    private func eventFacts(
+        confidence: String,
+        decisions: [String] = ["maintain"],
+        limitations: [String] = [],
+        recoveryPenalty: Double = 0
+    ) -> LevelBreakthroughEventFacts {
+        LevelBreakthroughEventFacts(
+            confidenceAtEventRaw: confidence,
+            decisionRawsAtEvent: decisions,
+            limitationCodesAtEvent: limitations,
+            recoveryPenaltyAtEvent: recoveryPenalty
         )
     }
 
     private func levelEvent(
         muscle: String = "back",
-        confidenceDate: String = "2026-07-29"
+        confidenceDate: String = "2026-07-29",
+        facts: LevelBreakthroughEventFacts? = nil
     ) -> LevelBreakthrough {
         LevelBreakthrough(
             kind: .muscleLevel,
@@ -58,17 +29,24 @@ final class MuscleEventShareBuilderTests: XCTestCase {
             fromTier: nil,
             toTier: nil,
             evidence: [],
-            achievedAtIso: confidenceDate
+            achievedAtIso: confidenceDate,
+            eventFacts: facts
         )
     }
 
-    func testTodayMediumConfidenceLevelEventBuildsCardAndOldEventDoesNot() {
+    func testTodayEventTimeMediumConfidenceBuildsCardAndOldEventDoesNot() {
         let snapshots = MuscleEventShareBuilder.snapshots(
             pending: [
-                levelEvent(muscle: "chest", confidenceDate: "2026-07-28"),
-                levelEvent(),
+                levelEvent(
+                    muscle: "chest",
+                    confidenceDate: "2026-07-28",
+                    facts: eventFacts(confidence: "medium")
+                ),
+                levelEvent(facts: eventFacts(
+                    confidence: "medium",
+                    limitations: ["noBaselineWindow"]
+                )),
             ],
-            profile: profile([estimate(.back, confidence: .medium)]),
             generatedDateISO: "2026-07-29",
             recentTrainingDays: 9
         )
@@ -81,18 +59,80 @@ final class MuscleEventShareBuilderTests: XCTestCase {
         XCTAssertEqual(card.recentTrainingDays, 9)
     }
 
-    func testLowConfidenceMuscleUpgradeDoesNotBuildCard() {
+    func testLowConfidenceAtFirstAppendRemainsFactOnlyAfterLaterSameKeyBecomesMedium() {
+        let lowAtAppend = levelEvent(facts: eventFacts(confidence: "low"))
+        let laterMedium = levelEvent(facts: eventFacts(confidence: "medium"))
+        let pending = MuscleLevelMemory.mergingPending(
+            existing: [lowAtAppend],
+            new: [laterMedium]
+        )
+
         let snapshots = MuscleEventShareBuilder.snapshots(
-            pending: [levelEvent()],
-            profile: profile([estimate(.back, confidence: .low)]),
+            pending: pending,
             generatedDateISO: "2026-07-29",
             recentTrainingDays: 9
+        )
+
+        XCTAssertEqual(
+            MuscleEventShareBuilder.todayEvents(
+                pending: pending,
+                generatedDateISO: "2026-07-29"
+            ),
+            [lowAtAppend],
+            "事实行必须保留"
         )
         XCTAssertTrue(snapshots.isEmpty)
     }
 
-    func testTierUpgradeUsesConservativeMedianConfidenceGate() {
-        let tier = LevelBreakthrough(
+    func testLegacyMissingFactsAndRecoveryOrSafetyFactsFailClosed() {
+        let legacy = levelEvent()
+        let recovering = levelEvent(
+            muscle: "chest",
+            facts: eventFacts(confidence: "medium", decisions: ["recover"])
+        )
+        let recoveryPenalty = levelEvent(
+            muscle: "quads",
+            facts: eventFacts(confidence: "high", recoveryPenalty: 1)
+        )
+        let unknownLimitation = levelEvent(
+            muscle: "shoulders",
+            facts: eventFacts(confidence: "medium", limitations: ["painSignal"])
+        )
+        let reducing = levelEvent(
+            muscle: "biceps",
+            facts: eventFacts(confidence: "medium", decisions: ["reduce"])
+        )
+        let nonFinitePenalty = levelEvent(
+            muscle: "triceps",
+            facts: eventFacts(confidence: "high", recoveryPenalty: .infinity)
+        )
+
+        for event in [
+            legacy,
+            recovering,
+            recoveryPenalty,
+            unknownLimitation,
+            reducing,
+            nonFinitePenalty,
+        ] {
+            XCTAssertFalse(LevelBreakthroughShareEligibility.isEligible(event))
+        }
+        XCTAssertTrue(MuscleEventShareBuilder.snapshots(
+            pending: [
+                legacy,
+                recovering,
+                recoveryPenalty,
+                unknownLimitation,
+                reducing,
+                nonFinitePenalty,
+            ],
+            generatedDateISO: "2026-07-29",
+            recentTrainingDays: 4
+        ).isEmpty)
+    }
+
+    func testTierUpgradeUsesLockedEventTimeMedianConfidence() {
+        let lowTier = LevelBreakthrough(
             kind: .trainingTier,
             targetId: "overall",
             fromLevel: nil,
@@ -100,26 +140,28 @@ final class MuscleEventShareBuilderTests: XCTestCase {
             fromTier: .beginner,
             toTier: .novicePlus,
             evidence: [],
-            achievedAtIso: "2026-07-29"
+            achievedAtIso: "2026-07-29",
+            eventFacts: eventFacts(confidence: "low")
         )
-        let lowMedian = profile([
-            estimate(.back, confidence: .low),
-            estimate(.chest, confidence: .medium),
-        ])
         XCTAssertTrue(MuscleEventShareBuilder.snapshots(
-            pending: [tier],
-            profile: lowMedian,
+            pending: [lowTier],
             generatedDateISO: "2026-07-29",
             recentTrainingDays: 4
-        ).isEmpty, "偶数 confidence 中位取低侧，与 tier 惯例一致")
+        ).isEmpty)
 
-        let mediumMedian = profile([
-            estimate(.back, confidence: .medium),
-            estimate(.chest, confidence: .medium),
-        ])
+        let mediumTier = LevelBreakthrough(
+            kind: .trainingTier,
+            targetId: "overall",
+            fromLevel: nil,
+            toLevel: nil,
+            fromTier: .beginner,
+            toTier: .novicePlus,
+            evidence: [],
+            achievedAtIso: "2026-07-29",
+            eventFacts: eventFacts(confidence: "medium")
+        )
         let snapshots = MuscleEventShareBuilder.snapshots(
-            pending: [tier],
-            profile: mediumMedian,
+            pending: [mediumTier],
             generatedDateISO: "2026-07-29",
             recentTrainingDays: 4
         )
@@ -142,7 +184,6 @@ final class MuscleEventShareBuilderTests: XCTestCase {
         )
         let snapshots = MuscleEventShareBuilder.snapshots(
             pending: [balance],
-            profile: profile([]),
             generatedDateISO: "2026-07-29",
             recentTrainingDays: 0
         )
