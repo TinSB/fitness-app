@@ -443,6 +443,38 @@ final class TrainFlowReducerTests: XCTestCase {
         XCTAssertEqual(state.events, [.removeExercise(removal), .removeExercise(removal.restoring)])
     }
 
+    func testStaleUndoCannotDuplicateOrdinarySameIdAdHocOrReplay() throws {
+        var state = try makeState()
+        let removal = try XCTUnwrap(state.removal(at: 2))
+        state.removeExercise(removal)
+        state.addExercise(removal.exercise)
+        let readdedAdHoc = state
+
+        let forgedDraft = TrainSessionDraft(
+            dateISO: "2026-07-30",
+            startedAt: Date(timeIntervalSince1970: 1_780_000_000),
+            prescription: state.prescription,
+            events: state.events + [.removeExercise(removal.restoring)]
+        )
+        XCTAssertNil(
+            forgedDraft.restoreFlow(),
+            "a stale ordinary Undo must fail draft replay instead of restoring a duplicate id"
+        )
+
+        state.removeExercise(removal.restoring)
+        XCTAssertEqual(
+            state,
+            readdedAdHoc,
+            "same-id add is a new ad-hoc occurrence, so the old removal is no longer exactly restorable"
+        )
+        XCTAssertEqual(
+            state.plan.exercises.filter {
+                $0.exerciseId == removal.exercise.exerciseId
+            }.count,
+            1
+        )
+    }
+
     func testRemoveRejectsCurrentCompletedPrefixAndAnyNonActivePhaseWithoutChangingFacts() throws {
         var state = try makeState()
         XCTAssertNil(state.removal(at: 0), "current exercise is never removable")
