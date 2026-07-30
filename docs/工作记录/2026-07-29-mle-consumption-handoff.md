@@ -162,3 +162,16 @@ MLE 批次 A+B 把肌群等级做完了，但用户升级时**毫无感知**：�
 
 - owner 已逐条确认停止回报中的四项问题成立，并批准上方 B2 的 stable reference、两次独立观察、confidence 中位口径、contributor 集合重置、低侧上升方向门槛与 raw delta `>= 10.0`。
 - 前次 STOP 保留为历史证据；本批自本记录起恢复 RED→GREEN。其余 A / B1 / C / D 裁定与全部红线不变；若实施证据表明 confidence 中位口径仍不足以支撑可靠判定，必须再次停止，不得静默降级或隐藏功能。
+
+## 停止回报（2026-07-30 · 独立审查发现 A2 / B1 语义冲突）
+
+- **状态：STOP。** A / B / C / D 正向实现与定向测试已经完成，独立 Simulator 也已证明“当天升级行 → 升级卡”的正向路径可见；但独立代码审查发现一项会改变用户结果的行为歧义，命中本交接件停止条件。发现后未继续修代码、写规格或跑最终 gate；本段是停止后的唯一仓库改动。
+- **问题 1｜A2 当天事实与 B1 分享资格无法由现有契约同时表达。** A2 写死“当天 pending 升级事件”都渲染一行观察式事实，并且“该行自带分享入口”；B1 同时写死“confidence < medium 的升级不出卡”。现有 pending 只保存 `LevelBreakthrough`，没有事件发生时的 confidence / 分享资格事实。当前实现用**消费时** profile 的 confidence 同时决定事实行与卡：
+  1. 事件发生时 low，当前仍 low：当天升级事实行也消失，违反 A2；
+  2. 同一天后续独立训练令当前 confidence 升到 medium、但没有新升级：同一个旧事件会突然获准出卡，违反 B1 的事件时门槛。
+- **问题 1 建议裁定（推荐）。** 把“事实可见”与“可分享”拆开：当天 pending 升级事实始终按 A2 显示；事件产生/首次 append 时锁定分享资格，之后不随消费时 profile 漂移。建议在 schema v1 内再授权一个 additive optional 的事件资格事实（可放 `MuscleLevelMemory` 的并行 eligibility map，按 pending 去重键索引；或明确批准给 `LevelBreakthrough` 增 optional 字段），旧文件缺资格事实只显示事实、不出卡。低置信行应显示为**不可点事实行、无分享图标与 chevron**；若 owner 坚持每条 A2 行都必须可点，则需明确改为“低置信升级连事实行也不显示”，并承认这会收窄 A2。
+- **需同时写死的资格时点。** 请明确 B1 的 confidence / safety / recovery 门槛均以“突破事件被 append 时”的 profile 为准；否则同一 pending 事件会随当天后续观察反复变成可分享/不可分享。
+- **问题 2｜当前写前合并仍不能承受真正重叠的四调用点写入。** `saveReconciling` 是无锁的 `load → merge → atomic replace`；atomic 只保证单次文件替换完整，不保证整个读改写事务原子。两个 writer 同时从同一旧文件起步时，后写者仍可覆盖先写者新增的 pending；旧 reader 的非 nil `balanceImprovementState` 也可覆盖盘上更新的 candidate/reference。这会重新出现“升级被吃掉”或让 B2 candidate 延后一场/重复确认。现有测试只覆盖“第一写已完成后第二写”，不是真并发。
+- **问题 2 建议实现边界。** 不改变任何产品裁定，批准把 app 进程内完整的 memory `load → advance/reconcile → save` 放进同一串行事务（同一 actor 或锁；widget 仍只读，未发现第二写进程），并用 barrier 双 writer 测试证明 pending 与较新 B2 state 都不丢。若 owner 认为 A1 只要求顺序多读、明确不要求重叠调用安全，也请写明接受残余丢写风险；实施方不自行弱化“谁先跑都不会吃掉事件”的现有表述。
+- **其余审查结果。** 未发现 `mle-v2` 常量 / `modelVersion`、memory/widget schemaVersion、paywall、`SessionShareSnapshotBuilder`、里程碑单位同源等红线被触碰。canonical docs、CHANGELOG / DEV_LOG、TestFlight 清单、最终 gate 与实施回执尚未收口，按 STOP 纪律不绕过上述歧义继续。
+- **恢复条件。** owner 明确裁定：①低置信当天事实行是否显示、显示时是否可点；②分享资格的锁定时点与允许落盘的 additive optional 结构；③A1 是否要求重叠调用的串行事务。三项写回后，才恢复定向 RED → 修复 → GREEN、规格与实施回执收尾。
