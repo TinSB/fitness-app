@@ -149,6 +149,10 @@ public struct MuscleLevelMemory: Codable, Equatable, Sendable {
                     achievedAtIso: atIso
                 )
             }
+        } else {
+            // 分数不可得 = 不可比观察（同 contributor 集合变化的「新口径新起点」裁定）：
+            // 清空 reference/candidate，防止分数恢复后拿过期对比确认陈旧改善。
+            balanceState = nil
         }
 
         var newEvents = profile.breakthroughs.map {

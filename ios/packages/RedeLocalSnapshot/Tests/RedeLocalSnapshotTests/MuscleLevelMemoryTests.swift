@@ -558,6 +558,41 @@ final class MuscleLevelMemoryTests: XCTestCase {
         XCTAssertNil(next.pendingBreakthroughs)
     }
 
+    func testNilBalanceScoreClearsStaleStateInsteadOfRetainingIt() {
+        // P2：分数不可得 = 不可比观察（同裁定 4 的「新口径新起点」）。
+        // 若保留旧 candidate，分数恢复后会拿过期对比立即确认一个陈旧「改善」。
+        let reference = BalanceImprovementReference(
+            score: 50,
+            levelsByContributorID: ["chest": 2, "back": 6, "quads": 10],
+            medianConfidence: .medium
+        )
+        let staleCandidate = BalanceImprovementCandidate(
+            score: 61,
+            completedSessionCount: 10
+        )
+        let previous = MuscleLevelMemory(
+            levels: ["chest": 2, "back": 6, "quads": 10],
+            peaks: ["chest": 2, "back": 6, "quads": 10],
+            tierRaw: "novicePlus",
+            balanceImprovementState: .init(reference: reference, candidate: staleCandidate),
+            updatedAtIso: "2026-07-28"
+        )
+        let scoreUnavailable = profile(
+            estimates: [estimate(.chest, level: 3, trend: .rising)],
+            balanceScore: nil
+        )
+
+        let next = MuscleLevelMemory.advancing(
+            from: scoreUnavailable,
+            previous: previous,
+            completedSessionCount: 11,
+            atIso: "2026-07-30"
+        )
+
+        XCTAssertNil(next.balanceImprovementState)
+        XCTAssertNil(next.pendingBreakthroughs)
+    }
+
     func testBalanceCandidateNeedsStrictlyNewSessionThenAppendsMilestone() {
         let reference = BalanceImprovementReference(
             score: 50,
