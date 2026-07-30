@@ -35,6 +35,9 @@ public struct ShareSnapshot: Equatable, Sendable {
         case workoutSummary(WorkoutSummary)
         case personalRecord(PersonalRecord)
         case muscleLevel(MuscleLevel)
+        case levelUp(LevelUp)
+        case balanceImprovement(BalanceImprovement)
+        case strengthMilestone(StrengthMilestone)
     }
 
     /// 训练总结卡：训练分类 + 完成动作/组数 + 时长区间 + 动作模式 + 是否破 PR。
@@ -97,6 +100,76 @@ public struct ShareSnapshot: Equatable, Sendable {
             self.isEstimated = isEstimated
         }
     }
+
+    /// 等级升级卡：同日突破事实最多展示两项，近期训练天数是中性一致性事实。
+    /// confidence 不进入结构，触发资格由上游纯 builder 判定。
+    public struct LevelUp: Equatable, Sendable {
+        public struct Change: Equatable, Sendable {
+            public let muscleRaw: String?
+            public let fromLevel: Int?
+            public let toLevel: Int?
+            public let fromTierRaw: String?
+            public let toTierRaw: String?
+
+            public init(
+                muscleRaw: String?,
+                fromLevel: Int?,
+                toLevel: Int?,
+                fromTierRaw: String?,
+                toTierRaw: String?
+            ) {
+                self.muscleRaw = muscleRaw
+                self.fromLevel = fromLevel
+                self.toLevel = toLevel
+                self.fromTierRaw = fromTierRaw
+                self.toTierRaw = toTierRaw
+            }
+        }
+
+        public let changes: [Change]
+        public let totalChangeCount: Int
+        public let recentTrainingDays: Int
+
+        public init(changes: [Change], totalChangeCount: Int, recentTrainingDays: Int) {
+            self.changes = changes
+            self.totalChangeCount = totalChangeCount
+            self.recentTrainingDays = recentTrainingDays
+        }
+    }
+
+    /// 均衡改善卡：只陈述 raw balanceScore 同源取整后的变化与正在补足的方向。
+    public struct BalanceImprovement: Equatable, Sendable {
+        public let fromScore: Int
+        public let toScore: Int
+        public let improvingMuscleRaws: [String]
+
+        public init(fromScore: Int, toScore: Int, improvingMuscleRaws: [String]) {
+            self.fromScore = fromScore
+            self.toScore = toScore
+            self.improvingMuscleRaws = improvingMuscleRaws
+        }
+    }
+
+    /// 力量里程碑独立数据 case。阈值与单位直接来自进展页 StrengthMilestone，
+    /// 不复用需要 reps/kg canonical 的 PersonalRecord，也不做 kg/lb 互转。
+    public struct StrengthMilestone: Equatable, Sendable {
+        public let exerciseId: String
+        public let achievedThreshold: Int
+        public let unitLabel: String
+        public let isEstimated: Bool
+
+        public init(
+            exerciseId: String,
+            achievedThreshold: Int,
+            unitLabel: String,
+            isEstimated: Bool
+        ) {
+            self.exerciseId = exerciseId
+            self.achievedThreshold = achievedThreshold
+            self.unitLabel = unitLabel
+            self.isEstimated = isEstimated
+        }
+    }
 }
 
 /// 隐私过滤 + 有损变换的唯一入口（SH2）。app 层只能经此构造 ShareSnapshot，
@@ -152,6 +225,64 @@ public enum SharePrivacyFilter {
             generatedDateISO: generatedDateISO,
             content: .muscleLevel(.init(tierRaw: tierRaw, balanceScore: balance,
                                         muscles: Array(ordered)))
+        )
+    }
+
+    public static func levelUp(
+        generatedDateISO: String,
+        changes: [ShareSnapshot.LevelUp.Change],
+        totalChangeCount: Int,
+        recentTrainingDays: Int
+    ) -> ShareSnapshot {
+        let shown = Array(changes.prefix(2))
+        return ShareSnapshot(
+            generatedDateISO: generatedDateISO,
+            content: .levelUp(.init(
+                changes: shown,
+                totalChangeCount: max(shown.count, totalChangeCount),
+                recentTrainingDays: max(0, recentTrainingDays)
+            ))
+        )
+    }
+
+    public static func balanceImprovement(
+        generatedDateISO: String,
+        fromScore: Double,
+        toScore: Double,
+        improvingMuscleRaws: [String]
+    ) -> ShareSnapshot {
+        var seen = Set<String>()
+        let directions = improvingMuscleRaws
+            .filter { !$0.isEmpty && seen.insert($0).inserted }
+            .prefix(2)
+        func displayScore(_ raw: Double) -> Int {
+            Int(min(max(raw, 0), 100).rounded())
+        }
+        return ShareSnapshot(
+            generatedDateISO: generatedDateISO,
+            content: .balanceImprovement(.init(
+                fromScore: displayScore(fromScore),
+                toScore: displayScore(toScore),
+                improvingMuscleRaws: Array(directions)
+            ))
+        )
+    }
+
+    public static func strengthMilestone(
+        generatedDateISO: String,
+        exerciseId: String,
+        achievedThreshold: Int,
+        unitLabel: String,
+        isEstimated: Bool
+    ) -> ShareSnapshot {
+        ShareSnapshot(
+            generatedDateISO: generatedDateISO,
+            content: .strengthMilestone(.init(
+                exerciseId: exerciseId,
+                achievedThreshold: achievedThreshold,
+                unitLabel: unitLabel,
+                isEstimated: isEstimated
+            ))
         )
     }
 }

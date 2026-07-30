@@ -160,4 +160,114 @@ final class ShareSnapshotTests: XCTestCase {
             XCTAssertFalse(rowFields.contains(forbidden), "MuscleRow 不应含 \(forbidden)")
         }
     }
+
+    // MARK: - MLE 消费面新增卡（升级 / 均衡改善 / 力量里程碑）
+
+    func testLevelUpCardKeepsTwoFactsAndNeutralConsistencyOnly() {
+        let snapshot = SharePrivacyFilter.levelUp(
+            generatedDateISO: "2026-07-29",
+            changes: [
+                .init(muscleRaw: "back", fromLevel: 8, toLevel: 9,
+                      fromTierRaw: nil, toTierRaw: nil),
+                .init(muscleRaw: "quads", fromLevel: 6, toLevel: 7,
+                      fromTierRaw: nil, toTierRaw: nil),
+                .init(muscleRaw: "chest", fromLevel: 9, toLevel: 10,
+                      fromTierRaw: nil, toTierRaw: nil),
+            ],
+            totalChangeCount: 3,
+            recentTrainingDays: 11
+        )
+        guard case .levelUp(let card) = snapshot.content else {
+            return XCTFail("应为 levelUp")
+        }
+        XCTAssertEqual(card.changes.map(\.muscleRaw), ["back", "quads"])
+        XCTAssertEqual(card.totalChangeCount, 3)
+        XCTAssertEqual(card.recentTrainingDays, 11)
+    }
+
+    func testBalanceImprovementCardClampsScoresAndCapsDirectionAtTwo() {
+        let snapshot = SharePrivacyFilter.balanceImprovement(
+            generatedDateISO: "2026-07-29",
+            fromScore: -1.2,
+            toScore: 105.9,
+            improvingMuscleRaws: ["back", "quads", "back", "glutes"]
+        )
+        guard case .balanceImprovement(let card) = snapshot.content else {
+            return XCTFail("应为 balanceImprovement")
+        }
+        XCTAssertEqual(card.fromScore, 0)
+        XCTAssertEqual(card.toScore, 100)
+        XCTAssertEqual(card.improvingMuscleRaws, ["back", "quads"])
+    }
+
+    func testStrengthMilestoneCardPreservesSourceUnitWithoutConversion() {
+        let measured = SharePrivacyFilter.strengthMilestone(
+            generatedDateISO: "2026-07-29",
+            exerciseId: "bench-press",
+            achievedThreshold: 225,
+            unitLabel: "lb",
+            isEstimated: false
+        )
+        guard case .strengthMilestone(let card) = measured.content else {
+            return XCTFail("应为 strengthMilestone")
+        }
+        XCTAssertEqual(card.exerciseId, "bench-press")
+        XCTAssertEqual(card.achievedThreshold, 225)
+        XCTAssertEqual(card.unitLabel, "lb")
+        XCTAssertFalse(card.isEstimated)
+
+        let estimated = SharePrivacyFilter.strengthMilestone(
+            generatedDateISO: "2026-07-29",
+            exerciseId: "bench-press",
+            achievedThreshold: 100,
+            unitLabel: "kg",
+            isEstimated: true
+        )
+        guard case .strengthMilestone(let estimatedCard) = estimated.content else {
+            return XCTFail("应为 strengthMilestone")
+        }
+        XCTAssertEqual(estimatedCard.achievedThreshold, 100)
+        XCTAssertEqual(estimatedCard.unitLabel, "kg")
+        XCTAssertTrue(estimatedCard.isEstimated)
+    }
+
+    func testNoForbiddenFieldsInLevelUpCard() {
+        let card = ShareSnapshot.LevelUp(
+            changes: [.init(muscleRaw: "back", fromLevel: 8, toLevel: 9,
+                            fromTierRaw: nil, toTierRaw: nil)],
+            totalChangeCount: 1,
+            recentTrainingDays: 8
+        )
+        assertNoForbiddenFields(card, cardName: "LevelUp")
+        assertNoForbiddenFields(card.changes[0], cardName: "LevelUp.Change")
+    }
+
+    func testNoForbiddenFieldsInBalanceImprovementCard() {
+        let card = ShareSnapshot.BalanceImprovement(
+            fromScore: 72,
+            toScore: 83,
+            improvingMuscleRaws: ["back"]
+        )
+        assertNoForbiddenFields(card, cardName: "BalanceImprovement")
+    }
+
+    func testNoForbiddenFieldsInStrengthMilestoneCard() {
+        let card = ShareSnapshot.StrengthMilestone(
+            exerciseId: "bench-press",
+            achievedThreshold: 100,
+            unitLabel: "kg",
+            isEstimated: true
+        )
+        assertNoForbiddenFields(card, cardName: "StrengthMilestone")
+    }
+
+    private func assertNoForbiddenFields<T>(_ value: T, cardName: String) {
+        let names = Set(Mirror(reflecting: value).children.compactMap { $0.label?.lowercased() })
+        for forbidden in [
+            "bodyweight", "bodyweightkg", "rir", "pain", "location", "gym", "timestamp",
+            "preciseseconds", "durationseconds", "failed", "confidence", "healthkit", "notes",
+        ] {
+            XCTAssertFalse(names.contains(forbidden), "\(cardName) 不应含敏感字段 \(forbidden)")
+        }
+    }
 }

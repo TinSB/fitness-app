@@ -713,7 +713,8 @@ struct ProgressTabView: View {
                 // 分享入口（B5）：沿 Development 块行样式（ember2 + chevron 披露），非练完态按钮复刻（审查 m2 措辞校准）
                 Button {
                     muscleSharePreview = SharePreviewItem(
-                        snapshots: [Self.muscleLevelShareSnapshot(from: profile)])
+                        snapshots: [Self.muscleLevelShareSnapshot(from: profile)]
+                            + model.eventShareSnapshots)
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "square.and.arrow.up").font(.redeCaption)
@@ -851,33 +852,46 @@ struct ProgressTabView: View {
                 let name = localeStore.exerciseName(row.exerciseId)
                 let measuredValue = row.measured.map { "\($0.achievedThreshold) \($0.unitLabel)" }
                 let estimatedValue = row.estimated.map { "\($0.achievedThreshold) \($0.unitLabel)" }
-                HStack(spacing: 8) {
-                    Text(name)
-                        .font(.redeBody)
-                        .foregroundStyle(Color.redeT2)
-                    // 纯估算行保留「估算」前置微标——不冒充实测（FR-PR7 诚信红线）；
-                    // 实测+估算合并行的估算值自带「估算」前缀，不再重复微标。
-                    if measuredValue == nil {
-                        Text(s.milestoneEstimatedBadge)
+                Button {
+                    let snapshots = [row.measured, row.estimated].compactMap { milestone in
+                        milestone.map(Self.strengthMilestoneShareSnapshot)
+                    }
+                    muscleSharePreview = SharePreviewItem(snapshots: snapshots)
+                } label: {
+                    HStack(spacing: 8) {
+                        Text(name)
+                            .font(.redeBody)
+                            .foregroundStyle(Color.redeT2)
+                        // 纯估算行保留「估算」前置微标——不冒充实测（FR-PR7 诚信红线）；
+                        // 实测+估算合并行的估算值自带「估算」前缀，不再重复微标。
+                        if measuredValue == nil {
+                            Text(s.milestoneEstimatedBadge)
+                                .font(.redeCaption)
+                                .foregroundStyle(Color.redeT4)
+                        }
+                        Spacer()
+                        // 实测 = ember 成就口音；估算 = 降一档中性，视觉上不与实测争辉。
+                        if let measuredValue {
+                            Text(measuredValue)
+                                .font(.redeCallout).monospacedDigit()
+                                .foregroundStyle(Color.redeEmber2)
+                        }
+                        if let estimatedValue {
+                            Text(measuredValue == nil
+                                 ? estimatedValue
+                                 : "· \(s.milestoneEstimatedBadge) \(estimatedValue)")
+                                .font(.redeCallout).monospacedDigit()
+                                .foregroundStyle(Color.redeT3)
+                        }
+                        Image(systemName: "chevron.right")
                             .font(.redeCaption)
                             .foregroundStyle(Color.redeT4)
+                            .accessibilityHidden(true)
                     }
-                    Spacer()
-                    // 实测 = ember 成就口音；估算 = 降一档中性，视觉上不与实测争辉。
-                    if let measuredValue {
-                        Text(measuredValue)
-                            .font(.redeCallout).monospacedDigit()
-                            .foregroundStyle(Color.redeEmber2)
-                    }
-                    if let estimatedValue {
-                        Text(measuredValue == nil
-                             ? estimatedValue
-                             : "· \(s.milestoneEstimatedBadge) \(estimatedValue)")
-                            .font(.redeCallout).monospacedDigit()
-                            .foregroundStyle(Color.redeT3)
-                    }
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
                 }
-                .padding(.vertical, 6)
+                .buttonStyle(.redePressableRow)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(milestoneRowA11y(name: name, measured: measuredValue,
                                                      estimated: estimatedValue))
@@ -891,6 +905,22 @@ struct ProgressTabView: View {
         }
         if let measured { return s.milestoneA11y(lift: name, value: measured) }
         return s.milestoneA11y(lift: name, value: estimated ?? "", estimated: true)
+    }
+
+    /// 里程碑行与分享卡严格同源：阈值/单位原样穿透，不做 kg/lb 互转；实测与估算
+    /// 合并行按 measured → estimated 各一页。
+    static func strengthMilestoneShareSnapshot(_ milestone: StrengthMilestone) -> ShareSnapshot {
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        fmt.timeZone = .current
+        fmt.dateFormat = "yyyy-MM-dd"
+        return SharePrivacyFilter.strengthMilestone(
+            generatedDateISO: fmt.string(from: Date()),
+            exerciseId: milestone.exerciseId,
+            achievedThreshold: milestone.achievedThreshold,
+            unitLabel: milestone.unitLabel,
+            isEstimated: milestone.isEstimated
+        )
     }
 
     // MARK: - 历史（FR-PR1；原型未画——保守样式：ov 标题 + 行 + 细分隔线）

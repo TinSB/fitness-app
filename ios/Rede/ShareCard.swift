@@ -32,6 +32,8 @@ struct ShareCardModel: Equatable {
         case workout(Workout)
         case pr(PR)
         case muscleLevel(MuscleLevelCard)
+        case levelUp(LevelUpCard)
+        case balance(BalanceCard)
     }
     /// 肌群发展画像卡（MLE B5）：tier/balance nil = 不显（校准中/解锁不足，不编数）。
     struct MuscleLevelCard: Equatable {
@@ -57,6 +59,16 @@ struct ShareCardModel: Equatable {
         let exerciseName: String
         let valueText: String    // 如 "102.5 kg × 5"
         let estimatedBadge: String?
+    }
+    struct LevelUpCard: Equatable {
+        let title: String
+        let changeLines: [String]
+        let consistencyLine: String
+    }
+    struct BalanceCard: Equatable {
+        let title: String
+        let changeLine: String
+        let directionLine: String
     }
     struct Stat: Equatable {
         let value: String
@@ -117,6 +129,51 @@ struct ShareCardModel: Equatable {
                     exerciseName: localeStore.exerciseName(pr.exerciseId),
                     valueText: "\(weightText) \(s.unitLabel) × \(pr.reps)",
                     estimatedBadge: pr.isEstimated ? s.shareCardEstimated : nil))
+            )
+        case let .levelUp(levelUp):
+            let lines = levelUp.changes.compactMap { change -> String? in
+                if let raw = change.muscleRaw,
+                   let from = change.fromLevel,
+                   let to = change.toLevel {
+                    let name = MuscleGroupLabel(rawValue: raw).map(s.muscleGroupName) ?? raw
+                    return "\(name) \(s.developmentLevel(from)) → \(s.developmentLevel(to))"
+                }
+                if let fromRaw = change.fromTierRaw,
+                   let toRaw = change.toTierRaw {
+                    let from = TrainingTierLabel(rawValue: fromRaw).map(s.trainingTierName) ?? fromRaw
+                    let to = TrainingTierLabel(rawValue: toRaw).map(s.trainingTierName) ?? toRaw
+                    return "\(from) → \(to)"
+                }
+                return nil
+            }
+            return ShareCardModel(
+                dateText: date, tagline: s.shareCardTagline, downloadHint: s.shareCardDownloadHint,
+                kind: .levelUp(.init(
+                    title: s.shareCardLevelUpTitle,
+                    changeLines: lines,
+                    consistencyLine: s.shareCardRecentTrainingDays(levelUp.recentTrainingDays)))
+            )
+        case let .balanceImprovement(balance):
+            let names = balance.improvingMuscleRaws.map { raw in
+                MuscleGroupLabel(rawValue: raw).map(s.muscleGroupName) ?? raw
+            }
+            return ShareCardModel(
+                dateText: date, tagline: s.shareCardTagline, downloadHint: s.shareCardDownloadHint,
+                kind: .balance(.init(
+                    title: s.shareCardBalanceTitle,
+                    changeLine: s.shareCardBalanceChange(
+                        from: balance.fromScore,
+                        to: balance.toScore),
+                    directionLine: s.shareCardImprovingDirection(names)))
+            )
+        case let .strengthMilestone(milestone):
+            return ShareCardModel(
+                dateText: date, tagline: s.shareCardTagline, downloadHint: s.shareCardDownloadHint,
+                kind: .pr(.init(
+                    title: s.shareCardMilestoneTitle,
+                    exerciseName: localeStore.exerciseName(milestone.exerciseId),
+                    valueText: "\(milestone.achievedThreshold) \(milestone.unitLabel)",
+                    estimatedBadge: milestone.isEstimated ? s.shareCardEstimated : nil))
             )
         }
     }
@@ -184,6 +241,48 @@ struct ShareCardView: View {
         case let .workout(w): workoutContent(w)
         case let .pr(pr): prContent(pr)
         case let .muscleLevel(m): muscleLevelContent(m)
+        case let .levelUp(levelUp): levelUpContent(levelUp)
+        case let .balance(balance): balanceContent(balance)
+        }
+    }
+
+    private func levelUpContent(_ card: ShareCardModel.LevelUpCard) -> some View {
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 6) {
+                Overline(text: model.dateText, color: .redeT3)
+                Text(card.title)
+                    .font(.system(size: 30, weight: .bold))
+                    .foregroundStyle(Color.redeT1)
+            }
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(Array(card.changeLines.enumerated()), id: \.offset) { _, line in
+                    Text(line)
+                        .font(.system(size: 25, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(Color.redeT1)
+                }
+            }
+            Text(card.consistencyLine)
+                .font(.system(size: 14))
+                .foregroundStyle(Color.redeT3)
+        }
+    }
+
+    private func balanceContent(_ card: ShareCardModel.BalanceCard) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 6) {
+                Overline(text: model.dateText, color: .redeT3)
+                Text(card.title)
+                    .font(.system(size: 30, weight: .bold))
+                    .foregroundStyle(Color.redeT1)
+            }
+            Text(card.changeLine)
+                .font(.system(size: 38, weight: .bold))
+                .monospacedDigit()
+                .foregroundStyle(Color.redeT1)
+            Text(card.directionLine)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(Color.redeEmber2)
         }
     }
 

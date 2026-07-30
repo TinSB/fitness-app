@@ -75,6 +75,9 @@ struct ShareCardPreviewView: View {
         case .workoutSummary: return s.shareCardWorkoutTitle
         case .personalRecord: return s.shareCardPRTitle
         case .muscleLevel: return s.shareCardMuscleLevelTitle
+        case .levelUp: return s.shareCardLevelUpTitle
+        case .balanceImprovement: return s.shareCardBalanceTitle
+        case .strengthMilestone: return s.shareCardMilestoneTitle
         }
     }
 
@@ -124,5 +127,24 @@ enum ShareCardSample {
                 .init(muscleRaw: "glutes", level: 9, trendRaw: "stable"),
                 .init(muscleRaw: "hamstrings", level: 8, trendRaw: "declining"),
             ]),
+        SharePrivacyFilter.levelUp(
+            generatedDateISO: "2026-07-29",
+            changes: [
+                .init(muscleRaw: "back", fromLevel: 8, toLevel: 9,
+                      fromTierRaw: nil, toTierRaw: nil),
+            ],
+            totalChangeCount: 1,
+            recentTrainingDays: 9),
+        SharePrivacyFilter.balanceImprovement(
+            generatedDateISO: "2026-07-29",
+            fromScore: 71,
+            toScore: 82,
+            improvingMuscleRaws: ["back", "quads"]),
+        SharePrivacyFilter.strengthMilestone(
+            generatedDateISO: "2026-07-29",
+            exerciseId: "bench-press",
+            achievedThreshold: 100,
+            unitLabel: "kg",
+            isEstimated: true),
     ]
 }

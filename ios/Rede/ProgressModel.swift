@@ -87,6 +87,9 @@ struct ProgressModel {
     let muscleProfile: MuscleDevelopmentProfile
     /// 子肌群等级（钻取层 2026-07-09；详情页读——back/shoulders 有值，其余空）。
     let subLevelsByMuscle: [RedeLocalSnapshot.MuscleGroupID: [MuscleSubLevel]]
+    /// 当天可分享的 MLE 事件卡（升级 / 均衡改善）。pending 读取不等于消费，
+    /// 过天由纯 builder 自然过滤；Today 与 Progress 共用同一组卡，避免入口漂移。
+    let eventShareSnapshots: [ShareSnapshot]
 
     static func loadOutcomeAsync(now: Date = Date()) async -> LoadOutcome? {
         // 批次 D：HealthKit 体重静默读（async 边界在此；未授权/无数据返回 nil 不弹框），
@@ -238,10 +241,32 @@ struct ProgressModel {
                 parentConfidence: estimate.confidence,
                 nowISO: todayISO, config: .current)
         }
-        let nextMemory = MuscleLevelMemory.extract(from: muscleProfile, atIso: todayISO)
+        let nextMemory = MuscleLevelMemory.advancing(
+            from: muscleProfile,
+            previous: previousMemory,
+            completedSessionCount: records.count,
+            atIso: todayISO
+        )
+        var effectiveMemory = nextMemory
         if MuscleLevelMemory.shouldPersist(previous: previousMemory, next: nextMemory) {
-            try? memoryStore.saveReconciling(nextMemory)   // 写前 peaks max 合并（并发竞写对策）
+            do {
+                try memoryStore.saveReconciling(nextMemory)   // 写前 peaks/pending 合并（并发竞写对策）
+                effectiveMemory = memoryStore.load() ?? nextMemory
+            } catch {
+                // derived-only best effort：写失败不阻断进度页，且本轮 UI 仍看见刚产生的事实。
+                effectiveMemory = nextMemory
+            }
         }
+        let recentTrainingDays = MuscleEventShareBuilder.recentTrainingDayCount(
+            dateISOs: records.map(\.dateISO),
+            throughISO: todayISO
+        )
+        let eventShareSnapshots = MuscleEventShareBuilder.snapshots(
+            pending: effectiveMemory.pendingBreakthroughs ?? [],
+            profile: muscleProfile,
+            generatedDateISO: todayISO,
+            recentTrainingDays: recentTrainingDays
+        )
         return .ready(ProgressModel(
             snapshot: snapshot,
             quality: quality,
@@ -255,7 +280,8 @@ struct ProgressModel {
             continuity: continuity,
             milestones: milestones,
             muscleProfile: muscleProfile,
-            subLevelsByMuscle: subLevelsByMuscle
+            subLevelsByMuscle: subLevelsByMuscle,
+            eventShareSnapshots: eventShareSnapshots
         ))
     }
 

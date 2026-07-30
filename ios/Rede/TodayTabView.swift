@@ -56,6 +56,8 @@ struct TodayTabView: View {
     @State private var weekVolumeKg: Double?
     /// T1 练完态分享入口打开的预览（复用训练小结同款载体与预览视图）。
     @State private var sharePreview: SharePreviewItem?
+    /// 当天 MLE 事件卡（pending 派生；读取不清空）。只在「今天这场」总结块显示事实行。
+    @State private var eventShareSnapshots: [ShareSnapshot] = []
     /// K8 周一「上周收官」行（PRD-4 周初叙事雏形；nil = 非周一/上周零训练/数据缺 → 不渲染）。
     @State private var weekReview: WeekReview?
 
@@ -858,10 +860,12 @@ struct TodayTabView: View {
     /// 从 canonical 补）+ 「下一场」投影。任何一环缺失 → 对应块不渲染（诚实兜底、不编数据）。
     private func loadCompletedDigest() async {
         guard showsRestBranch else { return }
+        eventShareSnapshots = []
         // 下一场（现成只读投影；练完态含今日场 → 轮转已推进到下一日，与计划页排期同源）
         nextSession = await Task.detached { SessionStore.loadPlanProjection().first?.first }.value
         let outcome = await ProgressModel.loadOutcomeAsync()
         guard case let .ready(pm) = outcome else { return }
+        eventShareSnapshots = pm.eventShareSnapshots
         // K8：周一收官行与本 digest 同批取自同一 snapshot（禁新增独立 IO 链路）；
         // 在 history 空守卫之前算——零历史时 computeWeekReview 自会落 nil。
         computeWeekReview(snapshot: pm.snapshot)
@@ -992,6 +996,28 @@ struct TodayTabView: View {
             Text(metaLine(digest))
                 .font(.redeCallout).monospacedDigit()
                 .foregroundStyle(Color.redeT2)
+            if isTodaySession, let eventLine = breakthroughLine(eventShareSnapshots) {
+                Button {
+                    sharePreview = SharePreviewItem(snapshots: eventShareSnapshots)
+                } label: {
+                    HStack(spacing: 7) {
+                        Text(eventLine)
+                            .font(.redeCallout)
+                            .foregroundStyle(Color.redeT1)
+                            .lineLimit(2)
+                        Spacer(minLength: 8)
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.redeCaption)
+                            .foregroundStyle(Color.redeEmber2)
+                        Image(systemName: "chevron.right")
+                            .font(.redeCaption)
+                            .foregroundStyle(Color.redeT4)
+                    }
+                    .frame(minHeight: RedeShape.controlHeight)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.redePressableRow)
+            }
             if !digest.shareSnapshots.isEmpty {
                 Button {
                     sharePreview = SharePreviewItem(snapshots: digest.shareSnapshots)
@@ -1050,6 +1076,42 @@ struct TodayTabView: View {
             parts.append("\(s.shareCardDurationBandValue(label)) \(s.shareCardDurationUnit)")
         }
         return parts.joined(separator: " · ")
+    }
+
+    /// A2 事实行：优先列同日等级变化（最多 2 项，更多折叠）；只有均衡事件时显示
+    /// balance 同源变化。这里只翻译已过纯 builder 门槛的卡，不重做 confidence 判断。
+    private func breakthroughLine(_ snapshots: [ShareSnapshot]) -> String? {
+        if let levelUp = snapshots.compactMap({ snapshot -> ShareSnapshot.LevelUp? in
+            guard case let .levelUp(card) = snapshot.content else { return nil }
+            return card
+        }).first {
+            var parts = levelUp.changes.compactMap { change -> String? in
+                if let raw = change.muscleRaw,
+                   let from = change.fromLevel,
+                   let to = change.toLevel {
+                    let name = MuscleGroupLabel(rawValue: raw).map(s.muscleGroupName) ?? raw
+                    return "\(name) \(s.developmentLevel(from)) → \(s.developmentLevel(to))"
+                }
+                if let fromRaw = change.fromTierRaw,
+                   let toRaw = change.toTierRaw {
+                    let from = TrainingTierLabel(rawValue: fromRaw).map(s.trainingTierName) ?? fromRaw
+                    let to = TrainingTierLabel(rawValue: toRaw).map(s.trainingTierName) ?? toRaw
+                    return "\(from) → \(to)"
+                }
+                return nil
+            }
+            if levelUp.totalChangeCount > levelUp.changes.count {
+                parts.append(s.todayBreakthroughMore(total: levelUp.totalChangeCount))
+            }
+            if !parts.isEmpty { return parts.joined(separator: " · ") }
+        }
+        if let balance = snapshots.compactMap({ snapshot -> ShareSnapshot.BalanceImprovement? in
+            guard case let .balanceImprovement(card) = snapshot.content else { return nil }
+            return card
+        }).first {
+            return s.shareCardBalanceChange(from: balance.fromScore, to: balance.toScore)
+        }
+        return nil
     }
 
     // 仅 rest/light/deload 等无动作清单态调用（isUnreadable 已被 unreadableBlock 独占，审查 [2]）
