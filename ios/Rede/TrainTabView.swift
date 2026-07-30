@@ -295,7 +295,7 @@ struct TrainTabView: View {
 
     private var overallFraction: Double {
         guard let flow else { return 0 }
-        let total = flow.plan.exercises.reduce(0) { $0 + $1.sets.count }
+        let total = flow.overallSetTotal
         guard total > 0 else { return 0 }
         let done = flow.observationsByExercise.values.reduce(0) { $0 + $1.count } + flow.skippedSets.count
         return min(1, Double(done) / Double(total))

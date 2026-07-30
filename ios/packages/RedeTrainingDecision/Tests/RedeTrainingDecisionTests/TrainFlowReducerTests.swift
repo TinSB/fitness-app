@@ -152,6 +152,52 @@ final class TrainFlowReducerTests: XCTestCase {
         XCTAssertEqual(state.replacements.first?.actualExerciseId, "db-bench-press")
     }
 
+    func testOverallSetTotalIsConservedAcrossMidExerciseReplacementAndSwapBack() throws {
+        var state = try makeState()
+        let originalOverallSetTotal = state.overallSetTotal
+
+        state.logSet(obs(60, 6))
+        state.restFinished()
+        state.replaceCurrentExercise(with: "db-bench-press")
+
+        XCTAssertEqual(state.currentExercise?.sets.count, 2)
+        XCTAssertEqual(
+            state.overallSetTotal,
+            originalOverallSetTotal,
+            "one sealed old fact plus the shortened replacement plan keeps the denominator stable"
+        )
+
+        state.logSet(obs(30, 8))
+        state.restFinished()
+        state.replaceCurrentExercise(with: "bench-press")
+
+        XCTAssertEqual(state.currentExercise?.sets.count, 1)
+        XCTAssertEqual(
+            state.overallSetTotal,
+            originalOverallSetTotal,
+            "A→B→A seals two facts while the current slot shrinks by two"
+        )
+    }
+
+    func testReplacingAfterAllPlannedSetsIsRejectedBeforeItCanCreateZeroRemainingWork() throws {
+        var state = try makeState()
+        for index in 0..<3 {
+            state.logSet(obs(60, 6))
+            if index < 2 { state.restFinished() }
+        }
+        XCTAssertEqual(state.phase, .resting)
+        XCTAssertEqual(state.completedInCurrentExercise.count, 3)
+
+        let before = state
+        state.replaceCurrentExercise(with: "db-bench-press")
+
+        XCTAssertEqual(state, before, "a completed exercise cannot be replaced from resting state")
+        XCTAssertTrue(state.replacements.isEmpty)
+        state.restFinished()
+        XCTAssertEqual(state.exerciseIndex, 1)
+        XCTAssertEqual(state.progress.setNumber, 1)
+    }
+
     // 本次训练重排：选择一个尚未开始的已排动作，应稳定移动到当前；不是替换或跳过。
     func testMovingScheduledExerciseToCurrentPreservesPlanAndResetsTransientGuidance() throws {
         var state = try makeState()

@@ -17,16 +17,28 @@ public enum CompletedSessionBuilder {
         durationMinutes: Int
     ) -> TrainingSession {
         var exercises: [JSONValue] = []
-        for exercisePlan in flow.plan.exercises {
-            guard let observations = flow.observationsByExercise[exercisePlan.exerciseId],
-                  !observations.isEmpty else { continue }
+        let persistedSegments = flow.exerciseFactSegments.filter { segment in
+            !segment.observations.isEmpty
+                || (!segment.skippedSets.isEmpty
+                    && segment.replacementLinks.contains(where: { $0.role == .original }))
+        }
+        let occurrenceCounts = Dictionary(grouping: persistedSegments, by: \.exerciseId)
+            .mapValues(\.count)
+        var occurrenceOrdinals: [String: Int] = [:]
+
+        for segment in persistedSegments {
+            let occurrenceOrdinal = (occurrenceOrdinals[segment.exerciseId] ?? 0) + 1
+            occurrenceOrdinals[segment.exerciseId] = occurrenceOrdinal
+            let recordStem = occurrenceCounts[segment.exerciseId, default: 0] > 1
+                ? "\(sessionId)-\(segment.exerciseId)-occurrence-\(occurrenceOrdinal)"
+                : "\(sessionId)-\(segment.exerciseId)"
 
             var sets: [JSONValue] = []
-            for (index, obs) in observations.enumerated() {
+            for (index, obs) in segment.observations.enumerated() {
                 var set: [String: JSONValue] = [
-                    "id": .string("\(sessionId)-\(exercisePlan.exerciseId)-\(index + 1)"),
+                    "id": .string("\(recordStem)-\(index + 1)"),
                     "setIndex": .int(Int64(index + 1)),
-                    "exerciseId": .string(exercisePlan.exerciseId),
+                    "exerciseId": .string(segment.exerciseId),
                     "weight": weightValue(obs.weightKg),
                     "reps": .int(Int64(obs.reps)),
                     "done": .bool(true),
@@ -38,13 +50,40 @@ public enum CompletedSessionBuilder {
             }
 
             var exercise: [String: JSONValue] = [
-                "id": .string("\(sessionId)-\(exercisePlan.exerciseId)"),
-                "exerciseId": .string(exercisePlan.exerciseId),
+                "id": .string(recordStem),
+                "exerciseId": .string(segment.exerciseId),
                 "sets": .array(sets),
             ]
-            if let replacement = flow.replacements.first(where: { $0.actualExerciseId == exercisePlan.exerciseId }) {
+            if let primaryLink = segment.replacementLinks.last {
+                let replacement = primaryLink.replacement
                 exercise["originalExerciseId"] = .string(replacement.originalExerciseId)
                 exercise["actualExerciseId"] = .string(replacement.actualExerciseId)
+                exercise["replacementRole"] = .string(primaryLink.role.rawValue)
+            } else if let replacement = segment.replacementAudit {
+                // 零事实替换沿用修复前的两个审计字段，不新增 role，保持字节 golden。
+                exercise["originalExerciseId"] = .string(replacement.originalExerciseId)
+                exercise["actualExerciseId"] = .string(replacement.actualExerciseId)
+            }
+
+            var allLinks = segment.replacementLinks
+            if let replacementAudit = segment.replacementAudit,
+               !allLinks.contains(where: { $0.replacement == replacementAudit }) {
+                allLinks.insert(
+                    TrainFlowState.SegmentReplacementLink(
+                        replacement: replacementAudit,
+                        role: .actual
+                    ),
+                    at: 0
+                )
+            }
+            if allLinks.count > 1 {
+                exercise["replacementLinks"] = .array(allLinks.map { link in
+                    .object([
+                        "originalExerciseId": .string(link.replacement.originalExerciseId),
+                        "actualExerciseId": .string(link.replacement.actualExerciseId),
+                        "replacementRole": .string(link.role.rawValue),
+                    ])
+                })
             }
             exercises.append(.object(exercise))
         }
@@ -63,14 +102,10 @@ public enum CompletedSessionBuilder {
             storage["endReason"] = .string(endReason.rawValue)
         }
         if !flow.skippedSets.isEmpty {
-            // 跳过留痕统一归到「最终动作 id」：换动作前的跳过重写到 actualExerciseId，
-            // 保证 skippedSets 与 exercises 数组可对齐（M4 进展层按动作索引）。
+            // 跳过是发生时动作的用户事实；中途替换只承接剩余量，不改写历史归属。
             storage["skippedSets"] = .array(flow.skippedSets.map { skip in
-                let finalId = flow.replacements
-                    .first(where: { $0.originalExerciseId == skip.exerciseId })?
-                    .actualExerciseId ?? skip.exerciseId
                 return .object([
-                    "exerciseId": .string(finalId),
+                    "exerciseId": .string(skip.exerciseId),
                     "setIndex": .int(Int64(skip.setIndex)),
                     "reason": .string(skip.reason.rawValue),
                 ])

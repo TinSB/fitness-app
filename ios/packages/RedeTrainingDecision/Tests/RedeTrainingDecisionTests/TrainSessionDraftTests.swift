@@ -57,6 +57,88 @@ final class TrainSessionDraftTests: XCTestCase {
         XCTAssertEqual(restored, flow)
     }
 
+    func testDraftReplayPreservesFactsOnBothSidesOfMidExerciseReplacement() throws {
+        var flow = try makeFlow()
+        flow.logSet(obs(60, 6))
+        flow.restFinished()
+        flow.logSet(obs(60, 7, rir: 1, pain: true))
+        flow.restFinished()
+        flow.replaceCurrentExercise(with: "db-bench-press")
+        flow.logSet(obs(30, 8))
+
+        let draft = TrainSessionDraft(
+            dateISO: "2026-06-10",
+            startedAt: Date(timeIntervalSince1970: 1_780_000_000),
+            prescription: flow.prescription,
+            events: flow.events
+        )
+        let bytes = try JSONEncoder().encode(draft)
+        let decoded = try JSONDecoder().decode(TrainSessionDraft.self, from: bytes)
+        var restored = try XCTUnwrap(decoded.restoreFlow())
+
+        XCTAssertEqual(restored, flow)
+        XCTAssertEqual(restored.observationsByExercise["bench-press"]?.count, 2)
+        XCTAssertEqual(restored.observationsByExercise["db-bench-press"]?.count, 1)
+        XCTAssertEqual(restored.completedInCurrentExercise.count, 1)
+        XCTAssertEqual(restored.currentExercise?.sets.count, 1)
+        XCTAssertEqual(restored.progress.setNumber, 1)
+
+        restored.requestFinish()
+        restored.confirmEnd(reason: .timeUp)
+        let session = CompletedSessionBuilder.build(
+            from: restored,
+            sessionId: "draft-mid-swap",
+            dateISO: "2026-06-10",
+            startedAtISO: "t0",
+            finishedAtISO: "t1",
+            durationMinutes: 9
+        )
+        XCTAssertEqual(session.exercises.map(\.exerciseId), ["bench-press", "db-bench-press"])
+        XCTAssertEqual(session.exercises[0].sets.count, 2)
+        XCTAssertEqual(session.exercises[0].sets[1].storage["painFlag"], .bool(true))
+        XCTAssertEqual(session.exercises[1].sets.count, 1)
+        XCTAssertNil(session.exercises[1].sets[0].storage["painFlag"])
+    }
+
+    func testDraftReplayPreservesRepeatedExerciseOccurrencesAfterSwapBack() throws {
+        var flow = try makeFlow()
+        flow.logSet(obs(60, 6))
+        flow.restFinished()
+        flow.replaceCurrentExercise(with: "db-bench-press")
+        flow.logSet(obs(30, 8))
+        flow.restFinished()
+        flow.replaceCurrentExercise(with: "bench-press")
+        flow.logSet(obs(60, 7, rir: 1))
+
+        let draft = TrainSessionDraft(
+            dateISO: "2026-06-10",
+            startedAt: Date(timeIntervalSince1970: 1_780_000_000),
+            prescription: flow.prescription,
+            events: flow.events
+        )
+        let bytes = try JSONEncoder().encode(draft)
+        let decoded = try JSONDecoder().decode(TrainSessionDraft.self, from: bytes)
+        var restored = try XCTUnwrap(decoded.restoreFlow())
+
+        XCTAssertEqual(restored, flow)
+        XCTAssertEqual(restored.overallSetTotal, flow.overallSetTotal)
+        restored.requestFinish()
+        restored.confirmEnd(reason: .timeUp)
+        let session = CompletedSessionBuilder.build(
+            from: restored,
+            sessionId: "draft-swap-back",
+            dateISO: "2026-06-10",
+            startedAtISO: "t0",
+            finishedAtISO: "t1",
+            durationMinutes: 11
+        )
+        XCTAssertEqual(
+            session.exercises.map(\.exerciseId),
+            ["bench-press", "db-bench-press", "bench-press"]
+        )
+        XCTAssertEqual(session.exercises.map { $0.sets.count }, [1, 1, 1])
+    }
+
     // resting 态切 Hold 的重放等值（guard 允许 resting）
     func testToggleHoldDuringRestReplays() throws {
         var flow = try makeFlow()
