@@ -347,7 +347,9 @@ Train 是最克制的页面。用户在器械旁,手上可能有汗,注意力在
 - `疼痛或不适`
 - `完成训练`
 
-**本次顺序（FR-TR14，2026-07-19）**：入口「接下来 / Up next」，sheet 标题「本次顺序 / Session order」，分区「当前 / Current」「今天稍后 / Later today」，行操作「现在练 / Train now」。这些标签直接表达行为，不附可见说明小字；VoiceOver 可补充「从今天剩余动作中选择现在训练的动作 / Choose a scheduled exercise to train now」和「当前动作会顺延到稍后 / The current exercise moves later」。成功播报「已切换到{动作名} / Now training {exercise name}」。写入失败只在当下显示并播报「暂时无法调整，请再试一次 / Couldn’t update the session. Try again」，不得假成功或清掉用户尚未提交的快改。
+**本次训练编辑（FR-TR14 S1+S2，2026-07-30）**：入口与 sheet 标题统一为「本次训练 / This workout」，分区「当前动作 / Current exercise」「接下来 / Up next」，S1 行操作仍为「现在练 / Train now」。S2 新动作只有「移除 / Remove」「加一个动作 / Add an exercise」与 sheet-local「撤销 / Undo」；当前动作组数事实写「还剩 N 组 / N sets left」，−/+ 的 VoiceOver 分别为「减少一组 / Remove one set」「增加一组 / Add one set」。任务型选择器返回行为为「返回本次训练 / Back to this workout」；无候选时写「没有可加入的动作 / No exercises to add」与「当前器械下的动作都已在本次训练中 / Every available exercise is already in this workout」。入口 VoiceOver hint 固定为「调整本次训练的动作与组数 / Edit exercises and sets for this workout」，「现在练」可补「当前动作会顺延到稍后 / The current exercise moves later」。
+
+成功 announcement 只陈述已发生事实：「已切换到{动作名} / Now training {exercise name}」「已加入{动作名} / Added {exercise name}」「已移除{动作名} / {Exercise name} removed」「已恢复{动作名} / Restored {exercise name}」「当前动作还剩 N 组 / N sets left for current exercise」。写入失败只在当下显示并播报「暂时无法调整　请再试一次 / Couldn’t update this workout · Try again」，不得假成功、弹确认或清掉尚未提交的快改；以上训练微文案均不加句号。
 
 **教学提示一次性策略（2026-07-05 拍板）**：「点重量可调整　之后的建议随之更新」是教学文案不是状态信息——只在「没用过快改入口 且 累计完成 < 3 场」时显示，任一条件破即永久消失；说明书不驻留界面。「按计划目标开始」是状态行（完成组后变为「上组接近力竭，从 X 回调」等），不适用此策略。
 

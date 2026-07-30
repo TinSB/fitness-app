@@ -87,7 +87,7 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 已批准的用户/外部事实写入类别：
 
-- 完成训练 append。
+- 完成训练 append（含 FR-TR14 S2 会话编辑审计 open-bag；仍走同一写闸）。
 - HealthKit body weight sample append。
 - HealthKit imported workout sample append 到 display-only derived storage。
 - Profile scalar edit。
@@ -100,6 +100,8 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 - Coach-action dismiss intent（暂不处理，喂降频计数，FR-T5）。
 - Coach-action volume-boost intent（补量承认，频率维度；不加训练不改处方，FR-T5）。
 - Notification preference edit（FR-NT1/2 通知开关；open-bag 加性、缺=关、无 schema bump）。
+
+> **FR-TR14 S2 会话编辑审计（2026-07-30）。** 会话内增删与组数调整不新增 canonical writer，也不把处方目标写回真相；完成训练仍由既有 append 写闸落一条 `TrainingSession`。只有发生增删时，session 顶层加 open-bag `sessionEdits`：`added[]` / `removed[]` 元素均为 `{exerciseId, position}`，`position` 是事件发生时的 0-based 会话队列位置；未使用增删时整个字段省略，旧输出逐字节不变。临时加入的动作若有真实完成组，就按普通 `exercises[]` 事实进入历史；最终仍被移除的动作不进入 `exercises[]`，中性移除也绝不进入 `skippedExercises`。撤销成功会抵消对应最终移除审计；`sessionEdits` 只供统计诚实与未来显式「存回计划」切片识别，现有轮转、verdict 和计划对账不消费它。无 schema bump。
 
 > **FR-TR6「只换这次」临时换动作（2026-06-26）。** 点替代项后二选一：「以后都换」= 永久（写 `exerciseSubstitutions`，FR-T5 原路径）；「只换这次」= 临时（写 `oneTimeSubstitutions[原]={换成,dateISO}`，**只今天有效、次日自动失效**）。两表均 open-bag 加性、**无 schema bump**。**引擎零改动**是关键：在 app 层（`TodayModel`）把「永久 + 今天的临时（按 todayISO 过滤）」**合并成一张 substitutions 表再喂 `plan()`（临时优先）**，引擎不区分二者 → golden 零回归；临时项只今天混入、绝不落进永久表。写闸 `applyOneTimeSubstitution` 顺手清掉非今天的陈旧项（容器永远只留当天，自动 GC）。撤销同 FR-T5（单步即时反向写 `removeOneTimeSubstitution`）。诚实：换后若 `plan()` 因替代非本槽合法候选优雅回退（处方没变），honest-check 清掉死覆盖、不假报成功（同 FR-T5）。UI：处方行微标「今天换」（vs 永久「已换」）、detail sheet 撤销入口文案标明次日自动恢复。
 
@@ -218,13 +220,17 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 ### 6.0.3 本次训练编排（FR-TR14）
 
-**产品边界。** 自动处方是默认起点，不是训练中的锁。用户临时调整默认只影响当前 session；不改 `PlanCustomization`、不形成长期偏好、不训练推荐系统。训练结束后显式保存到长期计划属于后续独立写闸切片，未实现前不得出现假入口。「本次顺序」是 Train 内的任务型窄编辑器，不等于永久计划编辑或大型动作浏览器。
+**产品边界。** 自动处方是默认起点，不是训练中的锁。用户临时调整默认只影响当前 session；不改 `PlanCustomization`、不形成长期偏好、不训练推荐系统。训练结束后显式保存到长期计划属于后续独立写闸切片，未实现前不得出现假入口。「本次训练」是 Train 内的任务型窄编辑器，不等于永久计划编辑或大型动作浏览器。
 
-**双层真相。** `prescription` 保持不可变，保存系统原建议及来源；`TrainFlowState.plan` 是本次会话可变执行队列。最终历史只记录实际完成事实，移动队列本身不生成 replacement、skip 或完成组，也不把系统目标值写入 canonical。所有队列变化必须是 typed `TrainFlowEvent`，经 `SessionStore` 的 reducer 接线进入事件日志并随 draft 重放；UI 禁止直接改 `plan`。普通训练事件在单一串行后台队列 best-effort 保存；S1 移动必须走 durable barrier：先等待此前普通写，再同步确认包含新事件的 draft 已原子落盘，之后 UI 才能宣布成功。durable 写失败须把内存 flow 精确回滚、保留尚未提交的本地快改并如实报错；读取和清除也在同一队列，清除后旧写不得倒灌。恢复仍以 `state.events == events` fail-closed，S1 不改 canonical AppData / `TrainingSession` schema，也不提升 draft 版本。
+**双层真相。** `prescription` 保持不可变，保存系统原建议及来源；`TrainFlowState.plan` 是本次会话可变执行队列。最终历史只记录实际完成事实；移动、增删或改组数不生成 replacement、skip 或完成组，也不把系统目标值写入 canonical。所有会话编辑必须是 typed `TrainFlowEvent`，经 `SessionStore` 的 reducer 接线进入事件日志并随 draft 重放；UI 禁止直接改 `plan`。普通训练事件在单一串行后台队列 best-effort 保存；S1 移动与 S2 `addExercise(ExerciseSetPlan)` / `removeExercise(SessionExerciseRemoval)` / `adjustRemainingSets(Int)` 全部走同一 durable barrier：先等待此前普通写，再同步确认包含新事件的 draft 已原子落盘，之后 UI 才能宣布成功。durable 写失败须把内存 flow 精确回滚、保留尚未提交的本地快改并如实报错；读取和清除也在同一队列，清除后旧写不得倒灌。恢复仍以 `state.events == events` fail-closed，不改 canonical AppData / `TrainingSession` schema，也不提升 draft 版本。
 
 **S1「后续动作现在练」合同。** 仅当 phase=`activeSet`，且当前动作尚无完成组、跳过组或待提交疼痛标记时，用户可从当前索引之后选择一个唯一已排动作并「现在练」。稳定移动语义：`[A,B,C,D]` 当前 A、选择 C → `[C,A,B,D]`；已完成前缀和其他动作相对顺序不变，`exerciseIndex` 与动作总数不变，目标动作自身的组数、重量、次数、RIR、休息和器械事实原样保留。移动后重置本动作的 warm-up pointer 与 Hold；热身按新的当前动作重新派生。当前/更早/不存在/重复目标、resting/confirm/summary、当前动作已有正式事实时必须拒绝且不追加事件。
 
-**S1 UI。** 热身与正式组画面都提供可点击的「接下来」开放行，进入「本次顺序」sheet；顶部静态显示当前动作，下方列出今天稍后的已排动作，每行单一操作「现在练」。点选在 durable commit 成功后回到新的 Hero，不弹确认、不依赖可见教学小字；失败则留在 sheet、显示即时错误并用 VoiceOver announcement 主动播报。已有正式事实后「接下来」退为不可点击静态行。完整替换继续走 FR-TR6 的「换一个动作」，两种语义不得再混用。Dynamic Type、VoiceOver、Reduce Motion 与稳定 accessibility identifier 必须覆盖。后续的完整目录增删、剩余组次修改、自定义热身、部分完成动作暂停/恢复与保存到计划，均不在 S1。
+**S2 临时加动作。** 「加一个动作」只打开按 `primaryMuscle` 分组的紧凑任务型选择器：过滤 deprecated / 不可处方 load type / 当前器械白名单，并排除本场已排 id；无详情、搜索或图片。选择后插在当前动作后，固定 3 组。重量先取该动作最近 canonical 场的工作组重量（同日按 append 顺序取最后、场内取最高），无历史才复用 replace 的保守起步：bodyweight/band 为 0，其余 `startWeightKg` 对齐真实 LoadGrid 并守下限。reps/RIR/rest 与完整 rep 区间只从今天已经生成的 `SessionSetPlan` 走确定性借值链：先取队列第一个同主肌群 donor；否则 reps 众数平票取小、rest 众数平票取大、RIR 取当前动作，并用队列第一个命中 reps 众数的动作借完整区间；理论兜底取当前动作全部对应值。事件创建时一次性携带完整 `ExerciseSetPlan`，draft replay 纯重放，不重查可能变化的历史。`TodayPrescriptionEngine`、轮转、verdict、周口径、自动均衡与疼痛保守态零改动。
+
+**S2 中性移除与剩余组数。** 只有 `activeSet` 中、位于当前索引之后且快照与位置完全匹配的动作可移除；按位置而非 id 操作，故自由日序中的重复 id 不会整批误删。移除不问原因、不写 skipped set/exercise、不进疼痛信号。sheet 只保留最后一次移除的本地撤销入口；撤销发同一 typed removal 的 restore 快照并按 LIFO 还原，关 sheet 或进程终止即失效，但已提交的队列与移除事实仍由 draft 恢复。当前动作只允许把**剩余组** ±1：减法至少留 1 组，加法令动作总组数不超过 8；只裁剪/复制尚未完成的尾部，已完成/已跳过前缀不动，加减组不清当前组 quick-adjust，被裁掉尾组的暂存随尾组作废。
+
+**S1+S2 UI。** 热身与正式组画面的「本次训练」开放行，以及 More sheet 的同名入口，进入同一编辑面：只读当前动作与 44pt 剩余组数 −/+，下方列今天稍后的动作，每行提供「现在练」和「移除」，底部提供「加一个动作」。成功后即时更新并以 VoiceOver announcement 播报；失败留在 sheet、显示诚实错误，不清未提交快改。已有正式事实后，S1「现在练」入口按既有规则退为静态；FR-TR6「换一个动作」仍是完整替换的唯一入口。Dynamic Type、VoiceOver、Reduce Motion 与稳定 accessibility identifier 必须覆盖。自定义热身、部分完成动作暂停/恢复及训练结束后保存到长期计划仍未实现。
 
 ### 6.1 动作库、模板生成与动作事实权威
 
@@ -1117,6 +1123,7 @@ Train 只有专注训练态。必须服务于：
 - 快速编辑 weight/reps/RIR。
 - Rest timer。
 - Next/previous exercise。
+- Current-session task editing（现在练、临时加/移除尚无事实的后续动作、当前动作剩余组数 ±1）。
 - Swap exercise。
 - Pain / discomfort。
 - Skip set / skip exercise。
@@ -1130,7 +1137,10 @@ Train 只有专注训练态。必须服务于：
 - 设置。
 - 营销卡片。
 - 大型动作浏览。
+- 把本次会话编辑保存成永久计划。
 - 与训练中低摩擦无关的按钮。
+
+FR-TR14 的「本次训练」是上述边界的窄例外：只编辑 `TrainFlowState.plan`，选择器只展示当前器械可用且本场未排的动作，不提供目录详情/搜索/图片，也不暴露任何「存回计划」入口。关闭编辑面不丢已 durable 提交的会话编辑，但清除 sheet-local 撤销入口。
 
 **快改入口教学提示两条消失线（T6 2026-07-05 #650）。** 「点重量可调整…」教学行显示条件 = 未用过快改入口（`@AppStorage hasUsedQuickAdjust`，用过永久消失）**且** 清洗后累计完成场数 < 3（与 CoachActionEngine `totalSessionCount` 同口径复用、不另设持久化计数器）——练三场都没点说明不需要教，说明书不永久驻留界面。「按计划目标开始」（firstSetWhy）为 why 行首组分支的多态状态信息（完成组后切 nextSetWhy），非教学文案、有意保留。
 
