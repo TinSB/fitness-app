@@ -1284,6 +1284,29 @@ final class SessionStore {
         return true
     }
 
+    /// FR-TR14 S2 任务型 picker：只暴露当前器械白名单内、且本场尚未排入的目录动作。
+    var sessionEditCandidates: [ExerciseCatalogEntry] {
+        guard let flow, todayModel != nil else { return [] }
+        return SessionExerciseEditPlanner.availableExercises(
+            sessionPlan: flow.plan,
+            allowedEquipment: allowedEquipment
+        )
+    }
+
+    /// 事件创建时一次性解析完整会话计划 payload；draft replay 只重放 payload，
+    /// 不再查询可能变化的 canonical 历史。
+    func makeSessionEditExercisePlan(exerciseId: String) -> ExerciseSetPlan? {
+        guard let flow, let sessions = todayModel?.cleanView.sessions else { return nil }
+        return SessionExerciseEditPlanner.makeAdHocPlan(
+            exerciseId: exerciseId,
+            sessionPlan: flow.plan,
+            currentExerciseIndex: flow.exerciseIndex,
+            sessions: sessions,
+            allowedEquipment: allowedEquipment,
+            loadUnit: loadUnit
+        )
+    }
+
     /// TrainFlowEvent → reducer 的唯一 app 层接线。返回值只表示 typed event 是否被接受。
     @discardableResult
     private func reduce(_ event: TrainFlowEvent) -> Bool {
@@ -1462,7 +1485,7 @@ final class SessionStore {
         draftStore.enqueueSave(draft)
     }
 
-    /// 仅关键顺序调整使用：在同一队列等待此前普通写完成，再同步确认最终快照落盘。
+    /// 本次训练关键编辑使用：在同一队列等待此前普通写完成，再同步确认最终快照落盘。
     private func saveDraftDurably() -> Bool {
         guard let draft = currentDraft() else { return false }
         return draftStore.saveDurably(draft)

@@ -287,17 +287,17 @@ extension RedeStrings {
     public var skipExerciseAction: String { locale == .zh ? "跳过这个动作" : "Skip this exercise" }
     public var swapExerciseAction: String { locale == .zh ? "换一个动作" : "Swap exercise" }
 
-    // MARK: 本次顺序（FR-TR14 S1）
+    // MARK: 本次训练编辑（FR-TR14 S1 + S2）
 
-    public var sessionOrderEntry: String { locale == .zh ? "接下来" : "Up next" }
-    public var sessionOrderTitle: String { locale == .zh ? "本次顺序" : "Session order" }
-    public var sessionOrderCurrent: String { locale == .zh ? "当前" : "Current" }
-    public var sessionOrderLater: String { locale == .zh ? "今天稍后" : "Later today" }
+    public var sessionOrderEntry: String { locale == .zh ? "本次训练" : "This workout" }
+    public var sessionOrderTitle: String { locale == .zh ? "本次训练" : "This workout" }
+    public var sessionOrderCurrent: String { locale == .zh ? "当前动作" : "Current exercise" }
+    public var sessionOrderLater: String { locale == .zh ? "接下来" : "Up next" }
     public var sessionOrderTrainNow: String { locale == .zh ? "现在练" : "Train now" }
     public var sessionOrderOpenHint: String {
         locale == .zh
-            ? "从今天剩余动作中选择现在训练的动作"
-            : "Choose a scheduled exercise to train now"
+            ? "调整本次训练的动作与组数"
+            : "Edit exercises and sets for this workout"
     }
     public func sessionOrderMoveA11y(name: String) -> String {
         locale == .zh ? "现在练，\(name)" : "Train \(name) now"
@@ -310,8 +310,49 @@ extension RedeStrings {
     }
     public var sessionOrderUpdateError: String {
         locale == .zh
-            ? "暂时无法调整，请再试一次"
-            : "Couldn’t update the session. Try again"
+            ? "暂时无法调整　请再试一次"
+            : "Couldn’t update this workout · Try again"
+    }
+    public var sessionEditRemove: String { locale == .zh ? "移除" : "Remove" }
+    public var sessionEditAddExercise: String { locale == .zh ? "加一个动作" : "Add an exercise" }
+    public func sessionEditAddA11y(name: String) -> String {
+        locale == .zh ? "加入，\(name)" : "Add \(name)"
+    }
+    public func sessionEditSetCount(_ count: Int) -> String {
+        locale == .zh ? "还剩 \(count) 组" : "\(count) sets left"
+    }
+    public var sessionEditDecreaseSetA11y: String {
+        locale == .zh ? "减少一组" : "Remove one set"
+    }
+    public var sessionEditIncreaseSetA11y: String {
+        locale == .zh ? "增加一组" : "Add one set"
+    }
+    public var sessionEditUndo: String { locale == .zh ? "撤销" : "Undo" }
+    public func sessionEditRemoved(name: String) -> String {
+        locale == .zh ? "已移除\(name)" : "\(name) removed"
+    }
+    public func sessionEditRemoveA11y(name: String) -> String {
+        locale == .zh ? "移除，\(name)" : "Remove \(name)"
+    }
+    public func sessionEditAddedAnnouncement(name: String) -> String {
+        locale == .zh ? "已加入\(name)" : "Added \(name)"
+    }
+    public func sessionEditRestoredAnnouncement(name: String) -> String {
+        locale == .zh ? "已恢复\(name)" : "Restored \(name)"
+    }
+    public func sessionEditSetCountAnnouncement(_ count: Int) -> String {
+        locale == .zh ? "当前动作还剩 \(count) 组" : "\(count) sets left for current exercise"
+    }
+    public var sessionEditPickerBack: String {
+        locale == .zh ? "返回本次训练" : "Back to this workout"
+    }
+    public var sessionEditPickerEmptyTitle: String {
+        locale == .zh ? "没有可加入的动作" : "No exercises to add"
+    }
+    public var sessionEditPickerEmptyNote: String {
+        locale == .zh
+            ? "当前器械下的动作都已在本次训练中"
+            : "Every available exercise is already in this workout"
     }
 
     public func skipReasonLabel(_ code: String) -> String {
