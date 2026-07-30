@@ -165,9 +165,107 @@ public enum CleanAppDataViewBuilder {
                     painFlag: set.painFlag == true
                 ))
             }
-            result.append(CleanExercise(exerciseId: exerciseId, sets: sets))
+            result.append(CleanExercise(
+                exerciseId: exerciseId,
+                sets: sets,
+                replacementLinks: cleanReplacementLinks(
+                    of: exercise,
+                    exerciseId: exerciseId,
+                    sessionId: sessionId,
+                    dateISO: dateISO,
+                    issues: &issues
+                )
+            ))
         }
         return result
+    }
+
+    /// 把 split occurrence 的顶层 replacementRole 与多跳 replacementLinks 归一成同一窄类型。
+    /// 零事实替换只有 original/actual 两字段而没有 role，刻意保持非链元素语义。
+    private static func cleanReplacementLinks(
+        of exercise: ExercisePrescription,
+        exerciseId: String,
+        sessionId: String,
+        dateISO: String,
+        issues: inout [DataHealthIssue]
+    ) -> [CleanExerciseReplacementLink] {
+        var result: [CleanExerciseReplacementLink] = []
+        var seen = Set<CleanExerciseReplacementLink>()
+
+        if let rawLinks = exercise.storage["replacementLinks"] {
+            if let links = rawLinks.asArray {
+                for (index, rawLink) in links.enumerated() {
+                    guard let storage = rawLink.asObject,
+                          let link = cleanReplacementLink(
+                            from: storage,
+                            occurrenceExerciseId: exerciseId
+                          )
+                    else {
+                        issues.append(.sessionFieldIgnored(
+                            sessionId: sessionId,
+                            dateISO: dateISO,
+                            field: "replacementLinks[\(index)]"
+                        ))
+                        continue
+                    }
+                    if seen.insert(link).inserted {
+                        result.append(link)
+                    }
+                }
+            } else {
+                issues.append(.sessionFieldIgnored(
+                    sessionId: sessionId,
+                    dateISO: dateISO,
+                    field: "replacementLinks"
+                ))
+            }
+        }
+
+        // 单跳 split 只写顶层三字段；多跳中该三字段会重复 replacementLinks 的主边，
+        // Set 去重后仍保留数组里的真实发生顺序。
+        if exercise.storage["replacementRole"] != nil {
+            if let link = cleanReplacementLink(
+                from: exercise.storage,
+                occurrenceExerciseId: exerciseId
+            ) {
+                if seen.insert(link).inserted {
+                    result.append(link)
+                }
+            } else {
+                issues.append(.sessionFieldIgnored(
+                    sessionId: sessionId,
+                    dateISO: dateISO,
+                    field: "replacementRole"
+                ))
+            }
+        }
+
+        return result
+    }
+
+    private static func cleanReplacementLink(
+        from storage: [String: JSONValue],
+        occurrenceExerciseId: String
+    ) -> CleanExerciseReplacementLink? {
+        guard let originalExerciseId = storage["originalExerciseId"]?.asString,
+              !originalExerciseId.isEmpty,
+              let actualExerciseId = storage["actualExerciseId"]?.asString,
+              !actualExerciseId.isEmpty,
+              let roleRaw = storage["replacementRole"]?.asString,
+              let role = CleanExerciseReplacementLink.Role(rawValue: roleRaw)
+        else { return nil }
+
+        switch role {
+        case .original:
+            guard occurrenceExerciseId == originalExerciseId else { return nil }
+        case .actual:
+            guard occurrenceExerciseId == actualExerciseId else { return nil }
+        }
+        return CleanExerciseReplacementLink(
+            originalExerciseId: originalExerciseId,
+            actualExerciseId: actualExerciseId,
+            role: role
+        )
     }
 
     /// FR-TR7：只把处方需要的 painDiscomfort 场次信号提升到 clean 层。

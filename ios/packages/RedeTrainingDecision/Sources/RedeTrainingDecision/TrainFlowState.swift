@@ -80,6 +80,49 @@ public struct TrainFlowState: Equatable, Sendable {
         public let actualExerciseId: String
     }
 
+    struct SegmentReplacementLink: Equatable, Sendable {
+        enum Role: String, Equatable, Sendable {
+            case original
+            case actual
+        }
+
+        let replacement: Replacement
+        let role: Role
+    }
+
+    /// 同一 exercise id 可在 A→B→A 中出现多次；落盘必须保留每次连续发生段，
+    /// 不能只靠 observationsByExercise 的 id 聚合反推顺序。
+    struct ExerciseFactSegment: Equatable, Sendable {
+        let exerciseId: String
+        var observations: [CompletedSetObservation]
+        var skippedSets: [SkippedSet]
+        /// occurrence 已离开可执行 plan 后，其既有事实仍须计入总进度并可独立落盘；
+        /// replacement link 可因 future terminal 被移除而溶解，不能再兼任 sealed 标记。
+        var isSealed: Bool
+        /// 零事实替换后新段沿用既有 original/actual 审计，但不产生 split role。
+        let replacementAudit: Replacement?
+        var replacementLinks: [SegmentReplacementLink]
+    }
+
+    struct PendingSegmentReplacement: Equatable, Sendable {
+        /// split 场景中始终折叠为「sealed 根 occurrence → 当前终点」；独立零事实
+        /// 替换仍只保存当前 hop，保持既有落盘字节。
+        let replacement: Replacement
+        let splitsFacts: Bool
+        /// sealed 根段及其 original link 的精确位置。fact segments 只 append 不删除，
+        /// 因而零事实中转可原位把 A→B 更新成 A→C→… 的最终端点。
+        let sealedSegmentIndex: Int?
+        let sealedLinkIndex: Int?
+    }
+
+    private struct RemovedExerciseRestoreContext: Equatable, Sendable {
+        let pendingReplacement: PendingSegmentReplacement?
+        /// remove 时该 id 的生命周期代次；同 id 后续 add/replace 会推进代次，使旧 Undo 永久失效。
+        let lifecycleGeneration: Int
+        /// 允许原计划本就有重复 id；restore 只接受 remove 后同 id 数量未被其它事件改变的精确状态。
+        let sameIdCountAfterRemoval: Int
+    }
+
     public struct Progress: Equatable, Sendable {
         public let exerciseNumber: Int
         public let exerciseTotal: Int
@@ -95,6 +138,7 @@ public struct TrainFlowState: Equatable, Sendable {
     public private(set) var completedInCurrentExercise: [CompletedSetObservation] = []
     public private(set) var observationsByExercise: [String: [CompletedSetObservation]] = [:]
     public private(set) var skippedSets: [SkippedSet] = []
+    private(set) var exerciseFactSegments: [ExerciseFactSegment] = []
     public private(set) var skippedExercises: [SkippedExercise] = []
     public private(set) var replacements: [Replacement] = []
     /// FR-TR14 S2：仅作本场完成落盘 open-bag 审计；不进入处方/轮转/verdict。
@@ -121,6 +165,14 @@ public struct TrainFlowState: Equatable, Sendable {
     private let allowedEquipment: Set<String>?
     /// 档位系统（2026-06-13）：换动作时按用户单位重算新动作的真实档位步长。
     private let loadUnit: LoadUnit
+    /// 当前连续发生段；换动作、换序或推进动作时清空，确保同 id 回换也创建新 occurrence。
+    private var currentFactSegmentIndex: Int?
+    private var deferredSegmentReplacements: [String: PendingSegmentReplacement] = [:]
+    /// 仅内存/replay 派生的 occurrence 代次；不进 typed event 或 canonical。
+    private var exerciseLifecycleGenerations: [String: Int] = [:]
+    /// 与 removedExercises 严格同栈：remove 摘下 pending 并冻结 occurrence 代次；
+    /// 仅未被同 id 新生命周期作废的同一 removal LIFO restore 才能恢复。
+    private var removedExerciseRestoreContexts: [RemovedExerciseRestoreContext] = []
 
     public init(prescription: TodayPrescription, catalog: ExerciseCatalog = .minimal, allowedEquipment: Set<String>? = nil, loadUnit: LoadUnit = .kg) {
         self.prescription = prescription
@@ -187,6 +239,17 @@ public struct TrainFlowState: Equatable, Sendable {
         )
     }
 
+    /// UI 总进度分母：当前 plan 总组数 + 已被替换封存的旧 occurrence 事实数。
+    /// 中途换动作会缩短当前 slot 的 plan，同时把同样数量的旧事实加回，因而总量守恒。
+    public var overallSetTotal: Int {
+        let currentPlanTotal = plan.exercises.reduce(0) { $0 + $1.sets.count }
+        let sealedFactTotal = exerciseFactSegments.reduce(0) { total, segment in
+            guard segment.isSealed else { return total }
+            return total + segment.observations.count + segment.skippedSets.count
+        }
+        return currentPlanTotal + sealedFactTotal
+    }
+
     /// 替换候选：同替代族，排除当日全部已排动作。
     public var replacementCandidates: [String] {
         guard let exercise = currentExercise else { return [] }
@@ -234,7 +297,10 @@ public struct TrainFlowState: Equatable, Sendable {
     /// 是否处于热身：动作开头（尚未做/跳任何工作组）且热身未走完。phase 仍是 .activeSet——
     /// 热身是 UI 叠加引导、不改状态机相位，UI 据此先渲染热身卡再渲染首个工作组。
     public var isWarmingUp: Bool {
-        phase == .activeSet
+        guard let exercise = currentExercise,
+              deferredSegmentReplacements[exercise.exerciseId]?.splitsFacts != true
+        else { return false }
+        return phase == .activeSet
             && completedInCurrentExercise.isEmpty
             && skippedInCurrentExercise == 0
             && warmupPointer < warmupStepsForCurrentExercise.count
@@ -271,6 +337,8 @@ public struct TrainFlowState: Equatable, Sendable {
             : observation
         completedInCurrentExercise.append(merged)
         observationsByExercise[exercise.exerciseId, default: []].append(merged)
+        let segmentIndex = factSegmentIndex(for: exercise.exerciseId)
+        exerciseFactSegments[segmentIndex].observations.append(merged)
         painReportedForCurrentSet = false
 
         if currentExerciseIsDone {
@@ -297,7 +365,10 @@ public struct TrainFlowState: Equatable, Sendable {
         guard phase == .activeSet, let exercise = currentExercise else { return }
         events.append(.skipSet(reason))
         let setIndex = completedInCurrentExercise.count + skippedInCurrentExercise + 1
-        skippedSets.append(SkippedSet(exerciseId: exercise.exerciseId, setIndex: setIndex, reason: reason))
+        let skippedSet = SkippedSet(exerciseId: exercise.exerciseId, setIndex: setIndex, reason: reason)
+        skippedSets.append(skippedSet)
+        let segmentIndex = factSegmentIndex(for: exercise.exerciseId)
+        exerciseFactSegments[segmentIndex].skippedSets.append(skippedSet)
         skippedInCurrentExercise += 1
         // 跳过不计完成、不休息，指针直接越过当前组。
         if currentExerciseIsDone {
@@ -323,10 +394,79 @@ public struct TrainFlowState: Equatable, Sendable {
     public mutating func replaceCurrentExercise(with newExerciseId: String) {
         guard phase == .activeSet, let exercise = currentExercise,
               replacementCandidates.contains(newExerciseId) else { return }
+        let priorFactCount = completedInCurrentExercise.count + skippedInCurrentExercise
+        let inheritedPending = deferredSegmentReplacements[exercise.exerciseId]
+        if priorFactCount > 0 {
+            guard currentFactSegmentIndex != nil else { return }
+        }
+        if let inheritedPending, inheritedPending.splitsFacts {
+            guard priorFactCount == 0,
+                  let segmentIndex = inheritedPending.sealedSegmentIndex,
+                  let linkIndex = inheritedPending.sealedLinkIndex,
+                  exerciseFactSegments.indices.contains(segmentIndex),
+                  exerciseFactSegments[segmentIndex].replacementLinks.indices.contains(linkIndex),
+                  exerciseFactSegments[segmentIndex].replacementLinks[linkIndex]
+                    == SegmentReplacementLink(
+                        replacement: inheritedPending.replacement,
+                        role: .original
+                    )
+            else { return }
+        }
+
         events.append(.replaceExercise(newExerciseId))
-        replacements.append(Replacement(originalExerciseId: exercise.exerciseId, actualExerciseId: newExerciseId))
+        beginNewExerciseLifecycle(for: newExerciseId)
+        let replacement = Replacement(
+            originalExerciseId: exercise.exerciseId,
+            actualExerciseId: newExerciseId
+        )
+        deferredSegmentReplacements.removeValue(forKey: exercise.exerciseId)
+        replacements.append(replacement)
+
+        let pendingReplacement: PendingSegmentReplacement
+        if let inheritedPending, inheritedPending.splitsFacts,
+           let segmentIndex = inheritedPending.sealedSegmentIndex,
+           let linkIndex = inheritedPending.sealedLinkIndex {
+            let collapsed = Replacement(
+                originalExerciseId: inheritedPending.replacement.originalExerciseId,
+                actualExerciseId: newExerciseId
+            )
+            exerciseFactSegments[segmentIndex].replacementLinks[linkIndex] =
+                SegmentReplacementLink(replacement: collapsed, role: .original)
+            exerciseFactSegments[segmentIndex].isSealed = true
+            pendingReplacement = PendingSegmentReplacement(
+                replacement: collapsed,
+                splitsFacts: true,
+                sealedSegmentIndex: segmentIndex,
+                sealedLinkIndex: linkIndex
+            )
+        } else if priorFactCount > 0, let currentFactSegmentIndex {
+            let linkIndex = exerciseFactSegments[currentFactSegmentIndex].replacementLinks.count
+            exerciseFactSegments[currentFactSegmentIndex].replacementLinks.append(
+                SegmentReplacementLink(replacement: replacement, role: .original)
+            )
+            exerciseFactSegments[currentFactSegmentIndex].isSealed = true
+            pendingReplacement = PendingSegmentReplacement(
+                replacement: replacement,
+                splitsFacts: true,
+                sealedSegmentIndex: currentFactSegmentIndex,
+                sealedLinkIndex: linkIndex
+            )
+        } else {
+            pendingReplacement = PendingSegmentReplacement(
+                replacement: replacement,
+                splitsFacts: false,
+                sealedSegmentIndex: nil,
+                sealedLinkIndex: nil
+            )
+        }
         let newEntry = catalog.entry(id: newExerciseId)
         let newLoadType = newEntry?.loadType ?? exercise.loadType
+        // 已经发生的完成/跳过事实属于旧动作；新动作只承接剩余量，并从自己的第 1 组开始。
+        // 正常流里 3/3 后 phase 已是 resting/summary，guard 会拒绝替换；max(1) 是保守下限，
+        // 防未来事件组合或脏 draft 产生零组动作。零事实路径继续使用完整原计划，行为不变。
+        let sourceSets = priorFactCount == 0
+            ? exercise.sets
+            : Array(exercise.sets.suffix(max(1, exercise.sets.count - priorFactCount)))
         // 步长跟动作走（LoadGrid，2026-06-13）；负重自重(equipment=bodyweight step 为 0)
         // 取挂片档；查不到器械=保守沿用原值。
         let newStep: Double = {
@@ -337,21 +477,31 @@ public struct TrainFlowState: Equatable, Sendable {
         // 换动作重算（wave-9/11，owner 拍板）：换到辅助器械(辅助量)或负重自重(外挂负重)时，
         // 原动作负重无意义（辅助方向反转、自重无重量轴），用目录默认值重置（下限守护防归零）。
         // external→external 沿用原负重不变（零回归面）。
-        let newSets: [PlannedSet]
+        let transformedSets: [PlannedSet]
         if (newLoadType == "assisted" || newLoadType == "bodyweight-plus"), let newEntry {
             let defaultLoad = max(newStep, (newEntry.startWeightKg / newStep).rounded() * newStep)
-            newSets = exercise.sets.map {
+            transformedSets = sourceSets.map {
                 PlannedSet(index: $0.index, targetWeightKg: defaultLoad, targetReps: $0.targetReps, targetRir: $0.targetRir)
             }
         } else if newLoadType == "bodyweight" || newLoadType == "band" {
             // 换到纯自重/弹力带：无重量轴，每组重量必须归 0——否则原动作负重（如 80kg）会随 PlannedSet
             // 落进 observations、被 CompletedSessionBuilder 写成"自重 80kg"脏历史，污染下次自重处方（审计 MAJOR）。
-            newSets = exercise.sets.map {
+            transformedSets = sourceSets.map {
                 PlannedSet(index: $0.index, targetWeightKg: 0, targetReps: $0.targetReps, targetRir: $0.targetRir)
             }
         } else {
-            newSets = exercise.sets
+            transformedSets = sourceSets
         }
+        let newSets = priorFactCount == 0
+            ? transformedSets
+            : transformedSets.enumerated().map { offset, set in
+                PlannedSet(
+                    index: offset + 1,
+                    targetWeightKg: set.targetWeightKg,
+                    targetReps: set.targetReps,
+                    targetRir: set.targetRir
+                )
+            }
         var exercises = plan.exercises
         exercises[exerciseIndex] = ExerciseSetPlan(
             exerciseId: newExerciseId,
@@ -363,6 +513,15 @@ public struct TrainFlowState: Equatable, Sendable {
             sets: newSets
         )
         plan = SessionSetPlan(dayCode: plan.dayCode, exercises: exercises)
+        painReportedForCurrentSet = false
+        isHolding = false
+        warmupPointer = 0
+        if priorFactCount > 0 {
+            completedInCurrentExercise = []
+            skippedInCurrentExercise = 0
+        }
+        currentFactSegmentIndex = nil
+        deferredSegmentReplacements[newExerciseId] = pendingReplacement
     }
 
     /// 把一个尚未开始的后续已排动作稳定移动到当前位置。
@@ -384,6 +543,7 @@ public struct TrainFlowState: Equatable, Sendable {
         isHolding = false
         painReportedForCurrentSet = false
         warmupPointer = 0
+        currentFactSegmentIndex = nil
     }
 
     /// 临时加动作：payload 已在事件创建前解析完成；replay 不重查 canonical 历史。
@@ -399,6 +559,7 @@ public struct TrainFlowState: Equatable, Sendable {
         var exercises = plan.exercises
         exercises.insert(exercise, at: insertionIndex)
         events.append(.addExercise(exercise))
+        beginNewExerciseLifecycle(for: exercise.exerciseId)
         addedExercises.append(SessionExerciseAddition(
             exerciseId: exercise.exerciseId,
             position: insertionIndex
@@ -425,14 +586,42 @@ public struct TrainFlowState: Equatable, Sendable {
             guard exercises.indices.contains(removal.index),
                   exercises[removal.index] == removal.exercise
             else { return }
+            let detached = detachDeferredSegmentReplacement(
+                for: removal.exercise.exerciseId
+            )
+            guard detached.accepted else { return }
             exercises.remove(at: removal.index)
             removedExercises.append(removal)
+            removedExerciseRestoreContexts.append(RemovedExerciseRestoreContext(
+                pendingReplacement: detached.pending,
+                lifecycleGeneration: lifecycleGeneration(
+                    for: removal.exercise.exerciseId
+                ),
+                sameIdCountAfterRemoval: exercises.lazy.filter {
+                    $0.exerciseId == removal.exercise.exerciseId
+                }.count
+            ))
         case .restore:
             guard removal.index <= exercises.count,
-                  removedExercises.last == removal.removing
+                  removedExercises.last == removal.removing,
+                  removedExerciseRestoreContexts.count == removedExercises.count
             else { return }
+            let contextIndex = removedExerciseRestoreContexts.index(
+                before: removedExerciseRestoreContexts.endIndex
+            )
+            let context = removedExerciseRestoreContexts[contextIndex]
+            guard canRestoreRemovedExercise(
+                context,
+                for: removal.exercise.exerciseId,
+                exercises: exercises
+            ) else { return }
+            restoreDeferredSegmentReplacement(
+                context.pendingReplacement,
+                for: removal.exercise.exerciseId
+            )
             exercises.insert(removal.exercise, at: removal.index)
             removedExercises.removeLast()
+            removedExerciseRestoreContexts.removeLast()
         }
         events.append(.removeExercise(removal))
         plan = SessionSetPlan(dayCode: plan.dayCode, exercises: exercises)
@@ -547,6 +736,120 @@ public struct TrainFlowState: Equatable, Sendable {
 
     // MARK: - 私有
 
+    private func lifecycleGeneration(for exerciseId: String) -> Int {
+        exerciseLifecycleGenerations[exerciseId] ?? 0
+    }
+
+    private mutating func beginNewExerciseLifecycle(for exerciseId: String) {
+        exerciseLifecycleGenerations[exerciseId, default: 0] += 1
+    }
+
+    private mutating func detachDeferredSegmentReplacement(
+        for exerciseId: String
+    ) -> (accepted: Bool, pending: PendingSegmentReplacement?) {
+        guard let pending = deferredSegmentReplacements[exerciseId] else {
+            return (true, nil)
+        }
+
+        if pending.splitsFacts {
+            guard let segmentIndex = pending.sealedSegmentIndex,
+                  let linkIndex = pending.sealedLinkIndex,
+                  exerciseFactSegments.indices.contains(segmentIndex),
+                  exerciseFactSegments[segmentIndex].replacementLinks.indices.contains(linkIndex),
+                  exerciseFactSegments[segmentIndex].replacementLinks[linkIndex]
+                    == SegmentReplacementLink(
+                        replacement: pending.replacement,
+                        role: .original
+                    )
+            else { return (false, nil) }
+            exerciseFactSegments[segmentIndex].replacementLinks.remove(at: linkIndex)
+        } else {
+            guard pending.sealedSegmentIndex == nil,
+                  pending.sealedLinkIndex == nil
+            else { return (false, nil) }
+        }
+
+        deferredSegmentReplacements.removeValue(forKey: exerciseId)
+        return (true, pending)
+    }
+
+    private func canRestoreRemovedExercise(
+        _ context: RemovedExerciseRestoreContext,
+        for exerciseId: String,
+        exercises: [ExerciseSetPlan]
+    ) -> Bool {
+        guard lifecycleGeneration(for: exerciseId) == context.lifecycleGeneration,
+              exercises.lazy.filter({ $0.exerciseId == exerciseId }).count
+                == context.sameIdCountAfterRemoval,
+              deferredSegmentReplacements[exerciseId] == nil
+        else { return false }
+        guard let pending = context.pendingReplacement else { return true }
+
+        if pending.splitsFacts {
+            guard let segmentIndex = pending.sealedSegmentIndex,
+                  let linkIndex = pending.sealedLinkIndex,
+                  exerciseFactSegments.indices.contains(segmentIndex),
+                  linkIndex <= exerciseFactSegments[segmentIndex].replacementLinks.count
+            else { return false }
+            let link = SegmentReplacementLink(
+                replacement: pending.replacement,
+                role: .original
+            )
+            return !exerciseFactSegments[segmentIndex].replacementLinks.contains(link)
+        }
+        return pending.sealedSegmentIndex == nil
+            && pending.sealedLinkIndex == nil
+    }
+
+    private mutating func restoreDeferredSegmentReplacement(
+        _ pending: PendingSegmentReplacement?,
+        for exerciseId: String
+    ) {
+        guard let pending else { return }
+        if pending.splitsFacts,
+           let segmentIndex = pending.sealedSegmentIndex,
+           let linkIndex = pending.sealedLinkIndex {
+            exerciseFactSegments[segmentIndex].replacementLinks.insert(
+                SegmentReplacementLink(
+                    replacement: pending.replacement,
+                    role: .original
+                ),
+                at: linkIndex
+            )
+        }
+        deferredSegmentReplacements[exerciseId] = pending
+    }
+
+    private mutating func factSegmentIndex(for exerciseId: String) -> Int {
+        if let currentFactSegmentIndex,
+           exerciseFactSegments.indices.contains(currentFactSegmentIndex),
+           exerciseFactSegments[currentFactSegmentIndex].exerciseId == exerciseId {
+            return currentFactSegmentIndex
+        }
+
+        let deferredReplacement = deferredSegmentReplacements.removeValue(forKey: exerciseId)
+        let replacementLinks: [SegmentReplacementLink]
+        if deferredReplacement?.splitsFacts == true,
+           let replacement = deferredReplacement?.replacement {
+            replacementLinks = [
+                SegmentReplacementLink(replacement: replacement, role: .actual),
+            ]
+        } else {
+            replacementLinks = []
+        }
+        exerciseFactSegments.append(ExerciseFactSegment(
+            exerciseId: exerciseId,
+            observations: [],
+            skippedSets: [],
+            isSealed: false,
+            replacementAudit: deferredReplacement?.replacement,
+            replacementLinks: replacementLinks
+        ))
+        let index = exerciseFactSegments.count - 1
+        currentFactSegmentIndex = index
+        return index
+    }
+
     private func isValidAdHocPayload(_ exercise: ExerciseSetPlan) -> Bool {
         guard let entry = catalog.entry(id: exercise.exerciseId),
               !entry.deprecated,
@@ -576,6 +879,7 @@ public struct TrainFlowState: Equatable, Sendable {
         isHolding = false
         painReportedForCurrentSet = false
         warmupPointer = 0 // 新动作重新进入其热身（内存态，不进 events/落库）
+        currentFactSegmentIndex = nil
     }
 
     private mutating func finishSession(reason: SessionEndReason) {

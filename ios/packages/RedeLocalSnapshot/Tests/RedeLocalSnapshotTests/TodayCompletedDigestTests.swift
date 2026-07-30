@@ -87,14 +87,58 @@ final class TodayCompletedDigestTests: XCTestCase {
 
     func testAllSetsSuspectStillRendersZeroSetsHonestly() {
         // 边界（审查 MINOR）：动作条目在、但全部组被质量清洗剔除 → setCount=0。
-        // 锁定行为：如实显示「N 动作 · 0 组 · 总量 0」（丑但不编数据、不崩），不整体退化。
+        // occurrence 兼容口径：动作数也只计聚合后仍有真实组的 id，因此如实显示
+        //「0 动作 · 0 组 · 总量 0」（丑但不编数据、不崩），不整体退化。
+        let filteredRecord = SnapshotSessionRecord(
+            id: "s1",
+            dateISO: today,
+            exercises: (0..<3).map {
+                SnapshotExerciseRecord(exerciseId: "ex\($0)", sets: [])
+            }
+        )
         let digest = TodayCompletedDigestBuilder.digest(
-            latest: entry(dateISO: today, volume: 0, sets: 0), record: record(exercises: 3),
+            latest: entry(dateISO: today, volume: 0, sets: 0), record: filteredRecord,
             dayCode: nil, durationMinutes: 40, patterns: [])
         XCTAssertNotNil(digest)
         XCTAssertEqual(digest?.setCount, 0)
         XCTAssertEqual(digest?.totalVolumeKg, 0)
-        XCTAssertEqual(digest?.exerciseCount, 3)
+        XCTAssertEqual(digest?.exerciseCount, 0)
+    }
+
+    func testExerciseCountAggregatesRepeatedIdsAndIgnoresZeroSetOccurrences() {
+        let record = SnapshotSessionRecord(
+            id: "s1",
+            dateISO: today,
+            exercises: [
+                SnapshotExerciseRecord(
+                    exerciseId: "bench-press",
+                    sets: [SnapshotSetRecord(weightKg: 100, reps: 5)]
+                ),
+                SnapshotExerciseRecord(
+                    exerciseId: "cable-row",
+                    sets: [SnapshotSetRecord(weightKg: 50, reps: 10)]
+                ),
+                SnapshotExerciseRecord(
+                    exerciseId: "bench-press",
+                    sets: [SnapshotSetRecord(weightKg: 80, reps: 8)]
+                ),
+                SnapshotExerciseRecord(exerciseId: "skipped-before-replace", sets: []),
+            ]
+        )
+        let digest = TodayCompletedDigestBuilder.digest(
+            latest: entry(dateISO: today, volume: 1_640, sets: 3),
+            record: record,
+            dayCode: "upper",
+            durationMinutes: 60,
+            patterns: ["horizontal-press", "horizontal-pull"]
+        )
+
+        XCTAssertEqual(digest?.exerciseCount, 2)
+        if case let .workoutSummary(summary)? = digest?.shareSnapshots.first?.content {
+            XCTAssertEqual(summary.exerciseCount, 2)
+        } else {
+            XCTFail("expected workoutSummary")
+        }
     }
 
     func testMissingDurationSkipsWorkoutCardButKeepsPRCard() {

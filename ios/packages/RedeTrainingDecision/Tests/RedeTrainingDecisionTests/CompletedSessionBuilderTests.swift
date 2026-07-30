@@ -85,8 +85,333 @@ final class CompletedSessionBuilderTests: XCTestCase {
         )
     }
 
-    // 跳过后再换动作：跳过留痕必须归到最终动作 id（与 exercises 可对齐）
-    func testSkipThenReplaceAlignsSkipRecordToFinalExercise() throws {
+    // 公开行为回归锁：当前 slot 练完 2/3 后换动作，旧动作事实与新动作事实都必须落盘；
+    // slot 仍是动作 1/6，但新动作只承接剩余 1 组并从第 1 组开始。
+    func testMidExerciseReplacementPersistsBothExercisesAndRestartsRemainingWorkAtSetOne() throws {
+        let input = try TestSupport.makeInput(
+            appDataJSON: #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}}"#,
+            todayISO: "2026-06-09"
+        )
+        let verdict = TodayVerdictEngine.evaluate(input)
+        let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict))
+        var flow = TrainFlowState(prescription: prescription)
+
+        XCTAssertEqual(flow.currentExercise?.exerciseId, "bench-press")
+        XCTAssertEqual(flow.currentExercise?.sets.count, 3)
+        let originalRemainingSet = try XCTUnwrap(flow.currentExercise?.sets.last)
+        flow.logSet(CompletedSetObservation(weightKg: 60, reps: 6, rir: 2, painReported: false))
+        flow.restFinished()
+        flow.logSet(CompletedSetObservation(weightKg: 60, reps: 7, rir: 1, painReported: true))
+        flow.restFinished()
+
+        flow.replaceCurrentExercise(with: "db-bench-press")
+
+        XCTAssertEqual(flow.currentExercise?.exerciseId, "db-bench-press")
+        XCTAssertEqual(flow.progress.exerciseNumber, 1)
+        XCTAssertEqual(flow.progress.exerciseTotal, 6)
+        XCTAssertEqual(flow.progress.setNumber, 1, "replacement starts at its own first set")
+        XCTAssertEqual(flow.progress.setTotal, 1, "two completed facts leave exactly one planned set")
+        XCTAssertTrue(flow.completedInCurrentExercise.isEmpty)
+        XCTAssertEqual(flow.currentExercise?.sets.map(\.index), [1])
+        XCTAssertEqual(
+            flow.currentExercise?.sets.first?.targetWeightKg,
+            originalRemainingSet.targetWeightKg,
+            "external-load replacement keeps the existing load transform semantics"
+        )
+
+        flow.logSet(CompletedSetObservation(weightKg: 30, reps: 8, rir: 2, painReported: false))
+        flow.requestFinish()
+        flow.confirmEnd(reason: .timeUp)
+
+        let session = CompletedSessionBuilder.build(
+            from: flow,
+            sessionId: "mid-swap",
+            dateISO: "2026-06-09",
+            startedAtISO: "t0",
+            finishedAtISO: "t1",
+            durationMinutes: 12
+        )
+
+        XCTAssertEqual(
+            session.exercises.map(\.exerciseId),
+            ["bench-press", "db-bench-press"],
+            "facts before and after replacement remain independently attributable"
+        )
+        let original = try XCTUnwrap(
+            session.exercises.first(where: { $0.exerciseId == "bench-press" })
+        )
+        XCTAssertEqual(original.sets.count, 2)
+        XCTAssertEqual(original.sets.map(\.setIndex), [1, 2])
+        XCTAssertEqual(original.sets.map(\.reps), [6, 7])
+        XCTAssertEqual(original.sets[1].storage["painFlag"], .bool(true))
+        XCTAssertEqual(original.storage["replacementRole"], .string("original"))
+        XCTAssertEqual(original.storage["originalExerciseId"], .string("bench-press"))
+        XCTAssertEqual(original.storage["actualExerciseId"], .string("db-bench-press"))
+
+        let replacement = try XCTUnwrap(
+            session.exercises.first(where: { $0.exerciseId == "db-bench-press" })
+        )
+        XCTAssertEqual(replacement.sets.count, 1)
+        XCTAssertEqual(replacement.sets.first?.setIndex, 1)
+        XCTAssertEqual(replacement.sets.first?.reps, 8)
+        XCTAssertNil(replacement.sets.first?.storage["painFlag"], "pain fact must not leak into the new exercise")
+        XCTAssertEqual(replacement.storage["replacementRole"], .string("actual"))
+        XCTAssertEqual(replacement.storage["originalExerciseId"], .string("bench-press"))
+        XCTAssertEqual(replacement.storage["actualExerciseId"], .string("db-bench-press"))
+        XCTAssertNil(session.storage["skippedSets"])
+    }
+
+    // 完成 + 跳过混合也属于旧动作已经发生的事实；换动作不得把旧 skip 重写到新 id。
+    func testMidExerciseReplacementKeepsCompletedAndSkippedFactsWithOriginalExercise() throws {
+        let input = try TestSupport.makeInput(
+            appDataJSON: #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}}"#,
+            todayISO: "2026-06-09"
+        )
+        let verdict = TodayVerdictEngine.evaluate(input)
+        let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict))
+        var flow = TrainFlowState(prescription: prescription)
+
+        flow.logSet(CompletedSetObservation(weightKg: 60, reps: 6, rir: 2, painReported: false))
+        flow.restFinished()
+        flow.skipSet(reason: .equipmentBusy)
+        flow.replaceCurrentExercise(with: "db-bench-press")
+
+        XCTAssertEqual(flow.progress.setNumber, 1)
+        XCTAssertEqual(flow.progress.setTotal, 1)
+        flow.logSet(CompletedSetObservation(weightKg: 30, reps: 8, rir: 2, painReported: false))
+        flow.requestFinish()
+        flow.confirmEnd(reason: .timeUp)
+
+        let session = CompletedSessionBuilder.build(
+            from: flow,
+            sessionId: "mixed-mid-swap",
+            dateISO: "2026-06-09",
+            startedAtISO: "t0",
+            finishedAtISO: "t1",
+            durationMinutes: 8
+        )
+
+        XCTAssertEqual(session.exercises.map(\.exerciseId), ["bench-press", "db-bench-press"])
+        XCTAssertEqual(
+            session.storage["skippedSets"],
+            .array([
+                .object([
+                    "exerciseId": .string("bench-press"),
+                    "setIndex": .int(2),
+                    "reason": .string("equipmentBusy"),
+                ]),
+            ])
+        )
+        XCTAssertEqual(
+            session.exercises.first(where: { $0.exerciseId == "bench-press" })?.sets.count,
+            1
+        )
+        XCTAssertEqual(
+            session.exercises.first(where: { $0.exerciseId == "db-bench-press" })?.sets.count,
+            1
+        )
+    }
+
+    func testReplacingBackToOriginalPersistsEachOccurrenceOnceWithUniqueIds() throws {
+        let input = try TestSupport.makeInput(
+            appDataJSON: #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}}"#,
+            todayISO: "2026-06-09"
+        )
+        let verdict = TodayVerdictEngine.evaluate(input)
+        let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict))
+        var flow = TrainFlowState(prescription: prescription)
+
+        flow.logSet(CompletedSetObservation(weightKg: 60, reps: 6, rir: 2, painReported: false))
+        flow.restFinished()
+        flow.replaceCurrentExercise(with: "db-bench-press")
+        flow.logSet(CompletedSetObservation(weightKg: 30, reps: 8, rir: 2, painReported: false))
+        flow.restFinished()
+        XCTAssertTrue(flow.replacementCandidates.contains("bench-press"))
+        flow.replaceCurrentExercise(with: "bench-press")
+        flow.logSet(CompletedSetObservation(weightKg: 60, reps: 7, rir: 1, painReported: false))
+        flow.requestFinish()
+        flow.confirmEnd(reason: .timeUp)
+
+        let session = CompletedSessionBuilder.build(
+            from: flow,
+            sessionId: "swap-back",
+            dateISO: "2026-06-09",
+            startedAtISO: "t0",
+            finishedAtISO: "t1",
+            durationMinutes: 14
+        )
+
+        XCTAssertEqual(
+            session.exercises.map(\.exerciseId),
+            ["bench-press", "db-bench-press", "bench-press"],
+            "persistence order follows fact occurrence segments, not exercise-id aggregation"
+        )
+        XCTAssertEqual(session.exercises.map { $0.sets.count }, [1, 1, 1])
+        XCTAssertEqual(session.exercises.map { $0.sets.first?.reps }, [6, 8, 7])
+
+        let exerciseRecordIds = session.exercises.compactMap(\.id)
+        let setRecordIds = session.exercises.flatMap(\.sets).compactMap(\.id)
+        XCTAssertEqual(Set(exerciseRecordIds).count, 3, "each repeated exercise occurrence needs a unique record id")
+        XCTAssertEqual(Set(setRecordIds).count, 3, "each repeated exercise set needs a unique record id")
+
+        XCTAssertEqual(session.exercises[0].storage["replacementRole"], .string("original"))
+        XCTAssertEqual(session.exercises[0].storage["originalExerciseId"], .string("bench-press"))
+        XCTAssertEqual(session.exercises[0].storage["actualExerciseId"], .string("db-bench-press"))
+        XCTAssertEqual(
+            session.exercises[1].storage["replacementLinks"],
+            .array([
+                .object([
+                    "originalExerciseId": .string("bench-press"),
+                    "actualExerciseId": .string("db-bench-press"),
+                    "replacementRole": .string("actual"),
+                ]),
+                .object([
+                    "originalExerciseId": .string("db-bench-press"),
+                    "actualExerciseId": .string("bench-press"),
+                    "replacementRole": .string("original"),
+                ]),
+            ]),
+            "the middle occurrence preserves both incoming and outgoing replacement relations"
+        )
+        XCTAssertEqual(session.exercises[2].storage["replacementRole"], .string("actual"))
+        XCTAssertEqual(session.exercises[2].storage["originalExerciseId"], .string("db-bench-press"))
+        XCTAssertEqual(session.exercises[2].storage["actualExerciseId"], .string("bench-press"))
+    }
+
+    func testMovingFutureExerciseAfterReplacementKeepsEarlierFactsAheadOfMovedExercise() throws {
+        let input = try TestSupport.makeInput(
+            appDataJSON: #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}}"#,
+            todayISO: "2026-06-09"
+        )
+        let verdict = TodayVerdictEngine.evaluate(input)
+        let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict))
+        var flow = TrainFlowState(prescription: prescription)
+
+        flow.logSet(CompletedSetObservation(weightKg: 60, reps: 6, rir: 2, painReported: false))
+        flow.restFinished()
+        flow.replaceCurrentExercise(with: "db-bench-press")
+        let movedExerciseId = flow.plan.exercises[2].exerciseId
+        XCTAssertTrue(flow.moveToCurrentCandidates.contains(movedExerciseId))
+        flow.moveExerciseToCurrent(movedExerciseId)
+        flow.logSet(CompletedSetObservation(weightKg: 40, reps: 10, rir: 2, painReported: false))
+        flow.requestFinish()
+        flow.confirmEnd(reason: .timeUp)
+
+        let session = CompletedSessionBuilder.build(
+            from: flow,
+            sessionId: "swap-then-move",
+            dateISO: "2026-06-09",
+            startedAtISO: "t0",
+            finishedAtISO: "t1",
+            durationMinutes: 7
+        )
+
+        XCTAssertEqual(
+            session.exercises.map(\.exerciseId),
+            ["bench-press", movedExerciseId],
+            "moving untouched future work must not reorder already completed facts"
+        )
+        XCTAssertEqual(session.exercises.map { $0.sets.count }, [1, 1])
+        XCTAssertEqual(session.exercises.map { $0.sets.first?.reps }, [6, 10])
+    }
+
+    func testZeroFactReplacementAuditSurvivesMovingAnotherExerciseAhead() throws {
+        let input = try TestSupport.makeInput(
+            appDataJSON: #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}}"#,
+            todayISO: "2026-06-09"
+        )
+        let verdict = TodayVerdictEngine.evaluate(input)
+        let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict))
+        var flow = TrainFlowState(prescription: prescription)
+
+        flow.replaceCurrentExercise(with: "db-bench-press")
+        let movedExerciseId = flow.plan.exercises[2].exerciseId
+        flow.moveExerciseToCurrent(movedExerciseId)
+        let movedPlan = try XCTUnwrap(flow.currentExercise)
+        for set in movedPlan.sets {
+            flow.logSet(CompletedSetObservation(
+                weightKg: set.targetWeightKg,
+                reps: set.targetReps,
+                rir: 2,
+                painReported: false
+            ))
+            flow.restFinished()
+        }
+        XCTAssertEqual(flow.currentExercise?.exerciseId, "db-bench-press")
+        flow.logSet(CompletedSetObservation(weightKg: 30, reps: 8, rir: 2, painReported: false))
+        flow.requestFinish()
+        flow.confirmEnd(reason: .timeUp)
+
+        let session = CompletedSessionBuilder.build(
+            from: flow,
+            sessionId: "zero-swap-move",
+            dateISO: "2026-06-09",
+            startedAtISO: "t0",
+            finishedAtISO: "t1",
+            durationMinutes: 12
+        )
+        let replacement = try XCTUnwrap(
+            session.exercises.first(where: { $0.exerciseId == "db-bench-press" })
+        )
+        XCTAssertEqual(replacement.storage["originalExerciseId"], .string("bench-press"))
+        XCTAssertEqual(replacement.storage["actualExerciseId"], .string("db-bench-press"))
+        XCTAssertNil(
+            replacement.storage["replacementRole"],
+            "zero-fact move keeps the exact pre-split audit vocabulary"
+        )
+    }
+
+    func testSplitReplacementActualRoleSurvivesMovingAnotherExerciseAhead() throws {
+        let input = try TestSupport.makeInput(
+            appDataJSON: #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}}"#,
+            todayISO: "2026-06-09"
+        )
+        let verdict = TodayVerdictEngine.evaluate(input)
+        let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict))
+        var flow = TrainFlowState(prescription: prescription)
+
+        flow.logSet(CompletedSetObservation(weightKg: 60, reps: 6, rir: 2, painReported: false))
+        flow.restFinished()
+        flow.replaceCurrentExercise(with: "db-bench-press")
+        let movedExerciseId = flow.plan.exercises[2].exerciseId
+        flow.moveExerciseToCurrent(movedExerciseId)
+        let movedPlan = try XCTUnwrap(flow.currentExercise)
+        for set in movedPlan.sets {
+            flow.logSet(CompletedSetObservation(
+                weightKg: set.targetWeightKg,
+                reps: set.targetReps,
+                rir: 2,
+                painReported: false
+            ))
+            flow.restFinished()
+        }
+        XCTAssertEqual(flow.currentExercise?.exerciseId, "db-bench-press")
+        flow.logSet(CompletedSetObservation(weightKg: 30, reps: 8, rir: 2, painReported: false))
+        flow.requestFinish()
+        flow.confirmEnd(reason: .timeUp)
+
+        let session = CompletedSessionBuilder.build(
+            from: flow,
+            sessionId: "split-swap-move",
+            dateISO: "2026-06-09",
+            startedAtISO: "t0",
+            finishedAtISO: "t1",
+            durationMinutes: 14
+        )
+        XCTAssertEqual(
+            session.exercises.map(\.exerciseId),
+            ["bench-press", movedExerciseId, "db-bench-press"]
+        )
+        let replacement = try XCTUnwrap(
+            session.exercises.first(where: { $0.exerciseId == "db-bench-press" })
+        )
+        XCTAssertEqual(replacement.storage["originalExerciseId"], .string("bench-press"))
+        XCTAssertEqual(replacement.storage["actualExerciseId"], .string("db-bench-press"))
+        XCTAssertEqual(replacement.storage["replacementRole"], .string("actual"))
+    }
+
+    // 跳过本身就是已发生事实：换动作后仍归旧动作，新动作只承接尚未发生的剩余组。
+    func testSkipThenReplaceKeepsSkipRecordWithOriginalExercise() throws {
         let input = try TestSupport.makeInput(
             appDataJSON: #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}}"#,
             todayISO: "2026-06-09"
@@ -106,9 +431,13 @@ final class CompletedSessionBuilderTests: XCTestCase {
         )
         XCTAssertEqual(
             session.storage["skippedSets"],
-            .array([.object(["exerciseId": .string("db-bench-press"), "setIndex": .int(1), "reason": .string("equipmentBusy")])])
+            .array([.object(["exerciseId": .string("bench-press"), "setIndex": .int(1), "reason": .string("equipmentBusy")])])
         )
-        XCTAssertEqual(session.exercises.first?.exerciseId, "db-bench-press")
+        XCTAssertEqual(session.exercises.map(\.exerciseId), ["bench-press", "db-bench-press"])
+        XCTAssertTrue(session.exercises[0].sets.isEmpty)
+        XCTAssertEqual(session.exercises[0].storage["replacementRole"], .string("original"))
+        XCTAssertEqual(session.exercises[1].sets.count, 1)
+        XCTAssertEqual(session.exercises[1].storage["replacementRole"], .string("actual"))
     }
 
     func testReplacementAuditFieldsAreRecorded() throws {
@@ -132,6 +461,45 @@ final class CompletedSessionBuilderTests: XCTestCase {
         XCTAssertEqual(exercise.exerciseId, "db-bench-press")
         XCTAssertEqual(exercise.storage["originalExerciseId"], .string("bench-press"))
         XCTAssertEqual(exercise.storage["actualExerciseId"], .string("db-bench-press"))
+        XCTAssertNil(exercise.storage["replacementRole"], "zero-fact replacement keeps the existing bytes")
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        let encoded = try encoder.encode(session.storage)
+        XCTAssertEqual(
+            encoded,
+            Data(#"{"completed":true,"date":"2026-06-09","durationMin":10,"endReason":"fatigue","exercises":[{"actualExerciseId":"db-bench-press","exerciseId":"db-bench-press","id":"s-db-bench-press","originalExerciseId":"bench-press","sets":[{"completionStatus":"completed","done":true,"exerciseId":"db-bench-press","id":"s-db-bench-press-1","reps":8,"rir":2,"setIndex":1,"weight":30}]}],"finishedAt":"t1","id":"s","startedAt":"t0","templateId":"push-a"}"#.utf8),
+            "zero-fact replacement must remain byte-identical to the frozen pre-fix output"
+        )
+    }
+
+    func testMultipleZeroFactReplacementsKeepFrozenTerminalOnlyBytes() throws {
+        let input = try TestSupport.makeInput(
+            appDataJSON: #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}}"#,
+            todayISO: "2026-06-09"
+        )
+        let verdict = TodayVerdictEngine.evaluate(input)
+        let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict))
+        var flow = TrainFlowState(prescription: prescription)
+        flow.replaceCurrentExercise(with: "db-bench-press")
+        flow.replaceCurrentExercise(with: "smith-bench-press")
+        flow.logSet(CompletedSetObservation(
+            weightKg: 50, reps: 8, rir: 2, painReported: false
+        ))
+        flow.requestFinish()
+        flow.confirmEnd(reason: .fatigue)
+
+        let session = CompletedSessionBuilder.build(
+            from: flow, sessionId: "s", dateISO: "2026-06-09",
+            startedAtISO: "t0", finishedAtISO: "t1", durationMinutes: 10
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        XCTAssertEqual(
+            try encoder.encode(session.storage),
+            Data(#"{"completed":true,"date":"2026-06-09","durationMin":10,"endReason":"fatigue","exercises":[{"actualExerciseId":"smith-bench-press","exerciseId":"smith-bench-press","id":"s-smith-bench-press","originalExerciseId":"db-bench-press","sets":[{"completionStatus":"completed","done":true,"exerciseId":"smith-bench-press","id":"s-smith-bench-press-1","reps":8,"rir":2,"setIndex":1,"weight":50}]}],"finishedAt":"t1","id":"s","startedAt":"t0","templateId":"push-a"}"#.utf8),
+            "a slot with no prior facts keeps the existing terminal-only zero-fact bytes"
+        )
     }
 
     // 重排是队列事实而非动作替换：完成记录按实际执行顺序输出，且不产生替换/跳过审计。

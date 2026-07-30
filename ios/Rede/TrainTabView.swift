@@ -295,7 +295,7 @@ struct TrainTabView: View {
 
     private var overallFraction: Double {
         guard let flow else { return 0 }
-        let total = flow.plan.exercises.reduce(0) { $0 + $1.sets.count }
+        let total = flow.overallSetTotal
         guard total > 0 else { return 0 }
         let done = flow.observationsByExercise.values.reduce(0) { $0 + $1.count } + flow.skippedSets.count
         return min(1, Double(done) / Double(total))
@@ -945,25 +945,22 @@ struct TrainTabView: View {
 
     // MARK: - 组表（沿用 M0-2 行渲染）
 
-    /// 行状态：跳过的组（按 setIndex 留痕）原位显示跳过标记；完成的组按顺序
-    /// 映射到未跳过的行；指针行高亮（MAJOR 修复：跳过后不再错位挂数据）。
-    private enum RowStatus {
+    /// 行状态只读当前 occurrence 的 reducer 指针：跳过数是当前动作头部已消费前缀，
+    /// 完成组紧随其后，不能按 exerciseId 回查全场 skip（A→B→A 会串 occurrence）。
+    enum RowStatus: Equatable {
         case done(CompletedSetObservation)
         case skipped
         case active
         case pending
     }
 
-    private func rowStatuses(_ flow: TrainFlowState) -> [RowStatus] {
+    static func rowStatuses(_ flow: TrainFlowState) -> [RowStatus] {
         guard let exercise = flow.currentExercise else { return [] }
-        let skippedIndices = Set(
-            flow.skippedSets.filter { $0.exerciseId == exercise.exerciseId }.map(\.setIndex)
-        )
-        let pointer = flow.completedInCurrentExercise.count + flow.skippedInCurrentExercise
+        let skippedPrefixCount = min(flow.skippedInCurrentExercise, exercise.sets.count)
+        let pointer = flow.completedInCurrentExercise.count + skippedPrefixCount
         var completedCursor = 0
         return exercise.sets.indices.map { index in
-            let number = index + 1
-            if skippedIndices.contains(number) { return .skipped }
+            if index < skippedPrefixCount { return .skipped }
             if index < pointer, completedCursor < flow.completedInCurrentExercise.count {
                 let obs = flow.completedInCurrentExercise[completedCursor]
                 completedCursor += 1
@@ -976,7 +973,7 @@ struct TrainTabView: View {
 
     private func setTable(_ flow: TrainFlowState) -> some View {
         let exercise = flow.currentExercise
-        let statuses = rowStatuses(flow)
+        let statuses = Self.rowStatuses(flow)
         return VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Overline(text: s.trainColSet).frame(width: 44, alignment: .leading)

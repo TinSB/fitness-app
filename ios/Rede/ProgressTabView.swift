@@ -326,23 +326,57 @@ struct ProgressTabView: View {
     /// 均分布局下唯一柱会独占全图宽渲染成一整块色块（T4 2026-07-05）。
     private static let barChartWindow = 5
 
+    struct SessionScaleItem: Equatable {
+        let exerciseId: String
+        let volumeKg: Double
+        let isPR: Bool
+    }
+
+    static func sessionScaleItems(
+        record: SnapshotSessionRecord?,
+        prExerciseIds: [String]
+    ) -> [SessionScaleItem] {
+        var orderedIds: [String] = []
+        var volumeById: [String: Double] = [:]
+        var setCountById: [String: Int] = [:]
+        for exercise in record?.exercises ?? [] {
+            if volumeById[exercise.exerciseId] == nil {
+                orderedIds.append(exercise.exerciseId)
+            }
+            volumeById[exercise.exerciseId, default: 0] += exercise.sets.reduce(0) {
+                $0 + $1.weightKg * Double($1.reps)
+            }
+            setCountById[exercise.exerciseId, default: 0] += exercise.sets.count
+        }
+        let prSet = Set(prExerciseIds)
+        return orderedIds
+            .filter { setCountById[$0, default: 0] > 0 }
+            .prefix(Self.barChartWindow)
+            .map {
+                SessionScaleItem(
+                    exerciseId: $0,
+                    volumeKg: volumeById[$0] ?? 0,
+                    isPR: prSet.contains($0)
+                )
+            }
+    }
+
     private func sessionScale(_ model: ProgressModel) -> ScaleView {
         let latest = model.snapshot.history[0]
         let record = model.statsRecords.first { $0.id == latest.sessionId }
-        let volumes: [(id: String, volume: Double)] = (record?.exercises ?? []).map { exercise in
-            (exercise.exerciseId, exercise.sets.reduce(0) { $0 + $1.weightKg * Double($1.reps) })
-        }
-        let shown = Array(volumes.prefix(Self.barChartWindow))
-        let maxVolume = max(shown.map(\.volume).max() ?? 1, 1)
-        let prSet = Set(latest.prExerciseIds)
+        let shown = Self.sessionScaleItems(
+            record: record,
+            prExerciseIds: latest.prExerciseIds
+        )
+        let maxVolume = max(shown.map(\.volumeKg).max() ?? 1, 1)
         let bars = shown.map { item -> (label: String, fraction: CGFloat, tag: String?, ember: Bool, a11y: String) in
-            let name = localeStore.exerciseName(item.id)
-            let isPR = prSet.contains(item.id)
+            let name = localeStore.exerciseName(item.exerciseId)
+            let isPR = item.isPR
             return (label: name,
-             fraction: CGFloat(item.volume / maxVolume),
+             fraction: CGFloat(item.volumeKg / maxVolume),
              tag: isPR ? s.historyPRBadge : nil,
              ember: isPR,
-             a11y: s.a11yChartBar(name, "\(s.formatVolumeKg(item.volume)) \(s.unitLabel)", pr: isPR))
+             a11y: s.a11yChartBar(name, "\(s.formatVolumeKg(item.volumeKg)) \(s.unitLabel)", pr: isPR))
         }
 
         let verdict: String

@@ -152,6 +152,86 @@ final class TrainFlowReducerTests: XCTestCase {
         XCTAssertEqual(state.replacements.first?.actualExerciseId, "db-bench-press")
     }
 
+    func testOverallSetTotalIsConservedAcrossMidExerciseReplacementAndSwapBack() throws {
+        var state = try makeState()
+        let originalOverallSetTotal = state.overallSetTotal
+
+        state.logSet(obs(60, 6))
+        state.restFinished()
+        state.replaceCurrentExercise(with: "db-bench-press")
+
+        XCTAssertEqual(state.currentExercise?.sets.count, 2)
+        XCTAssertEqual(
+            state.overallSetTotal,
+            originalOverallSetTotal,
+            "one sealed old fact plus the shortened replacement plan keeps the denominator stable"
+        )
+
+        state.logSet(obs(30, 8))
+        state.restFinished()
+        state.replaceCurrentExercise(with: "bench-press")
+
+        XCTAssertEqual(state.currentExercise?.sets.count, 1)
+        XCTAssertEqual(
+            state.overallSetTotal,
+            originalOverallSetTotal,
+            "A→B→A seals two facts while the current slot shrinks by two"
+        )
+    }
+
+    func testReplacingAfterFactsStartsCleanOccurrenceWithoutRestartingWarmup() throws {
+        var state = try makeState()
+
+        state.skipAllWarmup()
+        XCTAssertGreaterThan(state.warmupPointer, 0, "fixture must first consume the original exercise warm-up")
+        XCTAssertFalse(state.isWarmingUp)
+        state.logSet(obs(60, 6))
+        state.restFinished()
+        XCTAssertEqual(state.progress.setNumber, 2)
+
+        state.reportPain()
+        state.toggleHold()
+        XCTAssertTrue(state.painReportedForCurrentSet)
+        XCTAssertTrue(state.isHolding)
+
+        state.replaceCurrentExercise(with: "db-bench-press")
+
+        XCTAssertEqual(state.currentExercise?.exerciseId, "db-bench-press")
+        XCTAssertEqual(state.progress.setNumber, 1, "the replacement occurrence starts from its own first set")
+        XCTAssertFalse(state.painReportedForCurrentSet, "pre-registered pain belongs to the abandoned old set")
+        XCTAssertFalse(state.isHolding, "hold must not cross into a different exercise occurrence")
+        XCTAssertEqual(state.warmupPointer, 0, "the new occurrence resets exercise-scoped warm-up progress")
+        XCTAssertFalse(state.isWarmingUp, "a fact-bearing mid-exercise swap must not reopen warm-up")
+
+        state.logSet(obs(30, 8))
+
+        XCTAssertEqual(state.observationsByExercise["bench-press"]?.first?.painReported, false)
+        XCTAssertEqual(
+            state.observationsByExercise["db-bench-press"]?.first?.painReported,
+            false,
+            "old-set pain must not be attached to the replacement occurrence's first set"
+        )
+    }
+
+    func testReplacingAfterAllPlannedSetsIsRejectedBeforeItCanCreateZeroRemainingWork() throws {
+        var state = try makeState()
+        for index in 0..<3 {
+            state.logSet(obs(60, 6))
+            if index < 2 { state.restFinished() }
+        }
+        XCTAssertEqual(state.phase, .resting)
+        XCTAssertEqual(state.completedInCurrentExercise.count, 3)
+
+        let before = state
+        state.replaceCurrentExercise(with: "db-bench-press")
+
+        XCTAssertEqual(state, before, "a completed exercise cannot be replaced from resting state")
+        XCTAssertTrue(state.replacements.isEmpty)
+        state.restFinished()
+        XCTAssertEqual(state.exerciseIndex, 1)
+        XCTAssertEqual(state.progress.setNumber, 1)
+    }
+
     // 本次训练重排：选择一个尚未开始的已排动作，应稳定移动到当前；不是替换或跳过。
     func testMovingScheduledExerciseToCurrentPreservesPlanAndResetsTransientGuidance() throws {
         var state = try makeState()
@@ -361,6 +441,83 @@ final class TrainFlowReducerTests: XCTestCase {
         XCTAssertEqual(state.plan.exercises, original)
         XCTAssertTrue(state.removedExercises.isEmpty)
         XCTAssertEqual(state.events, [.removeExercise(removal), .removeExercise(removal.restoring)])
+    }
+
+    func testStaleUndoCannotDuplicateOrdinarySameIdAdHocOrReplay() throws {
+        var state = try makeState()
+        let removal = try XCTUnwrap(state.removal(at: 1))
+        state.removeExercise(removal)
+        state.addExercise(adHocPlan(id: removal.exercise.exerciseId))
+        XCTAssertEqual(
+            state.addedExercises.last?.exerciseId,
+            removal.exercise.exerciseId,
+            "the precondition must create a real same-id ad-hoc lifecycle"
+        )
+        let readdedAdHoc = state
+
+        let forgedDraft = TrainSessionDraft(
+            dateISO: "2026-07-30",
+            startedAt: Date(timeIntervalSince1970: 1_780_000_000),
+            prescription: state.prescription,
+            events: state.events + [.removeExercise(removal.restoring)]
+        )
+        XCTAssertNil(
+            forgedDraft.restoreFlow(),
+            "a stale ordinary Undo must fail draft replay instead of restoring a duplicate id"
+        )
+
+        state.removeExercise(removal.restoring)
+        XCTAssertEqual(
+            state,
+            readdedAdHoc,
+            "same-id add is a new ad-hoc occurrence, so the old removal is no longer exactly restorable"
+        )
+        XCTAssertEqual(
+            state.plan.exercises.filter {
+                $0.exerciseId == removal.exercise.exerciseId
+            }.count,
+            1
+        )
+    }
+
+    func testStaleUndoCannotResurrectCancelledChainAfterSameIdAdHocLeavesPlan() throws {
+        var state = try makeState()
+        state.logSet(obs(60, 6))
+        state.restFinished()
+        state.replaceCurrentExercise(with: "db-bench-press")
+
+        let movedExerciseId = state.plan.exercises[2].exerciseId
+        state.moveExerciseToCurrent(movedExerciseId)
+        let replacementIndex = try XCTUnwrap(
+            state.plan.exercises.firstIndex { $0.exerciseId == "db-bench-press" }
+        )
+        let removal = try XCTUnwrap(state.removal(at: replacementIndex))
+        state.removeExercise(removal)
+        state.addExercise(adHocPlan())
+        state.moveExerciseToCurrent("db-bench-press")
+        state.replaceCurrentExercise(with: "smith-bench-press")
+        XCTAssertFalse(
+            state.plan.exercises.contains { $0.exerciseId == "db-bench-press" }
+        )
+        let afterNewLifecycleLeftPlan = state
+
+        let forgedDraft = TrainSessionDraft(
+            dateISO: "2026-07-30",
+            startedAt: Date(timeIntervalSince1970: 1_780_000_000),
+            prescription: state.prescription,
+            events: state.events + [.removeExercise(removal.restoring)]
+        )
+        XCTAssertNil(
+            forgedDraft.restoreFlow(),
+            "a same-id ad-hoc lifecycle must permanently invalidate the cancelled chain's Undo"
+        )
+
+        state.removeExercise(removal.restoring)
+        XCTAssertEqual(
+            state,
+            afterNewLifecycleLeftPlan,
+            "an old Undo must not resurrect a cancelled replacement chain after the new id leaves plan"
+        )
     }
 
     func testRemoveRejectsCurrentCompletedPrefixAndAnyNonActivePhaseWithoutChangingFacts() throws {
