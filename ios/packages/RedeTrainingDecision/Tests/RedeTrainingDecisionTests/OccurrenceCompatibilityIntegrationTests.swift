@@ -333,6 +333,155 @@ final class OccurrenceCompatibilityIntegrationTests: XCTestCase {
         XCTAssertEqual(horizontalPress.exerciseId, "db-bench-press")
     }
 
+    func testRemovingPendingTerminalDissolvesChainWithoutDanglingLink() throws {
+        var flow = try pushFlow()
+        flow.logSet(CompletedSetObservation(
+            weightKg: 60, reps: 8, rir: 2, painReported: false
+        ))
+        flow.restFinished()
+        flow.replaceCurrentExercise(with: "db-bench-press")
+
+        let movedExerciseId = flow.plan.exercises[2].exerciseId
+        flow.moveExerciseToCurrent(movedExerciseId)
+        let replacementIndex = try XCTUnwrap(
+            flow.plan.exercises.firstIndex { $0.exerciseId == "db-bench-press" }
+        )
+        let removal = try XCTUnwrap(flow.removal(at: replacementIndex))
+        let totalBeforeRemoval = flow.overallSetTotal
+        flow.removeExercise(removal)
+
+        XCTAssertEqual(
+            flow.overallSetTotal,
+            totalBeforeRemoval - removal.exercise.sets.count,
+            "removing future work must not erase A's already completed fact from total progress"
+        )
+        flow.requestFinish()
+        flow.confirmEnd(reason: .timeUp)
+
+        let session = completedSession(
+            from: flow,
+            id: "removed-pending-terminal",
+            dateISO: "2026-07-24"
+        )
+        XCTAssertEqual(session.exercises.map(\.exerciseId), ["bench-press"])
+        let root = try XCTUnwrap(session.exercises.first)
+        XCTAssertNil(root.storage["originalExerciseId"])
+        XCTAssertNil(root.storage["actualExerciseId"])
+        XCTAssertNil(root.storage["replacementRole"])
+        XCTAssertNil(root.storage["replacementLinks"])
+
+        let input = try decisionInput(
+            history: [.object(session.storage)],
+            todayISO: "2026-07-29"
+        )
+        XCTAssertEqual(input.sessions.first?.exercises.first?.replacementLinks, [])
+        let next = try XCTUnwrap(TodayPrescriptionEngine.plan(
+            input: input,
+            verdict: trainVerdict,
+            dayCodeOverride: "full-a"
+        ))
+        let horizontalPress = try XCTUnwrap(next.exercises.first {
+            ExerciseCatalog.minimal.entry(id: $0.exerciseId)?.movementPattern
+                == "horizontal-press"
+        })
+        XCTAssertEqual(horizontalPress.exerciseId, "bench-press")
+    }
+
+    func testExactUndoRestoresDetachedReplacementChainAndDraftReplay() throws {
+        var flow = try pushFlow()
+        flow.logSet(CompletedSetObservation(
+            weightKg: 60, reps: 8, rir: 2, painReported: false
+        ))
+        flow.restFinished()
+        flow.replaceCurrentExercise(with: "db-bench-press")
+
+        let movedExerciseId = flow.plan.exercises[2].exerciseId
+        flow.moveExerciseToCurrent(movedExerciseId)
+        let replacementIndex = try XCTUnwrap(
+            flow.plan.exercises.firstIndex { $0.exerciseId == "db-bench-press" }
+        )
+        let removal = try XCTUnwrap(flow.removal(at: replacementIndex))
+        flow.removeExercise(removal)
+
+        let detached = completedSession(
+            from: flow,
+            id: "detached-before-undo",
+            dateISO: "2026-07-24"
+        )
+        XCTAssertNil(detached.exercises.first?.storage["replacementRole"])
+
+        flow.removeExercise(removal.restoring)
+        XCTAssertEqual(flow.plan.exercises[removal.index], removal.exercise)
+        flow.moveExerciseToCurrent("db-bench-press")
+        XCTAssertFalse(
+            flow.isWarmingUp,
+            "exact Undo must restore the fact-bearing split warm-up gate"
+        )
+
+        let draft = TrainSessionDraft(
+            dateISO: "2026-07-24",
+            startedAt: Date(timeIntervalSince1970: 1_780_000_000),
+            prescription: flow.prescription,
+            events: flow.events
+        )
+        let draftBytes = try JSONEncoder().encode(draft)
+        let decoded = try JSONDecoder().decode(TrainSessionDraft.self, from: draftBytes)
+        var restored = try XCTUnwrap(decoded.restoreFlow())
+        XCTAssertEqual(restored, flow)
+
+        restored.logSet(CompletedSetObservation(
+            weightKg: 30, reps: 10, rir: 2, painReported: false
+        ))
+        restored.requestFinish()
+        restored.confirmEnd(reason: .timeUp)
+
+        let session = completedSession(
+            from: restored,
+            id: "exact-undo-restored-chain",
+            dateISO: "2026-07-24"
+        )
+        XCTAssertEqual(
+            session.exercises.map(\.exerciseId),
+            ["bench-press", "db-bench-press"]
+        )
+        XCTAssertEqual(session.exercises[0].storage["replacementRole"], .string("original"))
+        XCTAssertEqual(session.exercises[1].storage["replacementRole"], .string("actual"))
+        for exercise in session.exercises {
+            XCTAssertEqual(exercise.storage["originalExerciseId"], .string("bench-press"))
+            XCTAssertEqual(exercise.storage["actualExerciseId"], .string("db-bench-press"))
+        }
+    }
+
+    func testRemovingPendingTerminalKeepsSkipOnlyRootAsOrdinaryFactOccurrence() throws {
+        var flow = try pushFlow()
+        flow.skipSet(reason: .equipmentBusy)
+        flow.replaceCurrentExercise(with: "db-bench-press")
+
+        let movedExerciseId = flow.plan.exercises[2].exerciseId
+        flow.moveExerciseToCurrent(movedExerciseId)
+        let replacementIndex = try XCTUnwrap(
+            flow.plan.exercises.firstIndex { $0.exerciseId == "db-bench-press" }
+        )
+        let removal = try XCTUnwrap(flow.removal(at: replacementIndex))
+        flow.removeExercise(removal)
+        flow.requestFinish()
+        flow.confirmEnd(reason: .timeUp)
+
+        let session = completedSession(
+            from: flow,
+            id: "removed-pending-terminal-skip-root",
+            dateISO: "2026-07-24"
+        )
+        XCTAssertEqual(session.exercises.map(\.exerciseId), ["bench-press"])
+        XCTAssertTrue(try XCTUnwrap(session.exercises.first).sets.isEmpty)
+        XCTAssertNil(session.exercises.first?.storage["replacementRole"])
+        XCTAssertNil(session.exercises.first?.storage["replacementLinks"])
+        XCTAssertEqual(
+            session.storage["skippedSets"]?.asArray?.first?.asObject?["exerciseId"],
+            .string("bench-press")
+        )
+    }
+
     func testRemovedReplacementTerminalCannotLeakItsChainIntoReaddedAdHocOccurrence() throws {
         var flow = try pushFlow()
         flow.logSet(CompletedSetObservation(
