@@ -132,3 +132,38 @@ FR-TR14 S1 只做了「后续动作现在练」。用户在训练现场的真实
 - 解除：owner 批准下述 donor 建议原文；规则已并入裁定 B，实施继续。
 - 新阻断——完整 `ExerciseSetPlan` 还必须包含 `repLowerBound` / `repUpperBound`，但解除裁定只定义了 `targetReps` / `targetRir` / `restSeconds` 的借值链。该字段不是无害填充：`NextSetEngine` 真实使用 `repLowerBound` 判断“低于次数下限”并触发下一组保守降重；实施方若自行令上下限等于 `targetReps`、借某一动作区间或另设固定范围，都会改变组内安全行为。
   - 建议 owner 明确采用：同主肌群与当前动作兜底分支直接借 donor 的完整 `repLowerBound` / `repUpperBound`；众数分支先按已裁定规则求 `targetReps`，再从当日队列中取**第一个首组 `targetReps` 等于该众数**的动作作为区间 donor，借其完整上下限。这样所有值仍来自今天引擎真实输出、零发明，且平票规则不变。若不采用，请给出另一条完整上下限规则。
+
+### 三次停止回报（待 owner 裁定）
+
+- 时间：2026-07-30
+- 状态：**STOP，停在最终独立审查；不回填完成回执。** 当前已完成并提交 reducer / 借值链 / draft barrier / UI / L10n / canonical 规格写回；权威 `.claude/quality-gate.cmd` 已 exit 0，尾部为 `** TEST SUCCEEDED ** / Testing started / QUALITY GATE: PASS`，真实 Simulator 的增删/撤销/组数/新增目标/强杀恢复也已通过。独立 reviewer 给出 0 P0、0 P1、6 P2；以下三项会实质改变用户结果或既有裁定，实施方未猜值继续。
+
+#### 阻断 1——重复 exercise id 的 occurrence 审计口径未定义
+
+- 现状：裁定 C 要求按**位置 + 快照**移除，`sessionEdits.removed[]` 也保存 `exerciseId + position`；但既有 `skippedExercises[]` 只保存 `exerciseId + reason`。若队列为 `[A, A, B]`，移除后一个 A、再跳过前一个 A，canonical 会同时出现 `removed=A@1` 与 `skippedExercises=A`。事件语义本身没有把被移除 occurrence 当跳过，但 storage 只按 id 看无法证明两者互斥。
+- 请 owner 二选一：
+  1. **严格 occurrence 可审计**：批准给会话动作 / skip / edit 引入稳定 occurrence identity 或 skip position（open-bag、无 schema bump，但会扩既有 skip 落盘合同与测试面）。
+  2. **事件级互斥**：明确“中性移除不产生 skip event”即满足互斥；同 id 的另一个 occurrence 可以合法出现在 `skippedExercises`，`sessionEdits.removed.position` 只审计移除发生的位置，不承诺跨数组仅凭 id 唯一归因。
+- 实施建议：若未来「存回计划」需要可靠逐 occurrence 对账，选 1；若本批只要求统计不把 remove event 计作 skip，选 2，并同步收窄验收与文档措辞。
+
+#### 阻断 2——进行中会话的器械白名单 / 单位取哪个时点
+
+- 现状：`TrainFlowState` 在开训时捕获 `allowedEquipment` / `loadUnit`，reducer 按这份会话配置校验；当前 picker 与 payload planner 却从可随 `loadToday()` 刷新的 `todayModel` 读取实时 Settings。训练中若改器械，picker 可能展示 reducer 会拒绝的新器械，或隐藏本场开训时合法的动作；改单位也可能让新动作目标按新单位档位生成、而会话仍以旧单位配置重放。
+- 请 owner 二选一：
+  1. **冻结到开训时（建议）**：picker、payload planner、reducer 全部读取 draft/flow 的 session-scoped 器械与单位；Settings 变化只影响下次训练。
+  2. **实时迁移**：Settings 变化要原子迁移进行中 flow、完整 payload 与 draft，并明确旧事件如何重放；这会显著扩大本批。
+
+#### 阻断 3——裁定 A 的入口与当前动作行，和当前实现冲突
+
+- 裁定 A 原文要求“入口可达性沿 S1 既有规则”且“当前动作行不在编辑面出现”；当前实现把「本次训练」开放行在任意 `activeSet` 都保持可点，并在 sheet 显示只读当前动作名 + 剩余组数控件。TestFlight N1 同时仍要求当前动作产生正式事实后 S1 入口退为静态。
+- 请 owner 二选一：
+  1. **严格沿原裁定（建议按字面）**：S1 开放行继续按原守卫退静态；半程 S2 从既有 More →「本次训练」进入；sheet 不显示当前动作身份行，只保留获批的剩余组数控件。
+  2. **批准当前统一入口**：任意 activeSet 都可从开放行进入，sheet 保留只读当前动作身份 + 组数控件；同步改裁定 A、PRD / 系统逻辑与 TestFlight N1。
+
+#### 已确定但因 STOP 未继续修的验收缺口
+
+- 「移除」「撤销」目前只有 `minHeight: 44`，没有明确 `minWidth: 44` / `contentShape`；中文两字按钮可能小于 44pt。解除后须补命中框与窄屏 / 最大 Dynamic Type / VoiceOver 验收。
+- PRD 当前写“增删不改推荐学习”，与裁定“新增动作真实完成事实正常进入统计/MLE/引擎”矛盾；应改成“不改推荐算法或长期计划，新增动作的真实完成事实仍按普通历史参与后续处方”。
+- `testNoSessionEditLeaves...ByteEquivalent` 目前是同源结果删去不存在字段后的比较，不是真正的 `origin/main` byte golden；解除后须用冻结基线补强。
+- 仍应补 remove → durable undo 的成功/失败回滚/编码重放、重复 id occurrence、训练中 Settings 漂移、quickAdjust 在 ±组后保留，以及 320pt / 最大 Dynamic Type / VoiceOver 命中与焦点测试。
+- 交接件属于 owner 明确要求回填的工作记录，本轮不擅自移动或删除；若 owner 要求在完成后迁出 `docs/工作记录/`，请同时指定最终归宿。
