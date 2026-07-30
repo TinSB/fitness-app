@@ -40,6 +40,7 @@ FR-TR14 S1 只做了「后续动作现在练」。用户在训练现场的真实
      1. 当日会话存在同 `primaryMuscle` 的已排动作 → 按当日队列顺序借第一个同主肌群动作的首组 `targetReps` / `targetRir` 与该动作 `restSeconds`；
      2. 无同主肌群动作 → `targetReps` 取当日全部已排动作首组值的众数（平票取更小值），`restSeconds` 同法取众数（平票取更大值），`targetRir` 取当前动作首组值；
      3. 理论兜底 → 取当前动作首组 `targetReps` / `targetRir` 与 `restSeconds`（当前动作永存在，链条必然终止）。
+   - rep 区间同样零发明：同主肌群分支与当前动作兜底分支借各自 donor 的完整 `repLowerBound` / `repUpperBound`；众数分支先按上条规则求 `targetReps` 众数，再取当日队列中第一个“首组 `targetReps` 等于该众数”的动作作为区间 donor，借其完整上下限。
    - `addExercise` typed event 在创建时一次性携带按上述重量与借值链解析完成的完整 `ExerciseSetPlan` payload；draft replay 只重放 payload，不重查 canonical 历史。
    - ⛔ 禁止任何无出处的魔法数字出现在处方行。
 3. **落盘**：以既有 exercises 元素字段正常落盘（真实事实进统计/MLE/引擎，replace 先例已证明下游容忍）；另加 open-bag 标记留痕（如元素内 `"adHocAdded": true` 或 storage 级 `sessionEdits`——形态你定，**不 bump schema**，回执写明）。审计口径：临时加的动作不参与轮转/verdict/计划对账的任何「计划 vs 实际」偏差告警（如有）。
@@ -124,3 +125,10 @@ FR-TR14 S1 只做了「后续动作现在练」。用户在训练现场的真实
 - 阻断 2——“sheet-local 单层撤销”与“强杀后撤销状态一致”不能同时由现有 draft 表达：当前 `TrainSessionDraft` 只保存原处方与 `TrainFlowEvent`；sheet 是否关闭、local undo 是否仍有效都不在 draft/event 中。若撤销只放 `@State`，强杀后必丢；若从最后一次 remove event 自动恢复，实施方又无法知道 sheet 是否已关闭，会违反“关 sheet 后不再提供撤销”。
   - 建议 owner 二选一并写回裁定：A. 把 remove/undo/关闭编辑面清除 undo 的生命周期都定义为可重放、durable 的 typed state/event（并明确这是否允许超过当前“三类新事件”的字面范围）；B. 明确“强杀等同关闭 sheet”，允许恢复队列与移除事实但不恢复撤销入口，同时相应收窄“撤销状态一致”红线。
 - 已确认的非阻断边界：Master Architecture 允许把改动限制在 `RedeTrainingDecision` 会话 reducer、非 canonical draft 与 `CompletedSessionBuilder` 顶层 `sessionEdits` open-bag；无需修改 `CanonicalSessionWriter`、AppData schema 或 `TodayPrescriptionEngine`。未来继续时，加动作 event 应携带已解析的完整会话计划 payload，draft replay 不应再次查询可能变化的历史。
+
+### 二次停止回报（owner 已裁定解除）
+
+- 状态：**STOP，仍未进入 RED 测试或 runtime 实现。**
+- 解除：owner 批准下述 donor 建议原文；规则已并入裁定 B，实施继续。
+- 新阻断——完整 `ExerciseSetPlan` 还必须包含 `repLowerBound` / `repUpperBound`，但解除裁定只定义了 `targetReps` / `targetRir` / `restSeconds` 的借值链。该字段不是无害填充：`NextSetEngine` 真实使用 `repLowerBound` 判断“低于次数下限”并触发下一组保守降重；实施方若自行令上下限等于 `targetReps`、借某一动作区间或另设固定范围，都会改变组内安全行为。
+  - 建议 owner 明确采用：同主肌群与当前动作兜底分支直接借 donor 的完整 `repLowerBound` / `repUpperBound`；众数分支先按已裁定规则求 `targetReps`，再从当日队列中取**第一个首组 `targetReps` 等于该众数**的动作作为区间 donor，借其完整上下限。这样所有值仍来自今天引擎真实输出、零发明，且平票规则不变。若不采用，请给出另一条完整上下限规则。
