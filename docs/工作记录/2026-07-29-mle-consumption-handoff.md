@@ -137,3 +137,18 @@ MLE 批次 A+B 把肌群等级做完了，但用户升级时**毫无感知**：�
 - 实拍：[文件名 + md5]
 - 未尽事项 / 范围外疑点：[如实列]
 ```
+
+## 停止回报（2026-07-29 · 实施前阈值裁定）
+
+- **状态：STOP，未进入 RED 测试或 runtime 实现。** 触发本交接件停止条件「balanceScore 刻度不支撑可靠阈值 / 行为歧义」。工作区在停止前仅有本交接件基线提交；未改 `mle-v2` 常量、`modelVersion`、memory/widget schema、订阅面或任何产品代码。
+- **问题 1｜双侧 confidence 无法从现有 memory 证明。** `balanceScore` 使用全部已解锁肌群的 `curveLevel`，而 `tierRaw` 只受中位 confidence 约束；即使 tier 非 calibrating，仍可能有 low-confidence 肌群参与并改变 balance。当前 `MuscleLevelMemory` 不存上一观察的 balance confidence，不能满足「新旧双侧 confidence 均不低于 medium」。
+- **问题 2｜分数上升不等于补足方向成立。** balance 可因高等级一侧回落而上升；只比较新旧分数会生成「均衡改善」，却没有任何「哪个肌群在涨」的事实，违反 B2 卡面契约。
+- **问题 3｜覆盖式基线无法同时防尖峰和识别渐进改善。** 若每次都把 previous balanceScore 覆盖，`+4、+4、+4` 永远达不到阈值；一次 `+10` 尖峰却会立刻触发。仅靠「相对上次持久化值 + 一个数值阈值」不能可靠满足“防单次波动”。
+- **问题 4｜contributors 变化时不可直接比较。** 新肌群解锁会改变 balance 的样本集合；若不锁新旧 contributor 集合相同，delta 混入了口径变化。
+- **刻度实证。** `balanceScore = max(0, 1 - CV) × 100`，范围 `0...100`、事件判定应使用未取整 `Double`。当前公式下，三块 all-medium 的 `[6, 7, 7] → [7, 7, 7]` 单肌群一级变化约为 `+7.071`，所以 `5` 分不足以隔离常见一步变化；`10` 分可作保守候选，但单独使用仍挡不住多肌群同一观察跨级或一次尖峰。
+- **建议的裁定修订（需 owner 明确批准后另开实施轮）。**
+  1. 继续保持 schema v1，仅授权 additive optional：`balanceScore`、参与 balance 的最低 `balanceConfidenceRaw`、稳定 contributor IDs，以及独立的 reference/candidate 确认状态；旧文件缺键只播种，不产事件。
+  2. 事件纯函数至少要求：新旧 contributor 集合相同；新旧最低 confidence 均 ≥ medium；原始分数 delta ≥ `10.0`；至少一个此前低侧或 priority 肌群 level 正向变化且当前 trend 为 `.rising`；只有强侧回落时拒绝。
+  3. 推荐采用“两次独立观察确认”而不是一次越线即发：首次满足写 candidate，后续独立训练观察仍满足才产 `balanceMilestone`；回落则清 candidate。四个 `loadOutcome` 对同一份数据的重复读取不得算第二次观察。
+  4. 明确 `+4、+4、+4` 是应累计到稳定 reference 后触发，还是按每次覆盖永不触发；这是产品行为裁定，实施方不代拍。
+- **恢复条件。** owner 回写并批准上述 reference/candidate 语义（或明确接受较弱的一次越线语义及其误报风险）后，才可重新开始本批 RED→GREEN；其余 A/C/D 虽可独立实现，本轮按交接件“触停止条件即结束”纪律没有绕过 B2 继续。
