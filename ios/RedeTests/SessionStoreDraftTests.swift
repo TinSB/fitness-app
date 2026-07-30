@@ -323,6 +323,59 @@ final class SessionStoreDraftTests: XCTestCase {
         XCTAssertEqual(draftStore.attemptedDrafts.last?.events, sessionStore.flow?.events)
     }
 
+    func testAllSessionEditEventsPassThroughDurableBarrierInOrder() throws {
+        let draftStore = FakeTrainSessionDraftStore()
+        let sessionStore = makeSessionStore(draftStore: draftStore)
+        let addition = makeAdHocExercisePlan()
+
+        XCTAssertTrue(sessionStore.applyDurably(.addExercise(addition)))
+        let removal = try XCTUnwrap(sessionStore.flow?.removal(at: 3))
+        XCTAssertTrue(sessionStore.applyDurably(.removeExercise(removal)))
+        XCTAssertTrue(sessionStore.applyDurably(.adjustRemainingSets(1)))
+
+        XCTAssertEqual(draftStore.saveKinds, [.durable, .durable, .durable])
+        XCTAssertEqual(draftStore.attemptedDrafts.map(\.events), [
+            [.addExercise(addition)],
+            [.addExercise(addition), .removeExercise(removal)],
+            [.addExercise(addition), .removeExercise(removal), .adjustRemainingSets(1)],
+        ])
+        XCTAssertEqual(draftStore.attemptedDrafts.last?.events, sessionStore.flow?.events)
+        XCTAssertEqual(sessionStore.flow?.plan.exercises[1], addition)
+        XCTAssertEqual(sessionStore.flow?.currentExercise?.sets.count, 4)
+    }
+
+    func testEverySessionEditRollsBackExactlyWhenDurableSaveFails() throws {
+        let eventBuilders: [(SessionStore) throws -> TrainFlowEvent] = [
+            { _ in .addExercise(self.makeAdHocExercisePlan()) },
+            { store in .removeExercise(try XCTUnwrap(store.flow?.removal(at: 2))) },
+            { _ in .adjustRemainingSets(1) },
+        ]
+
+        for makeEvent in eventBuilders {
+            let draftStore = FakeTrainSessionDraftStore(saveResult: false)
+            let sessionStore = makeSessionStore(draftStore: draftStore)
+            let before = try XCTUnwrap(sessionStore.flow)
+            let event = try makeEvent(sessionStore)
+
+            XCTAssertFalse(sessionStore.applyDurably(event))
+            XCTAssertEqual(sessionStore.flow, before)
+            XCTAssertEqual(draftStore.saveKinds, [.durable])
+            XCTAssertEqual(draftStore.attemptedDrafts.first?.events, [event])
+        }
+    }
+
+    func testRejectedSessionEditDoesNotSaveOrMutateFlow() throws {
+        let draftStore = FakeTrainSessionDraftStore()
+        let sessionStore = makeSessionStore(draftStore: draftStore)
+        let before = try XCTUnwrap(sessionStore.flow)
+
+        XCTAssertFalse(sessionStore.applyDurably(.addExercise(makeAdHocExercisePlan(id: "bench-press"))))
+        XCTAssertFalse(sessionStore.applyDurably(.adjustRemainingSets(2)))
+
+        XCTAssertEqual(sessionStore.flow, before)
+        XCTAssertTrue(draftStore.saveKinds.isEmpty)
+    }
+
     func testFileStoreDrainsOrdinaryWriteBeforeDurableAndClearCannotBeOverwritten() throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("rede-session-draft-tests-\(UUID().uuidString)", isDirectory: true)
@@ -618,6 +671,20 @@ final class SessionStoreDraftTests: XCTestCase {
             progressionStepKg: 2.5,
             change: .start,
             reason: .firstExposure
+        )
+    }
+
+    private func makeAdHocExercisePlan(id: String = "db-bench-press") -> ExerciseSetPlan {
+        ExerciseSetPlan(
+            exerciseId: id,
+            restSeconds: 90,
+            repLowerBound: 8,
+            repUpperBound: 12,
+            stepKg: 2.5,
+            loadType: "external",
+            sets: (1...3).map {
+                PlannedSet(index: $0, targetWeightKg: 30, targetReps: 10, targetRir: 2)
+            }
         )
     }
 }

@@ -1262,11 +1262,17 @@ final class SessionStore {
         enqueueDraftSave()
     }
 
-    /// FR-TR14 S1 的持久化提交：仅允许本次顺序 move。
+    /// FR-TR14 的持久化提交：仅允许本次顺序 / 动作 / 组数编辑。
     /// reducer 接受且同步 draft 保存成功才提交；任何失败都恢复逐字段完全相同的 flow。
     @discardableResult
     func applyDurably(_ event: TrainFlowEvent) -> Bool {
-        guard case .moveExerciseToCurrent = event, let before = flow else { return false }
+        switch event {
+        case .moveExerciseToCurrent, .addExercise, .removeExercise, .adjustRemainingSets:
+            break
+        default:
+            return false
+        }
+        guard let before = flow else { return false }
         guard reduce(event) else {
             flow = before
             return false
@@ -1290,6 +1296,9 @@ final class SessionStore {
         case .skipExercise(let reason): flow?.skipExercise(reason: reason)
         case .replaceExercise(let id): flow?.replaceCurrentExercise(with: id)
         case .moveExerciseToCurrent(let id): flow?.moveExerciseToCurrent(id)
+        case .addExercise(let plan): flow?.addExercise(plan)
+        case .removeExercise(let removal): flow?.removeExercise(removal)
+        case .adjustRemainingSets(let delta): flow?.adjustRemainingSets(delta)
         case .reportPain: flow?.reportPain()
         case .toggleHold: flow?.toggleHold()
         case .requestFinish: flow?.requestFinish()
