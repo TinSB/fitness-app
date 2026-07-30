@@ -26,6 +26,7 @@ public enum MuscleEventShareBuilder {
         }
 
         if let event = todaysEvents.last(where: { $0.kind == .balanceMilestone }),
+           LevelBreakthroughShareEligibility.isEligible(event),
            let from = event.fromLevel,
            let to = event.toLevel {
             let evidenceDirections = event.evidence.compactMap { evidence -> String? in
@@ -33,12 +34,16 @@ public enum MuscleEventShareBuilder {
                 return evidence.muscleId?.rawValue
             }
             let fallback = MuscleGroupID(rawValue: event.targetId).map { [$0.rawValue] } ?? []
-            snapshots.append(SharePrivacyFilter.balanceImprovement(
-                generatedDateISO: generatedDateISO,
-                fromScore: Double(from),
-                toScore: Double(to),
-                improvingMuscleRaws: evidenceDirections.isEmpty ? fallback : evidenceDirections
-            ))
+            let directions = evidenceDirections.isEmpty ? fallback : evidenceDirections
+            // 与 Today 行同门：坏 memory 里的降分/无方向 balance 事件不出「改善」卡。
+            if !directions.isEmpty {
+                snapshots.append(SharePrivacyFilter.balanceImprovement(
+                    generatedDateISO: generatedDateISO,
+                    fromScore: Double(from),
+                    toScore: Double(to),
+                    improvingMuscleRaws: directions
+                ))
+            }
         }
 
         return snapshots

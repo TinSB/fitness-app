@@ -266,15 +266,12 @@ struct ProgressModel {
             completedSessionCount: records.count,
             atIso: todayISO
         )
-        var effectiveMemory = nextMemory
-        if MuscleLevelMemory.shouldPersist(previous: previousMemory, next: nextMemory) {
-            do {
-                try memoryStore.save(nextMemory)
-                effectiveMemory = nextMemory
-            } catch {
-                // derived-only best effort：写失败不阻断进度页，且本轮 UI 仍看见刚产生的事实。
-                effectiveMemory = nextMemory
-            }
+        // 事务内 previousMemory 即盘上值：reconcile 保留「盘上有而本轮 extract 无」的
+        // peaks 键（肌群回退校准时历史 peak 不被抹掉），对既有键是幂等 max。
+        let effectiveMemory = nextMemory.reconcilingPeaks(with: previousMemory)
+        if MuscleLevelMemory.shouldPersist(previous: previousMemory, next: effectiveMemory) {
+            // derived-only best effort：写失败不阻断进度页，本轮 UI 仍见刚产生的事实。
+            try? memoryStore.save(effectiveMemory)
         }
         let recentTrainingDays = MuscleEventShareBuilder.recentTrainingDayCount(
             dateISOs: records.map(\.dateISO),

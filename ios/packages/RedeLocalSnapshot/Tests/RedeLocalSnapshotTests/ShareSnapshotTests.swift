@@ -266,6 +266,7 @@ final class ShareSnapshotTests: XCTestCase {
         for forbidden in [
             "bodyweight", "bodyweightkg", "rir", "pain", "location", "gym", "timestamp",
             "preciseseconds", "durationseconds", "failed", "confidence", "healthkit", "notes",
+            "weightkg", "eventfacts", "evidence", "confidencelabel", "reps",
         ] {
             XCTAssertFalse(names.contains(forbidden), "\(cardName) 不应含敏感字段 \(forbidden)")
         }

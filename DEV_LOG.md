@@ -14,7 +14,7 @@
 
 **你能看到什么**：练完触发升级后，Today 会出现「背部 Lv.8 → Lv.9」；可靠事件可以分享「等级变化」卡，不满足分享门槛的事实不会消失、也不会伪装成可点。均衡真正持续改善时会多一张只说变化与补足方向的卡。进展页力量里程碑可以事后分享。桌面小组件在已有稳定等级时多两行最高肌群的 `Lv.N`。
 
-**证据**：测试先红后绿；`RedeLocalSnapshot` 完整 236 项、App 宿主 `SessionStoreDraftTests` 20 项均 0 失败，两个不同 memory store 的 barrier 测试证明第二 writer 在首事务结束前不能进入，最终 pending 与较新 B2 state 同时保留。Today 混合中/低置信呈现与旧事件 fail-closed 有 App-hosted 定向测试。最终 Simulator 五条可见路径、widget 快照实读与权威 gate 将回填到本批交接件实施回执。
+**证据**：测试先红后绿；`RedeLocalSnapshot` 完整 237 项（含收口时补的 nil balanceScore 清态回归测试）、App 宿主 `SessionStoreDraftTests` 20 项均 0 失败，两个不同 memory store 的 barrier 测试证明第二 writer 在首事务结束前不能进入，最终 pending 与较新 B2 state 同时保留。Today 混合中/低置信呈现与旧事件 fail-closed 有 App-hosted 定向测试。最终 Simulator 五条可见路径、widget 快照实读与权威 gate 将回填到本批交接件实施回执。
 
 **风险与下一步**：muscle-level memory 始终是可重建的 derived-only 文件，不是 canonical；当前 MLE 尚无 pain/safety 输入，本批没有越界读取训练原始疼痛数据，未来接入必须另立切片。Widget 等级允许滞后到最近一次 Progress/练完态加载。低资格或旧事件只显示事实、不分享。真机 WidgetKit 时间线、VoiceOver 实听与 TestFlight 连贯手感仍按验收清单 N10–N13 复验；本批不改 schema、mle-v2/modelVersion、付费闸或版本号。
 
