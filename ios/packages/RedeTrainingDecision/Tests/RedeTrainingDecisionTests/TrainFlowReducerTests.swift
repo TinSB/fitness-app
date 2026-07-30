@@ -475,6 +475,46 @@ final class TrainFlowReducerTests: XCTestCase {
         )
     }
 
+    func testStaleUndoCannotResurrectCancelledChainAfterSameIdAdHocLeavesPlan() throws {
+        var state = try makeState()
+        state.logSet(obs(60, 6))
+        state.restFinished()
+        state.replaceCurrentExercise(with: "db-bench-press")
+
+        let movedExerciseId = state.plan.exercises[2].exerciseId
+        state.moveExerciseToCurrent(movedExerciseId)
+        let replacementIndex = try XCTUnwrap(
+            state.plan.exercises.firstIndex { $0.exerciseId == "db-bench-press" }
+        )
+        let removal = try XCTUnwrap(state.removal(at: replacementIndex))
+        state.removeExercise(removal)
+        state.addExercise(adHocPlan())
+        state.moveExerciseToCurrent("db-bench-press")
+        state.replaceCurrentExercise(with: "smith-bench-press")
+        XCTAssertFalse(
+            state.plan.exercises.contains { $0.exerciseId == "db-bench-press" }
+        )
+        let afterNewLifecycleLeftPlan = state
+
+        let forgedDraft = TrainSessionDraft(
+            dateISO: "2026-07-30",
+            startedAt: Date(timeIntervalSince1970: 1_780_000_000),
+            prescription: state.prescription,
+            events: state.events + [.removeExercise(removal.restoring)]
+        )
+        XCTAssertNil(
+            forgedDraft.restoreFlow(),
+            "a same-id ad-hoc lifecycle must permanently invalidate the cancelled chain's Undo"
+        )
+
+        state.removeExercise(removal.restoring)
+        XCTAssertEqual(
+            state,
+            afterNewLifecycleLeftPlan,
+            "an old Undo must not resurrect a cancelled replacement chain after the new id leaves plan"
+        )
+    }
+
     func testRemoveRejectsCurrentCompletedPrefixAndAnyNonActivePhaseWithoutChangingFacts() throws {
         var state = try makeState()
         XCTAssertNil(state.removal(at: 0), "current exercise is never removable")
