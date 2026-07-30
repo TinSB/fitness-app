@@ -170,3 +170,59 @@ FR-TR14 S1 只做了「后续动作现在练」。用户在训练现场的真实
 - `testNoSessionEditLeaves...ByteEquivalent` 目前是同源结果删去不存在字段后的比较，不是真正的 `origin/main` byte golden；解除后须用冻结基线补强。
 - 仍应补 remove → durable undo 的成功/失败回滚/编码重放、重复 id occurrence、训练中 Settings 漂移、quickAdjust 在 ±组后保留，以及 320pt / 最大 Dynamic Type / VoiceOver 命中与焦点测试。
 - 交接件属于 owner 明确要求回填的工作记录，本轮不擅自移动或删除；若 owner 要求在完成后迁出 `docs/工作记录/`，请同时指定最终归宿。
+
+## 实施回执
+
+- 分支与 commit 清单：分支 `codex/0730-session-edit`，基线 `origin/main@420a8d60816a8624bde9e26341ae85f7fef6698a`。
+  - `8b5916d` `docs: 训练现场编辑批交接件（FR-TR14 S2）`
+  - `2872c2c` `docs: resolve session edit implementation rulings`
+  - `63943d9` `docs: resolve session edit rep range donor`
+  - `a89a991` `feat: add durable session edit reducer`
+  - `1d6230a` `feat: route session edits through draft barrier`
+  - `9a8da61` `feat: add in-session workout editor`
+  - `560858a` `docs: record in-session workout editing`
+  - `8216f95` `docs: report session edit review blockers`
+  - `5415458` `docs: resolve session edit review rulings`
+  - `80a658a` `fix: close session edit review gaps`
+  - `b6f5519` `fix: harden session edit accessibility`
+  - `b4fed09` `fix: reject stale session removal callbacks`
+  - 本节与最终规格收口由当前回执提交承载（hash 见本分支最终 `HEAD`）。
+- A 编辑面：S1 sheet 已演进为统一「本次训练」编辑面；任意正式组 `activeSet`（含当前已有事实、当前为最后一个动作）都可从稳定开放行进入，More 入口仍指向同一 sheet。只读当前动作身份与剩余组 stepper 保留；当前已有事实时只让各「现在练」行按原 S1 守卫降级，移除、加动作、改组数继续可用。移除/撤销/现在练的完整文字 label 均有 `minWidth: 44`、`minHeight: 44` 与矩形 `contentShape`；accessibility Dynamic Type 下动作区改为纵向。终审发现的陈旧位置回调已以 RED→GREEN 关闭：按钮捕获渲染时的完整 `ExerciseSetPlan + position`，提交前复核快照，remove/undo 在下一主队列轮次前禁用重复操作，旧回调不能误删移入同位置的下一动作。
+- B 加动作：任务型 picker 按 `primaryMuscle` 分组，仅列开训时会话器械配置允许、可处方、未废弃且本场未排的目录动作；没有搜索、详情、图片或「存回计划」。插入位置固定为当前动作后，组数固定 3。重量走最近 canonical 工作历史（最近日、同日最后 append、场内最高工作重量）→ 无历史复用 replace 的 LoadGrid 保守起步；bodyweight/band 为 0。reps/RIR/rest 与完整 rep range 只走裁定借值链：首个同主肌群 donor；否则 reps 众数平票取小、rest 众数平票取大、RIR 当前动作、区间取首个命中 reps 众数 donor；理论兜底为当前动作。创建时一次性生成完整 `ExerciseSetPlan` event payload，replay 不重查历史或实时 Settings。完成落盘以普通 `exercises[]` 事实写入，并在顶层可选 `sessionEdits.added[{exerciseId,position}]` 留痕；未编辑时不出字段。
+- C 移除：只有 `activeSet` 中位于当前索引之后、且位置与完整快照同时匹配的 occurrence 可移除；当前动作、已完成前缀、错位/陈旧快照及非 active phase 都 fail closed。remove 不产生 skip event、不问原因、不进疼痛；同 id 的另一 occurrence 可按自身行为合法进入 `skippedExercises`。最终移除写 `sessionEdits.removed[{exerciseId,position}]`，`position` 只审计移除发生位置。sheet 内保留最后一次移除的单层撤销；撤销同样走 typed restore event + durable barrier，关闭 sheet/进程终止后入口失效。成功、失败回滚、编码重放、重复 id 位置语义及陈旧快速回调均有测试。
+- D 组数：`adjustRemainingSets(-1/+1)` 是 typed reducer event；只裁剪/复制当前动作未完成尾部，已完成/已跳过前缀不动；至少保留 1 个剩余组，总组数最多 8。视图在 durable 成功后显式恢复原 `TrainQuickAdjustmentState`，重量/次数/RIR 暂存对 −/+ 两个方向逐字段不变。
+- draft 恢复：S1 移动与 S2 add/remove/restore/adjust 全走既有串行 draft store 的 durable barrier；先排空普通写，再同步确认最终 draft，失败把完整 flow 回滚到事件前。`TrainSessionDraft` 以私有、加性 `sessionConfiguration` 保存排序后的器械集合（显式 unrestricted `nil` 与旧字段缺失可区分）和开训单位；新 draft 恢复用捕获值，旧 draft 才回退当前 profile。完整 payload、队列、组数、移除审计与会话配置随事件重放；撤销入口不恢复。app-hosted `SessionStoreDraftTests` 最终 32/32。
+- golden：不是同源删字段自比较。使用真实临时 `origin/main@420a8d60816a8624bde9e26341ae85f7fef6698a` checkout 生成并冻结四个 fixture：`session-set-plan-no-edits.origin-main.{input,expected}.json` 与 `completed-session-no-edits.origin-main.{input,expected}.json`。当前分支分别重建完整 `SessionSetPlan` surface 与 completed-session storage，按 `.sortedKeys` 编码后逐字节比较；无编辑 completed 输出还显式断言没有 `sessionEdits`。
+- 规格写回：
+  - `docs/REDE_PRD.md` FR-TR14：统一入口、行级降级、冻结配置、事件级 occurrence 语义、quick-adjust 与“真实完成事实进入普通历史但不改算法/长期计划”。
+  - `docs/REDE_iOS_SYSTEM_LOGIC.md` §6.0.3 / §7：双层真相、借值链、session configuration、durable/落盘 open-bag、UI 与 44pt 合同。
+  - `docs/REDE_PRODUCT_COPY_BASELINE.md`：本次训练、移除/撤销、加动作与双语无障碍文案。
+  - `docs/工作记录/2026-07-10-testflight-acceptance-checklist.md` N1/N14：S2 有意入口演进、冻结语义、重复 id、quick-adjust、窄屏/最大字号/VoiceOver 真机项。
+  - `CHANGELOG.md`、`DEV_LOG.md`：用户可见结果、测试/运行证据、独立审查修复与真实残余风险。
+- gate：最终代码输入上运行仓库根 `.claude/quality-gate.cmd`，exit `0`；10 个 Swift 包、8 个 ForgedCard 预算、通用 iOS Simulator build 与白名单 app-hosted 测试全部通过。`RedeTrainingDecision` 完整包 461/461；最终白名单 53/53，其中 `SessionStoreDraftTests` 32/32。xcresult：`~/Library/Developer/Xcode/DerivedData/Rede-fehbzdcxewzuvxgixmetankthjqd/Logs/Test/Test-Rede-2026.07.30_09-32-07--0400.xcresult`。尾部原文：
+
+  ```text
+  ** TEST SUCCEEDED **
+
+  Testing started
+  QUALITY GATE: PASS
+  ```
+
+- 实拍：全部 PNG 在 `.ai-tmp/session-edit/`，MD5 互异；失败态最大字号截图已清理，只保留最终证据。
+  - `2026-07-30-sessionedit-editor.png` — `08732167b07cedcfa060baf3df910791`
+  - `2026-07-30-sessionedit-picker.png` — `32a22639eedc744d2cacf23465757f76`
+  - `2026-07-30-sessionedit-remove-undo.png` — `4161f5fb95d3807ea7df62b41b1c390e`
+  - `2026-07-30-sessionedit-sets-plus.png` — `1009778835068c0b5fcd5ced2dfb1fdd`
+  - `2026-07-30-sessionedit-added-queue.png` — `9402314971c4ec8c0b2b63c220974811`
+  - `2026-07-30-sessionedit-added-card.png` — `cd81c732a9de0c129da0deef68fb8501`
+  - `2026-07-30-sessionedit-restored.png` — `64ae668b19856c8acf39eff8bfae67bd`
+  - `2026-07-30-sessionedit-review-normal.png` — `d4f97321ed218ddbaebc8f61f21fa7c8`
+  - `2026-07-30-sessionedit-review-max-dynamic-type-green.png` — `f9e1f96d7586af0d00d331c561722423`
+  - `2026-07-30-sessionedit-review-narrow-se3.png` — `d2fb503954ce60a6fa9a065632406161`
+  - 启动/呈现复用 `-skipOnboarding -initialTab train -autoStartSession`、`-autoOpenSessionEdit`、`-autoOpenSessionEditPicker` 与 `-autoAdvanceExercises`；强杀用 Simulator 进程终止/重启走真实 draft 恢复，不新增自动写入事实的生产入口。
+- 未尽事项：
+  - 代码层独立终审最终 `P0/P1/P2 = 0`；处方引擎、轮转、verdict、周口径、自动均衡、疼痛保守态、schema/version、`project.pbxproj` 与全部 `Package.swift` 相对基线零改。
+  - iPhone 17 Pro 与最窄可运行 iOS 26.5 机型 iPhone SE 3（375pt）已真 Simulator 通过；旧 320pt iPhone SE 1 设备型与本机唯一 iOS 26.5 runtime 不兼容，CoreSimulator 在创建设备前以 code 403 拒绝，因此没有把 320pt 冒充实测。
+  - Apple 不在 Simulator 提供 VoiceOver；本轮两台登记 iPhone 均离线。因此 VoiceOver 实听/焦点、真手空白命中、触感及长列表滚动手感仍保留在 TestFlight N14，未伪报通过。代码已有稳定 identifier、完整双语 label/hint、成功 announcement、44pt 几何与最大字号布局。
+  - 训练结束后显式「存回计划」仍是后续独立批；本批没有入口。
+  - 主 Simulator 字号已恢复 `large`；本轮临时 iPhone SE 3 Simulator 与临时 checkout/build 目录已按精确目标删除。未 push、未开 PR。
