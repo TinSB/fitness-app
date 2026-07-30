@@ -159,6 +159,59 @@ final class OccurrenceCompatibilityIntegrationTests: XCTestCase {
         )
     }
 
+    func testFactBearingSwapFollowedByZeroFactSwapKeepsChainTerminalAndWarmupGate() throws {
+        var flow = try pushFlow()
+        flow.logSet(CompletedSetObservation(
+            weightKg: 60, reps: 8, rir: 2, painReported: false
+        ))
+        flow.restFinished()
+
+        flow.replaceCurrentExercise(with: "db-bench-press")
+        XCTAssertFalse(flow.isWarmingUp, "the first fact-bearing replacement must not reopen warm-up")
+
+        flow.replaceCurrentExercise(with: "smith-bench-press")
+        XCTAssertFalse(
+            flow.isWarmingUp,
+            "a zero-fact follow-up replacement is still downstream of the slot's completed fact"
+        )
+        flow.logSet(CompletedSetObservation(
+            weightKg: 55, reps: 10, rir: 2, painReported: false
+        ))
+        flow.requestFinish()
+        flow.confirmEnd(reason: .timeUp)
+
+        let session = completedSession(
+            from: flow,
+            id: "sticky-split-zero-fact-middle",
+            dateISO: "2026-07-24"
+        )
+        XCTAssertEqual(
+            session.exercises.map(\.exerciseId),
+            ["bench-press", "smith-bench-press"],
+            "the zero-fact middle action must not manufacture a completed occurrence"
+        )
+
+        let input = try decisionInput(
+            history: [.object(session.storage)],
+            todayISO: "2026-07-29"
+        )
+        let next = try XCTUnwrap(TodayPrescriptionEngine.plan(
+            input: input,
+            verdict: trainVerdict,
+            dayCodeOverride: "full-a"
+        ))
+        let horizontalPress = try XCTUnwrap(next.exercises.first {
+            ExerciseCatalog.minimal.entry(id: $0.exerciseId)?.movementPattern
+                == "horizontal-press"
+        })
+
+        XCTAssertEqual(
+            horizontalPress.exerciseId,
+            "smith-bench-press",
+            "FR-TR6 sticky must follow the A→B→C terminal even when B logged no fact"
+        )
+    }
+
     func testAdHocSamePatternExerciseDoesNotTakeOverReplacementStickySlot() throws {
         var flow = try pushFlow()
         flow.addExercise(adHocExercisePlan())
