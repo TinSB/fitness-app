@@ -79,6 +79,27 @@ public enum PlanCustomizationWriteError: Error, Equatable {
     case emptyExerciseList        // 自定义当日清单不得为空（空=应走 remove 回退默认）
     case emptyExerciseId
     case emptyDaySequence
+    case planCustomizationNotObject
+    case dayPlansNotObject
+}
+
+/// FR-TR14「把今天存进计划」的窄写闸决定。调用方只能读取同一事务刚 load 的 AppData
+/// 并返回三种意图；真正的 canonical mutation 始终由 CanonicalSessionWriter 执行。
+public enum CompletedSessionPlanWriteDecision: Equatable, Sendable {
+    case noOp
+    case writeCustom(dayCode: String, exerciseIds: [String])
+    case clearCustom(dayCode: String)
+}
+
+/// 原子 compare-and-apply 的可观察结果。`didWrite == false` 时没有 gate / backup / save，
+/// `dayCode` 与 `previousDayPlanRaw` 也都是 nil，`didCreateDayPlansContainer` 为 false，
+/// 调用方不得显示假成功。
+public struct CompletedSessionPlanWriteResult: Equatable, Sendable {
+    public let didWrite: Bool
+    public let dayCode: String?
+    public let previousDayPlanRaw: JSONValue?
+    public let didCreateDayPlansContainer: Bool
+    public let appData: AppData
 }
 
 public enum PlanAdjustmentWriteError: Error, Equatable {
@@ -643,6 +664,171 @@ public struct CanonicalSessionWriter {
             storage["planCustomization"] = Self.cleanedCustomization(custom)
             return try AppData(decoding: .object(storage))
         }
+    }
+
+    /// FR-TR14「把今天存进计划」：在唯一 gated mutation 内读取最新 canonical 状态、
+    /// 让上层只读 resolver 重算目标/当前构成，再由本 writer 执行 no-op / 整日 exerciseId
+    /// 覆盖 / 清除覆盖。实际落盘前捕获当下 raw dayPlans[dayCode]，供单步 raw undo 使用。
+    ///
+    /// resolver 不持有 mutation 能力，RedePersistence 也不依赖训练引擎；合法性与构成比较仍由
+    /// 持有 clean view/目录的上层完成。若 resolver 返回的写决定实际不改变 bytes 语义，
+    /// 本层仍降为 no-op，绝不 gate、backup、save 或报告成功。
+    public func compareAndApplyCompletedSessionPlan(
+        resolve: (_ latest: AppData) throws -> CompletedSessionPlanWriteDecision
+    ) throws -> CompletedSessionPlanWriteResult {
+        var didWrite = false
+        var writtenDayCode: String?
+        var previousDayPlanRaw: JSONValue?
+        var didCreateDayPlansContainer = false
+
+        let appData = try performGatedMutation(skipSaveIfUnchanged: true) { current in
+            let decision = try resolve(current)
+            switch decision {
+            case .noOp:
+                return current
+
+            case .writeCustom(let dayCode, let exerciseIds):
+                guard !dayCode.isEmpty else { throw PlanCustomizationWriteError.emptyDayCode }
+                guard !exerciseIds.isEmpty else { throw PlanCustomizationWriteError.emptyExerciseList }
+                guard exerciseIds.allSatisfy({ !$0.isEmpty }) else {
+                    throw PlanCustomizationWriteError.emptyExerciseId
+                }
+
+                var storage = current.storage
+                var (custom, dayPlans) = try Self.mutablePlanCustomization(in: storage)
+                let writeCreatedDayPlansContainer = custom["dayPlans"] == nil
+                let rawBefore = dayPlans[dayCode]
+                dayPlans[dayCode] = .object([
+                    "exercises": .array(
+                        exerciseIds.map { .object(["exerciseId": .string($0)]) }
+                    ),
+                ])
+                custom["dayPlans"] = .object(dayPlans)
+                storage["planCustomization"] = .object(custom)
+                let candidate = try AppData(decoding: .object(storage))
+                guard candidate != current else { return current }
+
+                didWrite = true
+                writtenDayCode = dayCode
+                previousDayPlanRaw = rawBefore
+                didCreateDayPlansContainer = writeCreatedDayPlansContainer
+                return candidate
+
+            case .clearCustom(let dayCode):
+                guard !dayCode.isEmpty else { throw PlanCustomizationWriteError.emptyDayCode }
+
+                var storage = current.storage
+                var (custom, dayPlans) = try Self.mutablePlanCustomization(in: storage)
+                guard let rawBefore = dayPlans[dayCode] else { return current }
+                dayPlans[dayCode] = nil
+                custom["dayPlans"] = .object(dayPlans)
+                storage["planCustomization"] = Self.cleanedCustomizationAfterRawDayRemoval(custom)
+                let candidate = try AppData(decoding: .object(storage))
+                guard candidate != current else { return current }
+
+                didWrite = true
+                writtenDayCode = dayCode
+                previousDayPlanRaw = rawBefore
+                return candidate
+            }
+        }
+
+        return CompletedSessionPlanWriteResult(
+            didWrite: didWrite,
+            dayCode: didWrite ? writtenDayCode : nil,
+            previousDayPlanRaw: didWrite ? previousDayPlanRaw : nil,
+            didCreateDayPlansContainer: didWrite && didCreateDayPlansContainer,
+            appData: appData
+        )
+    }
+
+    /// FR-TR14 单步撤销：把写入瞬间捕获的 raw `dayPlans[dayCode]` 节点原样放回；
+    /// nil 表示该键写前不存在，撤销即只移除该 dayCode。全程不走 typed decode→encode，
+    /// 因而目标节点内未知 dayPlan 键、未知 item 键、typed getter 跳过的脏 item 均可恢复。
+    /// 其他 dayCode、daySequence 与未知/脏 sibling 原样保留。
+    @discardableResult
+    public func restoreCompletedSessionPlanDayRaw(
+        dayCode: String,
+        snapshot: JSONValue?,
+        didCreateDayPlansContainer: Bool
+    ) throws -> AppData {
+        guard !dayCode.isEmpty else { throw PlanCustomizationWriteError.emptyDayCode }
+
+        return try performGatedMutation(skipSaveIfUnchanged: true) { current in
+            var storage = current.storage
+            var (custom, dayPlans) = try Self.mutablePlanCustomization(in: storage)
+
+            if let snapshot {
+                guard dayPlans[dayCode] != snapshot else { return current }
+                dayPlans[dayCode] = snapshot
+                custom["dayPlans"] = .object(dayPlans)
+                storage["planCustomization"] = .object(custom)
+            } else {
+                guard dayPlans[dayCode] != nil else { return current }
+                dayPlans[dayCode] = nil
+                custom["dayPlans"] = .object(dayPlans)
+                storage["planCustomization"] = Self.customizationAfterNilRawUndo(
+                    custom,
+                    removeCreatedDayPlansContainerIfEmpty: didCreateDayPlansContainer
+                )
+            }
+
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
+    /// nil raw undo 只移除目标 dayCode。写前已存在的 `dayPlans: {}` 与所有 sibling
+    /// （包括 `daySequence: []`）都必须逐字节保留；只有 compare-and-apply 明确记录
+    /// 为本次写入新建的 dayPlans 容器，才可在撤销后为空时清理。
+    private static func customizationAfterNilRawUndo(
+        _ original: [String: JSONValue],
+        removeCreatedDayPlansContainerIfEmpty: Bool
+    ) -> JSONValue? {
+        var custom = original
+        if removeCreatedDayPlansContainerIfEmpty,
+           custom["dayPlans"]?.asObject?.isEmpty == true {
+            custom["dayPlans"] = nil
+        }
+        return custom.isEmpty ? nil : .object(custom)
+    }
+
+    /// 新的 FR-TR14 raw/atomic 入口对已存在但不是 object 的容器 fail closed；它不会像
+    /// 普通「从无到有」writer 一样用空 object 覆盖读不懂的用户数据。
+    private static func mutablePlanCustomization(
+        in storage: [String: JSONValue]
+    ) throws -> (custom: [String: JSONValue], dayPlans: [String: JSONValue]) {
+        let custom: [String: JSONValue]
+        if let existing = storage["planCustomization"] {
+            guard let object = existing.asObject else {
+                throw PlanCustomizationWriteError.planCustomizationNotObject
+            }
+            custom = object
+        } else {
+            custom = [:]
+        }
+
+        let dayPlans: [String: JSONValue]
+        if let existing = custom["dayPlans"] {
+            guard let object = existing.asObject else {
+                throw PlanCustomizationWriteError.dayPlansNotObject
+            }
+            dayPlans = object
+        } else {
+            dayPlans = [:]
+        }
+        return (custom, dayPlans)
+    }
+
+    /// FR-TR14 clear 只清理由本操作移空的 `dayPlans` 容器。写前存在的任何 sibling
+    /// （包括 `daySequence: []` 与未知键）必须原样保留，供 non-nil raw undo 完整恢复。
+    private static func cleanedCustomizationAfterRawDayRemoval(
+        _ original: [String: JSONValue]
+    ) -> JSONValue? {
+        var custom = original
+        if custom["dayPlans"]?.asObject?.isEmpty == true {
+            custom["dayPlans"] = nil
+        }
+        return custom.isEmpty ? nil : .object(custom)
     }
 
     /// 写回 planCustomization 容器，但若它全空（无 dayPlans 或 dayPlans 空、且无 daySequence）则返回

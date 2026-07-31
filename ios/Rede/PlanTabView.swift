@@ -163,7 +163,9 @@ struct PlanTabView: View {
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: adjustment)
         // 写失败提示出现/消失也淡入（与今日页 coachSaveErrorText 对等，审查 M-1）。
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: sessionStore.planSaveErrorText)
-        .task {
+        // FR-TR14：Today「存进计划」/撤销成功后 revision 变化，显式重读 projection；
+        // 失败不递增。即使将来 tab 改为常驻，也不依赖当前 switch 重建的偶然刷新。
+        .task(id: sessionStore.completedSessionPlanRevision) {
             await reload()
             // 截图/UI 验证钩子（同 RootTabView -autoStartSession 先例）：
             // simctl launch ... -initialTab plan -autoOpenPlanEditor push-a | -autoOpenDaySequenceEditor

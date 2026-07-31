@@ -27,6 +27,23 @@ final class CompletedSessionBuilderTests: XCTestCase {
         return data
     }
 
+    private func encodedWithoutFinalExerciseOrder(_ session: TrainingSession) throws -> Data {
+        var storage = session.storage
+        storage.removeValue(forKey: "finalExerciseOrder")
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        return try encoder.encode(storage)
+    }
+
+    private func finalExerciseOrder(in session: TrainingSession) -> [String]? {
+        guard let values = session.storage["finalExerciseOrder"]?.asArray else { return nil }
+        let ids = values.compactMap { value -> String? in
+            guard case let .string(id) = value else { return nil }
+            return id
+        }
+        return ids.count == values.count ? ids : nil
+    }
+
     private func finishedFlow() throws -> TrainFlowState {
         let input = try TestSupport.makeInput(
             appDataJSON: #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}}"#,
@@ -82,6 +99,26 @@ final class CompletedSessionBuilderTests: XCTestCase {
         XCTAssertEqual(
             session.storage["skippedSets"],
             .array([.object(["exerciseId": .string("bench-press"), "setIndex": .int(2), "reason": .string("equipmentBusy")])])
+        )
+    }
+
+    func testNoSessionEditsStillPersistFinalExerciseOrder() throws {
+        let flow = try finishedFlow()
+        let session = CompletedSessionBuilder.build(
+            from: flow,
+            sessionId: "no-edits-final-order",
+            dateISO: "2026-06-09",
+            startedAtISO: "t0",
+            finishedAtISO: "t1",
+            durationMinutes: 47
+        )
+
+        XCTAssertTrue(flow.addedExercises.isEmpty)
+        XCTAssertTrue(flow.removedExercises.isEmpty)
+        XCTAssertEqual(
+            finalExerciseOrder(in: session),
+            flow.plan.exercises.map(\.exerciseId),
+            "final order is a session fact even when no add/remove audit exists"
         )
     }
 
@@ -276,6 +313,14 @@ final class CompletedSessionBuilderTests: XCTestCase {
         XCTAssertEqual(session.exercises[2].storage["replacementRole"], .string("actual"))
         XCTAssertEqual(session.exercises[2].storage["originalExerciseId"], .string("db-bench-press"))
         XCTAssertEqual(session.exercises[2].storage["actualExerciseId"], .string("bench-press"))
+        let expectedFinalOrder = flow.plan.exercises.map(\.exerciseId)
+        XCTAssertEqual(expectedFinalOrder.filter { $0 == "bench-press" }.count, 1)
+        XCTAssertFalse(expectedFinalOrder.contains("db-bench-press"))
+        XCTAssertEqual(
+            finalExerciseOrder(in: session),
+            expectedFinalOrder,
+            "A→B→A fact occurrences must not contaminate the final plan queue"
+        )
     }
 
     func testMovingFutureExerciseAfterReplacementKeepsEarlierFactsAheadOfMovedExercise() throws {
@@ -463,13 +508,11 @@ final class CompletedSessionBuilderTests: XCTestCase {
         XCTAssertEqual(exercise.storage["actualExerciseId"], .string("db-bench-press"))
         XCTAssertNil(exercise.storage["replacementRole"], "zero-fact replacement keeps the existing bytes")
 
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys]
-        let encoded = try encoder.encode(session.storage)
+        let encoded = try encodedWithoutFinalExerciseOrder(session)
         XCTAssertEqual(
             encoded,
             Data(#"{"completed":true,"date":"2026-06-09","durationMin":10,"endReason":"fatigue","exercises":[{"actualExerciseId":"db-bench-press","exerciseId":"db-bench-press","id":"s-db-bench-press","originalExerciseId":"bench-press","sets":[{"completionStatus":"completed","done":true,"exerciseId":"db-bench-press","id":"s-db-bench-press-1","reps":8,"rir":2,"setIndex":1,"weight":30}]}],"finishedAt":"t1","id":"s","startedAt":"t0","templateId":"push-a"}"#.utf8),
-            "zero-fact replacement must remain byte-identical to the frozen pre-fix output"
+            "after removing finalExerciseOrder, zero-fact replacement must remain byte-identical to the frozen pre-fix output"
         )
     }
 
@@ -493,12 +536,10 @@ final class CompletedSessionBuilderTests: XCTestCase {
             from: flow, sessionId: "s", dateISO: "2026-06-09",
             startedAtISO: "t0", finishedAtISO: "t1", durationMinutes: 10
         )
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys]
         XCTAssertEqual(
-            try encoder.encode(session.storage),
+            try encodedWithoutFinalExerciseOrder(session),
             Data(#"{"completed":true,"date":"2026-06-09","durationMin":10,"endReason":"fatigue","exercises":[{"actualExerciseId":"smith-bench-press","exerciseId":"smith-bench-press","id":"s-smith-bench-press","originalExerciseId":"db-bench-press","sets":[{"completionStatus":"completed","done":true,"exerciseId":"smith-bench-press","id":"s-smith-bench-press-1","reps":8,"rir":2,"setIndex":1,"weight":50}]}],"finishedAt":"t1","id":"s","startedAt":"t0","templateId":"push-a"}"#.utf8),
-            "a slot with no prior facts keeps the existing terminal-only zero-fact bytes"
+            "after removing finalExerciseOrder, a slot with no prior facts keeps the existing terminal-only zero-fact bytes"
         )
     }
 
@@ -607,6 +648,14 @@ final class CompletedSessionBuilderTests: XCTestCase {
             } ?? true,
             "neutral removal must never become a skipped exercise"
         )
+        let expectedFinalOrder = flow.plan.exercises.map(\.exerciseId)
+        XCTAssertTrue(expectedFinalOrder.contains(added.exerciseId))
+        XCTAssertFalse(expectedFinalOrder.contains(removed.exercise.exerciseId))
+        XCTAssertEqual(
+            finalExerciseOrder(in: session),
+            expectedFinalOrder,
+            "add/remove edits persist the resulting composition and order"
+        )
     }
 
     func testDuplicateExerciseIdMayAuditOneRemovedOccurrenceAndSkipAnother() throws {
@@ -659,6 +708,39 @@ final class CompletedSessionBuilderTests: XCTestCase {
                 ]),
             ]),
             "event-level mutual exclusion permits another occurrence with the same id to be skipped"
+        )
+    }
+
+    func testFinalExerciseOrderKeepsFirstOccurrenceOfDuplicatePlanInputs() throws {
+        let input = try TestSupport.makeInput(
+            appDataJSON: #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}}"#,
+            todayISO: "2026-06-09"
+        )
+        let verdict = TodayVerdictEngine.evaluate(input)
+        let base = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict))
+        let first = try XCTUnwrap(base.exercises.first)
+        let second = try XCTUnwrap(base.exercises.dropFirst().first)
+        var flow = TrainFlowState(prescription: TodayPrescription(
+            dayCode: base.dayCode,
+            exercises: [first, second, first],
+            dayReasons: base.dayReasons
+        ))
+        flow.requestFinish()
+        flow.confirmEnd(reason: .timeUp)
+
+        let session = CompletedSessionBuilder.build(
+            from: flow,
+            sessionId: "duplicate-final-order",
+            dateISO: "2026-06-09",
+            startedAtISO: "t0",
+            finishedAtISO: "t1",
+            durationMinutes: 1
+        )
+
+        XCTAssertEqual(
+            finalExerciseOrder(in: session),
+            [first.exerciseId, second.exerciseId],
+            "duplicate plan inputs retain their first position and drop later occurrences"
         )
     }
 

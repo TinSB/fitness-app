@@ -161,12 +161,32 @@ struct RootTabView: View {
         // -autoAdvanceExercises N 开训并打满前 N 个动作（落在第 N+1 个动作，验证今日页橙色条跟随进度）。
         .task {
             let args = ProcessInfo.processInfo.arguments
+            let preparesSaveToPlan = args.contains("-autoPrepareSaveToPlan")
+            let savesToPlan = args.contains("-autoSaveSessionToPlan")
             let advanceTarget = args.firstIndex(of: "-autoAdvanceExercises").flatMap { idx -> Int? in
                 args.indices.contains(idx + 1) ? Int(args[idx + 1]) : nil
             }
-            if args.contains("-autoStartSession") || args.contains("-autoCompleteSession") || args.contains("-autoPartialSession") || advanceTarget != nil {
+            if args.contains("-autoStartSession")
+                || args.contains("-autoCompleteSession")
+                || args.contains("-autoPartialSession")
+                || preparesSaveToPlan
+                || savesToPlan
+                || advanceTarget != nil {
                 await sessionStore.loadToday()
                 sessionStore.startSession()
+            }
+            // FR-TR14 Simulator 验证脚手架：经真实会话编辑 seam 加入一个该日默认未排动作、
+            // 移除一个未来动作，覆盖最长「加+删」事实句；再由下方同一完成/落盘路径生成候选。
+            // 只在显式 launch argument 下生效，不在 Train 增加任何入口。
+            if preparesSaveToPlan || savesToPlan,
+               let exerciseId = sessionStore.sessionEditCandidates.first?.id,
+               let addition = sessionStore.makeSessionEditExercisePlan(exerciseId: exerciseId) {
+                _ = sessionStore.applyDurably(.addExercise(addition))
+            }
+            if preparesSaveToPlan || savesToPlan,
+               let flow = sessionStore.flow,
+               let removal = flow.removal(at: flow.plan.exercises.count - 1) {
+                _ = sessionStore.applyDurably(.removeExercise(removal))
             }
             if let target = advanceTarget {
                 var guardCounter = 0 // 防御：异常状态下不空转
@@ -198,7 +218,7 @@ struct RootTabView: View {
                     painReported: false
                 )))
             }
-            if args.contains("-autoCompleteSession") {
+            if args.contains("-autoCompleteSession") || preparesSaveToPlan || savesToPlan {
                 var guardCounter = 0 // 防御：异常状态下不空转（计划为空等）
                 while let flow = sessionStore.flow, flow.phase != .summary, guardCounter < 500 {
                     guardCounter += 1

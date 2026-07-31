@@ -91,6 +91,12 @@ public enum CompletedSessionBuilder {
             exercises.append(.object(exercise))
         }
 
+        var seenExerciseIds: Set<String> = []
+        let finalExerciseOrder: [JSONValue] = flow.plan.exercises.compactMap { exercise in
+            seenExerciseIds.insert(exercise.exerciseId).inserted
+                ? .string(exercise.exerciseId)
+                : nil
+        }
         var storage: [String: JSONValue] = [
             "id": .string(sessionId),
             "date": .string(dateISO),
@@ -100,6 +106,8 @@ public enum CompletedSessionBuilder {
             "completed": .bool(true),
             "templateId": .string(flow.plan.dayCode),
             "exercises": .array(exercises),
+            // 保存时的最终单日队列事实；与 customSlots 一致，重复 id 保留首次。
+            "finalExerciseOrder": .array(finalExerciseOrder),
         ]
         if let endReason = flow.endReason {
             storage["endReason"] = .string(endReason.rawValue)
