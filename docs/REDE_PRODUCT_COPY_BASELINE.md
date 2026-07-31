@@ -1,7 +1,7 @@
 # Rede Product Copy Baseline — 产品文案基底
 
 > **状态:** Canonical / living copy baseline
-> **最后更新:** 2026-07-29（FR-PL3/PL4 双向频率提案与撤销栈文案合同已实现；生产购买仍关闭）
+> **最后更新:** 2026-07-30（FR-TR14 练完存进计划双语合同已实现；生产购买仍关闭）
 > **适用范围:** 产品定位、v0 / 原型生成、App Store 文案、onboarding、paywall、UI microcopy、空状态、错误、通知、双语 locale
 > **权威边界:** 本文定义 Rede 如何说话,视觉品牌与原型画面方向以 `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md` 为准。本文不授权任何新功能、网络、云、HealthKit 范围、医疗判断或 source-of-truth 变更。功能与架构边界以 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 和 `docs/REDE_iOS_SYSTEM_LOGIC.md` 为准。
 
@@ -302,6 +302,22 @@ Today 不应像 dashboard。它要像训练前 30 秒的判断。
 
 **练完态当日总结（FR-T6，2026-07-05 拍板；K3/K4 推广 2026-07-16）**：「今天已练完」态下加当日总结块，双语基线——区头「今天这场 / Today's session」、总量标签「总量 / Volume」（数值千分位 + 单位）、meta 行「N 动作 · N 组 · 时长档」（复用分享卡 stat 标签同词）、PR 徽章复用「刷新纪录 / New PR」、分享入口「分享这场训练 / Share this workout」。休息日/回归日同块显示最近一场，区头「上一场 · 7月14日 / Last session · Jul 14」（日期 = 场次真实日期）。总结块下「下一场　全身 B · 6 个动作 / Next session…」预告行；练完态「本周练 N 天 · 合计 X kg」（单位=天，ISO 周，与分段条同账）。**去空虚化第一批其余基线（2026-07-16）**：训练 tab 待机「今天这场 / 上次 · 7月13日　全身 C · 3,450 kg · 9 组」；计划页「动作库 · 165 个动作」「上次 · 7月12日」「已练 5 周 · 14 天」。全部无句号；数据缺失整块/整行不显示，不写占位假话。
 
+**练完存进计划（FR-TR14，2026-07-30）**：入口只在 Today 的已完成场次块出现，且只有今天的最终动作顺序与该训练日当前有效构成确实不同时才显示；Train 和训练小结 sheet 零入口。第一行只陈述今天发生的构成事实，第二行是明确动作，不说系统优化、不建议用户应该长期这么练。精确双语基线：
+
+| 位置 / 分支 | 中文 | English |
+|---|---|---|
+| 入口动作 | 存进计划 | Save to plan |
+| 成功收据 | 已存进计划 | Saved to plan |
+| 成功收据动作 | 撤销 | Undo |
+| 无障碍提示 | 将今天的动作和顺序存进计划 | Save today's exercises and order to your plan |
+| 只新增（单项示例） | 今天加了哑铃弯举 | You added Dumbbell curl today |
+| 只移除（单项示例） | 今天去掉了面拉 | You removed Face pull today |
+| 新增 + 移除（单项示例） | 今天加了哑铃弯举，去掉了面拉 | You added Dumbbell curl and removed Face pull today |
+| 纯重排 / 换动作且无 add/remove 审计 | 今天调整了动作顺序 | You adjusted today's exercise order |
+| 写入 / 撤销失败 | 暂时无法存进计划　请再试一次 | Couldn't save to plan · Try again |
+
+同一侧多于一个动作时只报「加了 N 个动作 / added N exercises」「去掉了 N 个动作 / removed N exercises」，不逐名堆叠。`sessionEdits` 只决定 add/remove 的事实句；是否显示入口由最终构成差异决定。全部微文案无句号、无感叹号、零说教。成功后「已存进计划」与「撤销」是同一约 5 秒收据里的两个元素，不拼成新长句；失败是独立计划写入错误，禁止误用「训练记录仍在」语境。
+
 **MLE 消费面（2026-07-30）**只陈述可核对事实。Today 当天升级行为「背部 Lv.8 → Lv.9 / Back Lv.8 → Lv.9」，多项折叠尾句「等 N 处 / N updates total」；是否可点由事件时质量事实决定，纯文字内容不因资格变化而改口。三张新增卡的标题与事实行固定为：「等级变化 / Level update」「均衡改善 / Balance improved」「力量里程碑 / Strength milestone」「近 4 周训练 N 天 / N training days in 4 weeks」「均衡度 A → B / Balance A → B」「正在补足 X / Building X」。不得出现置信度、最弱、恭喜、干得漂亮、感叹号、句号或破折号；低资格事实行不得补「不可分享」解释小字。
 4. 为什么。
 5. 从哪里开始。
@@ -350,6 +366,8 @@ Train 是最克制的页面。用户在器械旁,手上可能有汗,注意力在
 **本次训练编辑（FR-TR14 S1+S2，2026-07-30）**：入口与 sheet 标题统一为「本次训练 / This workout」，分区「当前动作 / Current exercise」「接下来 / Up next」，S1 行操作仍为「现在练 / Train now」。S2 新动作只有「移除 / Remove」「加一个动作 / Add an exercise」与 sheet-local「撤销 / Undo」；当前动作组数事实写「还剩 N 组 / N sets left」，−/+ 的 VoiceOver 分别为「减少一组 / Remove one set」「增加一组 / Add one set」。任务型选择器返回行为为「返回本次训练 / Back to this workout」；无候选时写「没有可加入的动作 / No exercises to add」与「当前器械下的动作都已在本次训练中 / Every available exercise is already in this workout」。入口 VoiceOver hint 固定为「调整本次训练的动作与组数 / Edit exercises and sets for this workout」，「现在练」可补「当前动作会顺延到稍后 / The current exercise moves later」。
 
 成功 announcement 只陈述已发生事实：「已切换到{动作名} / Now training {exercise name}」「已加入{动作名} / Added {exercise name}」「已移除{动作名} / {Exercise name} removed」「已恢复{动作名} / Restored {exercise name}」「当前动作还剩 N 组 / N sets left for current exercise」。写入失败只在当下显示并播报「暂时无法调整　请再试一次 / Couldn’t update this workout · Try again」，不得假成功、弹确认或清掉尚未提交的快改；以上训练微文案均不加句号。
+
+Train 与训练小结 sheet 不写「存进计划 / Save to plan」；该动作只有训练完成并落盘后，才可按 §5.1 的构成差异合同出现在 Today 练完态。
 
 **教学提示一次性策略（2026-07-05 拍板）**：「点重量可调整　之后的建议随之更新」是教学文案不是状态信息——只在「没用过快改入口 且 累计完成 < 3 场」时显示，任一条件破即永久消失；说明书不驻留界面。「按计划目标开始」是状态行（完成组后变为「上组接近力竭，从 X 回调」等），不适用此策略。
 

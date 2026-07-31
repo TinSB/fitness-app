@@ -6,6 +6,22 @@
 
 ---
 
+## 2026-07-30 · 练完觉得今天这套更顺手，现在能一键存进对应训练日计划
+
+**用户目标**：训练现场临时加动作、删动作或换顺序，本来只能活这一场；如果今天实练后觉得这套更适合，以前还要再去计划页手动重做。目标是把已经发生的真实选择交还给用户决定是否长期采用，同时绝不让训练中的低摩擦界面变成计划编辑器。
+
+**做了什么**：每次完成训练现在会额外记住最终执行队列的动作顺序，并按单日计划合同保序去重、保留第一次出现的 exerciseId。回到 Today 后，系统用这条完成场自己的 `templateId` 找到实际训练日，再把最终构成与该日当前有效构成直接比较；只有存回真的会改变什么时才出现入口。`sessionEdits` 只负责把事实写成「今天加了 X」「去掉了 Y」或两者组合；纯重排没有增删审计，也会诚实显示「今天调整了动作顺序」。什么都没改、或最后又改回当前计划时，整行完全不出现。这里的 Today 候选只负责显示和文案；用户真正点击时，唯一写闸会在同一次事务里重新读取最新计划、重算目标与当前构成，已经等价就不写、不备份、不假报成功，仍有差异才保存。
+
+**你能看到什么**：训练中和训练小结都没有新按钮；完成落盘、回到 Today 练完态后，差异行才显示「存进计划」。点一下只保存动作与顺序，今天做了几组、多重、多少次、RIR 和休息都不会写死；下次重量与进阶仍由原引擎按历史判断。这里的比较对象不是裸默认模板，而是原引擎按最新 clean 数据真正投影出的下场构成，包含 sticky 与永久替换：它们已经让下场等于今天时入口不会误显示；今天明确改回默认、但 overlay 下次仍会拉走时，则写一份必要的 `userPinned` 默认日来兑现用户意图，不会静默清掉替换或 sticky。只有移除该日自定义后真实构成仍等于目标，才清掉冗余自定义。成功后约 5 秒显示「已存进计划」并提供「撤销」；撤销恢复的是**实际写入瞬间**那个训练日的 raw dayPlan 节点，不是打开 Today 时的陈旧 typed 副本——入口出现后若你从别处合法改过计划，它会以那份最新状态为撤销基线；未知字段和脏 item 也不会被 typed 往返吃掉。原先没有该日节点时，撤销只移除该 dayCode；只有本次写入确实创建了空 `dayPlans` 容器才清理它，写前已有的空 `dayPlans:{}`、空 `daySequence:[]` 与其他 sibling 均原样保留。失败只说「暂时无法存进计划　请再试一次」，不会误导成刚完成的训练没保存。
+
+**一个精确例外**：计划编辑器仍不能凭空给某训练日添加默认模板没有的新 pattern；但一场已经真实完成并落盘的训练，可以由用户从 Today 明确存回这类动作。现有 `customSlots` 会用 8 次下限、12 次上限、90 秒休息、RIR 2.0 的确定性槽参数兜底，重量仍读取真实历史。为此没有改 `TodayPrescriptionEngine`、轮转、verdict、疼痛保守态、sticky 或替换链，也没有改 schema、版本、工程文件和 `TrainTabView`。
+
+**证据**：测试严格先红后绿；最终 `RedePersistence` 110/110、`RedeTrainingDecision` 494/494、`RedeL10n` 143/143、App `SessionStoreDraftTests` 52/52。raw 测试锁住未知 dayPlan sibling、未知 item key、typed getter 跳过的脏 item，以及写前空 `daySequence:[]` / 空 `dayPlans:{}` 在 writeCustom→nil undo 与 clearCustom→non-nil undo 两路均按确定性 JSON bytes 原样恢复；竞态测试锁住“外部编辑后已等价 no-op / 仍有差异并捕获最新 raw 前值 / 已被别处写成目标同值 no-op”；跨层测试锁住永久替换与 sticky 已同构时不显示，以及 B→默认 A 后由 `userPinned A` 压过 overlay、下场真实仍为 A。唯一因新字段重捕获的 fixture 是 `completed-session-no-edits.origin-main.expected.json`；删掉 `finalExerciseOrder` 后，排序紧凑 JSON SHA-256 baseline/current 均为 `fc82ff51f27d1c4c97b4098088d7a40e433cb3aa87cd953e20f54f3743dd4efa`，scalar path/value stream SHA-256 baseline/current 均为 `f80463e144a5a5f9ea8bde9b0acacb18a4dc456e80833474f98a732937c58db3`，证明其余字段零差异。权威 `.claude/quality-gate.cmd` exit 0：10 个 Swift 包、通用 Simulator build、App 宿主 73/73，并输出 `QUALITY GATE: PASS`。专用 iPhone 17 Pro / iOS 26.5 Simulator 四张最终实拍 MD5 分别为 `e09e22bb1360d28cb504c013195201a3`、`907c4f7f81296ac0fa4f0aa797c3d9df`、`d1206e6108e7807734fa7b6c4628c563`、`773e51163df7b3d629b27acb7c0d106f`，覆盖入口、撤销条、计划编辑器同构与 no-op 无入口；canonical 实读确认完成场 `finalExerciseOrder` 与 `planCustomization.dayPlans.upper.exercises` 顺序逐项相同且只写 exerciseId。
+
+**风险与下一步**：`finalExerciseOrder` 是 open-bag 加性字段、无 schema bump；旧历史不迁移，本功能只对能提供该字段的新完成场显示。新增的 compare-and-apply/raw-restore 是同一个 `CanonicalSessionWriter` 上的 FR-TR14 窄能力，既有四个计划编辑 writer 的签名与语义不变。即时撤销只有约 5 秒，过期后仍可去计划编辑器修改或恢复默认。TestFlight N16 仍未在真机打勾；不把本地自动化与 Simulator 冒充发布验收。不 push、不开 PR。
+
+---
+
 ## 2026-07-30 · 中途换动作事实链五次停线闭合，本地恢复 GO
 
 **用户目标**：卧推做到第 2 组后遇到器械占用或不适，用户需要当场换成哑铃卧推；前两组卧推不能从历史消失，也不能冒充成哑铃卧推。真实健身房还会连续遇到器械占用、只跳过替代动作，或在「本次训练」里移除/重加动作；这些组合也必须保持事实诚实、撤销准确，不能靠禁止用户操作绕开。
