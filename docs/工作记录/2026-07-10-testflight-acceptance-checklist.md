@@ -136,7 +136,7 @@
     6. 让入口出现后先从计划编辑器修改同一天，再回 Today 点击：若当前有效构成已等于目标或已经由别处写成同值，入口应刷新消失且没有成功收据；若仍不同，存回后点撤销应恢复刚才那次外部编辑后的最新构成，而不是 Today 最初加载时的旧构成。
     7. 永久 `A→B` 生效且本场零编辑时，Today 不应显示入口；last-actual sticky 已让下场同构时同样不显示。随后在永久 `A→B` 下把本场 B 改回默认 A：存回后 substitution 表仍保留，但该日写入 userPinned A，下一场真实处方必须仍是 A。
 
-    **当前本地证据**：Persistence raw/atomic 完整包 110/110、`RedeTrainingDecision` 494/494、`RedeL10n` 143/143、App 定向 52/52；权威门禁覆盖全部 10 个 Swift 包、通用 Simulator build 与 App 宿主 73/73，末行 `QUALITY GATE: PASS`。测试覆盖未知 dayPlan/item 键、脏 item、空 `daySequence`/`dayPlans` 在写入与清除两种 raw 撤销路径的 bytes 恢复，入口出现后外部编辑的三条原子分支，以及 sticky/substitution 的真实构成与条件收敛。专用 iPhone 17 Pro / iOS 26.5 Simulator 已重捕入口、撤销条、计划编辑器与 no-op 四态；本项仍未在 TestFlight 真机执行，保持 `[ ]`。
+    **当前本地证据**：Persistence raw/atomic 完整包 110/110、`RedeTrainingDecision` 494/494、`RedeL10n` 144/144、App `SessionStoreDraftTests` 60/60；最终权威门禁覆盖全部 10 个 Swift 包、通用 Simulator build 与 App 宿主 81/81，末行 `QUALITY GATE: PASS`。测试覆盖未知 dayPlan/item 键、脏 item、空 `daySequence`/`dayPlans` 在写入与清除两种 raw 撤销路径的 bytes 恢复，入口出现后外部编辑的三条原子分支，sticky/substitution 的真实构成与条件收敛，以及真实换动作、先加后删再 S1 移动、文案素材与最终 target 对账、Today/Plan 错误面隔离、候选按需派生和快速双击 busy→首笔成功后的 5 秒撤销生命周期收敛。专用 iPhone 17 Pro / iOS 26.5 Simulator 已重捕入口、撤销条、计划编辑器与 no-op 四态；另用 `Rede-SaveToPlan-SE-QA`（iPhone SE 3rd generation / iOS 26.5，375×667pt）在最大 `accessibility-extra-extra-extra-large` 下实拍最长加+删分支。首次 RED 中事实句出现省略、动作词被挤成侧栏；按 #720 同款让 accessibility size 的动作词移到事实句下方后，最终 `.ai-tmp/save-to-plan/2026-07-30-savetoplan-se-ax5.png` 为 750×1334px、完整显示「今天加了髋内收机，去掉了杠铃耸肩」与下一行「存进计划」，MD5 `a4e4496723fc9d58207d4efe99d5b694`。本项仍未在 TestFlight 真机执行，保持 `[ ]`。
 
 ## H · 稳定性出错场景
 

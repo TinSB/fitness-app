@@ -273,19 +273,30 @@ nil raw 撤销当前会把写入前已有的空 `daySequence: []` 当成不存�
 - `f9268c3 feat: 记录完成场最终动作顺序`：完成场 open-bag 数据、builder 测试、唯一 fixture 与跨层 pattern 消费测试。
 - `ce94c65 feat: 原子存回完成场计划并支持原样撤销`：最新 canonical compare-and-apply、真实有效构成投影、条件收敛、raw snapshot/provenance/restore 及 app/Persistence 测试。
 - `fe07d6d feat: 在今日练完态提供存进计划入口`：Today 入口、5 秒撤销条、Plan 显式刷新与双语文案。
+- `293f927 fix: 闭合练完存回候选与错误面`：target 对账后的五路事实文案、Today/Plan 错误隔离、候选按需派生、AX5 纵排、最长加删 QA seam 与双击 busy 完成顺序收敛。
 - living docs、CHANGELOG、DEV_LOG 与本回执：本提交。按纪律未 push、未开 PR。
+
+### 验收后 6 条定向 finding 与闭合
+
+- **①/同源三报——文案素材未与最终 target 对账：**候选先对 `sessionEdits` 做首次保序去重，再把同 id 的 add→remove 视为取消；`added` 只保留最终仍在 `targetExerciseIds` 的 id，`removed` 只保留最终已不在 target 的 id。对账后有素材才进入加/删/加+删精确事实；两侧空时不再无条件说“顺序”，而是 id 集合相同才说纯重排，集合不同统一使用观察式中性句「今天练的和这天的计划不一样 / Today's session differed from this day's plan」。除字符串矩阵外，场景级测试从真实 `flow.replaceCurrentExercise` 锁住换动作分支，并从真实“加 X → 删 X → S1 移动”锁住取消审计后只落纯顺序分支；另有逐项过滤测试保证不点名 target 外的新增动作或 target 内的移除动作。
+- **②——Today / Plan 错误面跨域污染：**新增 `completedSessionPlanSaveErrorText`；Today 存回行与撤销条只读写它，Plan editor 继续独占 `planSaveErrorText`。保存、撤销失败测试均断言 Plan 错误保持 nil；忙闸与现役 `performPlanWrite` 守卫同口径，只返回 `.failed`，不写 `completedSessionPlanWriteAlreadyInProgress` 或任何用户可见裸串。
+- **③——候选无条件重复跑引擎：**`loadCompletedFacts(sessionId:includesPlanCandidate:)` 默认 false；Today 先判定该完成场是否为今天，只有“今天这场”传 true，撤销后的同场刷新也显式 true。Train 待机与休息日沿用默认 false，只读 dayCode/时长等元数据；纯 helper 测试与三处调用面注释锁住 false 路径只返回 metadata/`planCandidate=nil`，实现以短路分支保证不进入候选引擎投影。
+- **④——QA 钩子未登记：**系统逻辑 §8.2 的现役 launch-argument 登记句已补 `-autoPrepareSaveToPlan`、`-autoSaveSessionToPlan`、`-autoOpenPlanAfterSave`、`-holdUndoBannerForQA`。前三者只驱动真实会话/存回/切页 seam；特别写明最后一个只在显式传参时冻结撤销条 5 秒自动消失，不改变生产生命周期。
+- **⑤——375pt / 最大字号证据缺失：**专用 `Rede-SaveToPlan-SE-QA`（iPhone SE 3rd generation / iOS 26.5）在 375×667pt、`accessibility-extra-extra-extra-large` 下走真实最长“加+删”候选。初拍复现事实句省略、动作词被挤成侧栏；按 #720 同款仅在 accessibility size 把动作词纵向移到完整事实句下方，复拍完整显示「今天加了髋内收机，去掉了杠铃耸肩」与下一行「存进计划」。最终图 `.ai-tmp/save-to-plan/2026-07-30-savetoplan-se-ax5.png` 为 750×1334px，MD5 `a4e4496723fc9d58207d4efe99d5b694`；首次 RED 图保留为同目录 `2026-07-30-savetoplan-se-ax5-before.png`，MD5 `618d0326b1a901ae50a623660e17efaf`。
+- **终审追加 P2——双击 busy 会冻结生产撤销条：**第二个快速点击先命中 busy `.failed` 并置 `completedPlanSaveFailed=true`，首笔随后 `.saved` 却未清标，5 秒任务会把它当撤销失败永久保留。新增完成顺序 presentation 测试先因 helper 缺失编译 RED；随后每个 outcome 返回时统一覆盖失败标记，使 `.failed → .saved/.noOp` 最终收敛为 false，busy 仍按 owner 裁定静默无文案。定向 GREEN 1/1、完整 App 60/60；Sol Ultra 定向复核确认原 P2 已关闭且未引入新 P0–P2。
+- 以上闭合没有改 `TodayPrescriptionEngine`、处方 package、schema/version/manifest/project 文件或 `TrainTabView`；既有同事务 compare-and-apply、raw byte restore、overlay 四象限条件收敛与 exerciseId-only 整日覆盖均保持原样。
 
 ### A 入口
 
 - 入口只在 `TodayTabView` 的已落盘练完态块中出现：既有 MLE 事实行之后、分享行之前；Train、本次训练编辑器、训练小结 sheet 与 `TrainTabView` 均为零改动、零入口。
 - 显示条件只有一个：完成场 `finalExerciseOrder` 与该 `templateId` 训练日由现役引擎从 clean input 投影出的**下次真实有效构成**不同，且条件收敛不是 noop。永久 substitution 或 sticky 已让两者同构时不显示；纯重排虽无 `sessionEdits`，仍显示。
-- 行形态为一条事实句 +「存进计划」动作；新增、移除、新增+移除、纯顺序四分支均有精确中英断言。它与 MLE 行使用同一练完态区域但互不替代；无候选时不占空位。
+- 行形态为一条事实句 +「存进计划」动作；新增、移除、新增+移除、纯顺序和无可用审计的构成差异五分支均有精确中英断言。它与 MLE 行使用同一练完态区域但互不替代；无候选时不占空位。最大 Dynamic Type 时动作词移到完整事实句下方，普通字号仍保持横排。
 - 成功后原行刷新消失，并显示约 5 秒「已存进计划 / Saved to plan」+「撤销 / Undo」；写入或撤销失败只显示独立计划错误，不冒充训练保存失败。
 
 ### B/C 数据
 
 - `CompletedSessionBuilder` 对最终 `flow.plan.exercises.map(\.exerciseId)` 做保序去重、保留首次，并在每条新完成场落 `finalExerciseOrder:[String]`；无 schema bump、旧历史不迁移。A→B→A occurrence 与重复输入测试锁定不会制造重复单日动作。
-- 读取由 `SessionStore.loadCompletedFacts` 按 `sessionId` 直读同一 canonical 完成场的 `finalExerciseOrder`、`templateId` 与可选 `sessionEdits`。`finalExerciseOrder` 是目标构成真源，`templateId` 是唯一 dayCode 真源，`sessionEdits` 只喂 add/remove 文案，绝不参与资格或写入决定。
+- 读取由 `SessionStore.loadCompletedFacts` 按 `sessionId` 直读同一 canonical 完成场的 `finalExerciseOrder`、`templateId` 与可选 `sessionEdits`。`finalExerciseOrder` 是目标构成真源，`templateId` 是唯一 dayCode 真源，`sessionEdits` 只喂文案，绝不参与资格或写入决定；且必须先与最终 target 对账，防止已撤销的 add/remove、换动作或 target 外 id 被写成错误事实。候选派生默认关闭，只有 Today 当天练完态显式开启。
 - **golden 重捕获清单只有一个：**`ios/packages/RedeTrainingDecision/Tests/RedeTrainingDecisionTests/Fixtures/completed-session-no-edits.origin-main.expected.json`。原始 diff 只新增：
   `finalExerciseOrder=["bench-press","incline-db-press","machine-chest-press","cable-fly","lateral-raise","triceps-pushdown"]`。
 - 删除仅 `finalExerciseOrder` 后的逐字段零差异证明：
@@ -302,6 +313,7 @@ nil raw 撤销当前会把写入前已有的空 `daySequence: []` 当成不存�
 - 终审额外抓到 `.clearCustom` 唯一日 + 写前 `daySequence:[]` 会丢 sibling：先得到 1 项测试 2 个真实 RED（恢复后 91 bytes ≠ 写前 108 bytes，且 clear 中间态错误为 nil），再把 FR-TR14 clear cleanup 收窄为只清空 `dayPlans`，GREEN 1/1、相邻 14/14、Persistence 110/110；non-nil raw undo 后整个 `planCustomization` bytes 与写前相同。
 - stale-click 三路均已锁定：外部编辑后真实构成已等价 → no-op；仍不同 → 写入并以那份最新 raw 前值作为撤销基线；别处已写成目标同值 → no-op。写失败 canonical bytes 不动且有诚实错误。
 - dayCode 始终取完成场已经落盘的 `templateId`；绝不回读已在 append 同事务消费清空的 `oneTimeDayOverride`。真实写入/撤销后 Today `loadToday()` 与 Plan revision 均显式刷新。
+- Today 存回/撤销错误独占 `completedSessionPlanSaveErrorText`，Plan 编辑器仍独占 `planSaveErrorText`；两面互不污染。并发忙闸不写用户可见错误，只拒绝本次动作。
 
 ### E pattern
 
@@ -319,13 +331,14 @@ nil raw 撤销当前会把写入前已有的空 `daySequence: []` 当成不存�
 
 ### gate / 实拍 / 规格写回 / 顺带项 / 未尽事项
 
-- RED→GREEN 关键节点：builder 新字段聚焦测试先有 5 个预期失败；raw nil/provenance 聚焦 13 项先有 2 个失败；overlay 收敛 App 52 项先有 4 个失败；终审 clear sibling 回归先有 1 项 2 个失败。最终 `RedeTrainingDecision` 494/494、`RedeL10n` 143/143、`RedePersistence` 110/110、App `SessionStoreDraftTests` 52/52。
-- 最终 writer 修复后重新运行 `.claude/quality-gate.cmd`，exit 0：全部 10 个 Swift 包、通用 Simulator build、App 宿主 73/73；末行 `QUALITY GATE: PASS`。
+- RED→GREEN 关键节点：builder 新字段聚焦测试先有 5 个预期失败；raw nil/provenance 聚焦 13 项先有 2 个失败；overlay 收敛 App 52 项先有 4 个失败；终审 clear sibling 回归先有 1 项 2 个失败；本轮 L10n 新必填参数先令 app 集成编译 RED，最大字号纯布局 seam 先编译 RED，375pt/AX5 实拍先出现截断 RED；最终双击竞态 test 先因 presentation helper 缺失编译 RED。最终 `RedeTrainingDecision` 494/494、`RedeL10n` 144/144、`RedePersistence` 110/110、App `SessionStoreDraftTests` 60/60。
+- 所有本轮代码稳定后重新运行 `.claude/quality-gate.cmd`，exit 0：全部 10 个 Swift 包、通用 Simulator build、App 宿主 81/81；末行 `QUALITY GATE: PASS`。
 - 专用 Simulator：`Rede-SaveToPlan-QA`，iPhone 17 Pro / iOS 26.5，UUID `AC85A53F-349B-40A3-B772-3EBF99A8476B`。四张最终图均为 1206×2622 且 MD5 互异：
   - `.ai-tmp/save-to-plan/2026-07-30-savetoplan-entry.png` → `e09e22bb1360d28cb504c013195201a3`
   - `.ai-tmp/save-to-plan/2026-07-30-savetoplan-undo-banner.png` → `907c4f7f81296ac0fa4f0aa797c3d9df`
   - `.ai-tmp/save-to-plan/2026-07-30-savetoplan-plan-editor.png` → `d1206e6108e7807734fa7b6c4628c563`
   - `.ai-tmp/save-to-plan/2026-07-30-savetoplan-noop.png` → `773e51163df7b3d629b27acb7c0d106f`
-- living-doc 写回：Master、PRD、系统逻辑、产品文案基线、TestFlight N14/N16、CHANGELOG、DEV_LOG 与本交接件。`git diff --check` 通过；独立 Sol Ultra 终审在关闭上述 clear sibling finding 后结论为**无 P0–P2**。
+- 窄屏最大字号专用 Simulator：`Rede-SaveToPlan-SE-QA`，iPhone SE 3rd generation / iOS 26.5，UUID `CBDF607C-3E88-4FA4-A426-B4A90F0D9265`；最终图与 hash 见上方 finding ⑤，375×667pt @2x 下最长事实句与动作均完整。
+- living-doc 写回：Master、PRD、系统逻辑、产品文案基线、TestFlight N14/N16、CHANGELOG、DEV_LOG 与本交接件。`git diff --check` 通过；本轮独立 Sol Ultra 终审仅报上述双击竞态 P2，RED→GREEN 后定向复核确认关闭，最终**无 P0–P2**。
 - 顺带 P3「同场同 id 多 occurrence 的数据质量提示重复显示第 1 组」未夹带；它需要独立的 occurrence 展示消歧，不影响本批验收，原样留案。
 - 未尽事项只有真实设备发布验收：TestFlight N16 仍保持 `[ ]`；不以本地自动化或 Simulator 冒充真机。旧历史不迁移，只有带 `finalExerciseOrder` 的新完成场可出现入口；即时撤销约 5 秒，过期后仍可去计划编辑器修改。无 schema/version/manifest/project 变化，无 push、无 PR。
