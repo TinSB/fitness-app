@@ -115,6 +115,11 @@ struct TodayTabView: View {
     /// T1/K3 最近一场总结（无处方分支从已落盘历史派生；nil = 数据缺退回原状）。
     /// K3（2026-07-16）放宽 today-only：休息日/停练回归日显「上一场」，练完态仍显「今天这场」。
     @State private var completedDigest: TodayCompletedDigest?
+    /// FR-TR14 今日完成场「存进计划」候选。只由 completed facts 同一次 canonical 读取派生；
+    /// 过天、no-op、缺 open-bag 事实均为 nil，不另造已读回执。
+    @State private var completedPlanCandidate: SessionStore.CompletedSessionPlanCandidate?
+    /// 仅标记本入口最近一次保存/撤销失败，避免把计划编辑器旧错误误显示到 Today。
+    @State private var completedPlanSaveFailed = false
     /// N3b：近 5 场（含当场）总体量，旧→新——总结卡吨位行小折线用；<2 场不渲染（单点无意义）。
     @State private var recentVolumes: [CGFloat] = []
     /// K3「下一场」预告（PlanDayProjection 现成投影；nil = 无排期不渲染）。
@@ -297,6 +302,8 @@ struct TodayTabView: View {
         .task(id: showsRestBranch) {
             if showsRestBranch { await loadCompletedDigest() } else {
                 completedDigest = nil
+                completedPlanCandidate = nil
+                completedPlanSaveFailed = false
                 recentVolumes = []
                 nextSession = nil
                 weekVolumeKg = nil
@@ -930,6 +937,8 @@ struct TodayTabView: View {
     /// 从 canonical 补）+ 「下一场」投影。任何一环缺失 → 对应块不渲染（诚实兜底、不编数据）。
     private func loadCompletedDigest() async {
         guard showsRestBranch else { return }
+        completedPlanCandidate = nil
+        completedPlanSaveFailed = false
         eventShareSnapshots = []
         todayBreakthroughs = []
         // 下一场（现成只读投影；练完态含今日场 → 轮转已推进到下一日，与计划页排期同源）
@@ -951,12 +960,19 @@ struct TodayTabView: View {
         let record = pm.statsRecords.first { $0.id == latest.sessionId }
         let sid = latest.sessionId
         let facts = await Task.detached { SessionStore.loadCompletedFacts(sessionId: sid) }.value
+        let isTodaySession = latest.dateISO == Self.isoDay(model?.now ?? Date())
+        completedPlanCandidate = isTodaySession ? facts?.planCandidate : nil
         // patterns 同训练小结口径（SessionShareSnapshotBuilder）：catalog 查动作模式
         let catalog = ExerciseCatalog.minimal
         let patterns = (record?.exercises ?? []).compactMap { catalog.entry(id: $0.exerciseId)?.movementPattern }
         completedDigest = TodayCompletedDigestBuilder.digest(
             latest: latest, record: record,
             dayCode: facts?.dayCode, durationMinutes: facts?.durationMinutes, patterns: patterns)
+        // Simulator 验证钩子：候选已由真实完成场派生后，调用与点击行完全相同的保存闭包。
+        if CommandLine.arguments.contains("-autoSaveSessionToPlan"),
+           let candidate = completedPlanCandidate {
+            await saveCompletedPlan(candidate)
+        }
     }
 
     private static func isoDay(_ date: Date) -> String {
@@ -1107,6 +1123,11 @@ struct TodayTabView: View {
                     .accessibilityLabel(eventLine)
                 }
             }
+            // FR-TR14：必须位于 MLE 行之后、分享行之前；只有今天这场且 target 真会改变
+            // 当前 dayCode 构成时才存在。sessionEdits 只决定事实句，不决定资格。
+            if isTodaySession, let candidate = completedPlanCandidate {
+                completedPlanSaveRow(candidate)
+            }
             if !digest.shareSnapshots.isEmpty {
                 Button {
                     sharePreview = SharePreviewItem(snapshots: digest.shareSnapshots)
@@ -1129,6 +1150,83 @@ struct TodayTabView: View {
         .background(RoundedRectangle(cornerRadius: RedeShape.cardRadius).fill(Color.redeSurface))
         .overlay(RoundedRectangle(cornerRadius: RedeShape.cardRadius).stroke(Color.redeHair, lineWidth: 1))
         .accessibilityElement(children: .contain)
+    }
+
+    /// FR-TR14 两段式开放行：事实 + 动作；零弹窗，点击即走独立 plan 写闸。
+    private func completedPlanSaveRow(
+        _ candidate: SessionStore.CompletedSessionPlanCandidate
+    ) -> some View {
+        let fact = s.saveToPlanFact(
+            addedExerciseNames: candidate.addedExerciseIds.map(localeStore.exerciseName),
+            removedExerciseNames: candidate.removedExerciseIds.map(localeStore.exerciseName)
+        )
+        return VStack(alignment: .leading, spacing: 4) {
+            Button {
+                Task { await saveCompletedPlan(candidate) }
+            } label: {
+                HStack(spacing: 8) {
+                    Text(fact)
+                        .font(.redeCallout)
+                        .foregroundStyle(Color.redeT1)
+                        .lineLimit(2)
+                    Spacer(minLength: 8)
+                    Text(s.saveToPlanAction)
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeEmber2)
+                    Image(systemName: "chevron.right")
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeT4)
+                        .accessibilityHidden(true)
+                }
+                .frame(minHeight: RedeShape.controlHeight)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.redePressableRow)
+            .disabled(sessionStore.isSaving)
+            .accessibilityElement(children: .combine)
+            .accessibilityHint(s.saveToPlanHint)
+
+            if completedPlanSaveFailed, let errorText = sessionStore.planSaveErrorText {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(s.saveToPlanFailure)
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeRisk)
+                    Text(errorText)
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeT4)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .transition(reduceMotion ? .identity : .opacity)
+            }
+        }
+    }
+
+    private func saveCompletedPlan(
+        _ candidate: SessionStore.CompletedSessionPlanCandidate
+    ) async {
+        completedPlanSaveFailed = false
+        let outcome = await sessionStore.saveCompletedSessionPlan(
+            sessionId: candidate.sessionId
+        )
+        switch outcome {
+        case .failed:
+            completedPlanSaveFailed = true
+            return
+        case .noOp:
+            // 点击前 canonical 已由其他合法入口改成等价值：诚实隐藏陈旧入口，
+            // 不播成功、不报失败，也不推进 PlanTab revision。
+            completedPlanCandidate = nil
+            return
+        case .saved(let undo):
+            commitPulse += 1
+            completedPlanCandidate = nil
+            undoBanner = UndoBanner(kind: .savedPlan(undo), text: s.saveToPlanSuccess)
+        }
+        // Simulator 验证钩子：保存成功后切计划页；可叠加 -autoOpenPlanEditor <dayCode>。
+        if CommandLine.arguments.contains("-autoOpenPlanAfterSave") {
+            onGoPlan()
+        }
     }
 
     /// K3「下一场」预告行：ember 竖标 + 训练日名 · 动作数 + chevron，点击跳计划页。
@@ -1340,13 +1438,26 @@ struct TodayTabView: View {
 
     /// 采纳后撤销条：正文 + 「撤销」（反向 gated 写）；约 5s 自动淡出，写进行中禁用撤销。
     private func undoBannerView(_ banner: UndoBanner) -> some View {
-        HStack(spacing: 12) {
-            Text(banner.text)
-                .font(.redeCaption).foregroundStyle(Color.redeT1)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer()
-            adoptCTA(s.coachUndoLabel) {
-                Task { await undoAdoption(banner) }
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 12) {
+                Text(banner.text)
+                    .font(.redeCaption).foregroundStyle(Color.redeT1)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer()
+                adoptCTA(s.coachUndoLabel) {
+                    Task { await undoAdoption(banner) }
+                }
+            }
+            if case .savedPlan = banner.kind,
+               completedPlanSaveFailed,
+               let errorText = sessionStore.planSaveErrorText {
+                Text(s.saveToPlanFailure)
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeRisk)
+                Text(errorText)
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT4)
+                    .lineLimit(2)
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 11)
@@ -1359,9 +1470,13 @@ struct TodayTabView: View {
         .padding(.bottom, RedeSpace.bottomBar + 8)
         .transition(.opacity)
         .task(id: banner.id) {
+            // Simulator 手动验收钩子：仅在显式 launch argument 下冻结 5s 自动消失，
+            // 让 UI 自动化能实际点击「撤销」并随后实读 canonical；生产路径仍严格 5s。
+            if CommandLine.arguments.contains("-holdUndoBannerForQA") { return }
             try? await Task.sleep(for: .seconds(5))
             // 撤销写进行中（isSaving）不自毁——否则 5s 定时器会与撤销写竞争，写失败后撤销条已消失、
             // 用户失去重试入口（补量撤销无持久兜底，审查 MAJOR）。撤销失败时撤销条留存供再试。
+            if case .savedPlan = banner.kind, completedPlanSaveFailed { return }
             if undoBanner?.id == banner.id, !sessionStore.isSaving { undoBanner = nil }
         }
     }
@@ -1373,6 +1488,20 @@ struct TodayTabView: View {
         case .swapOneTime(let originalId): ok = await sessionStore.removeOneTimeSubstitution(originalId: originalId)
         case .dayOverride: ok = await sessionStore.removeOneTimeDayOverride()
         case .volume(let week): ok = await sessionStore.removeVolumeBoost(weekStartISO: week)
+        case .savedPlan(let undo):
+            let restored = await sessionStore.restoreCompletedSessionPlan(undo)
+            if restored {
+                commitPulse += 1
+                let facts = await Task.detached {
+                    SessionStore.loadCompletedFacts(sessionId: undo.sessionId)
+                }.value
+                completedPlanCandidate = facts?.planCandidate
+                completedPlanSaveFailed = false
+                undoBanner = nil
+            } else {
+                completedPlanSaveFailed = true
+            }
+            return
         }
         // 撤销写失败保留撤销条（错误面已如实呈现），用户可再试——尤其补量撤销无持久兜底入口（审查 MAJOR）。
         if ok {
@@ -1405,6 +1534,7 @@ struct TodayTabView: View {
             case swapOneTime(originalId: String)   // FR-TR6「只换这次」：撤销路由到 removeOneTimeSubstitution
             case dayOverride                        // FR-TR12「今天换一天练」：撤销路由到 removeOneTimeDayOverride
             case volume(weekStartISO: String)
+            case savedPlan(SessionStore.CompletedSessionPlanUndoToken)
         }
         let id = UUID()
         let kind: Kind

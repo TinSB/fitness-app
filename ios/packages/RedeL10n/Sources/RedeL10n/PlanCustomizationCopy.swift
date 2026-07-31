@@ -64,6 +64,57 @@ extension RedeStrings {
         locale == .zh ? "肌群每周频率没有明显下降" : "No notable drop in weekly muscle frequency"
     }
 
+    // MARK: FR-TR14 练完存回计划
+
+    /// Today 练完态的显式存回动作。
+    public var saveToPlanAction: String { locale == .zh ? "存进计划" : "Save to plan" }
+    /// 写入成功后的短 toast。
+    public var saveToPlanSuccess: String { locale == .zh ? "已存进计划" : "Saved to plan" }
+    /// 独立计划写入失败，不误导为训练记录尚未保存。
+    public var saveToPlanFailure: String {
+        locale == .zh ? "暂时无法存进计划　请再试一次" : "Couldn't save to plan · Try again"
+    }
+    /// 存回行的无障碍提示。
+    public var saveToPlanHint: String {
+        locale == .zh
+            ? "将今天的动作和顺序存进计划"
+            : "Save today's exercises and order to your plan"
+    }
+    /// Today 练完态的改动事实。单项报动作名；同一侧多项只报数量，避免逐名罗列。
+    public func saveToPlanFact(addedExerciseNames: [String], removedExerciseNames: [String]) -> String {
+        let added = saveToPlanAddedFact(addedExerciseNames)
+        let removed = saveToPlanRemovedFact(removedExerciseNames)
+
+        switch (added, removed) {
+        case let (.some(added), .some(removed)):
+            return locale == .zh
+                ? "今天\(added)，\(removed)"
+                : "You \(added) and \(removed) today"
+        case let (.some(added), nil):
+            return locale == .zh ? "今天\(added)" : "You \(added) today"
+        case let (nil, .some(removed)):
+            return locale == .zh ? "今天\(removed)" : "You \(removed) today"
+        case (nil, nil):
+            return locale == .zh ? "今天调整了动作顺序" : "You adjusted today's exercise order"
+        }
+    }
+
+    private func saveToPlanAddedFact(_ names: [String]) -> String? {
+        guard let first = names.first else { return nil }
+        if names.count == 1 {
+            return locale == .zh ? "加了\(first)" : "added \(first)"
+        }
+        return locale == .zh ? "加了 \(names.count) 个动作" : "added \(names.count) exercises"
+    }
+
+    private func saveToPlanRemovedFact(_ names: [String]) -> String? {
+        guard let first = names.first else { return nil }
+        if names.count == 1 {
+            return locale == .zh ? "去掉了\(first)" : "removed \(first)"
+        }
+        return locale == .zh ? "去掉了 \(names.count) 个动作" : "removed \(names.count) exercises"
+    }
+
     // MARK: FR-PL7③ 训练日自由编排
 
     /// 计划页训练日编排入口。
