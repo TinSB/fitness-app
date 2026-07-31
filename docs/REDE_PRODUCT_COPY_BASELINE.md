@@ -314,7 +314,7 @@ Today 不应像 dashboard。它要像训练前 30 秒的判断。
 | 只移除（单项示例） | 今天去掉了面拉 | You removed Face pull today |
 | 新增 + 移除（单项示例） | 今天加了哑铃弯举，去掉了面拉 | You added Dumbbell curl and removed Face pull today |
 | 纯重排（终态与当前动作集合相同） | 今天调整了动作顺序 | You adjusted today's exercise order |
-| 其它构成差异且无可用 add/remove 素材 | 今天练的和这天的计划不一样 | Today's session differed from this day's plan |
+| 其它构成差异且无可用 add/remove 素材 | 今天练的和计划不一样 | Today's session differed from this day's plan |
 | 写入 / 撤销失败 | 暂时无法存进计划　请再试一次 | Couldn't save to plan · Try again |
 
 同一侧多于一个动作时只报「加了 N 个动作 / added N exercises」「去掉了 N 个动作 / removed N exercises」，不逐名堆叠。`sessionEdits` 只是候选素材，显示前必须与最终 target 对账：added 只保留终态仍存在的 id，removed 只保留终态已不存在的 id，同一 id 先加后删等抵消审计不向用户自相矛盾地报两次。对账后两侧皆空时，只有动作集合相同才说“调整了动作顺序”；集合不同统一使用不猜变化类型的中性事实句。是否显示入口仍只由最终构成差异决定。全部微文案无句号、无感叹号、零说教。成功后「已存进计划」与「撤销」是同一约 5 秒收据里的两个元素，不拼成新长句；失败走 Today 专属计划存回错误面，禁止污染 PlanTab，也禁止误用「训练记录仍在」语境。

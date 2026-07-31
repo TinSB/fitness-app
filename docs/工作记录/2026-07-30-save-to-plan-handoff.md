@@ -342,3 +342,16 @@ nil raw 撤销当前会把写入前已有的空 `daySequence: []` 当成不存�
 - living-doc 写回：Master、PRD、系统逻辑、产品文案基线、TestFlight N14/N16、CHANGELOG、DEV_LOG 与本交接件。`git diff --check` 通过；本轮独立 Sol Ultra 终审仅报上述双击竞态 P2，RED→GREEN 后定向复核确认关闭，最终**无 P0–P2**。
 - 顺带 P3「同场同 id 多 occurrence 的数据质量提示重复显示第 1 组」未夹带；它需要独立的 occurrence 展示消歧，不影响本批验收，原样留案。
 - 未尽事项只有真实设备发布验收：TestFlight N16 仍保持 `[ ]`；不以本地自动化或 Simulator 冒充真机。旧历史不迁移，只有带 `finalExerciseOrder` 的新完成场可出现入口；即时撤销约 5 秒，过期后仍可去计划编辑器修改。无 schema/version/manifest/project 变化，无 push、无 PR。
+
+## 主会话验收结论（2026-07-31）
+
+三 lens 全量验收 **0 MAJOR**（核心不变量：同事务原子 compare-and-apply、raw 逐字节撤销含空 daySequence、四象限条件收敛、跨层 userPinned 压 overlay、golden 独立复现，全部实测成立）；7 findings（含两 lens 重复报的同一条）已全部定向闭合，闭合后两路定向复验 pass=true（复验方实跑 L10n 144/144、SessionStoreDraftTests 60/60）。独立门禁两次 exit 0。
+
+主会话另修一条品味级：中性句中文「今天练的和这天的计划不一样」→「今天练的和计划不一样」（同句并置「今天/这天」拗口；三处同步：L10n 实现、精确断言、文案基线）。
+
+**已知非阻断残余（留案，不阻断合并）**：
+1. **中间字号带（.xxxLarge，非 accessibility 档）无窄屏证据**：该档仍走横排 `lineLimit(2)`，375pt 上跑最长「加+删双项」是否截断未验（AX 档已验纵排不截断）。归 TestFlight N16 真机复验项。
+2. 撤销忙闸静默：`isSaving` 时撤销返回 false 不写错误串，理论上撤销条不消失且无解释；实际不可达（撤销 CTA 已 `.disabled(isSaving)`），且闭合前同形状即存在，非本批回归。
+3. `performCompletedSessionPlanWrite` 与 `performPlanWrite` 逐行同构复制，语义已逐行比对无漂移；今后改其一须同步另一，否则两条计划写路径静默分叉。
+4. `isOrderOnlyDifference` 用 Set 相等判定，依赖「单日 exerciseId 有序唯一」既定合同（引擎若返重复 id 会误判为纯顺序差异）；概率极低，防御性登记。
+5. RootTabView QA 删动作 seam 无断言，`removal(at:)` 返 nil 时静默退化成「只加不删」（本轮实拍已确认生效）。

@@ -103,7 +103,7 @@ extension RedeStrings {
                 return locale == .zh ? "今天调整了动作顺序" : "You adjusted today's exercise order"
             }
             return locale == .zh
-                ? "今天练的和这天的计划不一样"
+                ? "今天练的和计划不一样"
                 : "Today's session differed from this day's plan"
         }
     }

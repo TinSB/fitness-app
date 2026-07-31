@@ -163,7 +163,7 @@ final class PlanCustomizationCopyTests: XCTestCase {
                 removedExerciseNames: [],
                 isOrderOnlyDifference: false
             ),
-            "今天练的和这天的计划不一样"
+            "今天练的和计划不一样"
         )
         XCTAssertEqual(
             en.saveToPlanFact(
