@@ -278,7 +278,7 @@ nil raw 撤销当前会把写入前已有的空 `daySequence: []` 当成不存�
 
 ### 验收后 6 条定向 finding 与闭合
 
-- **①/同源三报——文案素材未与最终 target 对账：**候选先对 `sessionEdits` 做首次保序去重，再把同 id 的 add→remove 视为取消；`added` 只保留最终仍在 `targetExerciseIds` 的 id，`removed` 只保留最终已不在 target 的 id。对账后有素材才进入加/删/加+删精确事实；两侧空时不再无条件说“顺序”，而是 id 集合相同才说纯重排，集合不同统一使用观察式中性句「今天练的和这天的计划不一样 / Today's session differed from this day's plan」。除字符串矩阵外，场景级测试从真实 `flow.replaceCurrentExercise` 锁住换动作分支，并从真实“加 X → 删 X → S1 移动”锁住取消审计后只落纯顺序分支；另有逐项过滤测试保证不点名 target 外的新增动作或 target 内的移除动作。
+- **①/同源三报——文案素材未与最终 target 对账：**候选先对 `sessionEdits` 做首次保序去重，再把同 id 的 add→remove 视为取消；`added` 只保留最终仍在 `targetExerciseIds` 的 id，`removed` 只保留最终已不在 target 的 id。对账后有素材才进入加/删/加+删精确事实；两侧空时不再无条件说“顺序”，而是 id 集合相同才说纯重排，集合不同统一使用观察式中性句「今天练的和计划不一样 / Today's session differed from this day's plan」。除字符串矩阵外，场景级测试从真实 `flow.replaceCurrentExercise` 锁住换动作分支，并从真实“加 X → 删 X → S1 移动”锁住取消审计后只落纯顺序分支；另有逐项过滤测试保证不点名 target 外的新增动作或 target 内的移除动作。
 - **②——Today / Plan 错误面跨域污染：**新增 `completedSessionPlanSaveErrorText`；Today 存回行与撤销条只读写它，Plan editor 继续独占 `planSaveErrorText`。保存、撤销失败测试均断言 Plan 错误保持 nil；忙闸与现役 `performPlanWrite` 守卫同口径，只返回 `.failed`，不写 `completedSessionPlanWriteAlreadyInProgress` 或任何用户可见裸串。
 - **③——候选无条件重复跑引擎：**`loadCompletedFacts(sessionId:includesPlanCandidate:)` 默认 false；Today 先判定该完成场是否为今天，只有“今天这场”传 true，撤销后的同场刷新也显式 true。Train 待机与休息日沿用默认 false，只读 dayCode/时长等元数据；纯 helper 测试与三处调用面注释锁住 false 路径只返回 metadata/`planCandidate=nil`，实现以短路分支保证不进入候选引擎投影。
 - **④——QA 钩子未登记：**系统逻辑 §8.2 的现役 launch-argument 登记句已补 `-autoPrepareSaveToPlan`、`-autoSaveSessionToPlan`、`-autoOpenPlanAfterSave`、`-holdUndoBannerForQA`。前三者只驱动真实会话/存回/切页 seam；特别写明最后一个只在显式传参时冻结撤销条 5 秒自动消失，不改变生产生命周期。
