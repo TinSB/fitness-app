@@ -647,6 +647,668 @@ final class SessionStoreDraftTests: XCTestCase {
         XCTAssertNil(store.load(), "clear must drain a still-queued write before deleting the draft")
     }
 
+    func testCompletedSessionPlanCandidateUsesPersistedTemplateIdAndSessionEditsForCopyOnly() throws {
+        let current = CustomDayPlan(exercises: [
+            CustomExerciseItem(exerciseId: "lat-pulldown"),
+            CustomExerciseItem(exerciseId: "seated-row"),
+        ])
+        let appData = try makeCompletedPlanAppData(
+            dayCode: "pull-a",
+            finalOrder: ["seated-row", "lat-pulldown"],
+            currentDayPlan: current,
+            added: ["seated-row"],
+            removed: ["face-pull"],
+            oneTimeDayOverride: "push-a"
+        )
+
+        let candidate = try XCTUnwrap(SessionStore.completedSessionPlanCandidate(
+            from: appData,
+            sessionId: "save-to-plan-session",
+            now: startedAt
+        ))
+
+        XCTAssertEqual(candidate.dayCode, "pull-a",
+                       "FR-TR12 完成时临时覆盖已消费；存回必须读该场 templateId")
+        XCTAssertEqual(candidate.targetExerciseIds, ["seated-row", "lat-pulldown"])
+        XCTAssertEqual(candidate.addedExerciseIds, ["seated-row"])
+        XCTAssertEqual(candidate.removedExerciseIds, ["face-pull"])
+    }
+
+    func testCompletedSessionPlanCandidateOffersPureReorderWithoutSessionEdits() throws {
+        let appData = try makeCompletedPlanAppData(
+            dayCode: "push-a",
+            finalOrder: ["incline-db-press", "bench-press"],
+            currentDayPlan: CustomDayPlan(exercises: [
+                CustomExerciseItem(exerciseId: "bench-press"),
+                CustomExerciseItem(exerciseId: "incline-db-press"),
+            ])
+        )
+
+        let candidate = try XCTUnwrap(SessionStore.completedSessionPlanCandidate(
+            from: appData,
+            sessionId: "save-to-plan-session",
+            now: startedAt
+        ))
+
+        XCTAssertEqual(candidate.targetExerciseIds, ["incline-db-press", "bench-press"])
+        XCTAssertTrue(candidate.addedExerciseIds.isEmpty)
+        XCTAssertTrue(candidate.removedExerciseIds.isEmpty)
+    }
+
+    func testCompletedSessionPlanCandidateDeduplicatesFirstOccurrenceAndSuppressesNoOp() throws {
+        let appData = try makeCompletedPlanAppData(
+            dayCode: "push-a",
+            finalOrder: ["bench-press", "incline-db-press", "bench-press"],
+            currentDayPlan: CustomDayPlan(exercises: [
+                CustomExerciseItem(exerciseId: "bench-press"),
+                CustomExerciseItem(exerciseId: "incline-db-press"),
+            ]),
+            added: ["bench-press"],
+            removed: ["cable-fly"]
+        )
+
+        XCTAssertNil(SessionStore.completedSessionPlanCandidate(
+            from: appData,
+            sessionId: "save-to-plan-session",
+            now: startedAt
+        ), "入口资格只看去重后的最终构成；即使 sessionEdits 非空，no-op 也不显示")
+    }
+
+    func testCompletedSessionPlanCandidateOffersDefaultEquivalentTarget() throws {
+        let defaults = TodayPrescriptionEngine.defaultDayExerciseIds(
+            dayCode: "push-a",
+            equipmentScenario: "commercial-gym"
+        )
+        XCTAssertFalse(defaults.isEmpty)
+        let appData = try makeCompletedPlanAppData(
+            dayCode: "push-a",
+            finalOrder: defaults,
+            currentDayPlan: CustomDayPlan(exercises: [
+                CustomExerciseItem(exerciseId: "db-bench-press"),
+                CustomExerciseItem(exerciseId: "db-curl"),
+            ])
+        )
+
+        let candidate = try XCTUnwrap(SessionStore.completedSessionPlanCandidate(
+            from: appData,
+            sessionId: "save-to-plan-session",
+            now: startedAt
+        ))
+
+        XCTAssertEqual(candidate.targetExerciseIds, defaults)
+    }
+
+    func testCompletedSessionPlanCandidateAndLatestWriteSuppressPermanentSubstitutionEquivalentTarget() async throws {
+        let defaults = TodayPrescriptionEngine.defaultDayExerciseIds(
+            dayCode: "pull-a",
+            equipmentScenario: "commercial-gym"
+        )
+        XCTAssertTrue(defaults.contains("lat-pulldown"))
+        let substituted = defaults.map { $0 == "lat-pulldown" ? "pull-up" : $0 }
+        let appData = try makeCompletedPlanAppData(
+            dayCode: "pull-a",
+            finalOrder: substituted,
+            currentDayPlan: nil,
+            exerciseSubstitutions: ["lat-pulldown": "pull-up"]
+        )
+        let now = try date("2026-07-31", timeZone: XCTUnwrap(TimeZone(identifier: "UTC")))
+
+        XCTAssertNil(SessionStore.completedSessionPlanCandidate(
+            from: appData,
+            sessionId: "save-to-plan-session",
+            now: now
+        ), "永久 A→B 已使下场真实构成等于本场 B 时，零编辑不应显示存回入口")
+
+        let (directory, fileURL) = try makeTemporaryCanonical(appData)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let bytesBeforeClick = try Data(contentsOf: fileURL)
+        let sessionStore = SessionStore(
+            draftStore: FakeTrainSessionDraftStore(),
+            planWriteFileURL: fileURL
+        )
+
+        let outcome = await sessionStore.saveCompletedSessionPlan(
+            sessionId: "save-to-plan-session",
+            now: now
+        )
+
+        XCTAssertEqual(outcome, .noOp)
+        XCTAssertEqual(sessionStore.completedSessionPlanRevision, 0)
+        XCTAssertEqual(try Data(contentsOf: fileURL), bytesBeforeClick,
+                       "同事务最新 canonical 的永久替换等价时必须 0 write")
+    }
+
+    func testCompletedSessionPlanCandidateAndLatestWriteSuppressStickyEquivalentTarget() async throws {
+        let defaults = TodayPrescriptionEngine.defaultDayExerciseIds(
+            dayCode: "pull-a",
+            equipmentScenario: "commercial-gym"
+        )
+        XCTAssertTrue(defaults.contains("lat-pulldown"))
+        let stickyOrder = defaults.map { $0 == "lat-pulldown" ? "pull-up" : $0 }
+        let appData = try makeCompletedPlanAppData(
+            dayCode: "pull-a",
+            finalOrder: stickyOrder,
+            currentDayPlan: nil,
+            completedExerciseIds: ["pull-up"]
+        )
+        let now = try date("2026-07-31", timeZone: XCTUnwrap(TimeZone(identifier: "UTC")))
+
+        XCTAssertNil(SessionStore.completedSessionPlanCandidate(
+            from: appData,
+            sessionId: "save-to-plan-session",
+            now: now
+        ), "last-actual sticky 已使下场真实构成等于本场时，零编辑不应显示存回入口")
+
+        let (directory, fileURL) = try makeTemporaryCanonical(appData)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let bytesBeforeClick = try Data(contentsOf: fileURL)
+        let sessionStore = SessionStore(
+            draftStore: FakeTrainSessionDraftStore(),
+            planWriteFileURL: fileURL
+        )
+
+        let outcome = await sessionStore.saveCompletedSessionPlan(
+            sessionId: "save-to-plan-session",
+            now: now
+        )
+
+        XCTAssertEqual(outcome, .noOp)
+        XCTAssertEqual(sessionStore.completedSessionPlanRevision, 0)
+        XCTAssertEqual(try Data(contentsOf: fileURL), bytesBeforeClick,
+                       "同事务最新 canonical 的 sticky 等价时必须 0 write")
+    }
+
+    func testCompletedSessionPlanDefaultTargetWithoutOverlayRemainsNoOp() throws {
+        let defaults = TodayPrescriptionEngine.defaultDayExerciseIds(
+            dayCode: "pull-a",
+            equipmentScenario: "commercial-gym"
+        )
+        let appData = try makeCompletedPlanAppData(
+            dayCode: "pull-a",
+            finalOrder: defaults,
+            currentDayPlan: nil
+        )
+
+        XCTAssertNil(SessionStore.completedSessionPlanCandidate(
+            from: appData,
+            sessionId: "save-to-plan-session",
+            now: try date("2026-07-31", timeZone: XCTUnwrap(TimeZone(identifier: "UTC")))
+        ), "无 overlay 且默认目标已经生效时继续保持 no-op")
+    }
+
+    func testSaveCompletedSessionPlanPinsDefaultAgainstPermanentSubstitutionAcrossBuilderCleanPlan() async throws {
+        let dayCode = "pull-a"
+        let originalId = "lat-pulldown"
+        let substitutedId = "pull-up"
+        let defaults = TodayPrescriptionEngine.defaultDayExerciseIds(
+            dayCode: dayCode,
+            equipmentScenario: "commercial-gym"
+        )
+        XCTAssertEqual(defaults.first, originalId)
+
+        let seed = try AppData(decoding: .object([
+            "schemaVersion": .int(Int64(SchemaVersion.current)),
+            "userProfile": .object([
+                "weeklyTrainingDays": .int(3),
+                "equipmentScenario": .string("commercial-gym"),
+            ]),
+            "programTemplate": .object([
+                "splitType": .string("push-pull-legs"),
+                "daysPerWeek": .int(3),
+            ]),
+            "exerciseSubstitutions": .object([
+                originalId: .string(substitutedId),
+            ]),
+            "history": .array([]),
+        ]))
+        let seedInput = try CleanTrainingDecisionInput.make(
+            from: CleanAppDataViewBuilder.build(from: seed),
+            todayISO: "2026-07-30"
+        )
+        let forcedDay = PlanCustomizationInput(daySequence: [dayCode])
+        let trainVerdict = TodayVerdict(
+            call: .train,
+            reason: .normalProgression,
+            signals: []
+        )
+        let substitutedPlan = try XCTUnwrap(TodayPrescriptionEngine.plan(
+            input: seedInput,
+            verdict: trainVerdict,
+            substitutions: seed.exerciseSubstitutions,
+            customization: forcedDay,
+            dayCodeOverride: dayCode
+        ))
+        XCTAssertEqual(
+            substitutedPlan.exercises.map(\.exerciseId),
+            defaults.map { $0 == originalId ? substitutedId : $0 }
+        )
+
+        var flow = TrainFlowState(
+            prescription: substitutedPlan,
+            allowedEquipment: EquipmentAccess.allowed(for: "commercial-gym")
+        )
+        XCTAssertEqual(flow.currentExercise?.exerciseId, substitutedId)
+        flow.replaceCurrentExercise(with: originalId)
+        XCTAssertEqual(
+            flow.plan.exercises.map(\.exerciseId),
+            defaults,
+            "本场 B→默认 A 后，builder 的最终队列应回到默认构成"
+        )
+        let completed = CompletedSessionBuilder.build(
+            from: flow,
+            sessionId: "save-to-plan-session",
+            dateISO: "2026-07-30",
+            startedAtISO: "2026-07-30T12:00:00Z",
+            finishedAtISO: "2026-07-30T13:00:00Z",
+            durationMinutes: 60
+        )
+        var root = seed.storage
+        root["history"] = .array([.object(completed.storage)])
+        let appData = try AppData(decoding: .object(root))
+        let now = try date("2026-07-31", timeZone: XCTUnwrap(TimeZone(identifier: "UTC")))
+        XCTAssertNotNil(SessionStore.completedSessionPlanCandidate(
+            from: appData,
+            sessionId: "save-to-plan-session",
+            now: now
+        ), "永久替换仍把默认 A 拉成 B 时，B→A 的本场目标必须可存回")
+
+        let (directory, fileURL) = try makeTemporaryCanonical(appData)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let sessionStore = SessionStore(
+            draftStore: FakeTrainSessionDraftStore(),
+            planWriteFileURL: fileURL
+        )
+        let outcome = await sessionStore.saveCompletedSessionPlan(
+            sessionId: "save-to-plan-session",
+            now: now
+        )
+        guard case .saved = outcome else {
+            return XCTFail("expected saved, got \(outcome)")
+        }
+
+        let reloaded = try XCTUnwrap(try JSONFileAppDataStore(fileURL: fileURL).load())
+        XCTAssertEqual(
+            reloaded.planCustomization?.dayPlans[dayCode]?.exercises.map(\.exerciseId),
+            defaults,
+            "overlay 会拉走默认时，默认 IDs 是非冗余 userPinned 覆盖，不能 clear/no-op"
+        )
+        XCTAssertEqual(
+            reloaded.exerciseSubstitutions,
+            [originalId: substitutedId],
+            "存回不得清除或改写永久 exerciseSubstitutions"
+        )
+
+        let nextInput = try CleanTrainingDecisionInput.make(
+            from: CleanAppDataViewBuilder.build(from: reloaded),
+            todayISO: "2026-07-31"
+        )
+        let bridged = PlanCustomizationBridge.input(from: reloaded.planCustomization)
+        let nextPlan = try XCTUnwrap(TodayPrescriptionEngine.plan(
+            input: nextInput,
+            verdict: trainVerdict,
+            substitutions: reloaded.exerciseSubstitutions,
+            customization: PlanCustomizationInput(
+                dayPlans: bridged.dayPlans,
+                daySequence: [dayCode]
+            ),
+            dayCodeOverride: dayCode
+        ))
+        XCTAssertEqual(
+            nextPlan.exercises.map(\.exerciseId),
+            defaults,
+            "builder→clean→plan：userPinned 默认 A 必须压过仍保留的永久 A→B"
+        )
+    }
+
+    func testSaveCompletedSessionPlanWritesOnlyIdsAndUndoRestoresRawNodeByteForByte() async throws {
+        let rawPrevious: JSONValue = .object([
+            "exercises": .array([
+                .object([
+                    "exerciseId": .string("bench-press"),
+                    "sets": .int(4),
+                    "futureItemKey": .object(["keep": .bool(true)]),
+                ]),
+                .object([
+                    "futureDirtyItem": .string("typed getter skips this"),
+                ]),
+                .object([
+                    "exerciseId": .string("cable-fly"),
+                    "crossFamily": .bool(true),
+                ]),
+            ]),
+            "futureDayPlanSibling": .array([.string("keep"), .int(7)]),
+        ])
+        let appData = try makeCompletedPlanAppData(
+            dayCode: "push-a",
+            finalOrder: ["db-bench-press", "db-curl"],
+            currentDayPlan: nil,
+            rawDayPlan: rawPrevious,
+            added: ["db-curl"],
+            removed: ["cable-fly"]
+        )
+        let candidate = try XCTUnwrap(SessionStore.completedSessionPlanCandidate(
+            from: appData,
+            sessionId: "save-to-plan-session",
+            now: startedAt
+        ))
+        let (directory, fileURL) = try makeTemporaryCanonical(appData)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let sessionStore = SessionStore(
+            draftStore: FakeTrainSessionDraftStore(),
+            planWriteFileURL: fileURL
+        )
+
+        let outcome = await sessionStore.saveCompletedSessionPlan(
+            sessionId: candidate.sessionId,
+            now: startedAt
+        )
+
+        guard case .saved(let undo) = outcome else {
+            return XCTFail("expected saved, got \(outcome)")
+        }
+        XCTAssertEqual(sessionStore.completedSessionPlanRevision, 1)
+        let afterSave = try XCTUnwrap(try JSONFileAppDataStore(fileURL: fileURL).load())
+        let savedItems = try XCTUnwrap(afterSave.planCustomization?.dayPlans["push-a"]?.exercises)
+        XCTAssertEqual(savedItems.map(\.exerciseId), ["db-bench-press", "db-curl"])
+        XCTAssertTrue(savedItems.allSatisfy {
+            $0.sets == nil && $0.repMin == nil && $0.repMax == nil
+                && $0.rest == nil && !$0.crossFamily
+        }, "FR-TR14 只写 exerciseId，不把本场组数/次数/休息写死进计划")
+        let rawSaved = try XCTUnwrap(rawDayPlan(in: afterSave, dayCode: "push-a")?.asObject)
+        XCTAssertEqual(rawSaved, [
+            "exercises": .array([
+                .object(["exerciseId": .string("db-bench-press")]),
+                .object(["exerciseId": .string("db-curl")]),
+            ]),
+        ], "存回本身仍是整日覆盖，只写 exerciseId")
+        XCTAssertEqual(undo.dayCode, "push-a")
+        XCTAssertEqual(
+            try deterministicJSONBytes(undo.rawDayPlan),
+            try deterministicJSONBytes(rawPrevious),
+            "撤销基线必须是写入瞬间的 raw JSONValue 节点"
+        )
+
+        let restored = await sessionStore.restoreCompletedSessionPlan(undo)
+
+        XCTAssertTrue(restored)
+        XCTAssertEqual(sessionStore.completedSessionPlanRevision, 2)
+        let afterUndo = try XCTUnwrap(try JSONFileAppDataStore(fileURL: fileURL).load())
+        XCTAssertEqual(
+            try deterministicJSONBytes(rawDayPlan(in: afterUndo, dayCode: "push-a")),
+            try deterministicJSONBytes(rawPrevious),
+            "未知 dayPlan sibling、未知 item key、typed getter 跳过的脏 item 必须逐字节恢复"
+        )
+        XCTAssertEqual(afterUndo.schemaVersion, SchemaVersion.current)
+    }
+
+    func testUndoSavedPlanWithNilSnapshotRemovesCustomDayPlan() async throws {
+        let defaults = TodayPrescriptionEngine.defaultDayExerciseIds(
+            dayCode: "push-a",
+            equipmentScenario: "commercial-gym"
+        )
+        let target = Array(defaults.reversed())
+        XCTAssertNotEqual(target, defaults)
+        let appData = try makeCompletedPlanAppData(
+            dayCode: "push-a",
+            finalOrder: target,
+            currentDayPlan: nil
+        )
+        let candidate = try XCTUnwrap(SessionStore.completedSessionPlanCandidate(
+            from: appData,
+            sessionId: "save-to-plan-session",
+            now: startedAt
+        ))
+        let (directory, fileURL) = try makeTemporaryCanonical(appData)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let sessionStore = SessionStore(
+            draftStore: FakeTrainSessionDraftStore(),
+            planWriteFileURL: fileURL
+        )
+
+        let outcome = await sessionStore.saveCompletedSessionPlan(
+            sessionId: candidate.sessionId,
+            now: startedAt
+        )
+        guard case .saved(let undo) = outcome else {
+            return XCTFail("expected saved, got \(outcome)")
+        }
+        XCTAssertNil(undo.rawDayPlan)
+        XCTAssertNotNil(try JSONFileAppDataStore(fileURL: fileURL).load()?
+            .planCustomization?.dayPlans["push-a"])
+
+        let restored = await sessionStore.restoreCompletedSessionPlan(undo)
+        XCTAssertTrue(restored)
+        XCTAssertNil(try JSONFileAppDataStore(fileURL: fileURL).load()?.planCustomization)
+    }
+
+    func testSaveCompletedSessionPlanClearsDefaultEquivalentCustomPlan() async throws {
+        let defaults = TodayPrescriptionEngine.defaultDayExerciseIds(
+            dayCode: "push-a",
+            equipmentScenario: "commercial-gym"
+        )
+        let appData = try makeCompletedPlanAppData(
+            dayCode: "push-a",
+            finalOrder: defaults,
+            currentDayPlan: CustomDayPlan(exercises: [
+                CustomExerciseItem(exerciseId: "db-bench-press"),
+                CustomExerciseItem(exerciseId: "db-curl"),
+            ])
+        )
+        let candidate = try XCTUnwrap(SessionStore.completedSessionPlanCandidate(
+            from: appData,
+            sessionId: "save-to-plan-session",
+            now: startedAt
+        ))
+        let (directory, fileURL) = try makeTemporaryCanonical(appData)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let sessionStore = SessionStore(
+            draftStore: FakeTrainSessionDraftStore(),
+            planWriteFileURL: fileURL
+        )
+
+        let outcome = await sessionStore.saveCompletedSessionPlan(
+            sessionId: candidate.sessionId,
+            now: startedAt
+        )
+        guard case .saved = outcome else {
+            return XCTFail("expected saved, got \(outcome)")
+        }
+
+        let reloaded = try XCTUnwrap(try JSONFileAppDataStore(fileURL: fileURL).load())
+        XCTAssertNil(reloaded.planCustomization?.dayPlans["push-a"])
+    }
+
+    func testSaveCompletedSessionPlanRecomputesLatestAndNoOpsWhenExternalRemovalMakesDefaultEquivalent() async throws {
+        let defaults = TodayPrescriptionEngine.defaultDayExerciseIds(
+            dayCode: "push-a",
+            equipmentScenario: "commercial-gym"
+        )
+        let initial = try makeCompletedPlanAppData(
+            dayCode: "push-a",
+            finalOrder: defaults,
+            currentDayPlan: CustomDayPlan(exercises: [
+                CustomExerciseItem(exerciseId: "db-bench-press"),
+                CustomExerciseItem(exerciseId: "db-curl"),
+            ])
+        )
+        XCTAssertNotNil(SessionStore.completedSessionPlanCandidate(
+            from: initial,
+            sessionId: "save-to-plan-session",
+            now: startedAt
+        ))
+        let (directory, fileURL) = try makeTemporaryCanonical(initial)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let sessionStore = SessionStore(
+            draftStore: FakeTrainSessionDraftStore(),
+            planWriteFileURL: fileURL
+        )
+        let externallyEdited = try makeCompletedPlanAppData(
+            dayCode: "push-a",
+            finalOrder: defaults,
+            currentDayPlan: nil
+        )
+        try JSONEncoder().encode(externallyEdited).write(to: fileURL)
+        let bytesBeforeClick = try Data(contentsOf: fileURL)
+
+        let outcome = await sessionStore.saveCompletedSessionPlan(
+            sessionId: "save-to-plan-session",
+            now: startedAt
+        )
+
+        XCTAssertEqual(outcome, .noOp)
+        XCTAssertNil(sessionStore.planSaveErrorText)
+        XCTAssertEqual(sessionStore.completedSessionPlanRevision, 0)
+        XCTAssertEqual(try Data(contentsOf: fileURL), bytesBeforeClick,
+                       "最新有效构成已等价时，不写、不备份、不报成功")
+    }
+
+    func testSaveCompletedSessionPlanUsesLatestExternalEditAsUndoBaselineWhenStillDifferent() async throws {
+        let target = ["db-bench-press", "db-curl"]
+        let initial = try makeCompletedPlanAppData(
+            dayCode: "push-a",
+            finalOrder: target,
+            currentDayPlan: CustomDayPlan(exercises: [
+                CustomExerciseItem(exerciseId: "bench-press"),
+                CustomExerciseItem(exerciseId: "incline-db-press"),
+            ])
+        )
+        XCTAssertNotNil(SessionStore.completedSessionPlanCandidate(
+            from: initial,
+            sessionId: "save-to-plan-session",
+            now: startedAt
+        ))
+        let (directory, fileURL) = try makeTemporaryCanonical(initial)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let sessionStore = SessionStore(
+            draftStore: FakeTrainSessionDraftStore(),
+            planWriteFileURL: fileURL
+        )
+        let latestRaw: JSONValue = .object([
+            "exercises": .array([
+                .object([
+                    "exerciseId": .string("lat-pulldown"),
+                    "futureItemKey": .string("latest"),
+                ]),
+                .object(["dirty": .bool(true)]),
+                .object(["exerciseId": .string("seated-row")]),
+            ]),
+            "futureDayPlanSibling": .string("latest"),
+        ])
+        let externallyEdited = try makeCompletedPlanAppData(
+            dayCode: "push-a",
+            finalOrder: target,
+            currentDayPlan: nil,
+            rawDayPlan: latestRaw
+        )
+        try JSONEncoder().encode(externallyEdited).write(to: fileURL)
+
+        let outcome = await sessionStore.saveCompletedSessionPlan(
+            sessionId: "save-to-plan-session",
+            now: startedAt
+        )
+
+        guard case .saved(let undo) = outcome else {
+            return XCTFail("expected saved, got \(outcome)")
+        }
+        XCTAssertEqual(
+            try deterministicJSONBytes(undo.rawDayPlan),
+            try deterministicJSONBytes(latestRaw),
+            "撤销基线必须来自 compare-and-apply 同一事务内的最新 raw 前值"
+        )
+        let afterSave = try XCTUnwrap(try JSONFileAppDataStore(fileURL: fileURL).load())
+        XCTAssertEqual(
+            afterSave.planCustomization?.dayPlans["push-a"]?.exercises.map(\.exerciseId),
+            target
+        )
+
+        let restored = await sessionStore.restoreCompletedSessionPlan(undo)
+        XCTAssertTrue(restored)
+        let afterUndo = try XCTUnwrap(try JSONFileAppDataStore(fileURL: fileURL).load())
+        XCTAssertEqual(
+            try deterministicJSONBytes(rawDayPlan(in: afterUndo, dayCode: "push-a")),
+            try deterministicJSONBytes(latestRaw)
+        )
+    }
+
+    func testSaveCompletedSessionPlanNoOpsWhenExternalEditAlreadyWroteTargetCustomValue() async throws {
+        let target = ["db-bench-press", "db-curl"]
+        let initial = try makeCompletedPlanAppData(
+            dayCode: "push-a",
+            finalOrder: target,
+            currentDayPlan: CustomDayPlan(exercises: [
+                CustomExerciseItem(exerciseId: "bench-press"),
+                CustomExerciseItem(exerciseId: "incline-db-press"),
+            ])
+        )
+        XCTAssertNotNil(SessionStore.completedSessionPlanCandidate(
+            from: initial,
+            sessionId: "save-to-plan-session",
+            now: startedAt
+        ))
+        let (directory, fileURL) = try makeTemporaryCanonical(initial)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let sessionStore = SessionStore(
+            draftStore: FakeTrainSessionDraftStore(),
+            planWriteFileURL: fileURL
+        )
+        let externallyEdited = try makeCompletedPlanAppData(
+            dayCode: "push-a",
+            finalOrder: target,
+            currentDayPlan: CustomDayPlan(exercises: target.map {
+                CustomExerciseItem(exerciseId: $0)
+            })
+        )
+        try JSONEncoder().encode(externallyEdited).write(to: fileURL)
+        let bytesBeforeClick = try Data(contentsOf: fileURL)
+
+        let outcome = await sessionStore.saveCompletedSessionPlan(
+            sessionId: "save-to-plan-session",
+            now: startedAt
+        )
+
+        XCTAssertEqual(outcome, .noOp)
+        XCTAssertNil(sessionStore.planSaveErrorText)
+        XCTAssertEqual(sessionStore.completedSessionPlanRevision, 0)
+        XCTAssertEqual(try Data(contentsOf: fileURL), bytesBeforeClick)
+    }
+
+    func testSaveCompletedSessionPlanFailureKeepsCanonicalBytesAndErrorState() async throws {
+        let appData = try makeCompletedPlanAppData(
+            dayCode: "push-a",
+            finalOrder: ["incline-db-press", "bench-press"],
+            currentDayPlan: CustomDayPlan(exercises: [
+                CustomExerciseItem(exerciseId: "bench-press"),
+                CustomExerciseItem(exerciseId: "incline-db-press"),
+            ])
+        )
+        let candidate = try XCTUnwrap(SessionStore.completedSessionPlanCandidate(
+            from: appData,
+            sessionId: "save-to-plan-session",
+            now: startedAt
+        ))
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rede-save-plan-failure-\(UUID().uuidString)", isDirectory: true)
+        let fileURL = directory.appendingPathComponent("app-data.json")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let malformed = Data(#"{"schemaVersion":"not-readable"}"#.utf8)
+        try malformed.write(to: fileURL)
+        let sessionStore = SessionStore(
+            draftStore: FakeTrainSessionDraftStore(),
+            planWriteFileURL: fileURL
+        )
+
+        let outcome = await sessionStore.saveCompletedSessionPlan(
+            sessionId: candidate.sessionId,
+            now: startedAt
+        )
+
+        XCTAssertEqual(outcome, .failed)
+        XCTAssertNotNil(sessionStore.planSaveErrorText)
+        XCTAssertEqual(sessionStore.completedSessionPlanRevision, 0)
+        XCTAssertEqual(try Data(contentsOf: fileURL), malformed)
+    }
+
     func testPlanAdjustmentStateShowsIncreaseProposalAboveExistingReduceUndo() throws {
         let dates = [
             "2026-06-29", "2026-06-30", "2026-07-01", "2026-07-02", "2026-07-03",
@@ -985,6 +1647,123 @@ final class SessionStoreDraftTests: XCTestCase {
             "history": .array(sessions),
             "planAdjustmentHistory": .array(records),
         ]))
+    }
+
+    private func makeCompletedPlanAppData(
+        dayCode: String,
+        finalOrder: [String],
+        currentDayPlan: CustomDayPlan?,
+        rawDayPlan: JSONValue? = nil,
+        added: [String] = [],
+        removed: [String] = [],
+        oneTimeDayOverride: String? = nil,
+        exerciseSubstitutions: [String: String] = [:],
+        completedExerciseIds: [String] = []
+    ) throws -> AppData {
+        func editItems(_ ids: [String]) -> JSONValue {
+            .array(ids.enumerated().map { index, id in
+                .object([
+                    "exerciseId": .string(id),
+                    "position": .int(Int64(index)),
+                ])
+            })
+        }
+        var session: [String: JSONValue] = [
+            "id": .string("save-to-plan-session"),
+            "date": .string("2026-07-30"),
+            "completed": .bool(true),
+            "templateId": .string(dayCode),
+            "durationMin": .double(62),
+            "exercises": .array(completedExerciseIds.map { exerciseId in
+                .object([
+                    "exerciseId": .string(exerciseId),
+                    "sets": .array([
+                        .object([
+                            "weight": .int(0),
+                            "reps": .int(8),
+                            "rir": .int(2),
+                        ]),
+                    ]),
+                ])
+            }),
+            "finalExerciseOrder": .array(finalOrder.map(JSONValue.string)),
+        ]
+        if !added.isEmpty || !removed.isEmpty {
+            session["sessionEdits"] = .object([
+                "added": editItems(added),
+                "removed": editItems(removed),
+            ])
+        }
+        var root: [String: JSONValue] = [
+            "schemaVersion": .int(Int64(SchemaVersion.current)),
+            "userProfile": .object([
+                "weeklyTrainingDays": .int(3),
+                "equipmentScenario": .string("commercial-gym"),
+            ]),
+            "programTemplate": .object([
+                "splitType": .string("push-pull-legs"),
+                "daysPerWeek": .int(3),
+            ]),
+            "history": .array([.object(session)]),
+        ]
+        if !exerciseSubstitutions.isEmpty {
+            root["exerciseSubstitutions"] = .object(
+                exerciseSubstitutions.mapValues(JSONValue.string)
+            )
+        }
+        if let rawDayPlan {
+            root["planCustomization"] = .object([
+                "dayPlans": .object([
+                    dayCode: rawDayPlan,
+                ]),
+            ])
+        } else if let currentDayPlan {
+            root["planCustomization"] = .object([
+                "dayPlans": .object([
+                    dayCode: .object([
+                        "exercises": .array(currentDayPlan.exercises.map(customItemJSON)),
+                    ]),
+                ]),
+            ])
+        }
+        if let oneTimeDayOverride {
+            root["oneTimeDayOverride"] = .object([
+                "dayCode": .string(oneTimeDayOverride),
+                "dateISO": .string("2026-07-30"),
+            ])
+        }
+        return try AppData(decoding: .object(root))
+    }
+
+    private func rawDayPlan(in appData: AppData, dayCode: String) -> JSONValue? {
+        appData.storage["planCustomization"]?
+            .asObject?["dayPlans"]?
+            .asObject?[dayCode]
+    }
+
+    private func deterministicJSONBytes(_ value: JSONValue?) throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        return try encoder.encode(value)
+    }
+
+    private func customItemJSON(_ item: CustomExerciseItem) -> JSONValue {
+        var object: [String: JSONValue] = ["exerciseId": .string(item.exerciseId)]
+        if let sets = item.sets { object["sets"] = .int(Int64(sets)) }
+        if let repMin = item.repMin { object["repMin"] = .int(Int64(repMin)) }
+        if let repMax = item.repMax { object["repMax"] = .int(Int64(repMax)) }
+        if let rest = item.rest { object["rest"] = .int(Int64(rest)) }
+        if item.crossFamily { object["crossFamily"] = .bool(true) }
+        return .object(object)
+    }
+
+    private func makeTemporaryCanonical(_ appData: AppData) throws -> (URL, URL) {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rede-save-plan-\(UUID().uuidString)", isDirectory: true)
+        let fileURL = directory.appendingPathComponent("app-data.json")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try JSONEncoder().encode(appData).write(to: fileURL)
+        return (directory, fileURL)
     }
 
     private func date(_ iso: String, timeZone: TimeZone) throws -> Date {

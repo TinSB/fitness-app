@@ -102,14 +102,21 @@ final class SessionStore {
     private let restLiveActivity = RestLiveActivityController()
     /// 进行中训练 draft 存取；生产默认仍落原文件，测试注入 fake，禁止触碰真实 AppData。
     private let draftStore: any TrainSessionDraftStoring
+    /// 计划写入文件。生产固定 canonical；app-hosted 测试注入临时文件以实走同一写闸，
+    /// 不触碰测试宿主的真实 AppData。
+    private let planWriteFileURL: URL
 
     /// K6 启动清理只跑一次（审查 MINOR：@State 初值表达式在 View 结构体每次构造时
     /// 求值——将来任何让 WindowGroup 重估的改动都会构造临时 SessionStore，若清理在
     /// init 无闸门，会误杀正在跑的休息 Live Activity；进程级 once 保住原语义）。
     private static var didRunLaunchCleanup = false
 
-    init(draftStore: any TrainSessionDraftStoring = FileTrainSessionDraftStore()) {
+    init(
+        draftStore: any TrainSessionDraftStoring = FileTrainSessionDraftStore(),
+        planWriteFileURL: URL = TodayModel.canonicalFileURL()
+    ) {
         self.draftStore = draftStore
+        self.planWriteFileURL = planWriteFileURL
         // K6 启动清理：上个进程被杀（训练异常中断）可能留下孤儿 Live Activity——
         // 新进程首次构造时必无休息在跑，全部收掉（controller 串行链保证先于 begin）。
         if !Self.didRunLaunchCleanup {
@@ -127,6 +134,9 @@ final class SessionStore {
     /// FR-PL3/4 计划调整写入（采纳/回滚）失败的如实呈现，同样与全局 saveErrorText 隔离——
     /// 计划页调整面只读它，不抢显训练/设置/教练写失败（复刻教练隔离修复，防跨面错误污染）。
     var planSaveErrorText: String?
+    /// FR-TR14 练完存回成功/撤销成功后递增；PlanTab 以 task(id:) 显式重载 projection。
+    /// 失败不递增，避免把未落盘状态投影成成功。
+    private(set) var completedSessionPlanRevision = 0
     /// 设置类写入（通知偏好/单位语言/周期开关）失败的如实呈现，与训练 saveErrorText 隔离——
     /// 设置页只读它，杜绝设置写失败错配到训练小结/引导语境（审计 MAJOR：跨域错误污染）。
     var settingsSaveErrorText: String?
@@ -309,13 +319,44 @@ final class SessionStore {
         )
     }
 
+    /// FR-TR14 练完存回候选。目标是该场最终有序唯一动作；sessionEdits 只喂文案，
+    /// 入口资格只看 target 与该 dayCode 当前有效构成是否不同。
+    struct CompletedSessionPlanCandidate: Equatable, Sendable {
+        let sessionId: String
+        let dayCode: String
+        let targetExerciseIds: [String]
+        let addedExerciseIds: [String]
+        let removedExerciseIds: [String]
+    }
+
+    /// FR-TR14 撤销令牌：raw dayPlan 来自实际写入瞬间的同一 gated mutation，
+    /// 不经过 typed getter，故未知 sibling / 脏 item 都能原样恢复。
+    struct CompletedSessionPlanUndoToken: Equatable, Sendable {
+        let sessionId: String
+        let dayCode: String
+        let rawDayPlan: JSONValue?
+        let didCreateDayPlansContainer: Bool
+    }
+
+    enum CompletedSessionPlanSaveOutcome: Equatable, Sendable {
+        case saved(CompletedSessionPlanUndoToken)
+        case noOp
+        case failed
+    }
+
+    private struct CompletedSessionPlanEvaluation: Sendable {
+        let candidate: CompletedSessionPlanCandidate
+        let resolution: PlanDayApplyResolution
+    }
+
     /// 已完成场次的 canonical 补充事实（T1 练完态 / K1 待机「上次」行 / K3「上一场」）：
-    /// 训练日码与时长不在 clean 链内（cleanView/snapshot 均不带），按 sessionId 从 canonical
-    /// 直读（快照链 HistoryEntry.sessionId 同源；同 loadTemplateFacts 只读不经写闸）。
+    /// 训练日码、时长与 FR-TR14 open-bag 事实不在 clean snapshot 内，按 sessionId 从同一次
+    /// canonical 读取补齐（快照链 HistoryEntry.sessionId 同源；只读不经写闸）。
     /// 缺失/不可读 → nil（对应字段不显示——不编数据）。
     struct TodayCompletedFacts {
         let dayCode: String?
         let durationMinutes: Int?
+        let planCandidate: CompletedSessionPlanCandidate?
     }
 
     nonisolated static func loadCompletedFacts(sessionId: String) -> TodayCompletedFacts? {
@@ -327,8 +368,204 @@ final class SessionStore {
         // templateId 是 legacy key 词汇表字段、类型层未提升（storage 开门设计）——此处按 key 直读。
         return TodayCompletedFacts(
             dayCode: session.storage["templateId"]?.asString,
-            durationMinutes: session.durationMin.map { Int($0.rounded()) }
+            durationMinutes: session.durationMin.map { Int($0.rounded()) },
+            planCandidate: completedSessionPlanCandidate(
+                from: appData,
+                sessionId: sessionId
+            )
         )
+    }
+
+    /// FR-TR14 候选纯派生：dayCode 只认完成场 storage["templateId"]，绝不读已经被消费清空的
+    /// oneTimeDayOverride；finalExerciseOrder 是构成真源，sessionEdits 仅为 add/remove 文案素材。
+    nonisolated static func completedSessionPlanCandidate(
+        from appData: AppData,
+        sessionId: String,
+        now: Date = Date()
+    ) -> CompletedSessionPlanCandidate? {
+        completedSessionPlanEvaluation(
+            from: appData,
+            sessionId: sessionId,
+            now: now
+        )?.candidate
+    }
+
+    /// 候选与落盘决议共用同一纯派生；展示时喂入口/文案，点击时由 Persistence resolver
+    /// 在最新 canonical 已加载且 mutation 尚未提交的同一事务内重新调用。
+    nonisolated private static func completedSessionPlanEvaluation(
+        from appData: AppData,
+        sessionId: String,
+        now: Date
+    ) -> CompletedSessionPlanEvaluation? {
+        guard let session = appData.history.last(where: {
+            $0.id == sessionId && $0.completed == true
+        }),
+        let dayCode = session.storage["templateId"]?.asString,
+        !dayCode.isEmpty,
+        let rawFinalOrder = session.storage["finalExerciseOrder"]?.asStringArray,
+        !rawFinalOrder.isEmpty
+        else { return nil }
+
+        let cleanView = CleanAppDataViewBuilder.build(from: appData)
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        guard let input = try? CleanTrainingDecisionInput.make(
+            from: cleanView,
+            todayISO: formatter.string(from: now)
+        ) else { return nil }
+
+        // builder 已保证有序唯一；读取端再按同口径保留首次，旧/手工 open-bag 数据也不产生歧义。
+        let target = stableUnique(rawFinalOrder)
+        guard !target.isEmpty else { return nil }
+
+        let scenario = input.profile.equipmentScenario
+        let previousDayPlan = appData.planCustomization?.dayPlans[dayCode]
+        let defaults = TodayPrescriptionEngine.defaultDayExerciseIds(
+            dayCode: dayCode,
+            equipmentScenario: scenario
+        )
+        guard !defaults.isEmpty else { return nil }
+        let customization = PlanCustomizationBridge.input(from: appData.planCustomization)
+        let targetProjection = PlanCustomizationInput(
+            dayPlans: [
+                dayCode: target.map {
+                    PlanCustomizationInput.ExerciseSpec(exerciseId: $0)
+                },
+            ]
+        )
+        // 目标也必须由现役处方完整接受；不在 app 层复制 catalog / 器械 / customSlots 规则。
+        guard completedSessionEffectiveExerciseIds(
+            input: input,
+            appData: appData,
+            dayCode: dayCode,
+            customization: targetProjection
+        ) == target,
+        let current = completedSessionEffectiveExerciseIds(
+            input: input,
+            appData: appData,
+            dayCode: dayCode,
+            customization: customization
+        )
+        else { return nil }
+        guard target != current else { return nil }
+
+        let resolution: PlanDayApplyResolution
+        if target == defaults {
+            var clearedDayPlans = customization.dayPlans
+            clearedDayPlans.removeValue(forKey: dayCode)
+            let clearedEffective = completedSessionEffectiveExerciseIds(
+                input: input,
+                appData: appData,
+                dayCode: dayCode,
+                customization: PlanCustomizationInput(dayPlans: clearedDayPlans)
+            )
+            if clearedEffective == target {
+                // 没有 overlay 把默认拉走：沿用编辑器收敛，已有 custom → clear，无 custom → noop。
+                resolution = PlanDayEditRules.applyResolution(
+                    working: target,
+                    defaults: defaults,
+                    wasCustomized: previousDayPlan != nil
+                )
+            } else {
+                // sticky / 永久 substitution 会让清空后真实构成偏离 target；
+                // 默认 IDs 此时是必要的 userPinned 覆盖，不是冗余 custom。
+                resolution = .writeCustom
+            }
+        } else {
+            resolution = PlanDayEditRules.applyResolution(
+                working: target,
+                defaults: defaults,
+                wasCustomized: previousDayPlan != nil
+            )
+        }
+        guard resolution != .noop else { return nil }
+
+        let edits = session.storage["sessionEdits"]?.asObject
+        return CompletedSessionPlanEvaluation(
+            candidate: CompletedSessionPlanCandidate(
+                sessionId: sessionId,
+                dayCode: dayCode,
+                targetExerciseIds: target,
+                addedExerciseIds: sessionEditExerciseIds(edits?["added"]),
+                removedExerciseIds: sessionEditExerciseIds(edits?["removed"])
+            ),
+            resolution: resolution
+        )
+    }
+
+    /// FR-TR14 只读投影：复用现役 Today clean-input→prescription API 取得指定 dayCode
+    /// 下场真实动作构成。合成 train verdict 只为绕开“今天已练完=rest”的展示裁决；
+    /// sticky、永久 substitution、自定义优先级、器械过滤与默认回退全部仍由引擎决定。
+    /// daySequence 仅在这份内存输入中固定为已完成场的 templateId，canonical 不变。
+    nonisolated private static func completedSessionEffectiveExerciseIds(
+        input: CleanTrainingDecisionInput,
+        appData: AppData,
+        dayCode: String,
+        customization: PlanCustomizationInput
+    ) -> [String]? {
+        let forcedDayCustomization = PlanCustomizationInput(
+            dayPlans: customization.dayPlans,
+            daySequence: [dayCode]
+        )
+        let projectionVerdict = TodayVerdict(
+            call: .train,
+            reason: .normalProgression,
+            signals: []
+        )
+        guard let prescription = TodayPrescriptionEngine.plan(
+            input: input,
+            verdict: projectionVerdict,
+            mesocycleEnabled: appData.mesocycle.enabled,
+            blockLengthWeeks: appData.mesocycle.blockLengthWeeks,
+            substitutions: appData.exerciseSubstitutions,
+            customization: forcedDayCustomization,
+            dayCodeOverride: dayCode,
+            rotationOffset: appData.rotationOffset,
+            weeklyCycleRestart: appData.weeklyCycleRestart
+        ),
+        prescription.dayCode == dayCode
+        else { return nil }
+        return prescription.exercises.map(\.exerciseId)
+    }
+
+    /// Persistence resolver 专用：只能从同一事务刚 load 的 AppData 得到三种窄决定，
+    /// 不携带 Today 展示时的 target / snapshot，杜绝 stale compare 与 stale undo。
+    nonisolated private static func completedSessionPlanWriteDecision(
+        from appData: AppData,
+        sessionId: String,
+        now: Date
+    ) -> CompletedSessionPlanWriteDecision {
+        guard let evaluation = completedSessionPlanEvaluation(
+            from: appData,
+            sessionId: sessionId,
+            now: now
+        ) else {
+            return .noOp
+        }
+        switch evaluation.resolution {
+        case .writeCustom:
+            return .writeCustom(
+                dayCode: evaluation.candidate.dayCode,
+                exerciseIds: evaluation.candidate.targetExerciseIds
+            )
+        case .clearCustom:
+            return .clearCustom(dayCode: evaluation.candidate.dayCode)
+        case .noop:
+            return .noOp
+        }
+    }
+
+    nonisolated private static func stableUnique(_ values: [String]) -> [String] {
+        var seen: Set<String> = []
+        return values.filter { !$0.isEmpty && seen.insert($0).inserted }
+    }
+
+    nonisolated private static func sessionEditExerciseIds(_ value: JSONValue?) -> [String] {
+        stableUnique((value?.asArray ?? []).compactMap {
+            $0.asObject?["exerciseId"]?.asString
+        })
     }
 
     /// K5 计划页「上次」列：各训练日码最近一次完成日期（canonical storage["templateId"] 直读，
@@ -1082,7 +1319,7 @@ final class SessionStore {
         isSaving = true
         planSaveErrorText = nil
         defer { isSaving = false }
-        let fileURL = TodayModel.canonicalFileURL()
+        let fileURL = planWriteFileURL
         let result: Result<Void, Error> = await Task.detached(priority: .userInitiated) {
             do {
                 try FileManager.default.createDirectory(
@@ -1118,6 +1355,83 @@ final class SessionStore {
     @discardableResult
     func removeCustomDayPlan(dayCode: String) async -> Bool {
         await performPlanWrite { _ = try $0.removeCustomDayPlan(dayCode: dayCode) }
+    }
+
+    /// FR-TR14「练完存回计划」：显示候选只传 sessionId。真正点击时 writer 在同一个
+    /// gated mutation 内 load 最新 canonical，resolver 重算 target / 当前有效构成；
+    /// 等价即 no-op，不写、不备份、不报成功。确有差异才整日写 exerciseId，并把实际
+    /// 写入瞬间的 raw dayPlan 带回作为撤销令牌。
+    func saveCompletedSessionPlan(
+        sessionId: String,
+        now: Date = Date()
+    ) async -> CompletedSessionPlanSaveOutcome {
+        guard !isSaving else {
+            planSaveErrorText = "completedSessionPlanWriteAlreadyInProgress"
+            return .failed
+        }
+        isSaving = true
+        planSaveErrorText = nil
+        defer { isSaving = false }
+
+        let fileURL = planWriteFileURL
+        let result: Result<CompletedSessionPlanWriteResult, Error> = await Task.detached(
+            priority: .userInitiated
+        ) {
+            do {
+                try FileManager.default.createDirectory(
+                    at: fileURL.deletingLastPathComponent(),
+                    withIntermediateDirectories: true
+                )
+                let writer = CanonicalSessionWriter(
+                    store: JSONFileAppDataStore(fileURL: fileURL),
+                    gate: DataHealthGate()
+                )
+                return .success(try writer.compareAndApplyCompletedSessionPlan { latest in
+                    Self.completedSessionPlanWriteDecision(
+                        from: latest,
+                        sessionId: sessionId,
+                        now: now
+                    )
+                })
+            } catch {
+                return .failure(error)
+            }
+        }.value
+
+        switch result {
+        case .success(let write):
+            await loadToday()
+            guard write.didWrite else { return .noOp }
+            guard let dayCode = write.dayCode else {
+                planSaveErrorText = "completedSessionPlanWriteMissingDayCode"
+                return .failed
+            }
+            completedSessionPlanRevision += 1
+            return .saved(CompletedSessionPlanUndoToken(
+                sessionId: sessionId,
+                dayCode: dayCode,
+                rawDayPlan: write.previousDayPlanRaw,
+                didCreateDayPlansContainer: write.didCreateDayPlansContainer
+            ))
+        case .failure(let error):
+            planSaveErrorText = String(describing: error)
+            return .failed
+        }
+    }
+
+    /// FR-TR14 5 秒撤销：raw 节点由写入瞬间捕获，原样写回；nil 表示当时该 dayCode
+    /// 键不存在，故只执行 removeCustomDayPlan 同义语义。绝不 typed decode→encode。
+    @discardableResult
+    func restoreCompletedSessionPlan(_ undo: CompletedSessionPlanUndoToken) async -> Bool {
+        let succeeded = await performPlanWrite {
+            _ = try $0.restoreCompletedSessionPlanDayRaw(
+                dayCode: undo.dayCode,
+                snapshot: undo.rawDayPlan,
+                didCreateDayPlansContainer: undo.didCreateDayPlansContainer
+            )
+        }
+        if succeeded { completedSessionPlanRevision += 1 }
+        return succeeded
     }
 
     /// FR-PL7②/③ 采纳自定义日序。
