@@ -3,6 +3,24 @@ import RedeL10n
 import RedeLocalSnapshot
 import RedeTrainingDecision
 
+enum CompletedPlanSaveRowLayout: Equatable {
+    case horizontal
+    case vertical
+
+    static func resolve(isAccessibilitySize: Bool) -> Self {
+        isAccessibilitySize ? .vertical : .horizontal
+    }
+}
+
+enum CompletedPlanSavePresentation {
+    /// 结果按完成顺序收敛 UI：快速双击时第二次 busy `.failed` 会先返回，原写入随后
+    /// `.saved` / `.noOp` 必须清掉失败标记，不能把生产撤销条误冻结成 QA hold。
+    static func didFail(for outcome: SessionStore.CompletedSessionPlanSaveOutcome) -> Bool {
+        if case .failed = outcome { return true }
+        return false
+    }
+}
+
 enum TodayBreakthroughPresentation {
     enum Row: Equatable {
         case shareable(String)
@@ -88,6 +106,7 @@ struct TodayTabView: View {
     @Environment(SessionStore.self) private var sessionStore
     @Environment(AppUpdateModel.self) private var appUpdateModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     // 截图钩子（沿 -initialTab 先例）：-expandTodayReason 启动即展开依据抽屉
     @State private var reasonExpanded = ProcessInfo.processInfo.arguments.contains("-expandTodayReason")
     @State private var showSettings = false
@@ -959,8 +978,15 @@ struct TodayTabView: View {
         weekVolumeKg = pm.snapshot.weeklyVolume.first { $0.weekStartISO == weekStart }?.totalVolumeKg
         let record = pm.statsRecords.first { $0.id == latest.sessionId }
         let sid = latest.sessionId
-        let facts = await Task.detached { SessionStore.loadCompletedFacts(sessionId: sid) }.value
         let isTodaySession = latest.dateISO == Self.isoDay(model?.now ?? Date())
+        // 只有 Today 的「今天这场」需要 FR-TR14 候选；休息日「上一场」只读 metadata，
+        // 保持默认 false，避免无条件运行三次引擎投影。
+        let facts = await Task.detached {
+            SessionStore.loadCompletedFacts(
+                sessionId: sid,
+                includesPlanCandidate: isTodaySession
+            )
+        }.value
         completedPlanCandidate = isTodaySession ? facts?.planCandidate : nil
         // patterns 同训练小结口径（SessionShareSnapshotBuilder）：catalog 查动作模式
         let catalog = ExerciseCatalog.minimal
@@ -1158,35 +1184,22 @@ struct TodayTabView: View {
     ) -> some View {
         let fact = s.saveToPlanFact(
             addedExerciseNames: candidate.addedExerciseIds.map(localeStore.exerciseName),
-            removedExerciseNames: candidate.removedExerciseIds.map(localeStore.exerciseName)
+            removedExerciseNames: candidate.removedExerciseIds.map(localeStore.exerciseName),
+            isOrderOnlyDifference: candidate.isOrderOnlyDifference
         )
         return VStack(alignment: .leading, spacing: 4) {
             Button {
                 Task { await saveCompletedPlan(candidate) }
             } label: {
-                HStack(spacing: 8) {
-                    Text(fact)
-                        .font(.redeCallout)
-                        .foregroundStyle(Color.redeT1)
-                        .lineLimit(2)
-                    Spacer(minLength: 8)
-                    Text(s.saveToPlanAction)
-                        .font(.redeCaption)
-                        .foregroundStyle(Color.redeEmber2)
-                    Image(systemName: "chevron.right")
-                        .font(.redeCaption)
-                        .foregroundStyle(Color.redeT4)
-                        .accessibilityHidden(true)
-                }
-                .frame(minHeight: RedeShape.controlHeight)
-                .contentShape(Rectangle())
+                completedPlanSaveLabel(fact: fact)
             }
             .buttonStyle(.redePressableRow)
             .disabled(sessionStore.isSaving)
             .accessibilityElement(children: .combine)
             .accessibilityHint(s.saveToPlanHint)
 
-            if completedPlanSaveFailed, let errorText = sessionStore.planSaveErrorText {
+            if completedPlanSaveFailed,
+               let errorText = sessionStore.completedSessionPlanSaveErrorText {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(s.saveToPlanFailure)
                         .font(.redeCaption)
@@ -1202,6 +1215,50 @@ struct TodayTabView: View {
         }
     }
 
+    @ViewBuilder
+    private func completedPlanSaveLabel(fact: String) -> some View {
+        let layout = CompletedPlanSaveRowLayout.resolve(
+            isAccessibilitySize: dynamicTypeSize.isAccessibilitySize
+        )
+        switch layout {
+        case .horizontal:
+            HStack(spacing: 8) {
+                Text(fact)
+                    .font(.redeCallout)
+                    .foregroundStyle(Color.redeT1)
+                    .lineLimit(2)
+                Spacer(minLength: 8)
+                completedPlanSaveActionLabel
+            }
+            .frame(minHeight: RedeShape.controlHeight)
+            .contentShape(Rectangle())
+        case .vertical:
+            VStack(alignment: .leading, spacing: 2) {
+                Text(fact)
+                    .font(.redeCallout)
+                    .foregroundStyle(Color.redeT1)
+                    .fixedSize(horizontal: false, vertical: true)
+                completedPlanSaveActionLabel
+                    .frame(minHeight: RedeShape.controlHeight, alignment: .leading)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 6)
+            .contentShape(Rectangle())
+        }
+    }
+
+    private var completedPlanSaveActionLabel: some View {
+        HStack(spacing: 4) {
+            Text(s.saveToPlanAction)
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeEmber2)
+            Image(systemName: "chevron.right")
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT4)
+                .accessibilityHidden(true)
+        }
+    }
+
     private func saveCompletedPlan(
         _ candidate: SessionStore.CompletedSessionPlanCandidate
     ) async {
@@ -1209,9 +1266,9 @@ struct TodayTabView: View {
         let outcome = await sessionStore.saveCompletedSessionPlan(
             sessionId: candidate.sessionId
         )
+        completedPlanSaveFailed = CompletedPlanSavePresentation.didFail(for: outcome)
         switch outcome {
         case .failed:
-            completedPlanSaveFailed = true
             return
         case .noOp:
             // 点击前 canonical 已由其他合法入口改成等价值：诚实隐藏陈旧入口，
@@ -1450,7 +1507,7 @@ struct TodayTabView: View {
             }
             if case .savedPlan = banner.kind,
                completedPlanSaveFailed,
-               let errorText = sessionStore.planSaveErrorText {
+               let errorText = sessionStore.completedSessionPlanSaveErrorText {
                 Text(s.saveToPlanFailure)
                     .font(.redeCaption)
                     .foregroundStyle(Color.redeRisk)
@@ -1493,7 +1550,10 @@ struct TodayTabView: View {
             if restored {
                 commitPulse += 1
                 let facts = await Task.detached {
-                    SessionStore.loadCompletedFacts(sessionId: undo.sessionId)
+                    SessionStore.loadCompletedFacts(
+                        sessionId: undo.sessionId,
+                        includesPlanCandidate: true
+                    )
                 }.value
                 completedPlanCandidate = facts?.planCandidate
                 completedPlanSaveFailed = false

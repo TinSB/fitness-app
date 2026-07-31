@@ -105,64 +105,139 @@ final class PlanCustomizationCopyTests: XCTestCase {
         XCTAssertEqual(en.saveToPlanFailure, "Couldn't save to plan · Try again")
     }
 
-    func testSaveToPlanFactNamesAndNeutralOrderExact() {
+    func testSaveToPlanFactNamesExact() {
         XCTAssertEqual(
-            zh.saveToPlanFact(addedExerciseNames: ["哑铃弯举"], removedExerciseNames: []),
+            zh.saveToPlanFact(
+                addedExerciseNames: ["哑铃弯举"],
+                removedExerciseNames: [],
+                isOrderOnlyDifference: false
+            ),
             "今天加了哑铃弯举"
         )
         XCTAssertEqual(
-            en.saveToPlanFact(addedExerciseNames: ["Dumbbell curl"], removedExerciseNames: []),
+            en.saveToPlanFact(
+                addedExerciseNames: ["Dumbbell curl"],
+                removedExerciseNames: [],
+                isOrderOnlyDifference: false
+            ),
             "You added Dumbbell curl today"
         )
         XCTAssertEqual(
-            zh.saveToPlanFact(addedExerciseNames: [], removedExerciseNames: ["面拉"]),
+            zh.saveToPlanFact(
+                addedExerciseNames: [],
+                removedExerciseNames: ["面拉"],
+                isOrderOnlyDifference: false
+            ),
             "今天去掉了面拉"
         )
         XCTAssertEqual(
-            en.saveToPlanFact(addedExerciseNames: [], removedExerciseNames: ["Face pull"]),
+            en.saveToPlanFact(
+                addedExerciseNames: [],
+                removedExerciseNames: ["Face pull"],
+                isOrderOnlyDifference: false
+            ),
             "You removed Face pull today"
         )
+    }
+
+    func testSaveToPlanFactDistinguishesOrderOnlyFromOtherDifferenceWithoutAudit() {
         XCTAssertEqual(
-            zh.saveToPlanFact(addedExerciseNames: [], removedExerciseNames: []),
+            zh.saveToPlanFact(
+                addedExerciseNames: [],
+                removedExerciseNames: [],
+                isOrderOnlyDifference: true
+            ),
             "今天调整了动作顺序"
         )
         XCTAssertEqual(
-            en.saveToPlanFact(addedExerciseNames: [], removedExerciseNames: []),
+            en.saveToPlanFact(
+                addedExerciseNames: [],
+                removedExerciseNames: [],
+                isOrderOnlyDifference: true
+            ),
             "You adjusted today's exercise order"
+        )
+        XCTAssertEqual(
+            zh.saveToPlanFact(
+                addedExerciseNames: [],
+                removedExerciseNames: [],
+                isOrderOnlyDifference: false
+            ),
+            "今天练的和这天的计划不一样"
+        )
+        XCTAssertEqual(
+            en.saveToPlanFact(
+                addedExerciseNames: [],
+                removedExerciseNames: [],
+                isOrderOnlyDifference: false
+            ),
+            "Today's session differed from this day's plan"
         )
     }
 
     func testSaveToPlanFactCombinesChangesAndSummarizesMultipleNames() {
         XCTAssertEqual(
-            zh.saveToPlanFact(addedExerciseNames: ["哑铃弯举"], removedExerciseNames: ["面拉"]),
+            zh.saveToPlanFact(
+                addedExerciseNames: ["哑铃弯举"],
+                removedExerciseNames: ["面拉"],
+                isOrderOnlyDifference: false
+            ),
             "今天加了哑铃弯举，去掉了面拉"
         )
         XCTAssertEqual(
-            en.saveToPlanFact(addedExerciseNames: ["Dumbbell curl"], removedExerciseNames: ["Face pull"]),
+            en.saveToPlanFact(
+                addedExerciseNames: ["Dumbbell curl"],
+                removedExerciseNames: ["Face pull"],
+                isOrderOnlyDifference: false
+            ),
             "You added Dumbbell curl and removed Face pull today"
         )
         XCTAssertEqual(
-            zh.saveToPlanFact(addedExerciseNames: ["哑铃弯举", "绳索弯举"], removedExerciseNames: []),
+            zh.saveToPlanFact(
+                addedExerciseNames: ["哑铃弯举", "绳索弯举"],
+                removedExerciseNames: [],
+                isOrderOnlyDifference: false
+            ),
             "今天加了 2 个动作"
         )
         XCTAssertEqual(
-            en.saveToPlanFact(addedExerciseNames: ["Dumbbell curl", "Cable curl"], removedExerciseNames: []),
+            en.saveToPlanFact(
+                addedExerciseNames: ["Dumbbell curl", "Cable curl"],
+                removedExerciseNames: [],
+                isOrderOnlyDifference: false
+            ),
             "You added 2 exercises today"
         )
         XCTAssertEqual(
-            zh.saveToPlanFact(addedExerciseNames: [], removedExerciseNames: ["面拉", "反向飞鸟"]),
+            zh.saveToPlanFact(
+                addedExerciseNames: [],
+                removedExerciseNames: ["面拉", "反向飞鸟"],
+                isOrderOnlyDifference: false
+            ),
             "今天去掉了 2 个动作"
         )
         XCTAssertEqual(
-            en.saveToPlanFact(addedExerciseNames: [], removedExerciseNames: ["Face pull", "Reverse fly"]),
+            en.saveToPlanFact(
+                addedExerciseNames: [],
+                removedExerciseNames: ["Face pull", "Reverse fly"],
+                isOrderOnlyDifference: false
+            ),
             "You removed 2 exercises today"
         )
         XCTAssertEqual(
-            zh.saveToPlanFact(addedExerciseNames: ["哑铃弯举", "绳索弯举"], removedExerciseNames: ["面拉", "反向飞鸟"]),
+            zh.saveToPlanFact(
+                addedExerciseNames: ["哑铃弯举", "绳索弯举"],
+                removedExerciseNames: ["面拉", "反向飞鸟"],
+                isOrderOnlyDifference: false
+            ),
             "今天加了 2 个动作，去掉了 2 个动作"
         )
         XCTAssertEqual(
-            en.saveToPlanFact(addedExerciseNames: ["Dumbbell curl", "Cable curl"], removedExerciseNames: ["Face pull", "Reverse fly"]),
+            en.saveToPlanFact(
+                addedExerciseNames: ["Dumbbell curl", "Cable curl"],
+                removedExerciseNames: ["Face pull", "Reverse fly"],
+                isOrderOnlyDifference: false
+            ),
             "You added 2 exercises and removed 2 exercises today"
         )
     }

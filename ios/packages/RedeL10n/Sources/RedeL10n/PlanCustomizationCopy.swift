@@ -81,7 +81,11 @@ extension RedeStrings {
             : "Save today's exercises and order to your plan"
     }
     /// Today 练完态的改动事实。单项报动作名；同一侧多项只报数量，避免逐名罗列。
-    public func saveToPlanFact(addedExerciseNames: [String], removedExerciseNames: [String]) -> String {
+    public func saveToPlanFact(
+        addedExerciseNames: [String],
+        removedExerciseNames: [String],
+        isOrderOnlyDifference: Bool
+    ) -> String {
         let added = saveToPlanAddedFact(addedExerciseNames)
         let removed = saveToPlanRemovedFact(removedExerciseNames)
 
@@ -95,7 +99,12 @@ extension RedeStrings {
         case let (nil, .some(removed)):
             return locale == .zh ? "今天\(removed)" : "You \(removed) today"
         case (nil, nil):
-            return locale == .zh ? "今天调整了动作顺序" : "You adjusted today's exercise order"
+            if isOrderOnlyDifference {
+                return locale == .zh ? "今天调整了动作顺序" : "You adjusted today's exercise order"
+            }
+            return locale == .zh
+                ? "今天练的和这天的计划不一样"
+                : "Today's session differed from this day's plan"
         }
     }
 

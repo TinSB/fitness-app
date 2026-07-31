@@ -175,12 +175,18 @@ struct RootTabView: View {
                 await sessionStore.loadToday()
                 sessionStore.startSession()
             }
-            // FR-TR14 Simulator 验证脚手架：经真实会话编辑 seam 加入一个该日默认未排动作，
-            // 再由下方同一完成/落盘路径生成候选；不在 Train 增加任何入口。
+            // FR-TR14 Simulator 验证脚手架：经真实会话编辑 seam 加入一个该日默认未排动作、
+            // 移除一个未来动作，覆盖最长「加+删」事实句；再由下方同一完成/落盘路径生成候选。
+            // 只在显式 launch argument 下生效，不在 Train 增加任何入口。
             if preparesSaveToPlan || savesToPlan,
                let exerciseId = sessionStore.sessionEditCandidates.first?.id,
                let addition = sessionStore.makeSessionEditExercisePlan(exerciseId: exerciseId) {
                 _ = sessionStore.applyDurably(.addExercise(addition))
+            }
+            if preparesSaveToPlan || savesToPlan,
+               let flow = sessionStore.flow,
+               let removal = flow.removal(at: flow.plan.exercises.count - 1) {
+                _ = sessionStore.applyDurably(.removeExercise(removal))
             }
             if let target = advanceTarget {
                 var guardCounter = 0 // 防御：异常状态下不空转

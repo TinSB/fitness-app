@@ -504,6 +504,37 @@ final class SessionStoreDraftTests: XCTestCase {
         )
     }
 
+    func testCompletedPlanSaveActionStacksOnlyForAccessibilityDynamicType() {
+        XCTAssertEqual(
+            CompletedPlanSaveRowLayout.resolve(isAccessibilitySize: false),
+            .horizontal
+        )
+        XCTAssertEqual(
+            CompletedPlanSaveRowLayout.resolve(isAccessibilitySize: true),
+            .vertical
+        )
+    }
+
+    func testCompletedPlanSavePresentationClearsBusyFailureWhenEarlierWriteFinishes() {
+        let undo = SessionStore.CompletedSessionPlanUndoToken(
+            sessionId: "save-to-plan-session",
+            dayCode: "push-a",
+            rawDayPlan: nil,
+            didCreateDayPlansContainer: false
+        )
+        var didFail = false
+
+        // Completion order for a rapid double tap: the second attempt hits the busy guard first,
+        // then the original write finishes successfully. The later success must win so the
+        // production undo banner keeps its ordinary five-second lifecycle.
+        didFail = CompletedPlanSavePresentation.didFail(for: .failed)
+        XCTAssertTrue(didFail)
+        didFail = CompletedPlanSavePresentation.didFail(for: .saved(undo))
+
+        XCTAssertFalse(didFail)
+        XCTAssertFalse(CompletedPlanSavePresentation.didFail(for: .noOp))
+    }
+
     func testUnifiedSessionEditEntryStaysOpenAfterCurrentFactsAndOnLastExercise() throws {
         var flowWithFacts = TrainFlowState(prescription: makePrescription())
         flowWithFacts.logSet(CompletedSetObservation(
@@ -674,6 +705,29 @@ final class SessionStoreDraftTests: XCTestCase {
         XCTAssertEqual(candidate.removedExerciseIds, ["face-pull"])
     }
 
+    func testCompletedSessionPlanCandidateFiltersAuditNamesAgainstFinalTarget() throws {
+        let appData = try makeCompletedPlanAppData(
+            dayCode: "push-a",
+            finalOrder: ["bench-press", "incline-db-press"],
+            currentDayPlan: CustomDayPlan(exercises: [
+                CustomExerciseItem(exerciseId: "bench-press"),
+            ]),
+            added: ["hip-adduction", "incline-db-press"],
+            removed: ["bench-press", "face-pull"]
+        )
+
+        let candidate = try XCTUnwrap(SessionStore.completedSessionPlanCandidate(
+            from: appData,
+            sessionId: "save-to-plan-session",
+            now: startedAt
+        ))
+
+        XCTAssertEqual(candidate.addedExerciseIds, ["incline-db-press"],
+                       "added copy may name only ids still present in the target")
+        XCTAssertEqual(candidate.removedExerciseIds, ["face-pull"],
+                       "removed copy may name only ids absent from the target")
+    }
+
     func testCompletedSessionPlanCandidateOffersPureReorderWithoutSessionEdits() throws {
         let appData = try makeCompletedPlanAppData(
             dayCode: "push-a",
@@ -693,6 +747,137 @@ final class SessionStoreDraftTests: XCTestCase {
         XCTAssertEqual(candidate.targetExerciseIds, ["incline-db-press", "bench-press"])
         XCTAssertTrue(candidate.addedExerciseIds.isEmpty)
         XCTAssertTrue(candidate.removedExerciseIds.isEmpty)
+    }
+
+    func testCompletedSessionPlanCandidateReportsReplacementAsCompositionDifference() throws {
+        let original = makePrescription()
+        var flow = TrainFlowState(prescription: original)
+
+        flow.replaceCurrentExercise(with: "db-bench-press")
+        XCTAssertEqual(flow.plan.exercises.first?.exerciseId, "db-bench-press",
+                       "fixture must exercise the real FR-TR14 replacement path")
+
+        let completed = CompletedSessionBuilder.build(
+            from: flow,
+            sessionId: "save-to-plan-session",
+            dateISO: "2026-07-30",
+            startedAtISO: "2026-07-30T12:00:00Z",
+            finishedAtISO: "2026-07-30T13:00:00Z",
+            durationMinutes: 60
+        )
+        let baseline = try makeCompletedPlanAppData(
+            dayCode: original.dayCode,
+            finalOrder: original.exercises.map(\.exerciseId),
+            currentDayPlan: CustomDayPlan(exercises: original.exercises.map {
+                CustomExerciseItem(exerciseId: $0.exerciseId)
+            })
+        )
+        var root = baseline.storage
+        root["history"] = .array([.object(completed.storage)])
+        let appData = try AppData(decoding: .object(root))
+
+        let candidate = try XCTUnwrap(SessionStore.completedSessionPlanCandidate(
+            from: appData,
+            sessionId: "save-to-plan-session",
+            now: startedAt
+        ))
+
+        XCTAssertTrue(candidate.addedExerciseIds.isEmpty)
+        XCTAssertTrue(candidate.removedExerciseIds.isEmpty)
+        XCTAssertFalse(candidate.isOrderOnlyDifference)
+        XCTAssertEqual(
+            RedeStrings(locale: .zh).saveToPlanFact(
+                addedExerciseNames: candidate.addedExerciseIds,
+                removedExerciseNames: candidate.removedExerciseIds,
+                isOrderOnlyDifference: candidate.isOrderOnlyDifference
+            ),
+            "今天练的和这天的计划不一样"
+        )
+    }
+
+    func testCompletedSessionPlanCandidateReconcilesCancelledAddRemoveBeforeOrderCopy() throws {
+        let original = makePrescription()
+        var flow = TrainFlowState(prescription: original)
+        let transientId = "hip-adduction"
+
+        flow.addExercise(makeAdHocExercisePlan(id: transientId))
+        let transientIndex = try XCTUnwrap(
+            flow.plan.exercises.firstIndex { $0.exerciseId == transientId }
+        )
+        flow.removeExercise(try XCTUnwrap(flow.removal(at: transientIndex)))
+        flow.moveExerciseToCurrent(targetId)
+        XCTAssertEqual(Set(flow.plan.exercises.map(\.exerciseId)),
+                       Set(original.exercises.map(\.exerciseId)))
+        XCTAssertNotEqual(flow.plan.exercises.map(\.exerciseId),
+                          original.exercises.map(\.exerciseId),
+                          "fixture must end as a pure S1 reorder after cancelling add/remove")
+
+        let completed = CompletedSessionBuilder.build(
+            from: flow,
+            sessionId: "save-to-plan-session",
+            dateISO: "2026-07-30",
+            startedAtISO: "2026-07-30T12:00:00Z",
+            finishedAtISO: "2026-07-30T13:00:00Z",
+            durationMinutes: 60
+        )
+        let baseline = try makeCompletedPlanAppData(
+            dayCode: original.dayCode,
+            finalOrder: original.exercises.map(\.exerciseId),
+            currentDayPlan: CustomDayPlan(exercises: original.exercises.map {
+                CustomExerciseItem(exerciseId: $0.exerciseId)
+            })
+        )
+        var root = baseline.storage
+        root["history"] = .array([.object(completed.storage)])
+        let appData = try AppData(decoding: .object(root))
+
+        let candidate = try XCTUnwrap(SessionStore.completedSessionPlanCandidate(
+            from: appData,
+            sessionId: "save-to-plan-session",
+            now: startedAt
+        ))
+
+        XCTAssertTrue(candidate.addedExerciseIds.isEmpty)
+        XCTAssertTrue(candidate.removedExerciseIds.isEmpty)
+        XCTAssertTrue(candidate.isOrderOnlyDifference)
+        XCTAssertEqual(
+            RedeStrings(locale: .zh).saveToPlanFact(
+                addedExerciseNames: candidate.addedExerciseIds,
+                removedExerciseNames: candidate.removedExerciseIds,
+                isOrderOnlyDifference: candidate.isOrderOnlyDifference
+            ),
+            "今天调整了动作顺序"
+        )
+    }
+
+    func testCompletedFactsDerivesPlanCandidateOnlyWhenRequested() throws {
+        let appData = try makeCompletedPlanAppData(
+            dayCode: "push-a",
+            finalOrder: ["incline-db-press", "bench-press"],
+            currentDayPlan: CustomDayPlan(exercises: [
+                CustomExerciseItem(exerciseId: "bench-press"),
+                CustomExerciseItem(exerciseId: "incline-db-press"),
+            ])
+        )
+
+        let metadataOnly = try XCTUnwrap(SessionStore.completedFacts(
+            from: appData,
+            sessionId: "save-to-plan-session",
+            includesPlanCandidate: false,
+            now: startedAt
+        ))
+        XCTAssertEqual(metadataOnly.dayCode, "push-a")
+        XCTAssertNil(metadataOnly.planCandidate,
+                     "Train 待机与非今日总结只补 metadata，不得派生计划候选")
+
+        let todayFacts = try XCTUnwrap(SessionStore.completedFacts(
+            from: appData,
+            sessionId: "save-to-plan-session",
+            includesPlanCandidate: true,
+            now: startedAt
+        ))
+        XCTAssertNotNil(todayFacts.planCandidate,
+                        "只有 Today 的今天这场显式请求候选派生")
     }
 
     func testCompletedSessionPlanCandidateDeduplicatesFirstOccurrenceAndSuppressesNoOp() throws {
@@ -1304,9 +1489,57 @@ final class SessionStoreDraftTests: XCTestCase {
         )
 
         XCTAssertEqual(outcome, .failed)
-        XCTAssertNotNil(sessionStore.planSaveErrorText)
+        XCTAssertNil(sessionStore.planSaveErrorText,
+                     "Today 的存回失败不得污染计划编辑错误面")
+        XCTAssertNotNil(sessionStore.completedSessionPlanSaveErrorText)
         XCTAssertEqual(sessionStore.completedSessionPlanRevision, 0)
         XCTAssertEqual(try Data(contentsOf: fileURL), malformed)
+    }
+
+    func testSaveCompletedSessionPlanBusyGuardDoesNotExposeRawErrorOrPollutePlanSurface() async {
+        let fileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rede-busy-plan-\(UUID().uuidString).json")
+        let sessionStore = SessionStore(
+            draftStore: FakeTrainSessionDraftStore(),
+            planWriteFileURL: fileURL
+        )
+        sessionStore.isSaving = true
+
+        let outcome = await sessionStore.saveCompletedSessionPlan(
+            sessionId: "save-to-plan-session",
+            now: startedAt
+        )
+
+        XCTAssertEqual(outcome, .failed)
+        XCTAssertNil(sessionStore.planSaveErrorText)
+        XCTAssertNil(sessionStore.completedSessionPlanSaveErrorText,
+                     "忙闸只拒绝重复动作，不直显内部裸串")
+    }
+
+    func testRestoreCompletedSessionPlanFailureUsesOnlyCompletedPlanErrorSurface() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rede-undo-plan-failure-\(UUID().uuidString)", isDirectory: true)
+        let fileURL = directory.appendingPathComponent("app-data.json")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try Data(#"{"schemaVersion":"not-readable"}"#.utf8).write(to: fileURL)
+        let sessionStore = SessionStore(
+            draftStore: FakeTrainSessionDraftStore(),
+            planWriteFileURL: fileURL
+        )
+        let undo = SessionStore.CompletedSessionPlanUndoToken(
+            sessionId: "save-to-plan-session",
+            dayCode: "push-a",
+            rawDayPlan: nil,
+            didCreateDayPlansContainer: false
+        )
+
+        let restored = await sessionStore.restoreCompletedSessionPlan(undo)
+
+        XCTAssertFalse(restored)
+        XCTAssertNil(sessionStore.planSaveErrorText,
+                     "Today 撤销失败不得污染 PlanTab")
+        XCTAssertNotNil(sessionStore.completedSessionPlanSaveErrorText)
     }
 
     func testPlanAdjustmentStateShowsIncreaseProposalAboveExistingReduceUndo() throws {
