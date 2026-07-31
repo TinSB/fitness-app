@@ -4,16 +4,107 @@
 //  - 用户显式选择高于 sticky；自定义日序重排生效、非法回退默认；投影同源。
 
 import XCTest
+import RedeDataHealth
+import RedeDomain
 @testable import RedeTrainingDecision
 
 final class PlanCustomizationEngineTests: XCTestCase {
     private let pplJSON = #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 6}}"#
+    private let trainVerdict = TodayVerdict(
+        call: .train,
+        reason: .normalProgression,
+        signals: []
+    )
 
     private func plan(_ json: String, todayISO: String = "2026-06-11",
                       customization: PlanCustomizationInput = .empty) throws -> TodayPrescription {
         let input = try TestSupport.makeInput(appDataJSON: json, todayISO: todayISO)
         let verdict = TodayVerdictEngine.evaluate(input)
         return try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict, customization: customization))
+    }
+
+    private func savedNewPatternSession(hasCompletedFacts: Bool) throws -> TrainingSession {
+        let input = try TestSupport.makeInput(
+            appDataJSON: pplJSON,
+            todayISO: "2026-07-24"
+        )
+        let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(
+            input: input,
+            verdict: trainVerdict,
+            dayCodeOverride: "push-a"
+        ))
+        var flow = TrainFlowState(prescription: prescription)
+        let curl = ExerciseSetPlan(
+            exerciseId: "db-curl",
+            restSeconds: 90,
+            repLowerBound: 8,
+            repUpperBound: 12,
+            stepKg: 2.5,
+            loadType: "external",
+            sets: (1...3).map {
+                PlannedSet(
+                    index: $0,
+                    targetWeightKg: 12.5,
+                    targetReps: 12,
+                    targetRir: 2
+                )
+            }
+        )
+        flow.addExercise(curl)
+        flow.moveExerciseToCurrent(curl.exerciseId)
+        XCTAssertEqual(flow.currentExercise?.exerciseId, curl.exerciseId)
+        if hasCompletedFacts {
+            for setIndex in curl.sets.indices {
+                flow.logSet(CompletedSetObservation(
+                    weightKg: 12.5,
+                    reps: 12,
+                    rir: 2,
+                    painReported: false
+                ))
+                if setIndex < curl.sets.index(before: curl.sets.endIndex) {
+                    flow.restFinished()
+                }
+            }
+        }
+        flow.requestFinish()
+        flow.confirmEnd(reason: .timeUp)
+        return CompletedSessionBuilder.build(
+            from: flow,
+            sessionId: hasCompletedFacts ? "new-pattern-facts" : "new-pattern-zero-facts",
+            dateISO: "2026-07-24",
+            startedAtISO: "2026-07-24T10:00:00Z",
+            finishedAtISO: "2026-07-24T10:30:00Z",
+            durationMinutes: 30
+        )
+    }
+
+    private func savedPlanInputs(
+        from session: TrainingSession
+    ) throws -> (CleanTrainingDecisionInput, PlanCustomizationInput) {
+        let appData = try AppData(decoding: .object([
+            "schemaVersion": .int(8),
+            "programTemplate": .object([
+                "splitType": .string("push-pull-legs"),
+                "daysPerWeek": .int(6),
+            ]),
+            "history": .array([.object(session.storage)]),
+        ]))
+        let cleanView = CleanAppDataViewBuilder.build(from: appData)
+        XCTAssertTrue(cleanView.issues.isEmpty, "cross-layer save fixture must remain clean: \(cleanView.issues)")
+        let input = try CleanTrainingDecisionInput.make(
+            from: cleanView,
+            todayISO: "2026-07-29"
+        )
+        let rawOrder = try XCTUnwrap(session.storage["finalExerciseOrder"]?.asArray)
+        let exerciseIds = try rawOrder.map { value in
+            try XCTUnwrap(value.asString)
+        }
+        let customization = PlanCustomizationInput(dayPlans: [
+            "push-a": exerciseIds.map {
+                PlanCustomizationInput.ExerciseSpec(exerciseId: $0)
+            },
+        ])
+        return (input, customization)
     }
 
     func testEmptyCustomizationEqualsNoParam() throws {
@@ -403,5 +494,45 @@ final class PlanCustomizationEngineTests: XCTestCase {
         ]])
         let result = try plan(pplJSON, customization: custom)
         XCTAssertEqual(result.exercises.map(\.exerciseId), ["db-bench-press", "cable-fly"], "重复动作只保首次")
+    }
+
+    func testSavedNewPatternWithFactsUsesNormalProgressionOnNextPlan() throws {
+        let session = try savedNewPatternSession(hasCompletedFacts: true)
+        let (input, customization) = try savedPlanInputs(from: session)
+        let next = try XCTUnwrap(TodayPrescriptionEngine.plan(
+            input: input,
+            verdict: trainVerdict,
+            customization: customization,
+            dayCodeOverride: "push-a"
+        ))
+        let curl = try XCTUnwrap(next.exercises.first { $0.exerciseId == "db-curl" })
+
+        XCTAssertEqual(curl.repLowerBound, 8, "new pattern uses the existing custom-slot fallback")
+        XCTAssertEqual(curl.repUpperBound, 12)
+        XCTAssertEqual(curl.restSeconds, 90)
+        XCTAssertEqual(curl.previousWeightKg, 12.5, "builder facts survive AppData/DataHealth projection")
+        XCTAssertEqual(curl.change, .increase)
+        XCTAssertEqual(curl.reason, .repCeilingReached)
+        XCTAssertEqual(curl.targetWeightKg, 15)
+    }
+
+    func testSavedNewPatternWithoutFactsUsesColdStartFallbackOnNextPlan() throws {
+        let session = try savedNewPatternSession(hasCompletedFacts: false)
+        let (input, customization) = try savedPlanInputs(from: session)
+        let next = try XCTUnwrap(TodayPrescriptionEngine.plan(
+            input: input,
+            verdict: trainVerdict,
+            customization: customization,
+            dayCodeOverride: "push-a"
+        ))
+        let curl = try XCTUnwrap(next.exercises.first { $0.exerciseId == "db-curl" })
+
+        XCTAssertEqual(curl.repLowerBound, 8, "zero-fact save still uses the deterministic custom-slot fallback")
+        XCTAssertEqual(curl.repUpperBound, 12)
+        XCTAssertEqual(curl.restSeconds, 90)
+        XCTAssertNil(curl.previousWeightKg)
+        XCTAssertEqual(curl.change, .start)
+        XCTAssertEqual(curl.reason, .firstExposure)
+        XCTAssertEqual(curl.targetWeightKg, 12.5)
     }
 }
