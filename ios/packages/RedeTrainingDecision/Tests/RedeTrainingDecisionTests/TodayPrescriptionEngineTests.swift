@@ -124,7 +124,7 @@ final class TodayPrescriptionEngineTests: XCTestCase {
         XCTAssertEqual(emptyMap.exercises.map(\.targetWeightKg), withoutArg.exercises.map(\.targetWeightKg))
     }
 
-    // 双重渐进：全组打满 repMax 且 RIR 富余 → +2.5kg、次数重置 repMin
+    // 双重渐进：该 fixture 全组封顶，满足现行「封顶 + floor + 平均中点 + RIR」闸门。
     func testProgressionIncreasesAfterRepCeiling() throws {
         // 两条已完成 session 让轮转落回 upper 日（2 % 2 = 0），从而能断言
         // db-bench-press 的渐进结果。

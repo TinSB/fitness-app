@@ -769,7 +769,11 @@ public enum TodayPrescriptionEngine {
                 targetReps = slot.repMin
                 change = .ease
                 reason = .belowRepFloor
-            } else if last.minReps >= slot.repMax, last.minRir.map({ $0 >= progressMinMeanRir }) ?? true,
+            } else if reachedProgressionGate(
+                last,
+                repMin: slot.repMin,
+                repMax: slot.repMax
+            ),
                       verdict.longGapDays == nil {
                 // 无上限：精英重量的 +一档 是合法递增，有意不设 cap。
                 // 回归压制（2026-07-08）：停练 ≥14 天时本分支不进——上上次的满分不是
@@ -1181,6 +1185,8 @@ public enum TodayPrescriptionEngine {
         let repsAtTop: Int
         let minReps: Int
         let maxReps: Int
+        /// 全部工作组的未取整平均次数（S1a 中点判据）。
+        let meanReps: Double
         /// min 口径：最差一组的 RIR（安全优先，见文件头拍板说明）。
         let minRir: Double?
     }
@@ -1389,8 +1395,25 @@ public enum TodayPrescriptionEngine {
             repsAtTop: topSet?.reps ?? 0,
             minReps: reps.min() ?? 0,
             maxReps: reps.max() ?? 0,
+            meanReps: reps.isEmpty
+                ? 0
+                : reps.reduce(0.0) { partial, reps in
+                    partial + Double(reps)
+                } / Double(reps.count),
             minRir: rirs.min()
         )
+    }
+
+    private static func reachedProgressionGate(
+        _ performance: LastPerformance,
+        repMin: Int,
+        repMax: Int
+    ) -> Bool {
+        let midpoint = (Double(repMin) + Double(repMax)) / 2
+        return performance.maxReps >= repMax
+            && performance.minReps >= repMin
+            && performance.meanReps >= midpoint
+            && (performance.minRir.map { $0 >= progressMinMeanRir } ?? true)
     }
 
     private static func roundToIncrement(_ weightKg: Double, step: Double) -> Double {
