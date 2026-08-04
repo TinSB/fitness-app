@@ -2,6 +2,10 @@
 
 All notable native iOS product, architecture, repository-governance, and documentation changes should be recorded here.
 
+## 2026-08-04 — Release 1.9.4 (build 29)
+
+- **Version bump for the nine-batch release**: `MARKETING_VERSION` 1.9.2 → 1.9.4 and `CURRENT_PROJECT_VERSION` 28 → 29 (28 was archived but never uploaded; 27 is the highest build on App Store Connect). All three version gates moved together — the two `RedeL10n` What's New guards and the app-side `bundledWhatsNewVersions` registry — with exact bilingual assertions updated and the drift guard `testCurrentRedeMarketingVersionHasBundledReleaseNotes` passing. Bundled release notes now describe in-session workout editing plus save-back-to-plan, the progression gate fix for small-muscle lifts, swap-without-losing-sets, and post-workout level-up feedback; the previous 1.9.2 narrative was removed per the existing YAGNI rule that only the shipping version keeps copy. No product logic changed.
+
 > Backfill note (2026-06-13): the entries from M5-1 (2026-06-10) through wave-8 (2026-06-13) below were backfilled in one pass to restore per-PR traceability after the log fell ~3 days behind. Facts sourced from `DEV_LOG.md` same-day entries and `git log`; backfilled summaries are tighter than the live M1–M4 entries above. Citation convention: `#NNN` = a merged PR; `#<7-hex>` = a commit with no PR number (the late-period work was committed locally while the GitHub account was suspended, so those entries cite the commit hash instead).
 
 > Backfill note (2026-06-23): the 2026-06-20 → 2026-06-23 sections below were backfilled in one pass — the log fell behind after 2026-06-18 (FR-NT + FR-PL3 slices 1/2). Covers FR-PL3/4 completion, the build bumps, the UX-polish program, notification fixes, FR-T5/FR-PR7 R1 wrap-up, the FR-EX2 exercise-detail content waves, the action-library expansion (123 → 165), and the FR-PL6/PL7 user-customizable-plan feature. Facts sourced from `DEV_LOG.md` + `git log` + PR titles; tighter than live entries.

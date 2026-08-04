@@ -70,9 +70,9 @@ final class RedeStringsTests: XCTestCase {
             ("appUpdateViewUpdate", s.appUpdateViewUpdate),
             ("appUpdateLater", s.appUpdateLater),
             ("appUpdateContinue", s.appUpdateContinue),
-            ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.9.2", build: "28")),
-            ("appUpdateHeroLine", s.appUpdateHeroLine(version: "1.9.2")),
-            ("appUpdateHighlights", s.appUpdateHighlights(version: "1.9.2").joined(separator: " ")),
+            ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.9.4", build: "29")),
+            ("appUpdateHeroLine", s.appUpdateHeroLine(version: "1.9.4")),
+            ("appUpdateHighlights", s.appUpdateHighlights(version: "1.9.4").joined(separator: " ")),
             // FR-SE9 / FR-SUB2：订阅管理与诚实状态
             ("settingsSubscriptionSection", s.settingsSubscriptionSection),
             ("settingsSubscriptionFreeCore", s.settingsSubscriptionFreeCore),
@@ -290,25 +290,30 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertEqual(zh.appUpdateAvailable(version: "1.9"), "1.9 可用")
         XCTAssertEqual(en.appUpdateAvailable(version: "1.9"), "1.9 Available")
         // 2026-07-20 owner「文案太不专业」重写：hero=版本主打句，亮点=具体名词句（基线 §5.5）。
-        // 2026-07-21 archive 1.9.2：内置叙事切到 1.9.2（自由编排 + 动作库全覆盖；只留当前发布版本，YAGNI）。
-        XCTAssertEqual(zh.appUpdateHeroLine(version: "1.9.2"), "训练日怎么排，你说了算")
-        XCTAssertEqual(en.appUpdateHeroLine(version: "1.9.2"), "Your split, your call")
+        // 2026-08-04 archive 1.9.4：内置叙事切到 1.9.4（训练现场编辑 + 存回计划 / 进阶闸门修复 /
+        // 换动作不丢组 / 升级反馈；只留当前发布版本，YAGNI）。
+        XCTAssertEqual(zh.appUpdateHeroLine(version: "1.9.4"), "今天怎么练，练的时候就能改")
+        XCTAssertEqual(en.appUpdateHeroLine(version: "1.9.4"), "Change today's workout as you go")
         XCTAssertEqual(
-            zh.appUpdateHighlights(version: "1.9.2"),
+            zh.appUpdateHighlights(version: "1.9.4"),
             [
-                "训练日构成自己定：换类型、加一天、删一天——推拉腿之后想接推拉就接",
-                "165 个动作全部配技术要点、进阶与退阶，训练中点动作名就能看",
-                "编排随时能撤回，按「采纳修改」之前一切都不生效",
+                "训练中能加动作、去掉动作、改剩余组数；练完可以把这套改法存进这天的计划",
+                "小肌群动作不再长期卡住：4 组做成 20/18/16/15 这样的正常递减，下次就会加重",
+                "换动作时之前做过的组不会再丢，都会如实记进历史",
+                "练完升级会直接告诉你，等级变化和均衡改善都能做成卡片分享",
             ]
         )
         XCTAssertEqual(
-            en.appUpdateHighlights(version: "1.9.2"),
+            en.appUpdateHighlights(version: "1.9.4"),
             [
-                "Build your own split: swap a day's type, add one, drop one — run push/pull/legs and keep going into push/pull",
-                "All 165 exercises now carry technique cues, progressions, and regressions — tap any name mid-workout",
-                "Every edit is undoable, and nothing takes effect until you tap Apply",
+                "Add an exercise, drop one, or change remaining sets mid-workout — then save that shape into the day's plan",
+                "Small-muscle lifts no longer stall: sets like 20/18/16/15 now earn the next load",
+                "Swapping an exercise mid-workout keeps the sets you already logged",
+                "Level-ups appear as soon as you finish, and level or balance changes can be shared as a card",
             ]
         )
+        // 旧版本叙事已按 YAGNI 移除
+        XCTAssertTrue(zh.appUpdateHighlights(version: "1.9.2").isEmpty)
         XCTAssertTrue(zh.appUpdateHighlights(version: "1.8").isEmpty)
         XCTAssertTrue(en.appUpdateHighlights(version: "2.0").isEmpty)
         XCTAssertTrue(zh.appUpdateHeroLine(version: "2.0").isEmpty)
