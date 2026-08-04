@@ -105,5 +105,20 @@
 - **分支与 commit 清单**：`codex/0804-phase-reason`，基线为 `origin/main` 的 `7a24498`，交接件起始提交为 `cd10e8a`；实现提交为 `bd0c617 feat: explain planned mesocycle volume changes`。本回执在随后的本地证据提交中落盘；未 push，未开 PR。
 - **两条 case + 触发条件 + 互斥性测试**：`DayPrescriptionReason` 新增 `.phaseOverreachAdded` 与 `.phaseDeloadReduced`。只在 `verdict.call == .train` 时，既有 phase 的 `(setDelta == 1)` 追加前者，或 `(setDelta == -1 && weightMultiplier < 1)` 追加后者；calibrate/build 不追加。`MesocyclePrescriptionTests` 锁定四相位覆盖以及 reactive `.light` / `.deload` 时 phase 理由不存在；`AutoBalanceTests` 锁定计划过载/减载时没有 `musclePriorityBoosted` 且仅一条 phase 理由；Today UI 以 `if ... else if` 只显示其中一条。处方的组数、重量和 RIR 调制块零改动。
 - **文案全文（中英）+ 红线扫描**：过载周「本周计划加量　今天多一组 / Planned higher volume this week　One more set today」；减载周「本周计划减量　今天少一组，重量也轻一些 / Planned lighter week　One less set and lighter loads」。`RedeL10n` 精确断言锁全文、全角空格，扫描拒绝句号、感叹号、破折号及 `AI`、`算法`、`系统认为`、`最佳`、`algorithm`、`model`、`best`、`置信度`、`confidence`、`弱`、`weak`、`差`、`poor`。两行只进已展开的「查看依据」抽屉。
-- **golden：不变 + 逐份论证**：`GoldenPrescriptionTests` 全部通过，五份 expected JSON 均未重捕且 bytes 零变化。`first-exposure` 无历史；`progression`、`pull-day`、`legs-day` 三份未配置计划周期；均不产生计划性 train-state phase 依据。`deload` 走既有反应式 `verdictDeloadReduced`（其 expected `dayReasonCodes` 保持该唯一值），因此同样不产生计划 phase 依据。没有任何 golden 变化可被误读为调制行为变化。
+- **golden：不变 + 逐份论证**：`GoldenPrescriptionTests` 全部通过，五份 expected JSON 均未重捕且 bytes 零变化。`first-exposure` 无历史；`progression`、`pull-day`、`legs-day` 在 golden harness 下 phase 恒为 nil（`plan(input:verdict:)` 的 `mesocycleEnabled` 默认 false）；均不产生计划性 train-state phase 依据。`deload` 走既有反应式 `verdictDeloadReduced`（其 expected `dayReasonCodes` 保持该唯一值），因此同样不产生计划 phase 依据。没有任何 golden 变化可被误读为调制行为变化。
 - **gate / 实拍 / 规格写回 / 未尽事项**：先 RED（缺 case 与文案属性）后 GREEN：训练决策相位/安全网/互斥测试 13/13，`RedeL10n` 精确文案与红线扫描 14/14，golden 5/5；`bash .claude/quality-gate.cmd` exit 0。隔离 iPhone 17 Pro / iOS 26.5 Simulator 实拍为 `.ai-tmp/phase-reason/2026-08-04-phasereason-overreach.png`（1206×2622，MD5 `3b339134ca2b1fa72b9cc92f930b19dd`，4 组/RIR 1）和 `.ai-tmp/phase-reason/2026-08-04-phasereason-deload.png`（1206×2622，MD5 `bf41f566c8fd53df1b8610303a14fa6c`，2 组/RIR 4、30 kg → 25 kg）。已回写系统逻辑、PRD、文案基线、CHANGELOG、DEV_LOG 和 TestFlight N18。未尽事项只有 N18 的 TestFlight 真机核对；本批没有 schema、catalog、LoadGrid、版本、manifest、网络或持久化变更。
+
+## 主会话验收结论（2026-08-04）
+
+两路定向复核 **pass=true**。核验方在隔离副本上做了**变异测试**证明测试载荷性：删 `verdict.call == .train` 守卫 → 互斥断言变红；把 `default: break` 改成乱产依据 → 「校准/构建不出依据」变红（同时证明该反向断言非空转）；对调两条 reason / 删 append → 各 4 处变红；文案改半角空格或加句号 → 三条断言各自独立变红。主会话另亲验：引擎 diff 零删除行、golden 逐字节未动、独立门禁 exit 0、两张实拍与画面上下文逐槽自洽（过载图逐槽恰好 +1、减载图 −1 且下限 2、卧推 30×6→25kg 正是 ×0.85 吸附）。
+
+**主会话补的两项**：
+1. **相位穷举覆盖度锁**（`testEveryMesocyclePhaseModulationHasAnExplicitReasonMapping`）——依据分支 switch 的是 modulation 数值元组 + `default: break`，Swift 不会因 `MesocyclePhase` 新增相位报错；新相位若改组数却落进 default，**本批要拔除的「静默」就原样回来了**。现对 `allCases` 穷举锁死「每个相位的调制必须有明确归属」，并顺带覆盖了 `where weightMultiplier < 1.0` 子句依赖的前提（核验方变异证明该子句原本零覆盖）。
+2. **golden 论证口径据实改写**：golden 不变的真实支点是 golden harness 的 `mesocycleEnabled` 默认 false（phase 恒 nil），不是 fixture 数据「未配置周期」。核验方用变异证明——把 default 改成乱产依据后 golden 仍全绿。**golden 对本特性零覆盖**，真正的守卫是 `MesocyclePrescriptionTests` / `AutoBalanceTests`。原措辞会让后人误以为 golden 在守这条线。
+
+**已知非阻断残余（留案）**：
+1. 文案「今天少一组」是**日级概括**：基础就 2 组的槽位（curl / triceps-extension）受 `max(2, sets−1)` 下限保护、减载周组数不变（减载实拍里 8 个动作中有 2 个属此类）。日级陈述可接受，未改文案以保实拍证据有效。
+2. 文案「重量也轻一些」只对 external / bodyweight-plus 负荷轴成立；纯自重 / 弹力带 / 辅助器械路径不套 `weightMultiplier`。默认模板任一天几乎必有 external 动作，故现实中成立；home-dumbbell / minimal 极端组合下是理论边界。
+3. `MesocyclePhase.role` 的 `default: return .deload` 意味着 `blockLengthWeeks > 4` 时第 4 周之后每周都是减载周，抽屉会连续多周重复该行（调制行为是既有的，依据只是如实陈述）；当前无 UI 可改该值，属数据层潜伏，开放 6 周块前需一并考虑。
+4. `AutoBalanceTests` 新互斥测试依赖相邻的 `testMesocyclePhaseGatesBoost` 证明 fixture 加量路径非空转，两条测试隐式耦合。
+5. TestFlight N18 实操成本高（需真机攒 3–4 周连续历史），有长期挂 `[ ]` 的风险。
