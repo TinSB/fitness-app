@@ -99,3 +99,11 @@
 - golden：变/不变 + 逐份论证
 - gate / 实拍 / 规格写回 / 未尽事项
 ```
+
+## 实施回执
+
+- **分支与 commit 清单**：`codex/0804-phase-reason`，基线为 `origin/main` 的 `7a24498`，交接件起始提交为 `cd10e8a`；实现提交为 `bd0c617 feat: explain planned mesocycle volume changes`。本回执在随后的本地证据提交中落盘；未 push，未开 PR。
+- **两条 case + 触发条件 + 互斥性测试**：`DayPrescriptionReason` 新增 `.phaseOverreachAdded` 与 `.phaseDeloadReduced`。只在 `verdict.call == .train` 时，既有 phase 的 `(setDelta == 1)` 追加前者，或 `(setDelta == -1 && weightMultiplier < 1)` 追加后者；calibrate/build 不追加。`MesocyclePrescriptionTests` 锁定四相位覆盖以及 reactive `.light` / `.deload` 时 phase 理由不存在；`AutoBalanceTests` 锁定计划过载/减载时没有 `musclePriorityBoosted` 且仅一条 phase 理由；Today UI 以 `if ... else if` 只显示其中一条。处方的组数、重量和 RIR 调制块零改动。
+- **文案全文（中英）+ 红线扫描**：过载周「本周计划加量　今天多一组 / Planned higher volume this week　One more set today」；减载周「本周计划减量　今天少一组，重量也轻一些 / Planned lighter week　One less set and lighter loads」。`RedeL10n` 精确断言锁全文、全角空格，扫描拒绝句号、感叹号、破折号及 `AI`、`算法`、`系统认为`、`最佳`、`algorithm`、`model`、`best`、`置信度`、`confidence`、`弱`、`weak`、`差`、`poor`。两行只进已展开的「查看依据」抽屉。
+- **golden：不变 + 逐份论证**：`GoldenPrescriptionTests` 全部通过，五份 expected JSON 均未重捕且 bytes 零变化。`first-exposure` 无历史；`progression`、`pull-day`、`legs-day` 三份未配置计划周期；均不产生计划性 train-state phase 依据。`deload` 走既有反应式 `verdictDeloadReduced`（其 expected `dayReasonCodes` 保持该唯一值），因此同样不产生计划 phase 依据。没有任何 golden 变化可被误读为调制行为变化。
+- **gate / 实拍 / 规格写回 / 未尽事项**：先 RED（缺 case 与文案属性）后 GREEN：训练决策相位/安全网/互斥测试 13/13，`RedeL10n` 精确文案与红线扫描 14/14，golden 5/5；`bash .claude/quality-gate.cmd` exit 0。隔离 iPhone 17 Pro / iOS 26.5 Simulator 实拍为 `.ai-tmp/phase-reason/2026-08-04-phasereason-overreach.png`（1206×2622，MD5 `3b339134ca2b1fa72b9cc92f930b19dd`，4 组/RIR 1）和 `.ai-tmp/phase-reason/2026-08-04-phasereason-deload.png`（1206×2622，MD5 `bf41f566c8fd53df1b8610303a14fa6c`，2 组/RIR 4、30 kg → 25 kg）。已回写系统逻辑、PRD、文案基线、CHANGELOG、DEV_LOG 和 TestFlight N18。未尽事项只有 N18 的 TestFlight 真机核对；本批没有 schema、catalog、LoadGrid、版本、manifest、网络或持久化变更。
