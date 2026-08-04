@@ -379,6 +379,44 @@ final class ProgressionGateTests: XCTestCase {
         XCTAssertEqual(result.change, .increase)
     }
 
+    // MARK: - S1b: one retry only after a just-raised failed rung
+
+    func testS1bFirstBelowFloorAttemptAfterRaiseHoldsCurrentRung() throws {
+        let result = try benchPlan(sessions: [
+            session("w", "2026-03-01", exerciseId: "bench-press", weightKg: 100, reps: [8, 8, 8]),
+            session("h-first", "2026-03-08", exerciseId: "bench-press", weightKg: 102.5, reps: [5, 5, 5]),
+        ])
+
+        XCTAssertEqual(result.targetWeightKg, 102.5)
+        XCTAssertEqual(result.targetReps, 8)
+        XCTAssertEqual(result.change, .hold)
+        XCTAssertEqual(result.reason, .holdProgressing)
+    }
+
+    func testS1bSecondBelowFloorAttemptAtSameRungEases() throws {
+        let result = try benchPlan(sessions: [
+            session("w", "2026-03-01", exerciseId: "bench-press", weightKg: 100, reps: [8, 8, 8]),
+            session("h-first", "2026-03-08", exerciseId: "bench-press", weightKg: 102.5, reps: [5, 5, 5]),
+            session("h-second", "2026-03-15", exerciseId: "bench-press", weightKg: 102.5, reps: [5, 5, 5]),
+        ], today: "2026-03-16")
+
+        XCTAssertEqual(result.targetWeightKg, 100)
+        XCTAssertEqual(result.targetReps, 6)
+        XCTAssertEqual(result.change, .ease)
+        XCTAssertEqual(result.reason, .belowRepFloor)
+    }
+
+    func testS1bNearFailureAtNewRungStillEasesImmediately() throws {
+        let result = try benchPlan(sessions: [
+            session("w", "2026-03-01", exerciseId: "bench-press", weightKg: 100, reps: [8, 8, 8]),
+            session("h", "2026-03-08", exerciseId: "bench-press", weightKg: 102.5, reps: [5, 5, 5], rir: 0.5),
+        ])
+
+        XCTAssertEqual(result.targetWeightKg, 100)
+        XCTAssertEqual(result.change, .ease)
+        XCTAssertEqual(result.reason, .nearFailureLastTime)
+    }
+
     // MARK: - Existing outer safety priorities
 
     func testPainPauseStillWinsOverNewS1aIncrease() throws {

@@ -140,6 +140,7 @@ public enum TodayPrescriptionEngine {
     private static let nearFailureMeanRir = 0.5
     private static let progressMinMeanRir = 1.0
     // 自重次数进阶（owner 拍板 2026-06-13）：起步 12、上限 25 提示换难度、下限 8。
+    private static let loadComparisonToleranceKg = 0.000_000_001
     private static let bodyweightStartReps = 12
     private static let bodyweightRepCeiling = 25
     private static let bodyweightRepFloor = 8
@@ -705,7 +706,12 @@ public enum TodayPrescriptionEngine {
         phase: PhaseModulation?,
         progressionPaused: Bool
     ) -> ExercisePrescriptionPlan {
-        let last = lastPerformance(exerciseId: entry.id, sessions: input.sessions)
+        let recent = recentPerformances(
+            exerciseId: entry.id,
+            sessions: input.sessions,
+            limit: entry.loadType == "external" ? 2 : 1
+        )
+        let last = recent.last
 
         // 自重分支（2026-06-13，owner 拍板）：无外部负重，按次数进阶；到顶提示换难度。
         // 重量轴的渐进/取整/调制全部不适用——单独一条路径。
@@ -765,10 +771,19 @@ public enum TodayPrescriptionEngine {
                 change = .ease
                 reason = .nearFailureLastTime
             } else if last.maxReps < slot.repMin {
-                baseWeight = LoadGrid.nextRungKg(last.topWeightKg, equipment: equip, unit: unit, up: false)
-                targetReps = slot.repMin
-                change = .ease
-                reason = .belowRepFloor
+                if latestPerformanceWasJustRaised(recent) {
+                    // 新台阶只宽限一次：最近两次顶重严格上升，且本次掉出次数下限。
+                    // 只阻止下降，绝不制造上升；下一次同重量再失败时比较不再成立。
+                    baseWeight = last.topWeightKg
+                    targetReps = slot.repMax
+                    change = .hold
+                    reason = .holdProgressing
+                } else {
+                    baseWeight = LoadGrid.nextRungKg(last.topWeightKg, equipment: equip, unit: unit, up: false)
+                    targetReps = slot.repMin
+                    change = .ease
+                    reason = .belowRepFloor
+                }
             } else if reachedProgressionGate(
                 last,
                 repMin: slot.repMin,
@@ -1371,6 +1386,16 @@ public enum TodayPrescriptionEngine {
         exerciseId: String,
         sessions: [CleanTrainingSession]
     ) -> LastPerformance? {
+        recentPerformances(exerciseId: exerciseId, sessions: sessions, limit: 1).last
+    }
+
+    /// 同动作按「日期 + canonical append offset」排序的最近表现。
+    private static func recentPerformances(
+        exerciseId: String,
+        sessions: [CleanTrainingSession],
+        limit: Int
+    ) -> [LastPerformance] {
+        guard limit > 0 else { return [] }
         let candidates = sessions.enumerated().compactMap {
             canonicalOffset, session -> (day: Int, canonicalOffset: Int, sets: [CleanLoggedSet])? in
             guard let day = TrainingDay.dayNumber(fromISO: session.date) else { return nil }
@@ -1378,30 +1403,29 @@ public enum TodayPrescriptionEngine {
             guard !sets.isEmpty else { return nil }
             return (day, canonicalOffset, sets)
         }
-        guard let latest = candidates.max(by: {
+        let ordered = candidates.sorted {
             if $0.day == $1.day {
                 return $0.canonicalOffset < $1.canonicalOffset
             }
             return $0.day < $1.day
-        }) else {
-            return nil
         }
-
-        let reps = latest.sets.map(\.reps)
-        let rirs = latest.sets.compactMap(\.rir)
-        let topSet = latest.sets.max { $0.weight < $1.weight }
-        return LastPerformance(
-            topWeightKg: topSet?.weight ?? 0,
-            repsAtTop: topSet?.reps ?? 0,
-            minReps: reps.min() ?? 0,
-            maxReps: reps.max() ?? 0,
-            meanReps: reps.isEmpty
-                ? 0
-                : reps.reduce(0.0) { partial, reps in
-                    partial + Double(reps)
-                } / Double(reps.count),
-            minRir: rirs.min()
-        )
+        return ordered.suffix(limit).map { candidate in
+            let reps = candidate.sets.map(\.reps)
+            let rirs = candidate.sets.compactMap(\.rir)
+            let topSet = candidate.sets.max { $0.weight < $1.weight }
+            return LastPerformance(
+                topWeightKg: topSet?.weight ?? 0,
+                repsAtTop: topSet?.reps ?? 0,
+                minReps: reps.min() ?? 0,
+                maxReps: reps.max() ?? 0,
+                meanReps: reps.isEmpty
+                    ? 0
+                    : reps.reduce(0.0) { partial, reps in
+                        partial + Double(reps)
+                    } / Double(reps.count),
+                minRir: rirs.min()
+            )
+        }
     }
 
     private static func reachedProgressionGate(
@@ -1414,6 +1438,13 @@ public enum TodayPrescriptionEngine {
             && performance.minReps >= repMin
             && performance.meanReps >= midpoint
             && (performance.minRir.map { $0 >= progressMinMeanRir } ?? true)
+    }
+
+    private static func latestPerformanceWasJustRaised(_ recent: [LastPerformance]) -> Bool {
+        guard recent.count >= 2 else { return false }
+        let previous = recent[recent.count - 2]
+        let latest = recent[recent.count - 1]
+        return latest.topWeightKg > previous.topWeightKg + loadComparisonToleranceKg
     }
 
     private static func roundToIncrement(_ weightKg: Double, step: Double) -> Double {
