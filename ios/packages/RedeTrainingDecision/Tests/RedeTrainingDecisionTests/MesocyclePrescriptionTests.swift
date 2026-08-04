@@ -20,8 +20,7 @@ final class MesocyclePrescriptionTests: XCTestCase {
         """
     }
 
-    private func prescription(sessionDates: [String], today: String, meso: Bool,
-                              blockLengthWeeks: Int = Mesocycle.defaultBlockLengthWeeks) throws -> TodayPrescription {
+    private func input(sessionDates: [String], today: String) throws -> CleanTrainingDecisionInput {
         let sessions = sessionDates.enumerated().map { sessionJSON("s\($0.offset)", $0.element) }.joined(separator: ",")
         let json = """
         {"schemaVersion":8,
@@ -31,7 +30,12 @@ final class MesocyclePrescriptionTests: XCTestCase {
         """
         let value = try JSONDecoder().decode(JSONValue.self, from: Data(json.utf8))
         let appData = try AppData(decoding: value)
-        let input = try CleanTrainingDecisionInput.make(from: CleanAppDataViewBuilder.build(from: appData), todayISO: today)
+        return try CleanTrainingDecisionInput.make(from: CleanAppDataViewBuilder.build(from: appData), todayISO: today)
+    }
+
+    private func prescription(sessionDates: [String], today: String, meso: Bool,
+                              blockLengthWeeks: Int = Mesocycle.defaultBlockLengthWeeks) throws -> TodayPrescription {
+        let input = try input(sessionDates: sessionDates, today: today)
         let verdict = TodayVerdictEngine.evaluate(input)
         return try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict,
                                                           mesocycleEnabled: meso, blockLengthWeeks: blockLengthWeeks))
@@ -64,6 +68,52 @@ final class MesocyclePrescriptionTests: XCTestCase {
         XCTAssertEqual(on.sets, max(2, off.sets - 1), "减载周 −1 组（下限 2）")
         XCTAssertEqual(on.targetRir, 4.0, "减载周 RIR 4（整数化 2026-06-16，旧 3.5）")
         XCTAssertLessThan(on.targetWeightKg, off.targetWeightKg, "减载周重量真减（×0.85）")
+    }
+
+    func testTrainPhaseReasonsDescribeOnlyPlannedVolumeChanges() throws {
+        func phaseReasons(in prescription: TodayPrescription) -> [DayPrescriptionReason] {
+            prescription.dayReasons.filter {
+                switch $0 {
+                case .phaseOverreachAdded, .phaseDeloadReduced:
+                    return true
+                default:
+                    return false
+                }
+            }
+        }
+
+        let calibrate = try prescription(sessionDates: ["2026-05-04"], today: "2026-05-07", meso: true)
+        let build = try prescription(sessionDates: ["2026-05-04", "2026-05-11"], today: "2026-05-13", meso: true)
+        let overreach = try prescription(sessionDates: block, today: "2026-05-20", meso: true)
+        let deload = try prescription(sessionDates: block, today: "2026-05-27", meso: true)
+
+        XCTAssertEqual(phaseReasons(in: calibrate), [], "校准周没有量变说明")
+        XCTAssertEqual(phaseReasons(in: build), [], "构建周没有量变说明")
+        XCTAssertEqual(phaseReasons(in: overreach), [.phaseOverreachAdded])
+        XCTAssertEqual(phaseReasons(in: deload), [.phaseDeloadReduced])
+    }
+
+    func testPhaseReasonsYieldToReactiveSafetyVerdicts() throws {
+        // 同一真实块锚强制分别走 light/deload：即使相位本应是 overreach，也只能保留
+        // 反应式安全网的依据，绝不同时给出两条量变说明。
+        let input = try input(sessionDates: block, today: "2026-05-20")
+        for (call, expectedSafetyReason) in [
+            (TodayCall.light, DayPrescriptionReason.verdictLightReduced),
+            (TodayCall.deload, DayPrescriptionReason.verdictDeloadReduced),
+        ] {
+            let verdict = TodayVerdict(call: call, reason: .sustainedLoadDeload(days: 14), signals: [])
+            let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(
+                input: input, verdict: verdict, mesocycleEnabled: true))
+            XCTAssertTrue(prescription.dayReasons.contains(expectedSafetyReason))
+            XCTAssertFalse(prescription.dayReasons.contains(where: { reason in
+                switch reason {
+                case .phaseOverreachAdded, .phaseDeloadReduced:
+                    return true
+                default:
+                    return false
+                }
+            }), "\(call) 安全网优先，不能叠加计划性依据")
+        }
     }
 
     func testPlanHonorsBlockLengthWeeks() throws {

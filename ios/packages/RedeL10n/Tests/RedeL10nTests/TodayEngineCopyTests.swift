@@ -214,4 +214,24 @@ final class TodayEngineCopyTests: XCTestCase {
             }
         }
     }
+
+    func testPlannedPhaseReasonLinesAreExactAndRespectRedLines() {
+        let lines = [
+            (zh.phaseOverreachAddedLine, "本周计划加量　今天多一组"),
+            (en.phaseOverreachAddedLine, "Planned higher volume this week　One more set today"),
+            (zh.phaseDeloadReducedLine, "本周计划减量　今天少一组，重量也轻一些"),
+            (en.phaseDeloadReducedLine, "Planned lighter week　One less set and lighter loads"),
+        ]
+        for (actual, expected) in lines {
+            XCTAssertEqual(actual, expected)
+            XCTAssertTrue(actual.contains("　"), "两拍全角空格: \(actual)")
+            XCTAssertFalse(actual.contains("。") || actual.contains("——") || actual.hasSuffix(".")
+                || actual.contains("！") || actual.contains("!"), "句号/破折号/感叹号: \(actual)")
+            for banned in ["AI", "算法", "系统认为", "最佳", "algorithm", "model", "best",
+                           "置信度", "confidence", "弱", "weak", "差", "poor"] {
+                XCTAssertFalse(actual.lowercased().contains(banned.lowercased()),
+                               "禁词「\(banned)」: \(actual)")
+            }
+        }
+    }
 }

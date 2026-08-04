@@ -680,6 +680,19 @@ public enum TodayPrescriptionEngine {
             dayReasons.append(.musclePriorityBoosted(muscleRaws: unique))
         }
 
+        // 计划性周期化已经在 prescribe() 中调制处方；这里只补充抽屉依据，绝不改
+        // 组数、重量或 RIR。非平周与自动均衡天然互斥，非 train 态则安全网优先。
+        if verdict.call == .train, let phase {
+            switch (phase.setDelta, phase.weightMultiplier) {
+            case (1, _):
+                dayReasons.append(.phaseOverreachAdded)
+            case (-1, let weightMultiplier) where weightMultiplier < 1.0:
+                dayReasons.append(.phaseDeloadReduced)
+            default:
+                break
+            }
+        }
+
         switch verdict.call {
         case .light: dayReasons.append(.verdictLightReduced)
         case .deload: dayReasons.append(.verdictDeloadReduced)
