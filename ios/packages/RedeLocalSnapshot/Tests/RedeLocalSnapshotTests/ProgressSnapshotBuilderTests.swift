@@ -1,5 +1,5 @@
 // M4-1（FR-PR1/2/3 数据派生）：固定历史 → 确定的历史/e1RM/PR/周训练量投影。
-// 口径锁定（与已落盘实现对齐）：e1RM = Epley w×(1+r/30)（同 SessionSummary）；
+// 口径锁定：e1RM = Epley w×(1+r/30)，取每场每动作层内 Epley 最大工作组；
 // PR = 顶组重量严格大于全部更早历史的同动作顶组（首练不发奖，同 M3 保守口径）；
 // volume = Σ 重量×次数；周聚合 = ISO 周（周一起始），纯字符串日期数学，无时区依赖。
 
@@ -141,17 +141,37 @@ final class ProgressSnapshotBuilderTests: XCTestCase {
         XCTAssertEqual(snapshot.history.first(where: { $0.sessionId == "pm" })?.prExerciseIds, ["bench-press"])
     }
 
-    // MARK: - e1RM 趋势（FR-PR2，Epley 顶组）
+    // MARK: - e1RM 趋势（FR-PR2，层内 Epley 最大工作组）
 
-    func testE1RMPointsUseEpleyOnSessionTopSet() {
+    func testE1RMPointsUseMaximumEpleySetInSession() {
         let snapshot = ProgressSnapshotBuilder.build(sessions: [
             session("s1", "2026-06-01", [("bench-press", [set(62.5, 6), set(60, 8)])]),
         ])
         let trend = snapshot.exerciseTrends.first(where: { $0.exerciseId == "bench-press" })
-        // 顶组 62.5×6（重量优先）→ 62.5×(1+6/30) = 75.0
-        XCTAssertEqual(trend?.points.first?.e1RmKg ?? 0, 75.0, accuracy: 1e-9)
+        // 60×8 的 Epley 76 高于 62.5×6 的 75，故趋势点取 76。
+        XCTAssertEqual(trend?.points.first?.e1RmKg ?? 0, 76.0, accuracy: 1e-9)
         XCTAssertEqual(trend?.points.first?.dateISO, "2026-06-01")
         XCTAssertEqual(trend?.points.first?.sessionId, "s1")
+    }
+
+    func testE1RMUsesHighestEpleySetWithoutChangingWeightPRTopSet() {
+        let snapshot = ProgressSnapshotBuilder.build(sessions: [
+            session("s0", "2026-05-25", [
+                ("lateral-raise", [set(19, 8)]),
+            ]),
+            session("s1", "2026-06-01", [
+                ("lateral-raise", [set(20, 8), set(16, 20)]),
+            ]),
+        ])
+
+        // 第二场的 20kg 比此前 19kg 更重，重量 PR / bestWeight 必须仍走最重工作组；
+        // 只有 e1RM 趋势改取本场层内 Epley 更高的 16×20。
+        XCTAssertEqual(snapshot.history[0].topSet?.weightKg, 20)
+        XCTAssertEqual(snapshot.history[0].topSet?.reps, 8)
+        XCTAssertEqual(snapshot.history[0].prExerciseIds, ["lateral-raise"])
+        let trend = snapshot.exerciseTrends.first { $0.exerciseId == "lateral-raise" }
+        XCTAssertEqual(trend?.bestWeightKg, 20)
+        XCTAssertEqual(trend?.points.last?.e1RmKg ?? 0, 16 * (1 + 20.0 / 30), accuracy: 1e-9)
     }
 
     func testExerciseTrendIsOldestToNewestWithLatestAndBest() {

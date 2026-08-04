@@ -1,7 +1,8 @@
 // ProgressSnapshot — 进展页只读派生投影（M4-1，FR-PR1/2/3 数据层）。
 //
 // 口径锁定（与已落盘实现对齐，改动须过架构门）：
-// · e1RM = Epley w×(1+r/30)，取每场每动作顶组（重量优先、同重比次数）——同 SessionSummary；
+// · e1RM = Epley w×(1+r/30)，取每场每动作层内 Epley 最大的工作组；
+//   历史顶组 / 重量 PR 仍按重量优先、同重比次数，两种口径不得混用；
 // · PR = 顶组重量严格大于全部更早历史同动作顶组；首练不发奖（M3 保守口径）；
 // · volume = Σ 重量×次数×loadFactor（§6.2 owner 拍板 B 案：目录系数修正
 //   哑铃单只口径低估；facts 缺省 = 系数 1，与旧口径一致）；
@@ -140,11 +141,12 @@ public enum ProgressSnapshotBuilder {
                     exerciseTop.weightKg
                 )
 
+                guard let e1RMTop = e1RMSet(of: setsByExercise[exerciseId] ?? []) else { continue }
                 pointsByExercise[exerciseId, default: []].append(
                     ProgressSnapshot.E1RMPoint(
                         sessionId: record.id,
                         dateISO: record.dateISO,
-                        e1RmKg: epley(weightKg: exerciseTop.weightKg, reps: exerciseTop.reps)
+                        e1RmKg: epley(weightKg: e1RMTop.weightKg, reps: e1RMTop.reps)
                     )
                 )
             }
@@ -202,6 +204,14 @@ public enum ProgressSnapshotBuilder {
     private static func topSet(of sets: [SnapshotSetRecord]) -> SnapshotSetRecord? {
         sets.max { a, b in
             (a.weightKg, a.reps) < (b.weightKg, b.reps)
+        }
+    }
+
+    /// e1RM 代表组：层内 Epley 最大值；不改变历史顶组或重量 PR 口径。
+    private static func e1RMSet(of sets: [SnapshotSetRecord]) -> SnapshotSetRecord? {
+        sets.max { a, b in
+            epley(weightKg: a.weightKg, reps: a.reps)
+                < epley(weightKg: b.weightKg, reps: b.reps)
         }
     }
 
