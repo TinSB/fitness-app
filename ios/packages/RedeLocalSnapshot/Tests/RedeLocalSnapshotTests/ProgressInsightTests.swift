@@ -15,6 +15,7 @@ final class ProgressInsightTests: XCTestCase {
         ProgressSnapshot.ExerciseTrend(
             exerciseId: id,
             points: points,
+            decisionE1RmPoints: points,
             latestE1RmKg: points.last?.e1RmKg ?? 0,
             bestE1RmKg: points.map(\.e1RmKg).max() ?? 0,
             bestWeightKg: 0

@@ -1,8 +1,10 @@
 // ProgressSnapshot — 进展页只读派生投影（M4-1，FR-PR1/2/3 数据层）。
 //
 // 口径锁定（与已落盘实现对齐，改动须过架构门）：
-// · e1RM = Epley w×(1+r/30)，取每场每动作层内 Epley 最大的工作组；
-//   历史顶组 / 重量 PR 仍按重量优先、同重比次数，两种口径不得混用；
+// · 展示 e1RM = Epley w×(1+r/30)，取每场每动作层内 Epley 最大的工作组；
+// · 决策 e1RM 保持既有「重量优先、同重比次数」顶组口径，供 MLE / 里程碑 /
+//   相对力量 / Weekly Coach Review 使用；展示与决策两种口径不得混用；
+// · 历史顶组 / 重量 PR 同样按重量优先、同重比次数；
 // · PR = 顶组重量严格大于全部更早历史同动作顶组；首练不发奖（M3 保守口径）；
 // · volume = Σ 重量×次数×loadFactor（§6.2 owner 拍板 B 案：目录系数修正
 //   哑铃单只口径低估；facts 缺省 = 系数 1，与旧口径一致）；
@@ -36,9 +38,14 @@ public struct ProgressSnapshot: Equatable, Sendable {
 
     public struct ExerciseTrend: Equatable, Sendable {
         public let exerciseId: String
-        /// 旧→新（趋势图直接可用）。
+        /// 展示口径，旧→新：每场取层内 Epley 最大组，Progress 趋势图直接使用。
         public let points: [E1RMPoint]
+        /// 决策口径，旧→新：每场取重量优先顶组。只供稳定性敏感的 MLE / 里程碑 /
+        /// 相对力量 / 周教练输入，防展示算法升级在零新增训练时制造等级或成就。
+        public let decisionE1RmPoints: [E1RMPoint]
+        /// 展示口径的最新趋势点。
         public let latestE1RmKg: Double
+        /// 决策口径的全史峰值；保持 2026-08-03 展示口径变更前的语义。
         public let bestE1RmKg: Double
         public let bestWeightKg: Double
     }
@@ -93,6 +100,7 @@ public enum ProgressSnapshotBuilder {
 
         var history: [ProgressSnapshot.HistoryEntry] = []
         var pointsByExercise: [String: [ProgressSnapshot.E1RMPoint]] = [:]
+        var decisionPointsByExercise: [String: [ProgressSnapshot.E1RMPoint]] = [:]
         var bestWeightByExercise: [String: Double] = [:]
         var weekBuckets: [String: (volume: Double, sets: Int, sessions: Int)] = [:]
 
@@ -141,6 +149,16 @@ public enum ProgressSnapshotBuilder {
                     exerciseTop.weightKg
                 )
 
+                // 决策口径必须先于展示代表组独立落点：MLE / 里程碑 / 相对力量沿用
+                // 历史重量优先顶组，避免 App 升级本身触发只升不降的等级记忆。
+                decisionPointsByExercise[exerciseId, default: []].append(
+                    ProgressSnapshot.E1RMPoint(
+                        sessionId: record.id,
+                        dateISO: record.dateISO,
+                        e1RmKg: epley(weightKg: exerciseTop.weightKg, reps: exerciseTop.reps)
+                    )
+                )
+
                 guard let e1RMTop = e1RMSet(of: setsByExercise[exerciseId] ?? []) else { continue }
                 pointsByExercise[exerciseId, default: []].append(
                     ProgressSnapshot.E1RMPoint(
@@ -173,11 +191,13 @@ public enum ProgressSnapshotBuilder {
         let trends = pointsByExercise
             .sorted { $0.key < $1.key }
             .map { exerciseId, points -> ProgressSnapshot.ExerciseTrend in
-                ProgressSnapshot.ExerciseTrend(
+                let decisionPoints = decisionPointsByExercise[exerciseId] ?? []
+                return ProgressSnapshot.ExerciseTrend(
                     exerciseId: exerciseId,
                     points: points,
+                    decisionE1RmPoints: decisionPoints,
                     latestE1RmKg: points.last?.e1RmKg ?? 0,
-                    bestE1RmKg: points.map(\.e1RmKg).max() ?? 0,
+                    bestE1RmKg: decisionPoints.map(\.e1RmKg).max() ?? 0,
                     bestWeightKg: bestWeightByExercise[exerciseId] ?? 0
                 )
             }
@@ -207,7 +227,7 @@ public enum ProgressSnapshotBuilder {
         }
     }
 
-    /// e1RM 代表组：层内 Epley 最大值；不改变历史顶组或重量 PR 口径。
+    /// 展示 e1RM 代表组：层内 Epley 最大值；不改变决策 e1RM、历史顶组或重量 PR。
     private static func e1RMSet(of sets: [SnapshotSetRecord]) -> SnapshotSetRecord? {
         sets.max { a, b in
             epley(weightKg: a.weightKg, reps: a.reps)

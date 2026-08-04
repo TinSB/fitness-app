@@ -96,6 +96,39 @@ final class WeeklyReviewFactsBuilderTests: XCTestCase {
         XCTAssertEqual(trend.windowSessionCount, 3)
     }
 
+    func testWeeklyDecisionTrendIgnoresDisplayOnlyBackoffE1RMGain() throws {
+        func mixedSession(_ id: String, _ date: String, backoffWeight: Double) -> SnapshotSessionRecord {
+            SnapshotSessionRecord(
+                id: id,
+                dateISO: date,
+                exercises: [SnapshotExerciseRecord(
+                    exerciseId: "bench-press",
+                    sets: [
+                        SnapshotSetRecord(weightKg: 85, reps: 5),
+                        SnapshotSetRecord(weightKg: backoffWeight, reps: 20),
+                    ]
+                )]
+            )
+        }
+        let sessions = [
+            mixedSession("baseline", "2026-06-20", backoffWeight: 50),
+            mixedSession("review", "2026-07-06", backoffWeight: 80),
+        ]
+
+        let result = try XCTUnwrap(WeeklyReviewFactsBuilder.build(
+            allSessions: sessions,
+            cleanSessions: sessions,
+            facts: facts,
+            todayISO: "2026-07-15"
+        ))
+        let trend = try XCTUnwrap(result.keyLiftTrend)
+
+        // Progress 展示点从 99.17 升到 133.33；周教练是决策面，仍须按两个 85×5
+        // 的重量优先顶组判 flat，不能因展示算法升级改写 verdict/action。
+        XCTAssertEqual(trend.call, .flat)
+        XCTAssertEqual(trend.deltaKg, 0, accuracy: 1e-9)
+    }
+
     func testCurrentAndFutureSessionsNeverEnterReviewFacts() throws {
         let sessions = [
             session("review", "2026-07-10"),

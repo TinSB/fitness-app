@@ -76,7 +76,10 @@ public enum WeeklyReviewFactsBuilder {
         let reviewVolume = cleanSnapshot.weeklyVolume.first {
             $0.weekStartISO == reviewWeekStartISO
         }?.totalVolumeKg ?? 0
-        let keyTrend = TrendInsight.keyExercise(of: cleanSnapshot, facts: facts).map(TrendInsight.assess)
+        // 周教练会改变 verdict/action，属于决策面：继续使用重量优先顶组 e1RM，
+        // 不跟随 Progress 展示曲线的层内最大 Epley 口径。
+        let keyTrend = TrendInsight.keyExercise(of: cleanSnapshot, facts: facts)
+            .map(TrendInsight.assessDecision)
 
         return WeeklyReviewFacts(
             reviewWeekStartISO: reviewWeekStartISO,
