@@ -138,6 +138,14 @@
 
     **当前本地证据**：Persistence raw/atomic 完整包 110/110、`RedeTrainingDecision` 494/494、`RedeL10n` 144/144、App `SessionStoreDraftTests` 60/60；最终权威门禁覆盖全部 10 个 Swift 包、通用 Simulator build 与 App 宿主 81/81，末行 `QUALITY GATE: PASS`。测试覆盖未知 dayPlan/item 键、脏 item、空 `daySequence`/`dayPlans` 在写入与清除两种 raw 撤销路径的 bytes 恢复，入口出现后外部编辑的三条原子分支，sticky/substitution 的真实构成与条件收敛，以及真实换动作、先加后删再 S1 移动、文案素材与最终 target 对账、Today/Plan 错误面隔离、候选按需派生和快速双击 busy→首笔成功后的 5 秒撤销生命周期收敛。专用 iPhone 17 Pro / iOS 26.5 Simulator 已重捕入口、撤销条、计划编辑器与 no-op 四态；另用 `Rede-SaveToPlan-SE-QA`（iPhone SE 3rd generation / iOS 26.5，375×667pt）在最大 `accessibility-extra-extra-extra-large` 下实拍最长加+删分支。首次 RED 中事实句出现省略、动作词被挤成侧栏；按 #720 同款让 accessibility size 的动作词移到事实句下方后，最终 `.ai-tmp/save-to-plan/2026-07-30-savetoplan-se-ax5.png` 为 750×1334px、完整显示「今天加了髋内收机，去掉了杠铃耸肩」与下一行「存进计划」，MD5 `a4e4496723fc9d58207d4efe99d5b694`。本项仍未在 TestFlight 真机执行，保持 `[ ]`。
 
+- [ ] N17 **处方进阶闸门与次数延伸（FR-T2）**：
+    1. 为普通外部负重动作准备同一训练日历史：侧平举 12–20×4 做出 20/18/16/15，下一次应上调一档并回到 12 次；20/12/12/12 不得上调。卧推 6–8×3 做出 8/8/7 应上调，8/6/6 应保持；任一组低于次数下限但最高组仍在区间时不得误上调。
+    2. 刚升到新档且整场最高次数低于下限时，第一次应保持新档再试，第二次仍失败才下调；任一组 RIR 0（或最小 RIR≤0.5）时第一次也必须立即下调。带近期疼痛保守态的动作不得因上述放宽而自动变难。
+    3. 在最近 8 次该动作出现内，先让某场全部工作组都在精确下一档且最高次数低于下限，再回到当前档：12–20 区间上限应静默变为 24，达标后才升档。另分别确认“下一档顶组 + 当前档回落组”的混合场、下一档已做到下限、失败已在第 9 次以前、以及仅凭步长预测均不延伸；上限只延伸一级且不超过 30。
+    4. 进展页同一场同一动作放入“更重但 Epley 较低”和“稍轻但 Epley 较高”两组：e1RM 趋势应采用后者，历史顶组与重量 PR 仍显示前者。组数、LoadGrid 档位、辅助式/自重/外挂自重分支、现有说明文案均应与此前一致。
+
+    **当前本地证据**：`RedeTrainingDecision` 518/518、`RedeLocalSnapshot` 239/239；权威门禁覆盖 10 个 Swift 包共 1,198 项、通用 Simulator build 与 App 宿主 81/81，exit 0 且末行 `QUALITY GATE: PASS`。专用 iPhone 17 Pro / iOS 26.5 Simulator 已用最终源码重 build/install，canonical fixture 写入前后 SHA-256 一致；五张 1206×2622 实拍覆盖 40 lb×20 → 50 lb×12、实测失败后 40 lb×24、达标后 50 lb×12，以及 e1RM 76 kg / 重量里程碑 60 kg 分离，MD5 与逐条路径见 2026-08-03 交接件实施回执。本项仍未在 TestFlight 真机执行，保持 `[ ]`。
+
 ## H · 稳定性出错场景
 
 - [x] H1 ✅模拟器 PASS（完成 1 组休息 2:58 强杀 → 重开弹「已完成的组都还在」→ 继续：第 1 组 ✓ 在、**休息计时连续恢复 1:28**）训练进行到一半，上滑强杀 App → 重新打开：训练进度还在，数据没丢
