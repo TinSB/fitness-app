@@ -176,3 +176,20 @@ S3 已按上方初裁完整实现并测试，随后主会话沿默认采用 `Nex
 - **e1RM 附带项**：`ProgressSnapshotBuilder` 对每场每动作单独选择 Epley `w×(1+r/30)` 最大的工作组生成趋势点；历史顶组、`bestWeightKg` 与重量 PR 继续重量优先、同重比次数。测试锁住 62.5×6 的 Epley 75 低于 60×8 的 76，以及另一场中 20×8 仍是重量顶组/PR、16×20 才是 e1RM 代表组。`RedeLocalSnapshot` 239/239。
 - **跨层集成**：两条连续 8 周时间线均由生产 `TrainFlowState → CompletedSessionBuilder → TrainingSession → AppData → CleanAppDataViewBuilder → CleanTrainingDecisionInput → TodayPrescriptionEngine.plan()` 生成事实。侧平举时间线依次证明 40 lb 正常递减升 50、第一次失败保 50、第二次失败退 40、当前上限延伸 24、24 次闸门挣到后再升 50，并最终离开原档；卧推时间线保持 100→102.5→105 kg 的既有节奏且所有 `repUpperBound` 仍为 8。
 - **gate / 实拍 / 规格写回 / 未尽事项**：独立审查提出的 `Int` 溢出、e1RM/重量 PR 证据分离、S3 一级限制和测试日期四项均已关闭，定向复核无剩余 P0–P3。最终权威 `bash .claude/quality-gate.cmd` exit 0：10 个 Swift 包共 1,198 项、Xcode build、App 宿主 81/81，末行 `QUALITY GATE: PASS`。其后用最终源码再次真实 build/install 到 `Rede-Progression-QA`（iPhone 17 Pro / iOS 26.5），五个 canonical fixture 写入前后 SHA-256 各自相同；五张最终 PNG 均为 1206×2622 且 MD5 互异：`.ai-tmp/progression-gate/2026-08-03-progression-before.png` `af3d13452bbf7e8349c11c11ccc851e9`（40 lb×20）、`...-s1a-unlocked.png` `b99363a54b11e1df399522dac43d2b1e`（50 lb×12）、`...-s3-extended.png` `f46cb7fe23f94c0759dad1173edd5423`（40 lb×24）、`...-s3-earned.png` `cad473a777105168abd6aafa37f509c3`（50 lb×12）、`...-e1rm.png` `d2705d81df18d16d22427c81a5d748b0`（e1RM 76 kg、重量里程碑 60 kg）。前台 AX 直接读到对应处方与进展文本。已 grep manifest 登记的全部 canonical 文档并写回 `TodayPrescriptionEngine` 头注释、系统逻辑 §6.0.1/§8、PRD FR-T2、CHANGELOG、DEV_LOG 与 TestFlight N17；Master、roadmap、设计/文案、catalog 合同均无本批新真相。旧历史不迁移；组形学习仍留案，混合负荷故意不算 S3 证据；TestFlight N17 仍未真机勾选。没有改组数、RIR/疼痛优先级、LoadGrid、目录/schema/版本、package/project manifest、辅助式/自重/外挂自重分支或用户可见文案。
+
+## 主会话验收结论（2026-08-04）
+
+全量三 lens 验收：5 MAJOR + 3 MINOR + 2 NIT（另 9 条被对抗核验驳回，理由逐行核过代码）。三个独立真问题（e1RM 外溢被三个 lens 各报一次）全部定向闭合，闭合后两路复验 **pass=true**（复验方独立重跑 10 个包 1,194/1,194、对 10 个 golden 文件逐个 shasum 比对全 SAME、全仓清点 e1RM 消费方归位）。独立门禁两次 exit 0。
+
+**两条根因是主会话交接件的裁定缺口，已如实记录**：
+1. S1a 只裁定了「按次数判定」，未继承 S3 的负荷一致性纪律 → 旧闸门 `minReps >= repMax` 天然对混合负荷免疫，新闸门把这道保护拆了。最危险路径：单次疼痛不进保守态 → NextSetEngine 因 painReported 降后续组重量 → 轻组打满、平均被拉过中点 → **下次把最重那组加重**。已加 `uniformWeightKg != nil` 守卫闭合。
+2. e1RM 附带项裁定范围写成「ProgressSnapshot 趋势点」，未意识到同一个 `bestE1RmKg` 还喂 MLE performance 轴 / 估算里程碑 / 相对力量地板 / levelUp 突破卡，且 MLE peaks 只升不降写盘不可逆。已改为展示/决策双通道闭合。
+
+**主会话另做的收口**：残余风险留案（见下）、两条 e1RM 点列逐场对齐断言、CHANGELOG「Uniform-load behavior is unchanged」补参照系。
+
+**已知非阻断残余（留案）**：
+1. **顶组+回落用户不再自动升档**：负荷一致性守卫要求整场同负荷，`[100×8, 90×8, 90×8]` 在守卫前会升、之后 hold。这是有意的保守取舍——放宽成「只看最重那一档」会同时放行「引擎因疼痛降重后仍判加重」这条更危险的路径。真解法是组形（top/backoff）学习层；在它落地前，收到「我练顶组回落重量不涨」的反馈直接归因本条，不要重做根因调查。已写入系统逻辑 §6.0.1。
+2. `latestE1RmKg`（展示口径）与 `bestE1RmKg`（决策口径）字段名不含口径前缀，当前无消费面同时读、注释与 §8.0 已锁；未来新消费面误读是隐性风险。
+3. 同场同 exerciseId 多 occurrence（FR-TR6 A→B→A / FR-TR14 二次加练）若两段负荷不同会被判混合负荷而 hold——偏保守不偏激进，与 #721 occurrence 拆分语义有轻微张力。
+4. 进展页曲线 e1RM 可能已过 100kg 而「估算里程碑」尚未达成（两个口径的必然结果），界面无解释——规格已写明是拍板取舍。
+5. `testProgressModelKeepsDecisionE1RMForEveryDecisionConsumer` 挂在 `SessionStoreDraftTests` 类下（主题不符但门禁按类白名单确实会跑）。

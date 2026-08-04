@@ -201,6 +201,16 @@ final class ProgressSnapshotBuilderTests: XCTestCase {
         // 重量优先顶组 85×5（99.17kg），否则升级后会凭空抬高等级与里程碑。
         XCTAssertEqual(trend.points.last?.e1RmKg ?? 0, 80 * (1 + 20.0 / 30), accuracy: 1e-9)
         XCTAssertEqual(trend.decisionE1RmPoints.count, sessions.count)
+        // 两条点列必须逐场对齐：今天 topSet 与 e1RMSet 的 guard 严格等价所以恒等长，
+        // 但将来任一侧加过滤（如跳过 0 重量组）会让消费方按索引静默错位，此断言先锁住。
+        XCTAssertEqual(
+            trend.points.count, trend.decisionE1RmPoints.count,
+            "展示与决策两条 e1RM 点列必须逐场一一对应"
+        )
+        XCTAssertEqual(
+            trend.points.map(\.dateISO), trend.decisionE1RmPoints.map(\.dateISO),
+            "两条点列的场次顺序必须一致"
+        )
         XCTAssertTrue(trend.decisionE1RmPoints.allSatisfy {
             abs($0.e1RmKg - legacyTopSetE1RM) < 1e-9
         })
