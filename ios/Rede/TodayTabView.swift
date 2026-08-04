@@ -1394,6 +1394,19 @@ struct TodayTabView: View {
                             .padding(.top, 8)
                     }
                 }
+                // 计划性周期化的量变解释同样只在用户主动展开的抽屉出现；引擎测试锁住
+                // 两种 phase reason 与反应式安全网/自动均衡的互斥，UI 也只渲染其中一条。
+                if dayReasonCodes.contains("phaseOverreachAdded") {
+                    Text(s.phaseOverreachAddedLine)
+                        .font(.redeCaption).foregroundStyle(Color.redeT3)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 8)
+                } else if dayReasonCodes.contains("phaseDeloadReduced") {
+                    Text(s.phaseDeloadReducedLine)
+                        .font(.redeCaption).foregroundStyle(Color.redeT3)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 8)
+                }
             }
         }
     }

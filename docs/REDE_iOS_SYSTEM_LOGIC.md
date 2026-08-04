@@ -184,6 +184,10 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 
 **输出合同**：`TodayPrescription{dayCode, exercises[], dayReasons[]}`；每动作 `{exerciseId, sets, restSeconds, rep 区间, targetReps, targetWeightKg(kg 口径), targetRir(增肌默认 2；力量目标复合主项 1，见 §6.0.1a), previousWeightKg, previousTopReps, nextProjectedWeightKg, change(start/increase/hold/ease), reason, progressionPauseReason?}`。`progressionPauseReason` 只在 FR-TR7 / FR-SE7 实际把更难负荷进阶钳回时存在，取 `.painDiscomfort` 或 `.injuryFlag(code)`；持平/变轻、首练、自重/弹力带次数进阶及换成孪生动作时必须为 nil，不能显示与该行结果矛盾的来源理由。无信号时为 nil 且编码省略该 key，保持既有处方字节。全 typed 零文案：dayCode/reason code 是 RedeL10n 模板挂点；**lb 换算归渲染层（FR-SE1），但渲染层不是裸换算——必须把每个可配重量吸附到「器械×当前单位」真实梯子的最近格再显示（见 `REDE_EXERCISE_CONTENT_SYSTEM` §8 LoadGrid 显示吸附契约）；禁止 ×2.2046 直转。**previous→target→change 三元组同时喂 Receipt Change 行、训练页 why 行与 Rail；Rail「上次」先按场内同 `exerciseId` 聚合 sets，过滤空 occurrence 后再按 `(日历日, canonical append offset)` 取最近真实实绩，skip-only/link carrier 不得遮住更早成绩。**里程摘要（wave-12，owner 拍板 B）**：今日页 Receipt Change 行只渲染**头牌动作**（exercises.first）；非头牌动作的**转折性 `reason`**（bandCeilingReached 换带 / bodyweightCeilingReached 加配重 / assistedGraduated 毕业 / bodyweightPlusDegraded 回退）另由今日页**里程摘要**扫全表单列于头牌行下方（配件类如弹力带永远排不到首位，否则其里程提示被吞）；只列转折性 reason、不列普通进阶（高信号），复用同一 `changeLine(for:)` 文案，纯文本不占卡预算。
 
+**计划周期的日级依据（2026-08-04，FR-T2 / FR-T3）**：`DayPrescriptionReason` 增加 `.phaseOverreachAdded` 与 `.phaseDeloadReduced`，只是在已有处方完成后 append 的可解释性事实，绝不改变组数、重量或 RIR 调制。`verdict.call == .train` 且 phase 的既有 `setDelta == +1` 时产前者；`setDelta == −1 && weightMultiplier < 1` 时产后者；校准 / 构建周不产理由。非 train 的 light / deload / rest 保持反应式安全网优先，故不得同时有 phase 与 `.verdictLightReduced` / `.verdictDeloadReduced`；自动均衡本来只在 `setDelta == 0`，故也不得与 phase 理由同日出现。两条理由只经 RedeL10n 进入 Today 的「查看依据」折叠抽屉，不加首屏常驻小字。
+
+**跨训练日的基准组数不是异常（2026-08-04）**：同一动作在推日与上肢日可有不同模板基础组数（例如肩部主场与兼顾日）；这是训练日职责不同的正确编排，不能为表面一致性统一，更不为此另加解释行。周期理由只解释计划性过载 / 减载造成的当日变化。
+
 **FR-TR7 / FR-SE7 自动进阶暂停（2026-07-29 已实现；行为边界即合同）。**
 
 - **疼痛窗口**：先把 clean 已完成场次按日历日排序，同一日保留 canonical append 顺序；只取全局最近 4 场。对每个 `exerciseId` 统计含 `painDiscomfort` 跳过的不同场次，同场的跳过组/跳过整动作合并去重；≥2 场进入保守态，1 场不触发，无关场次照样占窗口。某场既有正常完成组又有 pain 跳过时仍算 pain 场。

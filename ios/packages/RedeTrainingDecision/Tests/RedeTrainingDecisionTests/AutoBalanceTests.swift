@@ -108,4 +108,26 @@ final class AutoBalanceTests: XCTestCase {
         XCTAssertEqual(try boostDelta(today: "2026-07-08"), 0, "overreach 周不叠加")
         XCTAssertEqual(try boostDelta(today: "2026-07-13"), 0, "deload 周不抵消")
     }
+
+    func testPhaseReasonsAndPriorityBoostAreMutuallyExclusive() throws {
+        let json = TestSupport.appDataJSON(
+            historyDates: ["2026-06-22", "2026-06-29", "2026-07-06"], program: ppl)
+        for (today, expectedPhaseReason) in [
+            ("2026-07-08", DayPrescriptionReason.phaseOverreachAdded),
+            ("2026-07-13", DayPrescriptionReason.phaseDeloadReduced),
+        ] {
+            let input = try TestSupport.makeInput(appDataJSON: json, todayISO: today)
+            let verdict = TodayVerdict(call: .train, reason: .normalProgression, signals: [])
+            let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(
+                input: input, verdict: verdict, mesocycleEnabled: true,
+                dayCodeOverride: "pull-a", priorityMuscles: [.biceps]))
+            XCTAssertTrue(prescription.dayReasons.contains(expectedPhaseReason))
+            XCTAssertFalse(prescription.dayReasons.contains { $0.code == "musclePriorityBoosted" },
+                           "非平周周期化已调制组数，自动均衡不得叠加")
+            let phaseReasons = prescription.dayReasons.filter {
+                $0.code == "phaseOverreachAdded" || $0.code == "phaseDeloadReduced"
+            }
+            XCTAssertEqual(phaseReasons, [expectedPhaseReason], "同日只显示一条计划量变依据")
+        }
+    }
 }

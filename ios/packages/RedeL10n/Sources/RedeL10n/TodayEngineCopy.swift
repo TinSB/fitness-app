@@ -166,6 +166,18 @@ extension RedeStrings {
                   "Building up \(joined). Extra sets added today")
     }
 
+    /// 计划性周期化依据行：只进「查看依据」抽屉，无常驻小字。
+    public var phaseOverreachAddedLine: String {
+        t2("本周计划加量　今天多一组",
+           "Planned higher volume this week　One more set today")
+    }
+
+    /// 计划性周期化依据行：只进「查看依据」抽屉，无常驻小字。
+    public var phaseDeloadReducedLine: String {
+        t2("本周计划减量　今天少一组，重量也轻一些",
+           "Planned lighter week　One less set and lighter loads")
+    }
+
     /// FR-TR7 / FR-SE7：只描述系统本次不自动加重，不作诊断或保护承诺。
     public var progressionPausePainLine: String {
         t2(

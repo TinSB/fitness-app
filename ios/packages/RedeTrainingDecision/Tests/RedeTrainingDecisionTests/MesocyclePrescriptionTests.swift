@@ -20,8 +20,7 @@ final class MesocyclePrescriptionTests: XCTestCase {
         """
     }
 
-    private func prescription(sessionDates: [String], today: String, meso: Bool,
-                              blockLengthWeeks: Int = Mesocycle.defaultBlockLengthWeeks) throws -> TodayPrescription {
+    private func input(sessionDates: [String], today: String) throws -> CleanTrainingDecisionInput {
         let sessions = sessionDates.enumerated().map { sessionJSON("s\($0.offset)", $0.element) }.joined(separator: ",")
         let json = """
         {"schemaVersion":8,
@@ -31,7 +30,12 @@ final class MesocyclePrescriptionTests: XCTestCase {
         """
         let value = try JSONDecoder().decode(JSONValue.self, from: Data(json.utf8))
         let appData = try AppData(decoding: value)
-        let input = try CleanTrainingDecisionInput.make(from: CleanAppDataViewBuilder.build(from: appData), todayISO: today)
+        return try CleanTrainingDecisionInput.make(from: CleanAppDataViewBuilder.build(from: appData), todayISO: today)
+    }
+
+    private func prescription(sessionDates: [String], today: String, meso: Bool,
+                              blockLengthWeeks: Int = Mesocycle.defaultBlockLengthWeeks) throws -> TodayPrescription {
+        let input = try input(sessionDates: sessionDates, today: today)
         let verdict = TodayVerdictEngine.evaluate(input)
         return try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict,
                                                           mesocycleEnabled: meso, blockLengthWeeks: blockLengthWeeks))
@@ -66,6 +70,52 @@ final class MesocyclePrescriptionTests: XCTestCase {
         XCTAssertLessThan(on.targetWeightKg, off.targetWeightKg, "减载周重量真减（×0.85）")
     }
 
+    func testTrainPhaseReasonsDescribeOnlyPlannedVolumeChanges() throws {
+        func phaseReasons(in prescription: TodayPrescription) -> [DayPrescriptionReason] {
+            prescription.dayReasons.filter {
+                switch $0 {
+                case .phaseOverreachAdded, .phaseDeloadReduced:
+                    return true
+                default:
+                    return false
+                }
+            }
+        }
+
+        let calibrate = try prescription(sessionDates: ["2026-05-04"], today: "2026-05-07", meso: true)
+        let build = try prescription(sessionDates: ["2026-05-04", "2026-05-11"], today: "2026-05-13", meso: true)
+        let overreach = try prescription(sessionDates: block, today: "2026-05-20", meso: true)
+        let deload = try prescription(sessionDates: block, today: "2026-05-27", meso: true)
+
+        XCTAssertEqual(phaseReasons(in: calibrate), [], "校准周没有量变说明")
+        XCTAssertEqual(phaseReasons(in: build), [], "构建周没有量变说明")
+        XCTAssertEqual(phaseReasons(in: overreach), [.phaseOverreachAdded])
+        XCTAssertEqual(phaseReasons(in: deload), [.phaseDeloadReduced])
+    }
+
+    func testPhaseReasonsYieldToReactiveSafetyVerdicts() throws {
+        // 同一真实块锚强制分别走 light/deload：即使相位本应是 overreach，也只能保留
+        // 反应式安全网的依据，绝不同时给出两条量变说明。
+        let input = try input(sessionDates: block, today: "2026-05-20")
+        for (call, expectedSafetyReason) in [
+            (TodayCall.light, DayPrescriptionReason.verdictLightReduced),
+            (TodayCall.deload, DayPrescriptionReason.verdictDeloadReduced),
+        ] {
+            let verdict = TodayVerdict(call: call, reason: .sustainedLoadDeload(days: 14), signals: [])
+            let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(
+                input: input, verdict: verdict, mesocycleEnabled: true))
+            XCTAssertTrue(prescription.dayReasons.contains(expectedSafetyReason))
+            XCTAssertFalse(prescription.dayReasons.contains(where: { reason in
+                switch reason {
+                case .phaseOverreachAdded, .phaseDeloadReduced:
+                    return true
+                default:
+                    return false
+                }
+            }), "\(call) 安全网优先，不能叠加计划性依据")
+        }
+    }
+
     func testPlanHonorsBlockLengthWeeks() throws {
         // 审查 MAJOR-1：plan() 必须真用传入的 blockLengthWeeks（与计划页周期条读同一配置），
         // 不能内部写死 4。今日 05-20 = 块+16 天：4 周块 → 第 2 周过载（RIR 1.0）；
@@ -84,5 +134,33 @@ final class MesocyclePrescriptionTests: XCTestCase {
         XCTAssertEqual(on.sets, off.sets, "非 train 态 phase 让位：组数不变")
         XCTAssertEqual(on.targetRir, off.targetRir, "非 train 态 phase 让位：RIR 不变")
         XCTAssertEqual(on.targetWeightKg, off.targetWeightKg, "非 train 态 phase 让位：重量不变")
+    }
+
+    /// 覆盖度锁（2026-08-04 验收补）：本批的目的是拔掉「组数悄悄变、抽屉一句不说」。
+    /// 但依据分支 switch 的是 modulation 数值元组 + `default: break`，Swift 不会
+    /// 对 MesocyclePhase 新增相位报错——新相位若改了组数/重量却落进 default，
+    /// 静默就原样回来了。本测试对 allCases 穷举，把「每个相位的调制必须有明确归属」锁死。
+    func testEveryMesocyclePhaseModulationHasAnExplicitReasonMapping() {
+        for phase in MesocyclePhase.allCases {
+            let m = phase.modulation
+            let changesVolume = m.setDelta != 0
+            let changesLoad = m.weightMultiplier < 1.0
+            switch phase {
+            case .calibrate, .build:
+                XCTAssertFalse(
+                    changesVolume || changesLoad,
+                    "\(phase) 若开始改组数或重量，必须同批给它一条抽屉依据，不能落进 default 静默"
+                )
+            case .overreach:
+                XCTAssertEqual(m.setDelta, 1, "过载周依据分支按 setDelta == 1 匹配")
+                XCTAssertEqual(m.weightMultiplier, 1.0, "过载周若改成同时减重，文案只说「多一组」就不完整了")
+            case .deload:
+                XCTAssertEqual(m.setDelta, -1, "减载周依据分支按 setDelta == -1 匹配")
+                XCTAssertLessThan(
+                    m.weightMultiplier, 1.0,
+                    "减载依据的 where weightMultiplier < 1.0 子句依赖此前提；若改成不减重，文案「重量也轻一些」就是假话"
+                )
+            }
+        }
     }
 }

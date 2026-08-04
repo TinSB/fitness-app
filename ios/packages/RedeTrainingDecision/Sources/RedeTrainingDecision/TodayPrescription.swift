@@ -60,6 +60,10 @@ public enum PrescriptionReason: Equatable, Sendable, Codable {
 public enum DayPrescriptionReason: Equatable, Sendable, Codable {
     case verdictLightReduced
     case verdictDeloadReduced
+    /// 计划性过载周（仅 train 态）：相位既有 +1 组调制的可解释依据。
+    case phaseOverreachAdded
+    /// 计划性减载周（仅 train 态）：相位既有 −1 组与降重量调制的可解释依据。
+    case phaseDeloadReduced
     case comebackCycleRestart
     case carriedOverFromLastWeek
     case slotUnfilled(pattern: String)
@@ -71,6 +75,8 @@ public enum DayPrescriptionReason: Equatable, Sendable, Codable {
         switch self {
         case .verdictLightReduced: return "verdictLightReduced"
         case .verdictDeloadReduced: return "verdictDeloadReduced"
+        case .phaseOverreachAdded: return "phaseOverreachAdded"
+        case .phaseDeloadReduced: return "phaseDeloadReduced"
         case .comebackCycleRestart: return "comebackCycleRestart"
         case .carriedOverFromLastWeek: return "carriedOverFromLastWeek"
         case .slotUnfilled: return "slotUnfilled"
