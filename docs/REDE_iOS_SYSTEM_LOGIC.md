@@ -224,7 +224,11 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 - **sticky（粘住上次换的动作）当前为 pattern 全局**：先取最新相关场次，再按场内原序把完整 FR-TR6 replacement chain 折叠为“链首位置上的终点 actual”，非链元素保持自身，最后取该 pattern 的第一个代表。它记住换动作链，不把同 pattern 临时加练误当换动作；A→B→A 的终点仍是 A。无拆分历史与旧“第一个”语义等价。同 pattern 跨 A/B 且换入动作满足两天约束时会跨日粘住；新用户无换动作时 A/B 由槽位约束天然区分。dayCode 级精确化需会话存 dayCode 真值（templateId），留作后续。
 - 日名（dayCode→双语）：`RedeL10n.trainingDayName`（A 日/upper/lower 复用 legacy parity map；新 push-b/pull-b/legs-b/full-a/b/c 就近映射，不污染 parity-locked `Formatters.templateNameMap`）。
 
-**最小渐进（goldens 锁定；2026-08-03 普通外部负重闸门修正）**：双重渐进三分支，RIR 一律取 **min 口径**（最差一组；任何一组打到力竭就不加重——安全优先于抗噪，2026-06-09 审查后显式拍板）。普通外部负重动作只有同时满足「至少一组达到本次有效 repMax、没有一组低于 repMin、未取整平均次数 ≥ `(repMin + effectiveRepMax) / 2`、min RIR ≥1.0（含 1.0；无 RIR 数据视为有余力）、无长间隔回归」才上调一档并把次数重置 repMin；只首组封顶或平均未过中点均保持。min RIR≤0.5 仍立即下调一档，优先于任何新台阶宽限；若最高组低于 repMin，只有最新一次是相对前一次刚上到更高 topWeight 的首个失败尝试时保持该档再试一次，连续第二次同档仍失败才下调。**实测失败后的一级次数延伸（静默）**：若该动作最新工作重量为 W，且最近 8 次该动作出现内已有「精确下一档 W+1 的某一场全部工作组均在 W+1、该场 maxReps < repMin，之后又回到 W」的行为证据，则 `effectiveRepMax = min(30, repMax + ceil((repMax-repMin)/2))`；混合负荷场、W+1 做到 repMin、8 次窗外失败或纯模型预测均不得触发。延伸值只按目录原区间计算一次，不递归；其加重仍使用上述四项表现判据并随有效上限重算中点。行为证据不要求引擎 provenance，避免新增处方历史 schema。FR-TR7 / FR-SE7 疼痛保守态仍在外层最高优先钳住更难的自动进阶。加重无上限（有意为之）。裁决调制在渐进后：light ×0.9；deload ×0.8 且组数 −1(下限 2)；本批不改任何组数逻辑。**重量按「器械×用户单位」真实梯子取整**（§8 LoadGrid：公斤自由重量 2.5kg 等距、磅哑铃分段 2.5/5/10lb 梯子等），下限一档；**调制后若取整弹回原重量且原重量 > 一档，强制下调一格**（轻练/减载必须真减，小重量动作不得被取整吃掉）。**重量口径**：哑铃/单边动作 = 单只哑铃重量；杠铃 = 总杠重（含杆）；plate-loaded = 配重片读数；cable = 配重栈读数（美国习惯，引擎内部按手上有效推进）——**渲染层据此口径吸附梯子最近格显示，非裸换算**（§8 显示吸附契约）。辅助式、自重与外挂自重分支维持各自既有渐进口径。
+**最小渐进（goldens 锁定；2026-08-03 普通外部负重闸门修正 + 验收纠偏）**：双重渐进三分支，RIR 一律取 **min 口径**（最差一组；任何一组打到力竭就不加重——安全优先于抗噪，2026-06-09 审查后显式拍板）。普通外部负重动作只有同时满足「**本场该动作全部工作组负荷一致**、至少一组达到目录 repMax、没有一组低于 repMin、未取整平均次数 ≥ `(repMin + repMax) / 2`、min RIR ≥1.0（含 1.0；无 RIR 数据视为有余力）、无长间隔回归」才上调一档并把次数重置 repMin；只首组封顶或平均未过中点时保持，任何混合负荷场都不得 increase，未命中既有安全/ease 分支时保持。负荷一致性是 S1a 的前置证据边界：轻组次数不能替最重组赢得加重，尤其不得把「较重组报疼后 NextSet 安全降重、轻组完成高次数」解释成应把疼痛重量再升档。min RIR≤0.5 仍立即下调一档，优先于任何新台阶宽限；若最高组低于 repMin，只有最新一次是相对前一次刚上到更高 topWeight 的首个失败尝试、且 `verdict.longGapDays == nil` 时保持该档再试一次，连续第二次同档失败或长间隔回归均下调。FR-TR7 / FR-SE7 疼痛保守态仍在外层最高优先钳住更难的自动进阶。加重无上限（有意为之）。裁决调制在渐进后：light ×0.9；deload ×0.8 且组数 −1(下限 2)；本批不改任何组数逻辑。单组场在新旧判据下 `min=max=mean`，因此不另加最小组数条件；这保留既有单组处方与 deload 行为。
+
+**S3 次数上限延伸撤回留案（2026-08-03，已实现后经验收撤回）**：本批曾实现并测试「最近 8 次出现内整场全组在 W+1 且 `maxReps < repMin`、其后回到 W → `effectiveRepMax` 一级延伸」。随后沿默认采用 `NextSetEngine` 建议的真实会话路径核实，该证据不会自然形成：W+1 首组一旦疼痛、RIR≤0.5 或次数低于下限，下一组按安全瀑布降回 W，最终落盘成为混合负荷；而放宽为只看首组又与顶组/回落形态完全同构、无法可靠区分。故该方案在当前可判定合同下结构性不可达，`effectiveRepMax`、`progressionRepMax`、延伸分支及专属测试已全部撤回，`repMax` 恢复目录原语义；不是“从未实现”，而是实现后经接缝验收否决。此前“行为形态本身即充分证据、不要求引擎 provenance”的初裁作为历史仍成立，但默认会话路径不会自然生成所需的整块同档失败形态。未来若重开，只能另立切片评估：①用多场**频率/重复模式**区分偶发升档失败与稳定顶组回落；或 ②在会话内落一条 typed「引擎升档尝试」provenance 事实（涉及新持久化合同，须另走架构/schema 门）。在此之前禁止模型预测式延伸。
+
+**重量按「器械×用户单位」真实梯子取整**（§8 LoadGrid：公斤自由重量 2.5kg 等距、磅哑铃分段 2.5/5/10lb 梯子等），下限一档；**调制后若取整弹回原重量且原重量 > 一档，强制下调一格**（轻练/减载必须真减，小重量动作不得被取整吃掉）。**重量口径**：哑铃/单边动作 = 单只哑铃重量；杠铃 = 总杠重（含杆）；plate-loaded = 配重片读数；cable = 配重栈读数（美国习惯，引擎内部按手上有效推进）——**渲染层据此口径吸附梯子最近格显示，非裸换算**（§8 显示吸附契约）。辅助式、自重与外挂自重分支维持各自既有渐进口径。
 
 **catalog limitation（§6.1 红线如实声明）**：MVP catalog 缺**肌群贡献权重**——肌群级高置信分析（肌群等级/瓶颈识别）在补齐前不得基于本 catalog 产出；双语展示名归 RedeL10n。**注意事项（原"禁忌提示"）已落地为展示层**（FR-EX2：`safetyNoteZh/En`，按 §7.1 fitness≠medical 措辞——保守训练注意 + 条件句 +「咨询专业人士」，绝不诊断/治疗/防伤承诺；只给有风险动作、低风险诚实不加；经安全合规对抗审查）——它是**展示提示、不是引擎输入**，不参与处方/降级决策（FR-TR7 / FR-SE7 的窄幅自动进阶暂停只走本节上方合同，与本字段独立）。组形（top/backoff）归 M3-1 后续学习层；restSeconds 已在 M3-1 落地（slot 生成参数）。
 
@@ -788,7 +792,7 @@ V1 tier 实现口径(2026-07-07 批次 A): 已解锁肌群**中位等级**落界
 - 每个 milestone 绑定 canonical exercise、movement family、linked muscle ids、threshold kg/lb、achievement method、level floor、tier floor、confidence rule 和 display copy。
 - kg/lb 都要支持;美国市场默认显示 lb。`Bench 100kg` 与 `225 lb Bench` 属于同一 milestone family 的地区化表达,不是精确单位互换;catalog 必须分别保存 metric threshold 和 imperial threshold。
 - barbell milestone、dumbbell milestone、machine milestone 分开。机器动作只有在 gym equipment / machine calibration 足够时才能生成机器本地 milestone,不得冒充 barbell milestone。
-- milestone 分为 `actualCompletedSet` 和 `estimatedOneRepMax`。用户真实完成 100kg 卧推才是“Bench 100kg hit”;e1RM 跨过 100kg 只能显示“estimated 100kg bench strength”。
+- milestone 分为 `actualCompletedSet` 和 `estimatedOneRepMax`。用户真实完成 100kg 卧推才是“Bench 100kg hit”;e1RM 跨过 100kg 只能显示“estimated 100kg bench strength”。`estimatedOneRepMax` 固定读取每场**重量优先、同重比次数**顶组形成的决策点列及峰值，不读取 Progress 的层内最大 Epley 展示点；展示算法升级不得在零新增训练时抬高里程碑。
 - 疼痛、poor technique、异常数据、未完成 set、身份不稳定或单位不可信时,不得触发正式 milestone。
 
 V1 起始 milestone 示例:
@@ -831,7 +835,7 @@ V1 实现拍板(2026-07-07 批次 A MLE-4,`MuscleMilestoneCatalog`,catalogVersio
 - 上表九条即 V1 全量目录,id/双梯阈值/linkedMuscles/floor/tierCandidate 由全表契约测试锁死。
 - **floor 只抬已解锁肌群**: 校准中不因一次达标出等级(冷启动灰屏语义优先)。
 - **「不能直接拉到同一级」与「不能强行美化」的实现口径**: floor 是 max 抬底不是赋值;且 **balanceScore 用未抬底曲线级**——milestone 是强度成就不是训练覆盖证据,同一 floor 套满 linked muscles 会把「只练卧推」美化成「完美均衡」。tier/中位吃 floor、balance 不吃,语义拆分。
-- **estimated 达标同样触发 floor 与 tier 信号**: confidence rule V1 = actual→high、estimated→medium;目录判定层不设置信卡。**V1 现实(批次 B 接线后如实注)**: 调用方唯一把关 = statsRecords 数据质量剔除(可疑组不进 e1RM),**无额外 e1RM 置信门槛**——任意干净 e1RM 达标即产 estimated 成就;是否补置信卡列批次 C 拍板。同一里程碑 actual 已达不再出估算条目(估算不冒充实测);lb 梯独立比较(102kg≈224.9lb 不过 225lb 档),同 FR-PR7 口径。
+- **estimated 达标同样触发 floor 与 tier 信号**: confidence rule V1 = actual→high、estimated→medium;目录判定层不设置信卡。**V1 现实(批次 B 接线后如实注)**: 调用方唯一把关 = statsRecords 数据质量剔除(可疑组不进 e1RM),**无额外 e1RM 置信门槛**——任意干净的**决策 e1RM 峰值**达标即产 estimated 成就；该峰值保持重量优先顶组口径，Progress 展示点不进入 floor/tier。是否补置信卡列批次 C 拍板。同一里程碑 actual 已达不再出估算条目(估算不冒充实测);lb 梯独立比较(102kg≈224.9lb 不过 225lb 档),同 FR-PR7 口径。
 
 #### 6.5.6 计算 pipeline
 
@@ -842,7 +846,7 @@ V1 实现拍板(2026-07-07 批次 A MLE-4,`MuscleMilestoneCatalog`,catalogVersio
 3. **Normalize load evidence**: 对 free weight、plate-loaded machine、selectorized machine 使用不同置信策略;未校准机器不参与跨器械强度比较,只参与本器械趋势。
 4. **Detect strength milestones**: 从 actual completed set 和 high-confidence e1RM 中识别 `StrengthMilestoneAchievement`,区分真实完成和估算突破。
 5. **Compute muscle exposure**: 按 muscle contribution 汇总 effective sets、weekly frequency、recent coverage、movement pattern coverage。
-6. **Compute performance signal**: 复用 e1RM（Epley `w×(1+r/30)`,同 `SessionSummary`/`RedeLocalSnapshot.ProgressSnapshot`,无独立 `E1RMEngine` 类型）的概念,按动作族和肌群汇总可比强度趋势;RIR 缺失或技术差时降权。
+6. **Compute performance signal**: 复用 Epley `w×(1+r/30)` 公式但明确分开两种代表组口径，无独立 `E1RMEngine` 类型。Progress 展示趋势每场取层内 Epley 最大组；MLE performance、估算里程碑、相对力量与 Weekly Coach Review 等**决策面**继续取重量优先（同重比次数）的顶组 Epley 点列及其全史峰值，与 `SessionSummary` 既有口径一致。展示算法升级不得在零新增训练时制造等级、突破、里程碑或周教练 verdict；RIR 缺失或技术差降权仍是未实现留案。
 7. **Compute progression signal**: 计算同肌群/同动作族在 recent window 和 baseline window 的趋势,避免只看单次 PR。
 8. **Compute recovery/safety adjustment**: 疼痛、poor technique、support safety lock、长期跳过纠偏/功能性动作会降低 aggressiveness。
 9. **Apply user goal weights**: 默认 balanced;用户选择专项目标时只调整目标 gap,不改事实分数。
@@ -1194,8 +1198,8 @@ Progress：
 ### 8.0 进展派生投影（ProgressSnapshot · M4-1 已实现）
 
 - **包边界**：`RedeLocalSnapshot` 重生为 Foundation-only 独立包（Master §5：与 `RedeDomain`/canonical AppData 强制解耦，永不读写真相）。输入是包内自有值类型 `SnapshotSessionRecord`（id + 本地日 dateISO + 动作/组 + 时长），由 app 组合层把 DataHealth clean view 映射进来（M4-3 接线）。
-- **输出**：`ProgressSnapshotBuilder.build(sessions:)` 纯函数 → 历史（新→旧：volume/组数/顶组/PR 动作/时长）+ 每动作 e1RM 趋势（旧→新点列 + latest/best）+ 周训练量（ISO 周·周一起始，吨位/组数/场次）。
-- **口径锁定**（与已落盘实现对齐，改动须过架构门）：e1RM = Epley `w×(1+r/30)`，每场每动作取所有工作组中 **Epley 最大**的一组形成趋势点；历史顶组与重量 PR 继续重量优先、同重比次数，PR 仅在该重量顶组**严格大于**全部更早历史同动作重量顶组时成立，首练不发奖（M3 保守口径）。两种代表组口径不得混用；volume = Σ 重量×次数；周键由纯整数日期数学（Hinnant civil-days）从 dateISO 推导，无 Calendar/时区依赖——固定输入产出固定结果。
+- **输出**：`ProgressSnapshotBuilder.build(sessions:)` 纯函数 → 历史（新→旧：volume/组数/顶组/PR 动作/时长）+ 每动作两条显式 e1RM 点列（展示 `points` + 决策 `decisionE1RmPoints`）及 `latestE1RmKg`（展示）/`bestE1RmKg`（决策）+ 周训练量（ISO 周·周一起始，吨位/组数/场次）。
+- **双口径锁定**（与已落盘实现对齐，改动须过架构门）：两者都用 Epley `w×(1+r/30)`。Progress 图表/页面判断用展示 `points`，每场每动作取所有工作组中 **Epley 最大**的一组；MLE performance、估算里程碑、相对力量与 Weekly Coach Review 用决策 `decisionE1RmPoints`，每场继续取**重量优先、同重比次数**顶组，`bestE1RmKg` 也只从该决策点列取峰值。历史顶组与重量 PR 同样重量优先，PR 仅在该重量顶组**严格大于**全部更早历史同动作重量顶组时成立，首练不发奖（M3 保守口径）。展示与决策两种代表组不得混用；volume = Σ 重量×次数；周键由纯整数日期数学（Hinnant civil-days）从 dateISO 推导，无 Calendar/时区依赖——固定输入产出固定结果。
 - **防御**：非法日期条目整体跳过（上游 clean view 已保证合法）；legacy 的 median-e1RM/置信度门控不在本合同（置信度属数据质量层，且 §3.4 禁做 UI 读数）。
 
 ### 8.0.1 数据质量信号（DataQualityReport · M4-2 已实现）
@@ -1293,7 +1297,7 @@ Account/sync/cloud settings 不进入第一版干净实现,不得做成无能力
 
 **纯决策合同。** `WeeklyCoachReviewEngine` 归 `RedeTrainingDecision`，沿 `CoachActionEngine` 模式保持纯函数、typed output、零文案、零 clock/IO、零 entitlement/StoreKit/import AppData。app 组合层只注入窄事实：`reviewWeekStartISO`、同日去重训练日数、场次数、剔除可疑组后的训练量、近期完整周训练日中位数、截至上周末的关键动作趋势（up/flat/down/calibrating）和上周数据问题数。引擎输出 `verdict + evidence[≤3] + action`；文案全部由 `RedeL10n` 按 reason code 渲染。
 
-**周口径与可信输入。** 只分析 `[上周一, 本周一)`，当前周与未来记录全部排除；跨年、DST 和时区沿 `WeekAnchor` 的 civil-date/ISO Monday 口径。训练日从 clean session 日期去重；训练量、e1RM 和关键动作趋势从排除可疑组后的 `ProgressSnapshot` 重建。吨位可作依据，不能独立推出进步/退步。当前数据没有可追溯的 plan effective-date timeline，故 V1 禁止读取今天的计划评价上一周、禁止输出“完成 X/Y 次计划”；未来若要计划依从必须另走 schema/版本时间线 gate，不能补一个依赖周一开 App 的机会式快照。
+**周口径与可信输入。** 只分析 `[上周一, 本周一)`，当前周与未来记录全部排除；跨年、DST 和时区沿 `WeekAnchor` 的 civil-date/ISO Monday 口径。训练日从 clean session 日期去重；训练量、e1RM 和关键动作趋势从排除可疑组后的 `ProgressSnapshot` 重建，其中 `WeeklyReviewFactsBuilder` 明确读取 `decisionE1RmPoints`（重量优先顶组），不读取 Progress 展示 `points`（层内最大 Epley）。吨位可作依据，不能独立推出进步/退步。当前数据没有可追溯的 plan effective-date timeline，故 V1 禁止读取今天的计划评价上一周、禁止输出“完成 X/Y 次计划”；未来若要计划依从必须另走 schema/版本时间线 gate，不能补一个依赖周一开 App 的机会式快照。
 
 **确定性优先级。** 上周数据问题抢占正向判断并行动到核对数据；上周零训练进入中性事实态并回今日；可靠数据不足进入校准/事实态；实际训练日较近期完整周中位数明显减少时只说节奏变化；其余才按关键动作趋势给 progressing/holding/easing。下降不写“退步”，减载、回归或疼痛不被催补量。V1 动作只有 `reviewData`、`openToday`、`viewProgress`，全部为导航且不写 canonical、不改计划。
 

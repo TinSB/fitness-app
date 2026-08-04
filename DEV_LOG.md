@@ -6,21 +6,23 @@
 
 ---
 
-## 2026-08-03 · 侧平举不再卡死在粗档位，卧推节奏与安全线保持原样
+## 2026-08-03 · 二轮验收收口：混合负荷不再误升，S3 如实撤回
 
-**用户目标**：器械侧平举的最小 10 lb 档位相对 40 lb 是 +25%，大于 12–20 次区间能挣出的强度预算；旧规则又要求每组都到 20 才加重，造成长期 40↔50 摇摆。目标是让正常递减的工作组能继续进阶，同时不让首组刷满、近力竭、疼痛或顶组/回落训练被误判。
+**用户目标**：继续解决普通外部负重的进阶死锁，但不允许轻重量回落组替疼痛或失败的重组“挣”到加重，也不允许一次展示算法升级凭空制造肌群升级、里程碑或分享卡。真实会话接缝若证明方案不可达，就撤回而不是用手写历史绕过。
 
-**做了什么**：普通外部负重现在只有在「至少一组封顶、全组不破下限、未取整平均达到有效区间中点、最小 RIR≥1」四项同时满足时才升一档。刚升档后整场最高次数仍低于下限，第一次保持该档再试，连续第二次才退；最小 RIR≤0.5 仍在它之前立即退，疼痛保守态仍在外层优先钳住变难。若最近 8 次该动作出现里，真实发生过整场全部工作组都在精确下一档、最高次数仍低于下限，且之后回到当前档，当前次数上限静默延伸一级：`min(30, repMax + ceil((repMax-repMin)/2))`。行为本身就是证据，不持久化引擎 provenance；混合负荷、做到下限、跳过一档、窗外旧失败或模型预测都不算。进展页 e1RM 同时改为取一场内 Epley 最大的工作组，历史顶组、最佳重量和重量 PR 继续认最重组。
+**做了什么**：S1a 在「至少一组封顶、全组不破下限、未取整平均达到区间中点、最小 RIR≥1」之前新增负荷一致性门：该动作当场全部工作组必须同重，混合负荷一律不得 increase；未命中既有安全/ease 分支时才 hold。因此 `100×6 + 90×8 + 90×8`，以及 `40×20 + 40×18（painFlag）+ 30×20 + 30×20` 都不会拿最重组继续加重；同负荷的 20/18/16/15 与卧推 8/8/7 仍照裁定升档。S1b 继续按最近两场 `topWeightKg` 判断“刚升档”，只把第一次掉出次数下限的 ease 改成 hold；新增 `longGapDays == nil`，停练很久回来不享受宽限。RIR≤0.5 仍先立即 ease，疼痛保守态仍在外层优先。没有增加最小组数，因为单组场的 min=max=mean，新旧数学等价，额外门反而会改变既有行为。
 
-**你能看到什么**：器械侧平举 40 lb 做出 20/18/16/15 后，下次直接显示 50 lb ×12；只有 20/12/12/12 仍保持。试过 50 lb 且整场都拿不动 12 次、后来回到 40 lb 后，目标会静默继续爬到 24；做到 24/22/18/16 后再显示 50 lb ×12。卧推 8/8/7 仍按原节奏升档，8/6/6 不升。进展页可以同时显示平板卧推 e1RM 76 kg，而重量里程碑仍是最重组的 60 kg；没有新增解释文案。
+**S3 为什么撤回**：首轮确实完整实现过“实测下一档失败后把次数上限延伸到 24”等分支和测试。二轮沿真实 `NextSetEngine` 接缝核验后发现：默认采用组间建议时，W+1 首组疼痛、近力竭或低于次数下限，下一组会安全降回 W，完成场自然成为混合负荷；而允许只看首组，又与“顶组 W+1 + 回落 W”的合法训练形态完全同构。于是本批删除全部 S3 运行时分支、透传和专属测试，次数上限恢复为目录 `repMax`。这不是没做过，而是**做了 → 真实接缝验出证据合同不成立 → 撤回留案**。未来只保留两个另立切片方向：用跨场频率识别重复顶组/回落模式，或落一条 typed“引擎升档尝试”事实；后者涉及 provenance/持久化合同，绝不在本批偷加。
 
-**测试先红后绿**：旧实现下新增聚焦套件 21 项出现 33 个预期断言失败，直接证明 20/18/16/15、8/8/7、新档首次宽限和实测失败后 24 次延伸均尚不存在。完成后 `RedeTrainingDecision` 518/518、`RedeLocalSnapshot` 239/239。两个八周时间线均走真实 `TrainFlowState → CompletedSessionBuilder → AppData → CleanAppDataViewBuilder → CleanTrainingDecisionInput → plan()`：侧平举从 40 升 50、一次宽限、二次失败退回、延伸至 24、再次升 50 并离开原档；卧推保持原来的 100→102.5→105 kg 节奏。独立复核发现并关闭了超大次数用 `Int` 求和可能溢出、e1RM 测试未分离重量 PR、S3 一级限制未显式锁住和测试日期前后倒置四项，定向复核后无剩余 P0–P3。
+**e1RM 双口径**：进展曲线的每场点现在取层内 Epley 最大工作组；显式的决策点列和决策峰值继续用升级前的“重量优先、同重比次数”顶组口径。MLE 肌群等级、两类力量里程碑、相对力量、等级突破及 derived memory/share、Weekly Coach Review 全部只吃决策通道。包测试用同一批 12 场历史逐项对比完整 `MuscleDevelopmentProfile`、里程碑、相对力量、`MuscleLevelMemory` 与分享快照；反向把展示点故意喂进去会真实改变结果，证明 fixture 能抓住接线回归。另新增 app-hosted 临时 canonical/memory 测试，完整走生产 `ProgressModel`，直接锁住 App 胶水；默认运行时文件路径没有变化。
 
-**golden 逐条结论（零重捕获、零受影响 fixture）**：`golden-prescription-first-exposure` 没有历史，不进入新闸门；`golden-prescription-progression` 的卧推是 8/8/8，新旧都升档；`golden-prescription-deload` 的 hack-squat 只有一组 8 次，新旧闸门结果相同，随后 verdict 调制不变；`golden-prescription-pull-day` 只有卧推历史，今日拉类动作仍是首练；`golden-prescription-legs-day` 只有卧推与下拉历史，今日腿部动作仍是首练。五份 expected JSON 全部逐字节通过，没有借重捕获掩盖语义变化。
+**测试先红后绿**：二轮 RED 包括四条进阶测试 12 个断言失败（两条混合负荷、长间隔宽限、S3 撤回后的目录上限）、缺少决策点列导致的编译失败、Weekly Coach 两个失败断言，以及生产 `ProgressModel` 尚不能注入隔离文件路径的 app 编译失败。GREEN：`RedeTrainingDecision` 512/512、`RedeLocalSnapshot` 241/241，`NextSetEngineTests` 11/11，并有新的 app 生产接线测试。重写后的两个八周测试只声称“手写观察事实 → `TrainFlowState` / `CompletedSessionBuilder` → AppData → clean → `plan()`”这一段存储与处方接线：侧平举证明 S1a/S1b 节奏及最终只有自身在原目录上限达标才正常升档，卧推保持 100→102.5→105 kg；它不再冒充覆盖 `NextSetEngine` 的组内决策接缝，后者由独立测试直接验证并正是 S3 撤回依据。
 
-**直接证据**：权威 `.claude/quality-gate.cmd` exit 0，10 个 Swift 包共 1,198 项、App 宿主 81 项、Xcode Simulator build 全绿，末行 `QUALITY GATE: PASS`。修复溢出后又用最终源码重新 build/install 到 `Rede-Progression-QA`（iPhone 17 Pro / iOS 26.5），canonical fixture 写入前后 SHA-256 逐一相同；五张最终 1206×2622 实拍位于 `.ai-tmp/progression-gate/`，MD5 分别为 before `af3d13452bbf7e8349c11c11ccc851e9`、S1a `b99363a54b11e1df399522dac43d2b1e`、S3 延伸 `f46cb7fe23f94c0759dad1173edd5423`、S3 达标 `cad473a777105168abd6aafa37f509c3`、e1RM `d2705d81df18d16d22427c81a5d748b0`。前台可访问性树直接读到「器械侧平举、50 lb × 12、上次 40×24、向上 10」与「平板卧推、76 kg、保持 / 平板卧推 60 kg 已达成」。
+**golden 逐条结论（零重捕获、零变更 fixture）**：`golden-prescription-first-exposure` 没有历史，不进入闸门；`golden-prescription-progression` 是同负荷 8/8/8，新旧都升档；`golden-prescription-deload` 的 hack-squat 只有 80×8 一组，单组新旧判据数学等价，随后 verdict 调制不变；`golden-prescription-pull-day` 只有卧推历史，拉类动作仍是首练；`golden-prescription-legs-day` 只有卧推与下拉历史，腿部动作仍是首练。五份 expected JSON 逐字节通过，没有重捕获。
 
-**风险与下一步**：旧历史不迁移；S3 故意静默，现有行为数据无法学习递增组或顶组回落，所以混合负荷一律不作为失败证据，这个组形能力继续留案。没有改组数、LoadGrid、目录/schema/版本/工程清单、辅助式/自重/外挂自重分支或任何用户可见文案。TestFlight N17 已补验法但仍未在真机勾选；不把本地 Simulator 冒充发布验收。不 push、不开 PR。
+**直接证据与风险**：最终权威门禁结果和二轮 findings 闭合表写在同批交接件回执。首轮 S3/旧 max-Epley 的模拟器图片仅保留为历史排错材料，不能作为终态验收证据；那次本地 derived `muscle-level-memory.json` 可能已被单调 peak/pending 污染，因此本轮没有复用或清理旧 QA 设备，也不据此提出生产迁移——分支从未发布，TestFlight/生产数据未受影响。没有改组数、LoadGrid、目录/schema/版本/工程清单、RIR/疼痛优先级、辅助式/自重/外挂自重分支或用户可见文案。TestFlight N17 仍未在真机勾选；不 push、不开 PR。
+
+**最终权威门禁**：`bash .claude/quality-gate.cmd` 真实返回 exit 0；10 个 Swift 包 1,194/1,194、通用 iOS Simulator build、App 白名单 82/82 全部通过，末行 `QUALITY GATE: PASS`。逐包数量和六条 finding 的闭合方式见同批交接件二轮回执。
 
 ---
 
