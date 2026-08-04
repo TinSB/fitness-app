@@ -417,6 +417,192 @@ final class ProgressionGateTests: XCTestCase {
         XCTAssertEqual(result.reason, .nearFailureLastTime)
     }
 
+    // MARK: - S3: measured W -> exact H failure -> later W evidence
+
+    func testS3BehaviorEvidenceExtendsTwelveToTwentyRangeToTwentyFour() throws {
+        let weight = machineFortyPoundsKg
+        let next = LoadGrid.nextRungKg(weight, equipment: "selectorized", unit: .lb, up: true)
+        var sessions = [
+            session("w-before", "2026-01-01", exerciseId: "machine-lateral-raise", weightKg: weight, reps: [20, 18, 16, 15]),
+        ]
+        for day in 2...10 {
+            sessions.append(session(
+                "other-\(day)",
+                String(format: "2026-01-%02d", day),
+                exerciseId: "bench-press",
+                weightKg: 100,
+                reps: [8, 8, 8]
+            ))
+        }
+        sessions.append(session("h-failed", "2026-01-11", exerciseId: "machine-lateral-raise", weightKg: next, reps: [11, 10, 9, 8]))
+        sessions.append(session("w-return", "2026-01-12", exerciseId: "machine-lateral-raise", weightKg: weight, reps: [18, 18, 18, 18]))
+
+        let result = try machinePlan(sessions: sessions, today: "2026-01-13")
+
+        XCTAssertEqual(result.targetWeightKg, weight, accuracy: 0.000_000_001)
+        XCTAssertEqual(result.repUpperBound, 24, "unrelated sessions must not consume the eight-appearance window")
+        XCTAssertEqual(result.targetReps, 24)
+        XCTAssertEqual(result.change, .hold)
+        XCTAssertEqual(result.reason, .holdProgressing)
+    }
+
+    func testS3FailureAtWindowStartStillExtendsWhenEarlierWeightIsOutsideWindow() throws {
+        let weight = machineFortyPoundsKg
+        let next = LoadGrid.nextRungKg(weight, equipment: "selectorized", unit: .lb, up: true)
+        var sessions = [
+            // This establishes the real older W, but is deliberately the ninth appearance and
+            // therefore outside the decision window below.
+            session("w-outside", "2026-01-01", exerciseId: "machine-lateral-raise", weightKg: weight, reps: [20, 18, 16, 15]),
+            session("h-window-start", "2026-01-02", exerciseId: "machine-lateral-raise", weightKg: next, reps: [11, 10, 9, 8]),
+        ]
+        for day in 3...9 {
+            sessions.append(session(
+                "w-return-\(day)",
+                String(format: "2026-01-%02d", day),
+                exerciseId: "machine-lateral-raise",
+                weightKg: weight,
+                reps: [18, 18, 18, 18]
+            ))
+        }
+
+        let result = try machinePlan(sessions: sessions, today: "2026-01-10")
+
+        XCTAssertEqual(result.repUpperBound, 24, "the eight-appearance window limits failed-H evidence, not the older W provenance")
+        XCTAssertEqual(result.targetReps, 24)
+        XCTAssertEqual(result.targetWeightKg, weight, accuracy: 0.000_000_001)
+    }
+
+    func testS3MixedLoadFailureDoesNotCountAsNextRungEvidence() throws {
+        let weight = machineFortyPoundsKg
+        let next = LoadGrid.nextRungKg(weight, equipment: "selectorized", unit: .lb, up: true)
+        let result = try machinePlan(sessions: [
+            session("w-before", "2026-01-01", exerciseId: "machine-lateral-raise", weightKg: weight, reps: [20, 18, 16, 15]),
+            session(
+                "h-mixed",
+                "2026-01-08",
+                exerciseId: "machine-lateral-raise",
+                weightsKg: [next, next, weight, next],
+                reps: [11, 10, 9, 8]
+            ),
+            session("w-return", "2026-01-15", exerciseId: "machine-lateral-raise", weightKg: weight, reps: [18, 18, 18, 18]),
+        ])
+
+        XCTAssertEqual(result.repUpperBound, 20)
+        XCTAssertEqual(result.targetReps, 20)
+    }
+
+    func testS3FailureOutsideLastEightExerciseAppearancesDoesNotExtend() throws {
+        let weight = machineFortyPoundsKg
+        let next = LoadGrid.nextRungKg(weight, equipment: "selectorized", unit: .lb, up: true)
+        var sessions = [
+            session("w-before", "2026-01-01", exerciseId: "machine-lateral-raise", weightKg: weight, reps: [20, 18, 16, 15]),
+            session("h-old", "2026-01-02", exerciseId: "machine-lateral-raise", weightKg: next, reps: [11, 10, 9, 8]),
+            session("w-return", "2026-01-03", exerciseId: "machine-lateral-raise", weightKg: weight, reps: [18, 18, 18, 18]),
+        ]
+        for day in 4...11 {
+            sessions.append(session(
+                "w-\(day)",
+                String(format: "2026-01-%02d", day),
+                exerciseId: "machine-lateral-raise",
+                weightKg: weight,
+                reps: [18, 18, 18, 18]
+            ))
+        }
+
+        let result = try machinePlan(sessions: sessions, today: "2026-01-12")
+
+        XCTAssertEqual(result.repUpperBound, 20)
+        XCTAssertEqual(result.targetReps, 20)
+    }
+
+    func testS3NextRungAttemptReachingFloorDoesNotCountAsFailure() throws {
+        let weight = machineFortyPoundsKg
+        let next = LoadGrid.nextRungKg(weight, equipment: "selectorized", unit: .lb, up: true)
+        let result = try machinePlan(sessions: [
+            session("w-before", "2026-01-01", exerciseId: "machine-lateral-raise", weightKg: weight, reps: [20, 18, 16, 15]),
+            session("h-floor", "2026-01-08", exerciseId: "machine-lateral-raise", weightKg: next, reps: [12, 11, 10, 9]),
+            session("w-return", "2026-01-15", exerciseId: "machine-lateral-raise", weightKg: weight, reps: [18, 18, 18, 18]),
+        ])
+
+        XCTAssertEqual(result.repUpperBound, 20)
+        XCTAssertEqual(result.targetReps, 20)
+    }
+
+    func testS3LargePredictedStepWithoutMeasuredAttemptDoesNotExtend() throws {
+        let weight = machineFortyPoundsKg
+        let result = try machinePlan(sessions: [
+            session("w-only", "2026-01-15", exerciseId: "machine-lateral-raise", weightKg: weight, reps: [18, 18, 18, 18]),
+        ])
+
+        XCTAssertEqual(result.repUpperBound, 20)
+        XCTAssertEqual(result.targetReps, 20)
+    }
+
+    func testS3AttemptAboveExactNextLoadGridRungDoesNotExtend() throws {
+        let weight = machineFortyPoundsKg
+        let next = LoadGrid.nextRungKg(weight, equipment: "selectorized", unit: .lb, up: true)
+        let aboveNext = LoadGrid.nextRungKg(next, equipment: "selectorized", unit: .lb, up: true)
+        let result = try machinePlan(sessions: [
+            session("w-before", "2026-01-01", exerciseId: "machine-lateral-raise", weightKg: weight, reps: [20, 18, 16, 15]),
+            session("too-heavy", "2026-01-08", exerciseId: "machine-lateral-raise", weightKg: aboveNext, reps: [11, 10, 9, 8]),
+            session("w-return", "2026-01-15", exerciseId: "machine-lateral-raise", weightKg: weight, reps: [18, 18, 18, 18]),
+        ])
+
+        XCTAssertEqual(result.repUpperBound, 20)
+    }
+
+    func testS3ExtendedGateRaisesAfterTwentyFourCeilingIsEarned() throws {
+        let weight = machineFortyPoundsKg
+        let next = LoadGrid.nextRungKg(weight, equipment: "selectorized", unit: .lb, up: true)
+        let result = try machinePlan(sessions: [
+            session("w-before", "2026-01-01", exerciseId: "machine-lateral-raise", weightKg: weight, reps: [20, 18, 16, 15]),
+            session("h-failed", "2026-01-08", exerciseId: "machine-lateral-raise", weightKg: next, reps: [11, 10, 9, 8]),
+            session("w-earned", "2026-01-15", exerciseId: "machine-lateral-raise", weightKg: weight, reps: [24, 22, 18, 16]),
+        ])
+
+        XCTAssertEqual(result.repUpperBound, 24)
+        XCTAssertEqual(result.targetWeightKg, next, accuracy: 0.000_000_001)
+        XCTAssertEqual(result.targetReps, 12)
+        XCTAssertEqual(result.change, .increase)
+        XCTAssertEqual(result.reason, .repCeilingReached)
+    }
+
+    func testS3MultipleFailedNextRungCyclesStillExtendOnlyOneLevel() throws {
+        let weight = machineFortyPoundsKg
+        let next = LoadGrid.nextRungKg(weight, equipment: "selectorized", unit: .lb, up: true)
+        let result = try machinePlan(sessions: [
+            session("w-1", "2026-01-01", exerciseId: "machine-lateral-raise", weightKg: weight, reps: [20, 18, 16, 15]),
+            session("h-failed-1", "2026-01-08", exerciseId: "machine-lateral-raise", weightKg: next, reps: [11, 10, 9, 8]),
+            session("w-2", "2026-01-15", exerciseId: "machine-lateral-raise", weightKg: weight, reps: [20, 18, 16, 15]),
+            session("h-failed-2", "2026-01-22", exerciseId: "machine-lateral-raise", weightKg: next, reps: [11, 10, 9, 8]),
+            session("w-3", "2026-01-29", exerciseId: "machine-lateral-raise", weightKg: weight, reps: [20, 18, 16, 15]),
+        ], today: "2026-01-30")
+
+        XCTAssertEqual(result.repUpperBound, 24)
+        XCTAssertEqual(result.targetReps, 24)
+        XCTAssertEqual(result.targetWeightKg, weight, accuracy: 0.000_000_001)
+        XCTAssertEqual(result.change, .hold)
+    }
+
+    func testS3ExtendedCeilingHasHardCapOfThirty() throws {
+        let weight = machineFortyPoundsKg
+        let next = LoadGrid.nextRungKg(weight, equipment: "selectorized", unit: .lb, up: true)
+        let result = try machinePlan(
+            sessions: [
+                session("w-before", "2026-01-01", exerciseId: "machine-lateral-raise", weightKg: weight, reps: [28, 26, 24, 22]),
+                session("h-failed", "2026-01-08", exerciseId: "machine-lateral-raise", weightKg: next, reps: [19, 18, 17, 16]),
+                session("w-return", "2026-01-15", exerciseId: "machine-lateral-raise", weightKg: weight, reps: [29, 29, 29, 29]),
+            ],
+            repMin: 20,
+            repMax: 28
+        )
+
+        XCTAssertEqual(result.repUpperBound, 30)
+        XCTAssertEqual(result.targetReps, 30)
+        XCTAssertEqual(result.targetWeightKg, weight, accuracy: 0.000_000_001)
+        XCTAssertEqual(result.change, .hold)
+    }
+
     // MARK: - Existing outer safety priorities
 
     func testPainPauseStillWinsOverNewS1aIncrease() throws {
@@ -466,6 +652,71 @@ final class ProgressionGateTests: XCTestCase {
     }
 
     // MARK: - Builder -> clean input -> plan eight-week integrations
+
+    func testMachineLateralStuckUserUnlocksAcrossEightContinuousWeeks() throws {
+        let weight = machineFortyPoundsKg
+        let next = LoadGrid.nextRungKg(weight, equipment: "selectorized", unit: .lb, up: true)
+        let afterNext = LoadGrid.nextRungKg(next, equipment: "selectorized", unit: .lb, up: true)
+        let sessionDates = [
+            "2026-01-05", "2026-01-12", "2026-01-19", "2026-01-26",
+            "2026-02-02", "2026-02-09", "2026-02-16", "2026-02-23",
+        ]
+        let planDates = [
+            "2026-01-06", "2026-01-13", "2026-01-20", "2026-01-27",
+            "2026-02-03", "2026-02-10", "2026-02-17", "2026-02-24",
+        ]
+        let performances: [(Double, [Int])] = [
+            (weight, [20, 18, 16, 15]),
+            (next, [11, 10, 9, 8]),
+            (next, [11, 10, 9, 8]),
+            (weight, [20, 18, 16, 15]),
+            (weight, [22, 20, 18, 16]),
+            (weight, [24, 22, 18, 16]),
+            (next, [12, 12, 12, 12]),
+            (next, [20, 18, 16, 15]),
+        ]
+        var history: [TrainingSession] = []
+        var plans: [ExercisePrescriptionPlan] = []
+        for index in performances.indices {
+            let facts = session(
+                "week-\(index + 1)",
+                sessionDates[index],
+                exerciseId: "machine-lateral-raise",
+                weightKg: performances[index].0,
+                reps: performances[index].1
+            )
+            history.append(try completedSession(
+                from: facts,
+                repMin: 12,
+                repMax: 20,
+                equipment: "selectorized",
+                unit: .lb
+            ))
+            plans.append(try productionHistoryPlan(
+                exerciseId: "machine-lateral-raise",
+                history: history,
+                today: planDates[index],
+                unitSystem: "lb",
+                sets: 4,
+                repMin: 12,
+                repMax: 20
+            ))
+        }
+
+        XCTAssertEqual(plans[0].targetWeightKg, next, accuracy: 0.000_000_001, "week 1 normal drop-off unlocks the first raise")
+        XCTAssertEqual(plans[0].change, .increase)
+        XCTAssertEqual(plans[1].targetWeightKg, next, accuracy: 0.000_000_001, "first failed new rung gets one retry")
+        XCTAssertEqual(plans[1].change, .hold)
+        XCTAssertEqual(plans[2].targetWeightKg, weight, accuracy: 0.000_000_001, "second failed attempt returns to W")
+        XCTAssertEqual(plans[2].change, .ease)
+        XCTAssertEqual(plans[3].repUpperBound, 24, "measured failed rung extends the W ceiling")
+        XCTAssertEqual(plans[3].targetReps, 24)
+        XCTAssertEqual(plans[4].targetWeightKg, weight, accuracy: 0.000_000_001)
+        XCTAssertEqual(plans[5].targetWeightKg, next, accuracy: 0.000_000_001, "earned extended gate reaches H again")
+        XCTAssertEqual(plans[5].change, .increase)
+        XCTAssertEqual(plans[7].targetWeightKg, afterNext, accuracy: 0.000_000_001, "user is no longer trapped at the original rung")
+        XCTAssertEqual(plans[7].change, .increase)
+    }
 
     func testBenchNormalUserKeepsExistingEightWeekProgressionCadence() throws {
         let sessionDates = [
