@@ -110,11 +110,29 @@ struct ProgressModel {
     }
 
     static func loadOutcome(now: Date = Date(), healthKitWeightKg: Double? = nil) -> LoadOutcome? {
-        let memoryStore = MuscleLevelMemoryStore(fileURL: muscleLevelMemoryFileURL())
+        loadOutcome(
+            now: now,
+            healthKitWeightKg: healthKitWeightKg,
+            canonicalFileURL: TodayModel.canonicalFileURL(),
+            muscleLevelMemoryFileURL: muscleLevelMemoryFileURL()
+        )
+    }
+
+    /// 与生产同一条完整投影链，只把两份本地文件位置显式注入，供 app-hosted 测试在
+    /// 临时目录验证 canonical → snapshot → MLE/milestone/memory/share 接线；默认入口
+    /// 仍固定使用 Rede 的真实 canonical 与 derived-memory 路径。
+    static func loadOutcome(
+        now: Date,
+        healthKitWeightKg: Double?,
+        canonicalFileURL: URL,
+        muscleLevelMemoryFileURL: URL
+    ) -> LoadOutcome? {
+        let memoryStore = MuscleLevelMemoryStore(fileURL: muscleLevelMemoryFileURL)
         return memoryStore.withExclusiveAccess { previousMemory in
             loadOutcomeExclusively(
                 now: now,
                 healthKitWeightKg: healthKitWeightKg,
+                canonicalFileURL: canonicalFileURL,
                 memoryStore: memoryStore,
                 previousMemory: previousMemory
             )
@@ -126,10 +144,11 @@ struct ProgressModel {
     private static func loadOutcomeExclusively(
         now: Date,
         healthKitWeightKg: Double?,
+        canonicalFileURL: URL,
         memoryStore: MuscleLevelMemoryStore,
         previousMemory: MuscleLevelMemory?
     ) -> LoadOutcome? {
-        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        let store = JSONFileAppDataStore(fileURL: canonicalFileURL)
         let appData: AppData
         do {
             if let existing = try store.load() {
@@ -164,7 +183,8 @@ struct ProgressModel {
         // FR-PR7 力量里程碑：公认大项实测最佳顶组跨过的配片阈值。eligible = 具体 id 白名单（不按
         // pattern 宽匹配，避免窄距卧推/臀推/早安/前蹲等稀释成就感，审查 m-1）；与目录交集且排
         // deprecated（审查 M-1，防日后下线动作仍触发）。扩里程碑动作走此清单——校准项。本包与目录
-        // 解耦，故 eligible 在 app 层注入。实测用 snapshot 的 bestWeightKg；估算用 bestE1RmKg（FR-PR7 收尾，明确标注）。
+        // 解耦，故 eligible 在 app 层注入。实测用 snapshot 的 bestWeightKg；估算用
+        // 决策口径 bestE1RmKg（重量优先顶组，FR-PR7 收尾，明确标注）。
         let milestoneLiftIds: Set<String> = ["bench-press", "squat", "deadlift", "overhead-press"]
         let milestoneEligible = Set(
             catalog.entries
@@ -175,7 +195,8 @@ struct ProgressModel {
             snapshot.exerciseTrends.map { ($0.exerciseId, $0.bestWeightKg) },
             uniquingKeysWith: { first, _ in first }  // trends 已按 id 去重；防御重复 key 不崩
         )
-        // FR-PR7 收尾：估算里程碑用 bestE1RmKg（估算峰值）；可疑组已排除（statsRecords），不被坏数据带偏。
+        // 决策 e1RM 峰值保持重量优先顶组的历史口径：估算里程碑、相对力量与 MLE
+        // 不得吃 Progress 展示曲线的「层内最大 Epley」升级，防零新增训练凭空升级。
         let estByExercise = Dictionary(
             snapshot.exerciseTrends.map { ($0.exerciseId, $0.bestE1RmKg) },
             uniquingKeysWith: { first, _ in first }
@@ -224,12 +245,13 @@ struct ProgressModel {
                 }
             }
         }
-        // e1RM 只挂主肌群（拍板③：副贡献动作的 e1RM 不代表该肌群可比强度）
+        // e1RM 只挂主肌群（拍板③：副贡献动作的 e1RM 不代表该肌群可比强度）。
+        // MLE 明确吃 decisionE1RmPoints（重量优先顶组），不是展示 points。
         var e1rmRows: [MuscleE1RMRow] = []
         for trend in snapshot.exerciseTrends {
             guard let group = MuscleGroupMapping.primaryGroup(
                 forExerciseId: trend.exerciseId, catalog: catalog) else { continue }
-            for point in trend.points {
+            for point in trend.decisionE1RmPoints {
                 e1rmRows.append(MuscleE1RMRow(
                     muscleRaw: group.rawValue, dateISO: point.dateISO, e1RmKg: point.e1RmKg))
             }

@@ -5,12 +5,16 @@
 // 顺序第一个未用且匹配」从 catalog 现算（FR-ON3：不锁死硬编码模板，可重算）；
 // 槽位的组数/次数区间是生成参数，沿 legacy 模板口径（事实性复用，已留痕）。
 //
-// 最小渐进 = 双重渐进三分支（goldens 锁定阈值）。RIR 一律取 min 口径
-// （最差一组）：任何一组打到力竭就不该加重——安全优先于抗噪，这是显式
-// 产品拍板（2026-06-09 审查后），改口径必须连 §6.0.1 与 goldens 一起改：
-//   全组打满 repMax 且 min RIR ≥ 1.0(含 1.0；无 RIR 数据视为有余力) → +一档，次数重置 repMin；
-//   上次力竭(min RIR ≤ 0.5) 或 最高组未到 repMin → −一档；
-//   否则持平，次数目标 repMax（区间内推进）。
+// 最小渐进 = 双重渐进三分支。RIR 一律取 min 口径（最差一组）：任何一组
+// 打到力竭就不该加重——安全优先于抗噪，这是显式产品拍板。ordinary external：
+//   至少一组封顶、没有组掉出下限、未取整平均 ≥ 区间中点、min RIR ≥ 1.0
+//   且本场全部工作组负荷一致（无 RIR 视为有余力）→ +一档，次数重置 repMin；
+//   混合负荷一律不得 increase；未命中既有安全/ease 分支时 hold，不能用轻组次数
+//   替最重组赢得加重；
+//   新档第一次最高组仍未到 repMin、且非长间隔回归 → 保持新档再试一次；
+//   第二次仍失败或长间隔回归时 −一档；
+//   min RIR ≤ 0.5 永远立即 −一档，不受宽限影响；否则持平冲次数上限。
+// assisted/bodyweight/bodyweight-plus 仍各走自己的既有分支，不套本判据。
 // 加重无上限（精英重量合法递增，有意为之）。
 // 「一档」= 该动作器械×用户单位的真实档位步长（LoadGrid，2026-06-13「宁大勿小」）：
 // kg+自由重量=2.5（与旧口径等价，goldens 零变化）；lb=5lb 真实格子；选重机更粗。
@@ -139,6 +143,7 @@ enum ProgressionPausePolicy {
 public enum TodayPrescriptionEngine {
     private static let nearFailureMeanRir = 0.5
     private static let progressMinMeanRir = 1.0
+    private static let loadComparisonToleranceKg = 0.000_000_001
     // 自重次数进阶（owner 拍板 2026-06-13）：起步 12、上限 25 提示换难度、下限 8。
     private static let bodyweightStartReps = 12
     private static let bodyweightRepCeiling = 25
@@ -705,7 +710,13 @@ public enum TodayPrescriptionEngine {
         phase: PhaseModulation?,
         progressionPaused: Bool
     ) -> ExercisePrescriptionPlan {
-        let last = lastPerformance(exerciseId: entry.id, sessions: input.sessions)
+        let recent = recentPerformances(
+            exerciseId: entry.id,
+            sessions: input.sessions,
+            // ordinary external 只需最近两次判断「刚升档」；其它负荷轴只读最近一次。
+            limit: entry.loadType == "external" ? 2 : 1
+        )
+        let last = recent.last
 
         // 自重分支（2026-06-13，owner 拍板）：无外部负重，按次数进阶；到顶提示换难度。
         // 重量轴的渐进/取整/调制全部不适用——单独一条路径。
@@ -765,11 +776,25 @@ public enum TodayPrescriptionEngine {
                 change = .ease
                 reason = .nearFailureLastTime
             } else if last.maxReps < slot.repMin {
-                baseWeight = LoadGrid.nextRungKg(last.topWeightKg, equipment: equip, unit: unit, up: false)
-                targetReps = slot.repMin
-                change = .ease
-                reason = .belowRepFloor
-            } else if last.minReps >= slot.repMax, last.minRir.map({ $0 >= progressMinMeanRir }) ?? true,
+                if latestPerformanceWasJustRaised(recent), verdict.longGapDays == nil {
+                    // 新台阶只宽限一次：最近两次顶重严格上升，且本次掉出次数下限。
+                    // 只阻止下降，绝不制造上升；长间隔回归不宽限，下一次同重量再
+                    // 失败时比较也不再成立。
+                    baseWeight = last.topWeightKg
+                    targetReps = slot.repMax
+                    change = .hold
+                    reason = .holdProgressing
+                } else {
+                    baseWeight = LoadGrid.nextRungKg(last.topWeightKg, equipment: equip, unit: unit, up: false)
+                    targetReps = slot.repMin
+                    change = .ease
+                    reason = .belowRepFloor
+                }
+            } else if reachedProgressionGate(
+                last,
+                repMin: slot.repMin,
+                repMax: slot.repMax
+            ),
                       verdict.longGapDays == nil {
                 // 无上限：精英重量的 +一档 是合法递增，有意不设 cap。
                 // 回归压制（2026-07-08）：停练 ≥14 天时本分支不进——上上次的满分不是
@@ -1181,6 +1206,10 @@ public enum TodayPrescriptionEngine {
         let repsAtTop: Int
         let minReps: Int
         let maxReps: Int
+        /// 全部工作组的未取整平均次数（S1a 中点判据）。
+        let meanReps: Double
+        /// 仅当该动作本场全部工作组负荷相同时有值；S1a 只允许一致负荷赢得加重。
+        let uniformWeightKg: Double?
         /// min 口径：最差一组的 RIR（安全优先，见文件头拍板说明）。
         let minRir: Double?
     }
@@ -1365,6 +1394,16 @@ public enum TodayPrescriptionEngine {
         exerciseId: String,
         sessions: [CleanTrainingSession]
     ) -> LastPerformance? {
+        recentPerformances(exerciseId: exerciseId, sessions: sessions, limit: 1).last
+    }
+
+    /// 同动作按「日期 + canonical append offset」排序的最近表现，再 suffix(limit)。
+    private static func recentPerformances(
+        exerciseId: String,
+        sessions: [CleanTrainingSession],
+        limit: Int
+    ) -> [LastPerformance] {
+        guard limit > 0 else { return [] }
         let candidates = sessions.enumerated().compactMap {
             canonicalOffset, session -> (day: Int, canonicalOffset: Int, sets: [CleanLoggedSet])? in
             guard let day = TrainingDay.dayNumber(fromISO: session.date) else { return nil }
@@ -1372,25 +1411,60 @@ public enum TodayPrescriptionEngine {
             guard !sets.isEmpty else { return nil }
             return (day, canonicalOffset, sets)
         }
-        guard let latest = candidates.max(by: {
+        let ordered = candidates.sorted {
             if $0.day == $1.day {
                 return $0.canonicalOffset < $1.canonicalOffset
             }
             return $0.day < $1.day
-        }) else {
-            return nil
         }
+        return ordered.suffix(limit).map { candidate in
+            let reps = candidate.sets.map(\.reps)
+            let rirs = candidate.sets.compactMap(\.rir)
+            let topSet = candidate.sets.max { $0.weight < $1.weight }
+            let firstWeight = candidate.sets.first?.weight
+            let uniformWeight = firstWeight.flatMap { weight in
+                candidate.sets.allSatisfy {
+                    sameLoad($0.weight, weight)
+                } ? weight : nil
+            }
+            return LastPerformance(
+                topWeightKg: topSet?.weight ?? 0,
+                repsAtTop: topSet?.reps ?? 0,
+                minReps: reps.min() ?? 0,
+                maxReps: reps.max() ?? 0,
+                meanReps: reps.isEmpty
+                    ? 0
+                    : reps.reduce(0.0) { partial, reps in
+                        partial + Double(reps)
+                    } / Double(reps.count),
+                uniformWeightKg: uniformWeight,
+                minRir: rirs.min()
+            )
+        }
+    }
 
-        let reps = latest.sets.map(\.reps)
-        let rirs = latest.sets.compactMap(\.rir)
-        let topSet = latest.sets.max { $0.weight < $1.weight }
-        return LastPerformance(
-            topWeightKg: topSet?.weight ?? 0,
-            repsAtTop: topSet?.reps ?? 0,
-            minReps: reps.min() ?? 0,
-            maxReps: reps.max() ?? 0,
-            minRir: rirs.min()
-        )
+    private static func reachedProgressionGate(
+        _ performance: LastPerformance,
+        repMin: Int,
+        repMax: Int
+    ) -> Bool {
+        guard performance.uniformWeightKg != nil else { return false }
+        let midpoint = (Double(repMin) + Double(repMax)) / 2
+        return performance.maxReps >= repMax
+            && performance.minReps >= repMin
+            && performance.meanReps >= midpoint
+            && (performance.minRir.map { $0 >= progressMinMeanRir } ?? true)
+    }
+
+    private static func latestPerformanceWasJustRaised(_ recent: [LastPerformance]) -> Bool {
+        guard recent.count >= 2 else { return false }
+        let previous = recent[recent.count - 2]
+        let latest = recent[recent.count - 1]
+        return latest.topWeightKg > previous.topWeightKg + loadComparisonToleranceKg
+    }
+
+    private static func sameLoad(_ lhs: Double, _ rhs: Double) -> Bool {
+        abs(lhs - rhs) <= loadComparisonToleranceKg
     }
 
     private static func roundToIncrement(_ weightKg: Double, step: Double) -> Double {

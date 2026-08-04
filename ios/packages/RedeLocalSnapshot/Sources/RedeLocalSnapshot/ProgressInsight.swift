@@ -30,11 +30,25 @@ public enum TrendInsight {
     private static let flatBandRatio = 0.03
     private static let flatBandFloorKg = 1.25
 
+    /// Progress 展示判断：使用每场层内最大 Epley 点列。
     public static func assess(_ trend: ProgressSnapshot.ExerciseTrend) -> TrendAssessment {
-        let window = Array(trend.points.suffix(windowSize))
+        assessment(exerciseId: trend.exerciseId, points: trend.points)
+    }
+
+    /// 决策判断：使用升级前既有的重量优先顶组点列。周教练等会改变 action/verdict
+    /// 的消费面必须走这里，不能让展示算法变更制造新的训练判断。
+    public static func assessDecision(_ trend: ProgressSnapshot.ExerciseTrend) -> TrendAssessment {
+        assessment(exerciseId: trend.exerciseId, points: trend.decisionE1RmPoints)
+    }
+
+    private static func assessment(
+        exerciseId: String,
+        points: [ProgressSnapshot.E1RMPoint]
+    ) -> TrendAssessment {
+        let window = Array(points.suffix(windowSize))
         guard window.count >= 2, let first = window.first, let last = window.last else {
             return TrendAssessment(
-                exerciseId: trend.exerciseId, call: .calibrating,
+                exerciseId: exerciseId, call: .calibrating,
                 deltaKg: 0, windowSessionCount: window.count
             )
         }
@@ -42,7 +56,7 @@ public enum TrendInsight {
         let band = max(flatBandFloorKg, first.e1RmKg * flatBandRatio)
         let call: TrendCall = abs(delta) < band ? .flat : (delta > 0 ? .up : .down)
         return TrendAssessment(
-            exerciseId: trend.exerciseId, call: call,
+            exerciseId: exerciseId, call: call,
             deltaKg: delta, windowSessionCount: window.count
         )
     }

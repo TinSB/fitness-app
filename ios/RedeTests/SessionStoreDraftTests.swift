@@ -26,6 +26,108 @@ final class SessionStoreDraftTests: XCTestCase {
     private let startedAt = Date(timeIntervalSince1970: 1_784_000_000)
     private let targetId = "pec-deck"
 
+    func testProgressModelKeepsDecisionE1RMForEveryDecisionConsumer() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rede-progress-e1rm-routing-\(UUID().uuidString)", isDirectory: true)
+        let canonicalURL = directory.appendingPathComponent("app-data.json")
+        let memoryURL = directory.appendingPathComponent("muscle-level-memory.json")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let baselineDates = [
+            "2026-02-23", "2026-03-02", "2026-03-09",
+            "2026-03-16", "2026-03-23", "2026-03-30",
+        ]
+        let recentDates = [
+            "2026-06-01", "2026-06-08", "2026-06-15",
+            "2026-06-22", "2026-06-29", "2026-07-06",
+        ]
+        let dates = baselineDates + recentDates
+        let history: [JSONValue] = dates.enumerated().map { index, date in
+            let backoffKg = baselineDates.contains(date) ? 50.0 : 80.0
+            return .object([
+                "id": .string("e1rm-routing-\(index)"),
+                "date": .string(date),
+                "completed": .bool(true),
+                "exercises": .array([
+                    .object([
+                        "exerciseId": .string("bench-press"),
+                        "sets": .array([
+                            .object(["weight": .double(85), "reps": .int(5)]),
+                            .object(["weight": .double(backoffKg), "reps": .int(20)]),
+                            .object(["weight": .double(backoffKg), "reps": .int(20)]),
+                        ]),
+                    ]),
+                ]),
+            ])
+        }
+        let appData = try AppData(decoding: .object([
+            "schemaVersion": .int(Int64(SchemaVersion.current)),
+            "userProfile": .object([
+                "sex": .string("male"),
+                "weightKg": .double(100),
+                "unitSystem": .string("kg"),
+            ]),
+            "history": .array(history),
+        ]))
+        try JSONFileAppDataStore(fileURL: canonicalURL).save(appData)
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let now = try XCTUnwrap(calendar.date(from: DateComponents(
+            year: 2026, month: 7, day: 7, hour: 12
+        )))
+        let outcome = ProgressModel.loadOutcome(
+            now: now,
+            healthKitWeightKg: nil,
+            canonicalFileURL: canonicalURL,
+            muscleLevelMemoryFileURL: memoryURL
+        )
+        guard case .ready(let model)? = outcome else {
+            return XCTFail("isolated production ProgressModel projection must be readable")
+        }
+
+        let trend = try XCTUnwrap(model.snapshot.exerciseTrends.first {
+            $0.exerciseId == "bench-press"
+        })
+        let legacyTopSetE1RM = 85 * (1 + 5.0 / 30)
+        XCTAssertEqual(trend.points.last?.e1RmKg ?? 0, 80 * (1 + 20.0 / 30), accuracy: 1e-9)
+        XCTAssertTrue(trend.decisionE1RmPoints.allSatisfy {
+            abs($0.e1RmKg - legacyTopSetE1RM) < 1e-9
+        })
+        XCTAssertEqual(trend.bestE1RmKg, legacyTopSetE1RM, accuracy: 1e-9)
+        XCTAssertEqual(model.milestones, [
+            StrengthMilestone(
+                exerciseId: "bench-press",
+                achievedThreshold: 60,
+                unitLabel: "kg",
+                isEstimated: false
+            ),
+        ], "display-only 133.33kg must not manufacture an estimated 100kg milestone")
+
+        let persistedMemory = try XCTUnwrap(MuscleLevelMemoryStore(fileURL: memoryURL).load())
+        let expectedMemory = MuscleLevelMemory.advancing(
+            from: model.muscleProfile,
+            previous: nil,
+            completedSessionCount: model.records.count,
+            atIso: "2026-07-07"
+        ).reconcilingPeaks(with: nil)
+        XCTAssertEqual(persistedMemory, expectedMemory)
+        let recentTrainingDays = MuscleEventShareBuilder.recentTrainingDayCount(
+            dateISOs: model.records.map(\.dateISO),
+            throughISO: "2026-07-07"
+        )
+        XCTAssertEqual(model.eventShareSnapshots, MuscleEventShareBuilder.snapshots(
+            pending: persistedMemory.pendingBreakthroughs ?? [],
+            generatedDateISO: "2026-07-07",
+            recentTrainingDays: recentTrainingDays
+        ))
+        XCTAssertEqual(model.todayBreakthroughs, MuscleEventShareBuilder.todayEvents(
+            pending: persistedMemory.pendingBreakthroughs ?? [],
+            generatedDateISO: "2026-07-07"
+        ))
+    }
+
     private func planAdjustmentFixtureURL(_ name: String) -> URL {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
