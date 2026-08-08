@@ -31,7 +31,8 @@ final class ProgressEngineCopyTests: XCTestCase {
                        "训练量较上周 +12% · 18 组 · 5500 kg")
         XCTAssertEqual(en.weekSubCompared(deltaPercent: -8, sets: 12, volumeKg: "4100"),
                        "Volume −8% vs last week · 12 sets · 4100 kg")
-        XCTAssertEqual(zh.weekVerdict("first"), "第一周开账")
+        XCTAssertEqual(zh.weekVerdict("first"), "第一周")
+        XCTAssertEqual(en.weekVerdict("first"), "Week one")
         XCTAssertEqual(zh.weekVerdict("down"), "本周收着练")
         XCTAssertEqual(zh.weekVerdict("gap"), "本周回到训练")
         XCTAssertEqual(en.weekVerdict("up"), "Volume is up this week")

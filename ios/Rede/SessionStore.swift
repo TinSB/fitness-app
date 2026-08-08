@@ -156,6 +156,12 @@ final class SessionStore {
     }
     /// 保存进行中（防双击双写；MainActor 上同步置位）。
     var isSaving = false
+    /// 云同步落盘失败的如实呈现，与其余写入错误面隔离——同步页只读它，
+    /// 不把后台同步失败错报成训练记录没保存（沿用教练/计划/设置的隔离纪律）。
+    var syncSaveErrorText: String?
+    /// 已成功落盘的完成场次计数。**只在 completeAndPersistSession 真正写盘成功后递增**——
+    /// 失败不动，所以拿它当「练完自动上传」的触发信号不会在写失败时误触发同步。
+    private(set) var completedSessionCount = 0
     var todayModel: TodayModel? {
         if case .ready(let model)? = todayOutcome { return model }
         return nil
@@ -1502,6 +1508,67 @@ final class SessionStore {
         }
     }
 
+    // MARK: - 云同步落盘（FR-ACC1）
+
+    /// 等待写入槽位空出。返回 false = 超时放弃。
+    ///
+    /// 轮询而非 continuation 队列：写入是毫秒级的，撞车窗口极窄，20ms 的粒度足够；
+    /// 而 continuation 队列要维护等待者数组，多一份能在 MainActor 上出错的状态。
+    /// `isSaving` 的读改在 MainActor 上原子，循环里 await 会让出以便持有者跑完。
+    private func waitForWriteSlot(maxAttempts: Int) async -> Bool {
+        var attempts = 0
+        while isSaving {
+            if attempts >= maxAttempts { return false }
+            attempts += 1
+            try? await Task.sleep(nanoseconds: 20_000_000)
+        }
+        return true
+    }
+
+    /// 云同步合并落盘。**忙时等待，不放弃。**
+    ///
+    /// 为什么不能沿用其余写路径的 `guard !isSaving else { return false }`：用户点击时
+    /// 忙就放弃是对的——用户看到没反应会再点一次。但后台同步背后没有那个人，放弃就是
+    /// 静默丢掉一次同步结果，而且界面上完全看不出来。所以这里排队等，等不到才如实失败。
+    ///
+    /// - Parameter maxWaitAttempts: 等待轮次上限（每轮 20ms）。默认 150 ≈ 3 秒；
+    ///   超时按失败处理并写入错误面，绝不假装成功。
+    @discardableResult
+    func applySyncMerge(mergedStorage: [String: JSONValue], maxWaitAttempts: Int = 150) async -> Bool {
+        guard await waitForWriteSlot(maxAttempts: maxWaitAttempts) else {
+            syncSaveErrorText = "写入繁忙，本次同步未落盘"
+            return false
+        }
+        isSaving = true
+        syncSaveErrorText = nil
+        defer { isSaving = false }
+        let fileURL = planWriteFileURL
+        let result: Result<Void, Error> = await Task.detached(priority: .utility) {
+            do {
+                try FileManager.default.createDirectory(
+                    at: fileURL.deletingLastPathComponent(),
+                    withIntermediateDirectories: true
+                )
+                let writer = CanonicalSessionWriter(
+                    store: JSONFileAppDataStore(fileURL: fileURL),
+                    gate: DataHealthGate()
+                )
+                try writer.applySyncMerge(mergedStorage: mergedStorage)
+                return .success(())
+            } catch {
+                return .failure(error)
+            }
+        }.value
+        switch result {
+        case .success:
+            await loadToday()
+            return true
+        case .failure(let error):
+            syncSaveErrorText = String(describing: error)
+            return false
+        }
+    }
+
     /// FR-PL7②/③ 采纳自定义日序。
     @discardableResult
     func applyCustomDaySequence(_ sequence: [String]) async -> Bool {
@@ -1965,6 +2032,7 @@ final class SessionStore {
         case .success:
             endSession()
             await loadToday() // 裁决/进展立即反映新记录
+            completedSessionCount += 1 // FR-ACC1：练完自动上传的触发信号（只在写盘成功后递增）
             return true
         case .failure(let error):
             // MVP 临时方案：直出技术错误串（如实优先）；友好映射随 M4 文案层补。

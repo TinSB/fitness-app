@@ -77,7 +77,7 @@ extension RedeStrings {
         case "level": return locale == .zh ? "本周持平" : "Holding level this week"
         case "gap": return locale == .zh ? "本周回到训练" : "Back to lifting this week"
         case "inProgress": return locale == .zh ? "本周进行中" : "Week in progress"
-        default: return locale == .zh ? "第一周开账" : "Week one on the books"
+        default: return locale == .zh ? "第一周" : "Week one"
         }
     }
     /// "训练量较上周 +12% · 18 组 · 5,500 kg"
@@ -105,6 +105,30 @@ extension RedeStrings {
             ? "本周至今 \(sets) 组 · \(volumeKg) \(unitLabel)　周结束后显现对比"
             : "\(sets) sets · \(volumeKg) \(unitLabel) so far this week. Comparison appears when the week ends"
     }
+    /// 周摘要的**分段**版本（2026-08-06 排版基准 S4）。
+    ///
+    /// 四个 weekSub* 都是「N 组 · V kg + 一句状态说明」。整串排成灰色小字时，
+    /// 本页最核心的两个数（组数、训练量）反而没有重心。分段后视图层用读数排版承载数字，
+    /// 这里只留纯说明句。原 weekSub* 保留——无障碍与既有断言仍念完整串。
+    ///
+    /// 返回 nil = 该状态无附加说明（数字已自证，例如「较上周 +5%」本身就是读数）。
+    public func weekCompareNote(deltaPercent: Int?, isFirstWeek: Bool, isGapWeek: Bool) -> String? {
+        if isFirstWeek { return locale == .zh ? "多周后显现对比" : "Comparison appears as weeks add up" }
+        if isGapWeek { return locale == .zh ? "上周没练，暂无对比" : "No sessions last week to compare" }
+        if deltaPercent == nil { return locale == .zh ? "周结束后显现对比" : "Comparison appears when the week ends" }
+        return nil
+    }
+
+    /// 「较上周」读数列的标签与带符号百分比。
+    public func weekDeltaColumn(deltaPercent: Int) -> (label: String, value: String) {
+        let sign = deltaPercent >= 0 ? "+" : "−"
+        return (locale == .zh ? "较上周" : "vs last",
+                "\(sign)\(abs(deltaPercent))%")
+    }
+
+    public var weekColSets: String { locale == .zh ? "组数" : "sets" }
+    public var weekColVolume: String { locale == .zh ? "训练量" : "volume" }
+
     public var weekChartTitleByWeek: String {
         locale == .zh ? "周训练量" : "Weekly volume"
     }

@@ -161,17 +161,17 @@ extension RedeStrings {
     public func weeklyCoachReviewVerdictDisplayTitle(code: String) -> String {
         switch code {
         case "dataNeedsReview":
-            return weeklyT("先核对，\n再判断。", "Verify first.\nThen read the trend.")
+            return weeklyT("先核对，\n再判断", "Verify first.\nThen read the trend")
         case "rebuildRhythm":
-            return weeklyT("先接回，\n训练节奏。", "Rebuild\nyour rhythm.")
+            return weeklyT("先接回，\n训练节奏", "Rebuild\nyour rhythm")
         case "progressing":
-            return weeklyT("关键动作，\n向上。", "Key lift,\nmoving up.")
+            return weeklyT("关键动作，\n向上", "Key lift,\nmoving up")
         case "holding":
-            return weeklyT("关键动作，\n稳定。", "Key lift,\nholding.")
+            return weeklyT("关键动作，\n稳定", "Key lift,\nholding")
         case "easing":
-            return weeklyT("关键动作，\n回落。", "Key lift,\neasing.")
+            return weeklyT("关键动作，\n回落", "Key lift,\neasing")
         default:
-            return weeklyT("继续积累，\n再判断。", "Keep building.\nThen call the trend.")
+            return weeklyT("继续积累，\n再判断", "Keep building.\nThen call the trend")
         }
     }
 

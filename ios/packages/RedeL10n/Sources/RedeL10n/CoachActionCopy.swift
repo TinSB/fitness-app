@@ -34,19 +34,19 @@ extension RedeStrings {
         case "dataHasFindings":
             let n = count ?? 0
             return t2c("近期有 \(n) 条记录看起来不对劲　去进展页核对一下",
-                       "\(n) recent entries look off — review them on Progress")
+                       "\(n) recent entries look off. Review them on Progress")
         case "ceilingReached":
             // 标题已点名该动作（「{name} 到顶了」），正文不再重复主语，避免卡上下相邻读两遍（审查 NIT）。
             return t2c("当前变体已经练满　换个更难的版本继续往上走",
-                       "This variation is maxed out — a harder version keeps you moving up")
+                       "This variation is maxed out. A harder version keeps you moving up")
         case "belowWeeklyPlan":
             // 口径=日历周（引擎 trainedDaysThisWeek；周口径迁移 2026-07-15）：计数口径与
             // 「按周抑制键」终于同源，与状态行分段条同口径。单位=天（与 weekStripCount 合流，
             // 「次」会与同日多场分叉——N3 审查 NIT 口径）；英文单复数分流。
             let n = count ?? 0
             let en = n == 1
-                ? "1 day short of your plan this week — fit one in if you can"
-                : "\(n) days short of your plan this week — fit one in if you can"
+                ? "1 day short of your plan this week. Fit one in if you can"
+                : "\(n) days short of your plan this week. Fit one in if you can"
             return t2c("本周还差 \(n) 天就到计划　有空补一次就好", en)
         default:
             return ""
@@ -95,8 +95,8 @@ extension RedeStrings {
     public var swapScopeTitle: String { t2c("换这个动作", "Swap this exercise") }
     /// 二选一对话框正文：换成 X，问范围。
     public func swapScopeMessage(exerciseName: String) -> String {
-        t2c("换成 \(exerciseName)——只换今天这次，还是以后都换？",
-            "Swap to \(exerciseName) — just for today, or always?")
+        t2c("换成 \(exerciseName)　只换今天这次，还是以后都换？",
+            "Swap to \(exerciseName). Just for today, or always?")
     }
     /// 选项：只换这次（今天有效，明天自动恢复原动作）。
     public var swapScopeOnce: String { t2c("只换这次（今天）", "Just this time (today)") }

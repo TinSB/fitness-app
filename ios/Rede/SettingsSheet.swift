@@ -17,6 +17,7 @@ struct SettingsSheet: View {
     @Bindable var store: LocaleStore
     var onCoachAction: (WeeklyCoachReviewAction) -> Void = { _ in }
     @Environment(SessionStore.self) private var sessionStore
+    @Environment(SyncService.self) private var syncService
     @Environment(SubscriptionModel.self) private var subscriptionModel
     @Environment(AppUpdateModel.self) private var appUpdateModel
     @Environment(\.dismiss) private var dismiss
@@ -25,6 +26,8 @@ struct SettingsSheet: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     @State private var profile: SessionStore.ProfileSnapshot?
+    /// FR-ACC1 云端同步页与入口行的状态值。
+    @State private var showSync = false
     /// 周期化开关持久态（FR-PL2 enablement；默认关 = opt-in）。
     @State private var mesocycleOn = false
     @State private var weeklyRestartOn = false
@@ -103,6 +106,9 @@ struct SettingsSheet: View {
                         EngraveDivider().padding(.top, RedeSpace.section)
                         healthSection
                         EngraveDivider().padding(.top, RedeSpace.section)
+                        syncSection
+                            .id("sync")
+                        EngraveDivider().padding(.top, RedeSpace.section)
                         dataSection
                             .id("data")   // -settingsScrollTo 锚点
                         EngraveDivider().padding(.top, RedeSpace.section)
@@ -138,6 +144,11 @@ struct SettingsSheet: View {
         .preferredColorScheme(.dark)
         .sensoryFeedback(.selection, trigger: store.unit)
         .sensoryFeedback(.selection, trigger: store.locale)
+        .sheet(isPresented: $showSync) {
+            SyncSheet(store: store)
+                .environment(sessionStore)
+                .environment(syncService)
+        }
         // K7：导出成功 → 系统 share sheet（临时文件由系统 tmp 生命周期回收）。
         .sheet(item: $exportItem) { item in
             ExportActivityView(items: [item.url])
@@ -329,6 +340,42 @@ struct SettingsSheet: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.redePressableRow)
+    }
+
+    // MARK: - 云端同步（FR-ACC1）
+    //
+    // 位置：夹在「Apple 健康」与「数据」之间。前面几组是纯偏好开关，后面是数据去向，
+    // 同步属于后者；也刻意不挨着「方案」，避免被读成付费功能。
+    // 右侧值只有未开启／已开启两种——不加徽标、不加小红点、不在首页推销。
+
+    private var syncSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Overline(text: s.syncGroupOverline).padding(.top, 18)
+            Button {
+                showSync = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "icloud")
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeT4)
+                        .accessibilityHidden(true)
+                    Text(s.syncTitle)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT2)
+                    Spacer()
+                    Text(syncService.isSignedIn ? s.syncStateOn : s.syncStateOff)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Color.redeT3)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Color.redeT4)
+                        .accessibilityHidden(true)
+                }
+                .frame(minHeight: RedeShape.controlHeight)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.redePressableRow)
+        }
     }
 
     // MARK: - K7 数据（FR-SE6 兑现）：只保留自解释的导出行；owner 2026-07-18
@@ -1324,6 +1371,7 @@ enum PlateQuestion: String, Identifiable, Hashable {
 struct PlateQuestionEditView: View {
     @Environment(LocaleStore.self) private var localeStore
     @Environment(SessionStore.self) private var sessionStore
+    @Environment(SyncService.self) private var syncService
     @Environment(\.dismiss) private var dismiss
 
     let question: PlateQuestion

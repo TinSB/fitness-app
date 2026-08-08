@@ -15,6 +15,10 @@ struct RootTabView: View {
     @State private var selection: RootTab
     @State private var localeStore: LocaleStore
     @State private var sessionStore = SessionStore()
+    /// FR-ACC1 云同步。提到 app 级而非同步页局部：自动同步的两个时机（练完、进 App）
+    /// 都在同步页之外，局部持有就只能靠用户手动点，界面上「练完自动上传」会变成假承诺。
+    /// 全 app 唯一实例，经 environment 下传——同步页曾各建各的，状态永远对不上。
+    @State private var syncService = SyncService()
     @State private var subscriptionModel: SubscriptionModel
     @State private var appUpdateModel: AppUpdateModel
     @State private var progressScrollTarget: ProgressScrollTarget?
@@ -52,6 +56,14 @@ struct RootTabView: View {
     }
 
     var body: some View {
+        // 动效方向样例（临时脚手架）：-motionSample 直接进对比页，不走正常 tab 结构。
+        if ProcessInfo.processInfo.arguments.contains("-motionSample") {
+            return AnyView(MotionSampleView().environment(localeStore))
+        }
+        return AnyView(mainBody)
+    }
+
+    private var mainBody: some View {
         ZStack(alignment: .bottom) {
             // 启动时序竞态修复（2026-06-10 模拟器实证）：持久化语言偏好异步应用，
             // 但 iOS 弹窗（如恢复训练 alert）一旦呈现就冻结文案——内容必须等
@@ -93,8 +105,9 @@ struct RootTabView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
+            // 2026-08-07 tab bar 改悬浮后，这里原本垫的整条 redeTabBar 背板成了残留黑块——
+            // 悬浮块自带锻面与圆角，底下不需要任何背板，内容就该从它两侧和下方透出来。
             RedeTabBar(selection: $selection)
-                .background(Color.redeTabBar.ignoresSafeArea(edges: .bottom))
             }
 
             // M5-1b 首启引导（FR-ON1）：合法空文档才出现；unreadable 绝不进引导。
@@ -242,6 +255,10 @@ struct RootTabView: View {
             }
         }
         .task {
+            // FR-ACC1：同步服务随 app 起，未登录时它什么都不做（syncNow 自身 guard）。
+            syncService.attach(sessionStore)
+            await syncService.refreshSignedInState()
+            await syncService.syncNow()
             // FR-SUB2：进程生命周期监听必须在任何购买展示前启动。StoreKit
             // 查询失败只影响订阅状态，绝不阻塞首启、训练或 canonical 数据。
             await subscriptionModel.start()
@@ -253,10 +270,18 @@ struct RootTabView: View {
                 if showOnboarding == false {
                     await appUpdateModel.checkAutomatically()
                 }
+                // ② 进 App 时自动取回。未登录时 syncNow 自身 guard 掉，不发任何请求。
+                await syncService.syncNow()
             }
+        }
+        // ① 练完自动上传。以「已落盘的完成场次数」为触发信号——它只在
+        // completeAndPersistSession 真正写盘成功后才变，失败不会误触发同步。
+        .onChange(of: sessionStore.completedSessionCount) { _, _ in
+            Task { await syncService.syncNow() }
         }
         .environment(localeStore)
         .environment(sessionStore)
+        .environment(syncService)
         .environment(subscriptionModel)
         .environment(appUpdateModel)
         .preferredColorScheme(.dark)

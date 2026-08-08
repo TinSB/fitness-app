@@ -926,6 +926,25 @@ public struct CanonicalSessionWriter {
         }
     }
 
+    /// 已批准写入类别：云同步合并落盘。
+    ///
+    /// 与其余写入类别的根本区别：mutation **不由本类计算**。合并语义（history id 并集、
+    /// 本地优先、配置整块 LWW、按日期插入而非追加）全部由 RedeSync 的纯函数引擎算好，
+    /// 这里只负责把结果送进同一道写闸。这样切分是有意的——合并是纯函数就能穷举测试，
+    /// 而写闸负责它一贯的职责：DataHealth 校验 + 备份 + 原子落盘。
+    ///
+    /// 安全性没有因此降低：gate 照常拦「clean 视图丢 session」和「新增条目过不了净化」，
+    /// 所以即使上游引擎有 bug 算出会丢数据的结果，这一步仍会拒绝写入。
+    ///
+    /// - Parameter mergedStorage: 合并后的完整 storage。调用方必须保证它源自当前 canonical
+    ///   的 load-modify（RedeSync 的 SyncCoordinator 在同一次 await 内完成读→合并→写）。
+    @discardableResult
+    public func applySyncMerge(mergedStorage: [String: JSONValue]) throws -> AppData {
+        try performGatedMutation(skipSaveIfUnchanged: true) { _ in
+            try AppData(decoding: .object(mergedStorage))
+        }
+    }
+
     /// 唯一的 gated 编排。current 为 nil（首写）时引导最小 canonical 文档。
     private func performGatedMutation(
         skipSaveIfUnchanged: Bool = false,

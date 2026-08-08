@@ -98,6 +98,10 @@ extension RedeStrings {
     private static let muscleLabels: [String: (zh: String, en: String)] = [
         "chest": ("胸", "Chest"),
         "back": ("背", "Back"),
+        // 2026-07-09 子肌群钻取给目录加了 lats，这张表当时没跟上——中文版的
+        // 「主要肌群」直接露出 `lats`（detailLabel 未知码回退原值）。
+        // CatalogLabelCoverageTests 现在钉住目录里每个码都必须在这里有条目。
+        "lats": ("背阔肌", "Lats"),
         "upper-back": ("上背", "Upper back"),
         "lower-back": ("下背", "Lower back"),
         "shoulder": ("肩", "Shoulders"),
