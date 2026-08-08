@@ -231,11 +231,28 @@ struct ProgressTabView: View {
                         .lineSpacing(22 * 0.3)
                         .foregroundStyle(Color.redeT1)
                         .lineLimit(2)
-                    Text(view.sub)
-                        .font(.redeBody)
-                        .lineSpacing(14 * 0.45)
-                        .foregroundStyle(Color.redeT3)
-                        .lineLimit(3)
+                    if view.stats.isEmpty {
+                        Text(view.sub)
+                            .font(.redeBody)
+                            .lineSpacing(14 * 0.45)
+                            .foregroundStyle(Color.redeT3)
+                            .lineLimit(3)
+                    } else {
+                        // S4：核心读数用 StatStrip 承载，状态说明退成小字。
+                        // 无障碍仍念完整摘要句，不让读屏用户听三段割裂的读数。
+                        VStack(alignment: .leading, spacing: 10) {
+                            StatStrip(columns: view.stats, valueSize: 23)
+                            if let note = view.note {
+                                Text(note)
+                                    .font(.redeCaption)
+                                    .foregroundStyle(Color.redeT4)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                        .padding(.top, 2)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(view.sub)
+                    }
                 }
                 .padding(.horizontal, RedeSpace.page)
                 .padding(.top, RedeSpace.section)
@@ -308,7 +325,12 @@ struct ProgressTabView: View {
 
     private struct ScaleView {
         let verdict: String
+        /// 完整摘要句。仍是无障碍与非结构化尺度（单次/周期）的正文。
         let sub: String
+        /// S4 排版基准：核心读数升格成 StatStrip。非空时视图用读数 + note 取代 sub。
+        var stats: [StatColumn] = []
+        /// 读数之外的状态说明（「周结束后显现对比」等）；数字已自证时为 nil。
+        var note: String? = nil
         let chartTitle: String
         let bars: [(label: String, fraction: CGFloat, tag: String?, ember: Bool, a11y: String)]?
         let trend: (values: [CGFloat], emberIndex: Int, emberLabel: String)?
@@ -444,9 +466,26 @@ struct ProgressTabView: View {
             sub = s.weekSubFirstWeek(sets: latest.setCount, volumeKg: s.formatVolumeKg(latest.totalVolumeKg))
         }
 
+        // 组数与训练量是本页最核心的两个数——从灰色说明句里提出来做读数。
+        var stats: [StatColumn] = [
+            StatColumn(label: s.weekColSets, value: "\(latest.setCount)"),
+            StatColumn(label: s.weekColVolume,
+                       value: s.formatVolumeKg(latest.totalVolumeKg), unit: s.unitLabel),
+        ]
+        var delta: Int? = nil
+        if case .vsPreviousWeek(let d)? = model.weeklyComparison {
+            delta = d
+            let col = s.weekDeltaColumn(deltaPercent: d)
+            stats.append(StatColumn(label: col.label, value: col.value))
+        }
+
         return ScaleView(
             verdict: s.weekVerdict(verdictCode),
             sub: sub,
+            stats: stats,
+            note: s.weekCompareNote(deltaPercent: delta,
+                                    isFirstWeek: verdictCode == "first",
+                                    isGapWeek: verdictCode == "gap"),
             chartTitle: s.weekChartTitleByWeek,
             bars: bars, trend: nil
         )

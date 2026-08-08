@@ -1,6 +1,13 @@
 import SwiftUI
 
 // Forged Graphite + Emberline — token 与字阶按 docs/rede-prototypes/rede-app.html 精确提取。
+//
+// 2026-08-07 配色修订：面与文字的**饱和度**从 17% 压到 6%，色相仍留在 30–40°（暖）。
+// 原因：owner 判旧配色「土、像儿童玩具」——根因是那 17% 的黄褐糊在整个画面上，
+// 不是暖调本身。压掉饱和后暖只剩底味，ember 因此立得住。
+// 试过冷调石墨（#0B0D12，223°）方向，更"科技"但离「锻造 + 余烬」的品牌意象远了，
+// 且对已上架用户是断裂式变化，故未采用。
+// ember 同步从 #E1652B（施工橙，饱和 76%）沉到 #C85A2E（铜/余烬，饱和 63%）。
 // 原型为最新设计真相(含 D-A/D-B):与设计语言文档取值不一致处以原型为准。
 // Ember 只表示「下一步 / 当前动作」;主按钮为锻面 + ember 左缘,不用 ember 填充。
 
@@ -15,38 +22,38 @@ extension Color {
     }
 
     // 面
-    static let redeBase = Color(redeHex: 0x15130F)      // --base
-    static let redeSurface = Color(redeHex: 0x1F1C17)   // --surface
-    static let redeRaised = Color(redeHex: 0x262219)    // --raised
-    static let redeBtn = Color(redeHex: 0x211E18)       // --btn 锻面按钮底
-    static let redeHair = Color(redeHex: 0x2A261F)      // --hair
-    static let redeHair2 = Color(redeHex: 0x221F1B)     // --hair2
-    static let redeTabBar = Color(redeHex: 0x100E0B)    // tab bar 底
-    static let redeSegBase = Color(redeHex: 0x1A1712)   // 分段控件底
-    static let redeEtch = Color(redeHex: 0x2E2A22)      // S2 刻线（rede-app.html .etick）
+    static let redeBase = Color(redeHex: 0x131211)      // --base
+    static let redeSurface = Color(redeHex: 0x1D1B19)   // --surface
+    static let redeRaised = Color(redeHex: 0x232120)    // --raised
+    static let redeBtn = Color(redeHex: 0x1F1D1B)       // --btn 锻面按钮底
+    static let redeHair = Color(redeHex: 0x2A2724)      // --hair
+    static let redeHair2 = Color(redeHex: 0x222020)     // --hair2
+    static let redeTabBar = Color(redeHex: 0x111010)    // tab bar 底
+    static let redeSegBase = Color(redeHex: 0x1A1917)   // 分段控件底
+    static let redeEtch = Color(redeHex: 0x333029)      // S2 刻线（rede-app.html .etick）
 
     // 文字
-    static let redeT1 = Color(redeHex: 0xECE6D8)
-    static let redeT2 = Color(redeHex: 0xC9C2B4)
-    static let redeT3 = Color(redeHex: 0x9C9484)
-    static let redeT4 = Color(redeHex: 0x908A7C)
+    static let redeT1 = Color(redeHex: 0xE9E6E1)
+    static let redeT2 = Color(redeHex: 0xC2BFB9)
+    static let redeT3 = Color(redeHex: 0x948F87)
+    static let redeT4 = Color(redeHex: 0x8A857E)
 
     // 品牌与语义
     // ⚠️ ember/base/T1/T3 在 ios/RedeWidget/RestLiveActivity.swift 的 RestPalette 有
     // 本地副本（extension 无共享 token 包）——改值时两处同改（K6 审查留痕）。
-    static let redeEmber = Color(redeHex: 0xE1652B)
-    static let redeEmber2 = Color(redeHex: 0xF0875A)
+    static let redeEmber = Color(redeHex: 0xC85A2E)
+    static let redeEmber2 = Color(redeHex: 0xE0855C)
     static let redeRec = Color(redeHex: 0x2F7D5B)
     static let redeRec2 = Color(redeHex: 0x56B083)
     static let redeCaution = Color(redeHex: 0xC79A3A)
     static let redeRisk = Color(redeHex: 0xC2413A)
 
     // 控件
-    static let redeSteel = Color(redeHex: 0x8C8A86)     // --steel 次级控件
-    static let redeNeu = Color(redeHex: 0x4A453B)       // --neu 中性数据条
-    static let redeGroove = Color(redeHex: 0x231F19)    // 进度/休息条凹槽底（替代裸 hex，统一轨道色）
-    static let redeRegMark = Color(redeHex: 0x5F594C)   // 角标 registration
-    static let redeNextDot = Color(redeHex: 0x3A352B)   // next 节点描边
+    static let redeSteel = Color(redeHex: 0x8C8884)     // --steel 次级控件
+    static let redeNeu = Color(redeHex: 0x4A463F)       // --neu 中性数据条
+    static let redeGroove = Color(redeHex: 0x1F1D1A)    // 进度/休息条凹槽底（替代裸 hex，统一轨道色）
+    static let redeRegMark = Color(redeHex: 0x5F5B52)   // 角标 registration
+    static let redeNextDot = Color(redeHex: 0x373430)   // next 节点描边
 }
 
 // 字阶(rede-app.html type scale)。tracking = em × size;行高用 lineSpacing 逐处贴齐。
@@ -78,11 +85,17 @@ enum RedeSpace {
     static let section: CGFloat = 24   // 区块间
     static let card: CGFloat = 16      // 卡内
     static let group: CGFloat = 8      // 组内
-    static let bottomBar: CGFloat = 78 // 底栏避让（ScrollView 内容底部留白，避开 tab 栏）
+    /// 底栏避让。2026-08-07 tab bar 改悬浮标尺后整体变高（8 + 44 + 15 刻度 + 12 离底 ≈ 79），
+    /// 78 已不够——固定元素（如今日页悬浮 CTA）会贴到 tab bar 上。留 14 的呼吸。
+    static let bottomBar: CGFloat = 93
 }
 
 enum RedeShape {
     static let cardRadius: CGFloat = 12
+    /// S1 基准（2026-08-06）：列表/内容卡的新默认圆角。大圆角是 iOS 26 的语气，
+    /// 也让卡片读起来更像一块实体而非一个框。展开态用 cardRadiusXL。
+    static let cardRadiusL: CGFloat = 20
+    static let cardRadiusXL: CGFloat = 30
     static let buttonRadius: CGFloat = 10
     static let steelRadius: CGFloat = 8
     static let controlHeight: CGFloat = 44

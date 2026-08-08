@@ -1049,7 +1049,15 @@ struct TrainTabView: View {
         return HStack {
             Text("\(number)").frame(width: 44, alignment: .leading)
             if !hideWeight {
-                Text("\(weight) \(s.unitLabel)").frame(maxWidth: .infinity, alignment: .leading)
+                // 排版基准：数值大、单位小。组表是密集列表，数值维持行字号，
+                // 只把单位压到 0.72 倍 + T4——四行重量叠在一起时，眼睛只需扫数值。
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text(weight)
+                    Text(s.unitLabel)
+                        .font(.system(size: 10.5))
+                        .foregroundStyle(Color.redeT4)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             Text(reps).frame(maxWidth: hideWeight ? .infinity : 60, alignment: .leading)
             Text(rir).frame(width: 44, alignment: .leading)

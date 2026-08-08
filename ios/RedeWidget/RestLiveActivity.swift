@@ -14,7 +14,7 @@ import WidgetKit
 import RedeWidgetShared
 
 /// 品牌色本地副本（extension 不编 app target 的 RedeTheme.swift；hex 与其同值——
-/// base 0x15130F / T1 0xECE6D8 / T3 0x9C9484 / ember 0xE1652B）。
+/// base 0x131211 / T1 0xE9E6E1 / T3 0x948F87 / ember 0xC85A2E）。
 private // ⚠️ 品牌色本地副本（extension 无共享色 token 包）——四值必须与
 // ios/Rede/RedeTheme.swift 逐值一致；改 ember/基色时两处同改（审查 NIT 漂移风险留痕）。
 enum RestPalette {
@@ -27,10 +27,10 @@ enum RestPalette {
         )
     }
 
-    static let base = hex(0x15130F)
-    static let t1 = hex(0xECE6D8)
-    static let t3 = hex(0x9C9484)
-    static let ember = hex(0xE1652B)
+    static let base = hex(0x131211)
+    static let t1 = hex(0xE9E6E1)
+    static let t3 = hex(0x948F87)
+    static let ember = hex(0xC85A2E)
 }
 
 struct RestLiveActivity: Widget {
