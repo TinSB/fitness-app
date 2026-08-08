@@ -25,25 +25,26 @@ struct ExerciseDetailSheet<HeaderAccessory: View, AlternativesSection: View>: Vi
         let entry = ExerciseCatalog.minimal.entry(id: exerciseId)
         return ScrollView {
             VStack(alignment: .leading, spacing: RedeSpace.section) {
-                Text(localeStore.exerciseName(exerciseId))
-                    .font(.redeHeadline)
-                    .tracking(RedeTracking.headline)
-                    .foregroundStyle(Color.redeT1)
+                VStack(alignment: .leading, spacing: 14) {
+                    Text(localeStore.exerciseName(exerciseId))
+                        .font(.redeHeadline)
+                        .tracking(RedeTracking.headline)
+                        .foregroundStyle(Color.redeT1)
+                    // 标题与正文之间落一道刻度线（既有品牌资产 EngraveDivider）——
+                    // 像规格卡的分区标记，比一条素线有工艺味，且只用这一道，不滥。
+                    EngraveDivider()
+                }
 
                 headerAccessory()
 
                 if let entry {
                     // FR-EX2 技术要点（双语自由 prose；缺则不显示）——放元数据前，最有用内容优先。
                     if let cues = (s.locale == .zh ? entry.techniqueCuesZh : entry.techniqueCuesEn), !cues.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: 10) {
                             Overline(text: s.exerciseDetailTechnique)
-                            ForEach(Array(cues.enumerated()), id: \.offset) { _, cue in
-                                HStack(alignment: .top, spacing: 7) {
-                                    Text("·").font(.redeBody).foregroundStyle(Color.redeT3)
-                                    Text(cue).font(.redeBody).foregroundStyle(Color.redeT2)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                            }
+                            // 2026-08-06 排版基准：`·` 只说明「这是一条」，序号说明「这是第几步」。
+                            // 技术要点本就有先后（先稳定、再控制、后收尾），且可指认（"第二点没做到"）。
+                            CueList(items: cues)
                         }
                     }
 

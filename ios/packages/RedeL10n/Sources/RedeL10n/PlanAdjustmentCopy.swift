@@ -14,15 +14,15 @@ extension RedeStrings {
     /// 诚实红线：目标值 to 经过下限钳制（= max(下限,中位数)），不等于真实观测频率（被托高时会虚报），
     /// 故本句只说"持续低于计划"，不把 to 当观测数报；引擎另给的未钳制观测值只用于增频正文的事实陈述。
     public func planAdjustReduceBody(from: Int, to: Int) -> String {
-        t2p("最近几周你的训练频率持续低于每周 \(from) 天的计划。把目标调到每周 \(to) 天会更贴合你现在的节奏——随时可以改回来。",
-            "Your recent training has stayed below your \(from)-day plan for a few weeks. Setting the target to \(to) days a week fits your current rhythm better — you can switch back anytime.")
+        t2p("最近几周你的训练频率持续低于每周 \(from) 天的计划　把目标调到每周 \(to) 天会更贴合你现在的节奏　随时可以改回来",
+            "Your recent training has stayed below your \(from)-day plan for a few weeks. Setting the target to \(to) days a week fits your current rhythm better. You can switch back anytime")
     }
 
     /// 增频提案正文（最近 4 个完整 ISO 周的训练天数中位数 + 当前计划 + 中性动作）。
     /// `observed` 是未钳制的真实中位数；`to` 可因 2...6 上限而与 observed 不同。
     public func planAdjustIncreaseBody(observed: Int, from: Int, to: Int) -> String {
-        t2p("最近四周你每周练 \(observed) 天　计划是 \(from) 天。把计划调到 \(to) 天。",
-            "Over the last four weeks, you trained \(observed) days a week. Your plan is \(from) days. Adjust the plan to \(to) days.")
+        t2p("最近四周你每周练 \(observed) 天　计划是 \(from) 天　把计划调到 \(to) 天",
+            "Over the last four weeks, you trained \(observed) days a week. Your plan is \(from) days. Adjust the plan to \(to) days")
     }
 
     /// 频率对比行（紧凑 before→after）。
@@ -48,7 +48,7 @@ extension RedeStrings {
 
     /// 已采纳态正文（现状 + 可逆）。
     public func planAdjustActiveBody(to: Int) -> String {
-        t2p("现在每周目标 \(to) 天。", "Your target is now \(to) days a week.")
+        t2p("现在每周目标 \(to) 天", "Your target is now \(to) days a week")
     }
 
     /// 改回原计划 CTA（单步即时回滚）。

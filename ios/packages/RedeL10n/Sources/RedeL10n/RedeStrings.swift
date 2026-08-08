@@ -1,7 +1,17 @@
 // RedeStrings — clean rewrite 双语文案基底(M0-3)。
 //
 // 中英各为母语原生稿、共享意图、不互译(docs/REDE_PRODUCT_COPY_BASELINE.md §3)。
-// UI 短语不收句号;判断句/收据句保留句号。英文以 rede-app.html 原型为基准。
+//
+// 标点铁律(§3.4，2026-06-15 扩展到全语态；2026-08-08 清除全部例外)：
+//   · 中文**一律不收句号**——不分 UI 短语/判断句/收据句/免责/隐私/通知/卡面标题。
+//     原来用句号断开的两拍改用**全角空格**留白；问号感叹号不在此限。
+//   · 禁 `——` 与 em-dash 挂解释性补语；英文行尾不收句点，句间可留单个句点。
+//   · 禁用词：您 / 为您 / 即可 / 贴心 / 全方位 / 开启旅程 / 释放潜能 / 打造专属。
+// 本文件头一度写着「判断句/收据句保留句号」——那是 2026-06-15 之前的旧规，
+// 与文档铁律并存多时，是后续违规照抄的源头，已废止。
+// 违规由 quality-gate.cmd 的 copy-voice 守卫拦下，不再靠人工翻。
+//
+// 英文以 rede-app.html 原型为基准。
 // 本文件只承载 app 壳的 UI 文案;动作名/数据值是静态展示数据,M2-M4 由
 // catalog/engine 提供 localized 真值后逐步接管。
 // Foundation-only:locale 状态由 app 层持有,这里是纯查表。
@@ -161,6 +171,12 @@ public struct RedeStrings: Sendable {
     }
     /// K5 计划页累计事实行："已练 5 周 · 14 天"（天=去重训练日，单位=天——裁定 3；
     /// 周=自首场日期起的 ISO 周跨度，含当前周）。
+    /// 累计事实的**列标签**（2026-08-06 排版基准 S5）。原 planTenureLine 保留给无障碍。
+    public var planTenureColWeeks: String { locale == .zh ? "已练" : "weeks in" }
+    public var planTenureColDays: String { locale == .zh ? "训练天数" : "days trained" }
+    public var planTenureUnitWeek: String { locale == .zh ? "周" : "" }
+    public var planTenureUnitDay: String { locale == .zh ? "天" : "" }
+
     public func planTenureLine(weeks: Int, days: Int) -> String {
         if locale == .zh { return "已练 \(weeks) 周 · \(days) 天" }
         let w = weeks == 1 ? "1 week" : "\(weeks) weeks"
@@ -224,8 +240,8 @@ public struct RedeStrings: Sendable {
     }
 
     public var settingsPeriodizationNote: String {
-        t("开启后按 4 周块自动安排过载与减载，计划页显示当前周期；关闭则只按你的身体反应逐次调整。安全规则（高量自动减载）始终生效。",
-          "When on, training runs a 4-week block with built-in overload and deload weeks, and Plan shows your current cycle. When off, each session is tuned only to how you've been responding. The safety rule (auto-deload after heavy load) is always on.")
+        t("开启后按 4 周块自动安排过载与减载　计划页显示当前周期　关闭则只按你的身体反应逐次调整　安全规则始终生效",
+          "When on, training runs a 4-week block with built-in overload and deload weeks, and Plan shows your current cycle. When off, each session is tuned only to how you've been responding. The safety rule stays on either way")
     }
     public var settingsData: String { t("数据", "Data") }
     /// FR-SE6 导出行（K7）：canonical 原样 JSON → 系统分享面板。
@@ -282,9 +298,13 @@ public struct RedeStrings: Sendable {
     public var settingsPrivacy: String { t("隐私", "Privacy") }
     /// M6-2 隐私说明（FR-DT4 诚实表达 + 文案基线 §7.4）：只说代码可证的事实。
     /// StoreKit runtime 存在后不能继续声称 App 完全不联网；训练数据与 Apple 购买流分开说明。
+    ///
+    /// FR-ACC1 改写（2026-08-08）：加入云端同步后，「Rede 没有账号」这句话就是假的，
+    /// 必须同批改掉——功能一旦进包，旧措辞即构成不实陈述。按文案基线 §7.4 的既定说法
+    /// 写成条件式（「未开启时保存在本机」），而不是删掉隐私承诺。
     public var settingsPrivacyNote: String {
-        t("训练记录默认保存在这台设备本机　订阅购买由 Apple 处理　Rede 没有账号或第三方统计组件　删除 App 会同时删除本机训练数据",
-          "Training records live on this device by default. Apple handles subscription purchases. Rede has no account or third-party analytics. Deleting the app also deletes its local training data")
+        t("训练记录默认保存在这台设备本机　开启云端同步后同时保留一份在云端　订阅购买由 Apple 处理　Rede 不含第三方统计组件　删除 App 会同时删除本机训练数据",
+          "Training records live on this device by default. Turning on Cloud Sync also keeps a copy in the cloud. Apple handles subscription purchases. Rede has no third-party analytics. Deleting the app also deletes its local training data")
     }
     public var settingsAbout: String { t("关于", "About") }
     /// FR-SE4 健康免责（fitness 非 medical 口径，沿文案基线 §7.1）。
@@ -306,6 +326,86 @@ public struct RedeStrings: Sendable {
     public func feedbackFallback(address: String) -> String {
         t("这台设备没有配置邮件 App　可手动发邮件到 \(address)", "No mail app is set up on this device. You can email \(address) directly")
     }
+
+    // MARK: - 云端同步（FR-ACC1）
+    //
+    // 文案纪律（§3.4/3.5）：中文不收句号，两拍之间用全角空格；失败态一律「发生了什么
+    // + 你还能用什么」，与既有的「暂时无法核对购买　Free Core 仍可正常使用」同结构。
+
+    public var syncPanelOverline: String { t("Rede · 同步", "Rede · Sync") }
+    public var syncTitle: String { t("云端同步", "Cloud Sync") }
+    public var syncGroupOverline: String { t("同步", "Sync") }
+    public var syncStateOff: String { t("未开启", "Off") }
+    public var syncStateOn: String { t("已开启", "On") }
+
+    // 未开启
+    public var syncIntroTitle: String { t("把记录留在云端", "Keep your records in the cloud") }
+    public func syncAtRisk(count: Int) -> String {
+        t("场训练只存在这一台设备", count == 1 ? "session exists only on this device"
+                                              : "sessions exist only on this device")
+    }
+    public var syncMetaEarliest: String { t("最早一场", "Earliest") }
+    public var syncMetaSpan: String { t("已累积", "Span") }
+    public func syncSpanMonths(_ months: Int) -> String {
+        t("\(months) 个月", months == 1 ? "1 month" : "\(months) months")
+    }
+    public var syncSignInWithApple: String { t("通过 Apple 登录", "Sign in with Apple") }
+
+    // 双端对照
+    public var syncSideLocal: String { t("这台设备", "This device") }
+    public var syncSideCloud: String { t("云端", "Cloud") }
+    public var syncUnitSessions: String { t("场训练", "sessions") }
+    public var syncVerdictMatched: String { t("一致", "In sync") }
+    public var syncVerdictFetching: String { t("正在取回", "Fetching") }
+    public var syncNeverSynced: String { t("还没同步过", "Not synced yet") }
+    public func syncShortBy(_ n: Int) -> String { t("少 \(n) 场", "\(n) behind") }
+    public var syncReasonNewerVersion: String {
+        t("来自更新版本的 Rede", "From a newer version of Rede")
+    }
+    public var syncReasonUnclean: String { t("云端有记录读不出", "Some cloud records can't be read") }
+    public var syncReasonOffline: String { t("连不上云端", "Can't reach the cloud") }
+
+    // 状态解释（脚注位）
+    public func syncBlockedDetail(_ n: Int) -> String {
+        t("另一台设备用了更新版本　这 \(n) 场没有丢失　更新 App 后自动补齐",
+          "Another device is on a newer version. These \(n) aren't lost. Updating Rede brings them in")
+    }
+    public var syncUncleanDetail: String {
+        t("已被单独隔离　不会影响其他记录", "Quarantined on its own. Other records are unaffected")
+    }
+    public var syncOfflineDetail: String {
+        t("本机训练记录不受影响　恢复网络后自动重试",
+          "Records on this device are unaffected. It retries when the network is back")
+    }
+    public var syncFirstFetchNote: String {
+        t("换设备后第一次取回可能需要一会儿", "The first fetch after switching devices can take a moment")
+    }
+
+    // 操作
+    public var syncAccount: String { t("账号", "Account") }
+    public var syncAccountApple: String { t("Apple ID", "Apple ID") }
+    public var syncNow: String { t("立即同步", "Sync now") }
+    public var syncAutoFootnote: String {
+        t("练完自动上传　打开 App 时自动取回",
+          "Uploads after each workout, fetches when you open Rede")
+    }
+    public var syncUpdateApp: String { t("前往 App Store 更新", "Update in the App Store") }
+    public var syncRetry: String { t("重试", "Retry") }
+    public var syncSignOut: String { t("退出登录", "Sign out") }
+    public var syncSignOutFootnote: String {
+        t("退出后这台设备上的记录保留", "Records on this device stay after signing out")
+    }
+
+    // 删号
+    public var syncDeleteAccount: String { t("删除云端账号", "Delete cloud account") }
+    public func syncDeleteBody(count: Int, word: String) -> String {
+        t("云端的 \(count) 场训练将被永久删除　这台设备上的记录保留　输入 \(word) 以确认",
+          "\(count) sessions in the cloud will be permanently deleted. Records on this device stay. Type \(word) to confirm")
+    }
+    /// 删号确认词。中英分开——中文输入法下让用户敲英文单词是刁难。
+    public var syncDeleteConfirmWord: String { t("删除", "DELETE") }
+    public var syncExportFirst: String { t("先导出一份训练数据", "Export your data first") }
+    public var syncCancel: String { t("取消", "Cancel") }
 
     // MARK: - 展示数据(静态;M2-M4 由 catalog/engine localized 值接管)
 

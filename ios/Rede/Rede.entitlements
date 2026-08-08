@@ -15,10 +15,20 @@
 	<!-- W-1: App Group shared with the RedeWidget extension. The app WRITES a
 	     small derived read-only readiness snapshot here; the widget READS it. A
 	     derived presentation share only (§12) — never canonical AppData, never a
-	     source of truth, on-device only (no iCloud/CloudKit/network/remote push). -->
+	     source of truth, on-device only (no iCloud/CloudKit/remote push). -->
 	<key>com.apple.security.application-groups</key>
 	<array>
 		<string>group.com.tinsab.rede</string>
+	</array>
+	<!-- FR-ACC1: Sign in with Apple — the only sign-in method for Cloud Sync.
+	     Without this entitlement ASAuthorizationAppleIDProvider fails on device
+	     (the Simulator does NOT surface that failure, which is why it stayed
+	     invisible until the pre-archive check). The App ID must have the matching
+	     capability enabled in the developer portal for automatic signing to embed
+	     it in the provisioning profile. -->
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
 	</array>
 </dict>
 </plist>

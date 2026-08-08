@@ -31,6 +31,51 @@ extension RedeStrings {
         }
     }
 
+    /// 目标摘要的**分段**版本（2026-08-06 排版基准 S1）。
+    ///
+    /// `targetLine` 返回一整串，整串同字号会退化成一个「标签」；视图层要把数值/单位/次数
+    /// 排成不同字号才有数据重心。分段必须在这里做——**视图层拆字符串是脆弱的**
+    /// （5 种 loadType 有「辅助」「负重 +」等前缀，`split(" ")` 一碰就碎）。
+    ///
+    /// 契约：各段拼接后与 `targetLine` 逐字一致（同 loadType/同入参），故无障碍与
+    /// 既有断言仍可继续用 `targetLine`。
+    public func targetParts(loadType: String, weightKg: Double, reps: Int) -> TargetParts {
+        let w = formatKg(weightKg)
+        switch loadType {
+        case "bodyweight", "band":
+            return TargetParts(prefix: nil, value: nil, unit: nil, reps: "× \(reps)")
+        case "assisted":
+            return TargetParts(prefix: t3("辅助", "assist"), value: w, unit: nil, reps: "× \(reps)")
+        case "bodyweight-plus":
+            return TargetParts(prefix: t3("负重", nil), value: "+\(w)", unit: nil, reps: "× \(reps)")
+        default:
+            return TargetParts(prefix: nil, value: w, unit: unitLabel, reps: "× \(reps)")
+        }
+    }
+
+    /// zh 有前缀、en 无前缀时用（`负重 +10 × 6` / `+10 × 6`）。
+    private func t3(_ zh: String, _ en: String?) -> String? {
+        locale == .zh ? zh : en
+    }
+}
+
+/// 目标摘要的分段。视图层按段给不同字号：数值大、单位小、前缀与次数中等。
+public struct TargetParts: Equatable, Sendable {
+    public let prefix: String?   // "辅助" / "负重"（en 侧多为 nil）
+    public let value: String?    // "37.5" / "+10"；自重/弹力带为 nil
+    public let unit: String?     // "kg" / "lb"；辅助与负重不带单位（沿用 targetLine 口径）
+    public let reps: String      // "× 6"
+
+    public init(prefix: String?, value: String?, unit: String?, reps: String) {
+        self.prefix = prefix
+        self.value = value
+        self.unit = unit
+        self.reps = reps
+    }
+}
+
+extension RedeStrings {
+
     /// 「上次」参照（今日清单 + 训练卡片共用）；首练/缺上次 → nil。
     public func lastRefLine(loadType: String, prevWeightKg: Double?, prevReps: Int?) -> String? {
         if loadType == "bodyweight" || loadType == "band" {

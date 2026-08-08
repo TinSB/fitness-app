@@ -45,12 +45,12 @@ extension RedeStrings {
     public var planEditImpactTitle: String { locale == .zh ? "改动影响" : "Impact" }
     /// 空清单诚实占位（用户把一天删空时）。
     public var planEditEmptyDay: String {
-        locale == .zh ? "这天还没有动作——添加几个，或恢复默认" : "No exercises yet — add some, or restore default"
+        locale == .zh ? "这天还没有动作　添加几个，或恢复默认" : "No exercises yet. Add some, or restore default"
     }
     /// 跨族换确认（FR-PL6：跨族需用户确认一下）。
     public var planEditCrossFamilyConfirm: String {
-        locale == .zh ? "这是跨肌群/模式的替换，会改变这天的训练侧重——确认替换？"
-                      : "This swaps across muscle/movement groups and shifts this day's focus — confirm?"
+        locale == .zh ? "这是跨肌群/模式的替换，会改变这天的训练侧重　确认替换？"
+                      : "This swaps across muscle/movement groups and shifts this day's focus. Confirm?"
     }
     /// 护栏：某肌群每周频率跌破 2×（中性提示、不阻止）。muscle 为已本地化肌群名。
     public func planEditMuscleFrequencyWarning(muscles: [String]) -> String {

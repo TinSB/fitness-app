@@ -58,8 +58,31 @@ struct Overline: View {
 // MARK: - 锻面颗粒(.forged::after 噪声,~1.5% 可见度)
 
 struct ForgedGrain: View {
+    /// 材质走向。噪点是各向同性的「砂面」；拉丝有方向，读起来才是**被加工过的金属**。
+    /// 竞品参照：Fitbod 的深色底带对角织理——有方向的纹理比纯噪点更像材料、更少像杂讯。
+    enum Texture { case noise, brushed, diagonal }
+
     /// 0.5 ≈ 卡面 1.5%（K2 锁定）；base 全屏用 0.33 ≈ 1%（§12.2，真机 25% 亮度校准后定值）。
     var intensity: Double = 0.5
+    var texture: Texture = Self.defaultTexture
+
+    /// 默认对角拉丝（2026-08-07 定）。噪点是各向同性的砂面、更接近杂讯；
+    /// 有走向的织理才读作「被加工过的金属」，也和 RegMark 的斜角标、EngraveDivider 的
+    /// 刻度构成同一套加工面语言。
+    ///
+    /// ⚠️ **强度待真机校准**：噪点那档 1.5% 是真机 25% 亮度下校准过的定值，拉丝是新的、
+    /// 只在模拟器上看过。健身房暗光 + OLED 会比模拟器明显，下次 TestFlight 需实看后再定。
+    /// 调参钩子：-grainTexture noise|brushed|diagonal。
+    static var defaultTexture: Texture {
+        let args = ProcessInfo.processInfo.arguments
+        guard let i = args.firstIndex(of: "-grainTexture"), args.indices.contains(i + 1)
+        else { return .diagonal }
+        switch args[i + 1] {
+        case "noise": return .noise
+        case "brushed": return .brushed
+        default: return .diagonal
+        }
+    }
 
     var body: some View {
         Canvas { context, size in
@@ -68,22 +91,67 @@ struct ForgedGrain: View {
                 seed = seed &* 6364136223846793005 &+ 1442695040888963407
                 return Double(seed >> 33) / Double(UInt64(1) << 31)
             }
-            let step: CGFloat = 3
-            var y: CGFloat = 0
-            while y < size.height {
-                var x: CGFloat = 0
-                while x < size.width {
-                    let v = rand()
-                    if v > 0.5 {
-                        let gray = rand()
-                        context.fill(
-                            Path(CGRect(x: x, y: y, width: 1, height: 1)),
-                            with: .color(Color(white: gray, opacity: 0.03))
-                        )
+            switch texture {
+            case .noise:
+                let step: CGFloat = 3
+                var y: CGFloat = 0
+                while y < size.height {
+                    var x: CGFloat = 0
+                    while x < size.width {
+                        if rand() > 0.5 {
+                            let gray = rand()
+                            context.fill(
+                                Path(CGRect(x: x, y: y, width: 1, height: 1)),
+                                with: .color(Color(white: gray, opacity: 0.03))
+                            )
+                        }
+                        x += step
                     }
-                    x += step
+                    y += step
                 }
-                y += step
+
+            case .brushed:
+                // 水平拉丝：断续的细线段，长短与亮度都抖动——连续等长会读成扫描线。
+                var y: CGFloat = 0
+                while y < size.height {
+                    var x: CGFloat = -10
+                    while x < size.width {
+                        let len = 10 + rand() * 30
+                        if rand() > 0.40 {
+                            context.fill(
+                                Path(CGRect(x: x, y: y, width: len, height: 0.7)),
+                                with: .color(Color(white: 0.5 + rand() * 0.5,
+                                                   opacity: 0.010 + rand() * 0.018))
+                            )
+                        }
+                        x += len + 2 + rand() * 6
+                    }
+                    y += 2.2
+                }
+
+            case .diagonal:
+                // 对角拉丝（约 −18°）：更有动势，同样断续抖动。
+                let slope: CGFloat = -0.32
+                var y: CGFloat = -size.width * 0.35
+                while y < size.height + size.width * 0.35 {
+                    var x: CGFloat = -10
+                    while x < size.width {
+                        let len = 12 + rand() * 34
+                        if rand() > 0.44 {
+                            var path = Path()
+                            path.move(to: CGPoint(x: x, y: y))
+                            path.addLine(to: CGPoint(x: x + len, y: y + len * slope))
+                            context.stroke(
+                                path,
+                                with: .color(Color(white: 0.5 + rand() * 0.5,
+                                                   opacity: 0.010 + rand() * 0.018)),
+                                lineWidth: 0.7
+                            )
+                        }
+                        x += len + 3 + rand() * 7
+                    }
+                    y += 2.4
+                }
             }
         }
         .opacity(intensity)
@@ -121,11 +189,18 @@ struct RegMark: View {
     }
 }
 
-// MARK: - 锻面卡(.forged: surface + 12r + 顶缘高光 + 颗粒)
+// MARK: - 锻面卡(.forged: 微渐变面 + 20r + 顶缘高光 + 颗粒)
+//
+// S1 改造（2026-08-06 基准 docs/工作记录/2026-08-06-motion-typography-baseline.md）：
+// ① 面从纯色改为极微弱垂直渐变——纯色在深色下读作「贴上去的纸」，渐变才有厚度；
+// ② 圆角 12 → 20（owner「再来点圆角」），`radius` 可覆盖，展开态用 30；
+// ③ 顶缘高光从整条实线改为两端淡出的渐变描边——实线在大圆角上会在转角处露出突兀的端点。
+// 颗粒（ForgedGrain）与 ember bar 是既有资产，原样保留。
 
 struct ForgedCard<Content: View>: View {
     var emberBarInset: CGFloat? = nil   // 非 nil = 带 embar(top/bottom inset)
     var showReg: Bool = false
+    var radius: CGFloat = RedeShape.cardRadiusL
     @ViewBuilder var content: Content
 
     var body: some View {
@@ -138,21 +213,233 @@ struct ForgedCard<Content: View>: View {
                     .frame(maxHeight: .infinity)
                     .background(Color.redeEmber)
                     .clipShape(RoundedRectangle(cornerRadius: 2))
-                    .padding(.vertical, inset)
+                    .padding(.vertical, max(inset, radius * 0.62))
+                    // 圆角越大，贴边的竖条被切得越狠——按半径内缩，让它落在直边段内。
+                    .padding(.leading, radius * 0.30)
             }
             if showReg {
                 RegMark(corner: .topRight)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                    .padding(11)
+                    .padding(max(11, radius * 0.52))
             }
         }
-        .background(Color.redeSurface)
-        .overlay(alignment: .top) {
-            Rectangle()
-                .fill(Color.redeT1.opacity(0.09))
-                .frame(height: 1)
+        .background(
+            LinearGradient(colors: [Color.redeRaised, Color.redeSurface],
+                           startPoint: .top, endPoint: .bottom)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [Color.redeT1.opacity(0.085), Color.redeT1.opacity(0.012)],
+                        startPoint: .top, endPoint: .bottom),
+                    lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - 数值簇(.load: 数值大 / 单位小 / 次数中——凡出现数字处统一走这里)
+//
+// 基准第二条：`37.5 kg × 6` 整串同字号会退化成一个「标签」。拆开才有数据的重心。
+// 规则一以贯之：**数值大、单位小、标签最小**。
+
+struct LoadCluster: View {
+    var prefix: String? = nil    // "辅助" / "负重"
+    var value: String? = nil     // "37.5"；自重/弹力带为 nil
+    var unit: String? = nil      // "kg"
+    var tail: String? = nil      // "× 6"
+    var size: CGFloat = 19       // 数值字号；hero 用 30
+    /// 自重/弹力带只有 "× 6"，此时把次数升格成主数值——否则整行只剩一个小字。
+    private var repsIsPrimary: Bool { value == nil }
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 0) {
+            if let prefix {
+                Text("\(prefix) ")
+                    .font(.system(size: size * 0.63, weight: .medium))
+                    .foregroundStyle(Color.redeT3)
+            }
+            if let value {
+                Text(value)
+                    .font(.system(size: size, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(Color.redeT1)
+            }
+            if let unit {
+                Text(" \(unit)")
+                    .font(.system(size: size * 0.47, weight: .regular))
+                    .foregroundStyle(Color.redeT4)
+            }
+            if let tail {
+                Text(value == nil ? tail : "  \(tail)")
+                    .font(.system(size: repsIsPrimary ? size : size * 0.63,
+                                  weight: repsIsPrimary ? .semibold : .medium))
+                    .monospacedDigit()
+                    .foregroundStyle(repsIsPrimary ? Color.redeT1 : Color.redeT3)
+            }
         }
-        .clipShape(RoundedRectangle(cornerRadius: RedeShape.cardRadius))
+    }
+}
+
+// MARK: - 读数列(.stat: 标签 + 数值，横排成一把尺子)
+//
+// 基准巧思一：把「3 组 · 休息 150s · RIR 2」这串文字拆成并列读数。
+// 工程感来自结构，不是装饰。数值与 LoadCluster 同源（数值大、单位小）。
+
+struct StatColumn: Identifiable {
+    let id = UUID()
+    let label: String            // "组数"
+    let value: String            // "150"
+    var unit: String? = nil      // "s"
+}
+
+struct StatStrip: View {
+    let columns: [StatColumn]
+    var valueSize: CGFloat = 25
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 0) {
+            ForEach(columns) { col in
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(col.label)
+                        .font(.system(size: 10, weight: .medium))
+                        .tracking(1.6)
+                        .foregroundStyle(Color.redeT4.opacity(0.9))
+                    HStack(alignment: .firstTextBaseline, spacing: 1) {
+                        Text(col.value)
+                            .font(.system(size: valueSize, weight: .medium, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(Color.redeT1)
+                        if let unit = col.unit {
+                            Text(unit)
+                                .font(.system(size: valueSize * 0.52, weight: .regular, design: .rounded))
+                                .foregroundStyle(Color.redeT4)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+}
+
+// MARK: - 工序列表(.cues: 01/02/03 序号 + 正文)
+//
+// 基准巧思二：`·` 只说明「这是一条」，序号说明「这是第几步」——技术要点本就有先后，
+// 且可指认（"第二点没做到"）。序号压到极暗，只在余光里起编排作用。
+
+struct CueList: View {
+    let items: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 13) {
+            ForEach(Array(items.enumerated()), id: \.offset) { i, text in
+                HStack(alignment: .top, spacing: 13) {
+                    Text(String(format: "%02d", i + 1))
+                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                        .foregroundStyle(Color.redeT4.opacity(0.75))
+                        .padding(.top, 3)
+                        .accessibilityHidden(true)   // 序号是排版，不念给 VoiceOver
+                    Text(text)
+                        .font(.system(size: 14.5))
+                        .lineSpacing(4)
+                        .foregroundStyle(Color.redeT2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+// MARK: - 连续变形展开层(.morph: 卡片就地长大成详情)
+//
+// 基准（docs/工作记录/2026-08-06-motion-typography-baseline.md 第一节）：
+// 一体感 = 同一元素连续变形，不是「一个淡出、一个淡入」。
+//
+// **为什么不用 .sheet**：sheet 是独立呈现上下文，会盖住整个 App、读作「进入新页面」；
+// 页内 overlay 才读作「我还在这一页、只是把这张卡打开了」。
+//
+// **为什么不用 matchedGeometryEffect**：它的语义是「一个视图提供几何、其余采用」。
+// 这里源（列表行）与目标（展开卡）必须共存且结构完全不同——无论谁当 source，
+// 另一边要么被锁死在错误尺寸、要么完全没有动画。改用宿主上报行位置 + 锚点缩放
+// （见 RowFramePreference 与调用方的 expandAnchor）。
+//
+// 代价（有意接受）：overlay 只覆盖宿主视图，盖不住 RootTabView 的 tab bar。
+// 这反而贴合「我还在这一页、只是展开了一张卡」的心智——不是进入新页面。
+// 遮罩因此也止于 tab bar 上沿，不做假的全屏黑幕。
+
+struct MorphExpansion<Content: View>: View {
+    var topInset: CGFloat = 92
+    let onDismiss: () -> Void
+    @ViewBuilder var content: Content
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var dragOffset: CGFloat = 0
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            // 遮罩单独淡入。**不要**给整个展开层加 .transition(.opacity)——
+            // 整块淡入会把 matchedGeometryEffect 的几何动画盖掉，读起来就是「突然冒出来」。
+            Color.black.opacity(0.46)
+                .ignoresSafeArea()
+                .contentShape(Rectangle())
+                .onTapGesture(perform: onDismiss)
+                .transition(.opacity)
+                .accessibilityLabel(Text(verbatim: ""))
+                .accessibilityAddTraits(.isButton)
+                .accessibilityAction { onDismiss() }
+
+            // 卡面直接用 ForgedCard——颗粒 / ember 左缘 / registration 角标都是既有品牌资产，
+            // 不另起炉灶。装饰必须是**材质与结构性**的（锻面、刻线、定位标记），
+            // 不是图形贴纸——后者正是 owner 判为廉价的那一类。
+            ForgedCard(emberBarInset: 20, showReg: true, radius: RedeShape.cardRadiusXL) {
+                VStack(spacing: 0) {
+                    // 拖拽把手：下拉收起的手势**只落在这一条**上。
+                    // 曾把 DragGesture 加在整张卡上——结果内容区的滚动被整个拦截，
+                    // 向上滑变成了收起。手势区必须与滚动区分离。
+                    Capsule()
+                        .fill(Color.redeT4.opacity(0.34))
+                        .frame(width: 38, height: 4)
+                        .padding(.top, 12)
+                        .padding(.bottom, 6)
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
+                        .gesture(
+                            DragGesture()
+                                .onChanged { v in
+                                    guard !reduceMotion else { return }
+                                    dragOffset = max(0, v.translation.height)
+                                }
+                                .onEnded { v in
+                                    if v.translation.height > 70 || v.predictedEndTranslation.height > 180 {
+                                        onDismiss()
+                                    }
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) { dragOffset = 0 }
+                                }
+                        )
+                        .accessibilityHidden(true)
+
+                    content
+                        // 内容后于容器落位：容器先到，信息再淡入，避免文字跟着缩放变糊。
+                        .transition(.opacity.combined(with: .offset(y: 12)))
+                        .padding(.horizontal, 22)
+                        .padding(.bottom, 20)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            // 再点一次即收起：点开与收起用同一个动作，不必去够空白处。
+            // 卡内的按钮/链接（换回原动作、替代动作、查看来源）手势优先级更高会先吃掉点击；
+            // 滚动是拖拽、不触发 tap。三者不冲突。
+            .contentShape(RoundedRectangle(cornerRadius: RedeShape.cardRadiusXL, style: .continuous))
+            .onTapGesture(perform: onDismiss)
+            .shadow(color: .black.opacity(0.6), radius: 34, y: 16)
+            .padding(.horizontal, RedeSpace.page)
+            .padding(.top, topInset)
+            .padding(.bottom, RedeSpace.bottomBar)
+            .offset(y: dragOffset)
+        }
     }
 }
 
@@ -198,11 +485,20 @@ struct EmbButton: View {
     // M1 提权（2026-07-06 去 AI 感中期批次）：主 CTA 曾 hug 半宽 + redeBtn 底与面板
     // 明度几乎无差，读作次级按钮。提权限 Ember 公理内（锻面 + ember 左缘，禁 ember
     // 填充）：默认全宽 + 底提亮一档（redeRaised）+ hair 轮廓 + 50pt + 3px 缘 + 16pt 字。
+    /// 点击计数——驱动图标的一次性弹跳（symbolEffect 需要一个变化的值做触发）。
+    @State private var tapTick = 0
+
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            tapTick += 1
+            action()
+        }) {
             HStack(spacing: 7) {
                 if let icon {
                     Image(systemName: icon).font(.system(size: iconSize))
+                        // 主 CTA 的图标在按下时弹一下：动作确认的最短反馈，
+                        // 比整块按钮变色克制。reduceMotion 由系统自动降级。
+                        .symbolEffect(.bounce, options: .nonRepeating, value: tapTick)
                 }
                 Text(title)
             }
@@ -369,44 +665,102 @@ struct SteelToggle: View {
 struct RedeTabBar: View {
     @Binding var selection: RootTab
     @Environment(LocaleStore.self) private var localeStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var items: [(tab: RootTab, icon: String, label: String)] {
         let s = localeStore.strings
         return [
-            (.today, "house", s.tabToday),
+            (.today, "target", s.tabToday),
             (.train, "dumbbell", s.tabTrain),
-            (.progress, "chart.line.uptrend.xyaxis", s.tabProgress),
+            (.progress, "chart.bar", s.tabProgress),
             (.plan, "calendar", s.tabPlan),
         ]
     }
 
+    private var selectedIndex: Int {
+        items.firstIndex { $0.tab == selection } ?? 0
+    }
+
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(items, id: \.tab) { item in
-                Button {
-                    selection = item.tab
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: item.icon).font(.system(size: 22))
-                        Text(item.label).font(.system(size: 10, weight: .medium))
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                ForEach(items, id: \.tab) { item in
+                    Button {
+                        withAnimation(reduceMotion ? nil : .spring(response: 0.34, dampingFraction: 0.82)) {
+                            selection = item.tab
+                        }
+                    } label: {
+                        VStack(spacing: 3) {
+                            Image(systemName: item.icon)
+                                .font(.system(size: 21, weight: .medium))
+                                .symbolRenderingMode(.monochrome)
+                            Text(item.label).font(.system(size: 9.5, weight: .medium))
+                        }
+                        .foregroundStyle(selection == item.tab ? Color.redeEmber : Color.redeT4)
+                        .frame(maxWidth: .infinity, minHeight: RedeShape.controlHeight)
                     }
-                    .foregroundStyle(selection == item.tab ? Color.redeEmber : Color.redeT4)
-                    .frame(maxWidth: .infinity, minHeight: RedeShape.controlHeight)
+                    .buttonStyle(.plain)
+                    // VoiceOver：图标+文字合成一条原子标签，并报当前选中态（图标本身不单独念）
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(item.label)
+                    .accessibilityAddTraits(selection == item.tab ? [.isButton, .isSelected] : .isButton)
                 }
-                .buttonStyle(.plain)
-                // VoiceOver：图标+文字合成一条原子标签，并报当前选中态（图标本身不单独念）
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(item.label)
-                .accessibilityAddTraits(selection == item.tab ? [.isButton, .isSelected] : .isButton)
             }
+            ruler
         }
-        .frame(height: 64)
-        .padding(.bottom, 6)
-        .background(Color.redeTabBar)
-        .overlay(alignment: .top) {
-            Rectangle().fill(Color.redeHair2).frame(height: 1)
-        }
+        .padding(.top, 8)
+        .background(
+            ZStack {
+                // 读 token，不硬编码——曾经写死过一组冷调色值，换主题时 tab bar 整块掉队。
+                LinearGradient(colors: [Color.redeRaised, Color.redeSurface],
+                               startPoint: .top, endPoint: .bottom)
+                ForgedGrain(intensity: 0.4)
+            }
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(LinearGradient(
+                    colors: [Color.redeT1.opacity(0.14), Color.redeT1.opacity(0.02), .clear],
+                    startPoint: .top, endPoint: .bottom), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.6), radius: 17, y: 8)
+        .padding(.horizontal, 14)
+        .padding(.bottom, 12)
         .sensoryFeedback(.selection, trigger: selection) // tab 切换触觉确认
+    }
+
+    /// 行程标尺：主刻度对齐四个 tab 中心，之间夹次刻度；ember 游标压在当前位上。
+    /// 切换时游标沿标尺滑过去——那一下滑动本身就是导航动效，不另加。
+    private var ruler: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let slot = w / CGFloat(items.count)
+            ZStack(alignment: .bottomLeading) {
+                // 主刻度：严格落在每个 tab 的中心（与图标同一坐标系——曾给 ruler 单独加过
+                // 水平 padding，槽宽跟 tabs 不一致，刻度就整体漂移了）。
+                ForEach(0..<items.count, id: \.self) { i in
+                    Rectangle()
+                        .fill(Color.redeEtch)
+                        .frame(width: 1, height: 8)
+                        .offset(x: slot * (CGFloat(i) + 0.5) - 0.5, y: -5)
+                }
+                // 次刻度：相邻两个中心的中点
+                ForEach(0..<(items.count - 1), id: \.self) { i in
+                    Rectangle()
+                        .fill(Color.redeEtch.opacity(0.55))
+                        .frame(width: 1, height: 4)
+                        .offset(x: slot * (CGFloat(i) + 1) - 0.5, y: -5)
+                }
+                Capsule()
+                    .fill(Color.redeEmber)
+                    .frame(width: 20, height: 2.5)
+                    .offset(x: slot * (CGFloat(selectedIndex) + 0.5) - 10, y: -4)
+            }
+            .frame(width: w, height: geo.size.height, alignment: .bottomLeading)
+        }
+        .frame(height: 15)
+        .accessibilityHidden(true)      // 纯装饰：选中态已由每个 tab 的 .isSelected 播报
     }
 }
 
@@ -607,5 +961,13 @@ struct MiniSparkline: View {
             let lx = xs(values.count - 1), ly = ys(values[values.count - 1])
             context.fill(Path(ellipseIn: CGRect(x: lx - 2.5, y: ly - 2.5, width: 5, height: 5)), with: .color(.redeEmber))
         }
+    }
+}
+
+/// 列表行的屏幕位置上报（展开动画的锚点来源）。
+struct RowFramePreference: PreferenceKey {
+    static var defaultValue: [String: CGRect] = [:]
+    static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
+        value.merge(nextValue()) { _, new in new }
     }
 }

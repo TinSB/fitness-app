@@ -44,6 +44,9 @@
 		CAMD00000000000000000002 /* MuscleDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAMD00000000000000000001 /* MuscleDetailSheet.swift */; };
 		CAMH00000000000000000002 /* MuscleHeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAMH00000000000000000001 /* MuscleHeatmapView.swift */; };
 		CAED00000000000000000002 /* ExerciseDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAED00000000000000000001 /* ExerciseDetailSheet.swift */; };
+		CAED000000000000000000A2 /* MotionSampleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAED000000000000000000A1 /* MotionSampleView.swift */; };
+		A100000000000000000000E2 /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000E1 /* SyncService.swift */; };
+		A100000000000000000000E4 /* SyncSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000E3 /* SyncSheet.swift */; };
 		CAEB00000000000000000002 /* ExerciseLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAEB00000000000000000001 /* ExerciseLibraryView.swift */; };
 		CA00000000000000000000B5 /* PlanTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A5 /* PlanTabView.swift */; };
 		CB00000000000000000000B1 /* RedeTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB00000000000000000000A1 /* RedeTheme.swift */; };
@@ -127,6 +130,9 @@
 		CAMD00000000000000000001 /* MuscleDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleDetailSheet.swift; sourceTree = "<group>"; };
 		CAMH00000000000000000001 /* MuscleHeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleHeatmapView.swift; sourceTree = "<group>"; };
 		CAED00000000000000000001 /* ExerciseDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseDetailSheet.swift; sourceTree = "<group>"; };
+		CAED000000000000000000A1 /* MotionSampleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionSampleView.swift; sourceTree = "<group>"; };
+		A100000000000000000000E1 /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
+		A100000000000000000000E3 /* SyncSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSheet.swift; sourceTree = "<group>"; };
 		CAEB00000000000000000001 /* ExerciseLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryView.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A5 /* PlanTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTabView.swift; sourceTree = "<group>"; };
 		CB00000000000000000000A1 /* RedeTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeTheme.swift; sourceTree = "<group>"; };
@@ -230,6 +236,9 @@
 				CAMD00000000000000000001 /* MuscleDetailSheet.swift */,
 				CAMH00000000000000000001 /* MuscleHeatmapView.swift */,
 				CAED00000000000000000001 /* ExerciseDetailSheet.swift */,
+				CAED000000000000000000A1 /* MotionSampleView.swift */,
+				A100000000000000000000E1 /* SyncService.swift */,
+				A100000000000000000000E3 /* SyncSheet.swift */,
 				CAEB00000000000000000001 /* ExerciseLibraryView.swift */,
 				CARL00000000000000000001 /* RestLiveActivityController.swift */,
 				CA00000000000000000000A5 /* PlanTabView.swift */,
@@ -295,6 +304,8 @@
 				DD00000000000000000000B2 /* RedeHealthKit */,
 				FF00000000000000000000B1 /* RedeEntitlements */,
 				EE00000000000000000000D1 /* RedeWidgetShared */,
+				A100000000000000000000B1 /* RedeSync */,
+				A100000000000000000000B2 /* RedeSyncSupabase */,
 			);
 			productName = Rede;
 			productReference = AA00000000000000000000B2 /* Rede.app */;
@@ -381,6 +392,8 @@
 				DD00000000000000000000C2 /* XCLocalSwiftPackageReference "packages/RedeHealthKit" */,
 				FF00000000000000000000C1 /* XCLocalSwiftPackageReference "packages/RedeEntitlements" */,
 				EE00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/RedeWidgetShared" */,
+				A100000000000000000000C1 /* XCLocalSwiftPackageReference "packages/RedeSync" */,
+				A100000000000000000000C2 /* XCLocalSwiftPackageReference "packages/RedeSyncSupabase" */,
 			);
 			productRefGroup = AA00000000000000000000A3 /* Products */;
 			projectDirPath = "";
@@ -453,6 +466,9 @@
 				CAMD00000000000000000002 /* MuscleDetailSheet.swift in Sources */,
 				CAMH00000000000000000002 /* MuscleHeatmapView.swift in Sources */,
 				CAED00000000000000000002 /* ExerciseDetailSheet.swift in Sources */,
+				CAED000000000000000000A2 /* MotionSampleView.swift in Sources */,
+				A100000000000000000000E2 /* SyncService.swift in Sources */,
+				A100000000000000000000E4 /* SyncSheet.swift in Sources */,
 				CAEB00000000000000000002 /* ExerciseLibraryView.swift in Sources */,
 				CARL00000000000000000002 /* RestLiveActivityController.swift in Sources */,
 				CA00000000000000000000B5 /* PlanTabView.swift in Sources */,
@@ -637,7 +653,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Rede/Rede.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 30;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -649,7 +665,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.9.4;
+				MARKETING_VERSION = 1.10.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -665,7 +681,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Rede/Rede.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 30;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -677,7 +693,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.9.4;
+				MARKETING_VERSION = 1.10.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -737,7 +753,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = RedeWidget/RedeWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 30;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = RedeWidget/Info.plist;
@@ -747,7 +763,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.9.4;
+				MARKETING_VERSION = 1.10.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede.RedeWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -764,7 +780,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = RedeWidget/RedeWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 30;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = RedeWidget/Info.plist;
@@ -774,7 +790,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.9.4;
+				MARKETING_VERSION = 1.10.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede.RedeWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -867,6 +883,14 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = packages/RedeEntitlements;
 		};
+		A100000000000000000000C1 /* XCLocalSwiftPackageReference "packages/RedeSync" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/RedeSync;
+		};
+		A100000000000000000000C2 /* XCLocalSwiftPackageReference "packages/RedeSyncSupabase" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/RedeSyncSupabase;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -917,6 +941,14 @@
 		F10000000000000000000011 /* RedeEntitlements */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = RedeEntitlements;
+		};
+		A100000000000000000000B1 /* RedeSync */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeSync;
+		};
+		A100000000000000000000B2 /* RedeSyncSupabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeSyncSupabase;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

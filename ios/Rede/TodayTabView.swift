@@ -163,6 +163,19 @@ struct TodayTabView: View {
         let deltaPercent: Int?
     }
 
+    /// 截图钩子（沿 -expandTodayReason 先例）：-autoOpenExerciseDetail <序号，1 起> 启动即展开该行详情。
+    private static var autoOpenExerciseIndex: Int? {
+        let args = ProcessInfo.processInfo.arguments
+        guard let i = args.firstIndex(of: "-autoOpenExerciseDetail"),
+              args.indices.contains(i + 1), let n = Int(args[i + 1]), n >= 1 else { return nil }
+        return n - 1
+    }
+
+    /// 每行在屏幕上的实际位置——展开卡要从被点那一行长出来，得知道它在哪。
+    @State private var rowFrames: [String: CGRect] = [:]
+    /// 展开/收起统一曲线：偏阻尼、无回弹——极简的动效应当察觉不到，只觉得顺。
+    private var morphCurve: Animation { .spring(response: 0.42, dampingFraction: 0.86) }
+
     private var model: TodayModel? { sessionStore.todayModel }
 
     private var isUnreadable: Bool {
@@ -203,6 +216,23 @@ struct TodayTabView: View {
         }
         .defaultScrollAnchor(Self.startAtBottom ? .bottom : .top)
         .background(Color.redeBase)
+        // 悬浮主 CTA：贴 tab bar 上沿，底下垫一层向下加深的渐隐，让列表从它身下滚过去。
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if let exercises = model?.prescription?.exercises, !exercises.isEmpty, !isUnreadable {
+                EmbButton(icon: "play.fill", title: s.startTraining, action: onStartTraining)
+                    .padding(.horizontal, RedeSpace.page)
+                    .padding(.top, 10)
+                    // 垫开 tab bar：tab bar 是 RootTabView 的兄弟层、压在本视图之上，
+                    // safeAreaInset 只认自己的坐标系，不垫会被整条盖住。
+                    .padding(.bottom, RedeSpace.bottomBar)
+                    .background(
+                        LinearGradient(colors: [Color.redeBase.opacity(0), Color.redeBase.opacity(0.92),
+                                                Color.redeBase],
+                                       startPoint: .top, endPoint: .bottom)
+                            .ignoresSafeArea(edges: .bottom)
+                    )
+            }
+        }
         // 切片6c：撤销条挂今日页根、避开 tab 栏；独立于教练卡，卡 reload 消失也不丢撤销入口。
         .overlay(alignment: .bottom) {
             if let banner = undoBanner {
@@ -330,8 +360,23 @@ struct TodayTabView: View {
                 await loadWeekReviewIfEligible()
             }
         }
-        .sheet(item: $detailTarget) { target in
-            exerciseDetailSheet(target)
+        // 连续变形（2026-08-06 基准）：详情不再用 sheet 呈现——matchedGeometryEffect
+        // 跨不过 sheet 边界。改为同层 overlay，卡片就地长大成详情。
+        .onPreferenceChange(RowFramePreference.self) { rowFrames = $0 }
+        .overlay {
+            if let target = detailTarget {
+                MorphExpansion(
+                    onDismiss: { withAnimation(reduceMotion ? nil : morphCurve) { detailTarget = nil } }
+                ) {
+                    // 不再外包 ScrollView：ExerciseDetailSheet 自带一层，嵌套会导致滚动打架。
+                    exerciseDetailSheet(target)
+                }
+                // 从被点那一行的位置缩放长出来。matchedGeometryEffect 在这里用不了——
+                // 源（列表行）与目标（展开卡）必须共存且结构完全不同，无论谁当 source
+                // 另一边都会被锁死或完全无动画。锚点缩放是这个约束下的正解。
+                .transition(.scale(scale: 0.9, anchor: expandAnchor(for: target.id))
+                    .combined(with: .opacity))
+            }
         }
         // FR-TR12「今天换一天练」品牌选择面板（替代原生 confirmationDialog）：①选训练日 ②单次/永久。
         // 同一 sheet 内就地切两步（pendingDayOverride 决定显哪步），关闭时清待定项防下次直接跳到②步。
@@ -534,7 +579,9 @@ struct TodayTabView: View {
 
                 ForEach(Array(exercises.enumerated()), id: \.offset) { idx, ex in
                     Button {
-                        detailTarget = ExerciseDetailTarget(id: ex.exerciseId)
+                        withAnimation(reduceMotion ? nil : morphCurve) {
+                            detailTarget = ExerciseDetailTarget(id: ex.exerciseId)
+                        }
                     } label: {
                         // 批次 G N2：当前/下一个动作 = hero 层级（同列表内放大，无说明
                         // 小字——放大本身就是焦点语言；owner 零小字红线）
@@ -546,19 +593,36 @@ struct TodayTabView: View {
                             }
                         }
                         .contentShape(Rectangle()) // 整行可点（含 Spacer 空白）+ 按压反馈覆盖全行
+                        .background(
+                            GeometryReader { geo in
+                                Color.clear.preference(
+                                    key: RowFramePreference.self,
+                                    value: [ex.exerciseId: geo.frame(in: .global)])
+                            }
+                        )
                     }
                     .buttonStyle(.redePressableRow)
                     .accessibilityHint(s.exerciseDetailHint)
+                    .opacity(detailTarget?.id == ex.exerciseId ? 0 : 1)
                     .padding(.horizontal, RedeSpace.page)
+                    .task {
+                        // 延迟 2.4s 再展开：录屏/截图要拍到展开动画本身，立即置位就只剩终态。
+                        guard Self.autoOpenExerciseIndex == idx, detailTarget == nil else { return }
+                        try? await Task.sleep(nanoseconds: 2_400_000_000)
+                        guard detailTarget == nil else { return }
+                        withAnimation(morphCurve) {
+                            detailTarget = ExerciseDetailTarget(id: ex.exerciseId)
+                        }
+                    }
                 }
 
                 summaryLine(exercises: exercises)
                     .padding(.horizontal, RedeSpace.page)
                     .padding(.top, 14)
 
-                EmbButton(icon: "play.fill", title: s.startTraining, action: onStartTraining)
-                    .padding(.horizontal, RedeSpace.page)
-                    .padding(.top, 16)
+                // 主 CTA 已移出滚动流（见 body 的 .overlay）：一屏要装下 8 个动作又要留白，
+                // 是死结——把 CTA 固定在底部就解开了。列表因此可以放开字号与行距，
+                // 而「开始训练」永远在拇指底下，比原来还好按。
 
                 RuleDivider()
 
@@ -785,10 +849,7 @@ struct TodayTabView: View {
                             Overline(text: s.exerciseSwappedOnceBadge, color: .redeEmber2)
                         }
                     }
-                    Text(targetSummary(ex))
-                        .font(.redeTitle).monospacedDigit()
-                        .tracking(RedeTracking.title)
-                        .foregroundStyle(Color.redeT1)
+                    targetCluster(ex, size: 30)
                         .lineLimit(1).minimumScaleFactor(0.6)   // 大字号可访问性下收缩不截断
                     HStack(spacing: 10) {
                         Text(s.exerciseMetaLine(sets: ex.sets, restSeconds: ex.restSeconds, rir: ex.targetRir))
@@ -827,7 +888,7 @@ struct TodayTabView: View {
             HStack(alignment: .top, spacing: 10) {
                 Rectangle().fill(Color.clear)
                     .frame(width: 3, height: 18)
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 5) {
                     HStack(spacing: 6) {
                         Text(localeStore.exerciseName(ex.exerciseId))
                             .font(.redeSubhead)
@@ -841,16 +902,14 @@ struct TodayTabView: View {
                         }
                     }
                     Text(s.exerciseMetaLine(sets: ex.sets, restSeconds: ex.restSeconds, rir: ex.targetRir))
-                        .font(.redeCaption).monospacedDigit()
+                        .font(.redeCallout).monospacedDigit()
                         .foregroundStyle(Color.redeT4)
                 }
                 Spacer()
                 // chevron 与右侧目标/升降列居中对齐（不随外层 .top 顶对齐而偏高，与进展历史行一致）。
                 HStack(alignment: .center, spacing: 8) {
                     VStack(alignment: .trailing, spacing: 3) {
-                        Text(targetSummary(ex))
-                            .font(.redeCallout).monospacedDigit()
-                            .foregroundStyle(Color.redeT2)
+                        targetCluster(ex, size: 19)
                         lastChangeView(ex)
                     }
                     // 可点线索（affordance 三件套之一）：整行可点开动作详情，尾部 chevron 明示。
@@ -860,8 +919,8 @@ struct TodayTabView: View {
                         .accessibilityHidden(true) // 装饰性线索；行的可点性已由 Button + hint 表达
                 }
             }
-            .padding(.top, 11)
-            .padding(.bottom, progressionPauseLine(ex) == nil ? 11 : 6)
+            .padding(.top, 15)
+            .padding(.bottom, progressionPauseLine(ex) == nil ? 15 : 7)
             if let line = progressionPauseLine(ex) {
                 Text(line)
                     .font(.redeCaption)
@@ -900,6 +959,28 @@ struct TodayTabView: View {
         s.targetLine(loadType: ex.loadType,
                      weightKg: LoadDisplay.snap(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s),
                      reps: ex.targetReps)
+    }
+
+    /// 把被点行的屏幕位置换算成缩放锚点（UnitPoint）。行未知时退回屏幕中心。
+    private func expandAnchor(for exerciseId: String) -> UnitPoint {
+        guard let rect = rowFrames[exerciseId] else { return .center }
+        let h = UIScreen.main.bounds.height
+        guard h > 0 else { return .center }
+        return UnitPoint(x: 0.5, y: min(max(rect.midY / h, 0), 1))
+    }
+
+    /// 目标摘要的分段渲染（2026-08-06 排版基准）：数值大、单位小、次数中。
+    /// 分段来自 L10n 的 targetParts（与 targetSummary 逐字一致，见 RedeL10n 契约测试），
+    /// 视图层不解析字符串。无障碍仍念完整串，避免读出「37.5 停顿 kg 停顿 乘 6」。
+    private func targetCluster(_ ex: ExercisePrescriptionPlan, size: CGFloat) -> some View {
+        let parts = s.targetParts(
+            loadType: ex.loadType,
+            weightKg: LoadDisplay.snap(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s),
+            reps: ex.targetReps)
+        return LoadCluster(prefix: parts.prefix, value: parts.value,
+                           unit: parts.unit, tail: parts.reps, size: size)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(targetSummary(ex))
     }
 
     @ViewBuilder

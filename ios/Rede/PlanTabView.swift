@@ -63,9 +63,17 @@ struct PlanTabView: View {
                         // K5 累计事实行（cleanView.sessions 去重天数 + 首场日期派生；
                         // 单位=天——裁定 3；无历史不渲染）。
                         if let tenure {
-                            Text(s.planTenureLine(weeks: tenure.weeks, days: tenure.days))
-                                .font(.redeCaption).monospacedDigit()
-                                .foregroundStyle(Color.redeT4)
+                            // S5 排版基准：坚持了多久是用户在这一页最该看见的成就，
+                            // 原来是 11pt 灰字、和说明文字无异。升格成读数。
+                            StatStrip(columns: [
+                                StatColumn(label: s.planTenureColWeeks,
+                                           value: "\(tenure.weeks)", unit: s.planTenureUnitWeek),
+                                StatColumn(label: s.planTenureColDays,
+                                           value: "\(tenure.days)", unit: s.planTenureUnitDay),
+                            ], valueSize: 22)
+                            .padding(.top, 4)
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityLabel(s.planTenureLine(weeks: tenure.weeks, days: tenure.days))
                         }
                     }
                     .padding(.horizontal, RedeSpace.page)

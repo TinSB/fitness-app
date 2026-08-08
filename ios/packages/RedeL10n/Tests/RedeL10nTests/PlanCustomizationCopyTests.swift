@@ -82,7 +82,7 @@ final class PlanCustomizationCopyTests: XCTestCase {
         )
         XCTAssertEqual(
             en.planHeroHeadline(isCustomizedDaySequence: false, splitCode: "push-pull-legs", days: 5, goalCode: "strength"),
-            "Push / Pull / Legs, 5 days a week — built for strength",
+            "Push / Pull / Legs, 5 days a week, built for strength",
             "未自定义时保持原模板 hero"
         )
     }

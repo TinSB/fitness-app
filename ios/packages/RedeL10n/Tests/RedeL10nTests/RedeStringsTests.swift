@@ -70,9 +70,9 @@ final class RedeStringsTests: XCTestCase {
             ("appUpdateViewUpdate", s.appUpdateViewUpdate),
             ("appUpdateLater", s.appUpdateLater),
             ("appUpdateContinue", s.appUpdateContinue),
-            ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.9.4", build: "29")),
-            ("appUpdateHeroLine", s.appUpdateHeroLine(version: "1.9.4")),
-            ("appUpdateHighlights", s.appUpdateHighlights(version: "1.9.4").joined(separator: " ")),
+            ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.10.0", build: "30")),
+            ("appUpdateHeroLine", s.appUpdateHeroLine(version: "1.10.0")),
+            ("appUpdateHighlights", s.appUpdateHighlights(version: "1.10.0").joined(separator: " ")),
             // FR-SE9 / FR-SUB2：订阅管理与诚实状态
             ("settingsSubscriptionSection", s.settingsSubscriptionSection),
             ("settingsSubscriptionFreeCore", s.settingsSubscriptionFreeCore),
@@ -173,18 +173,18 @@ final class RedeStringsTests: XCTestCase {
     func testPlanAdjustmentIncreaseCopyIsExactNeutralAndUsesTrainingDays() {
         XCTAssertEqual(
             zh.planAdjustIncreaseBody(observed: 7, from: 3, to: 6),
-            "最近四周你每周练 7 天　计划是 3 天。把计划调到 6 天。"
+            "最近四周你每周练 7 天　计划是 3 天　把计划调到 6 天"
         )
         XCTAssertEqual(
             en.planAdjustIncreaseBody(observed: 7, from: 3, to: 6),
-            "Over the last four weeks, you trained 7 days a week. Your plan is 3 days. Adjust the plan to 6 days."
+            "Over the last four weeks, you trained 7 days a week. Your plan is 3 days. Adjust the plan to 6 days"
         )
         XCTAssertEqual(
             zh.planAdjustReduceBody(from: 4, to: 2),
-            "最近几周你的训练频率持续低于每周 4 天的计划。把目标调到每周 2 天会更贴合你现在的节奏——随时可以改回来。"
+            "最近几周你的训练频率持续低于每周 4 天的计划　把目标调到每周 2 天会更贴合你现在的节奏　随时可以改回来"
         )
         XCTAssertEqual(zh.planAdjustFromTo(from: 3, to: 5), "每周 3 天 → 每周 5 天")
-        XCTAssertEqual(zh.planAdjustActiveBody(to: 5), "现在每周目标 5 天。")
+        XCTAssertEqual(zh.planAdjustActiveBody(to: 5), "现在每周目标 5 天")
         XCTAssertEqual(en.planAdjustFromTo(from: 3, to: 5), "3 days/wk → 5 days/wk")
 
         for line in [
@@ -290,29 +290,29 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertEqual(zh.appUpdateAvailable(version: "1.9"), "1.9 可用")
         XCTAssertEqual(en.appUpdateAvailable(version: "1.9"), "1.9 Available")
         // 2026-07-20 owner「文案太不专业」重写：hero=版本主打句，亮点=具体名词句（基线 §5.5）。
-        // 2026-08-04 archive 1.9.4：内置叙事切到 1.9.4（训练现场编辑 + 存回计划 / 进阶闸门修复 /
-        // 换动作不丢组 / 升级反馈；只留当前发布版本，YAGNI）。
-        XCTAssertEqual(zh.appUpdateHeroLine(version: "1.9.4"), "今天怎么练，练的时候就能改")
-        XCTAssertEqual(en.appUpdateHeroLine(version: "1.9.4"), "Change today's workout as you go")
+        // 2026-08-08 archive 1.10.0：内置叙事切到 1.10.0（云端同步；只留当前发布版本，YAGNI）。
+        XCTAssertEqual(zh.appUpdateHeroLine(version: "1.10.0"), "换手机，训练记录跟着走")
+        XCTAssertEqual(en.appUpdateHeroLine(version: "1.10.0"), "Switch phones, your records follow")
         XCTAssertEqual(
-            zh.appUpdateHighlights(version: "1.9.4"),
+            zh.appUpdateHighlights(version: "1.10.0"),
             [
-                "训练中能加动作、去掉动作、改剩余组数；练完可以把这套改法存进这天的计划",
-                "小肌群动作不再长期卡住：4 组做成 20/18/16/15 这样的正常递减，下次就会加重",
-                "换动作时之前做过的组不会再丢，都会如实记进历史",
-                "练完升级会直接告诉你，等级变化和均衡改善都能做成卡片分享",
+                "新增云端同步：用 Apple 登录后，训练记录同时保留一份在云端，换手机或重装 App 时全部取回",
+                "同步页并排显示这台设备与云端的场数，两边不一致时直接告诉你差多少、为什么",
+                "不开启同步不影响任何功能，训练记录照常存在本机",
+                "可以随时退出登录或删除云端账号，这台设备上的记录都会保留",
             ]
         )
         XCTAssertEqual(
-            en.appUpdateHighlights(version: "1.9.4"),
+            en.appUpdateHighlights(version: "1.10.0"),
             [
-                "Add an exercise, drop one, or change remaining sets mid-workout — then save that shape into the day's plan",
-                "Small-muscle lifts no longer stall: sets like 20/18/16/15 now earn the next load",
-                "Swapping an exercise mid-workout keeps the sets you already logged",
-                "Level-ups appear as soon as you finish, and level or balance changes can be shared as a card",
+                "Cloud Sync: sign in with Apple and a copy of your training stays in the cloud, ready when you switch phones or reinstall",
+                "The sync page shows this device and the cloud side by side. When they differ it tells you by how much and why",
+                "Leaving sync off changes nothing else. Your records stay on this device either way",
+                "Sign out or delete the cloud account anytime. Records on this device stay",
             ]
         )
         // 旧版本叙事已按 YAGNI 移除
+        XCTAssertTrue(zh.appUpdateHighlights(version: "1.9.4").isEmpty)
         XCTAssertTrue(zh.appUpdateHighlights(version: "1.9.2").isEmpty)
         XCTAssertTrue(zh.appUpdateHighlights(version: "1.8").isEmpty)
         XCTAssertTrue(en.appUpdateHighlights(version: "2.0").isEmpty)
@@ -423,10 +423,10 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertEqual(en.weeklyCoachReviewEntryUnit(2), "entries")
         XCTAssertEqual(zh.weeklyCoachReviewLiftCallMetric(code: "calibrating"), "校准中")
         XCTAssertEqual(en.weeklyCoachReviewLiftCallMetric(code: "up"), "Moving Up")
-        XCTAssertEqual(zh.weeklyCoachReviewVerdictDisplayTitle(code: "progressing"), "关键动作，\n向上。")
-        XCTAssertEqual(en.weeklyCoachReviewVerdictDisplayTitle(code: "progressing"), "Key lift,\nmoving up.")
-        XCTAssertEqual(zh.weeklyCoachReviewVerdictDisplayTitle(code: "dataNeedsReview"), "先核对，\n再判断。")
-        XCTAssertEqual(en.weeklyCoachReviewVerdictDisplayTitle(code: "dataNeedsReview"), "Verify first.\nThen read the trend.")
+        XCTAssertEqual(zh.weeklyCoachReviewVerdictDisplayTitle(code: "progressing"), "关键动作，\n向上")
+        XCTAssertEqual(en.weeklyCoachReviewVerdictDisplayTitle(code: "progressing"), "Key lift,\nmoving up")
+        XCTAssertEqual(zh.weeklyCoachReviewVerdictDisplayTitle(code: "dataNeedsReview"), "先核对，\n再判断")
+        XCTAssertEqual(en.weeklyCoachReviewVerdictDisplayTitle(code: "dataNeedsReview"), "Verify first.\nThen read the trend")
         XCTAssertEqual(zh.weeklyCoachReviewEmptyTitle, "上周没有训练记录")
         XCTAssertEqual(en.weeklyCoachReviewEmptyTitle, "No workouts were recorded last week")
         XCTAssertEqual(zh.weeklyCoachReviewVerdictTitle(code: "calibrating"), "继续训练后再判断趋势")
@@ -485,6 +485,42 @@ final class RedeStringsTests: XCTestCase {
         ]
         for phrase in shortPhrases {
             XCTAssertFalse(phrase.hasSuffix("。") || phrase.hasSuffix("."), "短语不应收句号: \(phrase)")
+        }
+    }
+}
+
+// MARK: - targetParts 分段契约（2026-08-06 排版基准 S1）
+
+extension RedeStringsTests {
+    /// 分段拼回去必须与 targetLine 逐字一致——否则视图层排出来的数与无障碍念出来的数会分叉。
+    func testTargetPartsReassemblesToTargetLineForEveryLoadType() {
+        for locale in [RedeLocale.zh, .en] {
+            let s = RedeStrings(locale: locale)
+            for loadType in ["external", "bodyweight", "band", "assisted", "bodyweight-plus"] {
+                for (kg, reps) in [(37.5, 6), (0.0, 12), (100.0, 1)] {
+                    let parts = s.targetParts(loadType: loadType, weightKg: kg, reps: reps)
+                    let joined = [parts.prefix, parts.value, parts.unit, parts.reps]
+                        .compactMap { $0 }
+                        .joined(separator: " ")
+                    XCTAssertEqual(
+                        joined,
+                        s.targetLine(loadType: loadType, weightKg: kg, reps: reps),
+                        "loadType=\(loadType) locale=\(locale) kg=\(kg) reps=\(reps)")
+                }
+            }
+        }
+    }
+
+    /// 自重/弹力带无重量轴：value 与 unit 必须为空，否则视图会排出一个空的大字位。
+    func testTargetPartsHasNoWeightForBodyweightAndBand() {
+        for locale in [RedeLocale.zh, .en] {
+            let s = RedeStrings(locale: locale)
+            for loadType in ["bodyweight", "band"] {
+                let parts = s.targetParts(loadType: loadType, weightKg: 40, reps: 8)
+                XCTAssertNil(parts.value, "\(loadType) \(locale)")
+                XCTAssertNil(parts.unit, "\(loadType) \(locale)")
+                XCTAssertEqual(parts.reps, "× 8")
+            }
         }
     }
 }

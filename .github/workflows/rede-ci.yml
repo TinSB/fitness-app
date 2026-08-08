@@ -29,7 +29,7 @@ jobs:
           set -euo pipefail
           # Explicit test surface: a package silently vanishing must fail CI,
           # and a new package must be registered here before it counts as tested.
-          EXPECTED_PACKAGES="RedeDataHealth RedeDomain RedeEntitlements RedeHealthKit RedeL10n RedeLocalSnapshot RedeNotifications RedePersistence RedeTrainingDecision RedeWidgetShared"
+          EXPECTED_PACKAGES="RedeDataHealth RedeDomain RedeEntitlements RedeHealthKit RedeL10n RedeLocalSnapshot RedeNotifications RedePersistence RedeSync RedeSyncSupabase RedeTrainingDecision RedeWidgetShared"
           for name in $EXPECTED_PACKAGES; do
             echo "== swift test: ios/packages/$name =="
             (cd "ios/packages/$name" && swift test)
@@ -42,6 +42,59 @@ jobs:
               *) echo "::error::ios/packages/$name is not in EXPECTED_PACKAGES — register it in this workflow"; exit 1 ;;
             esac
           done
+
+      # 文案声音守卫（文案基线 §3.4/3.5）。与 .claude/quality-gate.cmd 的 check_voice 同源，
+      # 改一处必须同步另一处。规则此前只写在文档里靠人工翻，攒出十几处违规才被发现。
+      - name: Copy voice guard
+        shell: bash
+        run: |
+          set -uo pipefail
+          fail=0
+          check_voice() {
+            local label="$1" pattern="$2" hits
+            hits=$(grep -rnE "$pattern" ios/packages/RedeL10n/Sources/RedeL10n/*.swift 2>/dev/null \
+                   | grep -vE '^[^:]+:[0-9]+:[[:space:]]*//' || true)
+            if [ -n "$hits" ]; then
+              echo "::error::$label — 文案基线 §3.4"
+              echo "$hits"
+              fail=1
+            fi
+          }
+          check_voice "中文句号（全语态一律不收）" '"[^"]*。'
+          check_voice "中文破折号挂补语" '"[^"]*——'
+          check_voice "英文 em-dash 挂补语" '"[^"]* — '
+          check_voice "禁用词" '"[^"]*(您|为您|即可|贴心|全方位|开启旅程|释放潜能|打造专属)'
+          exit $fail
+
+      # 目录标签覆盖守卫。与 .claude/quality-gate.cmd 的 catalog label coverage 同源。
+      # detailLabel 对未知码兜底「回退原值」——漏映射不崩不报错，只在中文版露英文码。
+      - name: Catalog label coverage
+        shell: bash
+        run: |
+          python3 - <<'PYEOF'
+          import json, re, sys, pathlib
+          cat = json.loads(pathlib.Path("ios/packages/RedeTrainingDecision/Sources/RedeTrainingDecision/Resources/exercises.json").read_text())
+          items = cat if isinstance(cat, list) else (cat.get("exercises") or [])
+          src = pathlib.Path("ios/packages/RedeL10n/Sources/RedeL10n/ExerciseDetailCopy.swift").read_text()
+          def mapped(name):
+              m = re.search(r"static let " + name + r".*?\[(.*?)\n    \]", src, re.S)
+              return set(re.findall(r'"([a-zA-Z0-9-]+)":', m.group(1))) if m else set()
+          checks = [
+              ("primaryMuscle",    lambda e: [e.get("primaryMuscle")],        "muscleLabels"),
+              ("secondaryMuscles", lambda e: e.get("secondaryMuscles") or [], "muscleLabels"),
+              ("equipment",        lambda e: [e.get("equipment")],            "equipmentLabels"),
+              ("kind",             lambda e: [e.get("kind")],                 "kindLabels"),
+              ("movementPattern",  lambda e: [e.get("movementPattern")],      "patternLabels"),
+          ]
+          bad = False
+          for field, get, mapname in checks:
+              used = {c for e in items if isinstance(e, dict) for c in get(e) if c}
+              miss = used - mapped(mapname)
+              if miss:
+                  bad = True
+                  print(f"::error::{field} 有码在 {mapname} 缺条目，中文版会露英文: {' '.join(sorted(miss))}")
+          sys.exit(1 if bad else 0)
+          PYEOF
 
       - name: Build iOS app
         run: |

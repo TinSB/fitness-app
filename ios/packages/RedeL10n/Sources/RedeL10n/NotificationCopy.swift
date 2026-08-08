@@ -17,8 +17,8 @@ extension RedeStrings {
     // 开关说明副文已移除（owner 2026-06-20：开关标题自解释，副文太重）。
     /// 系统层拒绝授权时的诚实引导（不能代开，指向 iOS 设置）。
     public var notificationPermissionDeniedHint: String {
-        t2n("通知已在系统里关闭　到 iOS「设置」开启后再用。",
-            "Notifications are off in iOS Settings — turn them on there to use this.")
+        t2n("通知已在系统里关闭　到 iOS「设置」开启后再用",
+            "Notifications are off in iOS Settings. Turn them on there to use this")
     }
 
     // MARK: FR-NT2 每周训练提醒（中性、价值先行；§7.3 禁断签/羞辱/streak 施压）
@@ -32,8 +32,8 @@ extension RedeStrings {
     }
     public func notificationWeeklyBody(messageCode: String) -> String {
         switch messageCode {
-        case "weekly_new_week": return t2n("安排一下本周训练。", "A good time to plan this week's training.")
-        case "weekly_keep_pace": return t2n("本周还有训练日，方便时练一次。", "Still time for a session this week.")
+        case "weekly_new_week": return t2n("安排一下本周训练", "A good time to plan this week's training")
+        case "weekly_keep_pace": return t2n("本周还有训练日　方便时练一次", "Still time for a session this week")
         default: return ""
         }
     }
@@ -66,14 +66,14 @@ extension RedeStrings {
     public func comebackBody(code: String) -> String {
         switch code {
         case "comeback_5d":
-            return t2n("距上次训练已有 5 天，重量沿用上次即可。",
-                       "It's been 5 days since your last session. Pick up right where you left off.")
+            return t2n("距上次训练已有 5 天　重量沿用上次就好",
+                       "It's been 5 days since your last session. Pick up right where you left off")
         case "comeback_12d":
-            return t2n("距上次训练已有近两周。你的计划保持不变，随时可以继续。",
-                       "It's been about two weeks. Your plan hasn't changed — continue anytime.")
+            return t2n("距上次训练已有近两周　你的计划保持不变　随时可以继续",
+                       "It's been about two weeks. Your plan hasn't changed. Continue anytime")
         default:   // comeback_21d
-            return t2n("训练循环已重置，首场训练将从较轻的重量开始。",
-                       "Your cycle has been reset. Your first session back will start light.")
+            return t2n("训练循环已重置　首场训练将从较轻的重量开始",
+                       "Your cycle has been reset. Your first session back will start light")
         }
     }
 }

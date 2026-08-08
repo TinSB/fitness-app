@@ -1,6 +1,5 @@
 // swift-tools-version: 5.9
 // M1-2 本地 JSON store + gated writer — canonical AppData 的唯一写路径。
-// Local-only Swift Package。No remote dependencies. No third-party SwiftPM.
 
 import PackageDescription
 

@@ -29,7 +29,7 @@ final class OnboardingCopyTests: XCTestCase {
         )
         XCTAssertEqual(
             en.onbVerdict(splitCode: "push-pull-legs", days: 5, goalCode: "strength"),
-            "Push / Pull / Legs, 5 days a week — built for strength"
+            "Push / Pull / Legs, 5 days a week, built for strength"
         )
         XCTAssertEqual(zh.onbSplitName("upper-lower"), "上下分化")
         XCTAssertEqual(en.onbSplitName("push-pull-legs"), "Push / Pull / Legs")

@@ -122,7 +122,7 @@ extension RedeStrings {
         }
         return locale == .zh
             ? "\(split)，每周 \(days) 天　\(goal)"
-            : "\(split), \(days) days a week — \(goal)"
+            : "\(split), \(days) days a week, \(goal)"
     }
 
     public var onbFirstSession: String { locale == .zh ? "首次训练" : "First session" }
@@ -137,7 +137,7 @@ extension RedeStrings {
         default:
             // FR-EQ1（2026-06-11）：目录暂无自重条目，回声只承诺引擎兑现的事——
             // 「一对哑铃就够」；自重覆盖归目录扩充（§6.3）
-            return locale == .zh ? "按少量负重编排　一对哑铃即可" : "Built around a pair of dumbbells"
+            return locale == .zh ? "按少量负重编排　一对哑铃就够" : "Built around a pair of dumbbells"
         }
     }
 
