@@ -228,7 +228,9 @@ struct SyncSheet: View {
         let report = service.lastReport
         let status: SyncGauge.Status = {
             if service.isSyncing { return .fetching }
-            if service.errorText != nil { return .offline }
+            // 只有真的网络不可达才用「连不上」那套图标与文案；服务端拒绝
+            // （4xx/5xx）走 .unclean，否则会让用户去查 WiFi 而问题在别处。
+            if service.errorText != nil { return service.isOffline ? .offline : .unclean }
             if let report {
                 if report.blockedByNewerSchema > 0 { return .behind }
                 if report.rejectedUncleanCount > 0 { return .unclean }
@@ -307,6 +309,10 @@ struct SyncSheet: View {
                 let n = service.lastReport?.blockedByNewerSchema ?? 0
                 return ("\(s.syncShortBy(n))　\(s.syncReasonNewerVersion)", .redeCaution)
             case .unclean:
+                // 同一图标下两种来源：远端脏记录（有 report）与服务端拒绝（有 errorText）。
+                if service.errorText != nil, service.lastReport?.rejectedUncleanCount ?? 0 == 0 {
+                    return (s.syncReasonRejected, .redeRisk)
+                }
                 let n = service.lastReport?.rejectedUncleanCount ?? 0
                 return ("\(s.syncShortBy(n))　\(s.syncReasonUnclean)", .redeRisk)
             case .matched:
@@ -324,7 +330,9 @@ struct SyncSheet: View {
     private func statusDetail(_ service: SyncService, status: SyncGauge.Status) -> String? {
         switch status {
         case .behind:   return s.syncBlockedDetail(service.lastReport?.blockedByNewerSchema ?? 0)
-        case .unclean:  return s.syncUncleanDetail
+        case .unclean:
+            return service.errorText != nil && service.lastReport?.rejectedUncleanCount ?? 0 == 0
+                ? s.syncRejectedDetail : s.syncUncleanDetail
         case .offline:  return s.syncOfflineDetail
         case .fetching: return s.syncFirstFetchNote
         case .matched:  return nil

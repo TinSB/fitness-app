@@ -127,6 +127,13 @@ final class SyncService {
     private(set) var lastSyncedAt: Date?
     /// 同步失败的如实呈现；nil = 无错误。与训练/设置错误面隔离。
     private(set) var errorText: String?
+    /// 失败是否属于「网络不可达」。
+    ///
+    /// 真机实证（TestFlight 1.10.0）：服务端返回 HTTP 400 时界面显示的是
+    /// 「连不上云端　恢复网络后自动重试」——把后端拒绝说成网络问题，用户会去
+    /// 检查 WiFi，而实际上网络好得很、等多久也不会自己好。错误分类必须跟着
+    /// 真实原因走。
+    private(set) var isOffline = false
     /// 云端与本机的记录数，供双端对照使用。云端数未知时为 nil（连不上就是不知道，
     /// 不能拿上次的数字冒充现在）。
     private(set) var localSessionCount = 0
@@ -186,6 +193,7 @@ final class SyncService {
             await syncNow()
         } catch {
             errorText = Self.describe(error)
+            isOffline = Self.isNetworkFailure(error)
         }
     }
 
@@ -194,6 +202,7 @@ final class SyncService {
         isSyncing = true
         defer { isSyncing = false }
         errorText = nil
+        isOffline = false
 
         let coordinator = SyncCoordinator(
             transport: transport,
@@ -218,6 +227,7 @@ final class SyncService {
             remoteSessionCount = localSessionCount + report.blockedByNewerSchema + report.rejectedUncleanCount
         } catch {
             errorText = Self.describe(error)
+            isOffline = Self.isNetworkFailure(error)
             // 失败时把云端数清成未知。留着上一次的数字会让对照器显示一个
             // 早已过期的「一致」——连不上就是不知道，不能拿旧数冒充现在。
             remoteSessionCount = nil
@@ -245,7 +255,16 @@ final class SyncService {
             return true
         } catch {
             errorText = Self.describe(error)
+            isOffline = Self.isNetworkFailure(error)
             return false
+        }
+    }
+
+    /// 是否为网络不可达。只有它才配「恢复网络后自动重试」那句话。
+    static func isNetworkFailure(_ error: Error) -> Bool {
+        switch error {
+        case SyncTransportError.offline, SupabaseAuthError.offline: return true
+        default: return false
         }
     }
 

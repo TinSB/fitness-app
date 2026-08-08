@@ -364,6 +364,13 @@ public struct RedeStrings: Sendable {
     }
     public var syncReasonUnclean: String { t("云端有记录读不出", "Some cloud records can't be read") }
     public var syncReasonOffline: String { t("连不上云端", "Can't reach the cloud") }
+    /// 服务端拒绝（4xx/5xx）。与「连不上」严格分开——真机实证把 HTTP 400 说成
+    /// 网络问题会让用户去查 WiFi，而那边等多久也不会自己好。
+    public var syncReasonRejected: String { t("云端拒绝了这次同步", "The cloud refused this sync") }
+    public var syncRejectedDetail: String {
+        t("本机训练记录不受影响　这不是网络问题　重试仍失败请把这条错误发给我们",
+          "Records on this device are unaffected. This isn't a network problem. If retrying keeps failing, send us this error")
+    }
 
     // 状态解释（脚注位）
     public func syncBlockedDetail(_ n: Int) -> String {

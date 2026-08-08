@@ -143,12 +143,34 @@ public struct SupabaseSyncTransport: SyncTransport {
         return uid
     }
 
+    /// query 值的编码字符集：在标准 urlQueryAllowed 基础上**移掉 `+`**。
+    ///
+    /// 真机实证（2026-08-08 TestFlight，1.10.0 首个 build）：Postgres 的 timestamptz
+    /// 序列化成 `2026-08-08T21:50:15.952823+00:00`，而 `URLComponents.queryItems`
+    /// **不会**编码 `+`（它在 query 里是合法字符）。服务端按表单规则把 `+` 解成空格，
+    /// 时间戳变成 `...952823 00:00` → `HTTP 400 invalid input syntax for type
+    /// timestamp with time zone`。首次同步 cursor 为 nil、不带该条件所以能成功，
+    /// 之后每次必失败——「第一次成功后面全挂」正是这个形状。
+    ///
+    /// 逗号与括号保留不编码：PostgREST 的 `or=(a.gt.x,and(...))` 语法要用到它们。
+    private static let queryValueAllowed: CharacterSet = {
+        var set = CharacterSet.urlQueryAllowed
+        set.remove(charactersIn: "+&=?#")
+        return set
+    }()
+
     private func get(path: String, query: [URLQueryItem]) async throws -> Data {
         var components = URLComponents(
             url: projectURL.appendingPathComponent(path),
             resolvingAgainstBaseURL: false
         )
-        components?.queryItems = query
+        // 自己控制百分号编码——交给 queryItems 会漏掉 `+`（见上）。
+        components?.percentEncodedQueryItems = query.map { item in
+            URLQueryItem(
+                name: item.name,
+                value: item.value?.addingPercentEncoding(withAllowedCharacters: Self.queryValueAllowed)
+            )
+        }
         guard let url = components?.url else {
             throw SyncTransportError.malformedResponse(message: "bad url for \(path)")
         }
