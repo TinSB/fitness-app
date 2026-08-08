@@ -70,9 +70,9 @@ final class RedeStringsTests: XCTestCase {
             ("appUpdateViewUpdate", s.appUpdateViewUpdate),
             ("appUpdateLater", s.appUpdateLater),
             ("appUpdateContinue", s.appUpdateContinue),
-            ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.10.0", build: "30")),
-            ("appUpdateHeroLine", s.appUpdateHeroLine(version: "1.10.0")),
-            ("appUpdateHighlights", s.appUpdateHighlights(version: "1.10.0").joined(separator: " ")),
+            ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.10.1", build: "31")),
+            ("appUpdateHeroLine", s.appUpdateHeroLine(version: "1.10.1")),
+            ("appUpdateHighlights", s.appUpdateHighlights(version: "1.10.1").joined(separator: " ")),
             // FR-SE9 / FR-SUB2：订阅管理与诚实状态
             ("settingsSubscriptionSection", s.settingsSubscriptionSection),
             ("settingsSubscriptionFreeCore", s.settingsSubscriptionFreeCore),
@@ -291,28 +291,30 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertEqual(en.appUpdateAvailable(version: "1.9"), "1.9 Available")
         // 2026-07-20 owner「文案太不专业」重写：hero=版本主打句，亮点=具体名词句（基线 §5.5）。
         // 2026-08-08 archive 1.10.0：内置叙事切到 1.10.0（云端同步；只留当前发布版本，YAGNI）。
-        XCTAssertEqual(zh.appUpdateHeroLine(version: "1.10.0"), "换手机，训练记录跟着走")
-        XCTAssertEqual(en.appUpdateHeroLine(version: "1.10.0"), "Switch phones, your records follow")
+        XCTAssertEqual(zh.appUpdateHeroLine(version: "1.10.1"), "换手机，训练记录跟着走")
+        XCTAssertEqual(en.appUpdateHeroLine(version: "1.10.1"), "Switch phones, your records follow")
         XCTAssertEqual(
-            zh.appUpdateHighlights(version: "1.10.0"),
+            zh.appUpdateHighlights(version: "1.10.1"),
             [
                 "新增云端同步：用 Apple 登录后，训练记录同时保留一份在云端，换手机或重装 App 时全部取回",
                 "同步页并排显示这台设备与云端的场数，两边不一致时直接告诉你差多少、为什么",
                 "不开启同步不影响任何功能，训练记录照常存在本机",
                 "可以随时退出登录或删除云端账号，这台设备上的记录都会保留",
+                "修复首次之后每次同步都失败的问题",
             ]
         )
         XCTAssertEqual(
-            en.appUpdateHighlights(version: "1.10.0"),
+            en.appUpdateHighlights(version: "1.10.1"),
             [
                 "Cloud Sync: sign in with Apple and a copy of your training stays in the cloud, ready when you switch phones or reinstall",
                 "The sync page shows this device and the cloud side by side. When they differ it tells you by how much and why",
                 "Leaving sync off changes nothing else. Your records stay on this device either way",
                 "Sign out or delete the cloud account anytime. Records on this device stay",
+                "Fixed syncing failing on every attempt after the first",
             ]
         )
         // 旧版本叙事已按 YAGNI 移除
-        XCTAssertTrue(zh.appUpdateHighlights(version: "1.9.4").isEmpty)
+        XCTAssertTrue(zh.appUpdateHighlights(version: "1.10.0").isEmpty)
         XCTAssertTrue(zh.appUpdateHighlights(version: "1.9.2").isEmpty)
         XCTAssertTrue(zh.appUpdateHighlights(version: "1.8").isEmpty)
         XCTAssertTrue(en.appUpdateHighlights(version: "2.0").isEmpty)

@@ -111,6 +111,33 @@ final class SupabaseSyncTransportTests: XCTestCase {
         )
     }
 
+    /// 真机回归（TestFlight 1.10.0 首个 build 必现）：Postgres 的 timestamptz 带 `+00:00`
+    /// 时区偏移，而 `URLComponents.queryItems` 不编码 `+`；服务端按表单规则把它解成空格，
+    /// 时间戳变成 `...952823 00:00` → HTTP 400。首次同步 cursor 为 nil 不带该条件所以能成，
+    /// 之后每次必挂——「第一次成功后面全失败」就是这个形状。
+    ///
+    /// 上一版测试断言的是**解码后**的 query，把这个 bug 整个跳过了。这里断言原始
+    /// `url.absoluteString`，`+` 必须已是 `%2B`。
+    func testTimestampPlusSignIsPercentEncodedInCursor() async throws {
+        let ts = "2026-08-08T21:50:15.952823+00:00"
+        let http = StubHTTP(json: "[]")
+        let transport = SupabaseSyncTransport(
+            projectURL: projectURL, apiKey: apiKey, http: http,
+            auth: makeAuth(http: http), pageSize: 100
+        )
+
+        _ = try await transport.fetchSessions(
+            since: SupabaseSyncTransport.encodeCursor(updatedAt: ts, sessionId: "session-3")
+        )
+
+        let raw = try XCTUnwrap(http.sent.first?.url.absoluteString)
+        // 只有 `+` 必须编码；冒号在 query 里合法，PostgREST 也照常解析，不强求 %3A。
+        XCTAssertTrue(raw.contains("%2B00:00"), "时区偏移的 + 必须编码成 %2B，否则服务端读成空格：\(raw)")
+        XCTAssertFalse(raw.contains("952823+00"), "原始 + 不得出现在 query 里：\(raw)")
+        // 语法字符仍须保持可用，否则 PostgREST 的 or 条件解析不了。
+        XCTAssertTrue(raw.contains("or=") && raw.contains("and("), "or/and 语法被过度编码：\(raw)")
+    }
+
     func testShortPageReportsNoMore() async throws {
         let http = StubHTTP(json: "[\(rowJSON(sessionId: "session-1", updatedAt: "2026-08-07T10:00:00Z"))]")
         let transport = SupabaseSyncTransport(
