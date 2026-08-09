@@ -22,6 +22,13 @@ public protocol SyncLocalStore: Sendable {
     func applyMerged(_ storage: [String: JSONValue]) async throws
     func loadCursor() async -> String?
     func saveCursor(_ cursor: String?) async
+    /// 已确认上传成功的 sessionId。
+    ///
+    /// 必须持久化，不能靠「本地有而本次拉取没返回」来推断：拉取是**增量**的，
+    /// 游标推进之后每次只回来新记录，那种推断会把整部本地历史算成待上传，
+    /// 于是每次同步重传全量（upsert 幂等所以数据不错，但白烧带宽与配额）。
+    func loadUploadedSessionIds() async -> Set<String>
+    func markSessionsUploaded(_ ids: [String]) async
     /// 本地配置最后修改时刻，ISO8601 UTC。
     func configUpdatedAtIso() async -> String
     func markConfigUploaded(at iso: String) async
@@ -71,12 +78,14 @@ public actor SyncCoordinator {
     /// 分页由 transport 决定；这里只防御性地限制循环轮数，避免后端游标实现有 bug
     /// 时无限拉取。
     private let maxPages: Int
+    private let uploadBatchSize: Int
 
     public init(
         transport: SyncTransport,
         localStore: SyncLocalStore,
         deviceId: String,
         maxPages: Int = 50,
+        uploadBatchSize: Int = 20,
         isSessionAcceptable: (@Sendable ([String: JSONValue]) -> Bool)? = nil,
         now: @escaping @Sendable () -> String
     ) {
@@ -84,6 +93,7 @@ public actor SyncCoordinator {
         self.localStore = localStore
         self.deviceId = deviceId
         self.maxPages = maxPages
+        self.uploadBatchSize = max(1, uploadBatchSize)
         self.isSessionAcceptable = isSessionAcceptable
         self.now = now
     }
@@ -110,6 +120,7 @@ public actor SyncCoordinator {
 
         // ── 合并 ──────────────────────────────────────────────────────────
         let localConfigUpdatedAt = await localStore.configUpdatedAtIso()
+        let alreadyUploaded = await localStore.loadUploadedSessionIds()
         let outcome = SyncMergeEngine.merge(
             localStorage: localStorage,
             localSchemaVersion: schemaVersion,
@@ -117,7 +128,8 @@ public actor SyncCoordinator {
             remoteConfig: remoteConfig,
             localConfigUpdatedAtIso: localConfigUpdatedAt,
             localDeviceId: deviceId,
-            isSessionAcceptable: isSessionAcceptable
+            isSessionAcceptable: isSessionAcceptable,
+            alreadyUploadedIds: alreadyUploaded
         )
 
         // ── 写回 ──────────────────────────────────────────────────────────
@@ -128,6 +140,11 @@ public actor SyncCoordinator {
         }
         // 游标只在写回成功后推进。否则一次写盘失败会让这批记录被永久跳过。
         await localStore.saveCursor(latestCursor)
+        // 本次拉到的记录云端已有，登记为已上传——否则下一轮增量拉不到它们时
+        // 会被重新算成待上传。
+        if !remoteSessions.isEmpty {
+            await localStore.markSessionsUploaded(remoteSessions.map(\.sessionId))
+        }
 
         // ── 上传 ──────────────────────────────────────────────────────────
         let timestamp = now()
@@ -151,9 +168,16 @@ public actor SyncCoordinator {
                     deviceId: deviceId
                 )
             }
-            if !records.isEmpty {
-                try await transport.uploadSessions(records)
-                uploaded = records.count
+            // 分批上传。实测单场训练记录约 39 KB（不是早期估算的 4 KB——那个数字
+            // 来自只含顶层字段的样本，真实记录带 exercises/sets/warmup/explanations
+            // 几层嵌套）。首次登录要推上百场，一次性 POST 会是几 MB，移动网络下
+            // 极易超时，而那正是用户最需要它成功的时刻。
+            //
+            // 每批成功即记账：中途失败时已传的批次不会重来，下一轮只补剩下的。
+            for chunk in records.chunked(into: uploadBatchSize) {
+                try await transport.uploadSessions(chunk)
+                uploaded += chunk.count
+                await localStore.markSessionsUploaded(chunk.map(\.sessionId))
             }
         }
 

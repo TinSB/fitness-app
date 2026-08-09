@@ -39,6 +39,8 @@ struct AppSyncLocalStore: SyncLocalStore {
     let writeMerged: @Sendable ([String: JSONValue]) async -> Bool
 
     private var cursorKey: String { "sync.cursor" }
+    private var ownerKey: String { "sync.ownerUserId" }
+    private var uploadedKey: String { "sync.uploadedSessionIds" }
     private var configUploadedKey: String { "sync.configUploadedAt" }
     private var configTouchedKey: String { "sync.configTouchedAt" }
 
@@ -80,6 +82,25 @@ struct AppSyncLocalStore: SyncLocalStore {
         defaults.set(iso, forKey: configUploadedKey)
         defaults.set(iso, forKey: configTouchedKey)
     }
+
+    func loadUploadedSessionIds() async -> Set<String> {
+        Set(defaults.stringArray(forKey: uploadedKey) ?? [])
+    }
+
+    func markSessionsUploaded(_ ids: [String]) async {
+        var all = Set(defaults.stringArray(forKey: uploadedKey) ?? [])
+        all.formUnion(ids)
+        defaults.set(Array(all), forKey: uploadedKey)
+    }
+
+    /// 清空已上传集合。换账号或删号后必须清——那份记录是「在上一个云端已存在」，
+    /// 换了账号就不再成立，不清会让本机历史永远传不上新账号。
+    func clearUploadedSessionIds() { defaults.removeObject(forKey: uploadedKey) }
+
+    /// 本机 canonical 归属的账号；nil = 从未同步过（首次登录，任何账号都可认领）。
+    func loadOwner() -> String? { defaults.string(forKey: ownerKey) }
+    func saveOwner(_ userId: String) { defaults.set(userId, forKey: ownerKey) }
+    func clearOwner() { defaults.removeObject(forKey: ownerKey) }
 }
 
 enum SyncLocalStoreError: Error {
@@ -134,6 +155,13 @@ final class SyncService {
     /// 检查 WiFi，而实际上网络好得很、等多久也不会自己好。错误分类必须跟着
     /// 真实原因走。
     private(set) var isOffline = false
+    /// 本机记录归属的账号与当前登录账号不一致。
+    ///
+    /// 归档纪律「owner mismatch 必须 fail-closed」。场景：设备上有账号 A 的训练记录，
+    /// 登出（按不变量不删本地）后登录账号 B——若照常同步，A 的全部训练会被推进 B 的
+    /// 云端。这不是合并冲突，是**把一个人的健康数据灌进另一个人的账号**，必须拒绝
+    /// 而不是想办法合并。
+    private(set) var ownerMismatch = false
     /// 云端与本机的记录数，供双端对照使用。云端数未知时为 nil（连不上就是不知道，
     /// 不能拿上次的数字冒充现在）。
     private(set) var localSessionCount = 0
@@ -190,15 +218,38 @@ final class SyncService {
         do {
             _ = try await auth.signInWithApple(identityToken: identityToken, rawNonce: rawNonce)
             isSignedIn = true
-            await syncNow()
+            // force：登录是明确的用户动作。登出不清 lastSyncedAt，60 秒内重新登录
+            // 会被自动同步的节流挡掉，用户刚登录却看到旧状态。
+            await syncNow(force: true)
         } catch {
             errorText = Self.describe(error)
             isOffline = Self.isNetworkFailure(error)
         }
     }
 
-    func syncNow() async {
+    /// 自动同步的最小间隔。
+    ///
+    /// 进 App 的触发挂在 scenePhase 变 active 上，而用户切出去看一眼消息再切回来
+    /// 就是一次 active——不节流的话短时间内会反复打满整轮同步（拉取 + 配置 + 上传）。
+    /// 手动点「立即同步」走 force，无视节流：那是用户明确要求，不该被静默吞掉。
+    private static let autoSyncMinInterval: TimeInterval = 60
+
+    func syncNow(force: Bool = false) async {
         guard !isSyncing, isSignedIn else { return }
+        if !force, let last = lastSyncedAt, Date().timeIntervalSince(last) < Self.autoSyncMinInterval {
+            return
+        }
+        // owner 闸：本机数据属于别的账号时一步都不能走——上传会把上一个人的训练
+        // 灌进当前账号，下拉会把两个人的记录混进同一个本地文件。
+        guard let uid = await auth.userId else { return }
+        if let owner = localStore.loadOwner(), owner != uid {
+            ownerMismatch = true
+            errorText = nil
+            remoteSessionCount = nil
+            return
+        }
+        ownerMismatch = false
+
         isSyncing = true
         defer { isSyncing = false }
         errorText = nil
@@ -225,12 +276,16 @@ final class SyncService {
             // rejected（记录损坏）都是**在云端存在但没进本地**的，所以加回去。
             // 这是推算不是查询，但它只在同步成功后成立，且每一项都有来源，不是编的。
             remoteSessionCount = localSessionCount + report.blockedByNewerSchema + report.rejectedUncleanCount
+            localStore.saveOwner(uid)   // 认领：本机数据自此归这个账号
         } catch {
             errorText = Self.describe(error)
             isOffline = Self.isNetworkFailure(error)
             // 失败时把云端数清成未知。留着上一次的数字会让对照器显示一个
             // 早已过期的「一致」——连不上就是不知道，不能拿旧数冒充现在。
             remoteSessionCount = nil
+            // 登录已失效时 auth 那边已清掉会话，界面必须跟着回到未登录态。
+            // 否则同步页停在「已开启」，用户反复点重试而没有任何登录入口。
+            if Self.isAuthFailure(error) { isSignedIn = await auth.isSignedIn }
         }
     }
 
@@ -241,6 +296,7 @@ final class SyncService {
         lastReport = nil
         remoteSessionCount = nil
         await localStore.saveCursor(nil)
+        localStore.clearUploadedSessionIds()
     }
 
     /// 删除云端账号。本机记录保留 —— 与登出同样的不变量。
@@ -251,12 +307,23 @@ final class SyncService {
             isSignedIn = false
             lastReport = nil
             remoteSessionCount = nil
+            ownerMismatch = false
             await localStore.saveCursor(nil)
+            localStore.clearOwner()
+            localStore.clearUploadedSessionIds()
             return true
         } catch {
             errorText = Self.describe(error)
             isOffline = Self.isNetworkFailure(error)
             return false
+        }
+    }
+
+    /// 登录是否已失效。真时界面要回到未登录态，把「通过 Apple 登录」还给用户。
+    static func isAuthFailure(_ error: Error) -> Bool {
+        switch error {
+        case SyncTransportError.notAuthenticated, SupabaseAuthError.notSignedIn: return true
+        default: return false
         }
     }
 

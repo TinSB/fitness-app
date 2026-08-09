@@ -33,9 +33,13 @@ public enum SyncRedaction {
 
 /// 一条远端训练记录。对应 canonical `history` 里的一个 TrainingSession。
 ///
-/// 切分理由（实测）：history 占 canonical 体量的 99.8%（单场 4.2 KB），且是唯一
-/// append-only、带稳定 id 的区域——天然适合记录级同步，合并退化成 id 并集，
-/// 不需要 CRDT。
+/// 切分理由（实测）：history 占 canonical 体量的绝大部分，且是唯一 append-only、
+/// 带稳定 id 的区域——天然适合记录级同步，合并退化成 id 并集，不需要 CRDT。
+///
+/// 体积更正（2026-08-08 实测 fixture）：**单场约 39 KB**，不是早期估算的 4.2 KB——
+/// 那个数字来自只含顶层字段的样本，真实记录带 exercises/sets/warmup/explanations
+/// 几层嵌套。上传因此必须分批（见 SyncCoordinator.uploadBatchSize）：上百场一次性
+/// POST 是几 MB，移动网络下极易超时。
 public struct RemoteSessionRecord: Equatable, Sendable {
     /// TrainingSession.id，形如 `session-<UUID>`。远端主键的一部分。
     public let sessionId: String
@@ -132,5 +136,16 @@ public struct SyncMergeOutcome: Equatable, Sendable {
         self.blockedByNewerSchema = blockedByNewerSchema
         self.rejectedUncleanCount = rejectedUncleanCount
         self.didChangeLocal = didChangeLocal
+    }
+}
+
+
+extension Array {
+    /// 定长切块。标准库没有，而同步需要它把上传拆成可独立成功的批次。
+    func chunked(into size: Int) -> [[Element]] {
+        guard size > 0 else { return isEmpty ? [] : [self] }
+        return stride(from: 0, to: count, by: size).map {
+            Array(self[$0..<Swift.min($0 + size, count)])
+        }
     }
 }

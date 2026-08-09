@@ -227,6 +227,7 @@ struct SyncSheet: View {
     private func signedInBody(_ service: SyncService) -> some View {
         let report = service.lastReport
         let status: SyncGauge.Status = {
+            if service.ownerMismatch { return .unclean }
             if service.isSyncing { return .fetching }
             // 只有真的网络不可达才用「连不上」那套图标与文案；服务端拒绝
             // （4xx/5xx）走 .unclean，否则会让用户去查 WiFi 而问题在别处。
@@ -272,7 +273,7 @@ struct SyncSheet: View {
             actionRow(title: s.syncAccount, systemImage: "person.circle", tint: .redeT2, trailing: s.syncAccountApple)
             Rectangle().fill(Color.redeHair2).frame(height: 1)
             actionRow(title: s.syncNow, systemImage: "arrow.trianglehead.clockwise", tint: .redeT2) {
-                Task { await service.syncNow() }
+                Task { await service.syncNow(force: true) }
             }
             .disabled(service.isSyncing)
 
@@ -309,6 +310,7 @@ struct SyncSheet: View {
                 let n = service.lastReport?.blockedByNewerSchema ?? 0
                 return ("\(s.syncShortBy(n))　\(s.syncReasonNewerVersion)", .redeCaution)
             case .unclean:
+                if service.ownerMismatch { return (s.syncReasonOwnerMismatch, .redeRisk) }
                 // 同一图标下两种来源：远端脏记录（有 report）与服务端拒绝（有 errorText）。
                 if service.errorText != nil, service.lastReport?.rejectedUncleanCount ?? 0 == 0 {
                     return (s.syncReasonRejected, .redeRisk)
@@ -331,6 +333,7 @@ struct SyncSheet: View {
         switch status {
         case .behind:   return s.syncBlockedDetail(service.lastReport?.blockedByNewerSchema ?? 0)
         case .unclean:
+            if service.ownerMismatch { return s.syncOwnerMismatchDetail }
             return service.errorText != nil && service.lastReport?.rejectedUncleanCount ?? 0 == 0
                 ? s.syncRejectedDetail : s.syncUncleanDetail
         case .offline:  return s.syncOfflineDetail
@@ -391,7 +394,10 @@ struct SyncSheet: View {
                 .font(.system(size: 15.5, weight: .semibold))
                 .foregroundStyle(Color.redeT1)
                 .padding(.bottom, 8)
-            Text(s.syncDeleteBody(count: service.remoteSessionCount ?? service.localSessionCount, word: word))
+            Text(
+                service.remoteSessionCount.map { s.syncDeleteBody(count: $0, word: word) }
+                    ?? s.syncDeleteBodyUnknownCount(word: word)
+            )
                 .font(.system(size: 12))
                 .foregroundStyle(Color.redeT3)
                 .lineSpacing(3)
