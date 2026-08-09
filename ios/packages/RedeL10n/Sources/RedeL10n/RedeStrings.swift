@@ -202,6 +202,10 @@ public struct RedeStrings: Sendable {
     public var settingsLanguage: String { t("语言", "Language") }
     public var settingsDone: String { t("完成", "Done") }
     public var settingsUnit: String { t("单位", "Units") }
+    /// 分组头（2026-08-09 IA 重排）：单位/语言只改数字与文字怎么写，不改任何行为，
+    /// 所以从原来的第一位降到「显示」组。分组名与同层的 训练背景/训练周期/通知/数据/方案/关于
+    /// 一样是朴素名词——不用「你的显示」这类第二人称，避免同层命名风格分叉。
+    public var settingsDisplayOverline: String { t("显示", "Display") }
     public var settingsBackground: String { t("训练背景", "Training background") }
     public var settingsBodyConditionLabel: String { t("身体状况", "Body areas") }
     public var settingsBodyConditionNote: String {
@@ -306,7 +310,11 @@ public struct RedeStrings: Sendable {
         t("训练记录默认保存在这台设备本机　开启云端同步后同时保留一份在云端　订阅购买由 Apple 处理　Rede 不含第三方统计组件　删除 App 会同时删除本机训练数据",
           "Training records live on this device by default. Turning on Cloud Sync also keeps a copy in the cloud. Apple handles subscription purchases. Rede has no third-party analytics. Deleting the app also deletes its local training data")
     }
+    /// 2026-08-09 IA 重排后这个 key 升为「关于」**分组头**（原本是组内一行）。
+    /// 组内展开免责正文的那一行改用 settingsDisclaimerTitle，避免组名与行名同字。
     public var settingsAbout: String { t("关于", "About") }
+    /// 免责行标题（原来叫「关于」，与分组头同名）。
+    public var settingsDisclaimerTitle: String { t("免责声明", "Disclaimer") }
     /// FR-SE4 健康免责（fitness 非 medical 口径，沿文案基线 §7.1）。
     public var settingsDisclaimer: String {
         t("Rede 提供健身训练参考，不构成医疗建议　如有伤病或健康疑虑，训练前请咨询专业人士",
@@ -334,7 +342,6 @@ public struct RedeStrings: Sendable {
 
     public var syncPanelOverline: String { t("Rede · 同步", "Rede · Sync") }
     public var syncTitle: String { t("云端同步", "Cloud Sync") }
-    public var syncGroupOverline: String { t("同步", "Sync") }
     public var syncStateOff: String { t("未开启", "Off") }
     public var syncStateOn: String { t("已开启", "On") }
 

@@ -109,6 +109,12 @@ final class RedeStringsTests: XCTestCase {
             ("weeklyCoachReviewKeyLift", s.weeklyCoachReviewKeyLift(name: "卧推", call: "up", deltaText: "+2.5 kg")),
             ("weeklyCoachReviewAction", s.weeklyCoachReviewAction(code: "viewProgress")),
             ("settingsPanelOverline", s.settingsPanelOverline),
+            // 2026-08-09 设置页 IA 重排新增 key（审查 m4：新增 key 进 parity 清单）
+            ("settingsDisplayOverline", s.settingsDisplayOverline),
+            ("settingsDisclaimerTitle", s.settingsDisclaimerTitle),
+            ("healthStateConnect", s.healthStateConnect),
+            ("healthStateNoRecord", s.healthStateNoRecord),
+            ("healthStateUnavailable", s.healthStateUnavailable),
             ("settingsDisclaimer", s.settingsDisclaimer), ("settingsFeedback", s.settingsFeedback),
             ("feedbackSubject", s.feedbackSubject(version: "0.1.0")),
             ("feedbackBodyPrompt", s.feedbackBodyPrompt),
