@@ -367,6 +367,14 @@ public struct RedeStrings: Sendable {
     /// 服务端拒绝（4xx/5xx）。与「连不上」严格分开——真机实证把 HTTP 400 说成
     /// 网络问题会让用户去查 WiFi，而那边等多久也不会自己好。
     public var syncReasonRejected: String { t("云端拒绝了这次同步", "The cloud refused this sync") }
+    /// owner mismatch（归档：必须 fail-closed）。
+    public var syncReasonOwnerMismatch: String {
+        t("这台设备的记录属于另一个账号", "These records belong to another account")
+    }
+    public var syncOwnerMismatchDetail: String {
+        t("为避免把两个人的训练混在一起　同步已停下　换回原来的账号就能继续　或先导出这台设备上的记录",
+          "Sync stopped so two people's training doesn't get mixed. Sign back in with the original account to continue, or export the records on this device first")
+    }
     public var syncRejectedDetail: String {
         t("本机训练记录不受影响　这不是网络问题　重试仍失败请把这条错误发给我们",
           "Records on this device are unaffected. This isn't a network problem. If retrying keeps failing, send us this error")
@@ -409,6 +417,13 @@ public struct RedeStrings: Sendable {
         t("云端的 \(count) 场训练将被永久删除　这台设备上的记录保留　输入 \(word) 以确认",
           "\(count) sessions in the cloud will be permanently deleted. Records on this device stay. Type \(word) to confirm")
     }
+    /// 云端条数未知时的删号正文。**不许拿本地数顶替**——文案说的是「云端的 N 场」，
+    /// 用本地数字填进去就是在删除确认这一步给用户看假数据。
+    public func syncDeleteBodyUnknownCount(word: String) -> String {
+        t("云端的训练记录将被永久删除　当前无法确认云端有多少场　这台设备上的记录保留　输入 \(word) 以确认",
+          "Your cloud records will be permanently deleted. How many are up there can't be confirmed right now. Records on this device stay. Type \(word) to confirm")
+    }
+
     /// 删号确认词。中英分开——中文输入法下让用户敲英文单词是刁难。
     public var syncDeleteConfirmWord: String { t("删除", "DELETE") }
     public var syncExportFirst: String { t("先导出一份训练数据", "Export your data first") }

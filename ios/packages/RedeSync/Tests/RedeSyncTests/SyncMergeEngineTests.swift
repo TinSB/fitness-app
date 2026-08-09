@@ -384,3 +384,65 @@ final class SyncMergeEngineTests: XCTestCase {
         XCTAssertEqual(first.mergedStorage, second.mergedStorage)
     }
 }
+
+// MARK: - 时间戳跨格式比较（真机形状回归）
+
+extension SyncMergeEngineTests {
+
+    /// 两端 ISO8601 形状不一致：本地 `...15Z`（ISO8601DateFormatter 默认，无小数秒），
+    /// 远端 `...15.952823+00:00`（Postgres timestamptz）。同一秒内字符串比较会因为
+    /// `Z`(0x5A) > `.`(0x2E) 让本地永远胜出，把「远端其实更晚」判反，静默丢一次配置改动。
+    func testRemoteWinsWhenLaterWithinSameSecondDespiteFormatDifference() {
+        let localIso  = "2026-08-08T21:50:15Z"
+        let remoteIso = "2026-08-08T21:50:15.952823+00:00"   // 实际晚 0.95 秒
+
+        XCTAssertTrue(remoteIso < localIso, "前提：字符串比较确实会判反，否则本测试失去意义")
+        XCTAssertTrue(
+            SyncMergeEngine.isLater(remoteIso, than: localIso),
+            "按时刻比较必须判远端更晚"
+        )
+
+        let outcome = SyncMergeEngine.merge(
+            localStorage: storage(history: [], config: ["unitSystem": .string("kg")]),
+            localSchemaVersion: localSchema,
+            remoteSessions: [],
+            remoteConfig: RemoteConfigRecord(
+                payload: ["unitSystem": .string("lb")],
+                schemaVersion: localSchema,
+                updatedAtIso: remoteIso,
+                deviceId: "device-B"
+            ),
+            localConfigUpdatedAtIso: localIso,
+            localDeviceId: "device-A"
+        )
+        XCTAssertEqual(outcome.mergedStorage["unitSystem"]?.asString, "lb", "更晚的远端配置应当获胜")
+        XCTAssertFalse(outcome.shouldUploadConfig)
+    }
+
+    func testLocalWinsWhenGenuinelyLaterAcrossFormats() {
+        let localIso  = "2026-08-09T10:00:00Z"
+        let remoteIso = "2026-08-08T21:50:15.952823+00:00"
+        XCTAssertFalse(SyncMergeEngine.isLater(remoteIso, than: localIso))
+
+        let outcome = SyncMergeEngine.merge(
+            localStorage: storage(history: [], config: ["unitSystem": .string("kg")]),
+            localSchemaVersion: localSchema,
+            remoteSessions: [],
+            remoteConfig: RemoteConfigRecord(
+                payload: ["unitSystem": .string("lb")],
+                schemaVersion: localSchema,
+                updatedAtIso: remoteIso,
+                deviceId: "device-B"
+            ),
+            localConfigUpdatedAtIso: localIso,
+            localDeviceId: "device-A"
+        )
+        XCTAssertEqual(outcome.mergedStorage["unitSystem"]?.asString, "kg", "本地更晚时不得被远端覆盖")
+        XCTAssertTrue(outcome.shouldUploadConfig)
+    }
+
+    func testUnparsableTimestampsFallBackToDeterministicStringOrder() {
+        XCTAssertTrue(SyncMergeEngine.isLater("zzz", than: "aaa"),
+                      "解析失败也要给确定结果，否则两台设备会各自认为自己赢而反复互相覆盖")
+    }
+}

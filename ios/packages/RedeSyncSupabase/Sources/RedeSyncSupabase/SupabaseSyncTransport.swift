@@ -238,6 +238,10 @@ public struct SupabaseSyncTransport: SyncTransport {
         let refreshed: String
         do {
             refreshed = try await auth.forceRefresh()
+        } catch SupabaseAuthError.offline {
+            // 刷新时断网 ≠ 登录失效。一律报 notAuthenticated 会让用户白白重登一次，
+            // 而他要做的只是等网络回来。
+            throw SyncTransportError.offline
         } catch {
             throw SyncTransportError.notAuthenticated
         }

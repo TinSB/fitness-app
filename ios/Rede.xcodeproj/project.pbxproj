@@ -47,6 +47,7 @@
 		CAED000000000000000000A2 /* MotionSampleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAED000000000000000000A1 /* MotionSampleView.swift */; };
 		A100000000000000000000E2 /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000E1 /* SyncService.swift */; };
 		A100000000000000000000E4 /* SyncSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000E3 /* SyncSheet.swift */; };
+		A100000000000000000000E6 /* SyncWriteSlotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000E5 /* SyncWriteSlotTests.swift */; };
 		CAEB00000000000000000002 /* ExerciseLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAEB00000000000000000001 /* ExerciseLibraryView.swift */; };
 		CA00000000000000000000B5 /* PlanTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A5 /* PlanTabView.swift */; };
 		CB00000000000000000000B1 /* RedeTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB00000000000000000000A1 /* RedeTheme.swift */; };
@@ -102,6 +103,7 @@
 		F10000000000000000000005 /* StoreKitEntitlementsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitEntitlementsTests.swift; sourceTree = "<group>"; };
 		FA0000000000000000000002 /* AppUpdateRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdateRuntimeTests.swift; sourceTree = "<group>"; };
 		FD0000000000000000000002 /* SessionStoreDraftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStoreDraftTests.swift; sourceTree = "<group>"; };
+		A100000000000000000000E5 /* SyncWriteSlotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncWriteSlotTests.swift; sourceTree = "<group>"; };
 		F10000000000000000000006 /* Rede.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = packages/RedeEntitlements/Tests/RedeEntitlementsTests/Resources/Rede.storekit; sourceTree = SOURCE_ROOT; };
 		AA00000000000000000000E1 /* RedeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeApp.swift; sourceTree = "<group>"; };
 		AA00000000000000000000E5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -254,6 +256,7 @@
 		F10000000000000000000007 /* RedeTests */ = {
 			isa = PBXGroup;
 			children = (
+				A100000000000000000000E5 /* SyncWriteSlotTests.swift */,
 				F10000000000000000000005 /* StoreKitEntitlementsTests.swift */,
 				FA0000000000000000000002 /* AppUpdateRuntimeTests.swift */,
 				FD0000000000000000000002 /* SessionStoreDraftTests.swift */,
@@ -492,6 +495,7 @@
 				F10000000000000000000001 /* StoreKitEntitlementsTests.swift in Sources */,
 				FA0000000000000000000001 /* AppUpdateRuntimeTests.swift in Sources */,
 				FD0000000000000000000001 /* SessionStoreDraftTests.swift in Sources */,
+				A100000000000000000000E6 /* SyncWriteSlotTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -653,7 +657,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Rede/Rede.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 32;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -665,7 +669,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.10.1;
+				MARKETING_VERSION = 1.10.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -681,7 +685,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Rede/Rede.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 32;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -693,7 +697,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.10.1;
+				MARKETING_VERSION = 1.10.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -753,7 +757,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = RedeWidget/RedeWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 32;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = RedeWidget/Info.plist;
@@ -763,7 +767,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.10.1;
+				MARKETING_VERSION = 1.10.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede.RedeWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -780,7 +784,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = RedeWidget/RedeWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 31;
+				CURRENT_PROJECT_VERSION = 32;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = RedeWidget/Info.plist;
@@ -790,7 +794,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.10.1;
+				MARKETING_VERSION = 1.10.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede.RedeWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

@@ -9,6 +9,7 @@
 //   2. 配置区   → 整块 last-writer-wins，平局按 deviceId 确定性打破
 //   3. schema   → 高于本机 current 的远端记录一律不合并，如实计数上报（fail-closed）
 
+import Foundation
 import RedeDomain
 
 public enum SyncMergeEngine {
@@ -32,7 +33,8 @@ public enum SyncMergeEngine {
         remoteConfig: RemoteConfigRecord?,
         localConfigUpdatedAtIso: String,
         localDeviceId: String,
-        isSessionAcceptable: (@Sendable ([String: JSONValue]) -> Bool)? = nil
+        isSessionAcceptable: (@Sendable ([String: JSONValue]) -> Bool)? = nil,
+        alreadyUploadedIds: Set<String> = []
     ) -> SyncMergeOutcome {
         var blocked = 0
         var rejectedUnclean = 0
@@ -125,7 +127,7 @@ public enum SyncMergeEngine {
             } else {
                 let remoteWins: Bool
                 if remote.updatedAtIso != localConfigUpdatedAtIso {
-                    remoteWins = remote.updatedAtIso > localConfigUpdatedAtIso
+                    remoteWins = isLater(remote.updatedAtIso, than: localConfigUpdatedAtIso)
                 } else {
                     // 时间戳相同（同秒写入或时钟粒度不足）时按 deviceId 字典序决胜。
                     // 目的是让两台设备算出**同一个**赢家——否则它们会各自认为自己赢，
@@ -154,7 +156,12 @@ public enum SyncMergeEngine {
 
         // 本地有、远端没有的记录 → 待上传。远端因 schema 太新而被跳过的 id 不在
         // 此列（它们在远端已存在），避免用旧版本覆盖新版本写的记录。
-        let sessionIdsToUpload = localSessionIds.subtracting(remoteSessionIds).sorted()
+        // 扣掉已确认上传过的：remoteSessionIds 只是**本次增量**拉到的，不是云端全集。
+        // 只减它会让游标推进后的每一轮都把整部本地历史当成待上传。
+        let sessionIdsToUpload = localSessionIds
+            .subtracting(remoteSessionIds)
+            .subtracting(alreadyUploadedIds)
+            .sorted()
 
         return SyncMergeOutcome(
             mergedStorage: mergedStorage,
@@ -165,5 +172,32 @@ public enum SyncMergeEngine {
             rejectedUncleanCount: rejectedUnclean,
             didChangeLocal: didChangeLocal
         )
+    }
+
+    /// a 是否晚于 b。**按时刻比较，不做字符串比较。**
+    ///
+    /// 两端的 ISO8601 形状不一致：本地由 `ISO8601DateFormatter` 生成、默认无小数秒
+    /// 且以 `Z` 收尾（`2026-08-08T21:50:15Z`）；远端由 Postgres 的 timestamptz 序列化，
+    /// 带微秒与数字偏移（`2026-08-08T21:50:15.952823+00:00`）。
+    ///
+    /// 直接用 `>` 比字符串时，同一秒内前 19 字符完全相同，接着比到 `Z`(0x5A) 与
+    /// `.`(0x2E)——本地永远胜出。于是「远端其实晚了 0.95 秒」会被判成本地赢，
+    /// 那一次配置改动被静默丢弃。跨秒时因为在秒位就分出胜负所以看不出问题，
+    /// 这正是它能藏住的原因。
+    ///
+    /// 解析失败时退回字符串比较：宁可用一个有偏差的确定规则，也不要让两台设备
+    /// 各自算出不同赢家而反复互相覆盖。
+    static func isLater(_ a: String, than b: String) -> Bool {
+        guard let da = parseInstant(a), let db = parseInstant(b) else { return a > b }
+        return da > db
+    }
+
+    static func parseInstant(_ iso: String) -> Date? {
+        let withFraction = ISO8601DateFormatter()
+        withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = withFraction.date(from: iso) { return d }
+        let plain = ISO8601DateFormatter()
+        plain.formatOptions = [.withInternetDateTime]
+        return plain.date(from: iso)
     }
 }

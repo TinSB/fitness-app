@@ -33,6 +33,8 @@ private actor FakeTransport: SyncTransport {
     private(set) var uploadedSessions: [RemoteSessionRecord] = []
     private(set) var uploadedConfigs: [RemoteConfigRecord] = []
     private(set) var fetchCallCount = 0
+    private(set) var uploadCallCount = 0
+    private var failUploadAfterCalls: Int?
 
     init(pages: [SyncFetchPage], config: RemoteConfigRecord? = nil) {
         self.pages = pages
@@ -41,6 +43,7 @@ private actor FakeTransport: SyncTransport {
 
     func setFetchError(_ error: SyncTransportError?) { fetchError = error }
     func setUploadError(_ error: SyncTransportError?) { uploadError = error }
+    func setFailUploadAfterCalls(_ n: Int) { failUploadAfterCalls = n }
 
     func fetchSessions(since cursor: String?) async throws -> SyncFetchPage {
         if let fetchError { throw fetchError }
@@ -58,6 +61,10 @@ private actor FakeTransport: SyncTransport {
 
     func uploadSessions(_ records: [RemoteSessionRecord]) async throws {
         if let uploadError { throw uploadError }
+        if let limit = failUploadAfterCalls, uploadCallCount >= limit {
+            throw SyncTransportError.offline
+        }
+        uploadCallCount += 1
         uploadedSessions.append(contentsOf: records)
     }
 
@@ -75,6 +82,7 @@ private actor FakeLocalStore: SyncLocalStore {
     private(set) var configUpdatedAt: String
     private(set) var applyCallCount = 0
     private(set) var configUploadedAt: String?
+    private(set) var uploadedIds: Set<String> = []
     var applyShouldFail = false
 
     init(history: [[String: JSONValue]], config: [String: JSONValue] = [:], configUpdatedAt: String = "2026-01-01T00:00:00Z") {
@@ -88,6 +96,9 @@ private actor FakeLocalStore: SyncLocalStore {
     }
 
     func setApplyShouldFail(_ value: Bool) { applyShouldFail = value }
+
+    func loadUploadedSessionIds() async -> Set<String> { uploadedIds }
+    func markSessionsUploaded(_ ids: [String]) async { uploadedIds.formUnion(ids) }
 
     func loadStorage() async throws -> (storage: [String: JSONValue], schemaVersion: Int) {
         (storage, schema)
@@ -350,5 +361,95 @@ final class SyncCoordinatorTests: XCTestCase {
 
         let calls = await transport.fetchCallCount
         XCTAssertEqual(calls, 5, "必须被 maxPages 截断")
+    }
+}
+
+
+// MARK: - 增量拉取后的待上传集合（真机形状回归）
+
+extension SyncCoordinatorTests {
+
+    /// 待上传集合曾算成「本地全部 − 本次拉取到的」。拉取是**增量**的：游标推进之后
+    /// 每轮只回来新记录，于是整部本地历史被反复算成待上传，每次同步重传全量
+    /// （upsert 幂等所以数据不错，但白烧带宽与免费档配额）。
+    func testSecondSyncDoesNotReuploadAlreadyUploadedSessions() async throws {
+        let store = FakeLocalStore(history: [
+            sessionPayload("session-1", date: "2026-01-01"),
+            sessionPayload("session-2", date: "2026-01-02"),
+        ])
+
+        // 第一轮：远端空，两场都要上传
+        let t1 = FakeTransport(pages: [])
+        _ = try await makeCoordinator(transport: t1, store: store).syncOnce()
+        let firstUpload = await t1.uploadedSessions.map(\.sessionId).sorted()
+        XCTAssertEqual(firstUpload, ["session-1", "session-2"])
+
+        // 第二轮：游标已推进，增量拉取返回空——不得再传一遍
+        let t2 = FakeTransport(pages: [])
+        let report = try await makeCoordinator(transport: t2, store: store).syncOnce()
+        let secondUpload = await t2.uploadedSessions
+        XCTAssertTrue(secondUpload.isEmpty, "已上传过的记录不得因增量拉取为空而重传")
+        XCTAssertEqual(report.uploadedSessionCount, 0)
+    }
+
+    /// 上传失败的那批必须留在待上传集合里，下次重试。
+    func testFailedUploadIsRetriedNextTime() async throws {
+        let store = FakeLocalStore(history: [sessionPayload("session-1", date: "2026-01-01")])
+        let failing = FakeTransport(pages: [])
+        await failing.setUploadError(.offline)
+
+        _ = try? await makeCoordinator(transport: failing, store: store).syncOnce()
+
+        let retry = FakeTransport(pages: [])
+        _ = try await makeCoordinator(transport: retry, store: store).syncOnce()
+        let ids = await retry.uploadedSessions.map(\.sessionId)
+        XCTAssertEqual(ids, ["session-1"], "上传失败的记录必须在下一轮重试")
+    }
+}
+
+// MARK: - 分批上传
+
+extension SyncCoordinatorTests {
+
+    /// 实测单场记录约 39 KB，首次登录推上百场时一次性 POST 会是几 MB，
+    /// 移动网络下极易超时——而那恰是用户最需要它成功的时刻。
+    func testLargeUploadIsSplitIntoBatches() async throws {
+        let many = (1...25).map { sessionPayload("session-\($0)", date: "2026-01-01") }
+        let store = FakeLocalStore(history: many)
+        let transport = FakeTransport(pages: [])
+        let coordinator = SyncCoordinator(
+            transport: transport, localStore: store, deviceId: "device-A",
+            uploadBatchSize: 10, now: { "2026-08-07T00:00:00Z" }
+        )
+
+        let report = try await coordinator.syncOnce()
+
+        let calls = await transport.uploadCallCount
+        XCTAssertEqual(calls, 3, "25 条按每批 10 条应分 3 次上传")
+        XCTAssertEqual(report.uploadedSessionCount, 25)
+    }
+
+    /// 中途失败时已成功的批次必须记账，下一轮只补剩下的——否则大历史永远传不完。
+    func testPartialBatchFailureKeepsSucceededBatches() async throws {
+        let many = (1...25).map { sessionPayload("session-\($0)", date: "2026-01-01") }
+        let store = FakeLocalStore(history: many)
+        let flaky = FakeTransport(pages: [])
+        await flaky.setFailUploadAfterCalls(2)   // 前两批成功，第三批失败
+
+        _ = try? await SyncCoordinator(
+            transport: flaky, localStore: store, deviceId: "device-A",
+            uploadBatchSize: 10, now: { "2026-08-07T00:00:00Z" }
+        ).syncOnce()
+
+        let remembered = await store.uploadedIds
+        XCTAssertEqual(remembered.count, 20, "已成功的两批必须记账")
+
+        let retry = FakeTransport(pages: [])
+        _ = try await SyncCoordinator(
+            transport: retry, localStore: store, deviceId: "device-A",
+            uploadBatchSize: 10, now: { "2026-08-07T00:00:00Z" }
+        ).syncOnce()
+        let retried = await retry.uploadedSessions.count
+        XCTAssertEqual(retried, 5, "下一轮只补剩下的 5 条，不重来")
     }
 }

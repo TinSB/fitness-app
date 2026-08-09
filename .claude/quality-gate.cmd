@@ -133,6 +133,7 @@ xcodebuild \
   -scheme Rede \
   -destination "platform=iOS Simulator,id=$REDE_SIMULATOR_ID" \
   -only-testing:RedeTests/StoreKitEntitlementsTests/testProductionConfigurationFailsClosedWithoutApprovedProducts \
+  -only-testing:RedeTests/SyncWriteSlotTests \
   -only-testing:RedeTests/StoreKitEntitlementsTests/testDebugPaidFixtureUnlocksFeatureWithoutOpeningPurchaseGate \
   -only-testing:RedeTests/StoreKitEntitlementsTests/testRedeCoachPageContentCoversEntitlementAndLaunchGateMatrix \
   -only-testing:RedeTests/StoreKitEntitlementsTests/testReadyCatalogDoesNotBypassDelayedEntitlementCheck \

@@ -77,11 +77,16 @@ public actor SupabaseAuth {
             )
             store.save(session)
             return session
-        } catch SupabaseAuthError.rejected(let message) {
+        } catch SupabaseAuthError.rejected {
             // refresh token 被拒 = 它已失效（用户在别处登出、或被轮换掉）。
-            // 清掉本地会话让上层提示重新登录；**本地训练数据一行不动**。
+            // 清掉本地会话；**本地训练数据一行不动**。
+            //
+            // 这里必须抛 notSignedIn 而不是把后端原话透传成 rejected：语义是
+            // 「要重新登录」，而 rejected 在上层会渲染成「云端拒绝了这次同步」——
+            // 用户读完不知道该干什么，只会反复点重试。排障信息的价值低于让用户
+            // 知道下一步该做什么。
             store.clear()
-            throw SupabaseAuthError.notSignedIn.orRejected(message)
+            throw SupabaseAuthError.notSignedIn
         }
     }
 
@@ -172,12 +177,5 @@ public actor SupabaseAuth {
             ?? (root["message"] as? String)
             ?? (root["error"] as? String)
         return text.map { "HTTP \(reply.status): \($0)" } ?? "HTTP \(reply.status)"
-    }
-}
-
-private extension SupabaseAuthError {
-    /// refresh 失败时保留后端原话便于排障，但语义仍是「要重新登录」。
-    func orRejected(_ message: String) -> SupabaseAuthError {
-        message.isEmpty ? .notSignedIn : .rejected(message: message)
     }
 }

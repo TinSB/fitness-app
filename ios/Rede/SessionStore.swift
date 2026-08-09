@@ -1510,14 +1510,28 @@ final class SessionStore {
 
     // MARK: - 云同步落盘（FR-ACC1）
 
-    /// 等待写入槽位空出。返回 false = 超时放弃。
+    /// 抢占写入槽位。**检查与置位必须在同一个同步片段内完成。**
+    ///
+    /// 曾写成「先 await 一个等待函数、返回后再 isSaving = true」——那中间隔着一个
+    /// suspension point，MainActor 可以在此调度别的任务进来；后到者看见 isSaving
+    /// 仍是 false，于是两个写入者同时进场，而这段代码存在的意义正是不让那发生。
+    /// 触发路径不假想：用户占着锁保存时后台同步在等，锁释放的那一刻同步与用户的
+    /// 下一次点击会一起冲进来。
+    ///
+    /// 本方法不含 await，MainActor 保证它整段不可被打断。
+    private func tryAcquireWriteSlot() -> Bool {
+        guard !isSaving else { return false }
+        isSaving = true
+        return true
+    }
+
+    /// 等到槽位并占住它。返回 false = 超时放弃（此时未占用）。
     ///
     /// 轮询而非 continuation 队列：写入是毫秒级的，撞车窗口极窄，20ms 的粒度足够；
     /// 而 continuation 队列要维护等待者数组，多一份能在 MainActor 上出错的状态。
-    /// `isSaving` 的读改在 MainActor 上原子，循环里 await 会让出以便持有者跑完。
-    private func waitForWriteSlot(maxAttempts: Int) async -> Bool {
+    private func acquireWriteSlot(maxAttempts: Int) async -> Bool {
         var attempts = 0
-        while isSaving {
+        while !tryAcquireWriteSlot() {
             if attempts >= maxAttempts { return false }
             attempts += 1
             try? await Task.sleep(nanoseconds: 20_000_000)
@@ -1535,11 +1549,11 @@ final class SessionStore {
     ///   超时按失败处理并写入错误面，绝不假装成功。
     @discardableResult
     func applySyncMerge(mergedStorage: [String: JSONValue], maxWaitAttempts: Int = 150) async -> Bool {
-        guard await waitForWriteSlot(maxAttempts: maxWaitAttempts) else {
+        // 抢占即置位，中间没有 await —— 见 tryAcquireWriteSlot。
+        guard await acquireWriteSlot(maxAttempts: maxWaitAttempts) else {
             syncSaveErrorText = "写入繁忙，本次同步未落盘"
             return false
         }
-        isSaving = true
         syncSaveErrorText = nil
         defer { isSaving = false }
         let fileURL = planWriteFileURL
