@@ -599,17 +599,19 @@ struct EngraveDivider: View {
     }
 }
 
-// 分段控件（rede-app.html .st-seg）：机加工凹槽轨 + 在槽里滑动的凸台键。
+// 分段控件（rede-app.html .st-seg）：一颗安静的键，没有槽。
 //
-// 2026-08-09 质感重做（owner：「两个大按钮感觉有点丑」）。旧版三处问题：
+// 2026-08-09 质感重做（owner：「两个大按钮感觉有点丑」→ 四档比稿后拍板 C）。
+// 旧版三处问题：
 //   ① **切换是硬切**——选中底色直接跳到另一格，没有任何位移，读起来像两个独立按钮
-//      互相顶掉，而不是一个键在槽里滑。全仓 matchedGeometryEffect 用量此前为 0，这是第一处。
-//   ② **「机加工」只是槽顶一条 1px 黑线**——那是记号，不是材质。真凹槽是上沿背光吃暗、
-//      下唇接光吃亮；两条边一起才读得出深度。键那边同理：单一填色做不出「抬起来」，
-//      要顶受光 + 底背光 + 下方投影三层。
-//   ③ **控件高 50pt**（44 轨 + 3×2 内边），比 Apple 分段控件（32）高一半，所以显得笨重。
-//      现在 painted 轨道 32、键 26，而**点击热区仍是 44**——轨道居中垫在 44 高的行里，
-//      视觉收窄不牺牲可点性。
+//      互相顶掉。改用 matchedGeometryEffect + spring（全仓此前用量为 0，这是第一处）。
+//   ② **廉价感来自两圈同心描边**——槽描一圈、键再描一圈，叠在一起就是廉价的来源。
+//      中途试过「把槽压黑、把键提亮」，反而更糟：键的明度冲出了 app 自己的材质梯子
+//      （铭牌卡才 redeSurface 0x1D1B19），两个最不影响行为的设置成了整页最重的实心块。
+//      **现在一条描边都没有**——去掉槽，只留一颗 redeHair 纯色胶囊裹住选中项，
+//      状态靠形状 + 字重 + 字色说话。
+//   ③ **控件高 50pt**（44 轨 + 3×2 内边），比 Apple 分段控件（32）高一半，所以笨重。
+//      现在键 28，而**点击热区仍是 44**——键垫在 44 高的行里居中，视觉收窄不牺牲可点性。
 struct SegControl: View {
     let options: [String]
     @Binding var selection: String
@@ -618,11 +620,7 @@ struct SegControl: View {
     /// 每个 SegControl 实例各自的命名空间——同页多个控件的键不会互相吸附。
     @Namespace private var keySlot
 
-    private let trackHeight: CGFloat = 32
-    private let keyHeight: CGFloat = 26
-    private let keyInset: CGFloat = 3
-    private let trackRadius: CGFloat = 10
-    private let keyRadius: CGFloat = 7.5
+    private let keyHeight: CGFloat = 28
 
     var body: some View {
         HStack(spacing: 0) {
@@ -630,8 +628,6 @@ struct SegControl: View {
                 segment(option)
             }
         }
-        // 轨道垫在 44 高的行里居中：视觉 32、可点 44。
-        .background { track.frame(height: trackHeight) }
     }
 
     private func segment(_ option: String) -> some View {
@@ -648,12 +644,12 @@ struct SegControl: View {
         } label: {
             Text(option)
                 .font(.system(size: 13, weight: isOn ? .semibold : .medium))
-                .foregroundStyle(isOn ? Color.redeT1 : Color.redeT3)
+                .foregroundStyle(isOn ? Color.redeT1 : Color.redeT4)
                 .frame(maxWidth: .infinity, minHeight: RedeShape.controlHeight)
                 .background {
                     if isOn {
-                        key
-                            .padding(.horizontal, keyInset)
+                        Capsule(style: .continuous)
+                            .fill(Color.redeHair)
                             .frame(height: keyHeight)
                             .matchedGeometryEffect(id: "segKey", in: keySlot)
                     }
@@ -661,48 +657,6 @@ struct SegControl: View {
                 .contentShape(Rectangle()) // 透明区域也可点中（默认只命中不透明像素）
         }
         .buttonStyle(.redePressableRow)
-    }
-
-    /// 铣槽：上沿背光吃暗、下唇接光吃亮。
-    private var track: some View {
-        RoundedRectangle(cornerRadius: trackRadius, style: .continuous)
-            .fill(Color.redeSegGroove)
-            .overlay {
-                RoundedRectangle(cornerRadius: trackRadius, style: .continuous)
-                    .strokeBorder(
-                        LinearGradient(
-                            stops: [
-                                .init(color: .black.opacity(0.55), location: 0),
-                                .init(color: .black.opacity(0.10), location: 0.5),
-                                .init(color: .white.opacity(0.07), location: 1),
-                            ],
-                            startPoint: .top, endPoint: .bottom
-                        ),
-                        lineWidth: 1
-                    )
-            }
-    }
-
-    /// 凸台键：顶受光 + 底背光 + 下方投影。
-    private var key: some View {
-        RoundedRectangle(cornerRadius: keyRadius, style: .continuous)
-            .fill(
-                LinearGradient(
-                    colors: [Color.redeSegKeyHi, Color.redeSegKeyLo],
-                    startPoint: .top, endPoint: .bottom
-                )
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: keyRadius, style: .continuous)
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [.white.opacity(0.11), .white.opacity(0.015)],
-                            startPoint: .top, endPoint: .bottom
-                        ),
-                        lineWidth: 1
-                    )
-            }
-            .shadow(color: .black.opacity(0.5), radius: 2.5, y: 1.5)
     }
 }
 
