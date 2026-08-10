@@ -599,6 +599,41 @@ struct EngraveDivider: View {
     }
 }
 
+/// 尺身（进展页尺度切换专用）：让分段控件坐在一条带刻度的基准线上，而不是浮在页面里。
+///
+/// 2026-08-09（owner 在四档比稿里拍板「乙」）。为什么不能直接复用 EngraveDivider：
+///   · EngraveDivider 是**分组分隔**——刻线簇、无尺身横线、固定 20pt 间距、居中收边，
+///     整页到处都是，读感是「这一段结束了」。直接拿它垫在控件下面，只会读成一条分隔线。
+///   · 这条是**尺身**：有横线，刻度按控件宽度等分，**主刻度正好落在分段边界上**，
+///     所以药丸停在两根主刻度之间 = 「量程档位」，不是「区块结束」。
+///
+/// 它有意不带任何状态：选了哪档由药丸表达，这里只提供刻度背景，不做第二个指示器。
+struct ScaleRule: View {
+    let segments: Int
+    /// 每档细分格数（主刻度之间的副刻度）
+    private let minorPerSegment = 3
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let n = max(1, segments * minorPerSegment)
+            ZStack(alignment: .topLeading) {
+                Rectangle()
+                    .fill(Color.redeHair2)
+                    .frame(width: w, height: 1)
+                ForEach(0...n, id: \.self) { i in
+                    Rectangle()
+                        .fill(Color.redeEtch)
+                        .frame(width: 1, height: i % minorPerSegment == 0 ? 6 : 3)
+                        .offset(x: min(w / CGFloat(n) * CGFloat(i), w - 1), y: 1)
+                }
+            }
+        }
+        .frame(height: 7)
+        .accessibilityHidden(true)   // 纯视觉结构，无状态可念
+    }
+}
+
 // 分段控件（rede-app.html .st-seg）：一颗安静的键，没有槽。
 //
 // 2026-08-09 质感重做（owner：「两个大按钮感觉有点丑」→ 四档比稿后拍板 C）。
