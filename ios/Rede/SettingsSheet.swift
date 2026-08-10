@@ -548,8 +548,10 @@ struct SettingsSheet: View {
                 .font(.redeBody)
                 .foregroundStyle(Color.redeT2)
             Spacer()
-            SegControl(options: options, selection: selection, machined: true)
-                .frame(width: 168)
+            // 两行共用同一宽度（不按各自内容收缩）：右列成一条干净的竖直块，
+            // 和这一页的仪表语气一致。168 → 152：kg/lb 只有两个字母，168 下半格几乎全是空。
+            SegControl(options: options, selection: selection)
+                .frame(width: 152)
         }
     }
 

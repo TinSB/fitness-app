@@ -215,7 +215,7 @@ struct ProgressTabView: View {
         let view = scaleView(model)
         return VStack(alignment: .leading, spacing: 0) {
             // 整面板（2026-06-11）：通用 seg 凹盒升级机加工凹槽（与设置面板同工艺）
-            SegControl(options: segOptions, selection: segSelection, machined: true)
+            SegControl(options: segOptions, selection: segSelection)
                 .padding(.horizontal, RedeSpace.page)
                 .padding(.top, 16)
 

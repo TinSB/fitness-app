@@ -29,7 +29,15 @@ extension Color {
     static let redeHair = Color(redeHex: 0x2A2724)      // --hair
     static let redeHair2 = Color(redeHex: 0x222020)     // --hair2
     static let redeTabBar = Color(redeHex: 0x111010)    // tab bar 底
-    static let redeSegBase = Color(redeHex: 0x1A1917)   // 分段控件底
+    static let redeSegBase = Color(redeHex: 0x1A1917)   // 输入框等浅内陷面（同步页邮箱框）
+    /// 分段控件槽底。**必须比页面底色（redeBase 0x131211）暗**——铣出来的槽是往下凹的。
+    /// 旧版直接借了 redeSegBase(0x1A1917)，比底色还亮，物理上是块凸起的板，
+    /// 所以再怎么描边也读不出「凹槽」（owner 2026-08-09：「两个大按钮感觉有点丑」）。
+    static let redeSegGroove = Color(redeHex: 0x0E0D0C)
+    /// 分段控件选中键（凸台）顶/底色。**两端一起**才读得出「这块是抬起来的」——
+    /// 旧版用单一 redeHair 平铺，键与槽几乎同明度，所以整个控件读成两个平按钮。
+    static let redeSegKeyHi = Color(redeHex: 0x37342F)
+    static let redeSegKeyLo = Color(redeHex: 0x282520)
     static let redeEtch = Color(redeHex: 0x333029)      // S2 刻线（rede-app.html .etick）
 
     // 文字
