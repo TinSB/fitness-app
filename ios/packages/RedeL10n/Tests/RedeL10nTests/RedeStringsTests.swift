@@ -70,7 +70,7 @@ final class RedeStringsTests: XCTestCase {
             ("appUpdateViewUpdate", s.appUpdateViewUpdate),
             ("appUpdateLater", s.appUpdateLater),
             ("appUpdateContinue", s.appUpdateContinue),
-            ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.10.2", build: "32")),
+            ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.10.2", build: "33")),
             ("appUpdateHeroLine", s.appUpdateHeroLine(version: "1.10.2")),
             ("appUpdateHighlights", s.appUpdateHighlights(version: "1.10.2").joined(separator: " ")),
             // FR-SE9 / FR-SUB2：订阅管理与诚实状态
