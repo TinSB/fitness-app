@@ -212,18 +212,24 @@ struct TodayTabView: View {
                             : .move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .padding(.bottom, RedeSpace.bottomBar)
+            // 底部留白 = tab bar 避让 + 悬浮 CTA 本体(10 上边距 + 50 按钮) + 14 呼吸。
+            // 与上面 overlay 的实际高度对齐；改任一处都要同改。
+            .padding(.bottom, RedeSpace.bottomBar + 74)
         }
         .defaultScrollAnchor(Self.startAtBottom ? .bottom : .top)
         .background(Color.redeBase)
-        // 悬浮主 CTA：贴 tab bar 上沿，底下垫一层向下加深的渐隐，让列表从它身下滚过去。
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if let exercises = model?.prescription?.exercises, !exercises.isEmpty, !isUnreadable {
-                EmbButton(icon: "play.fill", title: s.startTraining, action: onStartTraining)
+        // 悬浮主 CTA。**不用 safeAreaInset**：它的 content 带条件（model 未加载时为空），
+        // 首帧算出的 inset 是 0，model 到位后不会重算——真机上表现为 CTA 压住「合计」行
+        // 与最后一个动作（2026-08-10 用户实拍反馈）。改成 overlay + 内容侧静态留白，
+        // 留白量与 CTA 实际高度对齐，不依赖任何时序。
+        .overlay(alignment: .bottom) {
+            if let exercises = displayPrescription?.exercises, !exercises.isEmpty, !isUnreadable {
+                EmbButton(icon: sessionStore.flow == nil ? "play.fill" : "arrow.forward",
+                          title: sessionStore.flow == nil ? s.startTraining : s.resumeSessionContinue,
+                          action: onStartTraining)
                     .padding(.horizontal, RedeSpace.page)
                     .padding(.top, 10)
-                    // 垫开 tab bar：tab bar 是 RootTabView 的兄弟层、压在本视图之上，
-                    // safeAreaInset 只认自己的坐标系，不垫会被整条盖住。
+                    // 垫开 tab bar：tab bar 是 RootTabView 的兄弟层、压在本视图之上。
                     .padding(.bottom, RedeSpace.bottomBar)
                     .background(
                         LinearGradient(colors: [Color.redeBase.opacity(0), Color.redeBase.opacity(0.92),
@@ -257,7 +263,7 @@ struct TodayTabView: View {
             // 截图/UI 验证钩子（同 -autoOpenSharePreview 先例）：自动打开设置页（看 Apple 健康区等）。
             if CommandLine.arguments.contains("-autoOpenSettings") { showSettings = true }
             // FR-TR6 验证钩子：自动给首个处方动作打开换动作（swapIntent）detail，便于点替代项验「只换这次/以后都换」。
-            if CommandLine.arguments.contains("-autoOpenSwap"), let first = model?.prescription?.exercises.first {
+            if CommandLine.arguments.contains("-autoOpenSwap"), let first = displayPrescription?.exercises.first {
                 detailTarget = ExerciseDetailTarget(id: first.exerciseId, swapIntent: true)
             }
             // FR-TR12 验证钩子：自动弹「今天换一天练」选训练日对话框。
@@ -399,9 +405,9 @@ struct TodayTabView: View {
     private var reasonCode: String { model?.verdict.reason.code ?? "noHistoryCalibration" }
     /// 日级处方理由码（顺延副句等；空处方 = 空集）。
     private var dayReasonCodes: Set<String> {
-        Set(model?.prescription?.dayReasons.map(\.code) ?? [])
+        Set(displayPrescription?.dayReasons.map(\.code) ?? [])
     }
-    private var firstExercise: ExercisePrescriptionPlan? { model?.prescription?.exercises.first }
+    private var firstExercise: ExercisePrescriptionPlan? { displayPrescription?.exercises.first }
 
     private var pillFill: Color {
         if isUnreadable { return .redeT4 }
@@ -492,14 +498,42 @@ struct TodayTabView: View {
     /// **非头牌**且命中里程的动作单列，复用同一变化行文案。只列里程事件、不列普通进阶——避免每个
     /// 配件每场都刷屏（高信号优先）。
     private var milestoneNotes: [String] {
-        guard let exercises = model?.prescription?.exercises, exercises.count > 1 else { return [] }
+        guard let exercises = displayPrescription?.exercises, exercises.count > 1 else { return [] }
         // 里程事件（到顶/毕业/回退）与换动作教练卡触发同口径——共用 PrescriptionReason 穷举判定，
         // 新增 case 时编译器强制同步（审查：消除跨文件 default:false 无声漂移）。
         return exercises.dropFirst().filter { $0.reason.isCeilingOrGraduationMilestone }.map { changeLine(for: $0) }
     }
 
     private var dayName: String {
-        model?.prescription.map { s.trainingDayName($0.dayCode) } ?? ""
+        displayPrescription.map { s.trainingDayName($0.dayCode) } ?? ""
+    }
+
+    /// **今日页展示的处方 = 单一真源**（2026-08-10 根治）。
+    ///
+    /// 有活跃会话时一律用会话自己持有的那份（`TrainFlowState.prescription` —— 会话就是从
+    /// 开始那天的处方展开的），而不是 `model.prescription`（今天现算的）。
+    ///
+    /// 为什么会分叉：会话可以跨日存活（draft 恢复），而「今天换一天练」的 override 只对当天
+    /// 有效，次日今天的处方回到轮转值。于是训练页在练「拉 A」、今日页显示「推 A」
+    /// （2026-08-10 用户实拍）。更隐蔽的是橙条——它按下标对位标记当前动作，注释里写着
+    /// 「flow.plan 由本处方 expand，下标一一对应」，这个前提一破就会标错动作。
+    ///
+    /// 走这个真源之后，标题 / 清单 / 橙条 / 合计全部与训练页同源，分叉从根上不可能发生。
+    private var displayPrescription: TodayPrescription? {
+        if let flow = sessionStore.flow, flow.phase != .summary {
+            return flow.prescription
+        }
+        return model?.prescription
+    }
+
+    /// 展示的处方是否来自进行中的会话、且与今天现算的不是同一天。
+    /// 用于如实交代「你看到的是进行中的那场，不是今天新排的」。
+    private var activeSessionDayName: String? {
+        guard let flow = sessionStore.flow, flow.phase != .summary,
+              let todayCode = model?.prescription?.dayCode,
+              flow.prescription.dayCode != todayCode
+        else { return nil }
+        return s.trainingDayName(flow.prescription.dayCode)
     }
 
     /// FR-T5 教练卡（切片6b）：引擎已按优先级排序并降频，每屏只取首条（设计 ≤1）。
@@ -527,6 +561,24 @@ struct TodayTabView: View {
                     .padding(.top, 10)
             }
 
+            // 清单已经跟着会话走了（displayPrescription），这里只补一句交代：
+            // 说明这是进行中的那场，以及今天新排的是哪天——否则用户不知道今天的安排去哪了。
+            if let activeDay = activeSessionDayName,
+               let todayDay = model?.prescription.map({ s.trainingDayName($0.dayCode) }) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(s.sessionInProgressDiffers(active: activeDay))
+                        .font(.redeSubhead)
+                        .foregroundStyle(Color.redeEmber)
+                    Text(s.sessionInProgressTodayIs(today: todayDay))
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeT4)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, RedeSpace.page)
+                .padding(.top, 14)
+                .accessibilityElement(children: .combine)
+            }
+
             // 切片6c 红线：今日页教练写入（采纳/撤销/暂不处理）失败时如实呈现，绝不静默假成功
             //（与 TrainTabView 收尾页同口径：saveFailedLine + 明细；下次教练写入开写自动清空）。
             // 读教练专属 coachSaveErrorText，与全局 saveErrorText 隔离——不抢显训练/设置写失败（审查 MAJOR）。
@@ -547,7 +599,7 @@ struct TodayTabView: View {
                 unreadableBlock
                     .padding(.horizontal, RedeSpace.page)
                     .padding(.top, 18)
-            } else if let exercises = model?.prescription?.exercises, !exercises.isEmpty {
+            } else if let exercises = displayPrescription?.exercises, !exercises.isEmpty {
                 verdictLine(count: exercises.count)
                     .padding(.horizontal, RedeSpace.page)
                     .padding(.top, 14)
@@ -1030,7 +1082,7 @@ struct TodayTabView: View {
     /// 无处方分支判定（restBlock 可见）：digest/下一场的加载触发与渲染共用此口径。
     /// unreadable → model nil → false（unreadableBlock 独占，不掺总结）。
     private var showsRestBranch: Bool {
-        model != nil && (model?.prescription?.exercises.isEmpty ?? true)
+        model != nil && (displayPrescription?.exercises.isEmpty ?? true)
     }
 
     /// 从已落盘历史派生最近一场总结（snapshot 链与进度页同口径；dayCode/时长按 sessionId
@@ -1461,7 +1513,7 @@ struct TodayTabView: View {
                 .padding(.top, 6)
                 // 自动均衡（批次 E，owner 拍板「不要建议直接自动改」「不要小字」）：
                 // 解释只放这里——用户主动点开才见；未知 rawValue 如实跳过
-                if let boostedRaws = model?.prescription?.dayReasons.compactMap({ reason -> [String]? in
+                if let boostedRaws = displayPrescription?.dayReasons.compactMap({ reason -> [String]? in
                     if case .musclePriorityBoosted(let raws) = reason { return raws }
                     return nil
                 }).first {
@@ -1721,7 +1773,7 @@ struct TodayTabView: View {
         guard ok else { return }
         detailTarget = nil
         // model 为 nil（无法确认）时默认 false：倾向**保留**刚写盘的覆盖、不误删（审查 MAJOR）。
-        let stillHasOriginal = model?.prescription?.exercises.contains { $0.exerciseId == swap.fromExerciseId } ?? false
+        let stillHasOriginal = displayPrescription?.exercises.contains { $0.exerciseId == swap.fromExerciseId } ?? false
         if stillHasOriginal {
             if oneTime { _ = await sessionStore.removeOneTimeSubstitution(originalId: swap.rootOriginal) }
             else { _ = await sessionStore.removeExerciseSubstitution(originalId: swap.rootOriginal) }
@@ -1822,8 +1874,10 @@ struct TodayTabView: View {
     /// 守场景 + 排除已用）。否则会列出引擎换不成的动作（如 lower 日复合深蹲槽要 machine 却列了杠铃/哑铃深蹲），
     /// 用户点了悄无声息回退、看着像「没实现」。确保点了就换得成。
     private func alternatives(for entry: ExerciseCatalogEntry) -> [String] {
-        guard let dayCode = model?.prescription?.dayCode else { return [] }
-        let currentIds = model?.prescription?.exercises.map(\.exerciseId) ?? []
+        // 与展示同源：用户换的是**当前清单里**那个动作；会话进行中时清单来自会话，
+        // 若这里仍读今天现算的处方，候选会按另一天的槽位算，点了换不成。
+        guard let dayCode = displayPrescription?.dayCode else { return [] }
+        let currentIds = displayPrescription?.exercises.map(\.exerciseId) ?? []
         return TodayPrescriptionEngine.swapCandidates(
             for: entry.id, dayCode: dayCode, currentIds: currentIds,
             equipmentScenario: model?.equipmentScenario

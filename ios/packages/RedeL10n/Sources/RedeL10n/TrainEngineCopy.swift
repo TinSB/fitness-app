@@ -426,6 +426,18 @@ extension RedeStrings {
         locale == .zh ? "上次训练没有完成，已完成的组都还在" : "Your last session wasn't finished. Your logged sets are still here"
     }
     public var resumeSessionContinue: String { locale == .zh ? "继续训练" : "Resume" }
+
+    /// 进行中的训练与今天的安排不是同一天时的如实提示（2026-08-10 用户实拍：
+    /// 今日页显示「推 A」而训练页在练「拉 A」——跨日恢复 draft 或临时换天后必然分叉，
+    /// 此前两页各说各话、无任何交代）。
+    public func sessionInProgressDiffers(active: String) -> String {
+        locale == .zh ? "进行中：\(active)" : "In progress: \(active)"
+    }
+    /// 清单已跟着会话走，这句只交代今天新排的是哪天——否则用户不知道今天的安排去哪了。
+    public func sessionInProgressTodayIs(today: String) -> String {
+        locale == .zh ? "今天新排的是 \(today)　练完这场后接上"
+                      : "Today is newly scheduled as \(today). It follows once you finish this one"
+    }
     public var resumeSessionDiscard: String { locale == .zh ? "放弃" : "Discard" }
     /// 取消按钮必须显式给文案——SwiftUI 自动注入的系统 Cancel 跟随设备语言，
     /// 不理 app 内语言设置（2026-06-10 模拟器实证：中文界面冒英文 Cancel）。
