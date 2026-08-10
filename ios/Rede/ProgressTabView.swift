@@ -214,17 +214,14 @@ struct ProgressTabView: View {
     private func content(_ model: ProgressModel) -> some View {
         let view = scaleView(model)
         return VStack(alignment: .leading, spacing: 0) {
-            // 尺度切换（2026-08-09 owner 拍板「乙」）：药丸不动，下面补一条尺身。
-            // 单次/本周/周期 不是三个并列选项，是同一根时间轴上的三个倍率（1 场 ⊂ 7 天 ⊂ 4 周）；
-            // 尺身的主刻度落在分段边界上，药丸停在两根主刻度之间，读成「量程档位」。
-            // 设置页的 kg/lb、中英文是**二选一**，所以那边只有药丸、不带尺身——
-            // 一致性跟着含义走，不跟着形状走。
-            VStack(spacing: 8) {
-                SegControl(options: segOptions, selection: segSelection)
-                ScaleRule(segments: segOptions.count)
-            }
-            .padding(.horizontal, RedeSpace.page)
-            .padding(.top, 16)
+            // 尺度切换。2026-08-09 一度在下面补过一条带刻度的尺身（想表达
+            // 单次/本周/周期 是同一根时间轴上的三个倍率），owner 判「不好看」——
+            // 复盘：那条尺跟药丸隔着 8pt、自己不带任何状态，读起来只是一条带刻度的
+            // 分隔线，还跟分组刻线（EngraveDivider）撞脸。它没托住任何东西，删。
+            // 尺度语义交给切换后整块内容的交叉淡入去表达，不靠控件底下加装饰。
+            SegControl(options: segOptions, selection: segSelection)
+                .padding(.horizontal, RedeSpace.page)
+                .padding(.top, 16)
 
             // 尺度切换 = 整块交叉淡入（治"硬跳"）：HERO 判断句 + 图表/趋势随 scale 一起换。
             // .id(scale) 让换尺度时旧块淡出、新块淡入；动效由 segSelection setter 的 withAnimation 驱动、
