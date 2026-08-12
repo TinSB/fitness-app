@@ -111,6 +111,18 @@ final class RedeStringsTests: XCTestCase {
             ("settingsPanelOverline", s.settingsPanelOverline),
             // 2026-08-09 设置页 IA 重排新增 key（审查 m4：新增 key 进 parity 清单）
             ("settingsDisplayOverline", s.settingsDisplayOverline),
+            // 2026-08-12 引导内登录恢复
+            ("onbRestoreEntry", s.onbRestoreEntry),
+            ("onbRestoreTitle", s.onbRestoreTitle),
+            ("onbRestoreBody", s.onbRestoreBody),
+            ("onbRestoreWorking", s.onbRestoreWorking),
+            ("onbRestoreDone", s.onbRestoreDone(sessions: 47)),
+            ("onbRestoreDoneAction", s.onbRestoreDoneAction),
+            ("onbRestoreEmpty", s.onbRestoreEmpty),
+            ("onbRestoreEmptyAction", s.onbRestoreEmptyAction),
+            ("onbRestoreFailed", s.onbRestoreFailed),
+            ("onbRestoreRetry", s.onbRestoreRetry),
+            ("onbRestoreCancel", s.onbRestoreCancel),
             // 2026-08-12 计划页 IA 重排新增 key
             ("planTenureColSpan", s.planTenureColSpan),
             ("planTenureColTrained", s.planTenureColTrained),

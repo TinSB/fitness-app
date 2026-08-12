@@ -47,6 +47,7 @@
 		CAED000000000000000000A2 /* MotionSampleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAED000000000000000000A1 /* MotionSampleView.swift */; };
 		A100000000000000000000E2 /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000E1 /* SyncService.swift */; };
 		A100000000000000000000E4 /* SyncSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000E3 /* SyncSheet.swift */; };
+		A1000000000000000000FD01 /* OnboardingRestoreSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000FD02 /* OnboardingRestoreSheet.swift */; };
 		A100000000000000000000E6 /* SyncWriteSlotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000E5 /* SyncWriteSlotTests.swift */; };
 		CAEB00000000000000000002 /* ExerciseLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAEB00000000000000000001 /* ExerciseLibraryView.swift */; };
 		CA00000000000000000000B5 /* PlanTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A5 /* PlanTabView.swift */; };
@@ -135,6 +136,7 @@
 		CAED000000000000000000A1 /* MotionSampleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionSampleView.swift; sourceTree = "<group>"; };
 		A100000000000000000000E1 /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
 		A100000000000000000000E3 /* SyncSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSheet.swift; sourceTree = "<group>"; };
+		A1000000000000000000FD02 /* OnboardingRestoreSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingRestoreSheet.swift; sourceTree = "<group>"; };
 		CAEB00000000000000000001 /* ExerciseLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryView.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A5 /* PlanTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTabView.swift; sourceTree = "<group>"; };
 		CB00000000000000000000A1 /* RedeTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeTheme.swift; sourceTree = "<group>"; };
@@ -241,6 +243,7 @@
 				CAED000000000000000000A1 /* MotionSampleView.swift */,
 				A100000000000000000000E1 /* SyncService.swift */,
 				A100000000000000000000E3 /* SyncSheet.swift */,
+				A1000000000000000000FD02 /* OnboardingRestoreSheet.swift */,
 				CAEB00000000000000000001 /* ExerciseLibraryView.swift */,
 				CARL00000000000000000001 /* RestLiveActivityController.swift */,
 				CA00000000000000000000A5 /* PlanTabView.swift */,
@@ -472,6 +475,7 @@
 				CAED000000000000000000A2 /* MotionSampleView.swift in Sources */,
 				A100000000000000000000E2 /* SyncService.swift in Sources */,
 				A100000000000000000000E4 /* SyncSheet.swift in Sources */,
+				A1000000000000000000FD01 /* OnboardingRestoreSheet.swift in Sources */,
 				CAEB00000000000000000002 /* ExerciseLibraryView.swift in Sources */,
 				CARL00000000000000000002 /* RestLiveActivityController.swift in Sources */,
 				CA00000000000000000000B5 /* PlanTabView.swift in Sources */,
