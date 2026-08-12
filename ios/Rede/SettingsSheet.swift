@@ -56,6 +56,9 @@ struct SettingsSheet: View {
     @State private var feedbackFallbackText: String?
     /// 背板折叠态（J5 渐进披露：默认全收起）。
     @State private var expandedInfo: Set<String> = []
+    /// 数据组行首图标槽宽。**必须跟字号缩放**——写死 16 时最大辅助字号下图标会撑破槽位，
+    /// 把与行名之间的间距吃掉（实测：「☁云端同步」贴成一坨）。
+    @ScaledMetric(relativeTo: .caption) private var dataRowIconSlot: CGFloat = 16
 
     /// M6-3 正式反馈渠道。mailto 交给系统邮件 App；StoreKit 另由 Apple
     /// 服务处理。Rede 自身不上传训练数据，但不能再把整个 runtime 描述成“不连网”。
@@ -97,31 +100,31 @@ struct SettingsSheet: View {
             }
             ScrollViewReader { proxy in
                 ScrollView {
+                    // 2026-08-09 IA 重排（owner：「不像一个成熟的产品」）。11 组 → 7 组，
+                    // 排序依据只有一条——**这一项改动会波及多少东西**：
+                    //   改训练背景 → 整份计划重排；改单位 → 只是同一个数字换个写法。
+                    // 原顺序是按功能实现的先后堆的（单位语言最早做所以在最上，训练背景后补所以在第八），
+                    // 那个顺序只对写代码的人有意义。
+                    // 合并的三组：Apple 健康 / 云端同步 / 导出 回答的是同一个问题——
+                    // 我的数据在哪、去哪、能不能带走——所以并成「数据」一组；
+                    // 版本/隐私/关于/反馈 四个独立分组并成「关于」。
+                    // 通知按 owner 2026-08-09 指示保持独立成组，不并进「训练周期」。
                     VStack(alignment: .leading, spacing: 0) {
-                        preferenceRows
+                        backgroundPlate               // 1 训练背景：决定引擎怎么排计划 = 这一页的身份区
                         EngraveDivider().padding(.top, RedeSpace.section)
-                        periodizationSection
+                        periodizationSection          // 2 训练周期：影响每天练什么
                         EngraveDivider().padding(.top, RedeSpace.section)
-                        notificationsSection
+                        notificationsSection          // 3 通知：影响什么时候被叫
                         EngraveDivider().padding(.top, RedeSpace.section)
-                        healthSection
+                        dataGroup                     // 4 数据：同步 + 健康 + 导出
+                            .id("data")               // -settingsScrollTo 锚点
                         EngraveDivider().padding(.top, RedeSpace.section)
-                        syncSection
-                            .id("sync")
+                        displaySection                // 5 显示：只改写法，不改行为
                         EngraveDivider().padding(.top, RedeSpace.section)
-                        dataSection
-                            .id("data")   // -settingsScrollTo 锚点
-                        EngraveDivider().padding(.top, RedeSpace.section)
-                        subscriptionSection
+                        subscriptionSection           // 6 方案
                             .id("subscription")
                         EngraveDivider().padding(.top, RedeSpace.section)
-                        backgroundPlate
-                        EngraveDivider().padding(.top, RedeSpace.section)
-                        appUpdateSection
-                            .id("update")
-                        EngraveDivider().padding(.top, RedeSpace.section)
-                        backplateInfo
-                        feedbackKey
+                        aboutGroup                    // 7 关于：版本 + 隐私 + 免责 + 反馈
                     }
                     .padding(.horizontal, RedeSpace.page)
                     .padding(.bottom, 24)
@@ -215,38 +218,144 @@ struct SettingsSheet: View {
         }
     }
 
-    // MARK: - FR-PR8 Apple 健康（只读体重展示）
+    // MARK: - 数据组（2026-08-09 IA 重排）：云端同步 / Apple 健康 / 导出训练数据 三行一组
+    //
+    // 合并理由（owner：「不像一个成熟的产品」）：三者回答同一个问题——我的数据在哪、去哪、
+    // 能不能带走。重排前它们是三个独立分组、各带一个 overline、各有一套版式，读起来像三件
+    // 不相干的事。现在统一成同一种行形：图标 + 名 + 右值，**只有真能点的行才给 chevron**
+    // （沿铭牌 NIT-1 先例：不可点就不给「能点」的暗示）。组内用发丝线分隔，沿版本组先例。
 
-    private var healthSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Overline(text: s.healthSectionTitle).padding(.top, 18)
-            switch health.state {
-            case .weight(let sample):
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(s.healthWeightLine(weight: "\(s.formatKg(sample.kg)) \(s.unitLabel)", dateISO: sample.dateISO))
-                        .font(.redeBody).foregroundStyle(Color.redeT1).monospacedDigit()
-                    Text(s.healthSourceLabel).font(.redeCaption).foregroundStyle(Color.redeT4)
-                }
-            case .noData:
-                Text(s.healthNoData).font(.redeCaption).foregroundStyle(Color.redeT3)
-                    .fixedSize(horizontal: false, vertical: true)
-            case .unavailable:
-                Text(s.healthUnavailable).font(.redeCaption).foregroundStyle(Color.redeT3)
-            case .notConnected, .connecting:
-                Button {
-                    guard !healthBusy else { return }
-                    healthBusy = true
-                    Task { await health.connect(); healthBusy = false }
-                } label: {
-                    Text(health.state == .connecting ? s.healthConnecting : s.healthConnectAction)
-                        .font(.redeBody).foregroundStyle(Color.redeEmber2)
-                        .frame(minHeight: RedeShape.controlHeight, alignment: .leading)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.redePressable)
-                .disabled(healthBusy)
+    private var dataGroup: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Overline(text: s.settingsData)
+                .padding(.top, 18)
+                .padding(.bottom, 7)
+
+            // 云端同步（FR-ACC1）：右值只有未开启／已开启两种——不加徽标、不加小红点、不在首页推销。
+            Button {
+                showSync = true
+            } label: {
+                dataRow(
+                    icon: "icloud",
+                    title: s.syncTitle,
+                    value: syncService.isSignedIn ? s.syncStateOn : s.syncStateOff,
+                    valueColor: Color.redeT3,
+                    showsChevron: true
+                )
+            }
+            .buttonStyle(.redePressableRow)
+            .id("sync")   // -settingsScrollTo 锚点（重排前同步是独立分组，锚点沿用）
+
+            hairline
+            healthRow
+            hairline
+
+            // K7 导出（FR-SE6 兑现）：canonical 原样字节 → 系统分享面板。
+            Button {
+                exportData()
+            } label: {
+                dataRow(
+                    icon: "square.and.arrow.up",
+                    title: s.settingsExportAction,
+                    value: nil,
+                    valueColor: Color.redeT3,
+                    showsChevron: true
+                )
+            }
+            .buttonStyle(.redePressableRow)
+            .disabled(exportBusy)
+        }
+    }
+
+    /// FR-PR8 Apple 健康行（只读体重）。只有「未连接」可点——已连接、无记录、不可用都是纯展示，
+    /// 不给 chevron。读不到体重时右值给短态，完整原因（无记录 or 未授权）仍在行下如实说清。
+    @ViewBuilder
+    private var healthRow: some View {
+        switch health.state {
+        case .weight(let sample):
+            dataRow(
+                icon: "heart",
+                title: s.healthSectionTitle,
+                value: s.healthWeightLine(
+                    weight: "\(s.formatKg(sample.kg)) \(s.unitLabel)",
+                    dateISO: sample.dateISO
+                ),
+                valueColor: Color.redeT1,
+                showsChevron: false
+            )
+        case .noData:
+            healthRowWithReason(value: s.healthStateNoRecord, reason: s.healthNoData)
+        case .unavailable:
+            healthRowWithReason(value: s.healthStateUnavailable, reason: s.healthUnavailable)
+        case .notConnected, .connecting:
+            Button {
+                guard !healthBusy, health.state == .notConnected else { return }
+                healthBusy = true
+                Task { await health.connect(); healthBusy = false }
+            } label: {
+                dataRow(
+                    icon: "heart",
+                    title: s.healthSectionTitle,
+                    value: health.state == .connecting ? s.healthConnecting : s.healthStateConnect,
+                    valueColor: health.state == .connecting ? Color.redeT3 : Color.redeEmber2,
+                    showsChevron: false
+                )
+            }
+            .buttonStyle(.redePressableRow)
+            .disabled(healthBusy || health.state == .connecting)
+        }
+    }
+
+    /// 读不到体重的两种情形：右值给短态，原因在行下如实说清（「无记录」「不可用」单独看太含糊）。
+    private func healthRowWithReason(value: String, reason: String) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            dataRow(
+                icon: "heart", title: s.healthSectionTitle,
+                value: value, valueColor: Color.redeT3, showsChevron: false
+            )
+            Text(reason)
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT3)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.bottom, 10)
+        }
+    }
+
+    /// 数据组统一行形。图标只是装饰（§16.1 a11y 隐藏），行名本身自解释。
+    private func dataRow(
+        icon: String, title: String, value: String?, valueColor: Color, showsChevron: Bool
+    ) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT4)
+                .frame(width: dataRowIconSlot)
+                .accessibilityHidden(true)
+            Text(title)
+                .font(.redeBody)
+                .foregroundStyle(Color.redeT2)
+            Spacer(minLength: 8)
+            if let value {
+                Text(value)
+                    .font(.system(size: 13))
+                    .monospacedDigit()
+                    .foregroundStyle(valueColor)
+                    .multilineTextAlignment(.trailing)
+                    .fixedSize(horizontal: false, vertical: true)   // 大字号下让右值换行，不截断
+            }
+            if showsChevron {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.redeT4)
+                    .accessibilityHidden(true)
             }
         }
+        .frame(minHeight: RedeShape.controlHeight)
+        .contentShape(Rectangle())
+    }
+
+    private var hairline: some View {
+        Rectangle().fill(Color.redeHair2).frame(height: 1)
     }
 
     // MARK: - FR-SE9 / FR-SUB2 方案与订阅
@@ -342,73 +451,6 @@ struct SettingsSheet: View {
         .buttonStyle(.redePressableRow)
     }
 
-    // MARK: - 云端同步（FR-ACC1）
-    //
-    // 位置：夹在「Apple 健康」与「数据」之间。前面几组是纯偏好开关，后面是数据去向，
-    // 同步属于后者；也刻意不挨着「方案」，避免被读成付费功能。
-    // 右侧值只有未开启／已开启两种——不加徽标、不加小红点、不在首页推销。
-
-    private var syncSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Overline(text: s.syncGroupOverline).padding(.top, 18)
-            Button {
-                showSync = true
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "icloud")
-                        .font(.redeCaption)
-                        .foregroundStyle(Color.redeT4)
-                        .accessibilityHidden(true)
-                    Text(s.syncTitle)
-                        .font(.redeBody)
-                        .foregroundStyle(Color.redeT2)
-                    Spacer()
-                    Text(syncService.isSignedIn ? s.syncStateOn : s.syncStateOff)
-                        .font(.system(size: 13))
-                        .foregroundStyle(Color.redeT3)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.redeT4)
-                        .accessibilityHidden(true)
-                }
-                .frame(minHeight: RedeShape.controlHeight)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.redePressableRow)
-        }
-    }
-
-    // MARK: - K7 数据（FR-SE6 兑现）：只保留自解释的导出行；owner 2026-07-18
-    // 删除常驻说明小字。隐私/关于仍留背板渐进披露。
-
-    private var dataSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Overline(text: s.settingsData).padding(.top, 18)
-            Button {
-                exportData()
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.redeCaption)
-                        .foregroundStyle(Color.redeT4)
-                        .accessibilityHidden(true)   // 装饰性图标（§16.1，审查 NIT）
-                    Text(s.settingsExportAction)
-                        .font(.redeBody)
-                        .foregroundStyle(Color.redeT2)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.redeT4)
-                        .accessibilityHidden(true)   // 装饰性 affordance（§16.1）
-                }
-                .frame(minHeight: RedeShape.controlHeight)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.redePressableRow)
-            .disabled(exportBusy)
-        }
-    }
-
     /// K7 导出：canonical `app-data.json` **原样字节**（不重编码、不挑字段——诚实带走全部数据）
     /// → 系统临时目录落 `rede-export-yyyy-MM-dd.json` → share sheet。全程零写入 canonical；
     /// 读失败/文件缺失如实 alert，绝不产出空文件假成功。
@@ -466,10 +508,15 @@ struct SettingsSheet: View {
         .overlay(alignment: .bottom) { Rectangle().fill(Color.redeHair2).frame(height: 1) }
     }
 
-    // MARK: - 偏好：label 左 + 机加工分段开关 右（FR-SE1/SE3，改动即时生效 + 写闸持久化）
+    // MARK: - 显示：label 左 + 机加工分段开关 右（FR-SE1/SE3，改动即时生效 + 写闸持久化）
+    //
+    // 2026-08-09 IA 重排：从整页第一位降到第五。理由——单位与语言只改同一个数字/文字怎么写，
+    // 不改任何行为，装完设一次就不再碰；它排第一只是因为它最早被实现。
+    // 重排后它不再是「第一组」，所以补一个分组头，不然会被读成上一组（数据）的续行。
 
-    private var preferenceRows: some View {
-        VStack(spacing: 12) {
+    private var displaySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Overline(text: s.settingsDisplayOverline).padding(.top, 18)
             preferenceRow(s.settingsUnit, options: RedeUnit.allCases.map(\.displayName), selection: Binding(
                 get: { store.unit.displayName },
                 set: { picked in
@@ -493,7 +540,6 @@ struct SettingsSheet: View {
                 }
             ))
         }
-        .padding(.top, 16)
     }
 
     private func preferenceRow(_ label: String, options: [String], selection: Binding<String>) -> some View {
@@ -502,8 +548,10 @@ struct SettingsSheet: View {
                 .font(.redeBody)
                 .foregroundStyle(Color.redeT2)
             Spacer()
-            SegControl(options: options, selection: selection, machined: true)
-                .frame(width: 168)
+            // 两行共用同一宽度（不按各自内容收缩）：右列成一条干净的竖直块，
+            // 和这一页的仪表语气一致。168 → 152：kg/lb 只有两个字母，168 下半格几乎全是空。
+            SegControl(options: options, selection: selection)
+                .frame(width: 152)
         }
     }
 
@@ -649,15 +697,15 @@ struct SettingsSheet: View {
             ForgedCard(showReg: true) {
                 VStack(spacing: 0) {
                     plateRow(s.onbGoalLabel, profile?.primaryGoal.map { s.onbGoalOption($0).title }, question: .goal)
-                    plateDivider
+                    hairline
                     plateRow(s.onbDaysLabel, profile?.weeklyTrainingDays.map { s.settingsDaysValue($0) }, question: .days)
-                    plateDivider
+                    hairline
                     plateRow(s.onbEquipLabel, profile?.equipmentScenario.map { s.onbEquipOption($0).title }, question: .equipment)
-                    plateDivider
+                    hairline
                     plateRow(s.settingsSelfReportedBackgroundLabel, profile?.trainingLevel.map { s.onbLevelOption($0).title }, question: .level)  // 自报输入≠系统等级（FR-PR6 上线后区分，§6.5.14）
-                    plateDivider
+                    hairline
                     plateRow(s.settingsSexLabel, profile?.sex.map { s.settingsSexOption($0).title }, question: .sex)  // 可选（批次 D：仅相对力量标准用；未设显示 —）
-                    plateDivider
+                    hairline
                     plateRow(
                         s.settingsBodyConditionLabel,
                         profile.map {
@@ -689,10 +737,6 @@ struct SettingsSheet: View {
             && profile?.equipmentScenario != nil && profile?.trainingLevel != nil
     }
 
-    private var plateDivider: some View {
-        Rectangle().fill(Color.redeHair2).frame(height: 1)
-    }
-
     private func plateRow(_ label: String, _ value: String??, question: PlateQuestion) -> some View {
         Button {
             guard profileComplete || question == .injury else { return }
@@ -718,14 +762,31 @@ struct SettingsSheet: View {
         .buttonStyle(.redePressableRow)
     }
 
-    // MARK: - FR-SE10 版本与更新（事实行；无常驻说明小字）
+    // MARK: - 关于组（2026-08-09 IA 重排）：版本/检查更新/本次新增 + 隐私/免责 + 发送反馈
+    //
+    // 重排前这是四个独立分组（版本、背板蚀刻两行、反馈键），占了整页末尾一大截。
+    // 它们的共同点是：都不影响训练，都是元信息与出口。所以合成最底部一组。
+    // ember 仍然只有一处 = 发送反馈（面板唯一向外动作，S1/A2-6）。
 
-    private var appUpdateSection: some View {
+    private var aboutGroup: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Overline(text: s.appUpdateSection)
+            Overline(text: s.settingsAbout)
                 .padding(.top, 18)
                 .padding(.bottom, 7)
+            appUpdateRows
+                .id("update")   // -settingsScrollTo 锚点（重排前版本是独立分组，锚点沿用）
+            infoRow(id: "privacy", title: s.settingsPrivacy, detail: s.settingsPrivacyNote)
+            // 行名用「免责声明」而非「关于」——重排后「关于」已经是这一组的组名，同字会打架。
+            infoRow(id: "about", title: s.settingsDisclaimerTitle, detail: s.settingsDisclaimer)
+            feedbackKey
+        }
+    }
 
+    // MARK: - FR-SE10 版本与更新（事实行；无常驻说明小字）
+    // 2026-08-09：并入「关于」组后自己不再带 overline，版本行成为组内第一行。
+
+    private var appUpdateRows: some View {
+        VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(s.appUpdateVersion)
                     .font(.redeBody)
@@ -883,16 +944,8 @@ struct SettingsSheet: View {
         Task { await appUpdateModel.checkManually() }
     }
 
-    // MARK: - 背板蚀刻：数据/隐私/关于 渐进披露（默认收起）
-
-    private var backplateInfo: some View {
-        VStack(spacing: 0) {
-            // 「数据」行已上移成 dataSection（K7：单一导出入口，避免双标题）。
-            infoRow(id: "privacy", title: s.settingsPrivacy, detail: s.settingsPrivacyNote)
-            infoRow(id: "about", title: s.settingsAbout, detail: s.settingsDisclaimer)
-        }
-        .padding(.top, 14)
-    }
+    // MARK: - 背板蚀刻：隐私/免责 渐进披露（默认收起）
+    // 2026-08-09：两行并入 aboutGroup，自己不再是独立分组。
 
     private func infoRow(id: String, title: String, detail: String) -> some View {
         let expanded = expandedInfo.contains(id)

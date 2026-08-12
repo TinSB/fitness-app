@@ -214,8 +214,12 @@ struct ProgressTabView: View {
     private func content(_ model: ProgressModel) -> some View {
         let view = scaleView(model)
         return VStack(alignment: .leading, spacing: 0) {
-            // 整面板（2026-06-11）：通用 seg 凹盒升级机加工凹槽（与设置面板同工艺）
-            SegControl(options: segOptions, selection: segSelection, machined: true)
+            // 尺度切换。2026-08-09 一度在下面补过一条带刻度的尺身（想表达
+            // 单次/本周/周期 是同一根时间轴上的三个倍率），owner 判「不好看」——
+            // 复盘：那条尺跟药丸隔着 8pt、自己不带任何状态，读起来只是一条带刻度的
+            // 分隔线，还跟分组刻线（EngraveDivider）撞脸。它没托住任何东西，删。
+            // 尺度语义交给切换后整块内容的交叉淡入去表达，不靠控件底下加装饰。
+            SegControl(options: segOptions, selection: segSelection)
                 .padding(.horizontal, RedeSpace.page)
                 .padding(.top, 16)
 

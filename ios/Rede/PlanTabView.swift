@@ -33,6 +33,11 @@ struct PlanTabView: View {
     @State private var lastTrainedByDay: [String: String] = [:]
     /// K5：累计事实（自首场起 ISO 周跨度 + 去重训练天数；nil = 无历史不渲染）。
     @State private var tenure: (weeks: Int, days: Int)?
+    /// 每个训练日码的真实动作 id（详情行要同时渲染名字与「主肌群 · 器械」）。
+    @State private var exerciseIdsByDay: [String: [String]] = [:]
+    /// 当前展开的训练日（nil = 用下一场）。竞品对照 Alpha Progression：五天是顶部一排 tab，
+    /// 下面只展开一天——把五天的动作全铺开就是一堵均匀的文字墙。
+    @State private var selectedDay: String?
 
     private var s: RedeStrings { localeStore.strings }
 
@@ -55,25 +60,25 @@ struct PlanTabView: View {
                             .tracking(RedeTracking.headline)
                             .foregroundStyle(Color.redeT1)
                             .fixedSize(horizontal: false, vertical: true)
-                        if let ctx = planContextLine(facts) {
-                            Text(ctx)
-                                .font(.redeCallout)
-                                .foregroundStyle(Color.redeT3)
-                        }
                         // K5 累计事实行（cleanView.sessions 去重天数 + 首场日期派生；
                         // 单位=天——裁定 3；无历史不渲染）。
-                        if let tenure {
-                            // S5 排版基准：坚持了多久是用户在这一页最该看见的成就，
-                            // 原来是 11pt 灰字、和说明文字无异。升格成读数。
-                            StatStrip(columns: [
-                                StatColumn(label: s.planTenureColWeeks,
-                                           value: "\(tenure.weeks)", unit: s.planTenureUnitWeek),
-                                StatColumn(label: s.planTenureColDays,
-                                           value: "\(tenure.days)", unit: s.planTenureUnitDay),
-                            ], valueSize: 22)
-                            .padding(.top, 4)
-                            .accessibilityElement(children: .ignore)
-                            .accessibilityLabel(s.planTenureLine(weeks: tenure.weeks, days: tenure.days))
+                        Group {
+                            // 竞品对照 RP Hypertrophy：周期位置是导航栏里的一行「WEEK 5 DAY 1」，
+                            // 不是半屏的相位 stepper。这里降成 hero 第二行；相位名（构建/过载/减载）
+                            // 是引擎术语，用户不据此行动，随四节点轨一起撤。
+                            if let cycle {
+                                Text(s.mesoPhaseShort(cycle.currentPhase.rawValue) + " · "
+                                     + s.planCycleWeek(week: cycle.currentWeekInBlock + 1,
+                                                       total: cycle.blockLengthWeeks))
+                                    .font(.redeCallout)
+                                    .monospacedDigit()
+                                    .foregroundStyle(Color.redeT2)
+                            }
+                            if let ctx = planContextLine(facts) {
+                                Text(ctx)
+                                    .font(.redeCaption)
+                                    .foregroundStyle(Color.redeT4)
+                            }
                         }
                     }
                     .padding(.horizontal, RedeSpace.page)
@@ -94,19 +99,11 @@ struct PlanTabView: View {
                         }
                     }
 
-                    if let cycle {
-                        // FR-PL2 S5：真周期条（周期化开启且有真历史时）
-                        MesocycleCycleBar(state: cycle, s: s)
-                            .padding(.horizontal, RedeSpace.page)
-                            .padding(.top, 8)
-                    }
-
                     // FR-PL2：本周/下周排期（只读派生；有模板即展示，与今日页处方同源）
                     if !projection.isEmpty {
-                        if cycle != nil { RuleDivider() }
                         weekScheduleSection
                             .padding(.horizontal, RedeSpace.page)
-                            .padding(.top, cycle != nil ? 8 : 4)
+                            .padding(.top, 4)
                         // FR-PL7②/③：训练日编排入口（开放行下钻编辑器）。
                         daySequenceEntryRow
                             .padding(.horizontal, RedeSpace.page)
@@ -126,6 +123,19 @@ struct PlanTabView: View {
                                 .padding(.top, 4)
                         } else {
                             // 有真排期 →「回今日」降为文字链（大主按钮只留给空态，owner 拍板）。
+                            if let tenure {
+                                // 累计成就不是这一页的主线（这一页回答「我的循环长什么样、下一场是哪个」），
+                                // 但它仍值得看见——从 hero 挪到页脚，保留读数字号。
+                                StatStrip(columns: [
+                                    StatColumn(label: s.planTenureColSpan,
+                                               value: "\(tenure.weeks)", unit: s.planTenureUnitWeek),
+                                    StatColumn(label: s.planTenureColTrained,
+                                               value: "\(tenure.days)", unit: s.planTenureUnitDay),
+                                ], valueSize: 22)
+                                .padding(.bottom, 4)
+                                .accessibilityElement(children: .ignore)
+                                .accessibilityLabel(s.planTenureLine(weeks: tenure.weeks, days: tenure.days))
+                            }
                             Text(s.planScheduleNote)
                                 .font(.redeCallout)
                                 .foregroundStyle(Color.redeT3)
@@ -234,6 +244,15 @@ struct PlanTabView: View {
         adjustment = loaded.3
         lastTrainedByDay = loaded.4
         tenure = loaded.5
+        do {
+            let codes = PlanScheduleDigestBuilder.digest(from: loaded.2).dayTypes.map(\.dayCode)
+            let ids = await Task.detached {
+                Dictionary(uniqueKeysWithValues: codes.map {
+                    ($0, SessionStore.loadDayEditorContext(dayCode: $0)?.currentExerciseIds ?? [])
+                })
+            }.value
+            exerciseIdsByDay = ids
+        }
     }
 
     /// 背景 · 器械（真数据，引导选项标题）；缺则 nil。
@@ -398,35 +417,123 @@ struct PlanTabView: View {
     // MARK: - 本周/下周排期（FR-PL2；0 卡，纯文本行；训练日名 + 动作数 + 模式构成）
 
     private var weekScheduleSection: some View {
-        // T2 排期折叠（2026-07-05）：逐日渲染会让同一训练日类型的构成随周×天逐字
-        // 重复（上/下肢 4 天 = 8 行里重复 4 遍）。折叠为「分段序列 + 类型一次展开」：
-        // 先后顺序看序列行（保「接下来/再往后」分段语义），构成与下钻编辑（FR-PL6）
-        // 看类型行。digest 为包内纯函数（PlanScheduleDigestBuilder，含单测）。
-        let digest = PlanScheduleDigestBuilder.digest(from: projection)
-        return VStack(alignment: .leading, spacing: 16) {
-            ForEach(Array(digest.segments.enumerated()), id: \.offset) { segIdx, seg in
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(segIdx == 0 ? s.planScheduleThisWeek : s.planScheduleNextWeek)
-                        .font(.redeOverline)
-                        .tracking(RedeTracking.overline)
-                        .foregroundStyle(Color.redeT3)
-                    Text(seg.map(s.trainingDayName).joined(separator: " · "))
-                        .font(.redeCallout)
-                        .foregroundStyle(Color.redeT2)
-                        .fixedSize(horizontal: false, vertical: true)
+        loopSection(PlanScheduleDigestBuilder.digest(from: projection))
+    }
+
+    /// 训练日区（比稿 v3，竞品对照 Alpha Progression）。
+    ///
+    /// v2 把五天的动作名全铺在一页，结果是一堵均匀的文字墙——信息是重组了，
+    /// 但没有视觉分组也没有字阶，所以照样难看。Alpha Progression（功能上离 Rede 最近的）
+    /// 的做法是：**训练日做成顶部一排 tab，下面只展开当前那一天**，动作按行列出、
+    /// 右侧挂属性。LADDER 与 Hevy 也都是「先给下一场，其余让位」。
+    ///
+    /// 于是这一版：
+    /// · 五天 → 一排可横滑药丸（默认停在下一场），页面不再同时承载五份内容；
+    /// · 展开的那一天有真正的字阶跳跃（日名 22 / 动作名 15 / 属性 11）；
+    /// · 动作行右侧是「主肌群 · 器械」——目录真值，不是引擎的模式分类学。
+    private func loopSection(_ digest: PlanScheduleDigest) -> some View {
+        let days = digest.dayTypes
+        let nextCode = days.first?.dayCode
+        let current = days.first { $0.dayCode == (selectedDay ?? nextCode) } ?? days.first
+        return VStack(alignment: .leading, spacing: 0) {
+            dayPills(days, currentCode: current?.dayCode, nextCode: nextCode)
+            if let current { dayDetail(current, isNext: current.dayCode == nextCode) }
+        }
+    }
+
+    /// 训练日药丸条：横滑，选中 = redeHair 药丸（与设置页／进展页同一套裸药丸语言）。
+    private func dayPills(_ days: [PlanDayProjection], currentCode: String?, nextCode: String?) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(days, id: \.dayCode) { day in
+                    let on = day.dayCode == currentCode
+                    Button {
+                        guard !on else { return }
+                        withAnimation(reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.88)) {
+                            selectedDay = day.dayCode
+                        }
+                    } label: {
+                        Text(s.trainingDayName(day.dayCode))
+                            .font(.system(size: 13, weight: on ? .semibold : .medium))
+                            .foregroundStyle(on ? Color.redeT1 : Color.redeT4)
+                            .padding(.horizontal, 14)
+                            .frame(minHeight: 32)
+                            .background { if on { Capsule(style: .continuous).fill(Color.redeHair) } }
+                            .frame(minHeight: RedeShape.controlHeight)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.redePressableRow)
+                    .accessibilityAddTraits(on ? [.isButton, .isSelected] : .isButton)
                 }
-                .accessibilityElement(children: .combine)
             }
-            VStack(alignment: .leading, spacing: 8) {
-                Text(s.planDayTypesHeader)
-                    .font(.redeOverline)
-                    .tracking(RedeTracking.overline)
-                    .foregroundStyle(Color.redeT3)
-                ForEach(digest.dayTypes, id: \.dayCode) { day in
-                    dayScheduleRow(day)
+            .padding(.horizontal, RedeSpace.page)
+        }
+        .padding(.horizontal, -RedeSpace.page)   // 药丸条可滑到页边，不被页边距切住
+    }
+
+    private func dayDetail(_ day: PlanDayProjection, isNext: Bool) -> some View {
+        let ids = exerciseIdsByDay[day.dayCode] ?? []
+        return VStack(alignment: .leading, spacing: 0) {
+            // 药丸条里已经写着当前是哪一天，详情再放一个同名大标题是白重复一遍
+            //（Alpha Progression 有这个重复，但它的 tab 条会滚出视野、标题才需要锚点；
+            // Rede 的药丸条就贴在上面，重复读起来只是吵）。所以这里只留一行元信息。
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                if isNext {
+                    Text(s.planNextTag)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Color.redeEmber2)
+                    Text("·").font(.redeCaption).foregroundStyle(Color.redeT4)
                 }
+                Text(s.planDayMeta(count: day.exerciseCount,
+                                   lastDate: lastTrainedByDay[day.dayCode].map { s.shortDate(fromISO: $0) }))
+                    .font(.redeCaption)
+                    .monospacedDigit()
+                    .foregroundStyle(Color.redeT4)
+                Spacer()
+            }
+            .padding(.top, 12)
+
+            VStack(spacing: 0) {
+                ForEach(ids, id: \.self) { id in
+                    exerciseRow(id)
+                    if id != ids.last {
+                        Rectangle().fill(Color.redeHair2).frame(height: 1)
+                    }
+                }
+            }
+            .padding(.top, 10)
+
+            Button { editingDay = PlanEditTarget(dayCode: day.dayCode) } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "square.and.pencil").font(.redeCaption).foregroundStyle(Color.redeT3)
+                    Text(s.planDayEditEntry).font(.redeSubhead).foregroundStyle(Color.redeT1)
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.redeCaption).foregroundStyle(Color.redeT4)
+                }
+                .frame(minHeight: RedeShape.controlHeight)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.redePressableRow)
+            .accessibilityHint(s.planEditDayHint)
+        }
+        .id(day.dayCode)
+        .transition(reduceMotion ? .identity : .opacity)
+    }
+
+    private func exerciseRow(_ id: String) -> some View {
+        let entry = ExerciseCatalog.minimal.entry(id: id)
+        return HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text(localeStore.exerciseName(id))
+                .font(.redeBody)
+                .foregroundStyle(Color.redeT2)
+            Spacer(minLength: 8)
+            if let entry {
+                Text(s.planExerciseAttrs(muscle: entry.primaryMuscle, equipment: entry.equipment))
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.redeT4)
             }
         }
+        .frame(minHeight: 38)
     }
 
     /// FR-PL7②/③：训练日编排入口（开放行，点开编辑器 sheet）。
@@ -445,126 +552,7 @@ struct PlanTabView: View {
         .accessibilityElement(children: .combine)
         .accessibilityHint(s.planSeqEditEntryHint)
     }
-
-    private func dayScheduleRow(_ day: PlanDayProjection) -> some View {
-        // FR-PL6：开放行下钻编辑器（点整行；右侧 chevron 提示可编辑）。
-        Button { editingDay = PlanEditTarget(dayCode: day.dayCode) } label: {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 8) {
-                    Text(s.trainingDayName(day.dayCode))
-                        .font(.redeSubhead)
-                        .foregroundStyle(Color.redeT1)
-                    Spacer()
-                    // K5「上次」列：该日型最近一次完成日期（canonical templateId 直读；
-                    // 从未练过不显示——不编数据）。
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text(s.planDayExercises(day.exerciseCount))
-                            .font(.redeCaption).monospacedDigit()
-                            .foregroundStyle(Color.redeT4)
-                        if let last = lastTrainedByDay[day.dayCode] {
-                            Text(s.planDayLastTrained(dateText: s.shortDate(fromISO: last)))
-                                .font(.redeCaption).monospacedDigit()
-                                .foregroundStyle(Color.redeT4)
-                        }
-                    }
-                    Image(systemName: "chevron.right").font(.redeCaption).foregroundStyle(Color.redeT4)
-                }
-                Text(day.patternCodes.map(s.movementPatternLabel).joined(separator: " · "))
-                    .font(.redeCaption)
-                    .foregroundStyle(Color.redeT3)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.vertical, 6)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.redePressableRow)
-        .accessibilityElement(children: .combine)
-        .accessibilityHint(s.planEditDayHint)
-    }
 }
 
 /// `.sheet(item:)` 需要 Identifiable 包装 dayCode。
 private struct PlanEditTarget: Identifiable { let dayCode: String; var id: String { dayCode } }
-
-// MARK: - 周期条（FR-PL2 S5）— 4 周累积块·当前周 ember·相位角色。0 卡，纯 ember 轨/节点。
-struct MesocycleCycleBar: View {
-    let state: MesocycleCycleState
-    let s: RedeStrings
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(s.planCycleOverline)
-                .font(.redeOverline)
-                .tracking(RedeTracking.overline)
-                .foregroundStyle(Color.redeT3)
-
-            // 轨 + 节点：等宽列对齐，连接线落在首末节点中心，单 ember 标当前周。
-            ZStack {
-                GeometryReader { geo in
-                    let inset = geo.size.width / CGFloat(max(state.blockLengthWeeks, 1)) / 2
-                    Rectangle()
-                        .fill(Color.redeNeu)
-                        .frame(height: 1)
-                        .padding(.horizontal, inset)
-                        .frame(maxHeight: .infinity, alignment: .center)
-                }
-                HStack(spacing: 0) {
-                    ForEach(Array(state.phases.enumerated()), id: \.offset) { idx, _ in
-                        node(idx: idx)
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-            }
-            .frame(height: 20)
-
-            // 相位标签（节点下方等宽对齐），当前周 T1、其余 T3。
-            HStack(spacing: 0) {
-                ForEach(Array(state.phases.enumerated()), id: \.offset) { idx, phase in
-                    Text(s.mesoPhaseShort(phase.rawValue))
-                        .font(.redeCaption)
-                        .foregroundStyle(idx == state.currentWeekInBlock ? Color.redeT1 : Color.redeT3)
-                        .frame(maxWidth: .infinity)
-                }
-            }
-
-            // 相位已在节点下逐个标（当前周高亮）——摘要只留周计数，不重复相位（owner 拍板去重）。
-            Text(s.planCycleWeek(week: state.currentWeekInBlock + 1, total: state.blockLengthWeeks))
-                .font(.redeCaption)
-                .foregroundStyle(Color.redeT2)
-        }
-    }
-
-    @ViewBuilder
-    private func node(idx: Int) -> some View {
-        if idx == state.currentWeekInBlock {
-            RingDot(size: 12)                                   // 当前周：唯一 ember 口音
-        } else if idx < state.currentWeekInBlock {
-            Circle().fill(Color.redeT3).frame(width: 8, height: 8)   // 已过周：暗实心
-        } else {
-            Circle().stroke(Color.redeNextDot, lineWidth: 1.5)
-                .frame(width: 8, height: 8)                     // 未来周：空心
-        }
-    }
-}
-
-#Preview {
-    PlanTabView(onGoToday: {})
-        .environment(LocaleStore())
-        .environment(SessionStore())
-        .background(Color.redeBase)
-        .preferredColorScheme(.dark)
-}
-
-#Preview("CycleBar · overreach") {
-    MesocycleCycleBar(
-        state: MesocycleCycleState(
-            blockLengthWeeks: 4,
-            currentWeekInBlock: 2,
-            phases: [.calibrate, .build, .overreach, .deload]
-        ),
-        s: LocaleStore().strings
-    )
-    .padding(RedeSpace.page)
-    .background(Color.redeBase)
-    .preferredColorScheme(.dark)
-}

@@ -29,7 +29,9 @@ extension Color {
     static let redeHair = Color(redeHex: 0x2A2724)      // --hair
     static let redeHair2 = Color(redeHex: 0x222020)     // --hair2
     static let redeTabBar = Color(redeHex: 0x111010)    // tab bar 底
-    static let redeSegBase = Color(redeHex: 0x1A1917)   // 分段控件底
+    /// 输入框等浅内陷面（现用点：同步页邮箱框）。分段控件曾借这个色做「槽底」——
+    /// 2026-08-09 比稿后分段控件已无槽，不要再往这个方向复用（见 SegControl 头注）。
+    static let redeSegBase = Color(redeHex: 0x1A1917)
     static let redeEtch = Color(redeHex: 0x333029)      // S2 刻线（rede-app.html .etick）
 
     // 文字

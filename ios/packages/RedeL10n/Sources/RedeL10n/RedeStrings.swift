@@ -137,8 +137,6 @@ public struct RedeStrings: Sendable {
           "Your schedule and adjustments will land here. Start from Today")
     }
 
-    // MARK: - Plan 周期条（FR-PL2 S5：仅周期化开启且有真历史时显示；按引擎相位 rawValue 取标签）
-    public var planCycleOverline: String { t("当前周期", "Current cycle") }
     /// 周序 caption（无相位，相位已在节点下逐个标，摘要不重复）："第 3 / 4 周"。
     public func planCycleWeek(week: Int, total: Int) -> String {
         t("第 \(week) / \(total) 周", "Week \(week) of \(total)")
@@ -157,23 +155,34 @@ public struct RedeStrings: Sendable {
     // MARK: - Plan 周排期（FR-PL2：训练日 + 模式构成，只读派生投影）
     // 标签语义（Task 4 2026-07-04）：PlanWeekProjection 从下一场起按每周场数分块，
     // 不是日历周——标签用顺序词，不用「本周/下周」字面（周中已练满会误读）。
-    public var planScheduleThisWeek: String { t("接下来", "Coming up") }
-    public var planScheduleNextWeek: String { t("再往后", "After that") }
-    /// 排期折叠（T2 2026-07-05）：训练日类型区区头——每类构成只展开一次，先后顺序看序列行。
-    public var planDayTypesHeader: String { t("训练日构成", "Day types") }
     /// 单训练日动作数："6 个动作" / "6 exercises"。
     public func planDayExercises(_ count: Int) -> String {
         t("\(count) 个动作", count == 1 ? "1 exercise" : "\(count) exercises")
     }
-    /// K5 计划页「上次」列："上次 · 7月12日"（从未练过的日不显示——不编数据）。
-    public func planDayLastTrained(dateText: String) -> String {
-        t("上次 · \(dateText)", "Last · \(dateText)")
+    /// 同上的紧凑写法：与「6 个动作」并进同一行时用，避免出现「6 个动作 · 上次 · 7月12日」两个点。
+    public func planDayLastCompact(dateText: String) -> String {
+        t("上次 \(dateText)", "last \(dateText)")
     }
-    /// K5 计划页累计事实行："已练 5 周 · 14 天"（天=去重训练日，单位=天——裁定 3；
-    /// 周=自首场日期起的 ISO 周跨度，含当前周）。
-    /// 累计事实的**列标签**（2026-08-06 排版基准 S5）。原 planTenureLine 保留给无障碍。
-    public var planTenureColWeeks: String { locale == .zh ? "已练" : "weeks in" }
-    public var planTenureColDays: String { locale == .zh ? "训练天数" : "days trained" }
+    /// 训练日详情的元信息行："6 个动作 · 上次 7月29日"。
+    public func planDayMeta(count: Int, lastDate: String?) -> String {
+        let head = planDayExercises(count)
+        guard let lastDate else { return head }
+        return head + " · " + planDayLastCompact(dateText: lastDate)
+    }
+    /// 动作行右侧属性："胸 · 杠铃"（主肌群 · 器械，都来自目录真值）。
+    public func planExerciseAttrs(muscle: String, equipment: String) -> String {
+        muscleLabel(muscle) + " · " + equipmentLabel(equipment)
+    }
+    /// 训练日详情里的编辑入口。
+    public var planDayEditEntry: String { t("编辑这一天", "Edit this day") }
+    /// 「下一场」标记：药丸条停在哪一天由选中态表达，这个标签说明那一天恰好是下一场。
+    public var planNextTag: String { t("下一场", "Next") }
+    /// K5 累计事实（天=去重训练日；周=自首场起的 ISO 周跨度，含当前周）。planTenureLine 供无障碍念读。
+    /// 列标签改口径（2026-08-12）：原来是「已练 / 训练天数」，并排读起来自相矛盾——
+    /// 「已练 3 周」和「训练天数 1 天」听着像同一件事的两个答案。它们其实是两条轴：
+    /// **时长跨度** vs **实际次数**。标签互不重叠之后，两个数之间的落差才读得出来。
+    public var planTenureColSpan: String { locale == .zh ? "开始至今" : "since start" }
+    public var planTenureColTrained: String { locale == .zh ? "已训练" : "days trained" }
     public var planTenureUnitWeek: String { locale == .zh ? "周" : "" }
     public var planTenureUnitDay: String { locale == .zh ? "天" : "" }
 
@@ -202,6 +211,10 @@ public struct RedeStrings: Sendable {
     public var settingsLanguage: String { t("语言", "Language") }
     public var settingsDone: String { t("完成", "Done") }
     public var settingsUnit: String { t("单位", "Units") }
+    /// 分组头（2026-08-09 IA 重排）：单位/语言只改数字与文字怎么写，不改任何行为，
+    /// 所以从原来的第一位降到「显示」组。分组名与同层的 训练背景/训练周期/通知/数据/方案/关于
+    /// 一样是朴素名词——不用「你的显示」这类第二人称，避免同层命名风格分叉。
+    public var settingsDisplayOverline: String { t("显示", "Display") }
     public var settingsBackground: String { t("训练背景", "Training background") }
     public var settingsBodyConditionLabel: String { t("身体状况", "Body areas") }
     public var settingsBodyConditionNote: String {
@@ -306,7 +319,11 @@ public struct RedeStrings: Sendable {
         t("训练记录默认保存在这台设备本机　开启云端同步后同时保留一份在云端　订阅购买由 Apple 处理　Rede 不含第三方统计组件　删除 App 会同时删除本机训练数据",
           "Training records live on this device by default. Turning on Cloud Sync also keeps a copy in the cloud. Apple handles subscription purchases. Rede has no third-party analytics. Deleting the app also deletes its local training data")
     }
+    /// 2026-08-09 IA 重排后这个 key 升为「关于」**分组头**（原本是组内一行）。
+    /// 组内展开免责正文的那一行改用 settingsDisclaimerTitle，避免组名与行名同字。
     public var settingsAbout: String { t("关于", "About") }
+    /// 免责行标题（原来叫「关于」，与分组头同名）。
+    public var settingsDisclaimerTitle: String { t("免责声明", "Disclaimer") }
     /// FR-SE4 健康免责（fitness 非 medical 口径，沿文案基线 §7.1）。
     public var settingsDisclaimer: String {
         t("Rede 提供健身训练参考，不构成医疗建议　如有伤病或健康疑虑，训练前请咨询专业人士",
@@ -334,7 +351,6 @@ public struct RedeStrings: Sendable {
 
     public var syncPanelOverline: String { t("Rede · 同步", "Rede · Sync") }
     public var syncTitle: String { t("云端同步", "Cloud Sync") }
-    public var syncGroupOverline: String { t("同步", "Sync") }
     public var syncStateOff: String { t("未开启", "Off") }
     public var syncStateOn: String { t("已开启", "On") }
 
