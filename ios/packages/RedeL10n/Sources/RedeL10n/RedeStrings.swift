@@ -173,6 +173,32 @@ public struct RedeStrings: Sendable {
     public func planExerciseAttrs(muscle: String, equipment: String) -> String {
         muscleLabel(muscle) + " · " + equipmentLabel(equipment)
     }
+    // MARK: - 循环死区提示（2026-08-12）
+    //
+    // 从真实用户数据撞出来的：weeklyCycleRestart + 序列比实际每周场次长 = 序列尾部
+    // 永远轮不到。用户看不见这个因果——他只知道"我好像很久没练腿了"。
+    // 文案纪律：只说事实与依据，不指责、不说"你应该"。给一个能一键解决的动作。
+
+    /// 事实句："腿 A · 上肢 轮不到"
+    public func planDeadZoneTitle(_ dayNames: [String]) -> String {
+        let joined = dayNames.joined(separator: locale == .zh ? " · " : ", ")
+        return locale == .zh ? "\(joined) 轮不到" : "\(joined) never comes up"
+    }
+    /// 依据句：把因果说清楚——开关 + 实际频率 + 序列长度，三者缺一不可。
+    public func planDeadZoneReason(weeklySessions: Int, sequenceLength: Int) -> String {
+        locale == .zh
+            ? "每周重新开始循环时，轮转每周从第一天重来　最近每周练 \(weeklySessions) 次，\(sequenceLength) 天的循环只走得到前 \(weeklySessions) 天"
+            : "With the weekly restart on, the rotation returns to day one each week. At \(weeklySessions) sessions a week it only reaches the first \(weeklySessions) of \(sequenceLength) days"
+    }
+    /// 一键动作：关掉每周重开 = 立刻恢复顺延，尾部训练日下次就轮得到。
+    public var planDeadZoneAction: String {
+        locale == .zh ? "关闭每周重新开始循环" : "Turn off the weekly restart"
+    }
+    /// 关掉之后的确认（不说"已修复"，说发生了什么）。
+    public var planDeadZoneDone: String {
+        locale == .zh ? "已改为顺延　漏掉的训练日会按顺序补回" : "Switched to carry-over. Missed days now come up in order"
+    }
+
     /// 训练日详情里的编辑入口。
     public var planDayEditEntry: String { t("编辑这一天", "Edit this day") }
     /// 「下一场」标记：药丸条停在哪一天由选中态表达，这个标签说明那一天恰好是下一场。

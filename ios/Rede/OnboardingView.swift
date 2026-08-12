@@ -12,9 +12,13 @@ import RedeTrainingDecision
 struct OnboardingView: View {
     @Environment(LocaleStore.self) private var localeStore
     @Environment(SessionStore.self) private var sessionStore
+    @Environment(SyncService.self) private var syncService
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     let onFinish: () -> Void
+
+    /// 登录恢复面板（2026-08-12）：新机首启是云端唯一被兑现的时刻，之前这条路是断的。
+    @State private var showRestore = false
 
     private enum Step: Int, CaseIterable {
         case goal = 0, days, equipment, level
@@ -58,11 +62,27 @@ struct OnboardingView: View {
             .padding(.top, 16)
             // 结果卡隐藏页脚（11b：obMeta 在 result 态隐藏——「四个回答」是过期信息）
             if step < Step.allCases.count {
-                Text(s.onbFooterNote)
-                    .font(.redeCaption)
-                    .foregroundStyle(Color.redeT4)
-                    .padding(.horizontal, RedeSpace.page)
-                    .padding(.top, 12)
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(s.onbFooterNote)
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeT4)
+                    // 次级入口：主路径永远是「答四个问题」，所以这里只是一行字，
+                    // 不做按钮、不抢视线——但它必须在第一屏就能看见，
+                    // 否则换手机的人会先白答一遍问卷。
+                    Button { showRestore = true } label: {
+                        HStack(spacing: 5) {
+                            Text(s.onbRestoreEntry)
+                            Image(systemName: "chevron.right").font(.system(size: 10, weight: .medium))
+                        }
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeT3)
+                        .frame(minHeight: RedeShape.controlHeight, alignment: .leading)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.redePressable)
+                }
+                .padding(.horizontal, RedeSpace.page)
+                .padding(.top, 12)
             }
             Spacer(minLength: 0)
         }
@@ -71,6 +91,13 @@ struct OnboardingView: View {
         .sensoryFeedback(.selection, trigger: selectionPulse)
         .sensoryFeedback(.success, trigger: successPulse)
         .sensoryFeedback(.error, trigger: errorPulse)
+        .sheet(isPresented: $showRestore) {
+            OnboardingRestoreSheet(onRestored: onFinish)
+                .environment(localeStore)
+                .environment(sessionStore)
+                .environment(syncService)
+                .presentationDetents([.medium])
+        }
     }
 
     private var cardTransition: AnyTransition {

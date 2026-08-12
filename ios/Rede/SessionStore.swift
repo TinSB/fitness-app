@@ -700,6 +700,28 @@ final class SessionStore {
         )
     }
 
+    /// 循环死区（2026-08-12）：当前配置下**轮不到**的训练日码，空 = 无死区或数据不足。
+    /// 判断全在包内纯函数（PlanReachability，含单测）；这里只负责把三样真数据喂进去。
+    nonisolated static func loadDeadZone(now: Date = Date()) -> PlanReachability.Report? {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load() else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        let cleanView = CleanAppDataViewBuilder.build(from: appData)
+        guard let input = try? CleanTrainingDecisionInput.make(
+            from: cleanView, todayISO: formatter.string(from: now)) else { return nil }
+        let sequence = TodayPrescriptionEngine.resolvedDaySequence(
+            splitType: input.program.splitType,
+            override: PlanCustomizationBridge.input(from: appData.planCustomization).daySequence)
+        return PlanReachability.evaluate(
+            sequence: sequence,
+            weeklyCycleRestart: appData.weeklyCycleRestart,
+            sessionDates: input.sessions.map(\.date),
+            todayISO: formatter.string(from: now))
+    }
+
     // MARK: - FR-PL3/4 计划调整提案 / 已采纳态（计划页只读派生）
 
     /// 计划页调整卡所需状态：待采纳提案（含 after 训练日预览）与栈顶已采纳记录（可撤）可共存。

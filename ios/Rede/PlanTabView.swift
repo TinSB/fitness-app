@@ -35,11 +35,30 @@ struct PlanTabView: View {
     @State private var tenure: (weeks: Int, days: Int)?
     /// 每个训练日码的真实动作 id（详情行要同时渲染名字与「主肌群 · 器械」）。
     @State private var exerciseIdsByDay: [String: [String]] = [:]
+    /// 循环死区（2026-08-12，真实用户撞出来的）：当前配置下轮不到的训练日。
+    /// **只有这一个真源**：关掉每周重开后 loadDeadZone 必然返回 nil，提示自然消失。
+    /// 曾经加过一个 deadZoneCleared 乐观态做即时隐藏——它和 reload() 打架
+    /// （reload 重新算出非 nil 就把清除态冲掉），提示永远不消失。实拍抓到，删。
+    @State private var deadZone: PlanReachability.Report?
     /// 当前展开的训练日（nil = 用下一场）。竞品对照 Alpha Progression：五天是顶部一排 tab，
     /// 下面只展开一天——把五天的动作全铺开就是一堵均匀的文字墙。
     @State private var selectedDay: String?
 
     private var s: RedeStrings { localeStore.strings }
+
+    /// -planDeadZoneFixture <轮不到的日码，逗号分隔>[:每周场次:序列长度]
+    private static var deadZoneFixture: PlanReachability.Report? {
+        let args = ProcessInfo.processInfo.arguments
+        guard let i = args.firstIndex(of: "-planDeadZoneFixture"), args.indices.contains(i + 1)
+        else { return nil }
+        let parts = args[i + 1].split(separator: ":", omittingEmptySubsequences: false)
+        let days = parts[0].split(separator: ",").map(String.init)
+        guard !days.isEmpty else { return nil }
+        return PlanReachability.Report(
+            unreachable: days,
+            weeklySessions: parts.count > 1 ? (Int(parts[1]) ?? 2) : 2,
+            sequenceLength: parts.count > 2 ? (Int(parts[2]) ?? 4) : 4)
+    }
 
     var body: some View {
         ScrollView {
@@ -97,6 +116,13 @@ struct PlanTabView: View {
                         if cycle != nil || !projection.isEmpty {
                             RuleDivider().padding(.top, 12)
                         }
+                    }
+
+                    if let deadZone {
+                        deadZoneNotice(deadZone)
+                            .padding(.horizontal, RedeSpace.page)
+                            .padding(.top, 14)
+                            .transition(reduceMotion ? .identity : .opacity)
                     }
 
                     // FR-PL2：本周/下周排期（只读派生；有模板即展示，与今日页处方同源）
@@ -236,7 +262,8 @@ struct PlanTabView: View {
         let loaded = await Task.detached {
             (SessionStore.loadTemplateFacts(), SessionStore.loadCycleState(),
              SessionStore.loadPlanProjection(), SessionStore.loadPlanAdjustmentState(),
-             SessionStore.loadDayLastTrainedDates(), SessionStore.loadTrainingTenure())
+             SessionStore.loadDayLastTrainedDates(), SessionStore.loadTrainingTenure(),
+             SessionStore.loadDeadZone())
         }.value
         template = loaded.0
         cycle = loaded.1
@@ -244,6 +271,10 @@ struct PlanTabView: View {
         adjustment = loaded.3
         lastTrainedByDay = loaded.4
         tenure = loaded.5
+        // 截图/验收夹具（沿 -appUpdateFixture / -weeklyCoachReviewFixture 先例）：
+        // 死区需要「每周重开 + 序列长于实际频率 + 连续两周以上」才成立，真机造这个状态成本很高。
+        // 夹具只替换这一个只读派生值，不写盘、不影响任何真实用户路径。
+        deadZone = Self.deadZoneFixture ?? loaded.6
         do {
             let codes = PlanScheduleDigestBuilder.digest(from: loaded.2).dayTypes.map(\.dayCode)
             let ids = await Task.detached {
@@ -418,6 +449,46 @@ struct PlanTabView: View {
 
     private var weekScheduleSection: some View {
         loopSection(PlanScheduleDigestBuilder.digest(from: projection))
+    }
+
+    /// 循环死区提示。事实 → 依据 → 一个动作，与今日页收据同语法；不指责、不说「你应该」。
+    ///
+    /// 为什么值得占这个位置：这是**用户自己看不出来的因果**。他只会觉得「好像很久没练腿了」，
+    /// 而真正的原因是「每周重新开始循环」这个开关 + 他的实际频率短于序列长度。
+    /// 引擎的 reduceFrequency 提案解决不了它（序列长度与 daysPerWeek 解耦），
+    /// 采纳之后反而连「没练够」的信号都消失。所以这条必须自己说。
+    @ViewBuilder
+    private func deadZoneNotice(_ report: PlanReachability.Report) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(s.planDeadZoneTitle(report.unreachable.map(s.trainingDayName)))
+                .font(.redeSubhead)
+                .foregroundStyle(Color.redeT1)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(s.planDeadZoneReason(weeklySessions: report.weeklySessions,
+                                      sequenceLength: report.sequenceLength))
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT3)
+                .fixedSize(horizontal: false, vertical: true)
+            Button {
+                Task {
+                    guard await sessionStore.saveWeeklyCycleRestart(false) else { return }
+                    commitPulse += 1
+                    await sessionStore.loadToday()
+                    await reload()   // 提示的消失由重算结果驱动，不做乐观隐藏
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Text(s.planDeadZoneAction)
+                    Image(systemName: "chevron.right").font(.system(size: 10, weight: .medium))
+                }
+                .font(.redeCallout)
+                .foregroundStyle(Color.redeEmber2)
+                .frame(minHeight: RedeShape.controlHeight, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.redePressable)
+        }
+        .accessibilityElement(children: .combine)
     }
 
     /// 训练日区（比稿 v3，竞品对照 Alpha Progression）。

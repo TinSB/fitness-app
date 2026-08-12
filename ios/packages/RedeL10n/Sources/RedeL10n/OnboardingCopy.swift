@@ -9,8 +9,56 @@ extension RedeStrings {
 
     public var onbHeaderTag: String { locale == .zh ? "首份计划" : "First plan" }
     /// 信任铺垫三件套：问几个 / 多久 / 数据去哪（2026-06-10 打磨调研补「本机」句）。
+    /// 2026-08-12 补「默认」：云端同步上线后，「只存在本机」是绝对断言且与同屏的
+    /// 恢复入口自相矛盾。加一个词就准确了，也和设置页隐私说明（「默认保存在这台设备本机」）同口径。
     public var onbFooterNote: String {
-        locale == .zh ? "四个回答 · 约一分钟 · 记录只存在本机" : "Four answers · about a minute · stays on this device"
+        locale == .zh ? "四个回答 · 约一分钟 · 记录默认只存在本机"
+                      : "Four answers · about a minute · stays on this device by default"
+    }
+
+    // MARK: - 登录恢复（2026-08-12）
+    //
+    // 云端同步的卖点是「换手机，训练记录跟着走」，而它唯一被兑现的时刻就是新机首启。
+    // 在这个入口出现之前，那条路是：先答完整套问卷 → 进 App → 自己摸到设置里登录 →
+    // 记录才回来，而刚答的那份配置还会因为 updatedAt 更新而覆盖掉云端那份。
+    // 白答一遍问卷，还丢配置。
+
+    /// 引导页脚的次级入口。措辞用「用过」不用「有账号」——用户记得自己练过，不一定记得注册过。
+    public var onbRestoreEntry: String {
+        locale == .zh ? "已经用过 Rede？登录恢复" : "Used Rede before? Sign in to restore"
+    }
+    public var onbRestoreTitle: String {
+        locale == .zh ? "取回训练记录" : "Restore your training"
+    }
+    /// 说清楚会回来什么、以及不用重答——这是用户此刻唯一关心的两件事。
+    public var onbRestoreBody: String {
+        locale == .zh ? "用当初的 Apple 账号登录　训练记录和训练背景都会回到这台设备　这些问题不用再答一遍"
+                      : "Sign in with the same Apple Account. Your sessions and training background come back to this device, and you can skip these questions"
+    }
+    public var onbRestoreWorking: String {
+        locale == .zh ? "正在取回…" : "Restoring…"
+    }
+    public func onbRestoreDone(sessions: Int) -> String {
+        locale == .zh ? "取回 \(sessions) 场训练" : (sessions == 1 ? "1 session restored" : "\(sessions) sessions restored")
+    }
+    public var onbRestoreDoneAction: String {
+        locale == .zh ? "开始使用" : "Get started"
+    }
+    /// 登录成功但这个 Apple 账号下没有记录：如实说，不假装取回了什么。
+    public var onbRestoreEmpty: String {
+        locale == .zh ? "这个 Apple 账号下还没有 Rede 记录" : "No Rede records under this Apple Account yet"
+    }
+    public var onbRestoreEmptyAction: String {
+        locale == .zh ? "继续设置" : "Continue setup"
+    }
+    public var onbRestoreFailed: String {
+        locale == .zh ? "取回失败　检查网络后再试一次" : "Restore failed. Check your connection and try again"
+    }
+    public var onbRestoreRetry: String {
+        locale == .zh ? "再试一次" : "Try again"
+    }
+    public var onbRestoreCancel: String {
+        locale == .zh ? "返回" : "Back"
     }
 
     // MARK: - 问题 1 · 目标
