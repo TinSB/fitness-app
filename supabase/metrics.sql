@@ -106,3 +106,119 @@ order by times desc;
 
 -- 建完再关一次（create view 会把权限重新发给 owner 的默认集合）。
 revoke all on all tables in schema metrics from anon, authenticated;
+
+-- ════════════════════════════════════════════════════════════════════════
+-- 第二批（2026-08-12）：把 state 里已经存着、但一直没人看的东西露出来。
+-- 全部零 App 改动——这些字段本来就在同步的 config 里。
+-- ════════════════════════════════════════════════════════════════════════
+
+-- ── 6. 循环死区风险 ──────────────────────────────────────────────────────
+-- App 侧的 PlanReachability 只告诉**用户自己**；这个视图告诉 owner **有多少人中招**。
+--
+-- ⚠️ 只覆盖显式自定义了 daySequence 的用户。默认序列的长度由引擎从 splitType 推导，
+--    在 SQL 里重实现那张映射一定会和引擎漂移（仓库里已有教训：app 层复算轮转必漂移）。
+--    所以默认序列的用户这里报 unknown，不猜。
+create or replace view metrics.dead_zone_risk as
+with cfg as (
+    select user_id,
+           coalesce((payload->'programTemplate'->>'weeklyCycleRestart')::boolean, false) as weekly_restart,
+           jsonb_array_length(payload->'planCustomization'->'daySequence')               as seq_len,
+           payload->'planCustomization'->>'daySequence'                                  as day_sequence
+    from public.user_config
+),
+wk as (
+    select user_id,
+           max(sessions)   as best_week,
+           count(*)        as observed_weeks
+    from metrics.weekly
+    where week_start >= (current_date - 28)
+    group by 1
+)
+select c.user_id,
+       c.weekly_restart,
+       c.seq_len,
+       c.day_sequence,
+       w.best_week,
+       w.observed_weeks,
+       case
+           when c.seq_len is null                       then 'unknown'      -- 默认序列，长度不在 config 里
+           when not c.weekly_restart                    then 'safe'         -- 顺延永远没有死区
+           when coalesce(w.observed_weeks, 0) < 2       then 'insufficient' -- 数据不足以判断
+           when w.best_week >= c.seq_len                then 'safe'
+           else 'dead_zone'
+       end                                              as status,
+       -- 轮不到的位数（序列尾部有几天够不到）
+       case when c.weekly_restart and c.seq_len is not null and coalesce(w.best_week, 0) < c.seq_len
+            then c.seq_len - coalesce(w.best_week, 0) end as unreachable_count
+from cfg c
+left join wk w on w.user_id = c.user_id;
+
+-- ── 7. 计划调整提案 ──────────────────────────────────────────────────────
+-- 引擎提了什么、用户理没理。planAdjustment 非空 = 有一条待处理提案挂着。
+-- 「提了但一直没被采纳」本身就是信号：要么提案不对，要么用户没看见。
+create or replace view metrics.proposals as
+select u.user_id,
+       c.payload->'planAdjustment'->>'kind'                as kind,
+       (c.payload->'planAdjustment'->>'fromDaysPerWeek')::int as from_days,
+       (c.payload->'planAdjustment'->>'toDaysPerWeek')::int   as to_days,
+       (c.payload->'programTemplate'->>'daysPerWeek')::int    as current_days,
+       -- 现行天数已经等于建议值 = 大概率已经采纳过
+       ((c.payload->'programTemplate'->>'daysPerWeek')::int
+         = (c.payload->'planAdjustment'->>'toDaysPerWeek')::int) as looks_adopted,
+       u.sessions,
+       u.days_since_last
+from metrics.users u
+join public.user_config c on c.user_id = u.user_id
+where c.payload->'planAdjustment' is not null
+  and jsonb_typeof(c.payload->'planAdjustment') = 'object';
+
+-- ── 8. 教练动作被划掉的次数 ──────────────────────────────────────────────
+-- coachState.dismissed 里本来就在记 actionKey → 累计 dismiss 次数。
+-- 跨用户聚合 = 哪一类教练动作最不受欢迎。actionKey 形如 "volumeBoost:2026-06-22"，
+-- 冒号前是动作类型，后面是那一周——按类型归并才有统计意义。
+create or replace view metrics.coach_dismissals as
+select split_part(d->>'actionKey', ':', 1)   as action_type,
+       sum((d->>'count')::int)               as dismissals,
+       count(distinct c.user_id)             as users
+from public.user_config c,
+     lateral jsonb_array_elements(c.payload->'coachState'->'dismissed') d
+where jsonb_typeof(c.payload->'coachState'->'dismissed') = 'array'
+group by 1
+order by dismissals desc;
+
+-- ── 9. 临时换天 ──────────────────────────────────────────────────────────
+-- rotationOffset 每被「今天换一天练」用一次就 −1（FR-TR12 抵消轮转推进）。
+-- 绝对值 = 累计换天次数。数值偏大 = 有人在持续躲某个训练日，
+-- 那通常说明那一天本身有问题（太长、器械不对、动作不喜欢）。
+create or replace view metrics.day_overrides as
+select user_id,
+       abs(coalesce((payload->>'rotationOffset')::int, 0)) as override_count,
+       payload->'oneTimeDayOverride'                       as pending_override
+from public.user_config
+where coalesce((payload->>'rotationOffset')::int, 0) <> 0
+   or payload->'oneTimeDayOverride' is not null;
+
+-- ── 10. 通知开关 ─────────────────────────────────────────────────────────
+-- 哪些提醒被关掉了。召回提醒缺省开，被关 = 用户嫌吵，是文案或频率的信号。
+create or replace view metrics.notification_optout as
+select count(*)                                                                as configs,
+       count(*) filter (where (payload->'notifications'->>'restEndEnabled')::boolean)  as rest_end_on,
+       count(*) filter (where (payload->'notifications'->>'weeklyEnabled')::boolean)   as weekly_on,
+       count(*) filter (where (payload->'notifications'->>'comebackEnabled')::boolean) as comeback_on,
+       count(*) filter (where payload->'notifications' is null)                        as never_configured
+from public.user_config;
+
+-- ── 11. 计划级持久替换 ───────────────────────────────────────────────────
+-- exerciseSubstitutions 是"从此以后都用 B 代替 A"，比当场换（metrics.swaps）更强的信号：
+-- 用户不是这次不想练，是根本不要这个动作。
+create or replace view metrics.substitutions_persisted as
+select key            as original_id,
+       value #>> '{}' as replacement_id,
+       count(*)       as users
+from public.user_config,
+     lateral jsonb_each(payload->'exerciseSubstitutions')
+where jsonb_typeof(payload->'exerciseSubstitutions') = 'object'
+group by 1, 2
+order by users desc;
+
+revoke all on all tables in schema metrics from anon, authenticated;
