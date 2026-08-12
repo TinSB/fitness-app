@@ -72,6 +72,8 @@
 		7B3C91D42A18E5F6A0000023 /* RedePersistence in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000013 /* RedePersistence */; };
 		7B3C91D42A18E5F6A0000024 /* RedeTrainingDecision in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000014 /* RedeTrainingDecision */; };
 		7B3C91D42A18E5F6A0000025 /* RedeLocalSnapshot in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000015 /* RedeLocalSnapshot */; };
+		7B3C91D42A18E5F6B1000004 /* RedeWatchLink in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6B1000002 /* RedeWatchLink */; };
+		7B3C91D42A18E5F6B1000005 /* RedeWatchLink in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6B1000003 /* RedeWatchLink */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -207,6 +209,7 @@
 				7B3C91D42A18E5F6A0000023 /* RedePersistence in Frameworks */,
 				7B3C91D42A18E5F6A0000024 /* RedeTrainingDecision in Frameworks */,
 				7B3C91D42A18E5F6A0000025 /* RedeLocalSnapshot in Frameworks */,
+				7B3C91D42A18E5F6B1000005 /* RedeWatchLink in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -344,6 +347,7 @@
 				EE00000000000000000000D1 /* RedeWidgetShared */,
 				A100000000000000000000B1 /* RedeSync */,
 				A100000000000000000000B2 /* RedeSyncSupabase */,
+				7B3C91D42A18E5F6B1000002 /* RedeWatchLink */,
 			);
 			productName = Rede;
 			productReference = AA00000000000000000000B2 /* Rede.app */;
@@ -410,6 +414,7 @@
 				7B3C91D42A18E5F6A0000013 /* RedePersistence */,
 				7B3C91D42A18E5F6A0000014 /* RedeTrainingDecision */,
 				7B3C91D42A18E5F6A0000015 /* RedeLocalSnapshot */,
+				7B3C91D42A18E5F6B1000003 /* RedeWatchLink */,
 			);
 			productName = RedeWatch;
 			productReference = 7B3C91D42A18E5F6A0000001 /* RedeWatch.app */;
@@ -457,6 +462,7 @@
 				EE00000000000000000000F1 /* XCLocalSwiftPackageReference "packages/RedeWidgetShared" */,
 				A100000000000000000000C1 /* XCLocalSwiftPackageReference "packages/RedeSync" */,
 				A100000000000000000000C2 /* XCLocalSwiftPackageReference "packages/RedeSyncSupabase" */,
+				7B3C91D42A18E5F6B1000001 /* XCLocalSwiftPackageReference "packages/RedeWatchLink" */,
 			);
 			productRefGroup = AA00000000000000000000A3 /* Products */;
 			projectDirPath = "";
@@ -1030,6 +1036,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = packages/RedeSyncSupabase;
 		};
+		7B3C91D42A18E5F6B1000001 /* XCLocalSwiftPackageReference "packages/RedeWatchLink" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/RedeWatchLink;
+		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1112,6 +1122,14 @@
 		7B3C91D42A18E5F6A0000015 /* RedeLocalSnapshot */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = RedeLocalSnapshot;
+		};
+		7B3C91D42A18E5F6B1000002 /* RedeWatchLink */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeWatchLink;
+		};
+		7B3C91D42A18E5F6B1000003 /* RedeWatchLink */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeWatchLink;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

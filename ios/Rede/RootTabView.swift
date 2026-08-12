@@ -2,6 +2,7 @@ import SwiftUI
 import RedeEntitlements
 import RedeL10n
 import RedeTrainingDecision
+import RedeWatchLink
 
 enum RootTab: Hashable {
     case today
@@ -138,6 +139,23 @@ struct RootTabView: View {
             let unitForced = args.firstIndex(of: "-unit").flatMap { idx -> String? in
                 args.indices.contains(idx + 1) ? args[idx + 1] : nil
             }
+            // 切片 2（2026-08-12）：手表通道在 App 启动即激活。
+            // 手机侧不做界面——ping 自动回 pong，表上看到「← pong」就等于证明手机
+            // 确实收到并回了；一个 pong 不可能凭空出现。
+            WatchLink.shared.onReceive = { envelope, _ in
+                guard envelope.kind == WatchLinkKind.ping else { return }   // 未知 kind 安静丢弃（向前兼容）
+                WatchLink.shared.send(
+                    WatchLinkEnvelope(kind: WatchLinkKind.pong,
+                                      sentAtISO: ISO8601DateFormatter().string(from: Date()),
+                                      body: ["from": "phone"]),
+                    // 回 pong 走 userInfo 而不是 message：**它不要求对端可达**，
+                    // 这正是选它的理由。而且这就是切片 4 记组要用的通道，先把它验通更有价值。
+                    // （实测：模拟器里用 simctl 直装表 app，手机侧 WCSession 会报
+                    //  counterpart app not installed / reachable: NO，message 通道被守卫正确跳过。）
+                    via: .userInfo)
+            }
+            WatchLink.shared.activate()
+
             let localePreApplied = args.contains("-locale")
             localeStore.applyPersisted(
                 unitRaw: unitForced ?? prefs.unit,

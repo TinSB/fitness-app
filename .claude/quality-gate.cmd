@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-EXPECTED_PACKAGES="RedeDataHealth RedeDomain RedeEntitlements RedeHealthKit RedeL10n RedeLocalSnapshot RedeNotifications RedePersistence RedeSync RedeSyncSupabase RedeTrainingDecision RedeWidgetShared"
+EXPECTED_PACKAGES="RedeDataHealth RedeDomain RedeEntitlements RedeHealthKit RedeL10n RedeLocalSnapshot RedeNotifications RedePersistence RedeSync RedeSyncSupabase RedeTrainingDecision RedeWatchLink RedeWidgetShared"
 
 for name in $EXPECTED_PACKAGES; do
   echo "== swift test: ios/packages/$name =="
