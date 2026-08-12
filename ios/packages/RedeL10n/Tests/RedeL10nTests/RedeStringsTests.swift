@@ -111,6 +111,13 @@ final class RedeStringsTests: XCTestCase {
             ("settingsPanelOverline", s.settingsPanelOverline),
             // 2026-08-09 设置页 IA 重排新增 key（审查 m4：新增 key 进 parity 清单）
             ("settingsDisplayOverline", s.settingsDisplayOverline),
+            // 2026-08-12 计划页 IA 重排新增 key
+            ("planTenureColSpan", s.planTenureColSpan),
+            ("planTenureColTrained", s.planTenureColTrained),
+            ("planNextTag", s.planNextTag),
+            ("planDayEditEntry", s.planDayEditEntry),
+            ("planDayMeta", s.planDayMeta(count: 6, lastDate: "7月12日")),
+            ("planExerciseAttrs", s.planExerciseAttrs(muscle: "chest", equipment: "barbell")),
             ("settingsDisclaimerTitle", s.settingsDisclaimerTitle),
             ("healthStateConnect", s.healthStateConnect),
             ("healthStateNoRecord", s.healthStateNoRecord),
@@ -161,17 +168,13 @@ final class RedeStringsTests: XCTestCase {
     // 分块」的滚动排期、不是日历周——区块标签不得再用「本周/下周」字面，防止
     // 本周已练满的用户误读「这周还有 4 场」。planAdjustAfterLabel 同根因（同投影）。
     func testPlanScheduleLabelsAreSequenceNotCalendar() {
-        XCTAssertEqual(zh.planScheduleThisWeek, "接下来")
-        XCTAssertEqual(en.planScheduleThisWeek, "Coming up")
-        XCTAssertEqual(zh.planScheduleNextWeek, "再往后")
-        XCTAssertEqual(en.planScheduleNextWeek, "After that")
         XCTAssertEqual(zh.planAdjustAfterLabel, "调整后")
         XCTAssertEqual(en.planAdjustAfterLabel, "After the change")
         // 防回潮：计划页排期标签不得出现日历周字面
-        for line in [zh.planScheduleThisWeek, zh.planScheduleNextWeek, zh.planAdjustAfterLabel] {
+        for line in [zh.planAdjustAfterLabel] {
             XCTAssertFalse(line.contains("本周") || line.contains("下周"), line)
         }
-        for line in [en.planScheduleThisWeek, en.planScheduleNextWeek, en.planAdjustAfterLabel] {
+        for line in [en.planAdjustAfterLabel] {
             XCTAssertFalse(line.lowercased().contains("this week") || line.lowercased().contains("next week"), line)
         }
     }
@@ -229,14 +232,15 @@ final class RedeStringsTests: XCTestCase {
 
     // T2 排期折叠（2026-07-05）：类型区区头——构成只展开一次，序列另行紧凑表达。
     func testPlanDayTypesHeader() {
-        XCTAssertEqual(zh.planDayTypesHeader, "训练日构成")
-        XCTAssertEqual(en.planDayTypesHeader, "Day types")
     }
 
     // K5 计划页收尾（2026-07-16）：训练日「上次」列 + 累计事实行（单位=天，裁定 3）。
     func testPlanLastTrainedAndTenureAnchors() {
-        XCTAssertEqual(zh.planDayLastTrained(dateText: "7月12日"), "上次 · 7月12日")
-        XCTAssertEqual(en.planDayLastTrained(dateText: "Jul 12"), "Last · Jul 12")
+        // 紧凑写法（与「6 个动作」并进同一行，故不带前导点）
+        XCTAssertEqual(zh.planDayLastCompact(dateText: "7月12日"), "上次 7月12日")
+        XCTAssertEqual(en.planDayLastCompact(dateText: "Jul 12"), "last Jul 12")
+        XCTAssertEqual(zh.planDayMeta(count: 6, lastDate: "7月12日"), "6 个动作 · 上次 7月12日")
+        XCTAssertEqual(zh.planDayMeta(count: 6, lastDate: nil), "6 个动作")
         XCTAssertEqual(zh.planTenureLine(weeks: 5, days: 14), "已练 5 周 · 14 天")
         XCTAssertEqual(en.planTenureLine(weeks: 5, days: 14), "5 weeks in · 14 days trained")
         XCTAssertEqual(en.planTenureLine(weeks: 1, days: 1), "1 week in · 1 day trained")
@@ -490,10 +494,10 @@ final class RedeStringsTests: XCTestCase {
             en.settingsSubscriptionManage, en.settingsSubscriptionRetry,
             zh.settingsWeeklyRestartLabel, zh.settingsWeeklyRestartNote, zh.carriedOverHeader(day: "腿 A"),
             zh.swapDayScopeOnceWeekly, en.settingsWeeklyRestartLabel, en.carriedOverHeader(day: "Legs A"),
-            zh.planScheduleThisWeek, zh.planScheduleNextWeek, zh.planAdjustAfterLabel,
+            zh.planAdjustAfterLabel,
             en.startTraining, en.trainLogSet, en.trainFinish, en.trainHold185,
             en.todayWhyThisCall, en.todayHideReason,
-            en.planScheduleThisWeek, en.planScheduleNextWeek, en.planAdjustAfterLabel,
+            en.planAdjustAfterLabel,
         ]
         for phrase in shortPhrases {
             XCTAssertFalse(phrase.hasSuffix("。") || phrase.hasSuffix("."), "短语不应收句号: \(phrase)")
