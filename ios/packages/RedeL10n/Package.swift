@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "RedeL10n",
-    platforms: [.iOS(.v17)],
+    platforms: [.iOS(.v17), .watchOS(.v10)],
     products: [
         .library(name: "RedeL10n", targets: ["RedeL10n"]),
     ],

@@ -5,7 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "RedePersistence",
-    platforms: [.iOS(.v17)],
+    platforms: [.iOS(.v17), .watchOS(.v10)],
     products: [
         .library(name: "RedePersistence", targets: ["RedePersistence"]),
     ],

@@ -23,13 +23,41 @@ jobs:
       - name: List Xcode project
         run: xcodebuild -list -project ios/Rede.xcodeproj
 
+      - name: iOS deployment target guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Xcode 会自作主张抬高最低系统版本（已发生两次：上架前审计、2026-08-15 跑真机）。
+          # 抬高 = 绝大多数用户装不了，而本地跑起来毫无症状。
+          bad="$(grep -o "IPHONEOS_DEPLOYMENT_TARGET = [^;]*;" ios/Rede.xcodeproj/project.pbxproj | grep -v "= 17.0;" || true)"
+          if [ -n "$bad" ]; then
+            echo "::error::iOS deployment target changed (expected 17.0)"
+            echo "$bad" | sort | uniq -c
+            exit 1
+          fi
+
+      - name: Version parity across targets
+        shell: bash
+        run: |
+          set -euo pipefail
+          # App / Widget / Watch 必须同号，否则 App Store Connect 上传即拒。
+          # 表 target 是 2026-08-15 新加的第三处，bump 时最容易漏。
+          for key in MARKETING_VERSION CURRENT_PROJECT_VERSION; do
+            distinct="$(grep -o "$key = [^;]*;" ios/Rede.xcodeproj/project.pbxproj | sort -u | wc -l | tr -d ' ')"
+            if [ "$distinct" != "1" ]; then
+              echo "::error::$key mismatch across targets (App / Widget / Watch must match)"
+              grep -o "$key = [^;]*;" ios/Rede.xcodeproj/project.pbxproj | sort | uniq -c
+              exit 1
+            fi
+          done
+
       - name: Swift package tests
         shell: bash
         run: |
           set -euo pipefail
           # Explicit test surface: a package silently vanishing must fail CI,
           # and a new package must be registered here before it counts as tested.
-          EXPECTED_PACKAGES="RedeDataHealth RedeDomain RedeEntitlements RedeHealthKit RedeL10n RedeLocalSnapshot RedeNotifications RedePersistence RedeSync RedeSyncSupabase RedeTrainingDecision RedeWidgetShared"
+          EXPECTED_PACKAGES="RedeDataHealth RedeDomain RedeEntitlements RedeHealthKit RedeL10n RedeLocalSnapshot RedeNotifications RedePersistence RedeSync RedeSyncSupabase RedeTrainingDecision RedeWatchLink RedeWidgetShared"
           for name in $EXPECTED_PACKAGES; do
             echo "== swift test: ios/packages/$name =="
             (cd "ios/packages/$name" && swift test)
@@ -136,4 +164,5 @@ jobs:
             -only-testing:RedeTests/StoreKitEntitlementsTests/testWeeklyReviewLiftSignalPolicyDropsCalibratingZeroDelta \
             -only-testing:RedeTests/SessionStoreDraftTests \
             -only-testing:RedeTests/AppUpdateRuntimeTests \
+            -only-testing:RedeTests/WatchLoggedSetIntakeTests \
             test

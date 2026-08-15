@@ -4,7 +4,30 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-EXPECTED_PACKAGES="RedeDataHealth RedeDomain RedeEntitlements RedeHealthKit RedeL10n RedeLocalSnapshot RedeNotifications RedePersistence RedeSync RedeSyncSupabase RedeTrainingDecision RedeWidgetShared"
+EXPECTED_PACKAGES="RedeDataHealth RedeDomain RedeEntitlements RedeHealthKit RedeL10n RedeLocalSnapshot RedeNotifications RedePersistence RedeSync RedeSyncSupabase RedeTrainingDecision RedeWatchLink RedeWidgetShared"
+
+# 最低系统版本守卫。Xcode **会自作主张抬高它**——上架前审计撞过一次（iOS26→17），
+# 2026-08-15 owner 用 Xcode 跑真机时又被抬到 26.0 一次。
+# 抬高的后果是绝大多数用户直接装不了，而这在本地跑起来毫无症状。
+EXPECTED_IOS_TARGET="17.0"
+bad="$(grep -o "IPHONEOS_DEPLOYMENT_TARGET = [^;]*;" ios/Rede.xcodeproj/project.pbxproj | grep -v "= ${EXPECTED_IOS_TARGET};" || true)"
+if [ -n "$bad" ]; then
+  echo "ERROR: iOS 最低系统版本被改动（期望 ${EXPECTED_IOS_TARGET}）——Xcode 又抬高了它？"
+  echo "$bad" | sort | uniq -c
+  exit 1
+fi
+
+# 三个 target（App / Widget / Watch）的版本号必须完全一致，否则 App Store Connect
+# 上传即拒。**表 target 是 2026-08-15 新加的第三处**——bump 时最容易漏的就是它，
+# 而症状要等到上传那一刻才出现，那时人已经在 Xcode 里等着了。
+for key in MARKETING_VERSION CURRENT_PROJECT_VERSION; do
+  distinct="$(grep -o "$key = [^;]*;" ios/Rede.xcodeproj/project.pbxproj | sort -u | wc -l | tr -d ' ')"
+  if [ "$distinct" != "1" ]; then
+    echo "ERROR: $key 在各 target 之间不一致——App / Widget / Watch 必须同号："
+    grep -o "$key = [^;]*;" ios/Rede.xcodeproj/project.pbxproj | sort | uniq -c
+    exit 1
+  fi
+done
 
 for name in $EXPECTED_PACKAGES; do
   echo "== swift test: ios/packages/$name =="
@@ -143,6 +166,7 @@ xcodebuild \
   -only-testing:RedeTests/StoreKitEntitlementsTests/testWeeklyReviewLiftSignalPolicyDropsCalibratingZeroDelta \
   -only-testing:RedeTests/SessionStoreDraftTests \
   -only-testing:RedeTests/AppUpdateRuntimeTests \
+  -only-testing:RedeTests/WatchLoggedSetIntakeTests \
   test
 
 echo "QUALITY GATE: PASS"
