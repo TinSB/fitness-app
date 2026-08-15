@@ -601,6 +601,10 @@ struct RestCountdownView: View {
     let active: WatchPrescription.Active
     let store: WatchPrescriptionStore
     @ObservedObject private var link = WatchLink.shared
+    /// 常亮显示（手腕放下、屏幕变暗）时为 true。这时屏上只该剩「还剩多久」：
+    /// 两颗圆钮收起（暗屏下也按不着，抬腕点亮再出现），环与数字留着，
+    /// HKWorkoutSession 在跑所以 TimelineView 仍每秒刷新——这正是抬腕即读的那一眼。
+    @Environment(\.isLuminanceReduced) private var luminanceReduced
 
     private var s: RedeStrings { store.strings }
 
@@ -667,7 +671,7 @@ struct RestCountdownView: View {
             // 两颗圆钮走 message，只在手机够得着时能按。+30 是次级，下一组是主动作
             //（ember 轮廓）——与手机休息屏「+30s 钢钮 / 下一组 锻面主钮」的主次一致。
             HStack(spacing: 14) {
-                MachinedRoundButton(enabled: link.isReachable, action: {
+                MachinedRoundButton(enabled: link.isReachable && !luminanceReduced, action: {
                     store.send(.restAdd30, active: active)
                     WKInterfaceDevice.current().play(.click)
                 }) {
@@ -677,7 +681,7 @@ struct RestCountdownView: View {
                         .lineLimit(1).minimumScaleFactor(0.7)
                 }
                 .accessibilityLabel(Text(verbatim: s.restAdd30))
-                MachinedRoundButton(primary: true, enabled: link.isReachable, action: {
+                MachinedRoundButton(primary: true, enabled: link.isReachable && !luminanceReduced, action: {
                     store.send(.restSkip, active: active)
                     WKInterfaceDevice.current().play(.click)
                 }) {
@@ -686,6 +690,9 @@ struct RestCountdownView: View {
                 }
                 .accessibilityLabel(Text(verbatim: s.restNextSet))
             }
+            // 常亮暗屏：圆钮整排淡出（0.18s），抬腕点亮再淡回来。
+            .opacity(luminanceReduced ? 0 : 1)
+            .animation(WatchMotion.tint, value: luminanceReduced)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         // 精确在结束时刻震一下 + 告诉手机，不轮询。
