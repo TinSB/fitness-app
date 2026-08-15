@@ -12,6 +12,8 @@ import RedeWatchLink
 // 切片 4-7：记组、休息倒计时、HKWorkoutSession 保活、排队可见。
 // v2（2026-08-15）：记组屏重做——重量 / 次数 / RIR 三个量都能在表上改；休息屏 +30 / 下一组；
 //   热身可跳过；文案跟随手机 app 语言。
+// v3（2026-08-15）：视觉锻铁仪表化——去瓦片、去橙胶囊；读数 + 刻度轨指针、锻面主按钮、
+//   ember 休息环、开放行清单（令牌与工艺件在 WatchTheme.swift）。
 //
 // 范围纪律（方案 2026-08-12）：**表是训练进行时的遥控器，不是第二个 app**。
 // 计划 / 进展 / 设置 / 动作库 / 引导全部留在手机。表上最终只有三屏：
@@ -100,27 +102,6 @@ final class WatchPrescriptionStore {
     }
 }
 
-/// 表盘尺寸缩放。40mm（162pt 宽）是最小表盘，v2 的三值瓦片按它定基准字号；
-/// 更大的表盘按宽度等比放大（46mm = 208pt → 1.28 倍），到 1.3 封顶。
-/// 按宽度算而不是按机型枚举——新机型出来不用改；也不用 Dynamic Type：训练时这几个
-/// 数字就该是「屏幕允许的最大」，不随系统字号缩小。
-enum WatchMetrics {
-    static let scale: CGFloat = min(1.3, max(1, WKInterfaceDevice.current().screenBounds.width / 162))
-    /// 瓦片大数字
-    static var tileValue: CGFloat { (22 * scale).rounded() }
-    /// 瓦片高度
-    static var tileHeight: CGFloat { (46 * scale).rounded() }
-    /// 记组屏动作名
-    static var title: CGFloat { min(17, (14 * scale).rounded()) }
-    /// 休息倒计时
-    static var clock: CGFloat { (36 * scale).rounded() }
-    /// 主按钮内高
-    static var buttonHeight: CGFloat { (24 * scale).rounded() }
-    /// 进度行 / 休息标题 / 「下一组」预览这类辅助小字
-    static var meta: CGFloat { min(13, (11 * scale).rounded()) }
-    /// 瓦片下的说明小字
-    static var caption: CGFloat { min(12, (10 * scale).rounded()) }
-}
 
 struct TodayWatchView: View {
     @StateObject private var link = WatchLink.shared
@@ -150,6 +131,9 @@ struct TodayWatchView: View {
                 idleList
             }
         }
+        // 整面板：一块连续锻面，铺满到屏幕边（含圆角），数字直接蚀刻在上面。
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(WatchPalette.base.ignoresSafeArea())
         .task {
             // 截图钩子：-watchPreview list|set|warmup|rest|bodyweight [-watchPreviewLocale en]
             // 不配对也能在各尺寸模拟器上看四种状态。**不激活通道**，免得配对机的真处方把预览冲掉。
@@ -171,9 +155,11 @@ struct TodayWatchView: View {
         }
     }
 
+    /// 没在训练：今天的清单。开放行 + 刻线（整面板公理 §12.3「动作列表 = 开放行，禁描边按钮堆」），
+    /// 第一行带一条 ember 竖线——Emberline 指向今天要开始的地方，与手机今日页同一手势。
     private var idleList: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 0) {
                 header
                 if let rx = store.prescription {
                     if isStale {
@@ -183,8 +169,8 @@ struct TodayWatchView: View {
                     if rx.exercises.isEmpty {
                         notice(verbatim: s.watchRestDay)
                     } else {
-                        ForEach(rx.exercises, id: \.exerciseId) { item in
-                            exerciseRow(item)
+                        ForEach(Array(rx.exercises.enumerated()), id: \.element.exerciseId) { index, item in
+                            exerciseRow(item, isNext: index == 0 && !isStale)
                         }
                     }
                 } else {
@@ -199,11 +185,11 @@ struct TodayWatchView: View {
                     //   激活/手机端 YES 但没计划 → 手机侧确实没推出来
                     Text(verbatim: "激活 \(link.isActivated ? "YES" : "NO") · 手机端 \(link.hasCounterpart ? "YES" : "NO") · 可达 \(link.isReachable ? "YES" : "NO")")
                         .font(.system(size: 9, design: .monospaced))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(WatchPalette.t3)
                     ForEach(Array(link.log.suffix(6).enumerated()), id: \.offset) { _, line in
                         Text(verbatim: line)
                             .font(.system(size: 9, design: .monospaced))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(WatchPalette.t3)
                             .lineLimit(2)
                     }
                 }
@@ -213,71 +199,83 @@ struct TodayWatchView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text("REDE")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(.orange)
+        VStack(alignment: .leading, spacing: 2) {
+            // 词标走仪表小标签（钢色 + 字距），不用橙色：橙色只表示下一步。
+            InstrumentCaption(text: "REDE")
             Text(verbatim: store.prescription?.dayTitle.isEmpty == false
                  ? store.prescription!.dayTitle
                  : s.tabToday)
                 .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(WatchPalette.t1)
         }
+        .padding(.bottom, 8)
     }
 
-    private func exerciseRow(_ item: WatchPrescription.Item) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(verbatim: item.name)
-                .font(.system(size: 15, weight: .semibold))
-                .lineLimit(2)
-            // 目标是这一屏唯一要在两米外看清的东西——练的时候手表离眼睛就那么远。
-            Text(verbatim: item.targetText)
-                .font(.system(size: 17, weight: .bold, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(.orange)
-            Text(verbatim: item.setsText)
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-                .lineLimit(1).minimumScaleFactor(0.8)
+    private func exerciseRow(_ item: WatchPrescription.Item, isNext: Bool) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            // 第一行的 Emberline：今天从这里开始。其余行留同宽空位，文字对齐。
+            Rectangle()
+                .fill(isNext ? WatchPalette.ember : Color.clear)
+                .frame(width: 2)
+                .padding(.vertical, 2)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: item.name)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(WatchPalette.t2)
+                    .lineLimit(2)
+                // 目标是这一屏唯一要在两米外看清的东西——练的时候手表离眼睛就那么远。
+                Text(verbatim: item.targetText)
+                    .font(.system(size: 17, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(WatchPalette.t1)
+                    .lineLimit(1).minimumScaleFactor(0.8)
+                Text(verbatim: item.setsText)
+                    .font(.system(size: 11))
+                    .foregroundStyle(WatchPalette.t3)
+                    .lineLimit(1).minimumScaleFactor(0.8)
+            }
+            Spacer(minLength: 0)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 7)
-        .padding(.horizontal, 9)
-        .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+        .overlay(alignment: .bottom) { Rectangle().fill(WatchPalette.hair).frame(height: 1) }
     }
 
     private func notice(verbatim text: String) -> some View {
         Text(verbatim: text)
             .font(.system(size: 12))
-            .foregroundStyle(.secondary)
+            .foregroundStyle(WatchPalette.t3)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 4)
+            .padding(.vertical, 6)
     }
 }
 
-/// 记组屏（切片 4 → v2 重做）。表上唯一会改动落盘数据的界面。
+/// 记组屏（切片 4 → v2 三个量可改 → v3 锻铁仪表化）。表上唯一会改动落盘数据的界面。
 ///
-/// v2 布局：三块**值瓦片**（重量 / 次数 / RIR）+ 一颗完成按钮，一屏放下、不滚动。
-/// · 不操作时三块瓦片就是抬腕要看的东西——目标重量、次数、RIR 大字并排，两米外读得清。
-/// · 要改：**点一块瓦片、转表冠**。这是 watchOS 自己的计时器 / 闹钟设置界面的手法
-///   （点时、分字段再转表冠），用户不用学。选中的瓦片描橙边；改过的值变橙色——
-///   练的时候一眼要能看出「这不是处方给的数」。次数默认选中：它是最常偏离目标的量。
+/// 造型（v3，2026-08-15）：**一块连续锻面上的三个读数 + 一条刻度轨 + 一颗锻面主按钮**。
+/// · 三个数字直接蚀刻在底上，没有框：重量是主读数（大一号），次数与 RIR 是副读数。
+///   不操作时它们就是抬腕要看的东西——目标重量、次数、RIR 并排，两米外读得清。
+/// · 三个读数下面横着一条刻线，就是手机快改面板的**刻度轨**；轨上的 ember 指针指着
+///   表冠此刻在调的那个读数。要改：**点一个读数、转表冠**（watchOS 计时器设时分的手法）。
+///   改过的读数变 ember——练的时候一眼要能看出「这不是处方给的数」。次数默认选中：
+///   它是最常偏离目标的量。
+/// · 主按钮是与手机同一件锻面主按钮（raised 底 + hair 轮廓 + 3pt ember 左缘），不是橙色胶囊。
 /// · 重量在**手机推来的真实梯子**上选（器械 × 单位的格子，含目标那一格），表不算数。
-/// · 自重 / 弹力带没有重量轴（梯子为空）→ 只有次数与 RIR 两块瓦片，与手机快改面同口径。
+/// · 自重 / 弹力带没有重量轴（梯子为空）→ 只有次数与 RIR 两个读数，与手机快改面同口径。
 ///
-/// 布局纪律（2026-08-15 owner 真机反馈后确立，v2 沿用）：
+/// 布局纪律（2026-08-15 owner 真机反馈后确立）：
 /// · **一屏放下，不滚动**。小号表上一滚，「完成」就只剩半截——而它是这块屏上唯一重要的操作。
-/// · 训练时不显示 REDE / 训练日名。那两行在手机上已经有了，练的时候每一像素都该给动作本身。
+/// · 训练时不显示词标 / 训练日名。那两行在手机上已经有了，练的时候每一像素都该给动作本身。
 ///
 /// 表冠必须显式拿到焦点，否则会被外层滚动吃掉（真机实测：转表冠在滑页面）。
 struct ActiveSetView: View {
     let active: WatchPrescription.Active
     let store: WatchPrescriptionStore
 
-    /// 表冠此刻在调哪一块瓦片。
+    /// 表冠此刻在调哪个读数。
     enum Field: Hashable { case weight, reps, rir }
     @FocusState private var focus: Field?
     /// 焦点的**真值**。系统会自作主张重置焦点到第一块可聚焦视图（配对模拟器实测：
-    /// 拉起 HKWorkoutSession 后焦点从次数跳回重量），所以「用户想调哪块」由这里持有，
+    /// 拉起 HKWorkoutSession 后焦点从次数跳回重量），所以「用户想调哪个」由这里持有，
     /// 系统动过就抢回来（见 onChange(of: focus)）。默认次数：它是最常偏离目标的量。
     @State private var chosenField: Field = .reps
 
@@ -325,7 +323,7 @@ struct ActiveSetView: View {
         if link.pendingTransfers > 0 {
             Text(verbatim: s.watchPendingSets(link.pendingTransfers))
                 .font(.system(size: 10))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(WatchPalette.t3)
         }
     }
 
@@ -341,50 +339,58 @@ struct ActiveSetView: View {
         }
     }
 
-    // MARK: - 正式组：三值瓦片
+    // MARK: - 正式组：三个读数 + 刻度轨
 
-    private var setBody: some View {
-        VStack(alignment: .leading, spacing: 0) {
+    /// 进度行：左「3/6 · 第 2/4 组」，右本动作的组刻标。
+    private var progressLine: some View {
+        HStack(alignment: .center) {
             Text(verbatim: s.watchProgress(exercise: active.exerciseNumber, exerciseTotal: active.exerciseTotal,
                                            set: active.setNumber, setTotal: active.setTotal))
                 .font(.system(size: WatchMetrics.meta))
-                .foregroundStyle(.secondary)
+                .monospacedDigit()
+                .foregroundStyle(WatchPalette.t3)
+            Spacer(minLength: 4)
+            if active.setTotal <= 8 {   // 组数多到刻标放不下就只留文字
+                SetMarks(total: active.setTotal, current: active.setNumber)
+            }
+        }
+    }
+
+    private var setBody: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            progressLine
             Text(verbatim: active.exerciseName)
                 .font(.system(size: WatchMetrics.title, weight: .semibold))
+                .foregroundStyle(WatchPalette.t2)
                 .lineLimit(1).minimumScaleFactor(0.7)
                 .padding(.top, 1)
 
-            // 瓦片行。重量占一半、次数与 RIR 各四分之一：重量是这一屏的主数字
+            // 读数簇。重量占一半、次数与 RIR 各四分之一：重量是这一屏的主读数
             //（与手机 hero 同口径），三位数带小数的「137.5 lb」也放得下。
-            HStack(spacing: 5) {
+            HStack(alignment: .bottom, spacing: 0) {
                 if hasWeightAxis {
-                    tile(.weight, value: rungs[weightIndex].text,
-                         caption: active.adjust?.weightCaption ?? "", changed: weightChanged)
+                    reading(.weight, value: rungs[weightIndex].text, size: WatchMetrics.hero,
+                            caption: active.adjust?.weightCaption ?? "", uppercase: false, changed: weightChanged)
                 }
-                HStack(spacing: 5) {
-                    tile(.reps, value: "\(reps)", caption: s.trainColReps, changed: repsChanged)
-                    tile(.rir, value: rir.map(String.init) ?? s.adjustRirSkip, caption: s.trainColRir, changed: rirChanged)
+                HStack(alignment: .bottom, spacing: 0) {
+                    reading(.reps, value: "\(reps)", size: WatchMetrics.secondary,
+                            caption: s.trainColReps, changed: repsChanged)
+                    reading(.rir, value: rir.map(String.init) ?? s.adjustRirSkip, size: WatchMetrics.secondary,
+                            caption: s.trainColRir, changed: rirChanged)
                 }
             }
-            .padding(.top, 7 * WatchMetrics.scale)
+            .padding(.top, 8 * WatchMetrics.scale)
             .allowsHitTesting(!justLogged)
             .opacity(justLogged ? 0.6 : 1)
 
             Spacer(minLength: 3)
             pendingHint
 
-            Button {
+            EmbWatchButton(icon: "checkmark", title: buttonTitle, enabled: !justLogged) {
                 store.logSet(active: active, weightKg: chosenWeightKg, reps: reps, rir: rir.map(Double.init))
                 justLogged = true
                 WKInterfaceDevice.current().play(.success)
-            } label: {
-                Text(verbatim: buttonTitle)
-                    .font(.system(size: 15, weight: .semibold))
-                    .frame(maxWidth: .infinity, minHeight: WatchMetrics.buttonHeight)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.orange)
-            .disabled(justLogged)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         // 手机推来新一步 → 复位三个值、按钮与焦点。键里带 exerciseId 与 isWarmup：
@@ -397,37 +403,39 @@ struct ActiveSetView: View {
             chosenField = .reps
             focus = .reps
         }
-        // 焦点被系统动过（重置到第一块 / 收走）→ 抢回用户选的那块。
-        // 这一屏上除了用户点瓦片没有别的合法焦点来源，所以凡是与真值不符的都是系统干的。
+        // 焦点被系统动过（重置到第一块 / 收走）→ 抢回用户选的那个。
+        // 这一屏上除了用户点读数没有别的合法焦点来源，所以凡是与真值不符的都是系统干的。
         .onChange(of: focus) { _, now in
             if now != chosenField { focus = chosenField }
         }
     }
 
-    /// 一块值瓦片：大数字 + 小字说明。点它 = 表冠转它。
-    private func tile(_ field: Field, value: String, caption: String, changed: Bool) -> some View {
+    /// 一个读数：数字 + 仪表小标签 + 脚下那一段刻度轨。三个读数的轨段无缝相接成一条线，
+    /// 表冠正在调的那个读数脚下立着 ember 指针。点它 = 表冠转它。
+    private func reading(_ field: Field, value: String, size: CGFloat, caption: String,
+                         uppercase: Bool = true, changed: Bool) -> some View {
         let focused = focus == field
         return VStack(spacing: 0) {
             Text(verbatim: value)
-                .font(.system(size: WatchMetrics.tileValue, weight: .bold, design: .rounded))
+                .font(.system(size: size, weight: .semibold))
                 .monospacedDigit()
-                .lineLimit(1).minimumScaleFactor(0.6)
-                .foregroundStyle(changed ? Color.orange : Color.primary)
+                .lineLimit(1).minimumScaleFactor(0.55)
+                .foregroundStyle(changed ? WatchPalette.ember : WatchPalette.t1)
                 .contentTransition(.numericText())
                 .animation(.easeOut(duration: 0.12), value: value)
-            Text(verbatim: caption)
-                .font(.system(size: WatchMetrics.caption, weight: .medium))
-                .foregroundStyle(.secondary)
-                .lineLimit(1).minimumScaleFactor(0.7)
+                .frame(maxWidth: .infinity)
+            InstrumentCaption(text: caption, uppercase: uppercase)
+                .padding(.top, 1)
+            // 刻度轨：轨道通长，指针只在选中的读数下。
+            ZStack(alignment: .top) {
+                Rectangle().fill(WatchPalette.etch).frame(height: 1)
+                RailCaret().opacity(focused ? 1 : 0)
+                    .animation(.easeOut(duration: 0.15), value: focused)
+            }
+            .frame(height: 11)
+            .padding(.top, 5)
         }
-        .frame(maxWidth: .infinity, minHeight: WatchMetrics.tileHeight)
-        .padding(.horizontal, 3)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color.white.opacity(focused ? 0.13 : 0.07)))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(Color.orange.opacity(focused ? 1 : 0), lineWidth: 1.5))
+        .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
         .onTapGesture {
             guard chosenField != field else { return }
@@ -450,52 +458,46 @@ struct ActiveSetView: View {
         VStack(alignment: .leading, spacing: 0) {
             Text(verbatim: s.warmupProgress(index: active.setNumber, total: active.setTotal))
                 .font(.system(size: WatchMetrics.meta))
-                .foregroundStyle(.orange)
+                .monospacedDigit()
+                .foregroundStyle(WatchPalette.ember2)   // 与手机热身态 overline 同色
             Text(verbatim: active.exerciseName)
                 .font(.system(size: WatchMetrics.title, weight: .semibold))
+                .foregroundStyle(WatchPalette.t2)
                 .lineLimit(1).minimumScaleFactor(0.7)
                 .padding(.top, 1)
-            // 热身时这里是「空杆 ×8」，绝不会是工作重量。热身不记次数、不落库，所以没有瓦片。
+            // 热身时这里是「空杆 ×8」，绝不会是工作重量。热身不记次数、不落库，所以没有读数簇。
             Text(verbatim: active.targetText)
-                .font(.system(size: WatchMetrics.tileValue, weight: .bold, design: .rounded))
+                .font(.system(size: WatchMetrics.hero, weight: .semibold))
                 .monospacedDigit()
-                .foregroundStyle(.orange)
+                .foregroundStyle(WatchPalette.t1)
                 .lineLimit(1).minimumScaleFactor(0.6)
-                .padding(.top, 8)
+                .padding(.top, 8 * WatchMetrics.scale)
 
             Spacer(minLength: 3)
             pendingHint
 
             // 跳过热身走 message：手机不可达时不给按——按了没反应比按不了更糟。
-            // 文字按钮而不是第二颗胶囊：热身屏只有一个主动作（完成），跳过是让路的次选，
+            // 文字级操作而不是第二颗按钮：热身屏只有一个主动作（完成），跳过是让路的次选，
             // 与手机热身态「完成 = 主按钮 / 跳过 = 一行小字」同一主次。
             Button {
                 store.send(.skipWarmup, active: active)
                 WKInterfaceDevice.current().play(.click)
             } label: {
                 Text(verbatim: s.warmupSkip)
-                    .font(.system(size: WatchMetrics.meta + 2))
-                    .foregroundStyle(link.isReachable ? Color.secondary : Color.secondary.opacity(0.4))
-                    .frame(maxWidth: .infinity, minHeight: 30)
+                    .font(.system(size: WatchMetrics.meta + 1))
+                    .foregroundStyle(link.isReachable ? WatchPalette.t4 : WatchPalette.t4.opacity(0.4))
+                    .frame(maxWidth: .infinity, minHeight: 28)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.watchPressableText)
             .disabled(!link.isReachable)
 
-            Button {
+            EmbWatchButton(icon: "checkmark", title: buttonTitle, enabled: !justLogged) {
                 // 热身步：三个量原样回传（手机只看 exerciseId + 步序号 + isWarmup，不落库）。
                 store.logSet(active: active, weightKg: active.targetWeightKg, reps: active.targetReps, rir: active.targetRir)
                 justLogged = true
                 WKInterfaceDevice.current().play(.click)
-            } label: {
-                Text(verbatim: buttonTitle)
-                    .font(.system(size: 15, weight: .semibold))
-                    .frame(maxWidth: .infinity, minHeight: WatchMetrics.buttonHeight)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.orange)
-            .disabled(justLogged)
-            .padding(.top, 4)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .onChange(of: "\(active.exerciseId)#\(active.isWarmup)#\(active.setNumber)", initial: true) {
@@ -504,10 +506,10 @@ struct ActiveSetView: View {
     }
 }
 
-/// 把「哪块瓦片被选中」翻译成对应的表冠绑定。三块瓦片的范围各不相同：
+/// 把「哪个读数被选中」翻译成对应的表冠绑定。三个读数的范围各不相同：
 /// 重量 = 梯子下标；次数 1…50；RIR 0…6（0 是「—」）。
 /// 拆成 modifier 是因为 digitalCrownRotation 的绑定必须在编译期定下，
-/// 三块瓦片各挂各的，只有拿到焦点的那块会收到表冠事件。
+/// 三个读数各挂各的，只有拿到焦点的那个会收到表冠事件。
 private struct CrownBinding: ViewModifier {
     let field: ActiveSetView.Field
     @Binding var weightIdx: Double
@@ -530,7 +532,12 @@ private struct CrownBinding: ViewModifier {
     }
 }
 
-/// 休息倒计时（切片 5 → v2 加 +30 / 下一组）。
+/// 休息倒计时（切片 5 → v2 加 +30 / 下一组 → v3 环形）。
+///
+/// 造型：**一枚 ember 进度环，倒计时蚀刻在环心**，与灵动岛胶囊「左环右数」、锁屏卡同一家族
+///（设计语言 §7.1：ember 单焦点 = 倒计时数字 + 其图形化身）。环下一行「下一组 60 kg × 8」，
+/// 再下两颗机加工圆钮：+30（钢色轮廓）、下一组（ember 轮廓 = 主动作）。
+/// **陈旧态全灰化**：走到 0:00 还没等来手机的下一组时，数字与环退 T3——不许橙色假活。
 ///
 /// **数字算自手机给的绝对结束时刻，不是手机每秒发过来的剩余秒数。**
 /// 后者的话，消息延迟多久倒计时就差多久，还得每秒收一条消息；
@@ -558,72 +565,82 @@ struct RestCountdownView: View {
                       totalSeconds: active.restTotalSeconds)
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(verbatim: active.restPausedRemaining != nil ? s.watchRestPaused : s.restLabel)
-                .font(.system(size: WatchMetrics.meta))
-                .foregroundStyle(.secondary)
+    private var isPaused: Bool { active.restPausedRemaining != nil }
 
+    var body: some View {
+        VStack(spacing: 0) {
             // TimelineView 而不是自己跑 Timer：系统按需重绘，表被抬起时才刷，省电。
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 let remaining = countdown.remaining(now: context.date)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(verbatim: Self.clock(remaining))
-                        .font(.system(size: WatchMetrics.clock, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(remaining == 0 ? Color.green : Color.primary)
-                        .lineLimit(1).minimumScaleFactor(0.6)
-                    ProgressView(value: countdown.fraction(now: context.date))
-                        .tint(remaining == 0 ? .green : .orange)
+                let stale = remaining == 0            // 走完了、还在等手机 → 全灰，不许橙色假活
+                let accent = stale ? WatchPalette.t3 : WatchPalette.ember
+                ZStack {
+                    Circle()
+                        .stroke(WatchPalette.etch, lineWidth: WatchMetrics.ringStroke)   // 轨道 = 刻线色，暗但看得见
+                    Circle()
+                        .trim(from: 0, to: max(0.002, countdown.fraction(now: context.date)))
+                        .stroke(accent, style: StrokeStyle(lineWidth: WatchMetrics.ringStroke, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                        .animation(.linear(duration: 1), value: remaining)
+                    VStack(spacing: 1) {
+                        InstrumentCaption(text: isPaused ? s.watchRestPaused : s.restLabel)
+                        Text(verbatim: Self.clock(remaining))
+                            .font(.system(size: WatchMetrics.clock, weight: .semibold))
+                            .monospacedDigit()
+                            .foregroundStyle(accent)
+                            .lineLimit(1).minimumScaleFactor(0.6)
+                            .contentTransition(.numericText(countsDown: true))
+                    }
+                    .padding(.horizontal, WatchMetrics.ringStroke + 4)
+                }
+                .frame(width: WatchMetrics.ring, height: WatchMetrics.ring)
+            }
+
+            // 环下一行：优先说清楚状态（排队 / 不可达），否则说下一组是什么——
+            // 休息时最想知道的第二件事，省得倒计时结束还要再翻一屏。
+            Group {
+                if link.pendingTransfers > 0 {
+                    Text(verbatim: s.watchPendingSets(link.pendingTransfers))
+                } else if !link.isReachable {
+                    Text(verbatim: s.watchPhoneUnreachable)
+                } else {
+                    // 手机渲染的「下一组 · 第 3 组 · 60 kg × 6」/「接下来 · 高位下拉」；
+                    // 旧手机不带这一位时退回「下一组 + 目标串」。
+                    Text(verbatim: active.restPreviewText ?? s.watchNextUp(active.targetText))
                 }
             }
+            .font(.system(size: WatchMetrics.meta))
+            .monospacedDigit()
+            .foregroundStyle(WatchPalette.t3)
+            .lineLimit(1).minimumScaleFactor(0.7)
+            .padding(.top, 5)
 
-            Spacer(minLength: 2)
+            Spacer(minLength: 4)
 
-            // 休息时最想知道的第二件事：等下要做什么。省得倒计时结束还要再翻一屏。
-            Text(verbatim: s.watchNextUp(active.targetText))
-                .font(.system(size: WatchMetrics.meta + 1))
-                .foregroundStyle(.secondary)
-                .lineLimit(1).minimumScaleFactor(0.7)
-            if link.pendingTransfers > 0 {
-                Text(verbatim: s.watchPendingSets(link.pendingTransfers))
-                    .font(.system(size: 10))
-                    .foregroundStyle(.secondary)
-            } else if !link.isReachable {
-                Text(verbatim: s.watchPhoneUnreachable)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.secondary)
-            }
-
-            // 两颗按钮走 message，只在手机够得着时能按。+30 是次级（bordered），
-            // 下一组是主动作（prominent）——与手机休息屏的主次一致。
-            HStack(spacing: 5) {
-                Button {
+            // 两颗圆钮走 message，只在手机够得着时能按。+30 是次级，下一组是主动作
+            //（ember 轮廓）——与手机休息屏「+30s 钢钮 / 下一组 锻面主钮」的主次一致。
+            HStack(spacing: 14) {
+                MachinedRoundButton(enabled: link.isReachable, action: {
                     store.send(.restAdd30, active: active)
                     WKInterfaceDevice.current().play(.click)
-                } label: {
+                }) {
                     Text(verbatim: s.restAdd30)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
                         .monospacedDigit()
-                        .frame(maxWidth: .infinity, minHeight: WatchMetrics.buttonHeight)
+                        .lineLimit(1).minimumScaleFactor(0.7)
                 }
-                .buttonStyle(.bordered)
-                .tint(.orange)
-                Button {
+                .accessibilityLabel(Text(verbatim: s.restAdd30))
+                MachinedRoundButton(primary: true, enabled: link.isReachable, action: {
                     store.send(.restSkip, active: active)
                     WKInterfaceDevice.current().play(.click)
-                } label: {
-                    Text(verbatim: s.restNextSet)
+                }) {
+                    Image(systemName: "forward.fill")
                         .font(.system(size: 14, weight: .semibold))
-                        .frame(maxWidth: .infinity, minHeight: WatchMetrics.buttonHeight)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.orange)
+                .accessibilityLabel(Text(verbatim: s.restNextSet))
             }
-            .disabled(!link.isReachable)
-            .padding(.top, 2)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         // 精确在结束时刻震一下 + 告诉手机，不轮询。
         // task(id:) 绑 endDate：手机上「+30 秒」会换一个结束时刻 → 任务重启，重新定时。
         .task(id: active.restEndsAt) {
@@ -692,7 +709,8 @@ enum WatchPreview {
                            setNumber: 3, setTotal: 4, exerciseNumber: 3, exerciseTotal: 6,
                            targetText: "60 kg × 8", targetWeightKg: 60, targetReps: 8, targetRir: 2,
                            isResting: true, restEndsAt: Date().addingTimeInterval(75), restTotalSeconds: 120,
-                           adjust: .init(weightRungs: ladder, weightCaption: "kg"))
+                           adjust: .init(weightRungs: ladder, weightCaption: "kg"),
+                           restPreviewText: zh ? "下一组 · 第 3 组 · 60 kg × 8" : "Next · Set 3 · 60 kg × 8")
         default: active = nil
         }
         let rx = WatchPrescription(dateISO: today, dayTitle: zh ? "上肢" : "Upper", exercises: items,

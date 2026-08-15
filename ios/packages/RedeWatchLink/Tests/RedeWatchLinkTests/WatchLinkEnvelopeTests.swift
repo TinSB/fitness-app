@@ -221,6 +221,20 @@ final class WatchActivePayloadTests: XCTestCase {
         XCTAssertNil(back?.active?.adjust)
     }
 
+    func testRestPreviewTextIsOptionalAndSurvivesRoundTrip() {
+        // v3：休息屏那一行由手机渲染；旧载荷没有它也照常解出（表退回「下一组 + 目标串」）。
+        let withPreview = WatchPrescription.Active(
+            exerciseId: "squat", exerciseName: "深蹲", setNumber: 3, setTotal: 3,
+            exerciseNumber: 1, exerciseTotal: 4, targetText: "80 kg × 0",
+            targetWeightKg: 80, targetReps: 0, targetRir: 2, isResting: true,
+            restPreviewText: "接下来 · 高位下拉")
+        let data = try? JSONEncoder().encode(withPreview)
+        let back = data.flatMap { try? JSONDecoder().decode(WatchPrescription.Active.self, from: $0) }
+        XCTAssertEqual(back?.restPreviewText, "接下来 · 高位下拉")
+        let legacy = #"{"exerciseId":"squat","exerciseName":"深蹲","setNumber":1,"setTotal":3,"exerciseNumber":1,"exerciseTotal":4,"targetText":"80 kg × 5","targetWeightKg":80,"targetReps":5,"targetRir":2,"isResting":true,"restTotalSeconds":90,"isWarmup":false}"#
+        XCTAssertNil((try? JSONDecoder().decode(WatchPrescription.Active.self, from: Data(legacy.utf8)))?.restPreviewText)
+    }
+
     func testRepBasedExerciseHasNoWeightRungs() {
         // 自重 / 弹力带没有重量轴：空梯子是合法且有意义的，表上据此隐藏重量瓦片。
         let adjust = WatchPrescription.Adjust(weightRungs: [], weightCaption: "")

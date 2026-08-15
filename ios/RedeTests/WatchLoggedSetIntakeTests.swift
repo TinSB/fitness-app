@@ -308,6 +308,27 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         XCTAssertFalse(lb.contains(27.5), "25 以上是 5lb 一格，不该出现 27.5：\(lb)")
     }
 
+    // MARK: - v3：休息屏「等下做什么」（手机渲染，与手机休息屏同一分流）
+
+    func testRestPreviewReportsNextSetOrNextExercise() {
+        let zh = RedeStrings(locale: .zh, unit: .kg)
+        // 本动作还有组：报下一组
+        XCTAssertEqual(
+            SessionStore.watchRestPreview(currentExerciseDone: false, nextExerciseId: "lat-pulldown", loadType: "external",
+                                          setNumber: 3, snappedKg: 22.5, targetReps: 6, strings: zh),
+            zh.restNextPreview(setNumber: 3, kg: "22.5", reps: 6))
+        // 本动作做完了：报下一个动作，而不是「× 0」（那正是 v2 露出来的缺陷）
+        let next = SessionStore.watchRestPreview(currentExerciseDone: true, nextExerciseId: "lat-pulldown", loadType: "external",
+                                                 setNumber: 3, snappedKg: 22.5, targetReps: 0, strings: zh)
+        XCTAssertEqual(next, zh.restNextExercise(ExerciseCatalog.minimal.displayName("lat-pulldown", localeCode: "zh")))
+        XCTAssertFalse(next.contains("× 0"))
+        // 自重走自重口径
+        XCTAssertEqual(
+            SessionStore.watchRestPreview(currentExerciseDone: false, nextExerciseId: nil, loadType: "bodyweight",
+                                          setNumber: 2, snappedKg: 0, targetReps: 8, strings: zh),
+            zh.restNextPreviewBodyweight(setNumber: 2, reps: 8))
+    }
+
     func testRepBasedExercisesGetNoWeightAxis() {
         let strings = RedeStrings(locale: .zh, unit: .kg)
         let bw = SessionStore.watchAdjust(loadType: "bodyweight", targetWeightKg: 0,

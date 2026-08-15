@@ -309,6 +309,14 @@ final class SessionStore {
                     adjust: l.warmupKind == nil
                         ? SessionStore.watchAdjust(loadType: l.loadType, targetWeightKg: l.targetWeightKg,
                                                    gridEquipment: gridEquipment, unit: unit, strings: strings)
+                        : nil,
+                    // 休息屏「等下做什么」（v3）：与手机休息屏 restPreviewText 逐字同源。
+                    restPreviewText: l.isResting
+                        ? SessionStore.watchRestPreview(
+                            currentExerciseDone: l.currentExerciseDone, nextExerciseId: l.nextExerciseId,
+                            loadType: l.loadType, setNumber: l.setNumber,
+                            snappedKg: LoadGrid.snapKg(l.targetWeightKg, equipment: gridEquipment, unit: unit),
+                            targetReps: l.targetReps, strings: strings)
                         : nil)
             }
             let rx = WatchPrescription(
@@ -344,6 +352,10 @@ final class SessionStore {
         let restEndsAt: Date?, restTotalSeconds: Int, restPausedRemaining: Int?
         /// 热身步时非 nil，值是热身种类（空杆 / 百分比 / 动作模式）——文案分流用。
         let warmupKind: WarmupStep.Kind?
+        /// 休息屏「等下做什么」的素材（v3）：本动作是否已做完（休息完就换动作）+ 下一个动作。
+        /// 与 TrainTabView.restPreviewText 同一判据（完成 + 跳过 ≥ 组数）。
+        let currentExerciseDone: Bool
+        let nextExerciseId: String?
     }
 
     private func liveSetProjection() -> LiveSet? {
@@ -352,6 +364,10 @@ final class SessionStore {
         guard flow.phase == .activeSet || flow.phase == .resting else { return nil }
         let p = flow.progress
         let entry = ExerciseCatalog.minimal.entry(id: current.exerciseId)
+        // 休息完是否换动作（与 TrainTabView.restPreviewText 同判据），以及换到谁。
+        let currentDone = flow.completedInCurrentExercise.count + flow.skippedInCurrentExercise >= current.sets.count
+        let nextExerciseId = flow.plan.exercises.indices.contains(flow.exerciseIndex + 1)
+            ? flow.plan.exercises[flow.exerciseIndex + 1].exerciseId : nil
 
         // **热身必须先判**。手机在热身（空杆）时若把正式组重量推给表，
         // 用户照着表练就会直接上重量——那是会受伤的（2026-08-15 owner 真机拍到）。
@@ -371,7 +387,8 @@ final class SessionStore {
                 restEndsAt: restCountdown.endDate,
                 restTotalSeconds: restCountdown.totalSeconds,
                 restPausedRemaining: restCountdown.pausedRemaining,
-                warmupKind: step.kind)
+                warmupKind: step.kind,
+                currentExerciseDone: false, nextExerciseId: nextExerciseId)
         }
 
         let rec = flow.currentRecommendation
@@ -390,7 +407,8 @@ final class SessionStore {
             restEndsAt: restCountdown.endDate,
             restTotalSeconds: restCountdown.totalSeconds,
             restPausedRemaining: restCountdown.pausedRemaining,
-            warmupKind: nil)
+            warmupKind: nil,
+            currentExerciseDone: currentDone, nextExerciseId: nextExerciseId)
     }
 
     /// 表上记的一组。**走手机自己那条 apply(.logSet)**——不另开落盘路径，
@@ -500,6 +518,26 @@ final class SessionStore {
             weightRungs: watchWeightLadder(aroundKg: targetWeightKg, equipment: gridEquipment, unit: unit)
                 .map { .init(kg: $0, text: strings.formatKg($0)) },
             weightCaption: caption)
+    }
+
+    /// 休息屏「等下做什么」那一行，与 TrainTabView.restPreviewText 同一分流：本动作做完了就报下一个
+    /// 动作（「接下来 · 高位下拉」），否则按负荷类型报下一组（「下一组 · 第 3 组 · 60 kg × 6」）。
+    /// 做完且没有下一个动作（这是最后一个动作的最后一段休息，不会发生——末组直接进小结）→ 空串。
+    nonisolated static func watchRestPreview(currentExerciseDone: Bool, nextExerciseId: String?, loadType: String,
+                                             setNumber: Int, snappedKg: Double, targetReps: Int,
+                                             strings: RedeStrings) -> String {
+        if currentExerciseDone {
+            return nextExerciseId.map {
+                strings.restNextExercise(ExerciseCatalog.minimal.displayName($0, localeCode: strings.locale.rawValue))
+            } ?? ""
+        }
+        let kg = strings.formatKg(snappedKg)
+        switch loadType {
+        case "bodyweight", "band": return strings.restNextPreviewBodyweight(setNumber: setNumber, reps: targetReps)
+        case "assisted": return strings.restNextPreviewAssisted(setNumber: setNumber, kg: kg, reps: targetReps)
+        case "bodyweight-plus": return strings.restNextPreviewBodyweightPlus(setNumber: setNumber, kg: kg, reps: targetReps)
+        default: return strings.restNextPreview(setNumber: setNumber, kg: kg, reps: targetReps)
+        }
     }
 
     /// 目标前后各 `span` 格的真实梯子（升序、含目标那一格；到梯子底就停，不出负数不出 0）。
