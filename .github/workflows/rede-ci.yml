@@ -23,6 +23,21 @@ jobs:
       - name: List Xcode project
         run: xcodebuild -list -project ios/Rede.xcodeproj
 
+      - name: Version parity across targets
+        shell: bash
+        run: |
+          set -euo pipefail
+          # App / Widget / Watch 必须同号，否则 App Store Connect 上传即拒。
+          # 表 target 是 2026-08-15 新加的第三处，bump 时最容易漏。
+          for key in MARKETING_VERSION CURRENT_PROJECT_VERSION; do
+            distinct="$(grep -o "$key = [^;]*;" ios/Rede.xcodeproj/project.pbxproj | sort -u | wc -l | tr -d ' ')"
+            if [ "$distinct" != "1" ]; then
+              echo "::error::$key mismatch across targets (App / Widget / Watch must match)"
+              grep -o "$key = [^;]*;" ios/Rede.xcodeproj/project.pbxproj | sort | uniq -c
+              exit 1
+            fi
+          done
+
       - name: Swift package tests
         shell: bash
         run: |

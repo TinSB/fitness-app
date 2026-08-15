@@ -6,6 +6,18 @@ cd "$(dirname "$0")/.."
 
 EXPECTED_PACKAGES="RedeDataHealth RedeDomain RedeEntitlements RedeHealthKit RedeL10n RedeLocalSnapshot RedeNotifications RedePersistence RedeSync RedeSyncSupabase RedeTrainingDecision RedeWatchLink RedeWidgetShared"
 
+# 三个 target（App / Widget / Watch）的版本号必须完全一致，否则 App Store Connect
+# 上传即拒。**表 target 是 2026-08-15 新加的第三处**——bump 时最容易漏的就是它，
+# 而症状要等到上传那一刻才出现，那时人已经在 Xcode 里等着了。
+for key in MARKETING_VERSION CURRENT_PROJECT_VERSION; do
+  distinct="$(grep -o "$key = [^;]*;" ios/Rede.xcodeproj/project.pbxproj | sort -u | wc -l | tr -d ' ')"
+  if [ "$distinct" != "1" ]; then
+    echo "ERROR: $key 在各 target 之间不一致——App / Widget / Watch 必须同号："
+    grep -o "$key = [^;]*;" ios/Rede.xcodeproj/project.pbxproj | sort | uniq -c
+    exit 1
+  fi
+done
+
 for name in $EXPECTED_PACKAGES; do
   echo "== swift test: ios/packages/$name =="
   (cd "ios/packages/$name" && swift test)
