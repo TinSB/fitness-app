@@ -224,6 +224,8 @@ struct ActiveSetView: View {
     @State private var justLogged = false
     /// 表冠焦点。**必须显式置位**——不置的话表冠去驱动滚动，次数一动不动。
     @FocusState private var crownFocused: Bool
+    /// 排队中的组数。手机够不着时「已记录」是半个真话——组确实记下了，但还没过去。
+    @ObservedObject private var link = WatchLink.shared
 
     private var reps: Int { max(1, Int(repsDial.rounded())) }
     private var adjusted: Bool { reps != active.targetReps }
@@ -238,6 +240,16 @@ struct ActiveSetView: View {
     private var buttonTitle: String {
         if justLogged { return "已记录" }
         return active.isWarmup ? "完成热身组" : "完成这一组"
+    }
+
+    /// 只在真有东西排队时出现。**不能只说「已记录」**——手机够不着时那是半个真话，
+    /// 组确实记下了，但还没过去。说清楚「排队中」，用户才知道不用重按、也没丢。
+    @ViewBuilder private var pendingHint: some View {
+        if link.pendingTransfers > 0 {
+            Text(verbatim: "\(link.pendingTransfers) 组待同步")
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+        }
     }
 
     var body: some View {
@@ -269,6 +281,7 @@ struct ActiveSetView: View {
             if !active.isWarmup { repsDial_view }
 
             Spacer(minLength: 2)
+            pendingHint
 
             Button {
                 store.logSet(active: active, reps: reps)
@@ -358,6 +371,11 @@ struct RestCountdownView: View {
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
                 .lineLimit(1).minimumScaleFactor(0.7)
+            if WatchLink.shared.pendingTransfers > 0 {
+                Text(verbatim: "\(WatchLink.shared.pendingTransfers) 组待同步")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         // 精确在结束时刻震一下，不轮询。
