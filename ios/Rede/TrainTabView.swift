@@ -164,6 +164,11 @@ struct TrainTabView: View {
     /// 质量清洗丢弃的场不计入。
     private var completedSessionCount: Int { sessionStore.todayModel?.cleanView.sessions.count ?? 0 }
     private var flow: TrainFlowState? { sessionStore.flow }
+    /// 当前组的身份（动作位置 + 组号 + 热身态）。变了 = 指针换组，本组暂存作废。
+    private var setPointerKey: String {
+        guard let flow else { return "-" }
+        return "\(flow.exerciseIndex)#\(flow.progress.setNumber)#\(flow.isWarmingUp)"
+    }
 
     /// 训练完成并落盘后（全程最高满意度时刻）请求 App Store 评分——但仅在用户已获得价值
     /// （≥N 场完成）且当前 App 版本尚未问过时。判定在 ReviewPromptPolicy（已单测）；系统弹窗
@@ -221,6 +226,11 @@ struct TrainTabView: View {
         .sensoryFeedback(.impact(weight: .medium), trigger: restDonePulse) // 休息到点自动进组（用户多半没看屏）
         // 会话边界：换场（结束/新开训练）后旧暂存绝不滞留到新会话首组
         .onChange(of: sessionStore.sessionStartedAt) { _, _ in clearAdjustment() }
+        // 组指针换了、但不是本页自己换的——**表上记的组**（watchOS v2）走 SessionStore 直接
+        // 推进 flow，本页的 logCurrentSet 没跑，暂存不会被清。不清的后果：手机上刚在面板里
+        // 挑好 62.5，表上以 60 记完这一组，手机 hero 却带着 62.5 滑到下一组。
+        // 键只含动作位置 + 组号 + 热身态：改剩余组数不改组号（owner 裁定那条不清暂存），不受影响。
+        .onChange(of: setPointerKey) { _, _ in clearAdjustment() }
         .task(id: restTaskKey) { await runRestTimer() }
         // K1 待机数据：仅无会话时加载（进训练/收尾时 id 翻转自动重载或跳过）。
         // id 同时敏感 flow 与处方状态（审查 MINOR：练完收尾 loadToday 翻转 prescription

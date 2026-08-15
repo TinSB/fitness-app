@@ -1,4 +1,5 @@
 import XCTest
+import RedeL10n
 import RedeTrainingDecision
 import RedeWatchLink
 @testable import Rede
@@ -187,6 +188,142 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         store.flow = nil
         store.applyWatchLoggedSet(loggedSet())
         XCTAssertNil(draftStore.stored)
+    }
+
+    // MARK: - v2：表上改过的重量 / RIR 原样落库
+
+    func testAdjustedWeightAndUnrecordedRirAreStoredAsSent() {
+        // 表上现在三个量都能改。改过的重量必须原样落进去；「—」= 不记 RIR 必须落成 nil，
+        // 不能被任何默认值（目标 RIR 2）顶掉——引擎对 nil 与 2 的处理不同。
+        let store = makeStore(); finishWarmup(store)
+        store.applyWatchLoggedSet(WatchLoggedSet(exerciseId: "bench-press", setNumber: 1, weightKg: 62.5,
+                                                 reps: 6, rir: nil, loggedAtISO: "t"))
+        let obs = store.flow?.observationsByExercise["bench-press"]?.first
+        XCTAssertEqual(obs?.weightKg, 62.5)
+        XCTAssertEqual(obs?.reps, 6)
+        XCTAssertNil(obs?.rir)
+    }
+
+    // MARK: - v2：遥控命令（休息 +30 / 跳过休息 / 跳过热身）
+
+    private func command(_ action: WatchCommand.Action, exerciseId: String = "bench-press",
+                         auto: Bool = false) -> WatchCommand {
+        WatchCommand(action: action, exerciseId: exerciseId, auto: auto, sentAtISO: "t")
+    }
+
+    /// 记完一组、停在休息态的 store。
+    private func makeRestingStore() -> SessionStore {
+        let store = makeStore(); finishWarmup(store)
+        store.applyWatchLoggedSet(loggedSet(setNumber: 1))
+        XCTAssertEqual(store.flow?.phase, .resting, "前置：记完一组应进入休息")
+        return store
+    }
+
+    func testRestSkipEndsRestAndAdvancesToNextSet() {
+        let store = makeRestingStore()
+        store.applyWatchCommand(command(.restSkip))
+        XCTAssertEqual(store.flow?.phase, .activeSet)
+        XCTAssertEqual(store.flow?.progress.setNumber, 2)
+    }
+
+    func testRestSkipIsIgnoredWhenNotResting() {
+        // 表侧 context 滞后：手机早已进下一组，迟到的「跳过休息」什么都不该动。
+        let store = makeStore(); finishWarmup(store)
+        let before = store.flow
+        store.applyWatchCommand(command(.restSkip))
+        XCTAssertEqual(store.flow, before)
+    }
+
+    func testAutoRestEndIsIgnoredWhilePhoneStillHasTimeLeft() {
+        // 表说「倒计时走完了」，但手机刚按过 +30、自己的钟还没到——不能提前结束休息。
+        let store = makeRestingStore()
+        XCTAssertGreaterThan(store.restRemainingSeconds, 0)
+        store.applyWatchCommand(command(.restSkip, auto: true))
+        XCTAssertEqual(store.flow?.phase, .resting)
+    }
+
+    func testManualRestSkipWinsEvenWithTimeLeft() {
+        // 用户在表上按了「下一组」= 明确意图，不受手机剩余时间限制。
+        let store = makeRestingStore()
+        XCTAssertGreaterThan(store.restRemainingSeconds, 0)
+        store.applyWatchCommand(command(.restSkip, auto: false))
+        XCTAssertEqual(store.flow?.phase, .activeSet)
+    }
+
+    func testRestAdd30ExtendsTheCountdown() {
+        let store = makeRestingStore()
+        let before = store.restRemainingSeconds
+        store.applyWatchCommand(command(.restAdd30))
+        XCTAssertGreaterThanOrEqual(store.restRemainingSeconds, before + 29)   // 允许 1 秒墙钟流逝
+        XCTAssertEqual(store.flow?.phase, .resting)
+    }
+
+    func testCommandForAnotherExerciseIsDropped() {
+        let store = makeRestingStore()
+        store.applyWatchCommand(command(.restSkip, exerciseId: "squat"))
+        XCTAssertEqual(store.flow?.phase, .resting)
+    }
+
+    func testSkipWarmupJumpsToFirstWorkingSet() {
+        let store = makeStore()
+        XCTAssertTrue(store.flow?.isWarmingUp == true)
+        store.applyWatchCommand(command(.skipWarmup))
+        XCTAssertFalse(store.flow?.isWarmingUp == true)
+        XCTAssertEqual(store.flow?.progress.setNumber, 1)
+        XCTAssertEqual(completedCount(store), 0, "跳过热身不落库")
+    }
+
+    func testSkipWarmupIsIgnoredOnceWarmupIsOver() {
+        let store = makeStore(); finishWarmup(store)
+        let before = store.flow
+        store.applyWatchCommand(command(.skipWarmup))
+        XCTAssertEqual(store.flow, before)
+    }
+
+    // MARK: - v2：推给表的重量梯子（手机侧生成，表只在格子间选）
+
+    func testKgBarbellLadderIsCenteredOnTargetAndStepsByGrid() {
+        let ladder = SessionStore.watchWeightLadder(aroundKg: 60, equipment: "barbell", unit: .kg)
+        XCTAssertEqual(ladder.count, 25)                       // 12 下 + 目标 + 12 上
+        XCTAssertEqual(ladder[12], 60)
+        XCTAssertEqual(ladder.first, 30)
+        XCTAssertEqual(ladder.last, 90)
+        XCTAssertEqual(ladder[11], 57.5); XCTAssertEqual(ladder[13], 62.5)
+        XCTAssertEqual(ladder, ladder.sorted(), "必须升序，表冠向上 = 更重")
+    }
+
+    func testLadderStopsAtTheBottomRungInsteadOfGoingNegative() {
+        // 目标离梯子底很近：下方格子不足 12 格就停，绝不出 0 或负重量。
+        let ladder = SessionStore.watchWeightLadder(aroundKg: 5, equipment: "barbell", unit: .kg)
+        XCTAssertEqual(ladder.first, 2.5)
+        XCTAssertTrue(ladder.allSatisfy { $0 > 0 })
+        XCTAssertTrue(ladder.contains(5))
+    }
+
+    func testLbDumbbellLadderFollowsTheSegmentedRungs() {
+        // 磅哑铃轻段 2.5lb 一格、中段 5lb 一格——梯子必须走真实格子，不是等距算术。
+        let ladder = SessionStore.watchWeightLadder(aroundKg: 25 / 2.204_622_621_8, equipment: "dumbbell", unit: .lb)
+        let lb = ladder.map { ($0 * 2.204_622_621_8 * 2).rounded() / 2 }
+        XCTAssertTrue(lb.contains(22.5) && lb.contains(25) && lb.contains(30), "\(lb)")
+        XCTAssertFalse(lb.contains(27.5), "25 以上是 5lb 一格，不该出现 27.5：\(lb)")
+    }
+
+    func testRepBasedExercisesGetNoWeightAxis() {
+        let strings = RedeStrings(locale: .zh, unit: .kg)
+        let bw = SessionStore.watchAdjust(loadType: "bodyweight", targetWeightKg: 0,
+                                          gridEquipment: "bodyweight", unit: .kg, strings: strings)
+        XCTAssertTrue(bw.weightRungs.isEmpty)
+        let assisted = SessionStore.watchAdjust(loadType: "assisted", targetWeightKg: 40,
+                                                gridEquipment: "selectorized", unit: .kg, strings: strings)
+        XCTAssertEqual(assisted.weightCaption, "辅助 kg")
+        XCTAssertTrue(assisted.weightRungs.map(\.text).contains("40"))
+        let external = SessionStore.watchAdjust(loadType: "external", targetWeightKg: 60,
+                                                gridEquipment: "barbell", unit: .lb,
+                                                strings: RedeStrings(locale: .en, unit: .lb))
+        XCTAssertEqual(external.weightCaption, "lb")
+        // 显示串按当前单位渲染（60 kg ≈ 132 lb 落在 5lb 格 → 130 或 135）
+        XCTAssertTrue(external.weightRungs.map(\.text).contains(where: { $0 == "130" || $0 == "135" }),
+                      "\(external.weightRungs.map(\.text))")
     }
 }
 
