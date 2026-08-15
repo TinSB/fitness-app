@@ -395,6 +395,17 @@ final class SessionStore {
     /// 是**两块屏同时开着**：表上记了一组，又顺手在手机上点了打勾。
     /// 不判就是同一组落盘两次。
     func applyWatchLoggedSet(_ set: WatchLoggedSet) {
+        // **手机 app 在训练中被划掉的那条路**（owner 2026-08-15 提出）。
+        //
+        // 划掉之后表上仍显示当前组，用户照样能记——排队通道会保证送达。
+        // 但重开手机 app 时 flow 还是 nil：draft 要等用户点「继续训练」才重放，
+        // 而排队的那条组正好在这个窗口送到，撞上下面的 guard 被静默丢弃。
+        // 表上已经显示「已记录」了，组却没了——这正是选排队通道要避免的事。
+        //
+        // 修法：写进 draft 而不是内存里的 flow。draft 是这场训练的持久真源，
+        // 用户点「继续训练」重放时自然带上。判断依据用 draft 重放出来的状态，
+        // 幂等规则与在线路径完全一致。
+        guard flow != nil else { appendWatchSetToDraft(set); return }
         guard let flow, flow.phase == .activeSet else { return }
         guard flow.currentExercise?.exerciseId == set.exerciseId else { return }
 
@@ -413,6 +424,50 @@ final class SessionStore {
             rir: set.rir,
             // 疼痛只在手机上报——表上没有这个入口，照读当前状态，不臆造。
             painReported: flow.painReportedForCurrentSet)))
+    }
+
+    /// flow 尚未恢复时，把表侧记的组直接写进 draft。
+    ///
+    /// 只接受「重放后正好在等的那一组」——幂等规则与在线路径同一套，
+    /// 不因为走了另一条路就放宽。热身在这条路上不处理：热身指针是纯内存的
+    ///（引擎明确不落 draft、不进事件日志），重放后本来就会从头热身。
+    private func appendWatchSetToDraft(_ set: WatchLoggedSet) {
+        guard !set.isWarmup else { return }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        guard let draft = draftStore.load(),
+              draft.isRestorable(todayISO: formatter.string(from: Date())),
+              var replayed = draft.restoreFlow(allowedEquipment: allowedEquipment, loadUnit: loadUnit)
+        else { return }
+
+        // 重放后多半停在 .resting——记完一组就进休息，而 draft 里没有「休息已走完」这件事。
+        // **必须先补一条 restFinished 再补 logSet**：reducer 在 .resting 下直接忽略 logSet
+        //（TrainFlowState.logSet 第一行的 guard），硬追加的话重放时那条组会被静默吃掉，
+        // 比现在丢得还隐蔽。补 restFinished 也符合事实：表上那段休息按墙钟确实走完了，
+        // 线上路径此刻发的正是这条事件。
+        var extraEvents: [TrainFlowEvent] = []
+        if replayed.phase == .resting {
+            extraEvents.append(.restFinished)
+            replayed.restFinished()   // 值类型就地推进，不必整份重放第二次
+        }
+        // 校验放在补 restFinished **之后**：restFinished 可能推进到下一个动作，
+        // 那时该等的组号与动作都变了。
+        guard replayed.phase == .activeSet,
+              replayed.currentExercise?.exerciseId == set.exerciseId,
+              !replayed.isWarmingUp,
+              replayed.progress.setNumber == set.setNumber
+        else { return }
+
+        let observation = CompletedSetObservation(
+            weightKg: set.weightKg, reps: set.reps, rir: set.rir,
+            painReported: replayed.painReportedForCurrentSet)
+        var updated = draft
+        for event in extraEvents { updated = updated.appending(event) }
+        // 同步落盘，不用 enqueue：这条路上没有界面、也没有下一次机会——
+        // app 可能马上又被系统收走，异步写就赌上了这一组。
+        _ = draftStore.saveDurably(updated.appending(.logSet(observation)))
     }
 
     /// 裁定 D：只读 derived muscle-level-memory，将已解锁等级投影进现成 rows 通道。

@@ -67,6 +67,27 @@ public struct TrainSessionDraft: Equatable, Sendable, Codable {
         dateISO == String(todayISO.prefix(10))
     }
 
+    /// 追加一个事件，返回新 draft（watchOS 切片 4 的杀后台补洞，2026-08-15）。
+    ///
+    /// 用途只有一个：**手机 app 在训练中被划掉、重开后 flow 还没恢复时，
+    /// 接住表侧记的那一组**。那条组必须落进 draft，否则重放时它不存在——
+    /// 而用户在表上已经看到「已记录」了。
+    ///
+    /// 为什么放在类型内部而不是让调用点自己重建：sessionConfiguration 是私有的，
+    /// 调用点重建时漏传就会让恢复后的单位/器械退回默认——磅用户当日恢复后
+    /// 步长会悄悄回退成 kg（restoreFlow 注释里已经记过这个坑）。
+    public func appending(_ event: TrainFlowEvent) -> TrainSessionDraft {
+        TrainSessionDraft(
+            dateISO: dateISO,
+            startedAt: startedAt,
+            prescription: prescription,
+            events: events + [event],
+            catalogVersion: catalogVersion,
+            sessionAllowedEquipment: sessionConfiguration?.equipmentSet,
+            sessionLoadUnit: sessionConfiguration?.loadUnit
+        )
+    }
+
     /// nil = 重放失败（如 catalog 漂移）——调用方应放弃恢复而非展示错误状态。
     /// loadUnit 生产路径必须显式传当前档案单位（SessionStore 已传）；default .kg
     /// 仅为测试便利，不得在生产依赖（否则磅用户当日恢复后步长回退 kg）。

@@ -14,9 +14,8 @@ import RedeWatchLink
 @MainActor
 final class WatchLoggedSetIntakeTests: XCTestCase {
 
-    private func makeStore() -> SessionStore {
-        let store = SessionStore(draftStore: FakeDraftStore())
-        store.flow = TrainFlowState(prescription: TodayPrescription(
+    private func prescription() -> TodayPrescription {
+        TodayPrescription(
             dayCode: "push-a",
             exercises: [
                 ExercisePrescriptionPlan(
@@ -27,7 +26,12 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
                     progressionStepKg: 2.5, change: .start, reason: .firstExposure,
                     loadType: "external", equipment: "barbell", progressionPauseReason: nil)
             ],
-            dayReasons: []))
+            dayReasons: [])
+    }
+
+    private func makeStore() -> SessionStore {
+        let store = SessionStore(draftStore: FakeDraftStore())
+        store.flow = TrainFlowState(prescription: prescription())
         return store
     }
 
@@ -126,15 +130,70 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         }
     }
 
+    /// 带真 draft 存储的 store，且已走完热身（正式组测试的共同起点）。
+    private func makeStoreWithDraft() -> (SessionStore, FakeDraftStore) {
+        let draftStore = FakeDraftStore()
+        let store = SessionStore(draftStore: draftStore)
+        store.flow = TrainFlowState(prescription: prescription())
+        finishWarmup(store)
+        return (store, draftStore)
+    }
+
     private func warmupStep(index: Int) -> WatchLoggedSet {
         WatchLoggedSet(exerciseId: "bench-press", setNumber: index, weightKg: 0,
                        reps: 8, rir: 0, loggedAtISO: "t", isWarmup: true)
     }
+
+    // MARK: - 手机 app 在训练中被划掉（owner 2026-08-15 提出）
+
+    func testSetLoggedWhileFlowIsNotYetRestoredSurvivesIntoTheDraft() {
+        // 场景：训练中把手机 app 划掉 → 表上仍显示当前组、记一组（排队通道会保证送达）
+        // → 重开手机 app。**此刻 flow 还是 nil**——draft 要等用户点「继续训练」才重放，
+        // 而排队的那条组正好在这个窗口送达。
+        //
+        // 修之前：撞上 guard let flow 被静默丢弃。表上已经显示「已记录」，组却没了。
+        let (store, draftStore) = makeStoreWithDraft()
+        // 先在手机上正常记第 1 组——draft 只在有事件时才产生（热身是纯内存的，不落 draft）
+        store.applyWatchLoggedSet(loggedSet(setNumber: 1, reps: 8))
+        XCTAssertNotNil(draftStore.stored, "前置条件：记完一组后应当已经存过 draft")
+        // 模拟「被划掉」：draft 在盘上，内存里的 flow 没了
+        store.flow = nil
+
+        store.applyWatchLoggedSet(loggedSet(setNumber: 2, reps: 7))
+
+        // 重开后用户点「继续训练」→ 重放必须带上表侧那一组
+        let restored = draftStore.stored?.restoreFlow()
+        let logged = restored?.observationsByExercise["bench-press"] ?? []
+        XCTAssertEqual(logged.count, 2, "表上记的那一组必须落进 draft，否则重放后就没了")
+        XCTAssertEqual(logged.last?.reps, 7)
+    }
+
+    func testStaleSetIsStillDroppedWhenFlowIsNotRestored() {
+        // 补进 draft 这条路同样要判幂等——不能因为走了另一条路就放行。
+        let (store, draftStore) = makeStoreWithDraft()
+        store.applyWatchLoggedSet(loggedSet(setNumber: 1))
+        store.flow = nil
+        let before = draftStore.stored?.events.count ?? 0
+
+        store.applyWatchLoggedSet(loggedSet(setNumber: 3))   // 重放后手机等的是第 2 组
+
+        XCTAssertEqual(draftStore.stored?.events.count, before, "组号对不上就不该写进 draft")
+    }
+
+    func testSetIsDroppedWhenThereIsNoDraftAtAll() {
+        // 训练早就结束、draft 已清——排队通道可能在那之后才把消息送到。
+        let draftStore = FakeDraftStore()
+        let store = SessionStore(draftStore: draftStore)
+        store.flow = nil
+        store.applyWatchLoggedSet(loggedSet())
+        XCTAssertNil(draftStore.stored)
+    }
 }
 
 private final class FakeDraftStore: TrainSessionDraftStoring {
-    func load() -> TrainSessionDraft? { nil }
-    func clear() {}
-    func enqueueSave(_ draft: TrainSessionDraft) {}
-    func saveDurably(_ draft: TrainSessionDraft) -> Bool { true }
+    var stored: TrainSessionDraft?
+    func load() -> TrainSessionDraft? { stored }
+    func clear() { stored = nil }
+    func enqueueSave(_ draft: TrainSessionDraft) { stored = draft }
+    func saveDurably(_ draft: TrainSessionDraft) -> Bool { stored = draft; return true }
 }
