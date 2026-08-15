@@ -100,7 +100,9 @@ final class SessionStore {
     /// 休息倒计时的墙钟锚点（owner 反馈 2026-06-15 修复）：剩余秒数曾放在 TrainTabView
     /// 的 @State，切 tab 时 RootTabView 用 switch 销毁视图树即归 0。移到会话层后跨切页
     /// 存活，且按绝对结束时刻求剩余 → 离屏期间真实时间照常流逝。详见 RestCountdown。
-    private(set) var restCountdown = RestCountdown()
+    /// 休息倒计时。**变化也要重推给表**（切片 5）——否则表上「在休息」但没有结束时刻。
+    /// 与 flow 的 didSet 同理：写在这里而不是各调用点，漏一处就是表上倒计时不动。
+    private(set) var restCountdown = RestCountdown() { didSet { pushWatchPrescription() } }
     /// K6 休息计时 Live Activity（视觉层——裁定 1：到点提醒仍归 G1 休息通知）。
     /// 只在 restCountdown.begin/clear 既有接线点挂钩，不改 RestCountdown 本体。
     private let restLiveActivity = RestLiveActivityController()
@@ -236,8 +238,15 @@ final class SessionStore {
     ///
     /// ⚠️ unreadable 不推：与 widget 同一条诚实降级纪律——宁可让表显示上一份，
     /// 也不推一份基于读不懂的数据编出来的处方。
+    /// 推送代次。**防旧盖新**：渲染在后台做，两次推送的任务谁先落地不确定——
+    /// 没有它，`apply` 里 flow 与 restCountdown 各触发一次推送时，
+    /// 先发起的那次（还没有休息结束时刻）可能后落地，把正确的那份盖掉。
+    private var watchPushGeneration = 0
+
     private func pushWatchPrescription(now: Date = Date()) {
         guard case .ready(let model)? = todayOutcome else { return }
+        watchPushGeneration &+= 1
+        let generation = watchPushGeneration
         // ExercisePrescriptionPlan 是 Sendable，可以整体交给后台；dayCode 可能为 nil（休息日）。
         let plans = model.prescription?.exercises ?? []
         let dayCode = model.prescription?.dayCode
@@ -272,15 +281,31 @@ final class SessionStore {
                     exerciseName: ExerciseCatalog.minimal.displayName(l.exerciseId, localeCode: strings.locale.rawValue),
                     setNumber: l.setNumber, setTotal: l.setTotal,
                     exerciseNumber: l.exerciseNumber, exerciseTotal: l.exerciseTotal,
-                    targetText: strings.targetLine(
-                        loadType: l.loadType,
-                        weightKg: LoadGrid.snapKg(
+                    // 热身与正式组的文案完全不同源：热身走 warmupEmptyBar /
+                    // warmupMovementPrep / warmupWeight（与手机 warmupMainLine 逐字同源），
+                    // 正式组才走 targetLine。混用会把「空杆」显示成一个重量。
+                    targetText: {
+                        let snapped = LoadGrid.snapKg(
                             l.targetWeightKg,
                             equipment: LoadGrid.gridEquipment(loadType: l.loadType, equipment: l.equipment),
-                            unit: LoadUnit(unitSystem: strings.unit.rawValue)),
-                        reps: l.targetReps),
+                            unit: LoadUnit(unitSystem: strings.unit.rawValue))
+                        switch l.warmupKind {
+                        case .emptyBar:
+                            return "\(strings.warmupEmptyBar) \(strings.warmupReps(l.targetReps))"
+                        case .movementPrep:
+                            return "\(strings.warmupMovementPrep) \(strings.warmupReps(l.targetReps))"
+                        case .percent:
+                            return "\(strings.warmupWeight(snapped)) \(strings.warmupReps(l.targetReps))"
+                        case nil:
+                            return strings.targetLine(loadType: l.loadType, weightKg: snapped, reps: l.targetReps)
+                        }
+                    }(),
                     targetWeightKg: l.targetWeightKg, targetReps: l.targetReps,
-                    targetRir: l.targetRir, isResting: l.isResting)
+                    targetRir: l.targetRir, isResting: l.isResting,
+                    isWarmup: l.warmupKind != nil,
+                    restEndsAt: l.restEndsAt,
+                    restTotalSeconds: l.restTotalSeconds,
+                    restPausedRemaining: l.restPausedRemaining)
             }
             let rx = WatchPrescription(
                 dateISO: formatter.string(from: now),
@@ -292,6 +317,8 @@ final class SessionStore {
             guard let payload = rx.encoded else { return }
 
             await MainActor.run {
+                // 已经有更新的一次在路上 → 这次作废，不发。
+                guard self.watchPushGeneration == generation else { return }
                 WatchLink.shared.send(
                     WatchLinkEnvelope(kind: WatchLinkKind.prescription,
                                       sentAtISO: ISO8601DateFormatter().string(from: now),
@@ -308,6 +335,10 @@ final class SessionStore {
         let setNumber: Int, setTotal: Int, exerciseNumber: Int, exerciseTotal: Int
         let targetWeightKg: Double, targetReps: Int, targetRir: Double
         let isResting: Bool
+        /// 休息倒计时快照（绝对结束时刻 + 总时长 + 暂停冻结值）。切片 5。
+        let restEndsAt: Date?, restTotalSeconds: Int, restPausedRemaining: Int?
+        /// 热身步时非 nil，值是热身种类（空杆 / 百分比 / 动作模式）——文案分流用。
+        let warmupKind: WarmupStep.Kind?
     }
 
     private func liveSetProjection() -> LiveSet? {
@@ -315,8 +346,30 @@ final class SessionStore {
         // confirmEnd / summary 都不该在表上给「完成这一组」——那时已经没有下一组了。
         guard flow.phase == .activeSet || flow.phase == .resting else { return nil }
         let p = flow.progress
-        let rec = flow.currentRecommendation
         let entry = ExerciseCatalog.minimal.entry(id: current.exerciseId)
+
+        // **热身必须先判**。手机在热身（空杆）时若把正式组重量推给表，
+        // 用户照着表练就会直接上重量——那是会受伤的（2026-08-15 owner 真机拍到）。
+        // 热身的进度口径也不同：走热身步序号，不是工作组序号。
+        if flow.isWarmingUp, let step = flow.currentWarmupStep {
+            return LiveSet(
+                exerciseId: current.exerciseId,
+                loadType: current.loadType,
+                equipment: entry?.equipment ?? "dumbbell",
+                setNumber: step.index,
+                setTotal: flow.warmupStepsForCurrentExercise.count,
+                exerciseNumber: p.exerciseNumber, exerciseTotal: p.exerciseTotal,
+                targetWeightKg: step.targetWeightKg,
+                targetReps: step.targetReps,
+                targetRir: 0,                      // 热身不记 RIR
+                isResting: flow.phase == .resting,
+                restEndsAt: restCountdown.endDate,
+                restTotalSeconds: restCountdown.totalSeconds,
+                restPausedRemaining: restCountdown.pausedRemaining,
+                warmupKind: step.kind)
+        }
+
+        let rec = flow.currentRecommendation
         return LiveSet(
             exerciseId: current.exerciseId,
             loadType: current.loadType,
@@ -328,7 +381,11 @@ final class SessionStore {
             targetWeightKg: flow.currentTargetWeightKg ?? 0,
             targetReps: rec?.targetReps ?? 0,
             targetRir: Double(Int(rec?.targetRir ?? 2)),
-            isResting: flow.phase == .resting)
+            isResting: flow.phase == .resting,
+            restEndsAt: restCountdown.endDate,
+            restTotalSeconds: restCountdown.totalSeconds,
+            restPausedRemaining: restCountdown.pausedRemaining,
+            warmupKind: nil)
     }
 
     /// 表上记的一组。**走手机自己那条 apply(.logSet)**——不另开落盘路径，
@@ -338,16 +395,79 @@ final class SessionStore {
     /// 是**两块屏同时开着**：表上记了一组，又顺手在手机上点了打勾。
     /// 不判就是同一组落盘两次。
     func applyWatchLoggedSet(_ set: WatchLoggedSet) {
+        // **手机 app 在训练中被划掉的那条路**（owner 2026-08-15 提出）。
+        //
+        // 划掉之后表上仍显示当前组，用户照样能记——排队通道会保证送达。
+        // 但重开手机 app 时 flow 还是 nil：draft 要等用户点「继续训练」才重放，
+        // 而排队的那条组正好在这个窗口送到，撞上下面的 guard 被静默丢弃。
+        // 表上已经显示「已记录」了，组却没了——这正是选排队通道要避免的事。
+        //
+        // 修法：写进 draft 而不是内存里的 flow。draft 是这场训练的持久真源，
+        // 用户点「继续训练」重放时自然带上。判断依据用 draft 重放出来的状态，
+        // 幂等规则与在线路径完全一致。
+        guard flow != nil else { appendWatchSetToDraft(set); return }
         guard let flow, flow.phase == .activeSet else { return }
-        guard flow.currentExercise?.exerciseId == set.exerciseId,
-              flow.progress.setNumber == set.setNumber
-        else { return }
+        guard flow.currentExercise?.exerciseId == set.exerciseId else { return }
+
+        if set.isWarmup {
+            // 热身**不落库**：只推进热身步。幂等键同样是 exerciseId + 步序号。
+            guard flow.isWarmingUp, flow.currentWarmupStep?.index == set.setNumber else { return }
+            advanceWarmupStep()
+            return
+        }
+        // **热身期间绝不接受正式组**。表侧状态滞后一拍就会撞上这里——
+        // 不判的话，用户还在空杆热身，一组 65kg 就已经落库了。
+        guard !flow.isWarmingUp, flow.progress.setNumber == set.setNumber else { return }
         apply(.logSet(CompletedSetObservation(
             weightKg: set.weightKg,
             reps: set.reps,
             rir: set.rir,
             // 疼痛只在手机上报——表上没有这个入口，照读当前状态，不臆造。
             painReported: flow.painReportedForCurrentSet)))
+    }
+
+    /// flow 尚未恢复时，把表侧记的组直接写进 draft。
+    ///
+    /// 只接受「重放后正好在等的那一组」——幂等规则与在线路径同一套，
+    /// 不因为走了另一条路就放宽。热身在这条路上不处理：热身指针是纯内存的
+    ///（引擎明确不落 draft、不进事件日志），重放后本来就会从头热身。
+    private func appendWatchSetToDraft(_ set: WatchLoggedSet) {
+        guard !set.isWarmup else { return }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        guard let draft = draftStore.load(),
+              draft.isRestorable(todayISO: formatter.string(from: Date())),
+              var replayed = draft.restoreFlow(allowedEquipment: allowedEquipment, loadUnit: loadUnit)
+        else { return }
+
+        // 重放后多半停在 .resting——记完一组就进休息，而 draft 里没有「休息已走完」这件事。
+        // **必须先补一条 restFinished 再补 logSet**：reducer 在 .resting 下直接忽略 logSet
+        //（TrainFlowState.logSet 第一行的 guard），硬追加的话重放时那条组会被静默吃掉，
+        // 比现在丢得还隐蔽。补 restFinished 也符合事实：表上那段休息按墙钟确实走完了，
+        // 线上路径此刻发的正是这条事件。
+        var extraEvents: [TrainFlowEvent] = []
+        if replayed.phase == .resting {
+            extraEvents.append(.restFinished)
+            replayed.restFinished()   // 值类型就地推进，不必整份重放第二次
+        }
+        // 校验放在补 restFinished **之后**：restFinished 可能推进到下一个动作，
+        // 那时该等的组号与动作都变了。
+        guard replayed.phase == .activeSet,
+              replayed.currentExercise?.exerciseId == set.exerciseId,
+              !replayed.isWarmingUp,
+              replayed.progress.setNumber == set.setNumber
+        else { return }
+
+        let observation = CompletedSetObservation(
+            weightKg: set.weightKg, reps: set.reps, rir: set.rir,
+            painReported: replayed.painReportedForCurrentSet)
+        var updated = draft
+        for event in extraEvents { updated = updated.appending(event) }
+        // 同步落盘，不用 enqueue：这条路上没有界面、也没有下一次机会——
+        // app 可能马上又被系统收走，异步写就赌上了这一组。
+        _ = draftStore.saveDurably(updated.appending(.logSet(observation)))
     }
 
     /// 裁定 D：只读 derived muscle-level-memory，将已解锁等级投影进现成 rows 通道。

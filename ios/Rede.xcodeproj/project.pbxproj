@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		7B3C91D42A18E5F6A0000003 /* RedeWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6A0000002 /* RedeWatchApp.swift */; };
+		7B3C91D42A18E5F6C5000002 /* WorkoutSessionKeeper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6C5000001 /* WorkoutSessionKeeper.swift */; };
 		7B3C91D42A18E5F6A0000020 /* RedeL10n in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000010 /* RedeL10n */; };
 		7B3C91D42A18E5F6A0000021 /* RedeDomain in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000011 /* RedeDomain */; };
 		7B3C91D42A18E5F6A0000022 /* RedeDataHealth in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000012 /* RedeDataHealth */; };
@@ -133,6 +134,7 @@
 /* Begin PBXFileReference section */
 		7B3C91D42A18E5F6A0000001 /* RedeWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RedeWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B3C91D42A18E5F6A0000002 /* RedeWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeWatchApp.swift; sourceTree = "<group>"; };
+		7B3C91D42A18E5F6C5000001 /* WorkoutSessionKeeper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSessionKeeper.swift; sourceTree = "<group>"; };
 		7B3C91D42A18E5F6C3000001 /* WatchLoggedSetIntakeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchLoggedSetIntakeTests.swift; sourceTree = "<group>"; };
 		7B3C91D42A18E5F6C4000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A100000000000000000000E1 /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
@@ -248,6 +250,7 @@
 			isa = PBXGroup;
 			children = (
 				7B3C91D42A18E5F6A0000002 /* RedeWatchApp.swift */,
+				7B3C91D42A18E5F6C5000001 /* WorkoutSessionKeeper.swift */,
 				7B3C91D42A18E5F6C4000001 /* Assets.xcassets */,
 			);
 			path = RedeWatch;
@@ -551,6 +554,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7B3C91D42A18E5F6A0000003 /* RedeWatchApp.swift in Sources */,
+				7B3C91D42A18E5F6C5000002 /* WorkoutSessionKeeper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -654,8 +658,12 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = RedeWatch/RedeWatch.entitlements;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Rede 用心率与活动数据记录你这一场力量训练。";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Rede 把你完成的力量训练写回健康，让活动圆环计入这一场。";
+				INFOPLIST_FILE = RedeWatch/Info.plist;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 36;
+				CURRENT_PROJECT_VERSION = 37;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -680,8 +688,12 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = RedeWatch/RedeWatch.entitlements;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Rede 用心率与活动数据记录你这一场力量训练。";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Rede 把你完成的力量训练写回健康，让活动圆环计入这一场。";
+				INFOPLIST_FILE = RedeWatch/Info.plist;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 36;
+				CURRENT_PROJECT_VERSION = 37;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -830,7 +842,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Rede/Rede.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 36;
+				CURRENT_PROJECT_VERSION = 37;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -858,7 +870,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Rede/Rede.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 36;
+				CURRENT_PROJECT_VERSION = 37;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -884,7 +896,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = RedeWidget/RedeWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 36;
+				CURRENT_PROJECT_VERSION = 37;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = RedeWidget/Info.plist;
@@ -911,7 +923,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = RedeWidget/RedeWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 36;
+				CURRENT_PROJECT_VERSION = 37;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = RedeWidget/Info.plist;

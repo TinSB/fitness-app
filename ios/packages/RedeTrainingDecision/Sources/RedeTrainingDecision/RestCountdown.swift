@@ -22,6 +22,18 @@ public struct RestCountdown: Equatable, Sendable {
 
     public init() {}
 
+    /// 从线上传来的状态重建（watchOS 切片 5）。
+    ///
+    /// 存在的理由：手机 → 表**必须传绝对结束时刻，不能传剩余秒数**。
+    /// 传剩余秒数的话，消息延迟多久倒计时就差多久，而且表侧每秒都得等手机发一条。
+    /// 传结束时刻，表自己按墙钟算——延迟、丢包、app 被挂起后重开都不影响准确性。
+    /// 有了这个 init，两端共用同一份 remaining/fraction 实现，倒计时算术不会漂。
+    public init(endDate: Date?, pausedRemaining: Int?, totalSeconds: Int) {
+        self.endDate = endDate
+        self.pausedRemaining = pausedRemaining
+        self.totalSeconds = totalSeconds
+    }
+
     /// 是否有一段休息在进行（运行或暂停皆算）。
     public var isActive: Bool { endDate != nil || pausedRemaining != nil }
 

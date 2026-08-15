@@ -41,7 +41,19 @@ public final class WatchLink: NSObject, ObservableObject {
         #endif
     }
 
+    /// 还没送达对端的排队消息条数（切片 7）。
+    ///
+    /// 表上练完一组，若手机此刻够不着，那一组会静默地待在队列里——
+    /// 用户看到的只是「已记录」，无从知道它到底过去没有。
+    /// 这个数让状态说真话：**不是丢了，是排着队**。归零就是全部送到了。
+    /// 数据源是系统的 outstandingUserInfoTransfers，不是自己数——自己数迟早对不上。
+    @Published public private(set) var pendingTransfers = 0
+
     public var onReceive: ((WatchLinkEnvelope, WatchLinkChannel) -> Void)?
+
+    private func refreshPending() {
+        pendingTransfers = session?.outstandingUserInfoTransfers.count ?? 0
+    }
 
     /// 最后一份 applicationContext（不论发成功没有）。
     ///
@@ -109,6 +121,7 @@ public final class WatchLink: NSObject, ObservableObject {
         case .userInfo:
             session.transferUserInfo(envelope.dictionary)
             append("→ \(envelope.kind) (userInfo 已排队)")
+            refreshPending()
         case .message:
             guard session.isReachable else {
                 append("→ \(envelope.kind) (message) 跳过：对端不可达")
@@ -171,6 +184,7 @@ extension WatchLink: WCSessionDelegate {
         // 不读它 = 表一重启就变空白，直到手机再推一次——而手机锁在柜子里正是表最该有用的时候。
         //（2026-08-15 实测抓获：杀掉手机 app 后重开表 app，处方消失。）
         guard state == .activated else { return }
+        Task { @MainActor in self.refreshPending() }   // 上次没送完的，重开 app 后仍在队列里
         let stored = session.receivedApplicationContext
         if !stored.isEmpty { receive(stored, .applicationContext) }
 
@@ -219,6 +233,7 @@ extension WatchLink: WCSessionDelegate {
         } else {
             note("✓ \(kind) (userInfo) 已送达")
         }
+        Task { @MainActor in self.refreshPending() }
     }
 
     #if os(iOS)
