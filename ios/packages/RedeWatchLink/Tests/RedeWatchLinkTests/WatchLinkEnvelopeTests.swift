@@ -116,11 +116,58 @@ final class WatchLoggedSetTests: XCTestCase {
                                     rir: active.targetRir, loggedAtISO: "t")
         XCTAssertEqual(logged.exerciseId, active.exerciseId)
         XCTAssertEqual(logged.setNumber, active.setNumber)
-        // 重量与 RIR 原样回传（表不重算）；只有次数是表改过的。
         XCTAssertEqual(logged.weightKg, active.targetWeightKg)
         XCTAssertEqual(logged.rir, active.targetRir)
         XCTAssertNotEqual(logged.reps, active.targetReps)
     }
+
+    func testUnrecordedRirRoundTripsAsNil() {
+        // v2：表上选「—」= 不记 RIR。nil 必须原样过桥，不能在解码那头变成 0——
+        // 0 是「力竭」，和「没记」是两回事，引擎对两者的处理不同。
+        let set = WatchLoggedSet(exerciseId: "squat", setNumber: 1, weightKg: 82.5,
+                                 reps: 5, rir: nil, loggedAtISO: "t")
+        let back = set.encoded.flatMap(WatchLoggedSet.init(decoding:))
+        XCTAssertEqual(back, set)
+        XCTAssertNil(back?.rir)
+    }
+
+    func testLegacyLoggedSetWithRirStillDecodes() {
+        // 旧表恒带 rir；新手机必须照旧解出来。
+        let legacy = #"{"exerciseId":"squat","setNumber":1,"weightKg":80,"reps":5,"rir":2,"loggedAtISO":"t","isWarmup":false}"#
+        let back = WatchLoggedSet(decoding: Data(legacy.utf8))
+        XCTAssertEqual(back?.rir, 2)
+    }
+}
+
+// v2：表 → 手机的遥控命令。
+final class WatchCommandTests: XCTestCase {
+
+    func testRoundTripThroughEnvelope() {
+        let cmd = WatchCommand(action: .restAdd30, exerciseId: "squat", sentAtISO: "t")
+        let e = WatchLinkEnvelope(kind: WatchLinkKind.command, sentAtISO: "t", payload: cmd.encoded)
+        let back = WatchLinkEnvelope(dictionary: e.dictionary)
+        XCTAssertEqual(back.flatMap { $0.payload }.flatMap(WatchCommand.init(decoding:)), cmd)
+        XCTAssertTrue(PropertyListSerialization.propertyList(e.dictionary, isValidFor: .binary))
+    }
+
+    func testAutoFlagDistinguishesNaturalRestEndFromManualSkip() {
+        // 手机据 auto 决定撤不撤「休息结束」通知：自然到点不撤（正该此刻送达），手动提前要撤。
+        let natural = WatchCommand(action: .restSkip, exerciseId: "squat", auto: true, sentAtISO: "t")
+        let manual = WatchCommand(action: .restSkip, exerciseId: "squat", sentAtISO: "t")
+        XCTAssertTrue(natural.encoded.flatMap(WatchCommand.init(decoding:))?.auto == true)
+        XCTAssertFalse(manual.encoded.flatMap(WatchCommand.init(decoding:))?.auto == true)
+    }
+
+    func testUnknownActionFromANewerWatchDecodesToNilNotCrash() {
+        // 向前兼容：更新的表可能发来手机还不认识的命令，安静丢弃。
+        let future = #"{"action":"teleport","exerciseId":"squat","auto":false,"sentAtISO":"t"}"#
+        XCTAssertNil(WatchCommand(decoding: Data(future.utf8)))
+    }
+}
+
+// 切片 4 起的 active 载荷 + v2 的可调素材。版本不同步是常态（表 app 随手机 app 更新但不一定同刻），
+// 所以每加一个字段都要钉一条「旧载荷仍解得出」。
+final class WatchActivePayloadTests: XCTestCase {
 
     func testActiveSurvivesPrescriptionRoundTrip() {
         let rx = WatchPrescription(
@@ -138,5 +185,47 @@ final class WatchLoggedSetTests: XCTestCase {
         let back = WatchPrescription(decoding: Data(legacy.utf8))
         XCTAssertEqual(back?.dateISO, "2026-08-15")
         XCTAssertNil(back?.active)
+        XCTAssertNil(back?.localeCode)
+    }
+
+    // MARK: - v2：表上可调三个量
+
+    func testAdjustLadderAndLocaleSurviveRoundTrip() {
+        let rx = WatchPrescription(
+            dateISO: "2026-08-15", dayTitle: "上肢", exercises: [],
+            active: .init(exerciseId: "squat", exerciseName: "深蹲", setNumber: 1, setTotal: 3,
+                          exerciseNumber: 1, exerciseTotal: 4, targetText: "80 kg × 5",
+                          targetWeightKg: 80, targetReps: 5, targetRir: 2, isResting: false,
+                          adjust: .init(weightRungs: [.init(kg: 77.5, text: "77.5"),
+                                                      .init(kg: 80, text: "80"),
+                                                      .init(kg: 82.5, text: "82.5")],
+                                        weightCaption: "kg")),
+            localeCode: "zh")
+        let back = rx.encoded.flatMap(WatchPrescription.init(decoding:))
+        XCTAssertEqual(back, rx)
+        XCTAssertEqual(back?.active?.adjust?.weightRungs.map(\.text), ["77.5", "80", "82.5"])
+        XCTAssertEqual(back?.localeCode, "zh")
+    }
+
+    func testOlderActiveWithoutAdjustStillDecodes() {
+        // 旧手机推的 active 没有 adjust——表必须照常显示、退回只调次数，不能整份作废。
+        let legacy = #"""
+        {"dateISO":"2026-08-15","dayTitle":"上肢","exercises":[],
+         "active":{"exerciseId":"squat","exerciseName":"深蹲","setNumber":1,"setTotal":3,
+                   "exerciseNumber":1,"exerciseTotal":4,"targetText":"80 kg × 5",
+                   "targetWeightKg":80,"targetReps":5,"targetRir":2,"isResting":false,
+                   "restTotalSeconds":0,"isWarmup":false}}
+        """#
+        let back = WatchPrescription(decoding: Data(legacy.utf8))
+        XCTAssertEqual(back?.active?.exerciseId, "squat")
+        XCTAssertNil(back?.active?.adjust)
+    }
+
+    func testRepBasedExerciseHasNoWeightRungs() {
+        // 自重 / 弹力带没有重量轴：空梯子是合法且有意义的，表上据此隐藏重量瓦片。
+        let adjust = WatchPrescription.Adjust(weightRungs: [], weightCaption: "")
+        let data = try? JSONEncoder().encode(adjust)
+        let back = data.flatMap { try? JSONDecoder().decode(WatchPrescription.Adjust.self, from: $0) }
+        XCTAssertEqual(back?.weightRungs.isEmpty, true)
     }
 }

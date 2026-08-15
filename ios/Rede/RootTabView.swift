@@ -150,11 +150,16 @@ struct RootTabView: View {
             // 是因为 userInfo 是排队通道——表可能在手机 app 没开时就记了组，
             // 那条消息会在 app 一启动就送到，训练页那时还没出现。
             WatchLink.shared.onReceive = { envelope, _ in
-                guard envelope.kind == WatchLinkKind.loggedSet,
-                      let data = envelope.payload,
-                      let set = WatchLoggedSet(decoding: data)
-                else { return }   // 未知 kind / 载荷看不懂：安静丢弃（向前兼容）
-                sessionStore.applyWatchLoggedSet(set)
+                guard let data = envelope.payload else { return }
+                switch envelope.kind {
+                case WatchLinkKind.loggedSet:
+                    if let set = WatchLoggedSet(decoding: data) { sessionStore.applyWatchLoggedSet(set) }
+                case WatchLinkKind.command:
+                    // v2：休息 +30 / 跳过休息 / 跳过热身。走 message 通道，手机够得着才会到这里。
+                    if let command = WatchCommand(decoding: data) { sessionStore.applyWatchCommand(command) }
+                default:
+                    break   // 未知 kind / 载荷看不懂：安静丢弃（向前兼容）
+                }
             }
             WatchLink.shared.activate()
 

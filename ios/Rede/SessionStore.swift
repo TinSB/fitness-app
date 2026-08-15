@@ -276,7 +276,9 @@ final class SessionStore {
                 )
             }
             let active = live.map { l in
-                WatchPrescription.Active(
+                let gridEquipment = LoadGrid.gridEquipment(loadType: l.loadType, equipment: l.equipment)
+                let unit = LoadUnit(unitSystem: strings.unit.rawValue)
+                return WatchPrescription.Active(
                     exerciseId: l.exerciseId,
                     exerciseName: ExerciseCatalog.minimal.displayName(l.exerciseId, localeCode: strings.locale.rawValue),
                     setNumber: l.setNumber, setTotal: l.setTotal,
@@ -285,10 +287,7 @@ final class SessionStore {
                     // warmupMovementPrep / warmupWeight（与手机 warmupMainLine 逐字同源），
                     // 正式组才走 targetLine。混用会把「空杆」显示成一个重量。
                     targetText: {
-                        let snapped = LoadGrid.snapKg(
-                            l.targetWeightKg,
-                            equipment: LoadGrid.gridEquipment(loadType: l.loadType, equipment: l.equipment),
-                            unit: LoadUnit(unitSystem: strings.unit.rawValue))
+                        let snapped = LoadGrid.snapKg(l.targetWeightKg, equipment: gridEquipment, unit: unit)
                         switch l.warmupKind {
                         case .emptyBar:
                             return "\(strings.warmupEmptyBar) \(strings.warmupReps(l.targetReps))"
@@ -305,7 +304,12 @@ final class SessionStore {
                     isWarmup: l.warmupKind != nil,
                     restEndsAt: l.restEndsAt,
                     restTotalSeconds: l.restTotalSeconds,
-                    restPausedRemaining: l.restPausedRemaining)
+                    restPausedRemaining: l.restPausedRemaining,
+                    // 表上快改素材（v2）。热身不给：热身步不落库、也不该改重量。
+                    adjust: l.warmupKind == nil
+                        ? SessionStore.watchAdjust(loadType: l.loadType, targetWeightKg: l.targetWeightKg,
+                                                   gridEquipment: gridEquipment, unit: unit, strings: strings)
+                        : nil)
             }
             let rx = WatchPrescription(
                 dateISO: formatter.string(from: now),
@@ -313,7 +317,8 @@ final class SessionStore {
                 // **必须照推**：不推的话表上会继续显示昨天的动作，比空白更糟。
                 dayTitle: dayCode.map(strings.trainingDayName) ?? "",
                 exercises: items,
-                active: active)
+                active: active,
+                localeCode: strings.locale.rawValue)
             guard let payload = rx.encoded else { return }
 
             await MainActor.run {
@@ -468,6 +473,83 @@ final class SessionStore {
         // 同步落盘，不用 enqueue：这条路上没有界面、也没有下一次机会——
         // app 可能马上又被系统收走，异步写就赌上了这一组。
         _ = draftStore.saveDurably(updated.appending(.logSet(observation)))
+    }
+
+    // MARK: - watchOS v2：表上可调三个量 + 遥控命令
+
+    /// 表上快改的素材：重量梯子 + 瓦片小字。
+    ///
+    /// 梯子从**手机这边**生成，理由与 targetText 相同：格子必须落在「器械 × 显示单位」
+    /// 的真实梯子上（LoadGrid），而那套梯子的显示吸附在手机侧有 33 处调用点已对齐——
+    /// 表上重算一遍迟早两块屏对同一组显示不同重量。表只在格子间选，不算数。
+    ///
+    /// 自重 / 弹力带没有重量轴（与手机快改面「自重无重量轴：隐藏重量刻度轨」同口径）：
+    /// 给空梯子，表上不显示重量瓦片。
+    nonisolated static func watchAdjust(loadType: String, targetWeightKg: Double, gridEquipment: String,
+                                        unit: LoadUnit, strings: RedeStrings) -> WatchPrescription.Adjust {
+        if loadType == "bodyweight" || loadType == "band" {
+            return .init(weightRungs: [], weightCaption: "")
+        }
+        let caption: String
+        switch loadType {
+        case "assisted": caption = "\(strings.trainColAssist) \(strings.unitLabel)"
+        case "bodyweight-plus": caption = "\(strings.trainColWeighted) \(strings.unitLabel)"
+        default: caption = strings.unitLabel
+        }
+        return .init(
+            weightRungs: watchWeightLadder(aroundKg: targetWeightKg, equipment: gridEquipment, unit: unit)
+                .map { .init(kg: $0, text: strings.formatKg($0)) },
+            weightCaption: caption)
+    }
+
+    /// 目标前后各 `span` 格的真实梯子（升序、含目标那一格；到梯子底就停，不出负数不出 0）。
+    /// 12 格：kg 杠铃 = ±30 kg、选重机 = ±60 kg、lb 哑铃轻段 = ±30 lb——
+    /// 练到一半临时改重量用不到更远，更远的该回手机改计划。
+    nonisolated static func watchWeightLadder(aroundKg target: Double, equipment: String,
+                                              unit: LoadUnit, span: Int = 12) -> [Double] {
+        let center = LoadGrid.snapKg(target, equipment: equipment, unit: unit)
+        var below: [Double] = []
+        var cursor = center
+        for _ in 0..<span {
+            let next = LoadGrid.nextRungKg(cursor, equipment: equipment, unit: unit, up: false)
+            guard next < cursor - 1e-9 else { break }   // 已是最低一格
+            below.insert(next, at: 0)
+            cursor = next
+        }
+        var above: [Double] = []
+        cursor = center
+        for _ in 0..<span {
+            let next = LoadGrid.nextRungKg(cursor, equipment: equipment, unit: unit, up: true)
+            guard next > cursor + 1e-9 else { break }   // 已是最高一格（lb 哑铃梯子有顶）
+            above.append(next)
+            cursor = next
+        }
+        return below + [center] + above
+    }
+
+    /// 表上的遥控命令（v2）。与 applyWatchLoggedSet 同一条纪律：**只在命令对着的正是当前状态时执行**。
+    /// 表侧 context 滞后一拍是常态——「跳过热身」不能落到下一个动作头上，
+    /// 「跳过休息」不能在已经开始下一组之后再把什么东西推进一步。
+    ///
+    /// 命令都走手机自己那条路（addRestTime / apply(.restFinished) / skipAllWarmup），
+    /// 于是通知重排、Live Activity、draft 留存、表上的回推全部自动一致。
+    func applyWatchCommand(_ command: WatchCommand) {
+        guard let flow, flow.currentExercise?.exerciseId == command.exerciseId else { return }
+        switch command.action {
+        case .restAdd30:
+            guard flow.phase == .resting else { return }
+            addRestTime(30)
+        case .restSkip:
+            guard flow.phase == .resting else { return }
+            // 表说「倒计时自然走完了」时，要手机自己的钟也同意才算数：
+            // 手机上刚按过 +30 / 暂停、表侧那条在路上的旧消息不能把休息提前结束。
+            // 用户手动按「下一组」不受此限——那是明确的意图。
+            if command.auto, restCountdown.remaining() > 0 || restCountdown.isPaused { return }
+            apply(.restFinished, restCompletedNaturally: command.auto)
+        case .skipWarmup:
+            guard flow.phase == .activeSet, flow.isWarmingUp else { return }
+            skipAllWarmup()
+        }
     }
 
     /// 裁定 D：只读 derived muscle-level-memory，将已解锁等级投影进现成 rows 通道。

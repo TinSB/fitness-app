@@ -29,6 +29,11 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
     /// 为什么塞进同一份载荷而不另发一条：applicationContext **只有一个槽位**，
     /// 谁后写谁赢。两种 kind 各发一次的结果是互相覆盖（切片 3 已因此删掉 pongCtx）。
     public let active: Active?
+    /// 手机 app 当前的界面语言（"zh" / "en"）。**表跟随手机 app 的语言，不跟随表的系统语言**：
+    /// 动作名、目标串都是手机按 app 语言渲染的，表自己那几个词（「休息」「下一组」）
+    /// 若按表的系统语言取，同一屏就会中英混排——app 内有独立的语言开关，这不是假想场景。
+    /// 可选：旧手机不带这一位时表退回系统语言（与之前行为一致）。
+    public let localeCode: String?
 
     public struct Item: Codable, Equatable, Sendable {
         /// 语义身份（切片 4 记组回填用）。同一天允许同名动作，所以行的 identity 只能靠它。
@@ -88,13 +93,20 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
         /// 用户照着练就会直接上重量——那是会受伤的。2026-08-15 owner 真机拍到过。
         /// 热身**不落库**：表上点完成只是推进热身步，次数也不可改（热身次数不记录）。
         public let isWarmup: Bool
+        /// 表上可调的三个量的**素材**（v2，2026-08-15）。nil = 旧手机没推（表退回只调次数）。
+        ///
+        /// 重量为什么以「梯子」形式给：表上改重量必须落在「器械 × 显示单位」的真实格子上
+        ///（LoadGrid：kg 杠铃 2.5 一格、lb 哑铃轻段 2.5lb 中段 5lb……）。那套梯子在手机侧
+        /// 已经和 33 处显示调用点对齐，表上重算一遍迟早两块屏对不上。所以手机把目标前后
+        /// 各若干格**连同显示串**一起推过来，表只做一件事：用表冠在格子间选。
+        public let adjust: Adjust?
 
         public init(exerciseId: String, exerciseName: String, setNumber: Int, setTotal: Int,
                     exerciseNumber: Int, exerciseTotal: Int, targetText: String,
                     targetWeightKg: Double, targetReps: Int, targetRir: Double,
                     isResting: Bool, isWarmup: Bool = false,
                     restEndsAt: Date? = nil, restTotalSeconds: Int = 0,
-                    restPausedRemaining: Int? = nil) {
+                    restPausedRemaining: Int? = nil, adjust: Adjust? = nil) {
             self.exerciseId = exerciseId
             self.exerciseName = exerciseName
             self.setNumber = setNumber
@@ -110,14 +122,44 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
             self.restEndsAt = restEndsAt
             self.restTotalSeconds = restTotalSeconds
             self.restPausedRemaining = restPausedRemaining
+            self.adjust = adjust
         }
     }
 
-    public init(dateISO: String, dayTitle: String, exercises: [Item], active: Active? = nil) {
+    /// 表上快改的素材。与手机快改面板同源：重量走真实梯子，次数与 RIR 的可选范围
+    /// 两端一样（次数 1…50；RIR「—」= 不记、0…5）——后两者范围固定，不必传。
+    public struct Adjust: Codable, Equatable, Sendable {
+        /// 升序的重量格子，**含目标那一格**。空数组 = 这个动作没有重量轴（自重 / 弹力带），
+        /// 表上不显示重量瓦片——与手机「自重无重量轴」同一口径。
+        public let weightRungs: [WeightRung]
+        /// 重量瓦片下面那行小字：「kg」/「lb」；辅助器械「辅助 kg」；负重自重「负重 kg」。
+        /// 手机渲染，理由同 targetText——单位与负荷类型的措辞都是手机的事。
+        public let weightCaption: String
+
+        public init(weightRungs: [WeightRung], weightCaption: String) {
+            self.weightRungs = weightRungs
+            self.weightCaption = weightCaption
+        }
+    }
+
+    /// 梯子上的一格：回传用的 kg 原值 + 手机按当前单位渲染好的显示串（「62.5」/「135」）。
+    public struct WeightRung: Codable, Equatable, Sendable {
+        public let kg: Double
+        public let text: String
+
+        public init(kg: Double, text: String) {
+            self.kg = kg
+            self.text = text
+        }
+    }
+
+    public init(dateISO: String, dayTitle: String, exercises: [Item], active: Active? = nil,
+                localeCode: String? = nil) {
         self.dateISO = dateISO
         self.dayTitle = dayTitle
         self.exercises = exercises
         self.active = active
+        self.localeCode = localeCode
     }
 
     // MARK: - 编解码

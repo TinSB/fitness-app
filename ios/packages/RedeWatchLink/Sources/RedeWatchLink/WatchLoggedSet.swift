@@ -17,12 +17,14 @@ public struct WatchLoggedSet: Codable, Equatable, Sendable {
     public let exerciseId: String
     /// 手机推过来的 Active.setNumber（1-based），原样带回。幂等键的另一半。
     public let setNumber: Int
-    /// 原样回传手机给的目标重量。**表不重算重量**——器械梯子吸附在手机侧做过了。
+    /// 实际用的重量。**表不重算重量**：要么是手机给的目标原值，要么是手机推来的
+    /// 梯子（WatchPrescription.Adjust.weightRungs）上用户选中的那一格的 kg 原值。
     public let weightKg: Double
-    /// 表上可改的唯一一项：实际做到的次数。
+    /// 实际做到的次数。
     public let reps: Int
-    /// 原样回传目标 RIR。表上不问 RIR——练的时候没人愿意在手表上选这个。
-    public let rir: Double
+    /// 实际 RIR。nil = 用户在表上选了「—」不记（与手机快改面板同一语义：引擎不猜）。
+    /// v2 起可空；编码时 nil 不出现在 JSON 里，旧表发来的载荷（恒带 rir）照旧解得出。
+    public let rir: Double?
     /// 表侧记录时刻（ISO8601）。只作日志与排障，手机不拿它做判断——
     /// 两端时钟不保证一致，用它决策就是给自己埋雷。
     public let loggedAtISO: String
@@ -35,7 +37,7 @@ public struct WatchLoggedSet: Codable, Equatable, Sendable {
     public let isWarmup: Bool
 
     public init(exerciseId: String, setNumber: Int, weightKg: Double,
-                reps: Int, rir: Double, loggedAtISO: String, isWarmup: Bool = false) {
+                reps: Int, rir: Double?, loggedAtISO: String, isWarmup: Bool = false) {
         self.exerciseId = exerciseId
         self.setNumber = setNumber
         self.weightKg = weightKg
