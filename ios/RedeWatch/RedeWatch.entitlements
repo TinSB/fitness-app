@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- 切片 6：HKWorkoutSession。
+	     这不是「顺便接入健康」——**它是表 app 能不能用的前提**：
+	     watchOS 上没有运行中的 workout session，手腕一放下 app 几秒内就被挂起，
+	     休息倒计时会死在半路、记组按钮按不到。workout-processing 后台模式
+	     必须配这个 entitlement 才生效。
+
+	     只要基础 HealthKit：不要 clinical-records（healthkit.access），
+	     不要 background-delivery（那是后台观察用的，与训练进行时无关）。
+	     与 iOS 侧 HK-1 只读体重是两回事，两边各自独立。 -->
+	<key>com.apple.developer.healthkit</key>
+	<true/>
+</dict>
+</plist>

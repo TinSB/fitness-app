@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- 只放 INFOPLIST_KEY_* 表达不了的键；其余（WKApplication /
+	     WKCompanionAppBundleIdentifier / 版本 / 图标 / 两条 NSHealth 用途串）
+	     仍由 GENERATE_INFOPLIST_FILE 从构建设置生成并合并进来。
+
+	     WKBackgroundModes 没有对应的 INFOPLIST_KEY_ 设置——试过，生成的 plist 里
+	     那个键直接不存在。而它是表 app 能不能用的前提：没有它 + 没有运行中的
+	     HKWorkoutSession，手腕一放下 app 几秒内就被挂起，休息倒计时死在半路。 -->
+	<key>WKBackgroundModes</key>
+	<array>
+		<string>workout-processing</string>
+	</array>
+</dict>
+</plist>

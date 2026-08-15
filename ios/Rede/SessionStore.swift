@@ -100,7 +100,9 @@ final class SessionStore {
     /// 休息倒计时的墙钟锚点（owner 反馈 2026-06-15 修复）：剩余秒数曾放在 TrainTabView
     /// 的 @State，切 tab 时 RootTabView 用 switch 销毁视图树即归 0。移到会话层后跨切页
     /// 存活，且按绝对结束时刻求剩余 → 离屏期间真实时间照常流逝。详见 RestCountdown。
-    private(set) var restCountdown = RestCountdown()
+    /// 休息倒计时。**变化也要重推给表**（切片 5）——否则表上「在休息」但没有结束时刻。
+    /// 与 flow 的 didSet 同理：写在这里而不是各调用点，漏一处就是表上倒计时不动。
+    private(set) var restCountdown = RestCountdown() { didSet { pushWatchPrescription() } }
     /// K6 休息计时 Live Activity（视觉层——裁定 1：到点提醒仍归 G1 休息通知）。
     /// 只在 restCountdown.begin/clear 既有接线点挂钩，不改 RestCountdown 本体。
     private let restLiveActivity = RestLiveActivityController()
@@ -236,8 +238,15 @@ final class SessionStore {
     ///
     /// ⚠️ unreadable 不推：与 widget 同一条诚实降级纪律——宁可让表显示上一份，
     /// 也不推一份基于读不懂的数据编出来的处方。
+    /// 推送代次。**防旧盖新**：渲染在后台做，两次推送的任务谁先落地不确定——
+    /// 没有它，`apply` 里 flow 与 restCountdown 各触发一次推送时，
+    /// 先发起的那次（还没有休息结束时刻）可能后落地，把正确的那份盖掉。
+    private var watchPushGeneration = 0
+
     private func pushWatchPrescription(now: Date = Date()) {
         guard case .ready(let model)? = todayOutcome else { return }
+        watchPushGeneration &+= 1
+        let generation = watchPushGeneration
         // ExercisePrescriptionPlan 是 Sendable，可以整体交给后台；dayCode 可能为 nil（休息日）。
         let plans = model.prescription?.exercises ?? []
         let dayCode = model.prescription?.dayCode
@@ -293,7 +302,10 @@ final class SessionStore {
                     }(),
                     targetWeightKg: l.targetWeightKg, targetReps: l.targetReps,
                     targetRir: l.targetRir, isResting: l.isResting,
-                    isWarmup: l.warmupKind != nil)
+                    isWarmup: l.warmupKind != nil,
+                    restEndsAt: l.restEndsAt,
+                    restTotalSeconds: l.restTotalSeconds,
+                    restPausedRemaining: l.restPausedRemaining)
             }
             let rx = WatchPrescription(
                 dateISO: formatter.string(from: now),
@@ -305,6 +317,8 @@ final class SessionStore {
             guard let payload = rx.encoded else { return }
 
             await MainActor.run {
+                // 已经有更新的一次在路上 → 这次作废，不发。
+                guard self.watchPushGeneration == generation else { return }
                 WatchLink.shared.send(
                     WatchLinkEnvelope(kind: WatchLinkKind.prescription,
                                       sentAtISO: ISO8601DateFormatter().string(from: now),
@@ -321,6 +335,8 @@ final class SessionStore {
         let setNumber: Int, setTotal: Int, exerciseNumber: Int, exerciseTotal: Int
         let targetWeightKg: Double, targetReps: Int, targetRir: Double
         let isResting: Bool
+        /// 休息倒计时快照（绝对结束时刻 + 总时长 + 暂停冻结值）。切片 5。
+        let restEndsAt: Date?, restTotalSeconds: Int, restPausedRemaining: Int?
         /// 热身步时非 nil，值是热身种类（空杆 / 百分比 / 动作模式）——文案分流用。
         let warmupKind: WarmupStep.Kind?
     }
@@ -347,6 +363,9 @@ final class SessionStore {
                 targetReps: step.targetReps,
                 targetRir: 0,                      // 热身不记 RIR
                 isResting: flow.phase == .resting,
+                restEndsAt: restCountdown.endDate,
+                restTotalSeconds: restCountdown.totalSeconds,
+                restPausedRemaining: restCountdown.pausedRemaining,
                 warmupKind: step.kind)
         }
 
@@ -363,6 +382,9 @@ final class SessionStore {
             targetReps: rec?.targetReps ?? 0,
             targetRir: Double(Int(rec?.targetRir ?? 2)),
             isResting: flow.phase == .resting,
+            restEndsAt: restCountdown.endDate,
+            restTotalSeconds: restCountdown.totalSeconds,
+            restPausedRemaining: restCountdown.pausedRemaining,
             warmupKind: nil)
     }
 

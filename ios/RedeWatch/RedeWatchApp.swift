@@ -1,5 +1,7 @@
 import SwiftUI
+import WatchKit
 import RedeL10n
+import RedeTrainingDecision
 import RedeWatchLink
 
 // Rede watchOS。
@@ -74,6 +76,7 @@ final class WatchPrescriptionStore {
 struct TodayWatchView: View {
     @StateObject private var link = WatchLink.shared
     @State private var store = WatchPrescriptionStore()
+    @StateObject private var workout = WorkoutSessionKeeper()
 
     /// 表跟随系统语言。**动作名与目标串不用它**——那些是手机渲染好传过来的，
     /// 已经是手机上的语言。这里只管表自己那几个词（等待态、休息日）。
@@ -107,6 +110,12 @@ struct TodayWatchView: View {
             // 已存的 applicationContext，晚挂就会漏掉第一份。
             WatchLink.shared.onReceive = { [store] envelope, _ in store.apply(envelope) }
             link.activate()
+        }
+        // 切片 6：手机说在练 → 拉起 HKWorkoutSession（否则放下手腕几秒 app 就被挂起，
+        // 倒计时死在半路）；手机说练完 → 收掉并写回健康。
+        // 用 onChange 而不是在 body 里调：sync 虽然幂等，但每帧调一次是噪音。
+        .onChange(of: store.prescription?.active != nil, initial: true) { _, active in
+            workout.sync(trainingActive: active)
         }
     }
 
@@ -232,6 +241,16 @@ struct ActiveSetView: View {
     }
 
     var body: some View {
+        // 休息中整屏换成倒计时。**不是把按钮置灰了事**——休息是训练里最长的一段，
+        // 也是最该抬腕就看到的东西；这一刻屏幕上该有的只有「还剩多久」。
+        if active.isResting {
+            RestCountdownView(active: active)
+        } else {
+            setBody
+        }
+    }
+
+    private var setBody: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(verbatim: progressLine)
                 .font(.system(size: 11))
@@ -260,7 +279,7 @@ struct ActiveSetView: View {
                     .frame(maxWidth: .infinity, minHeight: 30)
             }
             .tint(.orange)
-            .disabled(justLogged || active.isResting)
+            .disabled(justLogged)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         // 手机推来新一步 → 复位表冠与按钮。键里带 exerciseId 与 isWarmup：
@@ -290,5 +309,71 @@ struct ActiveSetView: View {
         .digitalCrownRotation($repsDial, from: 1, through: 50, by: 1,
                               sensitivity: .low, isContinuous: false,
                               isHapticFeedbackEnabled: true)
+    }
+}
+
+/// 休息倒计时（切片 5）。
+///
+/// **数字算自手机给的绝对结束时刻，不是手机每秒发过来的剩余秒数。**
+/// 后者的话，消息延迟多久倒计时就差多久，还得每秒收一条消息；
+/// 前者只需要一份状态，之后表自己按墙钟走——延迟、丢包、app 被挂起后重开都不影响。
+/// remaining/fraction 直接用引擎里的 RestCountdown，两端同一份实现，不会漂。
+///
+/// 归零那一下必须**震**：健身房里没人盯着表看完 90 秒。
+/// 这也是切片 6 的 HKWorkoutSession 存在的理由——没有它，手腕放下后 app 被挂起，
+/// 这一震就不会发生。
+struct RestCountdownView: View {
+    let active: WatchPrescription.Active
+
+    private var countdown: RestCountdown {
+        RestCountdown(endDate: active.restEndsAt,
+                      pausedRemaining: active.restPausedRemaining,
+                      totalSeconds: active.restTotalSeconds)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(verbatim: active.restPausedRemaining != nil ? "休息（已暂停）" : "休息")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+
+            // TimelineView 而不是自己跑 Timer：系统按需重绘，表被抬起时才刷，省电。
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                let remaining = countdown.remaining(now: context.date)
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(verbatim: Self.clock(remaining))
+                        .font(.system(size: 40, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(remaining == 0 ? Color.green : Color.primary)
+                        .lineLimit(1).minimumScaleFactor(0.6)
+                    ProgressView(value: countdown.fraction(now: context.date))
+                        .tint(remaining == 0 ? .green : .orange)
+                }
+            }
+
+            Spacer(minLength: 2)
+
+            // 休息时最想知道的第二件事：等下要做什么。省得倒计时结束还要再翻一屏。
+            Text(verbatim: "下一组 \(active.targetText)")
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .lineLimit(1).minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        // 精确在结束时刻震一下，不轮询。
+        // task(id:) 绑 endDate：手机上「+30 秒」会换一个结束时刻 → 任务重启，重新定时。
+        .task(id: active.restEndsAt) {
+            guard let end = active.restEndsAt else { return }
+            let delay = end.timeIntervalSinceNow
+            guard delay > 0 else { return }   // 已经结束了就别补震——那只会莫名其妙
+            try? await Task.sleep(for: .seconds(delay))
+            guard !Task.isCancelled else { return }
+            WKInterfaceDevice.current().play(.notification)
+        }
+    }
+
+    /// mm:ss。超过 1 小时不特殊处理——组间休息不会有那么长，真出现了显示 99:59 也无妨。
+    private static func clock(_ seconds: Int) -> String {
+        String(format: "%d:%02d", seconds / 60, seconds % 60)
     }
 }

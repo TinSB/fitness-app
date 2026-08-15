@@ -72,6 +72,16 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
         public let targetRir: Double
         /// 手机此刻在休息倒计时里。表上这时不该给「完成这一组」——那一组还没开始做。
         public let isResting: Bool
+        /// 休息倒计时的**绝对结束时刻**（切片 5）。nil = 没在休息或已暂停。
+        ///
+        /// 传时刻而不传剩余秒数：传秒数的话消息延迟多久倒计时就差多久，
+        /// 而且表侧每秒都得等手机发一条。传时刻，表自己按墙钟算——
+        /// 延迟、丢包、app 被挂起后重开都不影响准确性。
+        public let restEndsAt: Date?
+        /// 这一段休息的总时长（进度环分母）。手机上「+30 秒」会让它同步增长。
+        public let restTotalSeconds: Int
+        /// 暂停中冻结的剩余秒数。非 nil = 手机上把倒计时按停了。
+        public let restPausedRemaining: Int?
         /// 这一步是**热身**还是正式组。
         ///
         /// 必传，而且是这条载荷里最要紧的一位：手机在热身（空杆）时表上若显示正式组重量，
@@ -82,7 +92,9 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
         public init(exerciseId: String, exerciseName: String, setNumber: Int, setTotal: Int,
                     exerciseNumber: Int, exerciseTotal: Int, targetText: String,
                     targetWeightKg: Double, targetReps: Int, targetRir: Double,
-                    isResting: Bool, isWarmup: Bool = false) {
+                    isResting: Bool, isWarmup: Bool = false,
+                    restEndsAt: Date? = nil, restTotalSeconds: Int = 0,
+                    restPausedRemaining: Int? = nil) {
             self.exerciseId = exerciseId
             self.exerciseName = exerciseName
             self.setNumber = setNumber
@@ -95,6 +107,9 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
             self.targetRir = targetRir
             self.isResting = isResting
             self.isWarmup = isWarmup
+            self.restEndsAt = restEndsAt
+            self.restTotalSeconds = restTotalSeconds
+            self.restPausedRemaining = restPausedRemaining
         }
     }
 
