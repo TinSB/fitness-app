@@ -42,3 +42,50 @@ final class WatchLinkEnvelopeTests: XCTestCase {
         XCTAssertEqual(e?.kind, "somethingFromTheFuture")
     }
 }
+
+// 切片 3：结构化载荷。信封多了一个 Data 字段，plist 安全这条契约不能被它破坏。
+final class WatchPrescriptionTests: XCTestCase {
+
+    private var sample: WatchPrescription {
+        WatchPrescription(dateISO: "2026-08-15", dayTitle: "上肢", exercises: [
+            .init(exerciseId: "bench-press", name: "卧推", setsText: "4 组", targetText: "60 kg · ×8-10"),
+            .init(exerciseId: "pull-up", name: "引体向上", setsText: "3 组", targetText: "自重 · ×8")
+        ])
+    }
+
+    func testRoundTripThroughEnvelope() {
+        let e = WatchLinkEnvelope(kind: WatchLinkKind.prescription, sentAtISO: "t",
+                                  payload: sample.encoded)
+        let back = WatchLinkEnvelope(dictionary: e.dictionary)
+        XCTAssertEqual(back, e)
+        XCTAssertEqual(back.flatMap { $0.payload }.flatMap(WatchPrescription.init(decoding:)), sample)
+    }
+
+    func testEnvelopeWithPayloadStaysPropertyListSafe() {
+        // WCSession 只接受 plist 兼容类型。Data 是合法的，但这条必须由测试钉住——
+        // 一旦有人把 payload 换成别的类型，发送会在运行时抛，而且错误信息很含糊。
+        let d = WatchLinkEnvelope(kind: WatchLinkKind.prescription, sentAtISO: "t",
+                                  payload: sample.encoded).dictionary
+        XCTAssertTrue(PropertyListSerialization.propertyList(d, isValidFor: .binary))
+    }
+
+    func testEnvelopeWithoutPayloadOmitsTheKey() {
+        // ping/pong 不带载荷，字典里就不该出现这个键。
+        let d = WatchLinkEnvelope(kind: "ping", sentAtISO: "t").dictionary
+        XCTAssertNil(d["p"])
+        XCTAssertNil(WatchLinkEnvelope(dictionary: d)?.payload)
+    }
+
+    func testRestDayIsAnEmptyListNotAMissingPayload() {
+        // 休息日必须是「空清单」而不是「不推」：不推的话表上会继续显示昨天的动作。
+        let rest = WatchPrescription(dateISO: "2026-08-15", dayTitle: "", exercises: [])
+        let back = rest.encoded.flatMap(WatchPrescription.init(decoding:))
+        XCTAssertEqual(back?.exercises.count, 0)
+        XCTAssertEqual(back?.dateISO, "2026-08-15")
+    }
+
+    func testGarbagePayloadDecodesToNilInsteadOfCrashing() {
+        // 版本不同步时表可能收到看不懂的载荷。必须安静失败——表上显示「等手机」，不是崩。
+        XCTAssertNil(WatchPrescription(decoding: Data([0x00, 0x01, 0x02])))
+    }
+}

@@ -139,31 +139,12 @@ struct RootTabView: View {
             let unitForced = args.firstIndex(of: "-unit").flatMap { idx -> String? in
                 args.indices.contains(idx + 1) ? args[idx + 1] : nil
             }
-            // 切片 2（2026-08-12）：手表通道在 App 启动即激活。
-            // 手机侧不做界面——ping 自动回 pong，表上看到「← pong」就等于证明手机
-            // 确实收到并回了；一个 pong 不可能凭空出现。
-            WatchLink.shared.onReceive = { envelope, _ in
-                guard envelope.kind == WatchLinkKind.ping else { return }   // 未知 kind 安静丢弃（向前兼容）
-                WatchLink.shared.send(
-                    WatchLinkEnvelope(kind: WatchLinkKind.pong,
-                                      sentAtISO: ISO8601DateFormatter().string(from: Date()),
-                                      body: ["from": "phone"]),
-                    // 回 pong 走 userInfo 而不是 message：**它不要求对端可达**，
-                    // 这正是选它的理由。而且这就是切片 4 记组要用的通道，先把它验通更有价值。
-                    // （实测：模拟器里用 simctl 直装表 app，手机侧 WCSession 会报
-                    //  counterpart app not installed / reachable: NO，message 通道被守卫正确跳过。）
-                    via: .userInfo)
-
-                // 同一次 ping 再走一条 applicationContext。**这不是冗余**：
-                // 两条通道的回程放在一起，表上就能一眼分辨「手机没收到」和
-                // 「手机收到了但某条通道不投递」——只发一条时这两种故障长得一模一样。
-                // applicationContext 还是切片 3 推处方要用的通道，先证明它活着再往上建。
-                WatchLink.shared.send(
-                    WatchLinkEnvelope(kind: WatchLinkKind.pongContext,
-                                      sentAtISO: ISO8601DateFormatter().string(from: Date()),
-                                      body: ["from": "phone"]),
-                    via: .applicationContext)
-            }
+            // 手表通道在 App 启动即激活（切片 2）。处方由 SessionStore.loadToday 推（切片 3）。
+            //
+            // 切片 2 的 ping/pong 自动回应已删。不是因为过时——是因为**它会打坏切片 3**：
+            // applicationContext 只有一个槽位，谁后写谁赢。pongCtx 一发就把处方从表上冲掉了。
+            // 这条约束以后一直有效：**同时只能有一种 kind 走 applicationContext**，
+            // 别的状态（比如切片 5 的休息倒计时）要么合进同一份处方载荷，要么另选通道。
             WatchLink.shared.activate()
 
             let localePreApplied = args.contains("-locale")

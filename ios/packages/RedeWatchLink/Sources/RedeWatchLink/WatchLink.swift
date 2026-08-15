@@ -27,6 +27,20 @@ public final class WatchLink: NSObject, ObservableObject {
 
     private var session: WCSession? { WCSession.isSupported() ? .default : nil }
 
+    /// 对端**存在**吗（区别于 isReachable 的「此刻能不能立即送到」）。
+    ///
+    /// 绝大多数用户没有 Apple Watch。不判这个，今日页每加载一次就往空处推一次，
+    /// 系统每次回一条 WCErrorCodeDeviceNotPaired——白做功，还把测试日志刷满、
+    /// 真错误反而看不见（2026-08-15 门禁日志里抓到）。
+    public var hasCounterpart: Bool {
+        guard let session else { return false }
+        #if os(iOS)
+        return session.isPaired && session.isWatchAppInstalled
+        #else
+        return session.isCompanionAppInstalled
+        #endif
+    }
+
     public var onReceive: ((WatchLinkEnvelope, WatchLinkChannel) -> Void)?
 
     private override init() { super.init() }
@@ -47,6 +61,8 @@ public final class WatchLink: NSObject, ObservableObject {
             append("发送失败：session 未激活 [\(envelope.kind)]")
             return
         }
+        // 没有对端就别发。放在这里而不是各调用点：漏一处就是一条静默的失败日志。
+        guard hasCounterpart else { return }
         switch channel {
         case .applicationContext:
             do {
@@ -113,6 +129,15 @@ extension WatchLink: WCSessionDelegate {
             note("已激活（state=\(state.rawValue)）")
         }
         syncState(activated: state == .activated, reachable: session.isReachable)
+
+        // **启动时必须主动读一次已存的 applicationContext。**
+        // didReceiveApplicationContext 只在**新**一份到达时触发，系统不会在 app 启动时重放；
+        // 而 receivedApplicationContext 是系统替我们持久化的那一份，重启后依然在。
+        // 不读它 = 表一重启就变空白，直到手机再推一次——而手机锁在柜子里正是表最该有用的时候。
+        //（2026-08-15 实测抓获：杀掉手机 app 后重开表 app，处方消失。）
+        guard state == .activated else { return }
+        let stored = session.receivedApplicationContext
+        if !stored.isEmpty { receive(stored, .applicationContext) }
     }
 
     public nonisolated func sessionReachabilityDidChange(_ session: WCSession) {

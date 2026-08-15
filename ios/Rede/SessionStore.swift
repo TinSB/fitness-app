@@ -6,6 +6,7 @@ import RedeLocalSnapshot
 import RedeNotifications
 import RedePersistence
 import RedeTrainingDecision
+import RedeWatchLink
 import RedeWidgetShared
 
 /// 真 DataHealth gate 适配器（组合层接线，验证逻辑在包内；
@@ -171,6 +172,7 @@ final class SessionStore {
         todayOutcome = await TodayModel.loadOutcomeAsync()
         checkForRestorableDraft()
         refreshWidgetSnapshot()
+        pushWatchPrescription()   // watchOS 切片 3：处方推到表上
         refreshNotificationCache() // FR-NT1：缓存偏好/语言供 rest-begin 调度
     }
 
@@ -213,6 +215,66 @@ final class SessionStore {
                 WidgetTimelineReloader().reloadWidgets()
             } catch {
                 // App Group 不可用 / 写失败：不 reload、不报错——保留上次好快照或诚实占位。
+            }
+        }
+    }
+
+    // MARK: - watchOS 切片 3：今日处方推到表
+
+    /// 今日加载成功后把处方推给表。形状与 refreshWidgetSnapshot 一致——
+    /// 主线程只做投影，渲染与发送留后台，失败静默（表是增强，不阻塞今日页）。
+    ///
+    /// 通道选 applicationContext：只保留最新一份、**不要求对端可达**、表下次醒来自动拿到。
+    /// 「一份会被反复覆盖的当前状态」正是它的用途。这里绝不能用 sendMessage——
+    /// 用户口袋里的手机大部分时间对表不可达，处方就永远推不过去。
+    ///
+    /// 显示串在手机侧渲染完再传（见 WatchPrescription 的理由）：重量必须先过
+    /// 「器械 × 显示单位」的梯子吸附，那套逻辑在 app 层，表上重写一遍迟早两块屏对不上。
+    ///
+    /// ⚠️ unreadable 不推：与 widget 同一条诚实降级纪律——宁可让表显示上一份，
+    /// 也不推一份基于读不懂的数据编出来的处方。
+    private func pushWatchPrescription(now: Date = Date()) {
+        guard case .ready(let model)? = todayOutcome else { return }
+        // ExercisePrescriptionPlan 是 Sendable，可以整体交给后台；dayCode 可能为 nil（休息日）。
+        let plans = model.prescription?.exercises ?? []
+        let dayCode = model.prescription?.dayCode
+
+        Task.detached(priority: .utility) {
+            let strings = SessionStore.resolveWidgetStrings()
+            let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.timeZone = .current // 与引擎同口径：用户本地日历日
+            formatter.dateFormat = "yyyy-MM-dd"
+
+            let items = plans.map { ex in
+                WatchPrescription.Item(
+                    exerciseId: ex.exerciseId,
+                    name: ExerciseCatalog.minimal.displayName(ex.exerciseId, localeCode: strings.locale.rawValue),
+                    setsText: strings.exerciseMetaLine(sets: ex.sets, restSeconds: ex.restSeconds, rir: ex.targetRir),
+                    // §8 显示吸附：目标重量先落真实梯子再格式化，与今日页 targetSummary 同源。
+                    targetText: strings.targetLine(
+                        loadType: ex.loadType,
+                        weightKg: LoadGrid.snapKg(
+                            ex.targetWeightKg,
+                            equipment: LoadGrid.gridEquipment(loadType: ex.loadType, equipment: ex.equipment),
+                            unit: LoadUnit(unitSystem: strings.unit.rawValue)),
+                        reps: ex.targetReps)
+                )
+            }
+            let rx = WatchPrescription(
+                dateISO: formatter.string(from: now),
+                // 休息日 dayCode 为 nil → 空标题 + 空清单，表上显示「今天休息」。
+                // **必须照推**：不推的话表上会继续显示昨天的动作，比空白更糟。
+                dayTitle: dayCode.map(strings.trainingDayName) ?? "",
+                exercises: items)
+            guard let payload = rx.encoded else { return }
+
+            await MainActor.run {
+                WatchLink.shared.send(
+                    WatchLinkEnvelope(kind: WatchLinkKind.prescription,
+                                      sentAtISO: ISO8601DateFormatter().string(from: now),
+                                      payload: payload),
+                    via: .applicationContext)
             }
         }
     }

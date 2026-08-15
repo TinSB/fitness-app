@@ -1,12 +1,12 @@
 import SwiftUI
 import RedeL10n
-import RedeTrainingDecision
 import RedeWatchLink
 
 // Rede watchOS。
 //
 // 切片 1：target 空壳 + 证明核心包真的能在表上链接运行。
 // 切片 2：WatchConnectivity 双向通道 + ping/pong 实跑。
+// 切片 3：手机推今日处方，表上只读显示。
 //
 // 范围纪律（方案 2026-08-12）：**表是训练进行时的遥控器，不是第二个 app**。
 // 计划 / 进展 / 设置 / 动作库 / 引导全部留在手机。表上最终只有三屏：
@@ -14,78 +14,124 @@ import RedeWatchLink
 //
 // 真源纪律：**手机是唯一决策方**。表不复算处方——仓库里已有教训
 //（TodayPrescriptionEngine.rotationBase 注释：app 层复算轮转必漂移，2026-07-08 实拍抓获）。
-// 表上引擎的用途只有校验与格式化（重量吸附器械梯子、单位换算），不做决策。
+// 切片 3 把这条推到底：连显示串都在手机侧渲染好再传，表上零业务逻辑。
 @main
 struct RedeWatchApp: App {
     var body: some Scene {
         WindowGroup {
-            WatchSmokeView()
+            TodayWatchView()
         }
     }
 }
 
-struct WatchSmokeView: View {
-    @StateObject private var link = WatchLink.shared
+/// 收到的处方 + 它是什么时候的。分开存是因为**过期判断要在表上做**：
+/// applicationContext 会一直留着，手机三天没开机，表上那份也还在。
+@MainActor
+@Observable
+final class WatchPrescriptionStore {
+    private(set) var prescription: WatchPrescription?
 
-    /// 表跟随系统语言；手机的语言偏好后续由处方消息带过来（切片 3）。
+    func apply(_ envelope: WatchLinkEnvelope) {
+        guard envelope.kind == WatchLinkKind.prescription,
+              let data = envelope.payload,
+              let rx = WatchPrescription(decoding: data)
+        else { return }   // 未知 kind / 载荷看不懂：安静丢弃，保留上一份（向前兼容）
+        prescription = rx
+    }
+
+    /// 今天的本地日历日。与手机侧、引擎同口径（en_US_POSIX + 当前时区）。
+    static var todayISO: String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = .current
+        f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: Date())
+    }
+}
+
+struct TodayWatchView: View {
+    @StateObject private var link = WatchLink.shared
+    @State private var store = WatchPrescriptionStore()
+
+    /// 表跟随系统语言。**动作名与目标串不用它**——那些是手机渲染好传过来的，
+    /// 已经是手机上的语言。这里只管表自己那几个词（等待态、休息日）。
     private var s: RedeStrings {
         RedeStrings(locale: RedeLocale.resolve(fromLanguageCode: Locale.current.language.languageCode?.identifier))
     }
 
-    /// 引擎侧的一个真实只读值：默认日序的长度。选它是因为它不依赖任何用户数据，
-    /// 空档案也能算，适合当冒烟信号。
-    private var sequenceLength: Int {
-        TodayPrescriptionEngine.resolvedDaySequence(splitType: "upper-lower", override: nil).count
+    private var isStale: Bool {
+        guard let rx = store.prescription else { return false }
+        return rx.dateISO != WatchPrescriptionStore.todayISO
     }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("REDE")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.orange)
-                // 这两行来自 RedeL10n 与 RedeTrainingDecision：证明核心包在表上真的执行了
-                HStack(spacing: 6) {
-                    Text(s.tabToday).font(.system(size: 17, weight: .bold))
-                    Text(verbatim: "seq \(sequenceLength)")
-                        .font(.system(size: 11)).foregroundStyle(.secondary).monospacedDigit()
-                }
-
-                Divider()
-
-                // ping 走 message 通道——它正是「可丢的实时态」，手机不可达时跳过即可。
-                // 同时再走一发 userInfo：**那是切片 4 记组要用的通道**，
-                // 必须先知道它在这个环境里到底送不送得到，否则记组会建在没验过的路上。
-                // 两发用不同 from，手机日志里能分辨是哪条通道到的。
-                Button {
-                    let now = ISO8601DateFormatter().string(from: Date())
-                    link.send(WatchLinkEnvelope(kind: WatchLinkKind.ping, sentAtISO: now,
-                                                body: ["from": "watch", "via": "message"]),
-                              via: .message)
-                    link.send(WatchLinkEnvelope(kind: WatchLinkKind.ping, sentAtISO: now,
-                                                body: ["from": "watch", "via": "userInfo"]),
-                              via: .userInfo)
-                } label: {
-                    Text(verbatim: "Ping 手机")
-                        .font(.system(size: 14, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                }
-                .tint(.orange)
-
-                Text(verbatim: link.isReachable ? "手机可达" : "手机不可达")
-                    .font(.system(size: 11))
-                    .foregroundStyle(link.isReachable ? .green : .secondary)
-
-                // 日志是切片 2 的可见性手段（调试脚手架，切片 4 之后收敛）
-                ForEach(Array(link.log.suffix(8).enumerated()), id: \.offset) { _, line in
-                    Text(verbatim: line)
-                        .font(.system(size: 10, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
+            VStack(alignment: .leading, spacing: 10) {
+                header
+                if let rx = store.prescription {
+                    if isStale {
+                        // 过期不隐藏内容——健身房里「看得见但标明是旧的」比空白有用得多。
+                        notice(verbatim: "\(rx.dateISO) 的计划")
+                    }
+                    if rx.exercises.isEmpty {
+                        notice(verbatim: "今天休息")
+                    } else {
+                        ForEach(rx.exercises, id: \.exerciseId) { item in
+                            exerciseRow(item)
+                        }
+                    }
+                } else {
+                    notice(verbatim: link.isReachable ? "正在取计划" : "在手机上打开 Rede")
                 }
             }
             .padding(.horizontal, 6)
         }
-        .task { link.activate() }
+        .task {
+            // onReceive 必须在 activate 之前挂：激活完成后系统会立刻投递
+            // 已存的 applicationContext，晚挂就会漏掉第一份。
+            WatchLink.shared.onReceive = { [store] envelope, _ in store.apply(envelope) }
+            link.activate()
+        }
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text("REDE")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.orange)
+            Text(verbatim: store.prescription?.dayTitle.isEmpty == false
+                 ? store.prescription!.dayTitle
+                 : s.tabToday)
+                .font(.system(size: 20, weight: .bold))
+        }
+    }
+
+    private func exerciseRow(_ item: WatchPrescription.Item) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(verbatim: item.name)
+                .font(.system(size: 15, weight: .semibold))
+                .lineLimit(2)
+            // 目标是这一屏唯一要在两米外看清的东西——练的时候手表离眼睛就那么远。
+            Text(verbatim: item.targetText)
+                .font(.system(size: 17, weight: .bold))
+                .monospacedDigit()
+                .foregroundStyle(.orange)
+            Text(verbatim: item.setsText)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .lineLimit(1).minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 7)
+        .padding(.horizontal, 9)
+        .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+    }
+
+    private func notice(verbatim text: String) -> some View {
+        Text(verbatim: text)
+            .font(.system(size: 12))
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 4)
     }
 }

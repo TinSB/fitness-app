@@ -40,11 +40,19 @@ public struct WatchLinkEnvelope: Equatable, Sendable {
     /// 发送时刻（ISO8601）。用于日志与乱序判断；不做时钟校正，只作参考。
     public let sentAtISO: String
     public let body: [String: String]
+    /// 结构化载荷（切片 3 起：JSON 编码的 WatchPrescription）。
+    ///
+    /// 为什么另开一个字段而不是把内容摊进 body：body 是扁平 [String: String]，
+    /// 装不下有序的动作清单。为什么用 Data 而不是嵌套字典：Data 本身就是
+    /// plist 兼容类型，信封原有的「整封 plist 安全」契约一分不破；
+    /// 而 Codable 把版本兼容收在一个地方，比手写嵌套字典的取值判空可靠得多。
+    public let payload: Data?
 
-    public init(kind: String, sentAtISO: String, body: [String: String] = [:]) {
+    public init(kind: String, sentAtISO: String, body: [String: String] = [:], payload: Data? = nil) {
         self.kind = kind
         self.sentAtISO = sentAtISO
         self.body = body
+        self.payload = payload
     }
 
     // MARK: - plist 字典互转
@@ -53,14 +61,20 @@ public struct WatchLinkEnvelope: Equatable, Sendable {
         static let kind = "k"
         static let sentAt = "t"
         static let body = "b"
+        static let payload = "p"
     }
 
     public var dictionary: [String: Any] {
-        [Key.kind: kind, Key.sentAt: sentAtISO, Key.body: body]
+        var d: [String: Any] = [Key.kind: kind, Key.sentAt: sentAtISO, Key.body: body]
+        // 只在有内容时才放键：applicationContext 靠内容变化触发投递，
+        // 多带一个恒为空的键没坏处但也没意义，保持字典最小。
+        if let payload { d[Key.payload] = payload }
+        return d
     }
 
     /// 缺字段 / 类型不符 → nil。**绝不部分构造**：半个信封比没有更糟，
     /// 它会让接收端以为自己拿到了完整数据。
+    /// payload 缺失不算残缺——ping/pong 本来就不带（与 body 同规矩）。
     public init?(dictionary: [String: Any]) {
         guard let kind = dictionary[Key.kind] as? String,
               let sentAt = dictionary[Key.sentAt] as? String
@@ -68,17 +82,17 @@ public struct WatchLinkEnvelope: Equatable, Sendable {
         self.kind = kind
         self.sentAtISO = sentAt
         self.body = (dictionary[Key.body] as? [String: String]) ?? [:]
+        self.payload = dictionary[Key.payload] as? Data
     }
 }
 
 /// 切片 2 用到的 kind。后续切片各自追加，不集中成一个大枚举——
 /// 那会让每加一种消息都要改公共文件。
 public enum WatchLinkKind {
-    public static let ping = "ping"
-    public static let pong = "pong"
-    /// 走 applicationContext 的回程。和 pong 分开成两种 kind，是为了让表上的日志
-    /// 直接说出**哪条通道活着**——同名两条就分不出来了。
-    /// applicationContext 只保留最新一份，所以内容必须每次都变（这里靠 sentAtISO），
-    /// 否则系统会当成重复更新丢掉。
-    public static let pongContext = "pongCtx"
+    /// 手机 → 表的今日处方（切片 3）。payload = JSON 编码的 WatchPrescription。
+    ///
+    /// 切片 2 的 ping / pong / pongCtx 已删——它们的任务（把三条通道逐条验通）
+    /// 已经完成，结论写在上面的通道纪律里。留着还有害：pongCtx 走 applicationContext，
+    /// 而那只有一个槽位，一发就把处方冲掉。
+    public static let prescription = "rx"
 }
