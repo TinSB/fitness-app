@@ -7,52 +7,53 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7B3C91D42A18E5F6A0000003 /* RedeWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6A0000002 /* RedeWatchApp.swift */; };
+		7B3C91D42A18E5F6A0000020 /* RedeL10n in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000010 /* RedeL10n */; };
+		7B3C91D42A18E5F6A0000021 /* RedeDomain in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000011 /* RedeDomain */; };
+		7B3C91D42A18E5F6A0000022 /* RedeDataHealth in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000012 /* RedeDataHealth */; };
+		7B3C91D42A18E5F6A0000023 /* RedePersistence in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000013 /* RedePersistence */; };
+		7B3C91D42A18E5F6A0000024 /* RedeTrainingDecision in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000014 /* RedeTrainingDecision */; };
+		7B3C91D42A18E5F6A0000025 /* RedeLocalSnapshot in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000015 /* RedeLocalSnapshot */; };
+		7B3C91D42A18E5F6B1000005 /* RedeWatchLink in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6B1000003 /* RedeWatchLink */; };
 		7B3C91D42A18E5F6C2000001 /* RedeWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6A0000001 /* RedeWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		7B3C91D42A18E5F6C3000002 /* WatchLoggedSetIntakeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6C3000001 /* WatchLoggedSetIntakeTests.swift */; };
+		7B3C91D42A18E5F6C4000002 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6C4000001 /* Assets.xcassets */; };
+		81CAB2673030B84900D641E6 /* RedeSync in Frameworks */ = {isa = PBXBuildFile; productRef = A100000000000000000000B1 /* RedeSync */; };
+		81CAB2683030B84900D641E6 /* RedeSyncSupabase in Frameworks */ = {isa = PBXBuildFile; productRef = A100000000000000000000B2 /* RedeSyncSupabase */; };
+		81CAB2693030B84900D641E6 /* RedeWatchLink in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6B1000002 /* RedeWatchLink */; };
+		A100000000000000000000E2 /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000E1 /* SyncService.swift */; };
+		A100000000000000000000E4 /* SyncSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000E3 /* SyncSheet.swift */; };
+		A100000000000000000000E6 /* SyncWriteSlotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000E5 /* SyncWriteSlotTests.swift */; };
+		A1000000000000000000FD01 /* OnboardingRestoreSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000FD02 /* OnboardingRestoreSheet.swift */; };
 		AA00000000000000000000E2 /* RedeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E1 /* RedeApp.swift */; };
 		AA00000000000000000000E7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E6 /* Assets.xcassets */; };
-		BB0000000000000000000F0B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F0C /* PrivacyInfo.xcprivacy */; };
-		BB0000000000000000000F0D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F0E /* PrivacyInfo.xcprivacy */; };
 		AA0000000000000000000117 /* RedeL10n in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000107 /* RedeL10n */; };
 		BB00000000000000000001A1 /* RedeDomain in Frameworks */ = {isa = PBXBuildFile; productRef = BB00000000000000000001B1 /* RedeDomain */; };
 		BB00000000000000000001A2 /* RedeDataHealth in Frameworks */ = {isa = PBXBuildFile; productRef = BB00000000000000000001B2 /* RedeDataHealth */; };
 		BB00000000000000000001A3 /* RedePersistence in Frameworks */ = {isa = PBXBuildFile; productRef = BB00000000000000000001B3 /* RedePersistence */; };
 		BB00000000000000000001A4 /* RedeTrainingDecision in Frameworks */ = {isa = PBXBuildFile; productRef = BB00000000000000000001B4 /* RedeTrainingDecision */; };
-		DD00000000000000000000A1 /* RedeNotifications in Frameworks */ = {isa = PBXBuildFile; productRef = DD00000000000000000000B1 /* RedeNotifications */; };
-		DD00000000000000000000A2 /* RedeHealthKit in Frameworks */ = {isa = PBXBuildFile; productRef = DD00000000000000000000B2 /* RedeHealthKit */; };
-		FF00000000000000000000A1 /* RedeEntitlements in Frameworks */ = {isa = PBXBuildFile; productRef = FF00000000000000000000B1 /* RedeEntitlements */; };
-		FF00000000000000000000D1 /* SubscriptionRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000000000000000000D2 /* SubscriptionRuntime.swift */; };
-		F20000000000000000000001 /* WeeklyCoachReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000002 /* WeeklyCoachReviewView.swift */; };
-		FA0000000000000000000003 /* AppUpdateRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000004 /* AppUpdateRuntime.swift */; };
-		FA0000000000000000000005 /* AppUpdateViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000006 /* AppUpdateViews.swift */; };
-		F10000000000000000000001 /* StoreKitEntitlementsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000005 /* StoreKitEntitlementsTests.swift */; };
-		FA0000000000000000000001 /* AppUpdateRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000002 /* AppUpdateRuntimeTests.swift */; };
-		FD0000000000000000000001 /* SessionStoreDraftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0000000000000000000002 /* SessionStoreDraftTests.swift */; };
-		F10000000000000000000002 /* Rede.storekit in Resources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000006 /* Rede.storekit */; };
-		F10000000000000000000003 /* RedeEntitlements in Frameworks */ = {isa = PBXBuildFile; productRef = F10000000000000000000011 /* RedeEntitlements */; };
 		BB00000000000000000001D1 /* TodayModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000001D2 /* TodayModel.swift */; };
+		BB00000000000000000001E1 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000001E2 /* SessionStore.swift */; };
 		BB0000000000000000000F01 /* PlanCustomizationBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F02 /* PlanCustomizationBridge.swift */; };
 		BB0000000000000000000F03 /* PlanDayEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F04 /* PlanDayEditorView.swift */; };
 		BB0000000000000000000F05 /* PlanDaySequenceEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F06 /* PlanDaySequenceEditorView.swift */; };
 		BB0000000000000000000F07 /* ShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F08 /* ShareCard.swift */; };
 		BB0000000000000000000F09 /* ShareCardPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F0A /* ShareCardPreviewView.swift */; };
+		BB0000000000000000000F0B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F0C /* PrivacyInfo.xcprivacy */; };
+		BB0000000000000000000F0D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F0E /* PrivacyInfo.xcprivacy */; };
 		BB0000000000000000000F11 /* HealthModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F12 /* HealthModel.swift */; };
 		BB0000000000000000000F23 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F20 /* InfoPlist.strings */; };
-		BB00000000000000000001E1 /* SessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000001E2 /* SessionStore.swift */; };
 		CA00000000000000000000B1 /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A1 /* RootTabView.swift */; };
 		CA00000000000000000000B2 /* TodayTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A2 /* TodayTabView.swift */; };
 		CA00000000000000000000B3 /* TrainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A3 /* TrainTabView.swift */; };
 		CA00000000000000000000B4 /* ProgressTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A4 /* ProgressTabView.swift */; };
-		CAMD00000000000000000002 /* MuscleDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAMD00000000000000000001 /* MuscleDetailSheet.swift */; };
-		CAMH00000000000000000002 /* MuscleHeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAMH00000000000000000001 /* MuscleHeatmapView.swift */; };
+		CA00000000000000000000B5 /* PlanTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A5 /* PlanTabView.swift */; };
+		CAEB00000000000000000002 /* ExerciseLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAEB00000000000000000001 /* ExerciseLibraryView.swift */; };
 		CAED00000000000000000002 /* ExerciseDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAED00000000000000000001 /* ExerciseDetailSheet.swift */; };
 		CAED000000000000000000A2 /* MotionSampleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAED000000000000000000A1 /* MotionSampleView.swift */; };
-		A100000000000000000000E2 /* SyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000E1 /* SyncService.swift */; };
-		A100000000000000000000E4 /* SyncSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000E3 /* SyncSheet.swift */; };
-		A1000000000000000000FD01 /* OnboardingRestoreSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000FD02 /* OnboardingRestoreSheet.swift */; };
-		A100000000000000000000E6 /* SyncWriteSlotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000E5 /* SyncWriteSlotTests.swift */; };
-		7B3C91D42A18E5F6C3000002 /* WatchLoggedSetIntakeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6C3000001 /* WatchLoggedSetIntakeTests.swift */; };
-		CAEB00000000000000000002 /* ExerciseLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAEB00000000000000000001 /* ExerciseLibraryView.swift */; };
-		CA00000000000000000000B5 /* PlanTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A5 /* PlanTabView.swift */; };
+		CAMD00000000000000000002 /* MuscleDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAMD00000000000000000001 /* MuscleDetailSheet.swift */; };
+		CAMH00000000000000000002 /* MuscleHeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAMH00000000000000000001 /* MuscleHeatmapView.swift */; };
+		CARL00000000000000000002 /* RestLiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CARL00000000000000000001 /* RestLiveActivityController.swift */; };
 		CB00000000000000000000B1 /* RedeTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB00000000000000000000A1 /* RedeTheme.swift */; };
 		CB00000000000000000000B2 /* RedeComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB00000000000000000000A2 /* RedeComponents.swift */; };
 		CC00000000000000000000B1 /* LocaleStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000000000000000000A1 /* LocaleStore.swift */; };
@@ -60,33 +61,27 @@
 		CC00000000000000000001A1 /* ProgressModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000000000000000001A2 /* ProgressModel.swift */; };
 		CC00000000000000000001B1 /* RedeLocalSnapshot in Frameworks */ = {isa = PBXBuildFile; productRef = CC00000000000000000001B2 /* RedeLocalSnapshot */; };
 		CC00000000000000000001C1 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC00000000000000000001C2 /* OnboardingView.swift */; };
+		DD00000000000000000000A1 /* RedeNotifications in Frameworks */ = {isa = PBXBuildFile; productRef = DD00000000000000000000B1 /* RedeNotifications */; };
+		DD00000000000000000000A2 /* RedeHealthKit in Frameworks */ = {isa = PBXBuildFile; productRef = DD00000000000000000000B2 /* RedeHealthKit */; };
 		EE00000000000000000000A4 /* RedeWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000A3 /* RedeWidgetBundle.swift */; };
 		EE00000000000000000000A6 /* ReadinessWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000A5 /* ReadinessWidget.swift */; };
 		EE00000000000000000000AA /* RestLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000A9 /* RestLiveActivity.swift */; };
-		CARL00000000000000000002 /* RestLiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CARL00000000000000000001 /* RestLiveActivityController.swift */; };
 		EE00000000000000000000B3 /* RedeWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EE00000000000000000000B2 /* RedeWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		EE00000000000000000000D2 /* RedeWidgetShared in Frameworks */ = {isa = PBXBuildFile; productRef = EE00000000000000000000D1 /* RedeWidgetShared */; };
 		EE00000000000000000000D4 /* RedeWidgetShared in Frameworks */ = {isa = PBXBuildFile; productRef = EE00000000000000000000D3 /* RedeWidgetShared */; };
-		7B3C91D42A18E5F6A0000003 /* RedeWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6A0000002 /* RedeWatchApp.swift */; };
-		7B3C91D42A18E5F6C4000002 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6C4000001 /* Assets.xcassets */; };
-		7B3C91D42A18E5F6A0000020 /* RedeL10n in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000010 /* RedeL10n */; };
-		7B3C91D42A18E5F6A0000021 /* RedeDomain in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000011 /* RedeDomain */; };
-		7B3C91D42A18E5F6A0000022 /* RedeDataHealth in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000012 /* RedeDataHealth */; };
-		7B3C91D42A18E5F6A0000023 /* RedePersistence in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000013 /* RedePersistence */; };
-		7B3C91D42A18E5F6A0000024 /* RedeTrainingDecision in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000014 /* RedeTrainingDecision */; };
-		7B3C91D42A18E5F6A0000025 /* RedeLocalSnapshot in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000015 /* RedeLocalSnapshot */; };
-		7B3C91D42A18E5F6B1000004 /* RedeWatchLink in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6B1000002 /* RedeWatchLink */; };
-		7B3C91D42A18E5F6B1000005 /* RedeWatchLink in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6B1000003 /* RedeWatchLink */; };
+		F10000000000000000000001 /* StoreKitEntitlementsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000005 /* StoreKitEntitlementsTests.swift */; };
+		F10000000000000000000002 /* packages/RedeEntitlements/Tests/RedeEntitlementsTests/Resources/Rede.storekit in Resources */ = {isa = PBXBuildFile; fileRef = F10000000000000000000006 /* packages/RedeEntitlements/Tests/RedeEntitlementsTests/Resources/Rede.storekit */; };
+		F10000000000000000000003 /* RedeEntitlements in Frameworks */ = {isa = PBXBuildFile; productRef = F10000000000000000000011 /* RedeEntitlements */; };
+		F20000000000000000000001 /* WeeklyCoachReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F20000000000000000000002 /* WeeklyCoachReviewView.swift */; };
+		FA0000000000000000000001 /* AppUpdateRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000002 /* AppUpdateRuntimeTests.swift */; };
+		FA0000000000000000000003 /* AppUpdateRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000004 /* AppUpdateRuntime.swift */; };
+		FA0000000000000000000005 /* AppUpdateViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0000000000000000000006 /* AppUpdateViews.swift */; };
+		FD0000000000000000000001 /* SessionStoreDraftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0000000000000000000002 /* SessionStoreDraftTests.swift */; };
+		FF00000000000000000000A1 /* RedeEntitlements in Frameworks */ = {isa = PBXBuildFile; productRef = FF00000000000000000000B1 /* RedeEntitlements */; };
+		FF00000000000000000000D1 /* SubscriptionRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000000000000000000D2 /* SubscriptionRuntime.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		F1000000000000000000000C /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = AA00000000000000000000A1 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = AA00000000000000000000B1;
-			remoteInfo = Rede;
-		};
 		7B3C91D42A18E5F6C2000003 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = AA00000000000000000000A1 /* Project object */;
@@ -100,6 +95,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = EE00000000000000000000B1;
 			remoteInfo = RedeWidgetExtension;
+		};
+		F1000000000000000000000C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA00000000000000000000A1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA00000000000000000000B1;
+			remoteInfo = Rede;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -129,47 +131,42 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		AA00000000000000000000B2 /* Rede.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Rede.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		F10000000000000000000004 /* RedeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RedeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		F10000000000000000000005 /* StoreKitEntitlementsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitEntitlementsTests.swift; sourceTree = "<group>"; };
-		FA0000000000000000000002 /* AppUpdateRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdateRuntimeTests.swift; sourceTree = "<group>"; };
-		FD0000000000000000000002 /* SessionStoreDraftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStoreDraftTests.swift; sourceTree = "<group>"; };
-		A100000000000000000000E5 /* SyncWriteSlotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncWriteSlotTests.swift; sourceTree = "<group>"; };
+		7B3C91D42A18E5F6A0000001 /* RedeWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RedeWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		7B3C91D42A18E5F6A0000002 /* RedeWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeWatchApp.swift; sourceTree = "<group>"; };
 		7B3C91D42A18E5F6C3000001 /* WatchLoggedSetIntakeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchLoggedSetIntakeTests.swift; sourceTree = "<group>"; };
-		F10000000000000000000006 /* Rede.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = packages/RedeEntitlements/Tests/RedeEntitlementsTests/Resources/Rede.storekit; sourceTree = SOURCE_ROOT; };
+		7B3C91D42A18E5F6C4000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A100000000000000000000E1 /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
+		A100000000000000000000E3 /* SyncSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSheet.swift; sourceTree = "<group>"; };
+		A100000000000000000000E5 /* SyncWriteSlotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncWriteSlotTests.swift; sourceTree = "<group>"; };
+		A1000000000000000000FD02 /* OnboardingRestoreSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingRestoreSheet.swift; sourceTree = "<group>"; };
+		AA00000000000000000000B2 /* Rede.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Rede.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA00000000000000000000E1 /* RedeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeApp.swift; sourceTree = "<group>"; };
 		AA00000000000000000000E5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA00000000000000000000E6 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		BB0000000000000000000F0C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		BB0000000000000000000F0E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		B500000000000000000000F5 /* Rede.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Rede.entitlements; sourceTree = "<group>"; };
 		BB00000000000000000001D2 /* TodayModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayModel.swift; sourceTree = "<group>"; };
+		BB00000000000000000001E2 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
 		BB0000000000000000000F02 /* PlanCustomizationBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanCustomizationBridge.swift; sourceTree = "<group>"; };
 		BB0000000000000000000F04 /* PlanDayEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanDayEditorView.swift; sourceTree = "<group>"; };
 		BB0000000000000000000F06 /* PlanDaySequenceEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanDaySequenceEditorView.swift; sourceTree = "<group>"; };
 		BB0000000000000000000F08 /* ShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCard.swift; sourceTree = "<group>"; };
 		BB0000000000000000000F0A /* ShareCardPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCardPreviewView.swift; sourceTree = "<group>"; };
+		BB0000000000000000000F0C /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		BB0000000000000000000F0E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		BB0000000000000000000F12 /* HealthModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthModel.swift; sourceTree = "<group>"; };
-		FF00000000000000000000D2 /* SubscriptionRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionRuntime.swift; sourceTree = "<group>"; };
-		F20000000000000000000002 /* WeeklyCoachReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyCoachReviewView.swift; sourceTree = "<group>"; };
-		FA0000000000000000000004 /* AppUpdateRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdateRuntime.swift; sourceTree = "<group>"; };
-		FA0000000000000000000006 /* AppUpdateViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdateViews.swift; sourceTree = "<group>"; };
 		BB0000000000000000000F21 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		BB0000000000000000000F22 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
-		BB00000000000000000001E2 /* SessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStore.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A1 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A2 /* TodayTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayTabView.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A3 /* TrainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainTabView.swift; sourceTree = "<group>"; };
 		CA00000000000000000000A4 /* ProgressTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressTabView.swift; sourceTree = "<group>"; };
-		CAMD00000000000000000001 /* MuscleDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleDetailSheet.swift; sourceTree = "<group>"; };
-		CAMH00000000000000000001 /* MuscleHeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleHeatmapView.swift; sourceTree = "<group>"; };
+		CA00000000000000000000A5 /* PlanTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTabView.swift; sourceTree = "<group>"; };
+		CAEB00000000000000000001 /* ExerciseLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryView.swift; sourceTree = "<group>"; };
 		CAED00000000000000000001 /* ExerciseDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseDetailSheet.swift; sourceTree = "<group>"; };
 		CAED000000000000000000A1 /* MotionSampleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionSampleView.swift; sourceTree = "<group>"; };
-		A100000000000000000000E1 /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
-		A100000000000000000000E3 /* SyncSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSheet.swift; sourceTree = "<group>"; };
-		A1000000000000000000FD02 /* OnboardingRestoreSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingRestoreSheet.swift; sourceTree = "<group>"; };
-		CAEB00000000000000000001 /* ExerciseLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryView.swift; sourceTree = "<group>"; };
-		CA00000000000000000000A5 /* PlanTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTabView.swift; sourceTree = "<group>"; };
+		CAMD00000000000000000001 /* MuscleDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleDetailSheet.swift; sourceTree = "<group>"; };
+		CAMH00000000000000000001 /* MuscleHeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleHeatmapView.swift; sourceTree = "<group>"; };
+		CARL00000000000000000001 /* RestLiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestLiveActivityController.swift; sourceTree = "<group>"; };
 		CB00000000000000000000A1 /* RedeTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeTheme.swift; sourceTree = "<group>"; };
 		CB00000000000000000000A2 /* RedeComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeComponents.swift; sourceTree = "<group>"; };
 		CC00000000000000000000A1 /* LocaleStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocaleStore.swift; sourceTree = "<group>"; };
@@ -178,21 +175,43 @@
 		CC00000000000000000001C2 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		EE00000000000000000000A3 /* RedeWidgetBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeWidgetBundle.swift; sourceTree = "<group>"; };
 		EE00000000000000000000A5 /* ReadinessWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessWidget.swift; sourceTree = "<group>"; };
-		EE00000000000000000000A9 /* RestLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestLiveActivity.swift; sourceTree = "<group>"; };
-		CARL00000000000000000001 /* RestLiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestLiveActivityController.swift; sourceTree = "<group>"; };
 		EE00000000000000000000A7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		EE00000000000000000000A8 /* RedeWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RedeWidget.entitlements; sourceTree = "<group>"; };
+		EE00000000000000000000A9 /* RestLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestLiveActivity.swift; sourceTree = "<group>"; };
 		EE00000000000000000000B2 /* RedeWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RedeWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		7B3C91D42A18E5F6A0000001 /* RedeWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RedeWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		7B3C91D42A18E5F6A0000002 /* RedeWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeWatchApp.swift; sourceTree = "<group>"; };
-		7B3C91D42A18E5F6C4000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		F10000000000000000000004 /* RedeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RedeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		F10000000000000000000005 /* StoreKitEntitlementsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitEntitlementsTests.swift; sourceTree = "<group>"; };
+		F10000000000000000000006 /* packages/RedeEntitlements/Tests/RedeEntitlementsTests/Resources/Rede.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = packages/RedeEntitlements/Tests/RedeEntitlementsTests/Resources/Rede.storekit; sourceTree = SOURCE_ROOT; };
+		F20000000000000000000002 /* WeeklyCoachReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyCoachReviewView.swift; sourceTree = "<group>"; };
+		FA0000000000000000000002 /* AppUpdateRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdateRuntimeTests.swift; sourceTree = "<group>"; };
+		FA0000000000000000000004 /* AppUpdateRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdateRuntime.swift; sourceTree = "<group>"; };
+		FA0000000000000000000006 /* AppUpdateViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdateViews.swift; sourceTree = "<group>"; };
+		FD0000000000000000000002 /* SessionStoreDraftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStoreDraftTests.swift; sourceTree = "<group>"; };
+		FF00000000000000000000D2 /* SubscriptionRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionRuntime.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		7B3C91D42A18E5F6A0000005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7B3C91D42A18E5F6A0000020 /* RedeL10n in Frameworks */,
+				7B3C91D42A18E5F6A0000021 /* RedeDomain in Frameworks */,
+				7B3C91D42A18E5F6A0000022 /* RedeDataHealth in Frameworks */,
+				7B3C91D42A18E5F6A0000023 /* RedePersistence in Frameworks */,
+				7B3C91D42A18E5F6A0000024 /* RedeTrainingDecision in Frameworks */,
+				7B3C91D42A18E5F6A0000025 /* RedeLocalSnapshot in Frameworks */,
+				7B3C91D42A18E5F6B1000005 /* RedeWatchLink in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AA00000000000000000000D2 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				81CAB2693030B84900D641E6 /* RedeWatchLink in Frameworks */,
+				81CAB2683030B84900D641E6 /* RedeSyncSupabase in Frameworks */,
+				81CAB2673030B84900D641E6 /* RedeSync in Frameworks */,
 				AA0000000000000000000117 /* RedeL10n in Frameworks */,
 				BB00000000000000000001A1 /* RedeDomain in Frameworks */,
 				BB00000000000000000001A2 /* RedeDataHealth in Frameworks */,
@@ -222,23 +241,18 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		7B3C91D42A18E5F6A0000005 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				7B3C91D42A18E5F6A0000020 /* RedeL10n in Frameworks */,
-				7B3C91D42A18E5F6A0000021 /* RedeDomain in Frameworks */,
-				7B3C91D42A18E5F6A0000022 /* RedeDataHealth in Frameworks */,
-				7B3C91D42A18E5F6A0000023 /* RedePersistence in Frameworks */,
-				7B3C91D42A18E5F6A0000024 /* RedeTrainingDecision in Frameworks */,
-				7B3C91D42A18E5F6A0000025 /* RedeLocalSnapshot in Frameworks */,
-				7B3C91D42A18E5F6B1000005 /* RedeWatchLink in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		7B3C91D42A18E5F6A000000B /* RedeWatch */ = {
+			isa = PBXGroup;
+			children = (
+				7B3C91D42A18E5F6A0000002 /* RedeWatchApp.swift */,
+				7B3C91D42A18E5F6C4000001 /* Assets.xcassets */,
+			);
+			path = RedeWatch;
+			sourceTree = "<group>";
+		};
 		AA00000000000000000000A2 = {
 			isa = PBXGroup;
 			children = (
@@ -306,19 +320,6 @@
 			path = Rede;
 			sourceTree = "<group>";
 		};
-		F10000000000000000000007 /* RedeTests */ = {
-			isa = PBXGroup;
-			children = (
-				A100000000000000000000E5 /* SyncWriteSlotTests.swift */,
-				7B3C91D42A18E5F6C3000001 /* WatchLoggedSetIntakeTests.swift */,
-				F10000000000000000000005 /* StoreKitEntitlementsTests.swift */,
-				FA0000000000000000000002 /* AppUpdateRuntimeTests.swift */,
-				FD0000000000000000000002 /* SessionStoreDraftTests.swift */,
-				F10000000000000000000006 /* Rede.storekit */,
-			);
-			path = RedeTests;
-			sourceTree = "<group>";
-		};
 		EE00000000000000000000B4 /* RedeWidget */ = {
 			isa = PBXGroup;
 			children = (
@@ -332,18 +333,48 @@
 			path = RedeWidget;
 			sourceTree = "<group>";
 		};
-		7B3C91D42A18E5F6A000000B /* RedeWatch */ = {
+		F10000000000000000000007 /* RedeTests */ = {
 			isa = PBXGroup;
 			children = (
-				7B3C91D42A18E5F6A0000002 /* RedeWatchApp.swift */,
-				7B3C91D42A18E5F6C4000001 /* Assets.xcassets */,
+				A100000000000000000000E5 /* SyncWriteSlotTests.swift */,
+				7B3C91D42A18E5F6C3000001 /* WatchLoggedSetIntakeTests.swift */,
+				F10000000000000000000005 /* StoreKitEntitlementsTests.swift */,
+				FA0000000000000000000002 /* AppUpdateRuntimeTests.swift */,
+				FD0000000000000000000002 /* SessionStoreDraftTests.swift */,
+				F10000000000000000000006 /* packages/RedeEntitlements/Tests/RedeEntitlementsTests/Resources/Rede.storekit */,
 			);
-			path = RedeWatch;
+			path = RedeTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		7B3C91D42A18E5F6A000000A /* RedeWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7B3C91D42A18E5F6A0000009 /* Build configuration list for PBXNativeTarget "RedeWatch" */;
+			buildPhases = (
+				7B3C91D42A18E5F6A0000004 /* Sources */,
+				7B3C91D42A18E5F6A0000005 /* Frameworks */,
+				7B3C91D42A18E5F6A0000006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = RedeWatch;
+			packageProductDependencies = (
+				7B3C91D42A18E5F6A0000010 /* RedeL10n */,
+				7B3C91D42A18E5F6A0000011 /* RedeDomain */,
+				7B3C91D42A18E5F6A0000012 /* RedeDataHealth */,
+				7B3C91D42A18E5F6A0000013 /* RedePersistence */,
+				7B3C91D42A18E5F6A0000014 /* RedeTrainingDecision */,
+				7B3C91D42A18E5F6A0000015 /* RedeLocalSnapshot */,
+				7B3C91D42A18E5F6B1000003 /* RedeWatchLink */,
+			);
+			productName = RedeWatch;
+			productReference = 7B3C91D42A18E5F6A0000001 /* RedeWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
 		AA00000000000000000000B1 /* Rede */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = AA00000000000000000000C2 /* Build configuration list for PBXNativeTarget "Rede" */;
@@ -380,27 +411,6 @@
 			productReference = AA00000000000000000000B2 /* Rede.app */;
 			productType = "com.apple.product-type.application";
 		};
-		F10000000000000000000008 /* RedeTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = F1000000000000000000000E /* Build configuration list for PBXNativeTarget "RedeTests" */;
-			buildPhases = (
-				F10000000000000000000009 /* Sources */,
-				F1000000000000000000000A /* Frameworks */,
-				F1000000000000000000000B /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				F1000000000000000000000D /* PBXTargetDependency */,
-			);
-			name = RedeTests;
-			packageProductDependencies = (
-				F10000000000000000000011 /* RedeEntitlements */,
-			);
-			productName = RedeTests;
-			productReference = F10000000000000000000004 /* RedeTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 		EE00000000000000000000B1 /* RedeWidgetExtension */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = EE00000000000000000000C2 /* Build configuration list for PBXNativeTarget "RedeWidgetExtension" */;
@@ -421,31 +431,26 @@
 			productReference = EE00000000000000000000B2 /* RedeWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
-		7B3C91D42A18E5F6A000000A /* RedeWatch */ = {
+		F10000000000000000000008 /* RedeTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 7B3C91D42A18E5F6A0000009 /* Build configuration list for PBXNativeTarget "RedeWatch" */;
+			buildConfigurationList = F1000000000000000000000E /* Build configuration list for PBXNativeTarget "RedeTests" */;
 			buildPhases = (
-				7B3C91D42A18E5F6A0000004 /* Sources */,
-				7B3C91D42A18E5F6A0000005 /* Frameworks */,
-				7B3C91D42A18E5F6A0000006 /* Resources */,
+				F10000000000000000000009 /* Sources */,
+				F1000000000000000000000A /* Frameworks */,
+				F1000000000000000000000B /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				F1000000000000000000000D /* PBXTargetDependency */,
 			);
-			name = RedeWatch;
+			name = RedeTests;
 			packageProductDependencies = (
-				7B3C91D42A18E5F6A0000010 /* RedeL10n */,
-				7B3C91D42A18E5F6A0000011 /* RedeDomain */,
-				7B3C91D42A18E5F6A0000012 /* RedeDataHealth */,
-				7B3C91D42A18E5F6A0000013 /* RedePersistence */,
-				7B3C91D42A18E5F6A0000014 /* RedeTrainingDecision */,
-				7B3C91D42A18E5F6A0000015 /* RedeLocalSnapshot */,
-				7B3C91D42A18E5F6B1000003 /* RedeWatchLink */,
+				F10000000000000000000011 /* RedeEntitlements */,
 			);
-			productName = RedeWatch;
-			productReference = 7B3C91D42A18E5F6A0000001 /* RedeWatch.app */;
-			productType = "com.apple.product-type.application";
+			productName = RedeTests;
+			productReference = F10000000000000000000004 /* RedeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -504,6 +509,14 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		7B3C91D42A18E5F6A0000006 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7B3C91D42A18E5F6C4000002 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AA00000000000000000000D3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -526,21 +539,21 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F10000000000000000000002 /* Rede.storekit in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		7B3C91D42A18E5F6A0000006 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				7B3C91D42A18E5F6C4000002 /* Assets.xcassets in Resources */,
+				F10000000000000000000002 /* packages/RedeEntitlements/Tests/RedeEntitlementsTests/Resources/Rede.storekit in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		7B3C91D42A18E5F6A0000004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7B3C91D42A18E5F6A0000003 /* RedeWatchApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		AA00000000000000000000D1 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -603,22 +616,9 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		7B3C91D42A18E5F6A0000004 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				7B3C91D42A18E5F6A0000003 /* RedeWatchApp.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		F1000000000000000000000D /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = AA00000000000000000000B1 /* Rede */;
-			targetProxy = F1000000000000000000000C /* PBXContainerItemProxy */;
-		};
 		7B3C91D42A18E5F6C2000004 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 7B3C91D42A18E5F6A000000A /* RedeWatch */;
@@ -628,6 +628,11 @@
 			isa = PBXTargetDependency;
 			target = EE00000000000000000000B1 /* RedeWidgetExtension */;
 			targetProxy = EE00000000000000000000E2 /* PBXContainerItemProxy */;
+		};
+		F1000000000000000000000D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA00000000000000000000B1 /* Rede */;
+			targetProxy = F1000000000000000000000C /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -644,6 +649,57 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		7B3C91D42A18E5F6A0000007 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 36;
+				DEVELOPMENT_TEAM = 47K95GV3X5;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Rede;
+				INFOPLIST_KEY_WKApplication = YES;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.tinsab.rede;
+				MARKETING_VERSION = 1.10.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		7B3C91D42A18E5F6A0000008 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 36;
+				DEVELOPMENT_TEAM = 47K95GV3X5;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Rede;
+				INFOPLIST_KEY_WKApplication = YES;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.tinsab.rede;
+				MARKETING_VERSION = 1.10.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
 		AA00000000000000000000C3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -774,7 +830,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Rede/Rede.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 36;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -802,7 +858,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Rede/Rede.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 35;
+				CURRENT_PROJECT_VERSION = 36;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -817,6 +873,59 @@
 				MARKETING_VERSION = 1.10.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		EE00000000000000000000C5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = RedeWidget/RedeWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 36;
+				DEVELOPMENT_TEAM = 47K95GV3X5;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RedeWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.10.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede.RedeWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		EE00000000000000000000C6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = RedeWidget/RedeWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 36;
+				DEVELOPMENT_TEAM = 47K95GV3X5;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RedeWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.10.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede.RedeWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.9;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -869,113 +978,18 @@
 			};
 			name = Release;
 		};
-		EE00000000000000000000C5 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = RedeWidget/RedeWidget.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 35;
-				DEVELOPMENT_TEAM = 47K95GV3X5;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = RedeWidget/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.10.2;
-				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede.RedeWidget;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Debug;
-		};
-		EE00000000000000000000C6 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = RedeWidget/RedeWidget.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 35;
-				DEVELOPMENT_TEAM = 47K95GV3X5;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = RedeWidget/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.10.2;
-				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede.RedeWidget;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Release;
-		};
-		7B3C91D42A18E5F6A0000007 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 35;
-				DEVELOPMENT_TEAM = 47K95GV3X5;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Rede;
-				INFOPLIST_KEY_WKApplication = YES;
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.tinsab.rede;
-				MARKETING_VERSION = 1.10.2;
-				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede.watchkitapp;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = watchos;
-				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 10.0;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-			};
-			name = Debug;
-		};
-		7B3C91D42A18E5F6A0000008 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 35;
-				DEVELOPMENT_TEAM = 47K95GV3X5;
-				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Rede;
-				INFOPLIST_KEY_WKApplication = YES;
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.tinsab.rede;
-				MARKETING_VERSION = 1.10.2;
-				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede.watchkitapp;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = watchos;
-				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 5.9;
-				TARGETED_DEVICE_FAMILY = 4;
-				WATCHOS_DEPLOYMENT_TARGET = 10.0;
-				SWIFT_COMPILATION_MODE = wholemodule;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		7B3C91D42A18E5F6A0000009 /* Build configuration list for PBXNativeTarget "RedeWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7B3C91D42A18E5F6A0000007 /* Debug */,
+				7B3C91D42A18E5F6A0000008 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		AA00000000000000000000C1 /* Build configuration list for PBXProject "Rede" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -994,15 +1008,6 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		F1000000000000000000000E /* Build configuration list for PBXNativeTarget "RedeTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				F1000000000000000000000F /* Debug */,
-				F10000000000000000000010 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		EE00000000000000000000C2 /* Build configuration list for PBXNativeTarget "RedeWidgetExtension" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -1012,11 +1017,11 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		7B3C91D42A18E5F6A0000009 /* Build configuration list for PBXNativeTarget "RedeWatch" */ = {
+		F1000000000000000000000E /* Build configuration list for PBXNativeTarget "RedeTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				7B3C91D42A18E5F6A0000007 /* Debug */,
-				7B3C91D42A18E5F6A0000008 /* Release */,
+				F1000000000000000000000F /* Debug */,
+				F10000000000000000000010 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -1024,6 +1029,18 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		7B3C91D42A18E5F6B1000001 /* XCLocalSwiftPackageReference "packages/RedeWatchLink" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/RedeWatchLink;
+		};
+		A100000000000000000000C1 /* XCLocalSwiftPackageReference "packages/RedeSync" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/RedeSync;
+		};
+		A100000000000000000000C2 /* XCLocalSwiftPackageReference "packages/RedeSyncSupabase" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = packages/RedeSyncSupabase;
+		};
 		AA00000000000000000000F7 /* XCLocalSwiftPackageReference "packages/RedeL10n" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = packages/RedeL10n;
@@ -1064,21 +1081,49 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = packages/RedeEntitlements;
 		};
-		A100000000000000000000C1 /* XCLocalSwiftPackageReference "packages/RedeSync" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = packages/RedeSync;
-		};
-		A100000000000000000000C2 /* XCLocalSwiftPackageReference "packages/RedeSyncSupabase" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = packages/RedeSyncSupabase;
-		};
-		7B3C91D42A18E5F6B1000001 /* XCLocalSwiftPackageReference "packages/RedeWatchLink" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = packages/RedeWatchLink;
-		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		7B3C91D42A18E5F6A0000010 /* RedeL10n */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeL10n;
+		};
+		7B3C91D42A18E5F6A0000011 /* RedeDomain */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeDomain;
+		};
+		7B3C91D42A18E5F6A0000012 /* RedeDataHealth */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeDataHealth;
+		};
+		7B3C91D42A18E5F6A0000013 /* RedePersistence */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedePersistence;
+		};
+		7B3C91D42A18E5F6A0000014 /* RedeTrainingDecision */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeTrainingDecision;
+		};
+		7B3C91D42A18E5F6A0000015 /* RedeLocalSnapshot */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeLocalSnapshot;
+		};
+		7B3C91D42A18E5F6B1000002 /* RedeWatchLink */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeWatchLink;
+		};
+		7B3C91D42A18E5F6B1000003 /* RedeWatchLink */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeWatchLink;
+		};
+		A100000000000000000000B1 /* RedeSync */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeSync;
+		};
+		A100000000000000000000B2 /* RedeSyncSupabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RedeSyncSupabase;
+		};
 		AA0000000000000000000107 /* RedeL10n */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = RedeL10n;
@@ -1119,53 +1164,13 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = RedeWidgetShared;
 		};
-		FF00000000000000000000B1 /* RedeEntitlements */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = RedeEntitlements;
-		};
 		F10000000000000000000011 /* RedeEntitlements */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = RedeEntitlements;
 		};
-		A100000000000000000000B1 /* RedeSync */ = {
+		FF00000000000000000000B1 /* RedeEntitlements */ = {
 			isa = XCSwiftPackageProductDependency;
-			productName = RedeSync;
-		};
-		A100000000000000000000B2 /* RedeSyncSupabase */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = RedeSyncSupabase;
-		};
-		7B3C91D42A18E5F6A0000010 /* RedeL10n */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = RedeL10n;
-		};
-		7B3C91D42A18E5F6A0000011 /* RedeDomain */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = RedeDomain;
-		};
-		7B3C91D42A18E5F6A0000012 /* RedeDataHealth */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = RedeDataHealth;
-		};
-		7B3C91D42A18E5F6A0000013 /* RedePersistence */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = RedePersistence;
-		};
-		7B3C91D42A18E5F6A0000014 /* RedeTrainingDecision */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = RedeTrainingDecision;
-		};
-		7B3C91D42A18E5F6A0000015 /* RedeLocalSnapshot */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = RedeLocalSnapshot;
-		};
-		7B3C91D42A18E5F6B1000002 /* RedeWatchLink */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = RedeWatchLink;
-		};
-		7B3C91D42A18E5F6B1000003 /* RedeWatchLink */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = RedeWatchLink;
+			productName = RedeEntitlements;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

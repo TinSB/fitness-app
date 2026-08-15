@@ -23,6 +23,19 @@ jobs:
       - name: List Xcode project
         run: xcodebuild -list -project ios/Rede.xcodeproj
 
+      - name: iOS deployment target guard
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Xcode 会自作主张抬高最低系统版本（已发生两次：上架前审计、2026-08-15 跑真机）。
+          # 抬高 = 绝大多数用户装不了，而本地跑起来毫无症状。
+          bad="$(grep -o "IPHONEOS_DEPLOYMENT_TARGET = [^;]*;" ios/Rede.xcodeproj/project.pbxproj | grep -v "= 17.0;" || true)"
+          if [ -n "$bad" ]; then
+            echo "::error::iOS deployment target changed (expected 17.0)"
+            echo "$bad" | sort | uniq -c
+            exit 1
+          fi
+
       - name: Version parity across targets
         shell: bash
         run: |
