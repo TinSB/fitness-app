@@ -272,15 +272,28 @@ final class SessionStore {
                     exerciseName: ExerciseCatalog.minimal.displayName(l.exerciseId, localeCode: strings.locale.rawValue),
                     setNumber: l.setNumber, setTotal: l.setTotal,
                     exerciseNumber: l.exerciseNumber, exerciseTotal: l.exerciseTotal,
-                    targetText: strings.targetLine(
-                        loadType: l.loadType,
-                        weightKg: LoadGrid.snapKg(
+                    // 热身与正式组的文案完全不同源：热身走 warmupEmptyBar /
+                    // warmupMovementPrep / warmupWeight（与手机 warmupMainLine 逐字同源），
+                    // 正式组才走 targetLine。混用会把「空杆」显示成一个重量。
+                    targetText: {
+                        let snapped = LoadGrid.snapKg(
                             l.targetWeightKg,
                             equipment: LoadGrid.gridEquipment(loadType: l.loadType, equipment: l.equipment),
-                            unit: LoadUnit(unitSystem: strings.unit.rawValue)),
-                        reps: l.targetReps),
+                            unit: LoadUnit(unitSystem: strings.unit.rawValue))
+                        switch l.warmupKind {
+                        case .emptyBar:
+                            return "\(strings.warmupEmptyBar) \(strings.warmupReps(l.targetReps))"
+                        case .movementPrep:
+                            return "\(strings.warmupMovementPrep) \(strings.warmupReps(l.targetReps))"
+                        case .percent:
+                            return "\(strings.warmupWeight(snapped)) \(strings.warmupReps(l.targetReps))"
+                        case nil:
+                            return strings.targetLine(loadType: l.loadType, weightKg: snapped, reps: l.targetReps)
+                        }
+                    }(),
                     targetWeightKg: l.targetWeightKg, targetReps: l.targetReps,
-                    targetRir: l.targetRir, isResting: l.isResting)
+                    targetRir: l.targetRir, isResting: l.isResting,
+                    isWarmup: l.warmupKind != nil)
             }
             let rx = WatchPrescription(
                 dateISO: formatter.string(from: now),
@@ -308,6 +321,8 @@ final class SessionStore {
         let setNumber: Int, setTotal: Int, exerciseNumber: Int, exerciseTotal: Int
         let targetWeightKg: Double, targetReps: Int, targetRir: Double
         let isResting: Bool
+        /// 热身步时非 nil，值是热身种类（空杆 / 百分比 / 动作模式）——文案分流用。
+        let warmupKind: WarmupStep.Kind?
     }
 
     private func liveSetProjection() -> LiveSet? {
@@ -315,8 +330,27 @@ final class SessionStore {
         // confirmEnd / summary 都不该在表上给「完成这一组」——那时已经没有下一组了。
         guard flow.phase == .activeSet || flow.phase == .resting else { return nil }
         let p = flow.progress
-        let rec = flow.currentRecommendation
         let entry = ExerciseCatalog.minimal.entry(id: current.exerciseId)
+
+        // **热身必须先判**。手机在热身（空杆）时若把正式组重量推给表，
+        // 用户照着表练就会直接上重量——那是会受伤的（2026-08-15 owner 真机拍到）。
+        // 热身的进度口径也不同：走热身步序号，不是工作组序号。
+        if flow.isWarmingUp, let step = flow.currentWarmupStep {
+            return LiveSet(
+                exerciseId: current.exerciseId,
+                loadType: current.loadType,
+                equipment: entry?.equipment ?? "dumbbell",
+                setNumber: step.index,
+                setTotal: flow.warmupStepsForCurrentExercise.count,
+                exerciseNumber: p.exerciseNumber, exerciseTotal: p.exerciseTotal,
+                targetWeightKg: step.targetWeightKg,
+                targetReps: step.targetReps,
+                targetRir: 0,                      // 热身不记 RIR
+                isResting: flow.phase == .resting,
+                warmupKind: step.kind)
+        }
+
+        let rec = flow.currentRecommendation
         return LiveSet(
             exerciseId: current.exerciseId,
             loadType: current.loadType,
@@ -328,7 +362,8 @@ final class SessionStore {
             targetWeightKg: flow.currentTargetWeightKg ?? 0,
             targetReps: rec?.targetReps ?? 0,
             targetRir: Double(Int(rec?.targetRir ?? 2)),
-            isResting: flow.phase == .resting)
+            isResting: flow.phase == .resting,
+            warmupKind: nil)
     }
 
     /// 表上记的一组。**走手机自己那条 apply(.logSet)**——不另开落盘路径，
@@ -339,9 +374,17 @@ final class SessionStore {
     /// 不判就是同一组落盘两次。
     func applyWatchLoggedSet(_ set: WatchLoggedSet) {
         guard let flow, flow.phase == .activeSet else { return }
-        guard flow.currentExercise?.exerciseId == set.exerciseId,
-              flow.progress.setNumber == set.setNumber
-        else { return }
+        guard flow.currentExercise?.exerciseId == set.exerciseId else { return }
+
+        if set.isWarmup {
+            // 热身**不落库**：只推进热身步。幂等键同样是 exerciseId + 步序号。
+            guard flow.isWarmingUp, flow.currentWarmupStep?.index == set.setNumber else { return }
+            advanceWarmupStep()
+            return
+        }
+        // **热身期间绝不接受正式组**。表侧状态滞后一拍就会撞上这里——
+        // 不判的话，用户还在空杆热身，一组 65kg 就已经落库了。
+        guard !flow.isWarmingUp, flow.progress.setNumber == set.setNumber else { return }
         apply(.logSet(CompletedSetObservation(
             weightKg: set.weightKg,
             reps: set.reps,

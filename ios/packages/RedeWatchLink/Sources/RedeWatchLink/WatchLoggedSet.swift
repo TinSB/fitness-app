@@ -26,15 +26,23 @@ public struct WatchLoggedSet: Codable, Equatable, Sendable {
     /// 表侧记录时刻（ISO8601）。只作日志与排障，手机不拿它做判断——
     /// 两端时钟不保证一致，用它决策就是给自己埋雷。
     public let loggedAtISO: String
+    /// 这是热身步的「做完了」而不是一组正式组。
+    ///
+    /// 复用同一种消息而不另开一种 kind，是为了让**幂等判断只有一处**：
+    /// 两者的键都是 exerciseId + setNumber（热身时 setNumber = 热身步序号）。
+    /// 手机侧据此分流：热身 → advanceWarmupStep（不落库）；正式组 → apply(.logSet)。
+    /// 默认 false，旧版本表发来的消息仍能解出来（向后兼容）。
+    public let isWarmup: Bool
 
     public init(exerciseId: String, setNumber: Int, weightKg: Double,
-                reps: Int, rir: Double, loggedAtISO: String) {
+                reps: Int, rir: Double, loggedAtISO: String, isWarmup: Bool = false) {
         self.exerciseId = exerciseId
         self.setNumber = setNumber
         self.weightKg = weightKg
         self.reps = reps
         self.rir = rir
         self.loggedAtISO = loggedAtISO
+        self.isWarmup = isWarmup
     }
 
     public var encoded: Data? { try? JSONEncoder().encode(self) }

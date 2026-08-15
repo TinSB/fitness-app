@@ -49,7 +49,10 @@ final class WatchPrescriptionStore {
             weightKg: active.targetWeightKg,
             reps: reps,
             rir: active.targetRir,
-            loggedAtISO: ISO8601DateFormatter().string(from: Date()))
+            loggedAtISO: ISO8601DateFormatter().string(from: Date()),
+            // 必带：手机据此分流。漏了就会把热身当成一组正式组落库——
+            // 用户还在空杆，记录里已经多出一组工作重量。
+            isWarmup: active.isWarmup)
         guard let payload = set.encoded else { return }
         WatchLink.shared.send(
             WatchLinkEnvelope(kind: WatchLinkKind.loggedSet,
@@ -84,15 +87,34 @@ struct TodayWatchView: View {
     }
 
     var body: some View {
+        Group {
+            if let active = store.prescription?.active {
+                // 训练进行时：这一屏只做一件事——记当前这一组。
+                //
+                // **故意不套 ScrollView**，两个理由：
+                // · 数码表冠在 ScrollView 里会被滚动吃掉，调不了次数（真机实测）
+                // · 「完成」按钮必须永远整颗可见。小号表上一滚动它就只剩半截，
+                //   而这是这块屏上唯一重要的操作（owner 真机反馈）
+                // 所以这一屏必须在最小表盘上一屏放下——放不下就是设计要减，不是加滚动。
+                ActiveSetView(active: active, store: store)
+                    .padding(.horizontal, 6)
+            } else {
+                idleList
+            }
+        }
+        .task {
+            // onReceive 必须在 activate 之前挂：激活完成后系统会立刻投递
+            // 已存的 applicationContext，晚挂就会漏掉第一份。
+            WatchLink.shared.onReceive = { [store] envelope, _ in store.apply(envelope) }
+            link.activate()
+        }
+    }
+
+    private var idleList: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
                 header
-                if let active = store.prescription?.active {
-                    // 训练进行时：这一屏只做一件事——记当前这一组。
-                    // 动作清单此时**故意不显示**：练的时候没人要在手表上翻列表，
-                    // 多一屏内容只会让唯一重要的那个按钮更难按到。
-                    ActiveSetView(active: active, store: store)
-                } else if let rx = store.prescription {
+                if let rx = store.prescription {
                     if isStale {
                         // 过期不隐藏内容——健身房里「看得见但标明是旧的」比空白有用得多。
                         notice(verbatim: "\(rx.dateISO) 的计划")
@@ -126,12 +148,6 @@ struct TodayWatchView: View {
                 }
             }
             .padding(.horizontal, 6)
-        }
-        .task {
-            // onReceive 必须在 activate 之前挂：激活完成后系统会立刻投递
-            // 已存的 applicationContext，晚挂就会漏掉第一份。
-            WatchLink.shared.onReceive = { [store] envelope, _ in store.apply(envelope) }
-            link.activate()
         }
     }
 
@@ -179,10 +195,16 @@ struct TodayWatchView: View {
     }
 }
 
-/// 记组屏（切片 4）。表上唯一会改动落盘数据的界面，所以刻意只有一个动作：完成这一组。
+/// 记组屏（切片 4）。表上唯一会改动落盘数据的界面，所以刻意只有一个动作：完成这一步。
 ///
-/// 次数是这里唯一可调的量，用数码表冠调——重量是练之前照处方配上器械的，
-/// 次数才是练出来的结果。表冠是 watchOS 上调数字最省事的方式，不占屏幕。
+/// 布局纪律（2026-08-15 owner 真机反馈后重做）：
+/// · **一屏放下，不滚动**。小号表上一滚，「完成」就只剩半截——而它是这块屏上
+///   唯一重要的操作。用 Spacer 把按钮钉在底边，永远整颗可见。
+/// · 训练时不显示 REDE / 训练日名。那两行在手机上已经有了，练的时候每一像素
+///   都该给动作本身。
+///
+/// 次数用数码表冠调——重量是练之前照处方配上器械的，次数才是练出来的结果。
+/// 表冠必须显式拿到焦点，否则会被外层滚动吃掉（真机实测：转表冠在滑页面）。
 struct ActiveSetView: View {
     let active: WatchPrescription.Active
     let store: WatchPrescriptionStore
@@ -190,62 +212,83 @@ struct ActiveSetView: View {
     /// 表冠绑定值。用 Double 是因为 digitalCrownRotation 要连续量；显示时取整。
     @State private var repsDial: Double = 0
     /// 本地乐观态：点完立刻变，不等手机把新一组推回来。
-    /// 手机推回来时 active.setNumber 会变，onChange 把它复位。
     @State private var justLogged = false
+    /// 表冠焦点。**必须显式置位**——不置的话表冠去驱动滚动，次数一动不动。
+    @FocusState private var crownFocused: Bool
 
     private var reps: Int { max(1, Int(repsDial.rounded())) }
+    private var adjusted: Bool { reps != active.targetReps }
+
+    /// 进度行。热身与正式组口径不同：热身数的是热身步，不是工作组。
+    private var progressLine: String {
+        active.isWarmup
+            ? "热身 \(active.setNumber)/\(active.setTotal)"
+            : "\(active.exerciseNumber)/\(active.exerciseTotal) · 第 \(active.setNumber)/\(active.setTotal) 组"
+    }
+
+    private var buttonTitle: String {
+        if justLogged { return "已记录" }
+        return active.isWarmup ? "完成热身组" : "完成这一组"
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            Text(verbatim: "\(active.exerciseNumber)/\(active.exerciseTotal) · 第 \(active.setNumber)/\(active.setTotal) 组")
-                .font(.system(size: 11)).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 4) {
+            Text(verbatim: progressLine)
+                .font(.system(size: 11))
+                .foregroundStyle(active.isWarmup ? Color.orange : Color.secondary)
             Text(verbatim: active.exerciseName)
-                .font(.system(size: 17, weight: .bold)).lineLimit(2)
-            Text(verbatim: active.targetText)
                 .font(.system(size: 15, weight: .semibold))
-                .monospacedDigit().foregroundStyle(.orange)
+                .lineLimit(1).minimumScaleFactor(0.7)
+            // 目标是两米外要看清的东西。热身时这里是「空杆 ×8」，绝不会是工作重量。
+            Text(verbatim: active.targetText)
+                .font(.system(size: 19, weight: .bold))
+                .monospacedDigit()
+                .foregroundStyle(.orange)
+                .lineLimit(1).minimumScaleFactor(0.6)
 
-            if active.isResting {
-                // 休息中不给按钮：那一组还没开始做，此刻「完成」没有意义。
-                Text(verbatim: "休息中")
-                    .font(.system(size: 13)).foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, minHeight: 40)
-            } else {
-                repsDialView
-                Button {
-                    store.logSet(active: active, reps: reps)
-                    justLogged = true
-                } label: {
-                    Text(verbatim: justLogged ? "已记录" : "完成这一组")
-                        .font(.system(size: 15, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                }
-                .tint(.orange)
-                .disabled(justLogged)
+            // 热身不记次数（热身根本不落库），所以不给表冠——少一行，按钮更靠上。
+            if !active.isWarmup { repsDial_view }
+
+            Spacer(minLength: 2)
+
+            Button {
+                store.logSet(active: active, reps: reps)
+                justLogged = true
+            } label: {
+                Text(verbatim: buttonTitle)
+                    .font(.system(size: 15, weight: .semibold))
+                    .frame(maxWidth: .infinity, minHeight: 30)
             }
+            .tint(.orange)
+            .disabled(justLogged || active.isResting)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        // 手机推来新一组 → 复位表冠与按钮。用 setNumber+exerciseId 作键，
-        // 因为换动作时 setNumber 会回到 1，只看它会漏掉换动作那一次。
-        .onChange(of: "\(active.exerciseId)#\(active.setNumber)", initial: true) {
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        // 手机推来新一步 → 复位表冠与按钮。键里带 exerciseId 与 isWarmup：
+        // 换动作时 setNumber 会回到 1，热身转正式组时也会——只看 setNumber 会漏。
+        .onChange(of: "\(active.exerciseId)#\(active.isWarmup)#\(active.setNumber)", initial: true) {
             repsDial = Double(active.targetReps)
             justLogged = false
+            crownFocused = true
         }
     }
 
-    private var repsDialView: some View {
-        HStack {
+    private var repsDial_view: some View {
+        HStack(alignment: .firstTextBaseline) {
             Text(verbatim: "次数")
-                .font(.system(size: 12)).foregroundStyle(.secondary)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
             Spacer()
             Text(verbatim: "\(reps)")
-                .font(.system(size: 26, weight: .bold))
+                .font(.system(size: 28, weight: .bold))
                 .monospacedDigit()
                 // 改过就变色——练的时候一眼要能看出「这不是处方给的数」。
-                .foregroundStyle(reps == active.targetReps ? Color.primary : Color.orange)
+                .foregroundStyle(adjusted ? Color.orange : Color.primary)
         }
-        .focusable()
+        .contentShape(Rectangle())
+        .focusable(true)
+        .focused($crownFocused)
         .digitalCrownRotation($repsDial, from: 1, through: 50, by: 1,
-                              sensitivity: .low, isContinuous: false)
+                              sensitivity: .low, isContinuous: false,
+                              isHapticFeedbackEnabled: true)
     }
 }

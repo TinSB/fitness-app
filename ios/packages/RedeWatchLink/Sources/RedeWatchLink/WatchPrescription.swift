@@ -72,10 +72,17 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
         public let targetRir: Double
         /// 手机此刻在休息倒计时里。表上这时不该给「完成这一组」——那一组还没开始做。
         public let isResting: Bool
+        /// 这一步是**热身**还是正式组。
+        ///
+        /// 必传，而且是这条载荷里最要紧的一位：手机在热身（空杆）时表上若显示正式组重量，
+        /// 用户照着练就会直接上重量——那是会受伤的。2026-08-15 owner 真机拍到过。
+        /// 热身**不落库**：表上点完成只是推进热身步，次数也不可改（热身次数不记录）。
+        public let isWarmup: Bool
 
         public init(exerciseId: String, exerciseName: String, setNumber: Int, setTotal: Int,
                     exerciseNumber: Int, exerciseTotal: Int, targetText: String,
-                    targetWeightKg: Double, targetReps: Int, targetRir: Double, isResting: Bool) {
+                    targetWeightKg: Double, targetReps: Int, targetRir: Double,
+                    isResting: Bool, isWarmup: Bool = false) {
             self.exerciseId = exerciseId
             self.exerciseName = exerciseName
             self.setNumber = setNumber
@@ -87,6 +94,7 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
             self.targetReps = targetReps
             self.targetRir = targetRir
             self.isResting = isResting
+            self.isWarmup = isWarmup
         }
     }
 
