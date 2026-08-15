@@ -73,14 +73,31 @@ enum WatchMetrics {
 // MARK: - 按压反馈（与手机 RedePressableStyle 同一套：降亮 + 微缩）
 
 struct WatchPressableStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var scale: CGFloat = 0.97
     var dim: Double = 0.55
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .opacity(configuration.isPressed ? dim : 1)
-            .scaleEffect(configuration.isPressed ? scale : 1)
+            // 关动效时只降亮、不缩放（设计语言 §14.1）；降亮本身不算 motion。
+            .scaleEffect(configuration.isPressed && !reduceMotion ? scale : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
+/// 表侧动效口径，与手机同一套数字（§14.3）：
+/// · morph = 屏间原地变形（记组 ⇄ 休息 ⇄ 热身、清单 ⇄ 训练）：0.22s easeInOut，透明度 + 0.98 缩放
+/// · caret = 刻度轨指针在读数间滑动：0.2s easeOut（手机刻度轨指针同款）
+/// · 一切位移 / 缩放过 reduceMotion 守卫，关则退化为纯透明度或直接切换
+enum WatchMotion {
+    static let morph: Animation = .easeInOut(duration: 0.22)
+    static let caret: Animation = .easeOut(duration: 0.2)
+    static let tint: Animation = .easeOut(duration: 0.18)
+
+    /// 屏间 morph 的转场：关动效时只淡入淡出。
+    static func morphTransition(reduceMotion: Bool) -> AnyTransition {
+        reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.98))
     }
 }
 
@@ -98,12 +115,18 @@ struct EmbWatchButton: View {
     var enabled = true
     let action: () -> Void
 
+    /// 点击计数——驱动图标的一次性弹跳（symbolEffect 需要一个变化的值做触发）。
+    /// 与手机 EmbButton 同款：主 CTA 的图标在按下时弹一下，是动作确认的最短反馈，
+    /// 比整块按钮变色克制。reduceMotion 由系统自动降级。
+    @State private var tapTick = 0
+
     var body: some View {
-        Button(action: action) {
+        Button(action: { tapTick += 1; action() }) {
             HStack(spacing: 6) {
                 if let icon {
                     Image(systemName: icon)
                         .font(.system(size: 13, weight: .semibold))
+                        .symbolEffect(.bounce, options: .nonRepeating, value: tapTick)
                 }
                 Text(verbatim: title)
                     .font(.system(size: 15, weight: .semibold))
@@ -121,6 +144,7 @@ struct EmbWatchButton: View {
         .buttonStyle(.watchPressable)
         .disabled(!enabled)
         .opacity(enabled ? 1 : 0.45)
+        .animation(WatchMotion.tint, value: enabled)
     }
 }
 
@@ -145,6 +169,7 @@ struct MachinedRoundButton<Label: View>: View {
         .buttonStyle(.watchPressable)
         .disabled(!enabled)
         .opacity(enabled ? 1 : 0.45)
+        .animation(WatchMotion.tint, value: enabled)
     }
 }
 
@@ -182,6 +207,8 @@ struct SetMarks: View {
                 RoundedRectangle(cornerRadius: 1, style: .continuous)
                     .fill(i < current ? WatchPalette.steel : (i == current ? WatchPalette.ember : WatchPalette.etch))
                     .frame(width: 7, height: 3)
+                    // 记完一组：当前格退钢色、下一格亮 ember——两格同拍换色，读作「推进了一格」。
+                    .animation(WatchMotion.tint, value: current)
             }
         }
     }

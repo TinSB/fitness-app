@@ -115,8 +115,10 @@ struct TodayWatchView: View {
         return rx.dateISO != WatchPrescriptionStore.todayISO
     }
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
-        Group {
+        ZStack {
             if let active = store.prescription?.active {
                 // 训练进行时：这一屏只做一件事——记当前这一组。
                 //
@@ -127,10 +129,14 @@ struct TodayWatchView: View {
                 // 所以这一屏必须在最小表盘上一屏放下——放不下就是设计要减，不是加滚动。
                 ActiveSetView(active: active, store: store)
                     .padding(.horizontal, 6)
+                    .transition(WatchMotion.morphTransition(reduceMotion: reduceMotion))
             } else {
                 idleList
+                    .transition(WatchMotion.morphTransition(reduceMotion: reduceMotion))
             }
         }
+        // 清单 ⇄ 训练：原地 morph（手机 hero 的 set ⇄ rest 同款 0.22s），不是硬切。
+        .animation(WatchMotion.morph, value: store.prescription?.active != nil)
         // 整面板：一块连续锻面，铺满到屏幕边（含圆角），数字直接蚀刻在上面。
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(WatchPalette.base.ignoresSafeArea())
@@ -288,6 +294,7 @@ struct ActiveSetView: View {
     @State private var justLogged = false
     /// 排队中的组数 + 可达性。手机够不着时「已记录」是半个真话——组确实记下了，但还没过去。
     @ObservedObject private var link = WatchLink.shared
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var s: RedeStrings { store.strings }
     private var rungs: [WatchPrescription.WeightRung] { active.adjust?.weightRungs ?? [] }
@@ -327,16 +334,27 @@ struct ActiveSetView: View {
         }
     }
 
+    /// 三屏（记组 / 热身 / 休息）之间的 morph 键。
+    private var screenKey: String { active.isResting ? "rest" : (active.isWarmup ? "warmup" : "set") }
+
     var body: some View {
         // 休息中整屏换成倒计时。**不是把按钮置灰了事**——休息是训练里最长的一段，
         // 也是最该抬腕就看到的东西；这一刻屏幕上该有的只有「还剩多久」。
-        if active.isResting {
-            RestCountdownView(active: active, store: store)
-        } else if active.isWarmup {
-            warmupBody
-        } else {
-            setBody
+        // 三屏之间原地 morph（透明度 + 0.98 缩放，0.22s）——与手机 hero 的 set ⇄ rest 同一口径，
+        // 记完一组按钮变「已记录」、手机推回休息、环淡入，是一个连贯的手势而不是三次硬切。
+        ZStack {
+            if active.isResting {
+                RestCountdownView(active: active, store: store)
+                    .transition(WatchMotion.morphTransition(reduceMotion: reduceMotion))
+            } else if active.isWarmup {
+                warmupBody
+                    .transition(WatchMotion.morphTransition(reduceMotion: reduceMotion))
+            } else {
+                setBody
+                    .transition(WatchMotion.morphTransition(reduceMotion: reduceMotion))
+            }
         }
+        .animation(WatchMotion.morph, value: screenKey)
     }
 
     // MARK: - 正式组：三个读数 + 刻度轨
@@ -379,6 +397,21 @@ struct ActiveSetView: View {
                             caption: s.trainColRir, changed: rirChanged)
                 }
             }
+            // 刻度轨：一条通长刻线 + 一枚 ember 指针，压在读数簇脚下。指针只有一枚，
+            // 位置按选中列的中心算、用 offset 滑过去（手机刻度轨 caretX 同一做法）——
+            // 不用 matchedGeometryEffect：焦点 / 条件插入那条路在表上不出中间帧（逐帧实测）。
+            .overlay(alignment: .bottom) {
+                GeometryReader { geo in
+                    let x = caretX(width: geo.size.width)
+                    ZStack(alignment: .topLeading) {
+                        Rectangle().fill(WatchPalette.etch).frame(height: 1)
+                        RailCaret()
+                            .offset(x: x - 3.5)
+                            .animation(reduceMotion ? nil : WatchMotion.caret, value: x)
+                    }
+                }
+                .frame(height: 11)
+            }
             .padding(.top, 8 * WatchMetrics.scale)
             .allowsHitTesting(!justLogged)
             .opacity(justLogged ? 0.6 : 1)
@@ -400,7 +433,7 @@ struct ActiveSetView: View {
             repsDial = Double(active.targetReps)
             rirIdx = Double(min(max(targetRir, 0), 5) + 1)
             justLogged = false
-            chosenField = .reps
+            withAnimation(reduceMotion ? nil : WatchMotion.caret) { chosenField = .reps }
             focus = .reps
         }
         // 焦点被系统动过（重置到第一块 / 收走）→ 抢回用户选的那个。
@@ -408,13 +441,29 @@ struct ActiveSetView: View {
         .onChange(of: focus) { _, now in
             if now != chosenField { focus = chosenField }
         }
+        // 「已记录」等手机推回来的这几百毫秒：读数簇退到 0.6，与按钮一起表示「已提交、别再动」。
+        .animation(WatchMotion.tint, value: justLogged)
     }
 
-    /// 一个读数：数字 + 仪表小标签 + 脚下那一段刻度轨。三个读数的轨段无缝相接成一条线，
-    /// 表冠正在调的那个读数脚下立着 ember 指针。点它 = 表冠转它。
+    /// 指针在刻度轨上的 x：选中列的中心。列宽与读数簇布局同一口径——有重量轴时
+    /// 重量占一半、次数与 RIR 各四分之一；没有重量轴时两列各一半。
+    private func caretX(width: CGFloat) -> CGFloat {
+        if hasWeightAxis {
+            switch chosenField {
+            case .weight: return width * 0.25
+            case .reps: return width * 0.625
+            case .rir: return width * 0.875
+            }
+        }
+        return chosenField == .rir ? width * 0.75 : width * 0.25
+    }
+
+    /// 一个读数：数字 + 仪表小标签。点它 = 表冠转它，脚下的指针沿刻度轨滑过去。
     private func reading(_ field: Field, value: String, size: CGFloat, caption: String,
                          uppercase: Bool = true, changed: Bool) -> some View {
-        let focused = focus == field
+        // 指针跟 chosenField（真值）走，不跟 @FocusState 走：焦点系统的更新不在 withAnimation
+        // 的事务里落地，指针会「跳」过去而不是「滑」过去（模拟器逐帧实测）。焦点自己随后跟上。
+        let focused = chosenField == field
         return VStack(spacing: 0) {
             Text(verbatim: value)
                 .font(.system(size: size, weight: .semibold))
@@ -423,23 +472,19 @@ struct ActiveSetView: View {
                 .foregroundStyle(changed ? WatchPalette.ember : WatchPalette.t1)
                 .contentTransition(.numericText())
                 .animation(.easeOut(duration: 0.12), value: value)
+                // 回到处方值 / 离开处方值：颜色渐变，不是跳变。
+                .animation(WatchMotion.tint, value: changed)
                 .frame(maxWidth: .infinity)
             InstrumentCaption(text: caption, uppercase: uppercase)
                 .padding(.top, 1)
-            // 刻度轨：轨道通长，指针只在选中的读数下。
-            ZStack(alignment: .top) {
-                Rectangle().fill(WatchPalette.etch).frame(height: 1)
-                RailCaret().opacity(focused ? 1 : 0)
-                    .animation(.easeOut(duration: 0.15), value: focused)
-            }
-            .frame(height: 11)
-            .padding(.top, 5)
+            // 脚下给刻度轨留位（轨与指针由读数簇的 overlay 统一画）。
+            Color.clear.frame(height: 11).padding(.top, 5)
         }
         .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
         .onTapGesture {
             guard chosenField != field else { return }
-            chosenField = field
+            withAnimation(reduceMotion ? nil : WatchMotion.caret) { chosenField = field }
             focus = field
             WKInterfaceDevice.current().play(.click)
         }
@@ -594,6 +639,8 @@ struct RestCountdownView: View {
                     .padding(.horizontal, WatchMetrics.ringStroke + 4)
                 }
                 .frame(width: WatchMetrics.ring, height: WatchMetrics.ring)
+                // 走到 0:00 → 数字与环一起退灰（渐变，不闪）；手机推回下一组时整屏 morph 走人。
+                .animation(WatchMotion.tint, value: stale)
             }
 
             // 环下一行：优先说清楚状态（排队 / 不可达），否则说下一组是什么——
