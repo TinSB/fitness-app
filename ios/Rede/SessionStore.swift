@@ -85,7 +85,10 @@ final class FileTrainSessionDraftStore: TrainSessionDraftStoring, @unchecked Sen
 @Observable
 final class SessionStore {
     var todayOutcome: TodayModel.LoadOutcome?
-    var flow: TrainFlowState?
+    /// 训练流。**每次变化都要重推给表**（切片 4）——开训、记组、恢复 draft、结束
+    /// 都会改变表上该显示什么。写成 didSet 而不是在四个调用点各补一句：
+    /// 漏一处的症状是表上停在某一组不动，而那是练到一半才会发现的。
+    var flow: TrainFlowState? { didSet { pushWatchPrescription() } }
     var sessionStartedAt: Date?
     /// FR-NT1/2 本地通知调度 seam（切片2 链接证明 → 切片3 接休息生命周期）。
     let notificationScheduler: NotificationScheduling = UNUserNotificationCenterScheduler()
@@ -238,6 +241,8 @@ final class SessionStore {
         // ExercisePrescriptionPlan 是 Sendable，可以整体交给后台；dayCode 可能为 nil（休息日）。
         let plans = model.prescription?.exercises ?? []
         let dayCode = model.prescription?.dayCode
+        // 训练进行时的当前一组（切片 4）。在 MainActor 上取完，后台只做渲染。
+        let live = liveSetProjection()
 
         Task.detached(priority: .utility) {
             let strings = SessionStore.resolveWidgetStrings()
@@ -261,12 +266,29 @@ final class SessionStore {
                         reps: ex.targetReps)
                 )
             }
+            let active = live.map { l in
+                WatchPrescription.Active(
+                    exerciseId: l.exerciseId,
+                    exerciseName: ExerciseCatalog.minimal.displayName(l.exerciseId, localeCode: strings.locale.rawValue),
+                    setNumber: l.setNumber, setTotal: l.setTotal,
+                    exerciseNumber: l.exerciseNumber, exerciseTotal: l.exerciseTotal,
+                    targetText: strings.targetLine(
+                        loadType: l.loadType,
+                        weightKg: LoadGrid.snapKg(
+                            l.targetWeightKg,
+                            equipment: LoadGrid.gridEquipment(loadType: l.loadType, equipment: l.equipment),
+                            unit: LoadUnit(unitSystem: strings.unit.rawValue)),
+                        reps: l.targetReps),
+                    targetWeightKg: l.targetWeightKg, targetReps: l.targetReps,
+                    targetRir: l.targetRir, isResting: l.isResting)
+            }
             let rx = WatchPrescription(
                 dateISO: formatter.string(from: now),
                 // 休息日 dayCode 为 nil → 空标题 + 空清单，表上显示「今天休息」。
                 // **必须照推**：不推的话表上会继续显示昨天的动作，比空白更糟。
                 dayTitle: dayCode.map(strings.trainingDayName) ?? "",
-                exercises: items)
+                exercises: items,
+                active: active)
             guard let payload = rx.encoded else { return }
 
             await MainActor.run {
@@ -277,6 +299,55 @@ final class SessionStore {
                     via: .applicationContext)
             }
         }
+    }
+
+    /// 训练进行时的当前一组，投影成 Sendable primitives（渲染留后台）。
+    /// 没在训练 / 已进小结 → nil，表上退回只读清单。
+    private struct LiveSet: Sendable {
+        let exerciseId: String, loadType: String, equipment: String
+        let setNumber: Int, setTotal: Int, exerciseNumber: Int, exerciseTotal: Int
+        let targetWeightKg: Double, targetReps: Int, targetRir: Double
+        let isResting: Bool
+    }
+
+    private func liveSetProjection() -> LiveSet? {
+        guard let flow, let current = flow.currentExercise else { return nil }
+        // confirmEnd / summary 都不该在表上给「完成这一组」——那时已经没有下一组了。
+        guard flow.phase == .activeSet || flow.phase == .resting else { return nil }
+        let p = flow.progress
+        let rec = flow.currentRecommendation
+        let entry = ExerciseCatalog.minimal.entry(id: current.exerciseId)
+        return LiveSet(
+            exerciseId: current.exerciseId,
+            loadType: current.loadType,
+            equipment: entry?.equipment ?? "dumbbell",
+            setNumber: p.setNumber, setTotal: p.setTotal,
+            exerciseNumber: p.exerciseNumber, exerciseTotal: p.exerciseTotal,
+            // 与手机 logCurrentSet 同源：目标重量走 currentTargetWeightKg（含 Hold 分支），
+            // 次数与 RIR 走引擎建议。两边取值必须一模一样，否则同一组在两块屏上目标不同。
+            targetWeightKg: flow.currentTargetWeightKg ?? 0,
+            targetReps: rec?.targetReps ?? 0,
+            targetRir: Double(Int(rec?.targetRir ?? 2)),
+            isResting: flow.phase == .resting)
+    }
+
+    /// 表上记的一组。**走手机自己那条 apply(.logSet)**——不另开落盘路径，
+    /// 于是休息计时、draft 留存、末组进小结全部自动一致。
+    ///
+    /// 只在「正是此刻等的那一组」时接受。丢弃的真实场景不是网络重传，
+    /// 是**两块屏同时开着**：表上记了一组，又顺手在手机上点了打勾。
+    /// 不判就是同一组落盘两次。
+    func applyWatchLoggedSet(_ set: WatchLoggedSet) {
+        guard let flow, flow.phase == .activeSet else { return }
+        guard flow.currentExercise?.exerciseId == set.exerciseId,
+              flow.progress.setNumber == set.setNumber
+        else { return }
+        apply(.logSet(CompletedSetObservation(
+            weightKg: set.weightKg,
+            reps: set.reps,
+            rir: set.rir,
+            // 疼痛只在手机上报——表上没有这个入口，照读当前状态，不臆造。
+            painReported: flow.painReportedForCurrentSet)))
     }
 
     /// 裁定 D：只读 derived muscle-level-memory，将已解锁等级投影进现成 rows 通道。
@@ -1807,6 +1878,8 @@ final class SessionStore {
         _ = reduce(event)
         syncRestCountdown(after: event, restCompletedNaturally: restCompletedNaturally)
         enqueueDraftSave()
+        // 重推由 flow 的 didSet 负责——reduce 改了 flow，推送自然跟上。
+        // 于是「表记一组 → 手机推下一组 → 表显示下一组」自动闭环。
     }
 
     /// FR-TR14 的持久化提交：仅允许本次顺序 / 动作 / 组数编辑。

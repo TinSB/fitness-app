@@ -50,6 +50,7 @@
 		A100000000000000000000E4 /* SyncSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000E3 /* SyncSheet.swift */; };
 		A1000000000000000000FD01 /* OnboardingRestoreSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000FD02 /* OnboardingRestoreSheet.swift */; };
 		A100000000000000000000E6 /* SyncWriteSlotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000000000000000000E5 /* SyncWriteSlotTests.swift */; };
+		7B3C91D42A18E5F6C3000002 /* WatchLoggedSetIntakeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6C3000001 /* WatchLoggedSetIntakeTests.swift */; };
 		CAEB00000000000000000002 /* ExerciseLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAEB00000000000000000001 /* ExerciseLibraryView.swift */; };
 		CA00000000000000000000B5 /* PlanTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A5 /* PlanTabView.swift */; };
 		CB00000000000000000000B1 /* RedeTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB00000000000000000000A1 /* RedeTheme.swift */; };
@@ -133,6 +134,7 @@
 		FA0000000000000000000002 /* AppUpdateRuntimeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdateRuntimeTests.swift; sourceTree = "<group>"; };
 		FD0000000000000000000002 /* SessionStoreDraftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStoreDraftTests.swift; sourceTree = "<group>"; };
 		A100000000000000000000E5 /* SyncWriteSlotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncWriteSlotTests.swift; sourceTree = "<group>"; };
+		7B3C91D42A18E5F6C3000001 /* WatchLoggedSetIntakeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchLoggedSetIntakeTests.swift; sourceTree = "<group>"; };
 		F10000000000000000000006 /* Rede.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = packages/RedeEntitlements/Tests/RedeEntitlementsTests/Resources/Rede.storekit; sourceTree = SOURCE_ROOT; };
 		AA00000000000000000000E1 /* RedeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeApp.swift; sourceTree = "<group>"; };
 		AA00000000000000000000E5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -306,6 +308,7 @@
 			isa = PBXGroup;
 			children = (
 				A100000000000000000000E5 /* SyncWriteSlotTests.swift */,
+				7B3C91D42A18E5F6C3000001 /* WatchLoggedSetIntakeTests.swift */,
 				F10000000000000000000005 /* StoreKitEntitlementsTests.swift */,
 				FA0000000000000000000002 /* AppUpdateRuntimeTests.swift */,
 				FD0000000000000000000002 /* SessionStoreDraftTests.swift */,
@@ -592,6 +595,7 @@
 				FA0000000000000000000001 /* AppUpdateRuntimeTests.swift in Sources */,
 				FD0000000000000000000001 /* SessionStoreDraftTests.swift in Sources */,
 				A100000000000000000000E6 /* SyncWriteSlotTests.swift in Sources */,
+				7B3C91D42A18E5F6C3000002 /* WatchLoggedSetIntakeTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

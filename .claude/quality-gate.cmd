@@ -143,6 +143,7 @@ xcodebuild \
   -only-testing:RedeTests/StoreKitEntitlementsTests/testWeeklyReviewLiftSignalPolicyDropsCalibratingZeroDelta \
   -only-testing:RedeTests/SessionStoreDraftTests \
   -only-testing:RedeTests/AppUpdateRuntimeTests \
+  -only-testing:RedeTests/WatchLoggedSetIntakeTests \
   test
 
 echo "QUALITY GATE: PASS"

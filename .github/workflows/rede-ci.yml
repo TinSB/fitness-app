@@ -136,4 +136,5 @@ jobs:
             -only-testing:RedeTests/StoreKitEntitlementsTests/testWeeklyReviewLiftSignalPolicyDropsCalibratingZeroDelta \
             -only-testing:RedeTests/SessionStoreDraftTests \
             -only-testing:RedeTests/AppUpdateRuntimeTests \
+            -only-testing:RedeTests/WatchLoggedSetIntakeTests \
             test

@@ -89,3 +89,54 @@ final class WatchPrescriptionTests: XCTestCase {
         XCTAssertNil(WatchPrescription(decoding: Data([0x00, 0x01, 0x02])))
     }
 }
+
+// 切片 4：表 → 手机的已完成组。
+final class WatchLoggedSetTests: XCTestCase {
+
+    private var sample: WatchLoggedSet {
+        WatchLoggedSet(exerciseId: "bench-press", setNumber: 2, weightKg: 37.5,
+                       reps: 8, rir: 2, loggedAtISO: "2026-08-15T10:00:00Z")
+    }
+
+    func testRoundTripThroughEnvelope() {
+        let e = WatchLinkEnvelope(kind: WatchLinkKind.loggedSet, sentAtISO: "t", payload: sample.encoded)
+        let back = WatchLinkEnvelope(dictionary: e.dictionary)
+        XCTAssertEqual(back.flatMap { $0.payload }.flatMap(WatchLoggedSet.init(decoding:)), sample)
+    }
+
+    func testIdempotencyKeyIsCarriedBackUnchanged() {
+        // 手机只在「正是此刻等的那一组」时接受。这两个字段就是那个判断的全部依据——
+        // 少任何一个，两块屏同时开着时同一组会落盘两次。
+        let active = WatchPrescription.Active(
+            exerciseId: "squat", exerciseName: "深蹲", setNumber: 3, setTotal: 4,
+            exerciseNumber: 1, exerciseTotal: 5, targetText: "80 kg × 5",
+            targetWeightKg: 80, targetReps: 5, targetRir: 2, isResting: false)
+        let logged = WatchLoggedSet(exerciseId: active.exerciseId, setNumber: active.setNumber,
+                                    weightKg: active.targetWeightKg, reps: 4,
+                                    rir: active.targetRir, loggedAtISO: "t")
+        XCTAssertEqual(logged.exerciseId, active.exerciseId)
+        XCTAssertEqual(logged.setNumber, active.setNumber)
+        // 重量与 RIR 原样回传（表不重算）；只有次数是表改过的。
+        XCTAssertEqual(logged.weightKg, active.targetWeightKg)
+        XCTAssertEqual(logged.rir, active.targetRir)
+        XCTAssertNotEqual(logged.reps, active.targetReps)
+    }
+
+    func testActiveSurvivesPrescriptionRoundTrip() {
+        let rx = WatchPrescription(
+            dateISO: "2026-08-15", dayTitle: "上肢", exercises: [],
+            active: .init(exerciseId: "squat", exerciseName: "深蹲", setNumber: 1, setTotal: 3,
+                          exerciseNumber: 1, exerciseTotal: 4, targetText: "80 kg × 5",
+                          targetWeightKg: 80, targetReps: 5, targetRir: 2, isResting: true))
+        XCTAssertEqual(rx.encoded.flatMap(WatchPrescription.init(decoding:)), rx)
+    }
+
+    func testOlderPayloadWithoutActiveStillDecodes() {
+        // 表和手机版本可能不同步：表是旧版、手机推了带 active 的新载荷，反之亦然。
+        // 少一个可选字段绝不能整份解不出来——那会让表变空白。
+        let legacy = #"{"dateISO":"2026-08-15","dayTitle":"上肢","exercises":[]}"#
+        let back = WatchPrescription(decoding: Data(legacy.utf8))
+        XCTAssertEqual(back?.dateISO, "2026-08-15")
+        XCTAssertNil(back?.active)
+    }
+}

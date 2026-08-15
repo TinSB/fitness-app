@@ -145,6 +145,17 @@ struct RootTabView: View {
             // applicationContext 只有一个槽位，谁后写谁赢。pongCtx 一发就把处方从表上冲掉了。
             // 这条约束以后一直有效：**同时只能有一种 kind 走 applicationContext**，
             // 别的状态（比如切片 5 的休息倒计时）要么合进同一份处方载荷，要么另选通道。
+            //
+            // 切片 4：表回传的已完成组在这里落地。挂在 App 级而不是训练页，
+            // 是因为 userInfo 是排队通道——表可能在手机 app 没开时就记了组，
+            // 那条消息会在 app 一启动就送到，训练页那时还没出现。
+            WatchLink.shared.onReceive = { envelope, _ in
+                guard envelope.kind == WatchLinkKind.loggedSet,
+                      let data = envelope.payload,
+                      let set = WatchLoggedSet(decoding: data)
+                else { return }   // 未知 kind / 载荷看不懂：安静丢弃（向前兼容）
+                sessionStore.applyWatchLoggedSet(set)
+            }
             WatchLink.shared.activate()
 
             let localePreApplied = args.contains("-locale")

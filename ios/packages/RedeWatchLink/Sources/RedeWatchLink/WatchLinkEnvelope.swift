@@ -95,4 +95,7 @@ public enum WatchLinkKind {
     /// 已经完成，结论写在上面的通道纪律里。留着还有害：pongCtx 走 applicationContext，
     /// 而那只有一个槽位，一发就把处方冲掉。
     public static let prescription = "rx"
+    /// 表 → 手机的一条已完成组（切片 4）。payload = JSON 编码的 WatchLoggedSet。
+    /// 走 userInfo，不走 message——见上面的通道纪律。
+    public static let loggedSet = "set"
 }
