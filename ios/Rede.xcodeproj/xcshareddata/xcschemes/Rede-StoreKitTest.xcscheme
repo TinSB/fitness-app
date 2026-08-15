@@ -82,7 +82,7 @@
          </CommandLineArgument>
       </CommandLineArguments>
       <StoreKitConfigurationFileReference
-         identifier = "../../packages/RedeEntitlements/Tests/RedeEntitlementsTests/Resources/Rede.storekit">
+         identifier = "packages/RedeEntitlements/Tests/RedeEntitlementsTests/Resources/Rede.storekit">
       </StoreKitConfigurationFileReference>
    </LaunchAction>
    <ProfileAction

@@ -43,6 +43,28 @@ public final class WatchLink: NSObject, ObservableObject {
 
     public var onReceive: ((WatchLinkEnvelope, WatchLinkChannel) -> Void)?
 
+    /// 最后一份 applicationContext（不论发成功没有）。
+    ///
+    /// 记「最后一份」而不是只记「没发出去的」，是因为要同时补两个洞：
+    /// · 激活前推的那份会被 guard 拦掉（真机实拍的那个缺陷）
+    /// · **表 app 重装后它那份存档就没了**——装新 TestFlight 必然发生。
+    ///   这时手机侧早就激活过、也早就发成功过，只记 pending 的话没东西可补。
+    /// 只留一份，不攒队列：它本来就是「最新状态」语义。
+    private var latestContext: WatchLinkEnvelope?
+
+    /// 重发最后一份 context。激活完成、手表状态变化（含刚装好 app）时各调一次。
+    /// 内容没变时重发是无害的——表侧激活时会主动读 receivedApplicationContext。
+    private func resendLatestContext() {
+        guard let latest = latestContext else { return }
+        guard let session, session.activationState == .activated, hasCounterpart else { return }
+        do {
+            try session.updateApplicationContext(latest.dictionary)
+            append("→ \(latest.kind) (context 补发)")
+        } catch {
+            append("→ \(latest.kind) (context 补发) 失败：\(error.localizedDescription)")
+        }
+    }
+
     private override init() { super.init() }
 
     public func activate() {
@@ -57,14 +79,27 @@ public final class WatchLink: NSObject, ObservableObject {
     /// 按通道纪律发送。**通道由调用方按语义选**，不在这里替它决定——
     /// 这个选择是有后果的（记组用错通道会静默丢数据），必须在调用点看得见。
     public func send(_ envelope: WatchLinkEnvelope, via channel: WatchLinkChannel) {
-        guard let session, session.activationState == .activated else {
-            append("发送失败：session 未激活 [\(envelope.kind)]")
+        // applicationContext 是「最新状态」，不是队列——所以还没激活时**不能丢**，
+        // 要留住最后一份等激活后补发。
+        //
+        // 这不是防御性补丁，是真机上抓到的缺陷（2026-08-15，owner 手表实拍）：
+        // activate() 是异步的，调用后 activationState 还不是 .activated，
+        // 而 isPaired 按 Apple 文档「只有激活后才有效」。App 启动时 loadToday 推的
+        // 那一份同时撞上这两道 guard 被丢，之后没有任何东西会重推——
+        // 表上就永远停在「正在取计划」。模拟器上没暴露，是因为我在反复重启/切单位/
+        // 开训，每次都重推了一遍。
+        guard let session, session.activationState == .activated, hasCounterpart else {
+            if channel == .applicationContext {
+                latestContext = envelope
+                append("⏸ \(envelope.kind) 暂存（等激活）")
+            } else {
+                append("发送失败：session 未就绪 [\(envelope.kind)]")
+            }
             return
         }
-        // 没有对端就别发。放在这里而不是各调用点：漏一处就是一条静默的失败日志。
-        guard hasCounterpart else { return }
         switch channel {
         case .applicationContext:
+            latestContext = envelope   // 记下来，表 app 重装后要靠它补
             do {
                 try session.updateApplicationContext(envelope.dictionary)
                 append("→ \(envelope.kind) (context)")
@@ -138,7 +173,20 @@ extension WatchLink: WCSessionDelegate {
         guard state == .activated else { return }
         let stored = session.receivedApplicationContext
         if !stored.isEmpty { receive(stored, .applicationContext) }
+
+        // 激活前攒下的那份现在才发得出去。手机侧的第一份处方就走这条路。
+        Task { @MainActor in self.resendLatestContext() }
     }
+
+    #if os(iOS)
+    /// 手表配对状态变化——**用户刚在手表上装好 app** 就走这里。
+    /// 此前 isWatchAppInstalled 是 false，处方被拦在 hasCounterpart 那道 guard 外；
+    /// 装好的这一刻必须补发，否则用户得重启手机 app 才能看到计划。
+    public nonisolated func sessionWatchStateDidChange(_ session: WCSession) {
+        note("手表状态变化（paired=\(session.isPaired) installed=\(session.isWatchAppInstalled)）")
+        Task { @MainActor in self.resendLatestContext() }
+    }
+    #endif
 
     public nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
         note("可达性变化：\(session.isReachable)")

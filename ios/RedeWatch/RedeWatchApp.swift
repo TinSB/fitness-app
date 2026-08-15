@@ -106,6 +106,23 @@ struct TodayWatchView: View {
                     }
                 } else {
                     notice(verbatim: link.isReachable ? "正在取计划" : "在手机上打开 Rede")
+                    // 空态诊断行。**只在没拿到计划时出现**，拿到就消失，不占正常使用的屏幕。
+                    //
+                    // 存在的理由：真机卡在空态时，模拟器复现不出来（2026-08-15 实测：
+                    // 净室冷启动在模拟器上必过，真机必挂）。没有这一行，两端都只能猜。
+                    // 三个值各自指向完全不同的原因：
+                    //   激活 NO      → 表侧 WCSession 就没起来
+                    //   手机端 NO    → 手机上装的那个 Rede 不含表支持（版本不对）
+                    //   激活/手机端 YES 但没计划 → 手机侧确实没推出来
+                    Text(verbatim: "激活 \(link.isActivated ? "YES" : "NO") · 手机端 \(link.hasCounterpart ? "YES" : "NO") · 可达 \(link.isReachable ? "YES" : "NO")")
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                    ForEach(Array(link.log.suffix(6).enumerated()), id: \.offset) { _, line in
+                        Text(verbatim: line)
+                            .font(.system(size: 9, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
                 }
             }
             .padding(.horizontal, 6)
