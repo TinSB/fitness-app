@@ -153,6 +153,16 @@ struct RootTabView: View {
                     // （实测：模拟器里用 simctl 直装表 app，手机侧 WCSession 会报
                     //  counterpart app not installed / reachable: NO，message 通道被守卫正确跳过。）
                     via: .userInfo)
+
+                // 同一次 ping 再走一条 applicationContext。**这不是冗余**：
+                // 两条通道的回程放在一起，表上就能一眼分辨「手机没收到」和
+                // 「手机收到了但某条通道不投递」——只发一条时这两种故障长得一模一样。
+                // applicationContext 还是切片 3 推处方要用的通道，先证明它活着再往上建。
+                WatchLink.shared.send(
+                    WatchLinkEnvelope(kind: WatchLinkKind.pongContext,
+                                      sentAtISO: ISO8601DateFormatter().string(from: Date()),
+                                      body: ["from": "phone"]),
+                    via: .applicationContext)
             }
             WatchLink.shared.activate()
 

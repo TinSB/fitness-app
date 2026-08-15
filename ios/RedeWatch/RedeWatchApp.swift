@@ -53,13 +53,18 @@ struct WatchSmokeView: View {
 
                 Divider()
 
-                // 切片 2：ping 走 message 通道——它正是「可丢的实时态」，
-                // 手机不可达时跳过即可，不需要排队。记组绝不能用这个通道。
+                // ping 走 message 通道——它正是「可丢的实时态」，手机不可达时跳过即可。
+                // 同时再走一发 userInfo：**那是切片 4 记组要用的通道**，
+                // 必须先知道它在这个环境里到底送不送得到，否则记组会建在没验过的路上。
+                // 两发用不同 from，手机日志里能分辨是哪条通道到的。
                 Button {
-                    link.send(WatchLinkEnvelope(kind: WatchLinkKind.ping,
-                                                sentAtISO: ISO8601DateFormatter().string(from: Date()),
-                                                body: ["from": "watch"]),
+                    let now = ISO8601DateFormatter().string(from: Date())
+                    link.send(WatchLinkEnvelope(kind: WatchLinkKind.ping, sentAtISO: now,
+                                                body: ["from": "watch", "via": "message"]),
                               via: .message)
+                    link.send(WatchLinkEnvelope(kind: WatchLinkKind.ping, sentAtISO: now,
+                                                body: ["from": "watch", "via": "userInfo"]),
+                              via: .userInfo)
                 } label: {
                     Text(verbatim: "Ping 手机")
                         .font(.system(size: 14, weight: .semibold))

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7B3C91D42A18E5F6C2000001 /* RedeWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6A0000001 /* RedeWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AA00000000000000000000E2 /* RedeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E1 /* RedeApp.swift */; };
 		AA00000000000000000000E7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000000E6 /* Assets.xcassets */; };
 		BB0000000000000000000F0B /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000F0C /* PrivacyInfo.xcprivacy */; };
@@ -84,6 +85,13 @@
 			remoteGlobalIDString = AA00000000000000000000B1;
 			remoteInfo = Rede;
 		};
+		7B3C91D42A18E5F6C2000003 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AA00000000000000000000A1 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7B3C91D42A18E5F6A000000A;
+			remoteInfo = RedeWatch;
+		};
 		EE00000000000000000000E2 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = AA00000000000000000000A1 /* Project object */;
@@ -94,6 +102,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		7B3C91D42A18E5F6C2000002 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				7B3C91D42A18E5F6C2000001 /* RedeWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EE00000000000000000000D8 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -327,11 +346,13 @@
 				AA00000000000000000000D2 /* Frameworks */,
 				AA00000000000000000000D3 /* Resources */,
 				EE00000000000000000000D8 /* Embed Foundation Extensions */,
+				7B3C91D42A18E5F6C2000002 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				EE00000000000000000000E1 /* PBXTargetDependency */,
+				7B3C91D42A18E5F6C2000004 /* PBXTargetDependency */,
 			);
 			name = Rede;
 			packageProductDependencies = (
@@ -589,6 +610,11 @@
 			isa = PBXTargetDependency;
 			target = AA00000000000000000000B1 /* Rede */;
 			targetProxy = F1000000000000000000000C /* PBXContainerItemProxy */;
+		};
+		7B3C91D42A18E5F6C2000004 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7B3C91D42A18E5F6A000000A /* RedeWatch */;
+			targetProxy = 7B3C91D42A18E5F6C2000003 /* PBXContainerItemProxy */;
 		};
 		EE00000000000000000000E1 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;

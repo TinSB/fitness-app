@@ -10,6 +10,15 @@ import Foundation
 //   · transferUserInfo   —— 表 → 手机的完成组。**排队 + 保证送达**。
 //     记组绝不能用 sendMessage：它在手机锁屏 / app 被杀时静默失败，丢一组就是丢数据。
 //   · sendMessage        —— 只用于可丢的实时态（如休息倒计时对表）。
+//
+// ⚠️ 实测（2026-08-15，表 app embed 之后、配对模拟器上）：
+//   sendMessage 与 applicationContext **两个方向都实跑通了**（表→手机 ping 触发手机
+//   onReceive；手机→表 pongCtx 在表上肉眼可见）。但 **transferUserInfo 两个方向都不投递**：
+//   API 接受、队列被系统收走（发送端 UserInfoTransfers 目录清空）、接收端 delegate 始终不响，
+//   等过两分钟、重启接收 app 都没有。同一个 session、同一套 delegate 上另外两条通道正常，
+//   所以这不是接线问题，是模拟器不支持这条通道。
+//   **后果**：切片 4 记组依赖的正是这条通道，它的送达保证**只能在真机上验**。
+//   不要因为模拟器不通就改用 sendMessage——那会把「丢一组 = 丢数据」重新引回来。
 public enum WatchLinkChannel: String, Sendable, CaseIterable {
     case applicationContext
     case userInfo
@@ -67,4 +76,9 @@ public struct WatchLinkEnvelope: Equatable, Sendable {
 public enum WatchLinkKind {
     public static let ping = "ping"
     public static let pong = "pong"
+    /// 走 applicationContext 的回程。和 pong 分开成两种 kind，是为了让表上的日志
+    /// 直接说出**哪条通道活着**——同名两条就分不出来了。
+    /// applicationContext 只保留最新一份，所以内容必须每次都变（这里靠 sentAtISO），
+    /// 否则系统会当成重复更新丢掉。
+    public static let pongContext = "pongCtx"
 }
