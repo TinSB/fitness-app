@@ -100,13 +100,19 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
         /// 已经和 33 处显示调用点对齐，表上重算一遍迟早两块屏对不上。所以手机把目标前后
         /// 各若干格**连同显示串**一起推过来，表只做一件事：用表冠在格子间选。
         public let adjust: Adjust?
+        /// 休息屏环下那一行「等下做什么」，手机渲染（v3）：「下一组 · 第 3 组 · 60 kg × 6」，
+        /// 或本动作已做完时的「接下来 · 高位下拉」。与手机休息屏 restPreviewText 逐字同源。
+        /// 只在 isResting 时有值；旧手机不带这一位时表退回「下一组 + targetText」——
+        /// 那个退路在动作最后一组休息时会显示「× 0」（targetReps 此时没有建议），所以这一位要有。
+        public let restPreviewText: String?
 
         public init(exerciseId: String, exerciseName: String, setNumber: Int, setTotal: Int,
                     exerciseNumber: Int, exerciseTotal: Int, targetText: String,
                     targetWeightKg: Double, targetReps: Int, targetRir: Double,
                     isResting: Bool, isWarmup: Bool = false,
                     restEndsAt: Date? = nil, restTotalSeconds: Int = 0,
-                    restPausedRemaining: Int? = nil, adjust: Adjust? = nil) {
+                    restPausedRemaining: Int? = nil, adjust: Adjust? = nil,
+                    restPreviewText: String? = nil) {
             self.exerciseId = exerciseId
             self.exerciseName = exerciseName
             self.setNumber = setNumber
@@ -123,6 +129,7 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
             self.restTotalSeconds = restTotalSeconds
             self.restPausedRemaining = restPausedRemaining
             self.adjust = adjust
+            self.restPreviewText = restPreviewText
         }
     }
 
