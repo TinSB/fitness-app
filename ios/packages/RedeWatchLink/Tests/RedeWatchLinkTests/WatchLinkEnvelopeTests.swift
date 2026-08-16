@@ -158,6 +158,21 @@ final class WatchCommandTests: XCTestCase {
         XCTAssertFalse(manual.encoded.flatMap(WatchCommand.init(decoding:))?.auto == true)
     }
 
+    func testSkipSetCarriesReasonAndSetNumberAndLegacyCommandsDecodeWithoutThem() {
+        // v3.2：跳过本组带理由码 + 组号（幂等键）。旧表发来的命令没有这两位，也照样解出来。
+        let skip = WatchCommand(action: .skipSet, exerciseId: "squat", sentAtISO: "t",
+                                reason: "equipmentBusy", setNumber: 2)
+        let back = skip.encoded.flatMap(WatchCommand.init(decoding:))
+        XCTAssertEqual(back?.reason, "equipmentBusy")
+        XCTAssertEqual(back?.setNumber, 2)
+        let legacy = #"{"action":"restAdd30","exerciseId":"squat","auto":false,"sentAtISO":"t"}"#
+        let old = WatchCommand(decoding: Data(legacy.utf8))
+        XCTAssertEqual(old?.action, .restAdd30)
+        XCTAssertNil(old?.reason); XCTAssertNil(old?.setNumber)
+        XCTAssertEqual(WatchCommand(action: .restPauseToggle, exerciseId: "squat", sentAtISO: "t")
+            .encoded.flatMap(WatchCommand.init(decoding:))?.action, .restPauseToggle)
+    }
+
     func testUnknownActionFromANewerWatchDecodesToNilNotCrash() {
         // 向前兼容：更新的表可能发来手机还不认识的命令，安静丢弃。
         let future = #"{"action":"teleport","exerciseId":"squat","auto":false,"sentAtISO":"t"}"#
@@ -186,6 +201,13 @@ final class WatchActivePayloadTests: XCTestCase {
         XCTAssertEqual(back?.dateISO, "2026-08-15")
         XCTAssertNil(back?.active)
         XCTAssertNil(back?.localeCode)
+        XCTAssertNil(back?.completedSetsToday)
+    }
+
+    func testCompletedSetsTodaySurvivesRoundTrip() {
+        // v3.2：今天练完了 → 表上清单头显示「今天练完了 · N 组」。
+        let rx = WatchPrescription(dateISO: "2026-08-16", dayTitle: "上肢", exercises: [], completedSetsToday: 22)
+        XCTAssertEqual(rx.encoded.flatMap(WatchPrescription.init(decoding:))?.completedSetsToday, 22)
     }
 
     // MARK: - v2：表上可调三个量

@@ -48,5 +48,28 @@ extension RedeStrings {
     public var watchFetchingPlan: String { t2w("正在取计划", "Getting today's plan") }
     public var watchOpenPhone: String { t2w("在 iPhone 上打开 Rede", "Open Rede on iPhone") }
 
+    // MARK: - 练完态（v3.2）
+
+    /// 清单头：「今天练完了 · 22 组」/「Done for today · 22 sets」。
+    public func watchDoneToday(sets: Int) -> String {
+        locale == .zh ? "今天练完了 · \(sets) 组" : (sets == 1 ? "Done for today · 1 set" : "Done for today · \(sets) sets")
+    }
+    public var watchDoneHint: String { t2w("总结在 iPhone 上", "Summary is on your iPhone") }
+
+    // MARK: - 健康写入权限门（v3.2）：没有它手腕一放下 app 就被挂起，表就没法用
+
+    public var watchHealthGateTitle: String { t2w("先允许写入健身记录", "Allow workout writing first") }
+    public var watchHealthGateBody: String {
+        t2w("手腕放下也能计时、到点震动，并把这一场记进活动圆环",
+            "Keeps timing with your wrist down, buzzes when rest ends, and adds this workout to your rings")
+    }
+    public var watchHealthGateAllow: String { t2w("允许", "Allow") }
+    /// 已拒绝：系统不会再弹授权框，只能去设置里开。两条路都给。
+    public var watchHealthGateDeniedBody: String {
+        t2w("在手表「设置 → 隐私与安全性 → 健康」或 iPhone「健康」App 的「共享 → App」里允许 Rede 写入健身记录",
+            "Allow Rede to write Workouts in watch Settings → Privacy & Security → Health, or in the iPhone Health app under Sharing → Apps")
+    }
+    public var watchHealthGateRecheck: String { t2w("已允许，重新检查", "Allowed, check again") }
+
     private func t2w(_ zh: String, _ en: String) -> String { locale == .zh ? zh : en }
 }

@@ -38,6 +38,17 @@ struct RedeWatchApp: App {
 @Observable
 final class WatchPrescriptionStore {
     private(set) var prescription: WatchPrescription?
+    /// 手机发出这份处方的时刻。进行中的训练是否「过期」看它，不看日历日：
+    /// 跨午夜的一场训练不能在 00:00 被判成昨天的残影，而手机某天中途放弃、之后没再开过的
+    /// 那份 context 会一直带着那天的第 N 组——手机在训练中每记一组、每段休息都会推，
+    /// 8 小时没推过就是没人在练了。
+    private(set) var sentAt: Date?
+
+    /// 进行中的训练是否已过期（v3.2）：距手机最后一次推送超过 8 小时。
+    var activeIsStale: Bool {
+        guard prescription?.active != nil, let sentAt else { return false }
+        return Date().timeIntervalSince(sentAt) > 8 * 3600
+    }
 
     func apply(_ envelope: WatchLinkEnvelope) {
         guard envelope.kind == WatchLinkKind.prescription,
@@ -45,6 +56,7 @@ final class WatchPrescriptionStore {
               let rx = WatchPrescription(decoding: data)
         else { return }   // 未知 kind / 载荷看不懂：安静丢弃，保留上一份（向前兼容）
         prescription = rx
+        sentAt = ISO8601DateFormatter().date(from: envelope.sentAtISO) ?? Date()
     }
 
     /// 表自己那几个词的语言。**跟随手机 app**（载荷里的 localeCode）——动作名、目标串都是
@@ -83,9 +95,11 @@ final class WatchPrescriptionStore {
     /// 手机够不着就让它失败（按钮已按可达性置灰），不排队等一个过期的执行。
     /// 表永不自己推进——这里只是把用户的意图（或「倒计时走完了」这个事实）告诉手机，
     /// 下一步仍由手机的引擎决定后推回来。
-    func send(_ action: WatchCommand.Action, active: WatchPrescription.Active, auto: Bool = false) {
+    func send(_ action: WatchCommand.Action, active: WatchPrescription.Active, auto: Bool = false,
+              reason: String? = nil, setNumber: Int? = nil) {
         let now = ISO8601DateFormatter().string(from: Date())
-        let command = WatchCommand(action: action, exerciseId: active.exerciseId, auto: auto, sentAtISO: now)
+        let command = WatchCommand(action: action, exerciseId: active.exerciseId, auto: auto, sentAtISO: now,
+                                   reason: reason, setNumber: setNumber)
         guard let payload = command.encoded else { return }
         WatchLink.shared.send(
             WatchLinkEnvelope(kind: WatchLinkKind.command, sentAtISO: now, payload: payload),
@@ -116,10 +130,35 @@ struct TodayWatchView: View {
     }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+
+    /// 权限门（v3.2，owner 拍板：整个表 app 以「健身记录」写入权限为前提）。
+    /// 没有它 HKWorkoutSession 起不来，手腕一放下 app 就被挂起——到点不震、自动推进不发，
+    /// 而屏幕上什么都不会说。与其让功能静默失效，不如在门口把话说清楚。
+    /// 截图钩子跳过这道门（-watchPreview gate 单独预览门本身）。
+    private var needsHealthGate: Bool {
+        if WatchPreview.isActive { return WatchPreview.previewsGate }
+        return workout.workoutWriteAuthorized != true
+    }
+
+    /// 进行中的训练。**过期的不算**：手机某天中途放弃、之后没再开过，表上那份 context 里
+    /// 还带着那天的第 N 组——不判就会一直冒充「进行中」（v3.2）。判据是手机最后一次推送
+    /// 距今 8 小时（见 activeIsStale），不是日历日：跨午夜的训练不能在 00:00 被切回清单。
+    private var liveActive: WatchPrescription.Active? {
+        guard let active = store.prescription?.active, !store.activeIsStale else { return nil }
+        return active
+    }
 
     var body: some View {
+        // NavigationStack 只为了给记组屏的角落钮（.toolbar）一个宿主；不设标题，不推页。
+        NavigationStack {
         ZStack {
-            if let active = store.prescription?.active {
+            if needsHealthGate {
+                HealthGateView(denied: workout.workoutWriteAuthorized == false, strings: s) {
+                    Task { await workout.requestAuthorization() }
+                }
+                .transition(WatchMotion.morphTransition(reduceMotion: reduceMotion))
+            } else if let active = liveActive {
                 // 训练进行时：这一屏只做一件事——记当前这一组。
                 //
                 // **故意不套 ScrollView**，两个理由：
@@ -135,14 +174,16 @@ struct TodayWatchView: View {
                     .transition(WatchMotion.morphTransition(reduceMotion: reduceMotion))
             }
         }
-        // 清单 ⇄ 训练：原地 morph（手机 hero 的 set ⇄ rest 同款 0.22s），不是硬切。
-        .animation(WatchMotion.morph, value: store.prescription?.active != nil)
+        // 清单 ⇄ 训练 ⇄ 权限门：原地 morph（手机 hero 的 set ⇄ rest 同款 0.22s），不是硬切。
+        .animation(WatchMotion.morph, value: "\(needsHealthGate)#\(liveActive != nil)")
         // 整面板：一块连续锻面，铺满到屏幕边（含圆角），数字直接蚀刻在上面。
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(WatchPalette.base.ignoresSafeArea())
+        }
         .task {
-            // 截图钩子：-watchPreview list|set|warmup|rest|bodyweight [-watchPreviewLocale en]
-            // 不配对也能在各尺寸模拟器上看四种状态。**不激活通道**，免得配对机的真处方把预览冲掉。
+            workout.refreshAuthorization()
+            // 截图钩子：-watchPreview list|set|warmup|rest|bodyweight|done|gate [-watchPreviewLocale en]
+            // 不配对也能在各尺寸模拟器上看各种状态。**不激活通道**，免得配对机的真处方把预览冲掉。
             if let preview = WatchPreview.fromArguments() {
                 store.apply(preview)
                 return
@@ -152,17 +193,34 @@ struct TodayWatchView: View {
             WatchLink.shared.onReceive = { [store] envelope, _ in store.apply(envelope) }
             link.activate()
         }
+        // 用户可能刚去设置里开了权限再回来：回前台重读一次，门自己开。
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { workout.refreshAuthorization() }
+        }
         // 切片 6：手机说在练 → 拉起 HKWorkoutSession（否则放下手腕几秒 app 就被挂起，
         // 倒计时死在半路）；手机说练完 → 收掉并写回健康。
         // 用 onChange 而不是在 body 里调：sync 虽然幂等，但每帧调一次是噪音。
-        .onChange(of: store.prescription?.active != nil, initial: true) { _, active in
-            guard !WatchPreview.isActive else { return }   // 截图钩子不拉起 HKWorkoutSession（会弹健康授权）
-            workout.sync(trainingActive: active)
+        // 权限门没过时不拉（起不来）；门一开（authorized 翻 true）这条 onChange 的键也变，会立刻补拉。
+        .onChange(of: "\(liveActive != nil)#\(workout.workoutWriteAuthorized == true)", initial: true) { _, _ in
+            guard !WatchPreview.isActive, workout.workoutWriteAuthorized == true else { return }
+            workout.sync(trainingActive: liveActive != nil)
         }
     }
 
+    /// 空态诊断行开关：长按空态提示 1 秒切换。**默认藏起来**——上架版不能让新用户看到原始日志，
+    /// 但真机卡在空态时它是唯一的线索（2026-08-15 实测：净室冷启动模拟器必过、真机必挂），所以不删。
+    @State private var showDiagnostics = false
+
+    /// 今天练完了（v3.2）：手机记录里今天已有 N 组、且没有进行中的训练。
+    private var doneSetsToday: Int? {
+        guard let rx = store.prescription, !isStale, liveActive == nil,
+              let sets = rx.completedSetsToday, sets > 0 else { return nil }
+        return sets
+    }
+
     /// 没在训练：今天的清单。开放行 + 刻线（整面板公理 §12.3「动作列表 = 开放行，禁描边按钮堆」），
-    /// 第一行带一条 ember 竖线——Emberline 指向今天要开始的地方，与手机今日页同一手势。
+    /// 第一行带一条 ember 竖线——Emberline 指向今天要开始的地方，与手机今日页同一手势；
+    /// 练完了就不画（没有「下一步」了）。
     private var idleList: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -172,16 +230,21 @@ struct TodayWatchView: View {
                         // 过期不隐藏内容——健身房里「看得见但标明是旧的」比空白有用得多。
                         notice(verbatim: s.watchStalePlan(dateISO: rx.dateISO))
                     }
+                    if let sets = doneSetsToday {
+                        doneHeader(sets: sets)
+                    }
                     if rx.exercises.isEmpty {
                         notice(verbatim: s.watchRestDay)
                     } else {
                         ForEach(Array(rx.exercises.enumerated()), id: \.element.exerciseId) { index, item in
-                            exerciseRow(item, isNext: index == 0 && !isStale)
+                            exerciseRow(item, isNext: index == 0 && !isStale && doneSetsToday == nil)
                         }
                     }
                 } else {
                     notice(verbatim: link.isReachable ? s.watchFetchingPlan : s.watchOpenPhone)
-                    // 空态诊断行。**只在没拿到计划时出现**，拿到就消失，不占正常使用的屏幕。
+                        .contentShape(Rectangle())
+                        .onLongPressGesture(minimumDuration: 1) { showDiagnostics.toggle() }
+                    // 空态诊断行。**只在没拿到计划、且长按提示语打开时出现**。
                     //
                     // 存在的理由：真机卡在空态时，模拟器复现不出来（2026-08-15 实测：
                     // 净室冷启动在模拟器上必过，真机必挂）。没有这一行，两端都只能猜。
@@ -189,19 +252,37 @@ struct TodayWatchView: View {
                     //   激活 NO      → 表侧 WCSession 就没起来
                     //   手机端 NO    → 手机上装的那个 Rede 不含表支持（版本不对）
                     //   激活/手机端 YES 但没计划 → 手机侧确实没推出来
-                    Text(verbatim: "激活 \(link.isActivated ? "YES" : "NO") · 手机端 \(link.hasCounterpart ? "YES" : "NO") · 可达 \(link.isReachable ? "YES" : "NO")")
-                        .font(.system(size: 9, design: .monospaced))
-                        .foregroundStyle(WatchPalette.t3)
-                    ForEach(Array(link.log.suffix(6).enumerated()), id: \.offset) { _, line in
-                        Text(verbatim: line)
+                    if showDiagnostics {
+                        Text(verbatim: "激活 \(link.isActivated ? "YES" : "NO") · 手机端 \(link.hasCounterpart ? "YES" : "NO") · 可达 \(link.isReachable ? "YES" : "NO")")
                             .font(.system(size: 9, design: .monospaced))
                             .foregroundStyle(WatchPalette.t3)
-                            .lineLimit(2)
+                        ForEach(Array(link.log.suffix(6).enumerated()), id: \.offset) { _, line in
+                            Text(verbatim: line)
+                                .font(.system(size: 9, design: .monospaced))
+                                .foregroundStyle(WatchPalette.t3)
+                                .lineLimit(2)
+                        }
                     }
                 }
             }
             .padding(.horizontal, 6)
         }
+    }
+
+    /// 练完态：一行结论 + 一行去处。不用橙色（橙色只表示下一步，练完了没有下一步）。
+    private func doneHeader(sets: Int) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(verbatim: s.watchDoneToday(sets: sets))
+                .font(.system(size: 15, weight: .semibold))
+                .monospacedDigit()
+                .foregroundStyle(WatchPalette.t1)
+            Text(verbatim: s.watchDoneHint)
+                .font(.system(size: 11))
+                .foregroundStyle(WatchPalette.t3)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 8)
+        .overlay(alignment: .bottom) { Rectangle().fill(WatchPalette.hair).frame(height: 1) }
     }
 
     private var header: some View {
@@ -255,6 +336,36 @@ struct TodayWatchView: View {
     }
 }
 
+/// 健康写入权限门（v3.2）。整个表 app 以「健身记录」写入权限为前提（owner 拍板）：
+/// 没有它 HKWorkoutSession 起不来，手腕一放下 app 就被挂起，到点不震、自动推进不发。
+/// 一句为什么 + 一颗「允许」；被拒绝过的系统不会再弹框，只能去设置里开——把两条路都写出来。
+struct HealthGateView: View {
+    let denied: Bool
+    let strings: RedeStrings
+    let onAllow: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                InstrumentCaption(text: "REDE")
+                Text(verbatim: strings.watchHealthGateTitle)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(WatchPalette.t1)
+                    .padding(.top, 2)
+                Text(verbatim: denied ? strings.watchHealthGateDeniedBody : strings.watchHealthGateBody)
+                    .font(.system(size: 12))
+                    .foregroundStyle(WatchPalette.t3)
+                    .padding(.top, 6)
+                EmbWatchButton(icon: denied ? "arrow.clockwise" : "checkmark",
+                               title: denied ? strings.watchHealthGateRecheck : strings.watchHealthGateAllow,
+                               action: onAllow)
+                    .padding(.top, 12)
+            }
+            .padding(.horizontal, 6)
+        }
+    }
+}
+
 /// 记组屏（切片 4 → v2 三个量可改 → v3 锻铁仪表化）。表上唯一会改动落盘数据的界面。
 ///
 /// 造型（v3，2026-08-15）：**一块连续锻面上的三个读数 + 一条刻度轨 + 一颗锻面主按钮**。
@@ -292,6 +403,8 @@ struct ActiveSetView: View {
     @State private var rirIdx: Double = 3
     /// 本地乐观态：点完立刻变，不等手机把新一组推回来。
     @State private var justLogged = false
+    /// 「更多」页（v3.2）：跳过本组的理由。从记组屏左上角的角落钮进。
+    @State private var showMore = false
     /// 排队中的组数 + 可达性。手机够不着时「已记录」是半个真话——组确实记下了，但还没过去。
     @ObservedObject private var link = WatchLink.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -443,6 +556,26 @@ struct ActiveSetView: View {
         }
         // 「已记录」等手机推回来的这几百毫秒：读数簇退到 0.6，与按钮一起表示「已提交、别再动」。
         .animation(WatchMotion.tint, value: justLogged)
+        // 「更多」：watchOS 10 的角落钮（时间对面那一角），不占记组屏一像素竖向空间。
+        // 里面只有一件事：跳过本组（带手机同一套理由码）。手机不可达时不给按。
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    showMore = true
+                } label: {
+                    Image(systemName: "ellipsis")
+                }
+                .disabled((!link.isReachable && !WatchPreview.isActive) || justLogged)
+                .accessibilityLabel(Text(verbatim: s.moreActions))
+            }
+        }
+        .sheet(isPresented: $showMore) {
+            SkipSetSheet(strings: s) { reason in
+                showMore = false
+                store.send(.skipSet, active: active, reason: reason, setNumber: active.setNumber)
+                WKInterfaceDevice.current().play(.click)
+            }
+        }
     }
 
     /// 指针在刻度轨上的 x：选中列的中心。列宽与读数簇布局同一口径——有重量轴时
@@ -577,6 +710,40 @@ private struct CrownBinding: ViewModifier {
     }
 }
 
+/// 「更多 → 跳过本组」（v3.2）。与手机「更多」面同一份理由码与文案；开放行 + 刻线（§12.3）。
+/// 只放跳过本组：换动作、跳过整个动作、登记不适仍留手机（owner 拍板）。
+struct SkipSetSheet: View {
+    let strings: RedeStrings
+    let onPick: (String) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    private let reasons = ["equipmentBusy", "painDiscomfort", "fatigue", "timeShort"]
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                InstrumentCaption(text: strings.skipSetAction)
+                    .padding(.bottom, 4)
+                ForEach(reasons, id: \.self) { code in
+                    Button {
+                        onPick(code)
+                    } label: {
+                        Text(verbatim: strings.skipReasonLabel(code))
+                            .font(.system(size: 15))
+                            .foregroundStyle(WatchPalette.t1)
+                            .frame(maxWidth: .infinity, minHeight: 38, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.watchPressableText)
+                    .overlay(alignment: .bottom) { Rectangle().fill(WatchPalette.hair).frame(height: 1) }
+                }
+            }
+            .padding(.horizontal, 6)
+        }
+        .background(WatchPalette.base.ignoresSafeArea())
+    }
+}
+
 /// 休息倒计时（切片 5 → v2 加 +30 / 下一组 → v3 环形）。
 ///
 /// 造型：**一枚 ember 进度环，倒计时蚀刻在环心**，与灵动岛胶囊「左环右数」、锁屏卡同一家族
@@ -670,7 +837,7 @@ struct RestCountdownView: View {
 
             // 两颗圆钮走 message，只在手机够得着时能按。+30 是次级，下一组是主动作
             //（ember 轮廓）——与手机休息屏「+30s 钢钮 / 下一组 锻面主钮」的主次一致。
-            HStack(spacing: 14) {
+            HStack(spacing: 10) {
                 MachinedRoundButton(enabled: link.isReachable && !luminanceReduced, action: {
                     store.send(.restAdd30, active: active)
                     WKInterfaceDevice.current().play(.click)
@@ -681,6 +848,16 @@ struct RestCountdownView: View {
                         .lineLimit(1).minimumScaleFactor(0.7)
                 }
                 .accessibilityLabel(Text(verbatim: s.restAdd30))
+                // 暂停 / 继续（v3.2）：暂停时环与数字冻结、标题变「休息 · 已暂停」，钮变 ▶。
+                MachinedRoundButton(enabled: link.isReachable && !luminanceReduced, action: {
+                    store.send(.restPauseToggle, active: active)
+                    WKInterfaceDevice.current().play(.click)
+                }) {
+                    Image(systemName: isPaused ? "play.fill" : "pause.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .contentTransition(.symbolEffect(.replace))
+                }
+                .accessibilityLabel(Text(verbatim: isPaused ? s.restResume : s.restPause))
                 MachinedRoundButton(primary: true, enabled: link.isReachable && !luminanceReduced, action: {
                     store.send(.restSkip, active: active)
                     WKInterfaceDevice.current().play(.click)
@@ -721,6 +898,12 @@ struct RestCountdownView: View {
 @MainActor
 enum WatchPreview {
     static let isActive = CommandLine.arguments.contains("-watchPreview")
+    /// -watchPreview gate：预览权限门本身。
+    static let previewsGate: Bool = {
+        let args = CommandLine.arguments
+        guard let i = args.firstIndex(of: "-watchPreview"), args.indices.contains(i + 1) else { return false }
+        return args[i + 1] == "gate"
+    }()
 
     static func fromArguments(_ args: [String] = CommandLine.arguments) -> WatchLinkEnvelope? {
         guard let i = args.firstIndex(of: "-watchPreview"), args.indices.contains(i + 1) else { return nil }
@@ -768,7 +951,8 @@ enum WatchPreview {
         default: active = nil
         }
         let rx = WatchPrescription(dateISO: today, dayTitle: zh ? "上肢" : "Upper", exercises: items,
-                                   active: active, localeCode: localeCode)
+                                   active: active, localeCode: localeCode,
+                                   completedSetsToday: args[i + 1] == "done" ? 22 : nil)
         guard let payload = rx.encoded else { return nil }
         return WatchLinkEnvelope(kind: WatchLinkKind.prescription, sentAtISO: today, payload: payload)
     }

@@ -1,0 +1,4 @@
+/* HealthKit 授权页两条用途串（表 target）。构建设置里的 INFOPLIST_KEY_ 值是中文基线，
+   这里给英文系统用户；zh-Hans.lproj 里同名文件是中文。两处与构建设置三份同改。 */
+"NSHealthShareUsageDescription" = "Rede uses heart rate and activity data to record this strength session.";
+"NSHealthUpdateUsageDescription" = "Rede saves your finished strength session to Health so it counts toward your Activity rings.";

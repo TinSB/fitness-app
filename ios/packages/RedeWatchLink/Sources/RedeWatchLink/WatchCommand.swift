@@ -19,8 +19,12 @@ public struct WatchCommand: Codable, Equatable, Sendable {
         case restAdd30
         /// 结束这段休息、进下一组（= 手机休息屏的「下一组」；也用于表上倒计时自然走完）。
         case restSkip
+        /// 暂停 / 继续这段休息（= 手机休息屏的「暂停 / 继续」）。v3.2。
+        case restPauseToggle
         /// 跳过这个动作剩余的全部热身步（= 手机热身态的「跳过热身」）。
         case skipWarmup
+        /// 跳过当前这一组（= 手机「更多 → 跳过本组」，带同一套理由码）。v3.2。
+        case skipSet
     }
 
     public let action: Action
@@ -33,12 +37,21 @@ public struct WatchCommand: Codable, Equatable, Sendable {
     public let auto: Bool
     /// 表侧发出时刻（ISO8601）。只作日志。
     public let sentAtISO: String
+    /// skipSet 的理由码（SetSkipReason.rawValue：equipmentBusy / painDiscomfort / fatigue / timeShort）。
+    /// 与手机同一套码，手机侧解不出的码一律丢弃，不猜。其他命令为 nil。
+    public let reason: String?
+    /// skipSet 针对的组号（1-based）——幂等键：跳过是会改落盘事实的动作，
+    /// 表侧滞后一拍的重复命令不能把下一组也跳掉。其他命令为 nil。
+    public let setNumber: Int?
 
-    public init(action: Action, exerciseId: String, auto: Bool = false, sentAtISO: String) {
+    public init(action: Action, exerciseId: String, auto: Bool = false, sentAtISO: String,
+                reason: String? = nil, setNumber: Int? = nil) {
         self.action = action
         self.exerciseId = exerciseId
         self.auto = auto
         self.sentAtISO = sentAtISO
+        self.reason = reason
+        self.setNumber = setNumber
     }
 
     public var encoded: Data? { try? JSONEncoder().encode(self) }

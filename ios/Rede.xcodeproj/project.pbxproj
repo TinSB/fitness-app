@@ -10,6 +10,7 @@
 		7B3C91D42A18E5F6A0000003 /* RedeWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6A0000002 /* RedeWatchApp.swift */; };
 		7B3C91D42A18E5F6C5000002 /* WorkoutSessionKeeper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6C5000001 /* WorkoutSessionKeeper.swift */; };
 		7B3C91D42A18E5F6D0000002 /* WatchTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6D0000001 /* WatchTheme.swift */; };
+		7B3C91D42A18E5F6D1000004 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6D1000001 /* InfoPlist.strings */; };
 		7B3C91D42A18E5F6A0000020 /* RedeL10n in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000010 /* RedeL10n */; };
 		7B3C91D42A18E5F6A0000021 /* RedeDomain in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000011 /* RedeDomain */; };
 		7B3C91D42A18E5F6A0000022 /* RedeDataHealth in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6A0000012 /* RedeDataHealth */; };
@@ -137,6 +138,8 @@
 		7B3C91D42A18E5F6A0000002 /* RedeWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeWatchApp.swift; sourceTree = "<group>"; };
 		7B3C91D42A18E5F6C5000001 /* WorkoutSessionKeeper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSessionKeeper.swift; sourceTree = "<group>"; };
 		7B3C91D42A18E5F6D0000001 /* WatchTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTheme.swift; sourceTree = "<group>"; };
+		7B3C91D42A18E5F6D1000002 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		7B3C91D42A18E5F6D1000003 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		7B3C91D42A18E5F6C3000001 /* WatchLoggedSetIntakeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchLoggedSetIntakeTests.swift; sourceTree = "<group>"; };
 		7B3C91D42A18E5F6C4000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A100000000000000000000E1 /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
@@ -255,6 +258,7 @@
 				7B3C91D42A18E5F6C5000001 /* WorkoutSessionKeeper.swift */,
 				7B3C91D42A18E5F6D0000001 /* WatchTheme.swift */,
 				7B3C91D42A18E5F6C4000001 /* Assets.xcassets */,
+				7B3C91D42A18E5F6D1000001 /* InfoPlist.strings */,
 			);
 			path = RedeWatch;
 			sourceTree = "<group>";
@@ -520,6 +524,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7B3C91D42A18E5F6C4000002 /* Assets.xcassets in Resources */,
+				7B3C91D42A18E5F6D1000004 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -645,6 +650,15 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
+		7B3C91D42A18E5F6D1000001 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				7B3C91D42A18E5F6D1000002 /* en */,
+				7B3C91D42A18E5F6D1000003 /* zh-Hans */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
 		BB0000000000000000000F20 /* InfoPlist.strings */ = {
 			isa = PBXVariantGroup;
 			children = (

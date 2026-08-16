@@ -21,9 +21,38 @@ final class WorkoutSessionKeeper: NSObject, ObservableObject {
     /// 出错就记一行，不弹窗。表上练到一半弹权限失败的框，比没有 session 还糟。
     @Published private(set) var lastError: String?
 
+    /// 「健身记录」写入权限（v3.2，owner 拍板：**整个表 app 都以它为前提**）。
+    /// nil = 系统还没问过；false = 用户拒绝过（系统不会再弹框，只能去设置里开）；true = 已允许。
+    /// 只看 share 状态：HealthKit 对写入类型如实报告，读类型出于隐私永远报 notDetermined。
+    /// 没有健康数据的设备（不会有，表上恒有）视为已允许——不能因为一个查不到的状态把表变砖。
+    @Published private(set) var workoutWriteAuthorized: Bool? = nil
+
     private let store = HKHealthStore()
     private var session: HKWorkoutSession?
     private var builder: HKLiveWorkoutBuilder?
+
+    /// 重读权限状态：启动时、回到前台时（用户可能刚去设置里开了）、请求授权之后。
+    func refreshAuthorization() {
+        guard HKHealthStore.isHealthDataAvailable() else { workoutWriteAuthorized = true; return }
+        switch store.authorizationStatus(for: HKObjectType.workoutType()) {
+        case .sharingAuthorized: workoutWriteAuthorized = true
+        case .sharingDenied: workoutWriteAuthorized = false
+        case .notDetermined: workoutWriteAuthorized = nil
+        @unknown default: workoutWriteAuthorized = nil
+        }
+    }
+
+    /// 弹系统授权框（只在还没问过时会真的弹；拒绝过的直接返回，状态照旧 false）。
+    /// 由权限门屏的「允许」按钮触发——用户已经读过一句为什么，这个询问才有上下文。
+    func requestAuthorization() async {
+        let read: Set<HKObjectType> = [HKQuantityType(.heartRate), HKQuantityType(.activeEnergyBurned)]
+        do {
+            try await store.requestAuthorization(toShare: [HKObjectType.workoutType()], read: read)
+        } catch {
+            lastError = "健康授权失败：\(error.localizedDescription)"
+        }
+        refreshAuthorization()
+    }
 
     /// 跟随手机的训练状态。**幂等**：重复调同一状态不做任何事——
     /// 处方每次推送都会调到这里（手机每记一组就推一次），不能每次都重启 session。

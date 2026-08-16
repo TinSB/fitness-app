@@ -264,6 +264,60 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         XCTAssertEqual(store.flow?.phase, .resting)
     }
 
+    func testRestPauseToggleFreezesAndResumesTheCountdown() {
+        let store = makeRestingStore()
+        XCTAssertFalse(store.restIsPaused)
+        store.applyWatchCommand(command(.restPauseToggle))
+        XCTAssertTrue(store.restIsPaused)
+        store.applyWatchCommand(command(.restPauseToggle))
+        XCTAssertFalse(store.restIsPaused)
+        XCTAssertEqual(store.flow?.phase, .resting, "暂停 / 继续不改训练阶段")
+    }
+
+    func testRestPauseToggleIsIgnoredWhenNotResting() {
+        let store = makeStore(); finishWarmup(store)
+        store.applyWatchCommand(command(.restPauseToggle))
+        XCTAssertFalse(store.restIsPaused)
+    }
+
+    func testSkipSetSkipsExactlyTheSetTheWatchWasLookingAt() {
+        let store = makeStore(); finishWarmup(store)
+        XCTAssertEqual(store.flow?.progress.setNumber, 1)
+        store.applyWatchCommand(WatchCommand(action: .skipSet, exerciseId: "bench-press", sentAtISO: "t",
+                                             reason: "equipmentBusy", setNumber: 1))
+        XCTAssertEqual(store.flow?.skippedInCurrentExercise, 1)
+        XCTAssertEqual(completedCount(store), 0, "跳过不落完成组")
+    }
+
+    func testSkipSetWithStaleSetNumberOrUnknownReasonIsDropped() {
+        // 组号是幂等键：表侧滞后一拍的重复命令不能把下一组也跳掉；理由码解不出就丢，不猜。
+        let store = makeStore(); finishWarmup(store)
+        store.applyWatchCommand(WatchCommand(action: .skipSet, exerciseId: "bench-press", sentAtISO: "t",
+                                             reason: "equipmentBusy", setNumber: 1))
+        store.applyWatchCommand(WatchCommand(action: .skipSet, exerciseId: "bench-press", sentAtISO: "t",
+                                             reason: "equipmentBusy", setNumber: 1))   // 重复：手机已在等第 2 组
+        XCTAssertEqual(store.flow?.skippedInCurrentExercise, 1)
+        store.applyWatchCommand(WatchCommand(action: .skipSet, exerciseId: "bench-press", sentAtISO: "t",
+                                             reason: "teleported", setNumber: 2))      // 未知理由码
+        XCTAssertEqual(store.flow?.skippedInCurrentExercise, 1)
+        store.applyWatchCommand(WatchCommand(action: .skipSet, exerciseId: "bench-press", sentAtISO: "t",
+                                             reason: "fatigue", setNumber: nil))       // 没带组号
+        XCTAssertEqual(store.flow?.skippedInCurrentExercise, 1)
+    }
+
+    func testSkipSetIsIgnoredWhileWarmingUpOrResting() {
+        let warm = makeStore()
+        XCTAssertTrue(warm.flow?.isWarmingUp == true)
+        warm.applyWatchCommand(WatchCommand(action: .skipSet, exerciseId: "bench-press", sentAtISO: "t",
+                                            reason: "fatigue", setNumber: 1))
+        XCTAssertEqual(warm.flow?.skippedInCurrentExercise, 0)
+        let resting = makeRestingStore()
+        resting.applyWatchCommand(WatchCommand(action: .skipSet, exerciseId: "bench-press", sentAtISO: "t",
+                                               reason: "fatigue", setNumber: 2))
+        XCTAssertEqual(resting.flow?.skippedInCurrentExercise, 0)
+        XCTAssertEqual(resting.flow?.phase, .resting)
+    }
+
     func testSkipWarmupJumpsToFirstWorkingSet() {
         let store = makeStore()
         XCTAssertTrue(store.flow?.isWarmingUp == true)
