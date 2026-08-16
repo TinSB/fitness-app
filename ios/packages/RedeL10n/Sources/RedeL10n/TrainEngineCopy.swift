@@ -44,14 +44,14 @@ extension RedeStrings {
         case "painReported":
             return locale == .zh ? "已登记不适，本组先降一档" : "Discomfort noted, easing this set"
         default:
-            return locale == .zh ? "按上组表现延续" : "Carrying your last set forward"
+            // 没有真正的理由（照计划 / 照上组延续）就不说话。「按上组表现延续」是一句什么都
+            // 没告诉用户的填充（owner 2026-08-16 截图指出）；hero 已经把目标写在那了。空串 = 视图不画这一行。
+            return ""
         }
     }
 
-    /// 首组（还没有「上一组」）的 why 行。
-    public var firstSetWhy: String {
-        locale == .zh ? "按计划目标开始" : "Starting at plan target"
-    }
+    /// 首组（还没有「上一组」）的 why 行：空——「按计划目标开始」同样是填充，hero 已经在说这件事。
+    public var firstSetWhy: String { "" }
 
     /// Hold 按钮：未开 "保持 60" / 已开 "保持中 60"。
     public func holdLabel(kg: String, holding: Bool) -> String {
@@ -67,11 +67,6 @@ extension RedeStrings {
 
     /// 键盘工具条提交键（decimal 键盘无回车）。
     public var adjustDone: String { locale == .zh ? "完成" : "Done" }
-
-    /// 快改入口的一次性提示（FR-TR2 可见性；用过即不再显示）。
-    public var adjustDiscoverHint: String {
-        locale == .zh ? "点重量可调整　之后的建议随之更新" : "Tap the weight to adjust. Suggestions follow your change"
-    }
 
     // MARK: - 休息态
 
@@ -139,7 +134,7 @@ extension RedeStrings {
         case "lastSetNearFailure": return locale == .zh ? "上组接近力竭，本组稳住次数" : "Last set near failure, hold your reps"
         case "belowRepFloor": return locale == .zh ? "上组次数偏低，本组稳住" : "Reps fell short, steady this set"
         case "painReported": return locale == .zh ? "已登记不适，本组放缓" : "Discomfort noted, ease this set"
-        default: return locale == .zh ? "尽力做，记录实际次数" : "Full effort, log your actual reps"
+        default: return ""   // 同 nextSetWhy：没有真理由就不说话
         }
     }
 
@@ -159,11 +154,6 @@ extension RedeStrings {
         locale == .zh ? "打勾后 · 下一组 × \(reps)" : "After log · next × \(reps)"
     }
 
-    /// 快改入口提示（自重）：点次数可调整。
-    public var adjustDiscoverHintBodyweight: String {
-        locale == .zh ? "点次数可调整　之后的建议随之更新" : "Tap the reps to adjust. Suggestions follow your change"
-    }
-
     // MARK: - 辅助器械 train 文案（wave-9：有重量轴=辅助量；引擎已翻方向，文案不反读、只加「辅助」）
 
     /// 下一组 why（辅助）：力竭/挣扎 = 加辅助（更轻=安全）；引擎已把方向翻好，这里如实叙述「加辅助」。
@@ -172,7 +162,7 @@ extension RedeStrings {
         case "lastSetNearFailure": return locale == .zh ? "上组接近力竭，本组加辅助一档" : "Near failure, adding assist this set"
         case "belowRepFloor": return locale == .zh ? "上组次数掉出区间，本组加辅助一档" : "Reps fell short, adding assist this set"
         case "painReported": return locale == .zh ? "已登记不适，本组加辅助一档" : "Discomfort noted, adding assist this set"
-        default: return locale == .zh ? "按上组表现延续" : "Carrying your last set forward"
+        default: return ""   // 同 nextSetWhy：没有真理由就不说话
         }
     }
 
@@ -192,11 +182,6 @@ extension RedeStrings {
     /// 后果预演（辅助）：下一组 辅助 重（引擎已算好下一档辅助量，直接显示，不反读）。
     public func adjustPreviewNextAssisted(kg: String) -> String {
         locale == .zh ? "打勾后 · 下一组 辅助 \(kg) \(unitLabel)" : "After log · next assist \(kg) \(unitLabel)"
-    }
-
-    /// 快改入口提示（辅助）：点辅助可调整。
-    public var adjustDiscoverHintAssisted: String {
-        locale == .zh ? "点辅助可调整　之后的建议随之更新" : "Tap the assist to adjust. Suggestions follow your change"
     }
 
     /// 辅助量数值前缀（wave-9）：刻度轨档位/组表行裸数值冠「辅助」二字，区别于举起的负重。
@@ -229,7 +214,7 @@ extension RedeStrings {
         case "painReported":
             return locale == .zh ? "已登记不适，本组减负重一档" : "Discomfort noted, easing this set"
         default:
-            return locale == .zh ? "按上组表现延续" : "Carrying your last set forward"
+            return ""   // 同 nextSetWhy：没有真理由就不说话
         }
     }
 
@@ -249,11 +234,6 @@ extension RedeStrings {
     /// 后果预演（负重自重）：下一组 负重 +重。
     public func adjustPreviewNextBodyweightPlus(kg: String) -> String {
         locale == .zh ? "打勾后 · 下一组 负重 +\(kg) \(unitLabel)" : "After log · next weighted +\(kg) \(unitLabel)"
-    }
-
-    /// 快改入口提示（负重自重）：点负重可调整。
-    public var adjustDiscoverHintBodyweightPlus: String {
-        locale == .zh ? "点负重可调整　之后的建议随之更新" : "Tap the load to adjust. Suggestions follow your change"
     }
 
     /// 外挂负重数值前缀（wave-11）：VoiceOver 用——孤立朗读「负重 +20 kg」比裸值清楚。

@@ -5,9 +5,8 @@ import XCTest
 @testable import RedeL10n
 
 final class TrainEngineCopyTests: XCTestCase {
-    func testAdjustHintAndDoneAreNonEmptyBothLocales() {
+    func testAdjustDoneIsNonEmptyBothLocales() {
         for t in [RedeStrings(locale: .zh), RedeStrings(locale: .en)] {
-            XCTAssertFalse(t.adjustDiscoverHint.isEmpty)
             XCTAssertFalse(t.adjustDone.isEmpty)
         }
     }
@@ -25,9 +24,13 @@ final class TrainEngineCopyTests: XCTestCase {
 
     func testNextSetWhyAnchors() {
         XCTAssertEqual(zh.nextSetWhy(reasonCode: "lastSetNearFailure", fromKg: "60"), "上组接近力竭，从 60 回调")
-        XCTAssertEqual(en.nextSetWhy(reasonCode: "onPlan", fromKg: nil), "Carrying your last set forward")
-        XCTAssertEqual(zh.firstSetWhy, "按计划目标开始")
-        XCTAssertEqual(en.firstSetWhy, "Starting at plan target")
+        // 没有真理由就不说话（owner 2026-08-16）：照计划 / 照上组延续 / 首组 → 空串，视图不画这一行。
+        XCTAssertEqual(en.nextSetWhy(reasonCode: "onPlan", fromKg: nil), "")
+        XCTAssertEqual(zh.nextSetWhyBodyweight(reasonCode: "onPlan"), "")
+        XCTAssertEqual(zh.nextSetWhyAssisted(reasonCode: "onPlan"), "")
+        XCTAssertEqual(en.nextSetWhyBodyweightPlus(reasonCode: "onPlan", fromKg: nil), "")
+        XCTAssertEqual(zh.firstSetWhy, "")
+        XCTAssertEqual(en.firstSetWhy, "")
         XCTAssertEqual(zh.holdLabel(kg: "60", holding: false), "保持 60")
         XCTAssertEqual(en.holdLabel(kg: "60", holding: true), "Holding 60")
     }
@@ -157,7 +160,7 @@ final class TrainEngineCopyTests: XCTestCase {
             en.nextSetWhy(reasonCode: "belowRepFloor", fromKg: "60"),
             zh.nextSetWhy(reasonCode: "painReported", fromKg: nil),
             en.holdWhyLine, zh.holdWhyLine,
-            en.adjustDiscoverHint, zh.adjustDiscoverHint, en.adjustDone, zh.adjustDone,
+            en.adjustDone, zh.adjustDone,
             zh.painRegistered, en.painRegistered,
             zh.summaryTitle, en.summaryTitle,
             zh.adjustOptionLabel("follow"), en.adjustOptionLabel("lighter"),

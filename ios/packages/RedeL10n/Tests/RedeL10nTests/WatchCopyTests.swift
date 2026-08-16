@@ -40,7 +40,7 @@ final class WatchCopyTests: XCTestCase {
         XCTAssertEqual(en.watchDoneToday(sets: 22), "Done for today · 22 sets")
         for (z, e) in [(zh.watchHealthGateTitle, en.watchHealthGateTitle), (zh.watchHealthGateBody, en.watchHealthGateBody),
                        (zh.watchHealthGateAllow, en.watchHealthGateAllow), (zh.watchHealthGateDeniedBody, en.watchHealthGateDeniedBody),
-                       (zh.watchHealthGateRecheck, en.watchHealthGateRecheck), (zh.watchDoneHint, en.watchDoneHint)] {
+                       (zh.watchHealthGateRecheck, en.watchHealthGateRecheck)] {
             XCTAssertFalse(z.isEmpty); XCTAssertFalse(e.isEmpty); XCTAssertNotEqual(z, e)
         }
     }

@@ -121,8 +121,6 @@ struct TrainTabView: View {
     @FocusState private var weightFieldFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    /// 快改入口一次性提示（用过即永久消失）。
-    @AppStorage("hasUsedQuickAdjust") private var hasUsedQuickAdjust = false
     /// FR-评分：完成训练后请求 App Store 评分。requestReview 是系统弹窗（无自定义文案）；
     /// 何时问的节流逻辑在 RedeDomain.ReviewPromptPolicy（纯逻辑，已单测）。完成场数复用既有
     /// `completedSessionCount`（清洗后真实场数，不另设持久化计数器）；只持久化「上次请求评分的版本」。
@@ -339,7 +337,10 @@ struct TrainTabView: View {
             }
             .animation(.easeInOut(duration: 0.22), value: flow.phase)
             .animation(.easeInOut(duration: 0.22), value: flow.isWarmingUp)
-            .frame(minHeight: 245, alignment: .topLeading)
+            // 245 是 why 行还常驻时定的；why 行只在有真理由时出现后（2026-08-16），
+            // 记组态少了一行，按新常态收到 205——三态里最高的热身态约 200，休息态约 175，
+            // 有 why 行时卡片自然长高（minHeight 不是 max）。留 245 就是卡底 40pt 死空间（§15.3）。
+            .frame(minHeight: 205, alignment: .topLeading)
             .padding(.leading, 13)
             .padding(.vertical, 18)
             .padding(.horizontal, RedeSpace.card)
@@ -426,23 +427,16 @@ struct TrainTabView: View {
                 .padding(.top, 6)
             }
 
-            // 快改入口教学提示两条消失线（T6 2026-07-05）：① 用过即永久消失（既有
-            // AppStorage）② 累计 ≥3 场后不再教——练了三场都没点说明不需要，说明书
-            // 不该永久驻留界面。场数取清洗后历史（进行中场未落盘不计，0/1/2 场时教）。
-            if !hasUsedQuickAdjust && !showAdjust && completedSessionCount < 3 {
-                Text(currentIsAssisted ? s.adjustDiscoverHintAssisted : (currentIsBodyweightPlus ? s.adjustDiscoverHintBodyweightPlus : (currentIsRepBased ? s.adjustDiscoverHintBodyweight : s.adjustDiscoverHint)))
-                    .font(.redeCaption)
-                    .foregroundStyle(Color.redeT4)
-                    .padding(.top, 2)
-            }
-
             if showAdjust {
                 adjustPanel(flow)
                     .padding(.top, 8)
                     .transition(reduceMotion ? .identity : .opacity)
             }
 
-            Text(flow.isHolding
+            // why 行只在有真理由时出现（力竭 / 掉出区间 / 不适 / Hold）：照计划、照上组延续、
+            // 首组这些「没有理由」的情形，文案包返回空串，这里就不画——「按上组表现延续」
+            // 那种什么都没说的填充行，owner 2026-08-16 截图指出不要。
+            let whyLine = flow.isHolding
                  ? s.holdWhyLine
                  : (flow.completedInCurrentExercise.isEmpty
                     ? s.firstSetWhy
@@ -455,10 +449,13 @@ struct TrainTabView: View {
                              : s.nextSetWhy(
                                   reasonCode: recommendation?.reason.code ?? "onPlan",
                                   fromKg: flow.completedInCurrentExercise.last.map { LoadDisplay.weight($0.weightKg, exerciseId: flow.currentExercise?.exerciseId ?? "", s) }
-                              ))))))
-                .font(.redeCallout)
-                .foregroundStyle(Color.redeT3)
-                .padding(.top, 10)
+                              )))))
+            if !whyLine.isEmpty {
+                Text(whyLine)
+                    .font(.redeCallout)
+                    .foregroundStyle(Color.redeT3)
+                    .padding(.top, 10)
+            }
 
             HStack(spacing: 8) {
                 SteelButton(
@@ -2094,7 +2091,6 @@ struct TrainTabView: View {
     }
 
     private func startAdjust(targetKg: Double, recommendation: NextSetRecommendation?) {
-        hasUsedQuickAdjust = true // 提示服务「入口发现」：打开过即达成，与是否真改无关（拍板留痕）
         if !showAdjust, !hasAdjustment { // 已有有效调整时重开面板不重置（保留用户决定）
             adjustWeight = targetKg
             adjustWeightText = s.formatKg(targetKg)
