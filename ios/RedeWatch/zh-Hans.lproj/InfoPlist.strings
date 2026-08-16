@@ -1,0 +1,3 @@
+/* HealthKit 授权页两条用途串（表 target，中文）。与 en.lproj 及构建设置三份同改。 */
+"NSHealthShareUsageDescription" = "Rede 用心率与活动数据记录你这一场力量训练。";
+"NSHealthUpdateUsageDescription" = "Rede 把你完成的力量训练写回健康，让活动圆环计入这一场。";

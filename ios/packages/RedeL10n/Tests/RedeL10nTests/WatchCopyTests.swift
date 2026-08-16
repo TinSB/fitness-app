@@ -34,6 +34,17 @@ final class WatchCopyTests: XCTestCase {
         XCTAssertEqual(en.watchStalePlan(dateISO: "2026-08-14"), "Plan for 08-14")
     }
 
+    func testDoneTodayAndHealthGateBilingual() {
+        XCTAssertEqual(zh.watchDoneToday(sets: 22), "今天练完了 · 22 组")
+        XCTAssertEqual(en.watchDoneToday(sets: 1), "Done for today · 1 set")
+        XCTAssertEqual(en.watchDoneToday(sets: 22), "Done for today · 22 sets")
+        for (z, e) in [(zh.watchHealthGateTitle, en.watchHealthGateTitle), (zh.watchHealthGateBody, en.watchHealthGateBody),
+                       (zh.watchHealthGateAllow, en.watchHealthGateAllow), (zh.watchHealthGateDeniedBody, en.watchHealthGateDeniedBody),
+                       (zh.watchHealthGateRecheck, en.watchHealthGateRecheck), (zh.watchDoneHint, en.watchDoneHint)] {
+            XCTAssertFalse(z.isEmpty); XCTAssertFalse(e.isEmpty); XCTAssertNotEqual(z, e)
+        }
+    }
+
     func testNextUpPrefixesTarget() {
         XCTAssertEqual(zh.watchNextUp("60 kg × 8"), "下一组 60 kg × 8")
         XCTAssertEqual(en.watchNextUp("60 kg × 8"), "Next 60 kg × 8")

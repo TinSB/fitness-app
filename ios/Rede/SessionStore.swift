@@ -252,6 +252,13 @@ final class SessionStore {
         let dayCode = model.prescription?.dayCode
         // 训练进行时的当前一组（切片 4）。在 MainActor 上取完，后台只做渲染。
         let live = liveSetProjection()
+        // 今天已经练完的组数（v3.2）：canonical 记录里今天日期的场次总组数。
+        // 没在训练且 > 0 → 表上清单头显示「今天练完了 · N 组」。
+        let todayISO = Self.localDayISO(now)
+        // 日期口径与 TodayModel 同：session.date 前 10 位就是本地日。
+        let completedSetsToday = model.cleanView.sessions
+            .filter { String($0.date.prefix(10)) == todayISO }
+            .reduce(0) { $0 + $1.exercises.reduce(0) { $0 + $1.sets.count } }
 
         Task.detached(priority: .utility) {
             let strings = SessionStore.resolveWidgetStrings()
@@ -326,7 +333,8 @@ final class SessionStore {
                 dayTitle: dayCode.map(strings.trainingDayName) ?? "",
                 exercises: items,
                 active: active,
-                localeCode: strings.locale.rawValue)
+                localeCode: strings.locale.rawValue,
+                completedSetsToday: completedSetsToday)
             guard let payload = rx.encoded else { return }
 
             await MainActor.run {
@@ -540,6 +548,15 @@ final class SessionStore {
         }
     }
 
+    /// 用户本地日历日 yyyy-MM-dd（en_US_POSIX + 当前时区，与引擎、表侧 todayISO 同口径）。
+    nonisolated static func localDayISO(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = .current
+        f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: date)
+    }
+
     /// 目标前后各 `span` 格的真实梯子（升序、含目标那一格；到梯子底就停，不出负数不出 0）。
     /// 12 格：kg 杠铃 = ±30 kg、选重机 = ±60 kg、lb 哑铃轻段 = ±30 lb——
     /// 练到一半临时改重量用不到更远，更远的该回手机改计划。
@@ -584,9 +601,21 @@ final class SessionStore {
             // 用户手动按「下一组」不受此限——那是明确的意图。
             if command.auto, restCountdown.remaining() > 0 || restCountdown.isPaused { return }
             apply(.restFinished, restCompletedNaturally: command.auto)
+        case .restPauseToggle:
+            guard flow.phase == .resting else { return }
+            toggleRestPause()
         case .skipWarmup:
             guard flow.phase == .activeSet, flow.isWarmingUp else { return }
             skipAllWarmup()
+        case .skipSet:
+            // 跳过是会改落盘事实的动作：动作、组号、理由码三样都要对得上才执行。
+            // 组号是幂等键——表侧滞后一拍的重复命令不能把下一组也跳掉；
+            // 理由码解不出就丢弃（不猜、不落「其他」）。
+            guard flow.phase == .activeSet, !flow.isWarmingUp,
+                  flow.progress.setNumber == command.setNumber,
+                  let reason = command.reason.flatMap(SetSkipReason.init(rawValue:))
+            else { return }
+            apply(.skipSet(reason))
         }
     }
 

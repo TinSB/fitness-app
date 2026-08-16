@@ -34,6 +34,10 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
     /// 若按表的系统语言取，同一屏就会中英混排——app 内有独立的语言开关，这不是假想场景。
     /// 可选：旧手机不带这一位时表退回系统语言（与之前行为一致）。
     public let localeCode: String?
+    /// 今天已经练完的组数（v3.2）。> 0 且没有进行中的训练 = 今天练完了：
+    /// 表上清单头显示「今天练完了 · N 组」、第一行不再画 Emberline。
+    /// nil / 0 = 今天还没练。手机按 canonical 记录里今天日期的场次数出来。
+    public let completedSetsToday: Int?
 
     public struct Item: Codable, Equatable, Sendable {
         /// 语义身份（切片 4 记组回填用）。同一天允许同名动作，所以行的 identity 只能靠它。
@@ -161,12 +165,13 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
     }
 
     public init(dateISO: String, dayTitle: String, exercises: [Item], active: Active? = nil,
-                localeCode: String? = nil) {
+                localeCode: String? = nil, completedSetsToday: Int? = nil) {
         self.dateISO = dateISO
         self.dayTitle = dayTitle
         self.exercises = exercises
         self.active = active
         self.localeCode = localeCode
+        self.completedSetsToday = completedSetsToday
     }
 
     // MARK: - 编解码
