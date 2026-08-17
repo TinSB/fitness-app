@@ -1139,6 +1139,61 @@ final class SessionStore {
         )
     }
 
+    /// 计划调整提案的「暂不」政策（2026-08-16，owner：点了暂不、杀后台重开又跳出来）。
+    ///
+    /// 之前「暂不」只记在内存里，重启就没了——同一条建议一天能弹好几次。现在落库，规则学自
+    /// Apple Watch「更改活动目标」提示 / Fitness 趋势卡这类做法：**同一条建议每周最多出现一次，
+    /// 拒绝两次就闭嘴，除非证据变了**。
+    ///
+    /// · 提案身份 = 方向 + 从几天到几天（`reduceFrequency:5>3`）。证据（最近 4 个完整 ISO 周的中位数）
+    ///   最快也要一周才会变，所以「本周」是自然的重提周期。
+    /// · 「暂不」→ 写 `planAdjust:<身份>:<本周一>`：**本周不再出现**；下周窗口滚过一周，若仍成立再出一次。
+    /// · 同一身份被「暂不」了 **两个不同的周** → 不再出现，直到身份变了（目标天数变了 / 方向反了 /
+    ///   用户在设置里改了每周天数让 from 变了）。不设更长的重问周期：状态行每天都在说本周练了几天。
+    /// · 「改回原计划」= 明确否决 → 写 `planAdjust:<身份>:veto`，同样直到身份变了才再提。
+    /// · 「采纳」走既有的栈顶同 kind 抑制，不在这里。
+    ///
+    /// 复用教练卡的 dismiss 账本（`coachState.dismissed`，`applyCoachActionDismissal`）：同一个写闸、
+    /// 同一个读取器（`AppData.coachDismissals`），键用 `planAdjust:` 前缀隔开，不新开 schema。
+    enum PlanProposalDismissalPolicy {
+        static let prefix = "planAdjust:"
+
+        static func identity(_ proposal: PlanAdjustmentProposal) -> String {
+            "\(proposal.kind.rawValue):\(proposal.fromDaysPerWeek)>\(proposal.toDaysPerWeek)"
+        }
+        /// 本周「暂不」键。
+        static func weekKey(_ proposal: PlanAdjustmentProposal, weekStartISO: String) -> String {
+            "\(prefix)\(identity(proposal)):\(weekStartISO)"
+        }
+        /// 「改回原计划」否决键。
+        static func vetoKey(_ proposal: PlanAdjustmentProposal) -> String {
+            "\(prefix)\(identity(proposal)):veto"
+        }
+        /// 本周暂不过 / 否决过 / 两个不同周都暂不过 → 不出。
+        static func isSuppressed(_ proposal: PlanAdjustmentProposal, dismissals: [String: Int], weekStartISO: String) -> Bool {
+            let idPrefix = "\(prefix)\(identity(proposal)):"
+            if (dismissals[weekKey(proposal, weekStartISO: weekStartISO)] ?? 0) > 0 { return true }
+            if (dismissals[vetoKey(proposal)] ?? 0) > 0 { return true }
+            let dismissedWeeks = dismissals.filter { $0.key.hasPrefix(idPrefix) && !$0.key.hasSuffix(":veto") && $0.value > 0 }
+            return dismissedWeeks.count >= 2
+        }
+    }
+
+    /// 引擎此刻会提的原始候选（不过任何抑制）。回滚时用它写否决键——回滚后引擎多半立刻又提同一条。
+    nonisolated static func planAdjustmentCandidate(from appData: AppData, now: Date, timeZone: TimeZone) -> PlanAdjustmentProposal? {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = timeZone
+        formatter.dateFormat = "yyyy-MM-dd"
+        let todayISO = formatter.string(from: now)
+        let cleanView = CleanAppDataViewBuilder.build(from: appData)
+        guard let input = try? CleanTrainingDecisionInput.make(from: cleanView, todayISO: todayISO),
+              let planned = input.program.daysPerWeek else { return nil }
+        let counts = WeeklyAdherence.recentWeeklySessionCounts(
+            sessionDatesISO: input.sessions.map(\.date), todayISO: todayISO, timeZone: timeZone)
+        return PlanAdjustmentEngine.frequencyProposal(plannedDaysPerWeek: planned, recentWeeklySessionCounts: counts)
+    }
+
     /// 计划页调整状态（FR-PL3 提案 + FR-PL4 可撤）。走与处方同一 clean pipeline。
     /// unreadable/缺 daysPerWeek → 仍如实报已采纳记录（理论必有 daysPerWeek，防御保留撤销入口）。
     nonisolated static func loadPlanAdjustmentState(now: Date = Date()) -> PlanAdjustmentState {
@@ -1183,7 +1238,13 @@ final class SessionStore {
             plannedDaysPerWeek: planned, recentWeeklySessionCounts: counts
         )
         // 栈顶同 kind 沿用既有抑制；相反方向可以与撤销收据同屏并继续 append。
-        let proposal = candidate?.kind == activeKind ? nil : candidate
+        // 再过「暂不」政策：本周暂不过 / 否决过 / 两个不同周都暂不过的身份不出（PlanProposalDismissalPolicy）。
+        let weekStartISO = WeekAnchor.isoWeekStart(now, timeZone: timeZone)
+        let proposal: PlanAdjustmentProposal? = {
+            guard let candidate, candidate.kind != activeKind else { return nil }
+            return PlanProposalDismissalPolicy.isSuppressed(candidate, dismissals: appData.coachDismissals,
+                                                            weekStartISO: weekStartISO) ? nil : candidate
+        }()
         guard let proposal else {
             return PlanAdjustmentState(
                 proposal: nil, activeKind: activeKind, activeTo: activeTo, proposedWeekDays: []
@@ -1649,6 +1710,15 @@ final class SessionStore {
         }
     }
 
+    /// 计划调整提案「暂不」（FR-PL3；2026-08-16 落库）。内存里先藏（本会话立刻消失），
+    /// 再把本周键写进 dismiss 账本——重启后由 PlanProposalDismissalPolicy 决定还出不出。
+    @discardableResult
+    func dismissPlanProposal(_ proposal: PlanAdjustmentProposal, now: Date = Date()) async -> Bool {
+        snoozePlanProposal(proposal.kind)
+        let key = PlanProposalDismissalPolicy.weekKey(proposal, weekStartISO: WeekAnchor.isoWeekStart(now))
+        return await performPlanWrite { _ = try $0.applyCoachActionDismissal(actionKey: key) }
+    }
+
     /// 回滚最近一层计划调整（FR-PL4）：经写闸同步恢复该层 before + pop history → 重载今日。
     @discardableResult
     func rollbackPlanAdjustment() async -> Bool {
@@ -1666,6 +1736,12 @@ final class SessionStore {
                     store: JSONFileAppDataStore(fileURL: fileURL), gate: DataHealthGate()
                 )
                 try writer.rollbackPlanAdjustment()
+                // 改回原计划 = 明确否决该方向（2026-08-16 落库）：回滚后引擎多半立刻又会提同一条，
+                // 在同一次写闸里把否决键写进去，直到证据变了才再提。读的是回滚后的最新 canonical。
+                if let rolledBack = try JSONFileAppDataStore(fileURL: fileURL).load(),
+                   let candidate = SessionStore.planAdjustmentCandidate(from: rolledBack, now: Date(), timeZone: .current) {
+                    _ = try writer.applyCoachActionDismissal(actionKey: PlanProposalDismissalPolicy.vetoKey(candidate))
+                }
                 return .success(())
             } catch {
                 return .failure(error)
