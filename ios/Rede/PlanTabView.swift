@@ -376,7 +376,12 @@ struct PlanTabView: View {
                     Spacer()
                     Button(s.planAdjustDismiss) {
                         selectPulse += 1
-                        sessionStore.snoozePlanProposal(p.kind)
+                        // 落库（本周不再出；两个不同周都暂不 → 直到证据变了）+ 重读派生。
+                        // 内存里的即时隐藏在 dismissPlanProposal 里先做，卡当场消失。
+                        Task {
+                            await sessionStore.dismissPlanProposal(p)
+                            await reload()
+                        }
                     }
                     .font(.redeCaption).foregroundStyle(Color.redeT4)
                     .buttonStyle(.redePressable).disabled(sessionStore.isSaving)
@@ -421,7 +426,8 @@ struct PlanTabView: View {
                 Button(s.planAdjustUndo) {
                     Task {
                         if await sessionStore.rollbackPlanAdjustment() {
-                            // 回滚 = 用户明确否决该方向；只 snooze 被弹出的 kind，不吞掉反向提案。
+                            // 回滚 = 用户明确否决该方向：否决键已在同一次写闸里落库（直到证据变了才再提）；
+                            // 内存里再 snooze 一下只为本会话立刻不闪回。只压被弹出的 kind，不吞掉反向提案。
                             if let kind { sessionStore.snoozePlanProposal(kind) }
                             commitPulse += 1
                             await reload()

@@ -1683,6 +1683,109 @@ final class SessionStoreDraftTests: XCTestCase {
                        "暂不降频不能压掉之后的增频提案")
     }
 
+    // MARK: - 计划调整提案「暂不」落库（2026-08-16：owner 点了暂不、杀后台重开又跳出来）
+
+    /// 5 天计划、四周都只练 3 天 → 引擎会提「降到 3 天」；这是下面几条的共同起点。
+    private func makeReduceProposalAppData(extraStorage: [String: JSONValue] = [:]) throws -> AppData {
+        let dates = [
+            "2026-06-29", "2026-07-01", "2026-07-03",
+            "2026-07-06", "2026-07-08", "2026-07-10",
+            "2026-07-13", "2026-07-15", "2026-07-17",
+            "2026-07-20", "2026-07-22", "2026-07-24",
+        ]
+        let base = try makePlanAdjustmentAppData(programDays: 5, historyDates: dates, adjustmentHistory: [])
+        var storage = base.storage
+        for (k, v) in extraStorage { storage[k] = v }
+        return try AppData(decoding: .object(storage))
+    }
+
+    private func dismissed(_ entries: [(String, Int)]) -> [String: JSONValue] {
+        ["coachState": .object(["dismissed": .array(entries.map {
+            .object(["actionKey": .string($0.0), "count": .int(Int64($0.1))])
+        })])]
+    }
+
+    func testPlanProposalIsHiddenForTheRestOfTheWeekAfterDismissal() throws {
+        let utc = try XCTUnwrap(TimeZone(identifier: "UTC"))
+        let now = try date("2026-07-29", timeZone: utc)          // 周三；本周一 = 07-27
+        // 没暂不过：提
+        let fresh = SessionStore.planAdjustmentState(from: try makeReduceProposalAppData(), now: now, timeZone: utc)
+        let proposal = try XCTUnwrap(fresh.proposal)
+        XCTAssertEqual(proposal.kind, .reduceFrequency)
+        XCTAssertEqual(SessionStore.PlanProposalDismissalPolicy.identity(proposal), "reduceFrequency:5>3")
+        // 本周暂不过一次：本周剩下几天都不提（重启也不提——这是账本里的，不是内存里的）
+        let key = SessionStore.PlanProposalDismissalPolicy.weekKey(proposal, weekStartISO: "2026-07-27")
+        XCTAssertEqual(key, "planAdjust:reduceFrequency:5>3:2026-07-27")
+        let dismissedThisWeek = try makeReduceProposalAppData(extraStorage: dismissed([(key, 1)]))
+        XCTAssertNil(SessionStore.planAdjustmentState(from: dismissedThisWeek, now: now, timeZone: utc).proposal)
+        XCTAssertNil(SessionStore.planAdjustmentState(from: dismissedThisWeek,
+                                                       now: try date("2026-08-02", timeZone: utc), timeZone: utc).proposal,
+                     "周日仍是同一周，仍不提")
+    }
+
+    func testPlanProposalComesBackNextWeekOnceThenStaysQuietAfterSecondDismissal() throws {
+        let utc = try XCTUnwrap(TimeZone(identifier: "UTC"))
+        let lastWeek = "planAdjust:reduceFrequency:5>3:2026-07-20"
+        // 上周暂不过一次：这周（证据窗口滚过一周）再提一次
+        let once = try makeReduceProposalAppData(extraStorage: dismissed([(lastWeek, 1)]))
+        XCTAssertNotNil(SessionStore.planAdjustmentState(from: once, now: try date("2026-07-29", timeZone: utc), timeZone: utc).proposal)
+        // 两个不同的周都暂不过：闭嘴，直到身份变了
+        let twice = try makeReduceProposalAppData(extraStorage: dismissed([
+            (lastWeek, 1), ("planAdjust:reduceFrequency:5>3:2026-07-13", 1),
+        ]))
+        XCTAssertNil(SessionStore.planAdjustmentState(from: twice, now: try date("2026-07-29", timeZone: utc), timeZone: utc).proposal)
+        XCTAssertNil(SessionStore.planAdjustmentState(from: twice, now: try date("2026-08-05", timeZone: utc), timeZone: utc).proposal,
+                     "再过一周仍是同一身份（5>3）就仍不提，不设重问周期")
+        // 证据真的变了（窗口滚到 8 月，中位数掉到 1 → 身份变成 5>2）→ 是新建议，会再提
+        XCTAssertEqual(SessionStore.planAdjustmentState(from: twice, now: try date("2026-08-12", timeZone: utc), timeZone: utc)
+                           .proposal.map(SessionStore.PlanProposalDismissalPolicy.identity), "reduceFrequency:5>2")
+        // 同一周里点了两次不算两个周（count 累加在同一个键上）
+        let sameWeekTwice = try makeReduceProposalAppData(extraStorage: dismissed([(lastWeek, 2)]))
+        XCTAssertNotNil(SessionStore.planAdjustmentState(from: sameWeekTwice, now: try date("2026-07-29", timeZone: utc), timeZone: utc).proposal)
+    }
+
+    func testPlanProposalVetoAndIdentityChange() throws {
+        let utc = try XCTUnwrap(TimeZone(identifier: "UTC"))
+        let now = try date("2026-07-29", timeZone: utc)
+        // 改回原计划 = 否决：不提
+        let vetoed = try makeReduceProposalAppData(extraStorage: dismissed([("planAdjust:reduceFrequency:5>3:veto", 1)]))
+        XCTAssertNil(SessionStore.planAdjustmentState(from: vetoed, now: now, timeZone: utc).proposal)
+        // 身份变了（用户把计划改成 4 天 → 提案变成 4>3）：以前对 5>3 的暂不 / 否决都不作数
+        var storage = vetoed.storage
+        storage["userProfile"] = .object(["weeklyTrainingDays": .int(4)])
+        storage["programTemplate"] = .object(["splitType": .string("full-body"), "daysPerWeek": .int(4)])
+        let changed = try AppData(decoding: .object(storage))
+        let proposal = SessionStore.planAdjustmentState(from: changed, now: now, timeZone: utc).proposal
+        XCTAssertEqual(proposal.map(SessionStore.PlanProposalDismissalPolicy.identity), "reduceFrequency:4>3")
+        // 教练卡自己的 dismiss 键（无 planAdjust: 前缀）不干扰
+        let unrelated = try makeReduceProposalAppData(extraStorage: dismissed([("dataReview", 5), ("volumeBoost:2026-07-27", 1)]))
+        XCTAssertNotNil(SessionStore.planAdjustmentState(from: unrelated, now: now, timeZone: utc).proposal)
+    }
+
+    func testDismissPlanProposalPersistsAWeekKeyThroughTheWriteGate() async throws {
+        // 走真实写闸落到临时 canonical，再用纯派生读回来：重启后仍不提。
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("rede-plan-dismiss-\(UUID().uuidString)", isDirectory: true)
+        let fileURL = directory.appendingPathComponent("app-data.json")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let seed = try makeReduceProposalAppData()
+        try JSONFileAppDataStore(fileURL: fileURL).save(seed)
+        let store = SessionStore(draftStore: FakeTrainSessionDraftStore(), planWriteFileURL: fileURL)
+        let utc = try XCTUnwrap(TimeZone(identifier: "UTC"))
+        let now = try date("2026-07-29", timeZone: utc)
+        let proposal = try XCTUnwrap(SessionStore.planAdjustmentState(from: seed, now: now, timeZone: utc).proposal)
+
+        let ok = await store.dismissPlanProposal(proposal, now: now)
+
+        XCTAssertTrue(ok)
+        XCTAssertTrue(store.isPlanProposalSnoozed(.reduceFrequency), "本会话立刻藏起来")
+        let reloaded = try XCTUnwrap(JSONFileAppDataStore(fileURL: fileURL).load())
+        XCTAssertEqual(reloaded.coachDismissals["planAdjust:reduceFrequency:5>3:2026-07-27"], 1)
+        XCTAssertNil(SessionStore.planAdjustmentState(from: reloaded, now: now, timeZone: utc).proposal,
+                     "重启后（内存 snooze 没了）派生层照样不提")
+    }
+
     func testPlanAdjustmentStateSuppressesSameKindWhileKeepingUndo() throws {
         let dates = [
             "2026-06-29", "2026-07-01",
