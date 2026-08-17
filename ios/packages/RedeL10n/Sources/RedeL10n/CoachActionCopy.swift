@@ -5,7 +5,7 @@
 // 调用方传已解析的动作名/数值，本包不查目录、不算阈值。
 //
 // 红线（系统逻辑 §6.5.2 / §4.2）：
-//  - 不羞辱：补量只说「还差几天 / 有空补一次」，绝不「你落后了 / 练太少」。
+//  - 不羞辱：补量只说「还差几天」，绝不「你落后了 / 练太少」，也不劝「有空补一次」（2026-08-16 去掉）。
 //  - 禁词：算法名 / 「AI 判断」/ 「系统认为」/ 「最佳」一律不出现。
 //  - 补量是频率维度——禁出现具体肌群名或组数，count 只表「本周还差几天」（日历周，2026-07-15）。
 
@@ -44,10 +44,11 @@ extension RedeStrings {
             // 「按周抑制键」终于同源，与状态行分段条同口径。单位=天（与 weekStripCount 合流，
             // 「次」会与同日多场分叉——N3 审查 NIT 口径）；英文单复数分流。
             let n = count ?? 0
+            // 只报事实、不劝（owner 2026-08-16：「有空补一次就好」这一拍不要）。
             let en = n == 1
-                ? "1 day short of your plan this week. Fit one in if you can"
-                : "\(n) days short of your plan this week. Fit one in if you can"
-            return t2c("本周还差 \(n) 天就到计划　有空补一次就好", en)
+                ? "1 day short of your plan this week"
+                : "\(n) days short of your plan this week"
+            return t2c("本周还差 \(n) 天就到计划", en)
         default:
             return ""
         }

@@ -54,7 +54,6 @@ extension RedeStrings {
     public func watchDoneToday(sets: Int) -> String {
         locale == .zh ? "今天练完了 · \(sets) 组" : (sets == 1 ? "Done for today · 1 set" : "Done for today · \(sets) sets")
     }
-    public var watchDoneHint: String { t2w("总结在 iPhone 上", "Summary is on your iPhone") }
 
     // MARK: - 健康写入权限门（v3.2）：没有它手腕一放下 app 就被挂起，表就没法用
 

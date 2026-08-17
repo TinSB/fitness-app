@@ -269,20 +269,16 @@ struct TodayWatchView: View {
         }
     }
 
-    /// 练完态：一行结论 + 一行去处。不用橙色（橙色只表示下一步，练完了没有下一步）。
+    /// 练完态：一行结论。不用橙色（橙色只表示下一步，练完了没有下一步）；
+    /// 不写「总结在 iPhone 上」这种去处提示（owner 2026-08-16：不要）。
     private func doneHeader(sets: Int) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(verbatim: s.watchDoneToday(sets: sets))
-                .font(.system(size: 15, weight: .semibold))
-                .monospacedDigit()
-                .foregroundStyle(WatchPalette.t1)
-            Text(verbatim: s.watchDoneHint)
-                .font(.system(size: 11))
-                .foregroundStyle(WatchPalette.t3)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 8)
-        .overlay(alignment: .bottom) { Rectangle().fill(WatchPalette.hair).frame(height: 1) }
+        Text(verbatim: s.watchDoneToday(sets: sets))
+            .font(.system(size: 15, weight: .semibold))
+            .monospacedDigit()
+            .foregroundStyle(WatchPalette.t1)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 8)
+            .overlay(alignment: .bottom) { Rectangle().fill(WatchPalette.hair).frame(height: 1) }
     }
 
     private var header: some View {

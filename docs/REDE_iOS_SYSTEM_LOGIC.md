@@ -1172,7 +1172,7 @@ Train 只有专注训练态。必须服务于：
 
 FR-TR14 的「本次训练」是上述边界的窄例外：只编辑 `TrainFlowState.plan`，选择器只展示本场开训时冻结的器械配置可用且本场未排的动作，不提供目录详情/搜索/图片，也不暴露任何「存进计划」入口。关闭编辑面不丢已 durable 提交的会话编辑，但清除 sheet-local 撤销入口。完成训练并成功落盘后，§5 的独立入口只可能出现在 Today 练完态块；加载时以完成场 `templateId + finalExerciseOrder` 与现役引擎投影的下次真实有效构成作显示 no-op 守卫，点击时再由同一 gated mutation 对最新 canonical 原子复核，绝不把陈旧展示候选当成写入依据，也绝不反向扩张 Train 的职责。
 
-**快改入口教学提示两条消失线（T6 2026-07-05 #650）。** 「点重量可调整…」教学行显示条件 = 未用过快改入口（`@AppStorage hasUsedQuickAdjust`，用过永久消失）**且** 清洗后累计完成场数 < 3（与 CoachActionEngine `totalSessionCount` 同口径复用、不另设持久化计数器）——练三场都没点说明不需要教，说明书不永久驻留界面。「按计划目标开始」（firstSetWhy）为 why 行首组分支的多态状态信息（完成组后切 nextSetWhy），非教学文案、有意保留。
+**快改入口教学提示（T6 2026-07-05 #650 → 2026-08-16 移除）。** 「点重量可调整…」教学行连同 `@AppStorage hasUsedQuickAdjust` 已整条删除（owner 截图判定不要）；快改入口的可供性只剩 hero 上的滑杆图标与「点重量」本身。**why 行（firstSetWhy / nextSetWhy 四个负荷类型变体）只在有真理由时渲染**：文案包对首组、照计划、照上组延续（reason onPlan 等 default 分支）返回空串，TrainTabView 空串不画；力竭 / 掉出区间 / 不适 / Hold 照旧。
 
 ### 7.1 休息倒计时运行时合同
 
