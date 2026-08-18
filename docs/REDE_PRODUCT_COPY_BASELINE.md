@@ -627,6 +627,28 @@ English examples:
 
 > Rede is being rebuilt as a clean native iOS app. Early users will be invited when the focused training loop is ready.
 
+### 6.4 App Store 可见元数据（真相源 · 2026-08-15 建立）
+
+App Store Connect 里的名称 / 副标题 / 关键词 / 类别 **以本节为准**。此前这几个字段只在 ASC 手填、仓库零记录；本节建立后，任何改动先改这里、再改 ASC，并在下表追加一行理由。
+
+**为什么这一节存在（2026-08-15 审计结论）**：Apple Ads 首日数据暴露 Search Match 只匹配到无关品牌词（`puregym` / `zelus wbgt` / `reclub`）。追查发现 Rede 在 App Store 搜索索引里与任何品类词无关联——`strength training` / `workout tracker` / `gym log` / `progressive overload` / `strength coach` / `lifting app` / `hypertrophy` 七个词全部不在前 190，连搜 `rede` 都不出现（只有精确 `rede strength` 才第 1）。同接口下 353 个只有 1 个评分的同类小 app 能被搜到，共同点是**名称里带品类词**。关键词字段当时已填满品类词，但撑不起可发现性 → 结论：**副标题必须承载品类词，这是入场券，不是可选优化。**
+
+| 字段 | 上限 | 当前（1.9.4 在架） | 拟改（随下一版本发） | 理由 |
+|---|---|---|---|---|
+| 名称 | 30 | `Rede Strength` | **不动** | 已贡献最强品类词；改名波及 widget / 分享卡 / 官网 |
+| 副标题 | 30 | `It decides. You just lift.` | `Strength Training Coach & Log` (29) | 三个真实搜索词拼成，且 Coach / Log 是 Rede 的两个真实身份。品牌语气让位给可发现性，保留在描述首段与截图 |
+| 关键词 | 100 | `gym,workout,strength,lifting,dumbbell,barbell,hypertrophy,overload,RIR,tracker,routine,coach` (92) | `gym,workout,lifting,barbell,dumbbell,hypertrophy,overload,tracker,planner,weightlifting,progressive` (99) | 去掉与名称/副标题重复的 `strength` `coach`（Apple 自动组合，重复是浪费）；去掉弱词 `routine` 和几乎没人搜的 `RIR`；换成未覆盖的 `planner` `weightlifting` `progressive` |
+| 主类别 | — | Health & Fitness | 不动 | — |
+| 次要类别 | — | **空** | Sports | 免费品类信号。注意：ASC 明示「名称 / 类别 / 隐私政策要改须创建新版本」，且 1.9.4 在架时该字段锁定 → 与副标题、关键词一起随下一版本发，三项一次到位 |
+
+关键词字段规则：逗号分隔、不加空格、不重复名称/副标题已有的词、单数复数只留一个、不放品牌名（Apple 会拒）。
+
+**副标题候选与否决记录**：
+- `It decides. You just lift.` — 品牌语气最纯，搜索价值 0，已被数据否决
+- `The strength coach that shows its work` — 半品牌半品类，但 38 字符超限
+- `Strength Coach · Workout Planner` — 32 字符超限
+- `Strength Training Coach & Log` — **选定**，29 字符
+
 ---
 
 ## 7. 风险红线
