@@ -204,6 +204,17 @@ final class WatchActivePayloadTests: XCTestCase {
         XCTAssertNil(back?.completedSetsToday)
     }
 
+    func testTrainingInProgressAndOutcomeSurviveRoundTripAndAreOptional() {
+        // v3.3：HK 会话跟 trainingInProgress 走；放弃的训练 discard 不写健康。旧载荷没有这两位。
+        let rx = WatchPrescription(dateISO: "2026-08-16", dayTitle: "上肢", exercises: [],
+                                   trainingInProgress: false, sessionOutcome: "abandoned")
+        let back = rx.encoded.flatMap(WatchPrescription.init(decoding:))
+        XCTAssertEqual(back?.trainingInProgress, false)
+        XCTAssertEqual(back?.sessionOutcome, "abandoned")
+        let legacy = WatchPrescription(decoding: Data(#"{"dateISO":"2026-08-16","dayTitle":"","exercises":[]}"#.utf8))
+        XCTAssertNil(legacy?.trainingInProgress); XCTAssertNil(legacy?.sessionOutcome)
+    }
+
     func testCompletedSetsTodaySurvivesRoundTrip() {
         // v3.2：今天练完了 → 表上清单头显示「今天练完了 · N 组」。
         let rx = WatchPrescription(dateISO: "2026-08-16", dayTitle: "上肢", exercises: [], completedSetsToday: 22)

@@ -169,6 +169,24 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         XCTAssertEqual(logged.last?.reps, 7)
     }
 
+    func testSetArrivingWhileRestorePromptIsShowingSurvivesTheActualRestore() {
+        // 审查 M2 抓到的漏：手机重开 → loadToday 把磁盘 draft 读进 pendingDraft、弹「继续训练？」→
+        // 排队的组这时送到 → 之前只写磁盘不更新 pendingDraft → 用户点「继续」重放的是旧 draft，
+        // 那一组照样丢。这条测试走**真实恢复入口** restorePendingDraft()，不直接读 draftStore。
+        let (store, draftStore) = makeStoreWithDraft()
+        store.applyWatchLoggedSet(loggedSet(setNumber: 1, reps: 8))
+        // 模拟「被划掉后重开」：flow 没了，磁盘 draft 已被读进 pendingDraft（loadToday 的效果）
+        store.flow = nil
+        store.pendingDraft = draftStore.stored
+
+        store.applyWatchLoggedSet(loggedSet(setNumber: 2, reps: 7))   // 提示还挂着，组到了
+        store.restorePendingDraft()                                     // 用户点「继续训练」
+
+        let logged = store.flow?.observationsByExercise["bench-press"] ?? []
+        XCTAssertEqual(logged.count, 2, "提示挂着时到的那一组必须跟着恢复进来")
+        XCTAssertEqual(logged.last?.reps, 7)
+    }
+
     func testStaleSetIsStillDroppedWhenFlowIsNotRestored() {
         // 补进 draft 这条路同样要判幂等——不能因为走了另一条路就放行。
         let (store, draftStore) = makeStoreWithDraft()

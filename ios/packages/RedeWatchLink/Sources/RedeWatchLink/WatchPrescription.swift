@@ -38,6 +38,15 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
     /// 表上清单头显示「今天练完了 · N 组」、第一行不再画 Emberline。
     /// nil / 0 = 今天还没练。手机按 canonical 记录里今天日期的场次数出来。
     public let completedSetsToday: Int?
+    /// 训练是否进行中（v3.3）：flow 存在且还没到小结。**表上的 HKWorkoutSession 跟这一位走，
+    /// 不跟「表上有没有记组屏」走**——手机弹「结束训练？」确认层时 active 是 nil（表退回清单），
+    /// 但训练没结束；之前拿 active 判会把 HK 会话收掉写进健康、点「继续训练」再新开一条，
+    /// 健康里一场被拆成两段（审查 M1）。旧手机不带这一位时退回 active != nil。
+    public let trainingInProgress: Bool?
+    /// 刚结束的那场是怎么结束的（v3.3）："completed"（到小结 / 已保存）或 "abandoned"（放弃、什么都不存）。
+    /// 表据此决定 HK 会话是 finishWorkout（写进健康）还是 discardWorkout（放弃的训练不该进健康）。
+    /// 只在 trainingInProgress == false 时有意义；进行中为 nil。
+    public let sessionOutcome: String?
 
     public struct Item: Codable, Equatable, Sendable {
         /// 语义身份（切片 4 记组回填用）。同一天允许同名动作，所以行的 identity 只能靠它。
@@ -165,13 +174,16 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
     }
 
     public init(dateISO: String, dayTitle: String, exercises: [Item], active: Active? = nil,
-                localeCode: String? = nil, completedSetsToday: Int? = nil) {
+                localeCode: String? = nil, completedSetsToday: Int? = nil,
+                trainingInProgress: Bool? = nil, sessionOutcome: String? = nil) {
         self.dateISO = dateISO
         self.dayTitle = dayTitle
         self.exercises = exercises
         self.active = active
         self.localeCode = localeCode
         self.completedSetsToday = completedSetsToday
+        self.trainingInProgress = trainingInProgress
+        self.sessionOutcome = sessionOutcome
     }
 
     // MARK: - 编解码
