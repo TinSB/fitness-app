@@ -44,10 +44,23 @@ final class WatchPrescriptionStore {
     /// 8 小时没推过就是没人在练了。
     private(set) var sentAt: Date?
 
-    /// 进行中的训练是否已过期（v3.2）：距手机最后一次推送超过 8 小时。
-    var activeIsStale: Bool {
+    /// 手机停止推送多久算「没人在练了」。训练进行中手机每记一组、每段休息都会推；
+    /// 60 分钟远大于任何合理组间休息。到点：表退回清单，且**表侧自己把 HK 会话收掉并丢弃**——
+    /// 不然手机被划掉后表上的会话会无上限地跑、最后把一段几小时的假训练写进健康（审查 M3）。
+    static let staleLimit: TimeInterval = 60 * 60
+
+    /// 进行中的训练是否已过期：距手机最后一次推送超过 staleLimit。
+    /// 传入 now 而不是每次取 Date()：视图用一个到点翻转的 tick 重估，判定要可复现。
+    func activeIsStale(now: Date = Date()) -> Bool {
         guard prescription?.active != nil, let sentAt else { return false }
-        return Date().timeIntervalSince(sentAt) > 8 * 3600
+        return now.timeIntervalSince(sentAt) > Self.staleLimit
+    }
+
+    /// 训练是否进行中（v3.3）：优先看手机明说的 trainingInProgress（弹「结束训练？」确认层时
+    /// active 是 nil 但训练没结束），旧手机退回 active != nil；过期一律算没在练。
+    func trainingInProgress(now: Date = Date()) -> Bool {
+        guard let rx = prescription, !activeIsStale(now: now) else { return false }
+        return rx.trainingInProgress ?? (rx.active != nil)
     }
 
     func apply(_ envelope: WatchLinkEnvelope) {
@@ -141,12 +154,24 @@ struct TodayWatchView: View {
         return workout.workoutWriteAuthorized != true
     }
 
+    /// 过期判定用的时钟。手机最后一次推送 + staleLimit 到点时由 .task 翻转一次，
+    /// 让 liveActive / trainingInProgress 重估——SwiftUI 不会因为时间流逝自己重绘。
+    @State private var staleTick = Date()
+
     /// 进行中的训练。**过期的不算**：手机某天中途放弃、之后没再开过，表上那份 context 里
     /// 还带着那天的第 N 组——不判就会一直冒充「进行中」（v3.2）。判据是手机最后一次推送
-    /// 距今 8 小时（见 activeIsStale），不是日历日：跨午夜的训练不能在 00:00 被切回清单。
+    /// 距今 staleLimit（不是日历日：跨午夜的训练不能在 00:00 被切回清单）。
     private var liveActive: WatchPrescription.Active? {
-        guard let active = store.prescription?.active, !store.activeIsStale else { return nil }
+        guard let active = store.prescription?.active, !store.activeIsStale(now: staleTick) else { return nil }
         return active
+    }
+
+    /// 表上 HK 会话该不该在跑：跟手机的 trainingInProgress 走（含 .confirmEnd 确认层），
+    /// 不跟「有没有记组屏」走；过期一律收。
+    private var trainingActive: Bool { store.trainingInProgress(now: staleTick) }
+    /// 收会话时写不写健康：手机说放弃、或表侧自己因过期止损 → 丢弃。
+    private var discardOnEnd: Bool {
+        store.prescription?.sessionOutcome == "abandoned" || store.activeIsStale(now: staleTick)
     }
 
     var body: some View {
@@ -198,12 +223,21 @@ struct TodayWatchView: View {
             if phase == .active { workout.refreshAuthorization() }
         }
         // 切片 6：手机说在练 → 拉起 HKWorkoutSession（否则放下手腕几秒 app 就被挂起，
-        // 倒计时死在半路）；手机说练完 → 收掉并写回健康。
+        // 倒计时死在半路）；手机说练完 → 收掉并写回健康；说放弃 / 表侧过期 → 收掉并丢弃。
         // 用 onChange 而不是在 body 里调：sync 虽然幂等，但每帧调一次是噪音。
         // 权限门没过时不拉（起不来）；门一开（authorized 翻 true）这条 onChange 的键也变，会立刻补拉。
-        .onChange(of: "\(liveActive != nil)#\(workout.workoutWriteAuthorized == true)", initial: true) { _, _ in
+        .onChange(of: "\(trainingActive)#\(discardOnEnd)#\(workout.workoutWriteAuthorized == true)", initial: true) { _, _ in
             guard !WatchPreview.isActive, workout.workoutWriteAuthorized == true else { return }
-            workout.sync(trainingActive: liveActive != nil)
+            workout.sync(trainingActive: trainingActive, discardOnEnd: discardOnEnd)
+        }
+        // 过期止损定时：手机最后一次推送 + staleLimit 到点，翻一次 tick 让上面重估。
+        // 每次新推送都会重启这条 task（键 = sentAt）。
+        .task(id: store.sentAt) {
+            guard let sentAt = store.sentAt else { return }
+            let delay = sentAt.addingTimeInterval(WatchPrescriptionStore.staleLimit).timeIntervalSinceNow
+            if delay > 0 { try? await Task.sleep(for: .seconds(delay)) }
+            guard !Task.isCancelled else { return }
+            staleTick = Date()
         }
     }
 
@@ -237,7 +271,9 @@ struct TodayWatchView: View {
                         notice(verbatim: s.watchRestDay)
                     } else {
                         ForEach(Array(rx.exercises.enumerated()), id: \.element.exerciseId) { index, item in
-                            exerciseRow(item, isNext: index == 0 && !isStale && doneSetsToday == nil)
+                            // Emberline 只在「今天还没开始」画：练完了没有下一步；训练进行中（手机在弹
+                            // 「结束训练？」确认层、表暂时退回清单）也不该说「从这里开始」。
+                            exerciseRow(item, isNext: index == 0 && !isStale && doneSetsToday == nil && !trainingActive)
                         }
                     }
                 } else {
@@ -552,6 +588,10 @@ struct ActiveSetView: View {
         }
         // 「已记录」等手机推回来的这几百毫秒：读数簇退到 0.6，与按钮一起表示「已提交、别再动」。
         .animation(WatchMotion.tint, value: justLogged)
+        // 手机任何一次新推送都解锁按钮（键没变也解）：手机重开后热身从第 1 步重来、键与按下时
+        // 一模一样，上面那条 onChange 不触发，按钮会永久锁在「已记录」（审查 m2）。
+        // 重复记同一组无害——手机侧幂等守卫会丢。
+        .onChange(of: store.sentAt) { _, _ in justLogged = false }
         // 「更多」：watchOS 10 的角落钮（时间对面那一角），不占记组屏一像素竖向空间。
         // 里面只有一件事：跳过本组（带手机同一套理由码）。手机不可达时不给按。
         .toolbar {
@@ -612,9 +652,11 @@ struct ActiveSetView: View {
         .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
         .onTapGesture {
+            // 无条件把焦点给回来：系统把焦点收走（弹层 / sheet 收起）后 focus 可能是 nil，
+            // 这时点同一个读数也要能重新拿到表冠（审查 m3）。只有换读数才动指针与触感。
+            focus = field
             guard chosenField != field else { return }
             withAnimation(reduceMotion ? nil : WatchMotion.caret) { chosenField = field }
-            focus = field
             WKInterfaceDevice.current().play(.click)
         }
         .focusable(true)
@@ -677,6 +719,7 @@ struct ActiveSetView: View {
         .onChange(of: "\(active.exerciseId)#\(active.isWarmup)#\(active.setNumber)", initial: true) {
             justLogged = false
         }
+        .onChange(of: store.sentAt) { _, _ in justLogged = false }   // 同上：新推送即解锁
     }
 }
 

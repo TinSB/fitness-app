@@ -132,6 +132,10 @@ final class SessionStore {
     }
     /// 启动时发现的可恢复 draft（FR-TR9 提示「继续进行中的训练」）。
     var pendingDraft: TrainSessionDraft?
+    /// 刚结束那场是怎么结束的（watchOS v3.3）："completed" / "abandoned"。放弃路径在清 flow 之前置位，
+    /// 随 flow didSet 那次推送带给表——表据此决定 HK 会话 finish 还是 discard（放弃的训练不进健康）。
+    /// 开训时清空。
+    private var lastSessionOutcome: String?
     /// 写入失败的如实呈现（FR-TR8：绝不假装成功）；nil = 无错误。训练落盘/偏好/引导共用。
     var saveErrorText: String?
     /// FR-T5 教练动作写入（采纳/撤销/暂不处理）失败的如实呈现，与全局 saveErrorText **隔离**——
@@ -252,6 +256,10 @@ final class SessionStore {
         let dayCode = model.prescription?.dayCode
         // 训练进行时的当前一组（切片 4）。在 MainActor 上取完，后台只做渲染。
         let live = liveSetProjection()
+        // 训练是否进行中（v3.3）：flow 在且没到小结。**表上的 HK 会话跟它走**，不跟 active 走——
+        // 弹「结束训练？」确认层（.confirmEnd）时 active 是 nil，但训练没结束（审查 M1）。
+        let trainingInProgress = flow != nil && flow?.phase != .summary
+        let outcome: String? = trainingInProgress ? nil : (flow?.phase == .summary ? "completed" : lastSessionOutcome)
         // 今天已经练完的组数（v3.2）：canonical 记录里今天日期的场次总组数。
         // 没在训练且 > 0 → 表上清单头显示「今天练完了 · N 组」。
         let todayISO = Self.localDayISO(now)
@@ -334,7 +342,9 @@ final class SessionStore {
                 exercises: items,
                 active: active,
                 localeCode: strings.locale.rawValue,
-                completedSetsToday: completedSetsToday)
+                completedSetsToday: completedSetsToday,
+                trainingInProgress: trainingInProgress,
+                sessionOutcome: outcome)
             guard let payload = rx.encoded else { return }
 
             await MainActor.run {
@@ -496,9 +506,15 @@ final class SessionStore {
             painReported: replayed.painReportedForCurrentSet)
         var updated = draft
         for event in extraEvents { updated = updated.appending(event) }
+        updated = updated.appending(.logSet(observation))
         // 同步落盘，不用 enqueue：这条路上没有界面、也没有下一次机会——
         // app 可能马上又被系统收走，异步写就赌上了这一组。
-        _ = draftStore.saveDurably(updated.appending(.logSet(observation)))
+        guard draftStore.saveDurably(updated) else { return }
+        // **内存里那份待恢复 draft 也要跟上**（审查 M2）：手机重开时 loadToday 已把磁盘 draft
+        // 读进 pendingDraft、弹着「继续训练？」，排队的组正好在这个窗口送到——
+        // 只写磁盘不更新 pendingDraft，用户点「继续」重放的是旧的那份，这一组照样丢，
+        // 下一次 enqueueDraftSave 还会用不含它的事件把磁盘那份盖掉。
+        if pendingDraft != nil { pendingDraft = updated }
     }
 
     // MARK: - watchOS v2：表上可调三个量 + 遥控命令
@@ -599,7 +615,10 @@ final class SessionStore {
             // 表说「倒计时自然走完了」时，要手机自己的钟也同意才算数：
             // 手机上刚按过 +30 / 暂停、表侧那条在路上的旧消息不能把休息提前结束。
             // 用户手动按「下一组」不受此限——那是明确的意图。
-            if command.auto, restCountdown.remaining() > 0 || restCountdown.isPaused { return }
+            // 容忍 1 秒：表钟比手机快几百毫秒时 remaining() 会向上取整成 1，表侧那条 .task 已经
+            // 发过不会再发，手机在口袋里又没有前台计时器——零容忍会让表停在 0:00（审查 m4）。
+            // 陈旧的 +30 前旧消息剩余是 ~30，不会被误放行。
+            if command.auto, restCountdown.remaining() > 1 || restCountdown.isPaused { return }
             apply(.restFinished, restCompletedNaturally: command.auto)
         case .restPauseToggle:
             guard flow.phase == .resting else { return }
@@ -2472,6 +2491,7 @@ final class SessionStore {
     func startSession(now: Date = Date()) {
         guard flow == nil, let prescription = todayModel?.prescription else { return }
         pendingDraft = nil // 显式清提示（不依赖 alert binding 的隐式 dismiss）
+        lastSessionOutcome = nil
         // FR-EQ1：换动作候选同守器械白名单
         flow = TrainFlowState(prescription: prescription, allowedEquipment: allowedEquipment, loadUnit: loadUnit)
         sessionStartedAt = now
@@ -2500,6 +2520,7 @@ final class SessionStore {
     /// 放弃进行中训练（owner 反馈 2026-06-13）：清空流与 draft、不写 canonical——
     /// 与「结束训练→保存并完成」相对，给用户一个「取消、什么都不存」的出口。
     func abandonActiveSession() {
+        lastSessionOutcome = "abandoned"   // 先置位再清 flow：flow didSet 那次推送要带给表（HK 会话 discard）
         endSession()
     }
 
@@ -2546,6 +2567,7 @@ final class SessionStore {
 
         switch result {
         case .success:
+            lastSessionOutcome = "completed"   // 表侧 HK 会话在到小结时已按 completed 收；这里只是保持一致
             endSession()
             await loadToday() // 裁决/进展立即反映新记录
             completedSessionCount += 1 // FR-ACC1：练完自动上传的触发信号（只在写盘成功后递增）

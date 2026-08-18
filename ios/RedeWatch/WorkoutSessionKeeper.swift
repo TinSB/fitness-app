@@ -31,6 +31,20 @@ final class WorkoutSessionKeeper: NSObject, ObservableObject {
     private var session: HKWorkoutSession?
     private var builder: HKLiveWorkoutBuilder?
 
+    /// 期望态调和（审查 M1 的第二半）：start/end 都是 async，手机在一两秒内「结束 → 继续」时，
+    /// 旧写法会在 end() 还没跑完（isRunning 仍 true）时把 sync(true) 当成「已在跑」吞掉，
+    /// end() 一落地 isRunning=false、此后无人再拉起——整场剩下的训练手腕一放下就被挂起。
+    /// 现在 sync 只记「想要的状态」，一个串行任务把实际状态追平到期望态为止。
+    private var desiredActive = false
+    private var desiredDiscard = false
+    private var reconciling = false
+
+    override init() {
+        super.init()
+        // 启动即知道权限状态：不然已授权用户每次冷启动都会先闪一帧权限门再 morph 走（审查 m1）。
+        refreshAuthorization()
+    }
+
     /// 重读权限状态：启动时、回到前台时（用户可能刚去设置里开了）、请求授权之后。
     func refreshAuthorization() {
         guard HKHealthStore.isHealthDataAvailable() else { workoutWriteAuthorized = true; return }
@@ -56,12 +70,21 @@ final class WorkoutSessionKeeper: NSObject, ObservableObject {
 
     /// 跟随手机的训练状态。**幂等**：重复调同一状态不做任何事——
     /// 处方每次推送都会调到这里（手机每记一组就推一次），不能每次都重启 session。
-    func sync(trainingActive: Bool) {
+    /// - discardOnEnd: 结束时丢弃而不是写进健康——放弃的训练、以及手机停止推送后表侧
+    ///   自己止损收掉的那段（审查 M3：那不是一场训练，不该出现在健康里）。
+    func sync(trainingActive: Bool, discardOnEnd: Bool = false) {
         guard HKHealthStore.isHealthDataAvailable() else { return }
-        if trainingActive, !isRunning {
-            Task { await start() }
-        } else if !trainingActive, isRunning {
-            Task { await end() }
+        desiredActive = trainingActive
+        if !trainingActive { desiredDiscard = discardOnEnd }
+        guard !reconciling else { return }   // 正在追平，追平循环末尾会再看一眼期望态
+        reconciling = true
+        Task {
+            while desiredActive != isRunning {
+                if desiredActive { await start() } else { await end(discard: desiredDiscard) }
+                // start 失败（权限 / 系统拒绝）isRunning 仍 false 而期望 true：不能死循环，跳出。
+                if desiredActive, !isRunning { break }
+            }
+            reconciling = false
         }
     }
 
@@ -107,15 +130,20 @@ final class WorkoutSessionKeeper: NSObject, ObservableObject {
         }
     }
 
-    private func end() async {
+    private func end(discard: Bool) async {
         guard let session, let builder else { isRunning = false; return }
         let now = Date()
         session.end()
         do {
             try await builder.endCollection(at: now)
-            // finishWorkout 才是真正写回健康的那一步。失败只记一行——
-            // 训练数据的真源在手机的 canonical 存储里，健康只是**额外**的一份。
-            _ = try await builder.finishWorkout()
+            if discard {
+                // 放弃的训练 / 手机断联后的止损：不写健康。写了才是数据污染（一条 8 小时的假训练）。
+                builder.discardWorkout()
+            } else {
+                // finishWorkout 才是真正写回健康的那一步。失败只记一行——
+                // 训练数据的真源在手机的 canonical 存储里，健康只是**额外**的一份。
+                _ = try await builder.finishWorkout()
+            }
         } catch {
             lastError = "训练会话收尾失败：\(error.localizedDescription)"
         }
