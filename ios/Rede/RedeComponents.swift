@@ -4,40 +4,16 @@ import RedeTrainingDecision
 
 // 签名组件 — 按 docs/rede-prototypes/rede-app.html 的 .ov/.forged/.embar/.reg/.emb/.btn2/.ring/.rule/.tb/.seg/.tg 复原。
 
-// MARK: - 显示层重量吸附（系统逻辑 §6.0.1 + 内容系统 §8「显示吸附契约」）
+// MARK: - 重量显示：吸附是引擎的事，显示层如实转述
 //
-// 复发根因：旧代码显示层裸换算（formatKg ×2.2046、kg 裸显 double）→ kg 格子 30kg 在 lb 显
-// 66lb（配不出）、lb 输入存奇数 kg 切回显长小数。契约：**任何「可配重量」显示都必须先吸附到
-// 「器械×当前显示单位」真实梯子最近格**，再交 RedeL10n 格式化。禁止裸换算。
-// 只吸附「用户实际要配上器械的重量」（目标/上次/刻度轨/组重）；e1RM、总吨位等估算值不吸附。
-enum LoadDisplay {
-    private static func loadUnit(_ s: RedeStrings) -> LoadUnit { LoadUnit(unitSystem: s.unit.rawValue) }
-
-    /// 吸附到「器械×显示单位」真实梯子的 kg 值——交给 formatKg/heroNumber/railValue 等的 weightKg 实参。
-    /// 格子器械经 LoadGrid.gridEquipment 映射（bodyweight-plus→barbell），与快改档位口径一致。
-    static func snap(_ weightKg: Double, loadType: String, equipment: String, _ s: RedeStrings) -> Double {
-        LoadGrid.snapKg(weightKg, equipment: LoadGrid.gridEquipment(loadType: loadType, equipment: equipment), unit: loadUnit(s))
-    }
-
-    /// 便捷：按 loadType+器械吸附 + formatKg = 直接出显示字符串（处方显示最常用）。
-    static func weight(_ weightKg: Double, loadType: String, equipment: String, _ s: RedeStrings) -> String {
-        s.formatKg(snap(weightKg, loadType: loadType, equipment: equipment, s))
-    }
-
-    /// 历史/进展/训练流：按 exerciseId 回目录查 loadType+器械再吸附（缺→external/dumbbell 兜底）。
-    /// 经 loadType 故 bodyweight-plus 也正确落 barbell 外加负重格。
-    static func snap(_ weightKg: Double, exerciseId: String, _ s: RedeStrings,
-                     catalog: ExerciseCatalog = .minimal) -> Double {
-        let entry = catalog.entry(id: exerciseId)
-        return snap(weightKg, loadType: entry?.loadType ?? "external", equipment: entry?.equipment ?? "dumbbell", s)
-    }
-
-    /// 便捷（历史）：按 exerciseId 吸附 + formatKg。
-    static func weight(_ weightKg: Double, exerciseId: String, _ s: RedeStrings,
-                       catalog: ExerciseCatalog = .minimal) -> String {
-        s.formatKg(snap(weightKg, exerciseId: exerciseId, s, catalog: catalog))
-    }
-}
+// 这里曾有一层 LoadDisplay，在显示前把每个重量吸附到「器械×单位」真实梯子最近格，
+// 为的是解决 kg 侧 30kg 在 lb 侧显成配不出的 66lb。2026-08-19 owner 真机推翻：选重机上
+// 他用「精确」手输 55 lb（机器有微调片），大字却被吸成 60——同屏大字 60 / 精确框 55 /
+// 「打勾后 55」三方打架，落盘还是 55。吸附的真实职责在**引擎生成处方那一刻**
+//（LoadGrid.snapKg / nextRungKg，TodayPrescriptionEngine 与 WarmupLadderEngine 各自已做）；
+// 用户已经发生的事实（落盘组重、上次实际、手输目标）以及会话内延续它的建议，显示层一律
+// 交 s.formatKg 如实转述——再吸一次不是在帮用户配重，是在篡改他的真实数据。
+// 例外只剩「生成可配格子」：SessionStore.watchWeightLadder 仍走 LoadGrid，那与引擎侧同性质。
 
 // MARK: - Overline(.ov: 11/500/+0.18em/uppercase)
 

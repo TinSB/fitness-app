@@ -126,4 +126,32 @@ public enum LoadGrid {
         let snapped = max(step, (weightKg / step).rounded() * step)
         return up ? snapped + step : max(step, snapped - step)
     }
+
+    /// 当前重量**紧邻**的上/下一格（严格大于 / 小于它的那一格）。快改面板的轻重一档专用。
+    ///
+    /// 与 `nextRungKg` 的分工：那个是**进阶一档**（先落格再走一整档），是引擎的进阶/回退
+    /// 语义，被「等距 ≡ snap(w)±step」零回归契约逐值钉死；这个是**旁边那一格**。
+    /// 两者对落在格上的重量完全一致，只有离格值才分叉——用户用「精确」手输 55 lb
+    /// （选重机 10 lb 一格，真实机器常有微调片），重一档必须是 60，不是先吸到 60 再
+    /// 加一整档跳到 70；否则面板读成「轻一档 50 / 跟随 55 / 重一档 70」，往左 5 往右 15
+    /// 没法理解（2026-08-19 owner 真机）。
+    public static func neighbourRungKg(_ weightKg: Double, equipment: String, unit: LoadUnit, up: Bool) -> Double {
+        if isSegmented(equipment: equipment, unit: unit) {
+            let lb = weightKg * lbPerKg
+            let snapped = nearest(lb, in: lbDumbbellLadder)
+            guard let idx = lbDumbbellLadder.firstIndex(of: snapped) else { return snapped / lbPerKg }
+            let onRung = abs(lb - snapped) < 1e-6
+            let nextIdx = onRung
+                ? (up ? idx + 1 : idx - 1)
+                : (up ? (snapped > lb ? idx : idx + 1) : (snapped < lb ? idx : idx - 1))
+            return lbDumbbellLadder[min(max(nextIdx, 0), lbDumbbellLadder.count - 1)] / lbPerKg
+        }
+        let step = stepKg(equipment: equipment, unit: unit)
+        guard step > 0 else { return weightKg }
+        let snapped = max(step, (weightKg / step).rounded() * step)
+        let onRung = abs(weightKg - snapped) < step * 1e-6
+        if onRung { return up ? snapped + step : max(step, snapped - step) }
+        return up ? (snapped > weightKg ? snapped : snapped + step)
+                  : max(step, snapped < weightKg ? snapped : snapped - step)
+    }
 }
