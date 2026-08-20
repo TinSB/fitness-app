@@ -280,13 +280,11 @@ final class SessionStore {
                     exerciseId: ex.exerciseId,
                     name: ExerciseCatalog.minimal.displayName(ex.exerciseId, localeCode: strings.locale.rawValue),
                     setsText: strings.exerciseMetaLine(sets: ex.sets, restSeconds: ex.restSeconds, rir: ex.targetRir),
-                    // §8 显示吸附：目标重量先落真实梯子再格式化，与今日页 targetSummary 同源。
+                    // 目标重量如实推给表：落格是处方生成时的事（引擎侧 LoadGrid），
+                    // 显示层再吸一次会把用户手输的离格重量改写成别的数（2026-08-19）。
                     targetText: strings.targetLine(
                         loadType: ex.loadType,
-                        weightKg: LoadGrid.snapKg(
-                            ex.targetWeightKg,
-                            equipment: LoadGrid.gridEquipment(loadType: ex.loadType, equipment: ex.equipment),
-                            unit: LoadUnit(unitSystem: strings.unit.rawValue)),
+                        weightKg: ex.targetWeightKg,
                         reps: ex.targetReps)
                 )
             }
@@ -302,16 +300,15 @@ final class SessionStore {
                     // warmupMovementPrep / warmupWeight（与手机 warmupMainLine 逐字同源），
                     // 正式组才走 targetLine。混用会把「空杆」显示成一个重量。
                     targetText: {
-                        let snapped = LoadGrid.snapKg(l.targetWeightKg, equipment: gridEquipment, unit: unit)
                         switch l.warmupKind {
                         case .emptyBar:
                             return "\(strings.warmupEmptyBar) \(strings.warmupReps(l.targetReps))"
                         case .movementPrep:
                             return "\(strings.warmupMovementPrep) \(strings.warmupReps(l.targetReps))"
                         case .percent:
-                            return "\(strings.warmupWeight(snapped)) \(strings.warmupReps(l.targetReps))"
+                            return "\(strings.warmupWeight(l.targetWeightKg)) \(strings.warmupReps(l.targetReps))"
                         case nil:
-                            return strings.targetLine(loadType: l.loadType, weightKg: snapped, reps: l.targetReps)
+                            return strings.targetLine(loadType: l.loadType, weightKg: l.targetWeightKg, reps: l.targetReps)
                         }
                     }(),
                     targetWeightKg: l.targetWeightKg, targetReps: l.targetReps,
@@ -330,7 +327,7 @@ final class SessionStore {
                         ? SessionStore.watchRestPreview(
                             currentExerciseDone: l.currentExerciseDone, nextExerciseId: l.nextExerciseId,
                             loadType: l.loadType, setNumber: l.setNumber,
-                            snappedKg: LoadGrid.snapKg(l.targetWeightKg, equipment: gridEquipment, unit: unit),
+                            weightKg: l.targetWeightKg,
                             targetReps: l.targetReps, strings: strings)
                         : nil)
             }
@@ -548,14 +545,14 @@ final class SessionStore {
     /// 动作（「接下来 · 高位下拉」），否则按负荷类型报下一组（「下一组 · 第 3 组 · 60 kg × 6」）。
     /// 做完且没有下一个动作（这是最后一个动作的最后一段休息，不会发生——末组直接进小结）→ 空串。
     nonisolated static func watchRestPreview(currentExerciseDone: Bool, nextExerciseId: String?, loadType: String,
-                                             setNumber: Int, snappedKg: Double, targetReps: Int,
+                                             setNumber: Int, weightKg: Double, targetReps: Int,
                                              strings: RedeStrings) -> String {
         if currentExerciseDone {
             return nextExerciseId.map {
                 strings.restNextExercise(ExerciseCatalog.minimal.displayName($0, localeCode: strings.locale.rawValue))
             } ?? ""
         }
-        let kg = strings.formatKg(snappedKg)
+        let kg = strings.formatKg(weightKg)
         switch loadType {
         case "bodyweight", "band": return strings.restNextPreviewBodyweight(setNumber: setNumber, reps: targetReps)
         case "assisted": return strings.restNextPreviewAssisted(setNumber: setNumber, kg: kg, reps: targetReps)
@@ -2427,7 +2424,7 @@ final class SessionStore {
                 exerciseName: catalog.displayName(current.exerciseId, localeCode: notifLocale.rawValue),
                 targetLine: strings.targetLine(
                     loadType: current.loadType,
-                    weightKg: LoadDisplay.snap(rec.targetWeightKg, exerciseId: current.exerciseId, strings),
+                    weightKg: rec.targetWeightKg,
                     reps: rec.targetReps))
         }
         // 组满休息 → 预告下一动作（同 restPreviewText 分支）；目标取其首组计划值
@@ -2436,7 +2433,7 @@ final class SessionStore {
             let target = next.sets.first.map { first in
                 strings.targetLine(
                     loadType: next.loadType,
-                    weightKg: LoadDisplay.snap(first.targetWeightKg, exerciseId: next.exerciseId, strings),
+                    weightKg: first.targetWeightKg,
                     reps: first.targetReps)
             } ?? ""
             return RestActivityAttributes(

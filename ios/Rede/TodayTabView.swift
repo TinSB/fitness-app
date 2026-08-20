@@ -473,23 +473,23 @@ struct TodayTabView: View {
             return s.changeLineAssisted(
                 exerciseName: localeStore.exerciseName(ex.exerciseId),
                 change: ex.change.rawValue,
-                fromKg: ex.previousWeightKg.map { LoadDisplay.weight($0, loadType: ex.loadType, equipment: ex.equipment, s) },
-                toKg: LoadDisplay.weight(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s)
+                fromKg: ex.previousWeightKg.map { s.formatKg($0) },
+                toKg: s.formatKg(ex.targetWeightKg)
             )
         }
         if ex.loadType == "bodyweight-plus" {
             return s.changeLineBodyweightPlus(
                 exerciseName: localeStore.exerciseName(ex.exerciseId),
                 change: ex.change.rawValue,
-                fromKg: ex.previousWeightKg.map { LoadDisplay.weight($0, loadType: ex.loadType, equipment: ex.equipment, s) },
-                toKg: LoadDisplay.weight(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s)
+                fromKg: ex.previousWeightKg.map { s.formatKg($0) },
+                toKg: s.formatKg(ex.targetWeightKg)
             )
         }
         return s.changeLine(
             exerciseName: localeStore.exerciseName(ex.exerciseId),
             change: ex.change.rawValue,
-            fromKg: ex.previousWeightKg.map { LoadDisplay.weight($0, loadType: ex.loadType, equipment: ex.equipment, s) },
-            toKg: LoadDisplay.weight(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s)
+            fromKg: ex.previousWeightKg.map { s.formatKg($0) },
+            toKg: s.formatKg(ex.targetWeightKg)
         )
     }
 
@@ -1009,7 +1009,7 @@ struct TodayTabView: View {
     private func targetSummary(_ ex: ExercisePrescriptionPlan) -> String {
         // §8 显示吸附：目标重量先落「器械×显示单位」真实梯子，再格式化（禁裸换算）。
         s.targetLine(loadType: ex.loadType,
-                     weightKg: LoadDisplay.snap(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s),
+                     weightKg: ex.targetWeightKg,
                      reps: ex.targetReps)
     }
 
@@ -1027,7 +1027,7 @@ struct TodayTabView: View {
     private func targetCluster(_ ex: ExercisePrescriptionPlan, size: CGFloat) -> some View {
         let parts = s.targetParts(
             loadType: ex.loadType,
-            weightKg: LoadDisplay.snap(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s),
+            weightKg: ex.targetWeightKg,
             reps: ex.targetReps)
         return LoadCluster(prefix: parts.prefix, value: parts.value,
                            unit: parts.unit, tail: parts.reps, size: size)
@@ -1041,7 +1041,7 @@ struct TodayTabView: View {
         // 上次值同有同无（审查 [4]）由 lastRefLine 内部 guard 保证，缺任一→nil 不显示
         let prevText = s.lastRefLine(
             loadType: ex.loadType,
-            prevWeightKg: ex.previousWeightKg.map { LoadDisplay.snap($0, loadType: ex.loadType, equipment: ex.equipment, s) },
+            prevWeightKg: ex.previousWeightKg.map { $0 },
             prevReps: ex.previousTopReps)
         HStack(spacing: 6) {
             if let prevText {
@@ -1054,7 +1054,7 @@ struct TodayTabView: View {
                 // 增量 = 吸附后目标 − 吸附后上次（两端同梯子，差才是真实可配增量）；箭头用 SFSymbol
                 let amount: String = (isRep || ex.previousWeightKg == nil)
                     ? ""
-                    : " \(s.formatKg(abs(LoadDisplay.snap(ex.targetWeightKg, loadType: ex.loadType, equipment: ex.equipment, s) - LoadDisplay.snap(ex.previousWeightKg ?? 0, loadType: ex.loadType, equipment: ex.equipment, s))))"
+                    : " \(s.formatKg(abs(ex.targetWeightKg - (ex.previousWeightKg ?? 0))))"
                 Text("\(Image(systemName: "arrow.up"))\(amount)").font(.redeCaption).monospacedDigit().foregroundStyle(Color.redeEmber)
             case "ease":
                 Text(Image(systemName: "arrow.down")).font(.redeCaption).foregroundStyle(Color.redeEmber2)

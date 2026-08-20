@@ -2,8 +2,8 @@
 //
 // 原则：尊重 session 内执行事实——用户上一组实际用的重量是下一组的基线
 // （§6.3：第一组完成 85，第二组建议继续 85；完全按计划执行则保持计划形状）。
-// 安全瀑布：疼痛 > 力竭 > 次数掉底 > 延续。无 RIR 数据不猜。
-// 组形学习/历史掉速模型/器械校准明示后置。引擎零文案。
+// 安全瀑布：疼痛 > 力竭 > 次数掉底 > 掉速 > 延续。无 RIR 数据不猜。
+// 器械校准明示后置。引擎零文案。
 
 public struct CompletedSetObservation: Equatable, Sendable, Codable {
     public let weightKg: Double
@@ -24,6 +24,8 @@ public enum NextSetReason: Equatable, Sendable {
     case lastSetNearFailure
     case belowRepFloor
     case painReported
+    /// 组间掉速：RIR 相邻两组下降 ≥2 档（累积疲劳早于力竭出现）。
+    case fatigueDrop
 
     public var code: String {
         switch self {
@@ -31,6 +33,7 @@ public enum NextSetReason: Equatable, Sendable {
         case .lastSetNearFailure: return "lastSetNearFailure"
         case .belowRepFloor: return "belowRepFloor"
         case .painReported: return "painReported"
+        case .fatigueDrop: return "fatigueDrop"
         }
     }
 }
@@ -65,6 +68,8 @@ public struct NextSetRecommendation: Equatable, Sendable {
 
 public enum NextSetEngine {
     private static let nearFailureRir = 0.5
+    /// 掉速判据：相邻两组 RIR 下降达到这么多档即视为累积疲劳（2026-08-19 owner 真机定）。
+    private static let rirDropSpan = 2.0
 
     /// 全部计划组完成 → nil（动作结束）。
     public static func recommend(
@@ -103,6 +108,18 @@ public enum NextSetEngine {
         default:                eased = max(plan.stepKg, base - plan.stepKg)   // external 减重
         }
 
+        // 组间掉速（2026-08-19 owner 真机：面拉 40lb 15×RIR3 → 15×RIR1 → 12×RIR0）：
+        // 只看上一组的绝对值会漏掉最强的疲劳信号——RIR 掉到 1 时人已经撑不住了，但 1
+        // 够不着力竭线 0.5、15 次也没掉出下界 12，旧瀑布三条全不触发，第 3 组于是原样
+        // 挂着做不到的目标。改看相邻两组的落差：下降 ≥2 档即判掉速，走同一条缓降分支。
+        // 两组都有 RIR 才判——沿用「无 RIR 数据不猜」，不拿缺失值当 0。
+        let fatigueDropped: Bool = {
+            guard completed.count >= 2,
+                  let rir = last.rir,
+                  let previousRir = completed[completed.count - 2].rir else { return false }
+            return previousRir - rir >= rirDropSpan
+        }()
+
         let weight: Double
         let reason: NextSetReason
         var safetyFlags: [NextSetSafetyFlag] = []
@@ -116,15 +133,24 @@ public enum NextSetEngine {
         } else if last.reps < plan.repLowerBound {
             weight = eased
             reason = .belowRepFloor
+        } else if fatigueDropped {
+            weight = eased
+            reason = .fatigueDrop
         } else {
             weight = base
             reason = .onPlan
         }
 
+        // 目标次数跟执行事实走（2026-08-19）：计划值是上限、区间下界是地板。旧版恒等于
+        // plannedSet.targetReps——用户连着两组只做到 15，第 3 组还挂 20，一个他这场从没
+        // 到过的数。跟着上组实际走故也会自己回上去（上组做多了目标就回升），不是单调下降。
+        // 涨过计划值仍是跨场次双重渐进的事，本场内只封顶不加码。
+        let targetReps = min(plannedSet.targetReps, max(plan.repLowerBound, last.reps))
+
         return NextSetRecommendation(
             setIndex: plannedSet.index,
             targetWeightKg: weight,
-            targetReps: plannedSet.targetReps,
+            targetReps: targetReps,
             targetRir: plannedSet.targetRir,
             restSeconds: plan.restSeconds,
             reason: reason,

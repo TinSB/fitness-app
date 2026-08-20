@@ -70,9 +70,9 @@ final class RedeStringsTests: XCTestCase {
             ("appUpdateViewUpdate", s.appUpdateViewUpdate),
             ("appUpdateLater", s.appUpdateLater),
             ("appUpdateContinue", s.appUpdateContinue),
-            ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.10.2", build: "33")),
-            ("appUpdateHeroLine", s.appUpdateHeroLine(version: "1.10.2")),
-            ("appUpdateHighlights", s.appUpdateHighlights(version: "1.10.2").joined(separator: " ")),
+            ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.11.0", build: "38")),
+            ("appUpdateHeroLine", s.appUpdateHeroLine(version: "1.11.0")),
+            ("appUpdateHighlights", s.appUpdateHighlights(version: "1.11.0").joined(separator: " ")),
             // FR-SE9 / FR-SUB2：订阅管理与诚实状态
             ("settingsSubscriptionSection", s.settingsSubscriptionSection),
             ("settingsSubscriptionFreeCore", s.settingsSubscriptionFreeCore),
@@ -318,33 +318,37 @@ final class RedeStringsTests: XCTestCase {
         XCTAssertEqual(en.appUpdateAvailable(version: "1.9"), "1.9 Available")
         // 2026-07-20 owner「文案太不专业」重写：hero=版本主打句，亮点=具体名词句（基线 §5.5）。
         // 2026-08-08 archive 1.10.0：内置叙事切到 1.10.0（云端同步；只留当前发布版本，YAGNI）。
-        XCTAssertEqual(zh.appUpdateHeroLine(version: "1.10.2"), "换手机，训练记录跟着走")
-        XCTAssertEqual(en.appUpdateHeroLine(version: "1.10.2"), "Switch phones, your records follow")
+        // 2026-08-20 archive 1.10.2：内置叙事切到 1.11.0（Apple Watch App；只留当前发布版本，YAGNI）。
+        XCTAssertEqual(zh.appUpdateHeroLine(version: "1.11.0"), "手表上就能练完一场")
+        XCTAssertEqual(en.appUpdateHeroLine(version: "1.11.0"), "Train a full session from your wrist")
         XCTAssertEqual(
-            zh.appUpdateHighlights(version: "1.10.2"),
+            zh.appUpdateHighlights(version: "1.11.0"),
             [
-                "新增云端同步：用 Apple 登录后，训练记录同时保留一份在云端，换手机或重装 App 时全部取回",
-                "同步页并排显示这台设备与云端的场数，两边不一致时直接告诉你差多少、为什么",
-                "不开启同步不影响任何功能，训练记录照常存在本机",
-                "可以随时退出登录或删除云端账号，这台设备上的记录都会保留",
-                "修复首次之后每次同步都失败的问题",
-                "换手机时上百场记录改为分批上传，不会再因为一次传太多而失败",
-                "登录另一个账号时会停下来提醒，不会把上一个账号的训练混进去",
+                "新增 Apple Watch App：手表上看这组多重、几次，打勾记组，休息自动倒计时；手机放包里也能练完整场",
+                "手表和手机是同一场训练：任一边记的组另一边立刻可见；断联超过一小时会停下来，不把不确定的数据写进健康",
+                "手表上可以改重量、次数、RIR，也能暂停或跳过本组",
+                "引导流程里可以直接用 Apple 登录恢复：换手机后不用把年龄、器械、目标重新答一遍",
+                "设置页从 11 组归并成 7 组，用得多的排在前面",
+                "计划调整建议选「暂不」之后不再反复出现：同一条每周最多再提一次，连拒两次就不再提，直到训练数据本身变了",
+                "训练中连着两组余力明显下降时，下一组自动降一档重量；目标次数也跟着你实际做到的走，不再挂一个整场没到过的数",
+                "修复：用「精确」手输的重量，大字上会显示成另一个数（选重机上最明显）",
             ]
         )
         XCTAssertEqual(
-            en.appUpdateHighlights(version: "1.10.2"),
+            en.appUpdateHighlights(version: "1.11.0"),
             [
-                "Cloud Sync: sign in with Apple and a copy of your training stays in the cloud, ready when you switch phones or reinstall",
-                "The sync page shows this device and the cloud side by side. When they differ it tells you by how much and why",
-                "Leaving sync off changes nothing else. Your records stay on this device either way",
-                "Sign out or delete the cloud account anytime. Records on this device stay",
-                "Fixed syncing failing on every attempt after the first",
-                "Large histories now upload in batches instead of failing on one huge request",
-                "Signing in with a different account now stops and warns instead of mixing records",
+                "Apple Watch app: see the set's weight and reps, log it, and start the rest timer from your wrist. Your phone can stay in the bag",
+                "Watch and phone run one session: a set logged on either side appears on the other; after an hour disconnected the session stops rather than writing uncertain data to Health",
+                "Adjust weight, reps, and RIR on the watch, or pause and skip a set",
+                "Sign in with Apple during onboarding to restore your profile. No re-answering age, equipment, and goals after switching phones",
+                "Settings regrouped from 11 sections into 7, most-used first",
+                "Dismissing a plan suggestion now sticks: the same one returns at most once a week, and stops entirely after two dismissals until your training data changes",
+                "When your reserve drops sharply across two sets, the next set eases one notch; the rep target follows what you actually hit instead of a number you never reached",
+                "Fixed: a weight typed into Exact showed as a different number in the big readout (most visible on selectorized machines)",
             ]
         )
         // 旧版本叙事已按 YAGNI 移除
+        XCTAssertTrue(zh.appUpdateHighlights(version: "1.10.2").isEmpty)
         XCTAssertTrue(zh.appUpdateHighlights(version: "1.10.1").isEmpty)
         XCTAssertTrue(zh.appUpdateHighlights(version: "1.9.2").isEmpty)
         XCTAssertTrue(zh.appUpdateHighlights(version: "1.8").isEmpty)

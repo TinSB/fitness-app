@@ -77,7 +77,7 @@ struct ShareCardModel: Equatable {
         var unit: String? = nil
     }
 
-    /// 从隐私过滤后的 ShareSnapshot 构造（动作/模式/训练日名经 LocaleStore 本地化，重量经 LoadDisplay 吸附口径）。
+    /// 从隐私过滤后的 ShareSnapshot 构造（动作/模式/训练日名经 LocaleStore 本地化，重量按落盘事实如实格式化）。
     @MainActor
     static func make(from snapshot: ShareSnapshot, localeStore: LocaleStore) -> ShareCardModel {
         let s = localeStore.strings
@@ -118,10 +118,10 @@ struct ShareCardModel: Equatable {
                     rows: rows))
             )
         case let .personalRecord(pr):
-            // 按当前单位偏好格式化：实测吸附到器械×单位真实梯；估算（e1RM）不吸附（LoadDisplay 契约）。
+            // 按当前单位偏好格式化：实测与估算（e1RM）都如实转述，显示层不做吸附（2026-08-19）。
             let weightText = pr.isEstimated
                 ? s.formatKg(pr.weightKg)
-                : LoadDisplay.weight(pr.weightKg, exerciseId: pr.exerciseId, s)
+                : s.formatKg(pr.weightKg)
             return ShareCardModel(
                 dateText: date, tagline: s.shareCardTagline, downloadHint: s.shareCardDownloadHint,
                 kind: .pr(.init(

@@ -154,6 +154,21 @@ final class TrainEngineCopyTests: XCTestCase {
         XCTAssertEqual(zh.trainLoadSuffix(targetReps: 6, targetRir: nil as Double?), "kg · × 6 · RIR —")
     }
 
+    // 掉速 why（2026-08-19 owner 真机）：四种负重语义各自的 why 行 + 预演注解都必须说话，
+    // 不能掉进「没有真理由就不说话」的空串默认分支——降重是有真理由的，用户必须看到为什么。
+    func testFatigueDropCopyAcrossLoadTypes() {
+        XCTAssertEqual(zh.nextSetWhy(reasonCode: "fatigueDrop", fromKg: "40"), "余力掉得快，从 40 回调")
+        XCTAssertEqual(en.nextSetWhy(reasonCode: "fatigueDrop", fromKg: "40"), "Eased from 40, reserve dropping fast")
+        XCTAssertFalse(zh.nextSetWhyBodyweight(reasonCode: "fatigueDrop").isEmpty)
+        XCTAssertFalse(en.nextSetWhyBodyweight(reasonCode: "fatigueDrop").isEmpty)
+        XCTAssertFalse(zh.nextSetWhyAssisted(reasonCode: "fatigueDrop").isEmpty)
+        XCTAssertFalse(en.nextSetWhyAssisted(reasonCode: "fatigueDrop").isEmpty)
+        XCTAssertFalse(zh.nextSetWhyBodyweightPlus(reasonCode: "fatigueDrop", fromKg: "10").isEmpty)
+        XCTAssertFalse(en.nextSetWhyBodyweightPlus(reasonCode: "fatigueDrop", fromKg: "10").isEmpty)
+        XCTAssertNotNil(zh.adjustPreviewNote(reasonCode: "fatigueDrop"))
+        XCTAssertNotNil(en.adjustPreviewNote(reasonCode: "fatigueDrop"))
+    }
+
     func testForbiddenWordsAcrossTrainCopy() {
         let samples: [String] = [
             zh.nextSetWhy(reasonCode: "lastSetNearFailure", fromKg: "60"),
@@ -169,6 +184,12 @@ final class TrainEngineCopyTests: XCTestCase {
             en.adjustPreviewNote(reasonCode: "lastSetNearFailure") ?? "",
             zh.adjustPreviewComplete, en.adjustPreviewComplete,
             zh.adjustExact, en.adjustExact,
+            zh.nextSetWhy(reasonCode: "fatigueDrop", fromKg: "40"),
+            en.nextSetWhy(reasonCode: "fatigueDrop", fromKg: "40"),
+            zh.nextSetWhyBodyweight(reasonCode: "fatigueDrop"),
+            en.nextSetWhyAssisted(reasonCode: "fatigueDrop"),
+            zh.adjustPreviewNote(reasonCode: "fatigueDrop") ?? "",
+            en.adjustPreviewNote(reasonCode: "fatigueDrop") ?? "",
         ]
         for text in samples {
             for banned in ["AI", "算法", "系统认为", "最佳", "algorithm", "model", "best"] {

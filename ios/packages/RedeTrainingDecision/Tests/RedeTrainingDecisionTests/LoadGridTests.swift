@@ -69,4 +69,39 @@ final class LoadGridTests: XCTestCase {
     func testLbDumbbellFloorIsFivePounds() {
         XCTAssertEqual(lb(LoadGrid.snapKg(0.5, equipment: "dumbbell", unit: .lb)), 5, accuracy: 0.05, "下限一只 5lb 哑铃")
     }
+
+    // MARK: - 离格值的相邻格（2026-08-19 owner 真机）
+
+    // 用户用「精确」手输了梯子上没有的重量（选重机 10lb 一格、他配了 55lb 微调片）。
+    // 旧实现先把 55 吸到 60 再 ±一整档 → 重一档给 70，把 60 这一格整个跳过去了；
+    // 快改面板上就读成「轻一档 50 / 跟随 55 / 重一档 70」，往左 5 往右 15，没法理解。
+    // 正确语义：相邻格 = 严格大于/小于当前重量的那一格。
+    func testNeighbourRungFromOffLadderValueTakesImmediateNeighbour() {
+        let lbPerKg = 2.204_622_621_8
+        let offLadder = 55.0 / lbPerKg          // 选重机梯子是 10lb 一格，55 不在格上
+        let up = LoadGrid.neighbourRungKg(offLadder, equipment: "selectorized", unit: .lb, up: true)
+        let down = LoadGrid.neighbourRungKg(offLadder, equipment: "selectorized", unit: .lb, up: false)
+        XCTAssertEqual(up * lbPerKg, 60, accuracy: 0.001, "重一档必须是紧邻上格 60，不是跳过它的 70")
+        XCTAssertEqual(down * lbPerKg, 50, accuracy: 0.001)
+    }
+
+    // 落在梯子上的值：行为与旧实现逐字一致（零回归）。
+    func testNeighbourRungOnLadderMatchesNextRung() {
+        let lbPerKg = 2.204_622_621_8
+        let onLadder = 60.0 / lbPerKg
+        let up = LoadGrid.neighbourRungKg(onLadder, equipment: "selectorized", unit: .lb, up: true)
+        let down = LoadGrid.neighbourRungKg(onLadder, equipment: "selectorized", unit: .lb, up: false)
+        XCTAssertEqual(up * lbPerKg, 70, accuracy: 0.001)
+        XCTAssertEqual(down * lbPerKg, 50, accuracy: 0.001)
+    }
+
+    // 分段梯子（磅哑铃）同规则：27lb 落在 25 与 30 之间，两侧各取紧邻格。
+    func testNeighbourRungOffLadderOnSegmentedDumbbellLadder() {
+        let lbPerKg = 2.204_622_621_8
+        let offLadder = 27.0 / lbPerKg
+        let up = LoadGrid.neighbourRungKg(offLadder, equipment: "dumbbell", unit: .lb, up: true)
+        let down = LoadGrid.neighbourRungKg(offLadder, equipment: "dumbbell", unit: .lb, up: false)
+        XCTAssertEqual(up * lbPerKg, 30, accuracy: 0.001)
+        XCTAssertEqual(down * lbPerKg, 25, accuracy: 0.001)
+    }
 }

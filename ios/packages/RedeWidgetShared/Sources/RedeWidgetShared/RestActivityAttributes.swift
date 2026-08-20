@@ -1,7 +1,7 @@
 // RestActivityAttributes — K6 休息计时 Live Activity（2026-07-16）。
 //
 // app 与 widget extension 共享的 ActivityKit 合同：静态属性 = 动作名 + 下一组目标串
-//（app 侧用 LoadDisplay/RedeL10n 格式化后传入，extension 零业务计算、只渲染传入值）；
+//（app 侧用 RedeL10n 格式化后传入，extension 零业务计算、只渲染传入值）；
 // 动态 ContentState = restEndsAt 墙钟结束时刻（extension 用 Text(timerInterval:)
 // 原生倒计时，零推送零轮询自更新；+30/继续由 app 侧 update 推进结束点）。
 //

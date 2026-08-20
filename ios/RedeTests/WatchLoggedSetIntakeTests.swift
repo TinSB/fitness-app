@@ -387,17 +387,17 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         // 本动作还有组：报下一组
         XCTAssertEqual(
             SessionStore.watchRestPreview(currentExerciseDone: false, nextExerciseId: "lat-pulldown", loadType: "external",
-                                          setNumber: 3, snappedKg: 22.5, targetReps: 6, strings: zh),
+                                          setNumber: 3, weightKg: 22.5, targetReps: 6, strings: zh),
             zh.restNextPreview(setNumber: 3, kg: "22.5", reps: 6))
         // 本动作做完了：报下一个动作，而不是「× 0」（那正是 v2 露出来的缺陷）
         let next = SessionStore.watchRestPreview(currentExerciseDone: true, nextExerciseId: "lat-pulldown", loadType: "external",
-                                                 setNumber: 3, snappedKg: 22.5, targetReps: 0, strings: zh)
+                                                 setNumber: 3, weightKg: 22.5, targetReps: 0, strings: zh)
         XCTAssertEqual(next, zh.restNextExercise(ExerciseCatalog.minimal.displayName("lat-pulldown", localeCode: "zh")))
         XCTAssertFalse(next.contains("× 0"))
         // 自重走自重口径
         XCTAssertEqual(
             SessionStore.watchRestPreview(currentExerciseDone: false, nextExerciseId: nil, loadType: "bodyweight",
-                                          setNumber: 2, snappedKg: 0, targetReps: 8, strings: zh),
+                                          setNumber: 2, weightKg: 0, targetReps: 8, strings: zh),
             zh.restNextPreviewBodyweight(setNumber: 2, reps: 8))
     }
 

@@ -40,8 +40,8 @@ public enum AdjustOptionsBuilder {
     ) -> [AdjustOption] {
         var candidates: [(option: AdjustOption, priority: Int)] = [
             (AdjustOption(role: .follow, weightKg: followKg), 1),
-            (AdjustOption(role: .lighter, weightKg: LoadGrid.nextRungKg(followKg, equipment: equipment, unit: unit, up: false)), 4),
-            (AdjustOption(role: .heavier, weightKg: LoadGrid.nextRungKg(followKg, equipment: equipment, unit: unit, up: true)), 4),
+            (AdjustOption(role: .lighter, weightKg: LoadGrid.neighbourRungKg(followKg, equipment: equipment, unit: unit, up: false)), 4),
+            (AdjustOption(role: .heavier, weightKg: LoadGrid.neighbourRungKg(followKg, equipment: equipment, unit: unit, up: true)), 4),
         ]
         if let last = lastActualKg {
             candidates.append((AdjustOption(role: .last, weightKg: last), 2))
