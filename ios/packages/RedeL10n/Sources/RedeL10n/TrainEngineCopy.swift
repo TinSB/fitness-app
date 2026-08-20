@@ -43,6 +43,9 @@ extension RedeStrings {
             return locale == .zh ? "上组次数掉出区间，从 \(from) 回调" : "Eased from \(from), reps fell short"
         case "painReported":
             return locale == .zh ? "已登记不适，本组先降一档" : "Discomfort noted, easing this set"
+        case "fatigueDrop":
+            let from = fromKg ?? "—"
+            return locale == .zh ? "余力掉得快，从 \(from) 回调" : "Eased from \(from), reserve dropping fast"
         default:
             // 没有真正的理由（照计划 / 照上组延续）就不说话。「按上组表现延续」是一句什么都
             // 没告诉用户的填充（owner 2026-08-16 截图指出）；hero 已经把目标写在那了。空串 = 视图不画这一行。
@@ -134,6 +137,7 @@ extension RedeStrings {
         case "lastSetNearFailure": return locale == .zh ? "上组接近力竭，本组稳住次数" : "Last set near failure, hold your reps"
         case "belowRepFloor": return locale == .zh ? "上组次数偏低，本组稳住" : "Reps fell short, steady this set"
         case "painReported": return locale == .zh ? "已登记不适，本组放缓" : "Discomfort noted, ease this set"
+        case "fatigueDrop": return locale == .zh ? "余力掉得快，本组稳住次数" : "Reserve dropping fast, hold your reps"
         default: return ""   // 同 nextSetWhy：没有真理由就不说话
         }
     }
@@ -162,6 +166,7 @@ extension RedeStrings {
         case "lastSetNearFailure": return locale == .zh ? "上组接近力竭，本组加辅助一档" : "Near failure, adding assist this set"
         case "belowRepFloor": return locale == .zh ? "上组次数掉出区间，本组加辅助一档" : "Reps fell short, adding assist this set"
         case "painReported": return locale == .zh ? "已登记不适，本组加辅助一档" : "Discomfort noted, adding assist this set"
+        case "fatigueDrop": return locale == .zh ? "余力掉得快，本组加辅助一档" : "Reserve dropping fast, adding assist this set"
         default: return ""   // 同 nextSetWhy：没有真理由就不说话
         }
     }
@@ -213,6 +218,9 @@ extension RedeStrings {
             return locale == .zh ? "上组次数掉出区间，从 负重 +\(from) 回调" : "Eased from weighted +\(from), reps fell short"
         case "painReported":
             return locale == .zh ? "已登记不适，本组减负重一档" : "Discomfort noted, easing this set"
+        case "fatigueDrop":
+            let from = fromKg ?? "—"
+            return locale == .zh ? "余力掉得快，从 负重 +\(from) 回调" : "Eased from weighted +\(from), reserve dropping fast"
         default:
             return ""   // 同 nextSetWhy：没有真理由就不说话
         }
@@ -250,6 +258,8 @@ extension RedeStrings {
             return locale == .zh ? "次数掉出区间，先回一档" : "reps fell short, easing"
         case "painReported":
             return locale == .zh ? "已登记不适，先回一档" : "discomfort noted, easing"
+        case "fatigueDrop":
+            return locale == .zh ? "余力掉得快，先回一档" : "reserve dropping fast, easing"
         default:
             return nil
         }
