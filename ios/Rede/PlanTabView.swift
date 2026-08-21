@@ -40,6 +40,8 @@ struct PlanTabView: View {
     /// 曾经加过一个 deadZoneCleared 乐观态做即时隐藏——它和 reload() 打架
     /// （reload 重新算出非 nil 就把清除态冲掉），提示永远不消失。实拍抓到，删。
     @State private var deadZone: PlanReachability.Report?
+    /// 免费态预告行点开的 Rede Coach 页（FR-SUB1 修订）。
+    @State private var showCoachPage = false
     /// 当前展开的训练日（nil = 用下一场）。竞品对照 Alpha Progression：五天是顶部一排 tab，
     /// 下面只展开一天——把五天的动作全铺开就是一堵均匀的文字墙。
     @State private var selectedDay: String?
@@ -232,6 +234,7 @@ struct PlanTabView: View {
             PlanDaySequenceEditorView(onApplied: { Task { await reload() } })
         }
         // K2：动作库浏览器（只读目录，无采纳/写入）。
+        .redeCoachPage(isPresented: $showCoachPage)
         .sheet(isPresented: $showLibrary) {
             ExerciseLibraryView()
         }
@@ -259,9 +262,10 @@ struct PlanTabView: View {
     /// 一次后台读、同步一起赋值（审查 MINOR-1）：避免分批到达时闪占位。
     /// 采纳/回滚后复用此函数刷新（写入口已落库 + loadToday，这里重读派生让计划页跟上）。
     private func reload() async {
+        let access = sessionStore.paidCoach   // 付费边界在 MainActor 上取，后台只做只读派生
         let loaded = await Task.detached {
             (SessionStore.loadTemplateFacts(), SessionStore.loadCycleState(),
-             SessionStore.loadPlanProjection(), SessionStore.loadPlanAdjustmentState(),
+             SessionStore.loadPlanProjection(), SessionStore.loadPlanAdjustmentState(paidCoach: access),
              SessionStore.loadDayLastTrainedDates(), SessionStore.loadTrainingTenure(),
              SessionStore.loadDeadZone())
         }.value
@@ -299,16 +303,26 @@ struct PlanTabView: View {
     /// 已采纳栈顶永远展示（撤销入口）；待采纳提案按 kind 在本会话「暂不」后隐藏。
     private var showsAdjustmentCard: Bool {
         if adjustment.activeTo != nil { return true }
+        if showsPaidCoachTeaser { return true }
         if let proposal = adjustment.proposal {
             return !sessionStore.isPlanProposalSnoozed(proposal.kind)
         }
         return false
     }
 
+    /// 免费态预告：确实有一条提案，但被 Rede Coach 的门挡住了。
+    /// 闸没开时 `showsUpgradeHints` 恒 false，所以生产今日一行都不会多出来。
+    private var showsPaidCoachTeaser: Bool {
+        adjustment.hasHiddenProposal && sessionStore.paidCoach.showsUpgradeHints
+    }
+
     @ViewBuilder
     private var adjustmentSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             // 裁定：提案在上、已采纳收据/撤销在下；不同 kind 可同屏。
+            if showsPaidCoachTeaser {
+                paidCoachTeaserRow
+            }
             if let proposal = adjustment.proposal,
                !sessionStore.isPlanProposalSnoozed(proposal.kind) {
                 adjustmentProposalCard(proposal)
@@ -327,6 +341,39 @@ struct PlanTabView: View {
                 }
             }
         }
+    }
+
+    /// 免费态预告行（FR-SUB1 修订）：开放行 + chevron，点进 Rede Coach 页。
+    /// **只说「有一条计划调整建议」**——方向、天数、影响哪几天一个字都不给（付费结论不白送）。
+    /// 不是卡、不是弹窗、没有 ember：它是一条线索，不是催促。
+    private var paidCoachTeaserRow: some View {
+        Button {
+            showCoachPage = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color.redeT3)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(s.paidCoachPlanTeaser)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT2)
+                    Text(s.paidCoachTag)
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeT4)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Color.redeT4)
+                    .accessibilityHidden(true)
+            }
+            .frame(minHeight: RedeShape.controlHeight)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.redePressableRow)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("plan-paid-coach-teaser")
     }
 
     /// 待采纳提案卡：信号 + 影响（before→after 频率 + 调整后本周训练日）+ 调整/暂不。

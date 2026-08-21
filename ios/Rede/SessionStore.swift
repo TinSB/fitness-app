@@ -85,6 +85,18 @@ final class FileTrainSessionDraftStore: TrainSessionDraftStoring, @unchecked Sen
 @Observable
 final class SessionStore {
     var todayOutcome: TodayModel.LoadOutcome?
+    /// Rede Coach 付费边界快照（FR-SUB1 修订）。**由 RootTabView 从 SubscriptionModel 灌进来**——
+    /// SessionStore 不认识 StoreKit，只拿一个已经解析好的答案；引擎更是完全不知情。
+    /// 默认 `.inactive` = 购买闸未开 = 全部能力照旧（生产今日形态）。
+    private(set) var paidCoach: PaidCoachAccess = .inactive
+
+    /// 权益或购买闸变化时由 app 层调用：更新边界并按新边界重算今日（周期化 / 自动均衡 /
+    /// 教练卡都吃这一位）。值没变就什么都不做——订阅模型每次前台复核都会调到这里。
+    func applyPaidCoach(_ access: PaidCoachAccess) async {
+        guard access != paidCoach else { return }
+        paidCoach = access
+        if todayOutcome != nil { await loadToday() }
+    }
     /// 训练流。**每次变化都要重推给表**（切片 4）——开训、记组、恢复 draft、结束
     /// 都会改变表上该显示什么。写成 didSet 而不是在四个调用点各补一句：
     /// 漏一处的症状是表上停在某一组不动，而那是练到一半才会发现的。
@@ -178,7 +190,7 @@ final class SessionStore {
     }
 
     func loadToday() async {
-        todayOutcome = await TodayModel.loadOutcomeAsync()
+        todayOutcome = await TodayModel.loadOutcomeAsync(paidCoach: paidCoach)
         checkForRestorableDraft()
         refreshWidgetSnapshot()
         pushWatchPrescription()   // watchOS 切片 3：处方推到表上
@@ -1149,6 +1161,9 @@ final class SessionStore {
         var activeKind: PlanAdjustmentProposal.Kind? // 栈顶已采纳方向（旧/未知 kind 防御为 nil）
         var activeTo: Int?                          // 已采纳记录的现频率（非 nil = 可撤）
         var proposedWeekDays: [PlanDayProjection]   // 提案后下一块训练日（预览，答「影响哪几天」；投影非日历周）
+        /// 有一条提案，但被付费门挡住了（FR-SUB1 修订）。计划页据此显示预告行，
+        /// **只说有、不说是什么**——泄露方向或天数就等于把付费结论白送。
+        var hasHiddenProposal: Bool = false
 
         static let none = PlanAdjustmentState(
             proposal: nil, activeKind: nil, activeTo: nil, proposedWeekDays: []
@@ -1212,17 +1227,21 @@ final class SessionStore {
 
     /// 计划页调整状态（FR-PL3 提案 + FR-PL4 可撤）。走与处方同一 clean pipeline。
     /// unreadable/缺 daysPerWeek → 仍如实报已采纳记录（理论必有 daysPerWeek，防御保留撤销入口）。
-    nonisolated static func loadPlanAdjustmentState(now: Date = Date()) -> PlanAdjustmentState {
+    nonisolated static func loadPlanAdjustmentState(
+        now: Date = Date(),
+        paidCoach: PaidCoachAccess = .inactive
+    ) -> PlanAdjustmentState {
         let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
         guard let appData = try? store.load() else { return .none }
-        return planAdjustmentState(from: appData, now: now, timeZone: .current)
+        return planAdjustmentState(from: appData, now: now, timeZone: .current, paidCoach: paidCoach)
     }
 
     /// 可测纯派生 seam：显式注入 canonical 快照 / 时钟 / 时区，不做 IO。
     nonisolated static func planAdjustmentState(
         from appData: AppData,
         now: Date,
-        timeZone: TimeZone
+        timeZone: TimeZone,
+        paidCoach: PaidCoachAccess = .inactive
     ) -> PlanAdjustmentState {
         let activeRecord = appData.planAdjustmentHistory.last
         let activeKind = activeRecord.flatMap { PlanAdjustmentProposal.Kind(rawValue: $0.kind) }
@@ -1264,6 +1283,15 @@ final class SessionStore {
         guard let proposal else {
             return PlanAdjustmentState(
                 proposal: nil, activeKind: activeKind, activeTo: activeTo, proposedWeekDays: []
+            )
+        }
+        // 计划调整是付费能力（FR-SUB1 修订）：免费态把提案与预览一起藏起来，只留一个「有一条建议」的
+        // 预告位。**已采纳记录的撤销入口照常留着**——用户对已经生效在自己计划上的改动必须始终能撤回
+        //（§1.4 用户保留控制权），那不是付费能力，是控制权。
+        guard paidCoach.allows(.planAdjustment) else {
+            return PlanAdjustmentState(
+                proposal: nil, activeKind: activeKind, activeTo: activeTo,
+                proposedWeekDays: [], hasHiddenProposal: true
             )
         }
         // 提案后本周训练日（同投影口径，weeks:1 取本周；与今日页处方/计划排期同源、不分叉）——

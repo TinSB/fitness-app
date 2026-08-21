@@ -87,11 +87,14 @@ struct TodayModel {
     }
 
     /// 后台加载（同步文件 IO 不进主线程——M3 写路径接通后文件会变大）。
-    static func loadOutcomeAsync(now: Date = Date()) async -> LoadOutcome? {
-        await Task.detached(priority: .userInitiated) { loadOutcome(now: now) }.value
+    /// paidCoach：**由 app 层解析好再传进来**（FR-SUB1 修订）。TodayModel 与引擎都不读 entitlement；
+    /// 付费能力的关法是把引擎输入置空（周期化 false、优先肌群空表），引擎代码零改动。
+    /// 默认 `.inactive` = 购买闸未开 = 全部照旧可用（生产今日形态，也是全部既有测试的口径）。
+    static func loadOutcomeAsync(now: Date = Date(), paidCoach: PaidCoachAccess = .inactive) async -> LoadOutcome? {
+        await Task.detached(priority: .userInitiated) { loadOutcome(now: now, paidCoach: paidCoach) }.value
     }
 
-    static func loadOutcome(now: Date = Date()) -> LoadOutcome? {
+    static func loadOutcome(now: Date = Date(), paidCoach: PaidCoachAccess = .inactive) -> LoadOutcome? {
         let store = JSONFileAppDataStore(fileURL: canonicalFileURL())
         let appData: AppData
         do {
@@ -151,7 +154,9 @@ struct TodayModel {
         })
         let prescription = TodayPrescriptionEngine.plan(
             input: input, verdict: verdict,
-            mesocycleEnabled: appData.mesocycle.enabled,
+            // 周期化是付费能力（FR-SUB1 修订）：没权益就当开关没开——用户的落库设置原样保留，
+            // 订阅后立刻恢复，不需要用户再去设置里点一次。
+            mesocycleEnabled: appData.mesocycle.enabled && paidCoach.allows(.periodization),
             blockLengthWeeks: appData.mesocycle.blockLengthWeeks,
             // FR-T5 永久换 + FR-TR6 今天的临时换（已合并；空表 = 零行为变化）
             substitutions: effectiveSubs,
@@ -162,7 +167,8 @@ struct TodayModel {
             rotationOffset: appData.rotationOffset,
             // 每周循环模式（2026-07-08）：默认 false = 顺延（现状零回归）
             weeklyCycleRestart: appData.weeklyCycleRestart,
-            priorityMuscles: priorityMuscles
+            // 自动均衡是付费能力：没权益就传空表（= 引擎既有的「没有弱肌群」路径，零分叉）。
+            priorityMuscles: paidCoach.allows(.autoBalance) ? priorityMuscles : []
         )
 
         // FR-T5 教练动作（切片6b）：摊平裁决信号 + 处方到顶 reason + 落库 dismiss/采纳态 → 引擎产卡。
@@ -192,9 +198,15 @@ struct TodayModel {
             dismissals: appData.coachDismissals,
             volumeBoostAdoptedThisWeek: appData.volumeBoostWeeks.contains(weekStartISO)
         ))
+        // 教练卡分流（FR-SUB1 修订）：**修数据卡永久免费**（数据可信属永不收费类），
+        // 换更难变体 / 补量这两类优化建议属 Rede Coach。免费态直接不产出卡——
+        // 不显示灰卡、不弹提示（owner 对重复弹窗零容忍），只在 Coach 页能力清单里列出。
+        let visibleCoachActions = paidCoach.allows(.coachOptimization)
+            ? coachActions
+            : coachActions.filter { $0.kind == .dataReview }
         return .ready(TodayModel(
             verdict: verdict, prescription: prescription, cleanView: cleanView, now: now,
-            coachActions: coachActions, substitutions: appData.exerciseSubstitutions,
+            coachActions: visibleCoachActions, substitutions: appData.exerciseSubstitutions,
             oneTimeSubstitutions: oneTimeToday,
             equipmentScenario: input.profile.equipmentScenario,
             daySequence: daySequence,

@@ -565,7 +565,29 @@ struct SettingsSheet: View {
                 Text(s.settingsPeriodizationLabel)
                     .font(.redeBody)
                     .foregroundStyle(Color.redeT2)
+                // 免费态尾标（FR-SUB1 修订）：周期化属 Rede Coach。闸没开时 showsUpgradeHints
+                // 恒 false，这一标一行都不会出现——生产今日与之前逐像素相同。
+                if sessionStore.paidCoach.showsUpgradeHints {
+                    Text(s.paidCoachTag)
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeT4)
+                }
                 Spacer()
+                if sessionStore.paidCoach.showsUpgradeHints {
+                    // 开关换成进 Coach 页的 chevron：用户的落库设置原样保留，订阅后立刻恢复，
+                    // 不需要回来再点一次；在这里给一个开不动的开关才是骗人。
+                    Button { showSubscriptionPage = true } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(Color.redeT4)
+                            .frame(minWidth: 44, minHeight: RedeShape.controlHeight, alignment: .trailing)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.redePressableRow)
+                    .accessibilityLabel(s.settingsPeriodizationLabel)
+                    .accessibilityHint(s.settingsSubscriptionOpenCoach)
+                    .accessibilityIdentifier("settings-periodization-paid")
+                } else {
                 SteelToggle(isOn: Binding(
                     get: { mesocycleOn },
                     set: { newValue in
@@ -582,6 +604,7 @@ struct SettingsSheet: View {
                         }
                     }
                 ))
+                }
             }
             Text(s.settingsPeriodizationNote)
                 .font(.redeCaption)
@@ -1087,7 +1110,34 @@ enum RedeCoachPageContentPolicy {
     }
 }
 
-private struct SubscriptionPageSheet: View {
+/// 任何 tab 都能挂的 Rede Coach 页（免费态预告行点进来；FR-SUB1 修订）。
+/// 环境显式再注入一遍，沿用设置页既有写法——sheet 内容树对 @Observable 环境的继承
+/// 在 UIKit 呈现边界上不做保证，这里不赌。
+extension View {
+    func redeCoachPage(isPresented: Binding<Bool>) -> some View {
+        modifier(RedeCoachPagePresenter(isPresented: isPresented))
+    }
+}
+
+private struct RedeCoachPagePresenter: ViewModifier {
+    @Binding var isPresented: Bool
+    @Environment(LocaleStore.self) private var localeStore
+    @Environment(SubscriptionModel.self) private var subscriptionModel
+    @Environment(SessionStore.self) private var sessionStore
+
+    func body(content: Content) -> some View {
+        content.sheet(isPresented: $isPresented) {
+            // 从计划页 / 进展页进来的只看能力与购买，不承接复盘的导航动作（那只在设置页语境里有意义）。
+            SubscriptionPageSheet(configuration: subscriptionModel.configuration, onCoachAction: { _ in })
+                .environment(localeStore)
+                .environment(subscriptionModel)
+                .environment(sessionStore)
+                .presentationDetents([.large])
+        }
+    }
+}
+
+struct SubscriptionPageSheet: View {
     let configuration: SubscriptionConfiguration
     let onCoachAction: (WeeklyCoachReviewAction) -> Void
     @Environment(LocaleStore.self) private var localeStore
@@ -1307,6 +1357,36 @@ private struct SubscriptionPageSheet: View {
         }
     }
 
+    /// 能力清单（FR-SUB1 修订）：**只在购买面真的能买时才渲染**。
+    /// FR-SUB2 明令 gate 未就绪时不得出现价值承诺——给一个买不到的东西列卖点就是那条禁令针对的事。
+    /// 清单由 `PaidCoachCapability.allCases` 生成，加了能力却漏了文案会在这里直接少一行（且有单测锁）。
+    private var capabilityList: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Overline(text: s.paidCoachIncludedOverline)
+            ForEach(PaidCoachCapability.allCases, id: \.rawValue) { capability in
+                let title = s.paidCoachCapabilityTitle(capability.rawValue)
+                if !title.isEmpty {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(title)
+                            .font(.redeSubhead)
+                            .foregroundStyle(Color.redeT1)
+                        Text(s.paidCoachCapabilityNote(capability.rawValue))
+                            .font(.redeCaption)
+                            .foregroundStyle(Color.redeT3)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            Text(s.paidCoachAlwaysFree)
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT4)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 2)
+        }
+        .accessibilityIdentifier("subscription-page-capabilities")
+    }
+
     private var storeContent: some View {
         RedeSubscriptionStoreView(configuration: configuration, products: products) {
             VStack(alignment: .leading, spacing: 14) {
@@ -1314,6 +1394,11 @@ private struct SubscriptionPageSheet: View {
                     .font(.redeTitle)
                     .foregroundStyle(Color.redeT1)
                     .fixedSize(horizontal: false, vertical: true)
+                Text(s.paidCoachPitch)
+                    .font(.redeBody)
+                    .foregroundStyle(Color.redeT2)
+                    .fixedSize(horizontal: false, vertical: true)
+                capabilityList
                 HStack(alignment: .firstTextBaseline) {
                     Text(s.subscriptionPageCurrentPlan)
                         .font(.redeBody)

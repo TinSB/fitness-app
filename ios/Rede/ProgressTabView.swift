@@ -50,6 +50,9 @@ struct ProgressTabView: View {
     /// FR-PR6 肌群详情页（钻取层 2026-07-09：行内展开升级为详情 sheet——
     /// 子肌群等级/依据/未来趋势图的承载页；§6.5.11 解释入口）。
     @State private var muscleDetail: MuscleDetailItem?
+    /// 免费态点肌群行进的 Rede Coach 页（FR-SUB1 修订）。
+    @State private var showCoachPage = false
+    @Environment(SessionStore.self) private var sessionStore
     /// 点历史行进详情的触感脉冲（单调自增）——不绑 detailRecord?.id：那是 .sheet(item:) 会回落 nil 的
     /// 呈现态，关 sheet 时 id→nil 会幽灵多震一次（审查确认）。只在「打开」自增 → 关闭不误触。
     @State private var historyOpenPulse = 0
@@ -95,6 +98,7 @@ struct ProgressTabView: View {
             .sheet(item: $muscleDetail) { item in
                 MuscleDetailSheet(item: item)
             }
+            .redeCoachPage(isPresented: $showCoachPage)
             .onChange(of: outcome != nil) {
                 // 截图钩子（沿 -progressScale 先例）：-openMuscleDetail <raw> 数据就绪后自动开详情
                 guard case .ready(let model) = outcome else { return }
@@ -840,9 +844,16 @@ struct ProgressTabView: View {
                 ? s.muscleDecisionEaseBackIn : s.muscleDecisionLabel(.recover)
         default: decisionLabel = nil
         }
-        // 钻取层（2026-07-09）：行内展开退役，点行进详情 sheet（子肌群等级/依据/未来趋势图）
+        // 钻取层（2026-07-09）：行内展开退役，点行进详情 sheet（子肌群等级/依据/未来趋势图）。
+        // 钻取是付费能力（FR-SUB1 修订）：**总览这一行始终免费**——等级、趋势、决策标签一个不少；
+        // 只有点进去的子肌群与相对力量归 Rede Coach，免费态点行改为进 Coach 页。
+        let drilldownAllowed = sessionStore.paidCoach.allows(.muscleDrilldown)
         return Button {
-            muscleDetail = MuscleDetailItem(id: muscleRaw, estimate: estimate, subLevels: subLevels)
+            if drilldownAllowed {
+                muscleDetail = MuscleDetailItem(id: muscleRaw, estimate: estimate, subLevels: subLevels)
+            } else {
+                showCoachPage = true
+            }
         } label: {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(name)
@@ -908,6 +919,12 @@ struct ProgressTabView: View {
     private func milestoneRows(_ milestones: [StrengthMilestone]) -> [MilestoneRowItem] {
         var order: [String] = []
         var byExercise: [String: MilestoneRowItem] = [:]
+        // 估算里程碑属 Rede Coach（FR-SUB1 修订）：**实测里程碑永远免费**——
+        // 真练出来的成绩不能拿去收费，那是 FR-PR7 的诚信红线。免费态只是不显示「估算 225 lb」
+        // 这类预测行；纯估算的动作整行不出现，实测 + 估算的合并行退回只显示实测。
+        let milestones = sessionStore.paidCoach.allows(.estimatedMilestone)
+            ? milestones
+            : milestones.filter { !$0.isEstimated }
         for milestone in milestones {
             if byExercise[milestone.exerciseId] == nil {
                 order.append(milestone.exerciseId)
