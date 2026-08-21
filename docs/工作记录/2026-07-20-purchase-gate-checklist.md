@@ -8,6 +8,18 @@
 
 ## 开闸六项（顺序执行，逐项留收据）
 
+> **① 的诊断更新（2026-08-20）**：blocker **不是项目配置问题**，项目侧全部可能原因已逐一排除。
+> 实测：`SKTestSession` 三种构造器（`configurationFileNamed:` / `contentsOf:` bundle / `contentsOf:` 可写副本）
+> 都能构造成功，但随后每个操作都返回 `SKInternalErrorDomain Code=3`（存配置、disableDialogs、
+> clearTransactions 全中），`Product.products(for:)` 恒返回 0。
+> 已排除：Xcode 26.6 两个构建（17F109 与 17F113）、全新创建的干净模拟器、scheme 的 TestAction 挂不挂
+> `.storekit`、配置文件放只读 bundle 还是可写临时目录、标识符用十六进制样式还是十进制数字串。
+> 结论：iOS 26.5 模拟器运行时的 StoreKit 测试守护进程根本没为本 app 提供服务。**剩余可试的只有换 iOS
+> 运行时版本（本机只装了 26.5）或直接走真机 Sandbox**。`simctl` 没有 storekit 子命令，命令行无法附加配置，
+> 所以在 Xcode 里手动 Run `Rede-StoreKitTest` scheme（LaunchAction 已挂配置）是下一个该试的动作。
+> 本轮已顺手补上 TestAction 的 `.storekit` 引用——运行时问题解决后，`xcodebuild test -scheme
+> Rede-StoreKitTest` 需要它才能拿到配置。**没有放宽或跳过任何断言**，该测试仍在门禁排除列表里红着。
+
 - [ ] **① StoreKit 生命周期测试跑绿**：`RedeTests/StoreKitEntitlementsTests/testLocalCatalogPurchasePendingRestoreRenewalExpirationAndRefund`
   在可复现环境（修复 Xcode 26.6 + iOS 26.5 Simulator 保存 `.storekit` 配置报
   `SKInternalErrorDomain Code=3` 的 blocker，或换用已验证可用的 Xcode/OS 组合）完整跑绿：
