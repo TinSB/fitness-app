@@ -56,6 +56,19 @@ struct RootTabView: View {
         _appUpdateModel = State(initialValue: RedeAppUpdateRuntime.makeModel(arguments: args))
     }
 
+    /// 当前付费边界。权益与购买闸任一变化都要重解析（键见 paidCoachKey）。
+    private var resolvedPaidCoach: PaidCoachAccess {
+        PaidCoachAccess.resolve(
+            entitlement: subscriptionModel.entitlement,
+            launchDecision: subscriptionModel.launchDecision
+        )
+    }
+    /// `.task(id:)` 的稳定键：权益态 + 购买闸决定。用它而不是直接绑 PaidCoachAccess，
+    /// 是因为 checking → freeCore 这类过渡也要触发一次重解析。
+    private var paidCoachKey: String {
+        "\(subscriptionModel.entitlement)#\(subscriptionModel.launchDecision)"
+    }
+
     var body: some View {
         // 动效方向样例（临时脚手架）：-motionSample 直接进对比页，不走正常 tab 结构。
         if ProcessInfo.processInfo.arguments.contains("-motionSample") {
@@ -288,6 +301,10 @@ struct RootTabView: View {
             // 查询失败只影响订阅状态，绝不阻塞首启、训练或 canonical 数据。
             await subscriptionModel.start()
         }
+        // Rede Coach 付费边界（FR-SUB1 修订）：**权益解析只发生在这里**——
+        // 解析好的一个布尔快照灌给 SessionStore，引擎与 canonical 永不认识 entitlement。
+        // 键同时含购买闸：闸没开时边界恒 inactive（生产今日形态 = 一切照旧免费）。
+        .task(id: paidCoachKey) { await sessionStore.applyPaidCoach(resolvedPaidCoach) }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
             Task {

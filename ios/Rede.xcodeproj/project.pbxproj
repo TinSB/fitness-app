@@ -20,6 +20,7 @@
 		7B3C91D42A18E5F6B1000005 /* RedeWatchLink in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3C91D42A18E5F6B1000003 /* RedeWatchLink */; };
 		7B3C91D42A18E5F6C2000001 /* RedeWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6A0000001 /* RedeWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7B3C91D42A18E5F6C3000002 /* WatchLoggedSetIntakeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6C3000001 /* WatchLoggedSetIntakeTests.swift */; };
+		7B3C91D42A18E5F6E3000002 /* PaidCoachBoundaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6E3000001 /* PaidCoachBoundaryTests.swift */; };
 		7B3C91D42A18E5F6C4000002 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6C4000001 /* Assets.xcassets */; };
 		81CAB2673030B84900D641E6 /* RedeSync in Frameworks */ = {isa = PBXBuildFile; productRef = A100000000000000000000B1 /* RedeSync */; };
 		81CAB2683030B84900D641E6 /* RedeSyncSupabase in Frameworks */ = {isa = PBXBuildFile; productRef = A100000000000000000000B2 /* RedeSyncSupabase */; };
@@ -82,6 +83,7 @@
 		FD0000000000000000000001 /* SessionStoreDraftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0000000000000000000002 /* SessionStoreDraftTests.swift */; };
 		FF00000000000000000000A1 /* RedeEntitlements in Frameworks */ = {isa = PBXBuildFile; productRef = FF00000000000000000000B1 /* RedeEntitlements */; };
 		FF00000000000000000000D1 /* SubscriptionRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000000000000000000D2 /* SubscriptionRuntime.swift */; };
+		FF00000000000000000000E1 /* PaidCoachAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000000000000000000E2 /* PaidCoachAccess.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -141,6 +143,7 @@
 		7B3C91D42A18E5F6D1000002 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		7B3C91D42A18E5F6D1000003 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		7B3C91D42A18E5F6C3000001 /* WatchLoggedSetIntakeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchLoggedSetIntakeTests.swift; sourceTree = "<group>"; };
+		7B3C91D42A18E5F6E3000001 /* PaidCoachBoundaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaidCoachBoundaryTests.swift; sourceTree = "<group>"; };
 		7B3C91D42A18E5F6C4000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A100000000000000000000E1 /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
 		A100000000000000000000E3 /* SyncSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSheet.swift; sourceTree = "<group>"; };
@@ -195,6 +198,7 @@
 		FA0000000000000000000006 /* AppUpdateViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdateViews.swift; sourceTree = "<group>"; };
 		FD0000000000000000000002 /* SessionStoreDraftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStoreDraftTests.swift; sourceTree = "<group>"; };
 		FF00000000000000000000D2 /* SubscriptionRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionRuntime.swift; sourceTree = "<group>"; };
+		FF00000000000000000000E2 /* PaidCoachAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaidCoachAccess.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -303,6 +307,7 @@
 				BB0000000000000000000F0A /* ShareCardPreviewView.swift */,
 				BB0000000000000000000F12 /* HealthModel.swift */,
 				FF00000000000000000000D2 /* SubscriptionRuntime.swift */,
+				FF00000000000000000000E2 /* PaidCoachAccess.swift */,
 				F20000000000000000000002 /* WeeklyCoachReviewView.swift */,
 				FA0000000000000000000004 /* AppUpdateRuntime.swift */,
 				FA0000000000000000000006 /* AppUpdateViews.swift */,
@@ -348,6 +353,7 @@
 			children = (
 				A100000000000000000000E5 /* SyncWriteSlotTests.swift */,
 				7B3C91D42A18E5F6C3000001 /* WatchLoggedSetIntakeTests.swift */,
+				7B3C91D42A18E5F6E3000001 /* PaidCoachBoundaryTests.swift */,
 				F10000000000000000000005 /* StoreKitEntitlementsTests.swift */,
 				FA0000000000000000000002 /* AppUpdateRuntimeTests.swift */,
 				FD0000000000000000000002 /* SessionStoreDraftTests.swift */,
@@ -586,6 +592,7 @@
 				BB0000000000000000000F09 /* ShareCardPreviewView.swift in Sources */,
 				BB0000000000000000000F11 /* HealthModel.swift in Sources */,
 				FF00000000000000000000D1 /* SubscriptionRuntime.swift in Sources */,
+				FF00000000000000000000E1 /* PaidCoachAccess.swift in Sources */,
 				F20000000000000000000001 /* WeeklyCoachReviewView.swift in Sources */,
 				FA0000000000000000000003 /* AppUpdateRuntime.swift in Sources */,
 				FA0000000000000000000005 /* AppUpdateViews.swift in Sources */,
@@ -626,6 +633,7 @@
 				FD0000000000000000000001 /* SessionStoreDraftTests.swift in Sources */,
 				A100000000000000000000E6 /* SyncWriteSlotTests.swift in Sources */,
 				7B3C91D42A18E5F6C3000002 /* WatchLoggedSetIntakeTests.swift in Sources */,
+				7B3C91D42A18E5F6E3000002 /* PaidCoachBoundaryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -681,14 +689,14 @@
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Rede 把你完成的力量训练写回健康，让活动圆环计入这一场。";
 				INFOPLIST_FILE = RedeWatch/Info.plist;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 37;
+				CURRENT_PROJECT_VERSION = 38;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Rede;
 				INFOPLIST_KEY_WKApplication = YES;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.tinsab.rede;
-				MARKETING_VERSION = 1.10.2;
+				MARKETING_VERSION = 1.11.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -711,14 +719,14 @@
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Rede 把你完成的力量训练写回健康，让活动圆环计入这一场。";
 				INFOPLIST_FILE = RedeWatch/Info.plist;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 37;
+				CURRENT_PROJECT_VERSION = 38;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = Rede;
 				INFOPLIST_KEY_WKApplication = YES;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.tinsab.rede;
-				MARKETING_VERSION = 1.10.2;
+				MARKETING_VERSION = 1.11.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -860,7 +868,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Rede/Rede.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 37;
+				CURRENT_PROJECT_VERSION = 38;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -872,7 +880,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.10.2;
+				MARKETING_VERSION = 1.11.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -888,7 +896,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = Rede/Rede.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 37;
+				CURRENT_PROJECT_VERSION = 38;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -900,7 +908,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.10.2;
+				MARKETING_VERSION = 1.11.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -914,7 +922,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = RedeWidget/RedeWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 37;
+				CURRENT_PROJECT_VERSION = 38;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = RedeWidget/Info.plist;
@@ -924,7 +932,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.10.2;
+				MARKETING_VERSION = 1.11.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede.RedeWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -941,7 +949,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = RedeWidget/RedeWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 37;
+				CURRENT_PROJECT_VERSION = 38;
 				DEVELOPMENT_TEAM = 47K95GV3X5;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = RedeWidget/Info.plist;
@@ -951,7 +959,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.10.2;
+				MARKETING_VERSION = 1.11.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.tinsab.rede.RedeWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
