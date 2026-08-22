@@ -138,3 +138,70 @@ final class PaidCoachBoundaryTests: XCTestCase {
         }
     }
 }
+
+// MARK: - 开闸 checklist ⑦：恢复购买与政策链接的可达性
+//
+// 起因（2026-07-20 验收批）：设置页订阅区收敛后，「恢复购买」与两条政策链接只活在 Apple 购买面里，
+// 而购买面只在「已确认 Free Core × 商店就绪」出现。核对不出权益的人恰恰最需要 AppStore.sync()，
+// 却只剩语义不等价的本地「重新核对」；付费用户则整个够不到政策链接。
+@MainActor
+final class RedeCoachRecoveryPolicyTests: XCTestCase {
+
+    private let gateReady = SubscriptionLaunchDecision.ready
+    private let gateClosed = SubscriptionLaunchDecision.blocked(.paidCapabilityNotReady)
+
+    func testStoreNotReadyShowsNothing() {
+        // 商店没就绪时既没有配置好的政策 URL 也没有购买路径，凭空多两个链接只会指向空处。
+        for entitlement in [EntitlementState.freeCore, .checking,
+                            .unknown(.storeUnavailable),
+                            .paidCoach(expirationDate: nil, billingState: .active)] {
+            XCTAssertEqual(
+                RedeCoachRecoveryPolicy.controls(entitlement: entitlement, launchDecision: gateClosed),
+                .none
+            )
+        }
+    }
+
+    func testUnknownEntitlementGetsRestoreAndPolicies() {
+        // 最尖锐的一格：权益核对不出 × 商店就绪。
+        let controls = RedeCoachRecoveryPolicy.controls(
+            entitlement: .unknown(.storeUnavailable), launchDecision: gateReady
+        )
+        XCTAssertTrue(controls.showsRestore, "核对不出权益的人必须够得到向 Apple 重新同步")
+        XCTAssertTrue(controls.showsPolicyLinks, "他看不到购买面，政策链接要在这里补")
+    }
+
+    func testPaidStateGetsPoliciesButNotRestore() {
+        let controls = RedeCoachRecoveryPolicy.controls(
+            entitlement: .paidCoach(expirationDate: nil, billingState: .active), launchDecision: gateReady
+        )
+        XCTAssertFalse(controls.showsRestore, "已经有权益的人不需要恢复入口")
+        XCTAssertTrue(controls.showsPolicyLinks, "付费态此前完全够不到条款链接")
+    }
+
+    func testConfirmedFreeCoreLeavesItToApplesPurchaseSheet() {
+        // 已确认免费 → 会看到购买面，Apple 自带恢复与政策控件，这里不重复给。
+        XCTAssertEqual(
+            RedeCoachRecoveryPolicy.controls(entitlement: .freeCore, launchDecision: gateReady),
+            .none
+        )
+    }
+
+    func testCheckingIsTransientAndAddsNoControls() {
+        XCTAssertEqual(
+            RedeCoachRecoveryPolicy.controls(entitlement: .checking, launchDecision: gateReady),
+            .none
+        )
+    }
+
+    func testExpiredPaidEntitlementIsTreatedAsFreeCoreNotPaid() {
+        // 过期 = 回落 Free Core：走购买面那条路，不给「已付费」的政策页脚。
+        let expired = EntitlementState.paidCoach(
+            expirationDate: Date().addingTimeInterval(-60), billingState: .active
+        )
+        XCTAssertEqual(
+            RedeCoachRecoveryPolicy.controls(entitlement: expired, launchDecision: gateReady),
+            .none
+        )
+    }
+}

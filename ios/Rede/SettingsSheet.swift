@@ -1065,6 +1065,48 @@ enum RedeCoachCurrentPlan: Equatable {
     case paidCoach
 }
 
+/// 恢复购买与政策链接的可达性（开闸 checklist ⑦，2026-07-20 验收批发现）。
+///
+/// 问题：设置页订阅区收敛后，「恢复购买」和两条政策链接**只存在于 Apple 的购买面里**，
+/// 而购买面只在「已确认 Free Core × 商店就绪」那一格出现。于是：
+/// · `unknown × store-ready` 最尖锐——权益核对不出的人恰恰是最需要 `AppStore.sync()` 的人，
+///   却只剩一个语义不等价的本地「重新核对」（那只是重读已缓存的结论）。
+/// · 付费态同时够不到隐私政策与使用条款。
+///
+/// 判据：**商店没就绪就什么都不给**——那时既没有配置好的政策 URL，也没有购买路径，
+/// 凭空多出两个链接只会指向空处。checking 是过渡态，不加控件。
+enum RedeCoachRecoveryPolicy {
+    struct Controls: Equatable {
+        var showsRestore: Bool
+        var showsPolicyLinks: Bool
+        static let none = Controls(showsRestore: false, showsPolicyLinks: false)
+    }
+
+    static func controls(
+        entitlement: EntitlementState,
+        launchDecision: SubscriptionLaunchDecision,
+        now: Date = Date()
+    ) -> Controls {
+        guard SubscriptionPagePolicy.presentation(for: launchDecision).showsTransactionControls else {
+            return .none
+        }
+        if FeatureAccessPolicy.allows(.paidCoach, entitlement: entitlement, now: now) {
+            // 已付费：不需要恢复（已经有了），但要够得到两条政策链接。
+            return Controls(showsRestore: false, showsPolicyLinks: true)
+        }
+        switch entitlement {
+        case .unknown:
+            // 核对不出：把 Apple 的重新同步给他，外加政策链接（他看不到购买面）。
+            return Controls(showsRestore: true, showsPolicyLinks: true)
+        case .checking:
+            return .none
+        case .freeCore, .paidCoach:
+            // 已确认免费（含过期回落）→ 购买面本身自带 Apple 的恢复与政策控件，不重复给。
+            return .none
+        }
+    }
+}
+
 enum RedeCoachPageContent: Equatable {
     case weeklyReview
     case entitlement(RedeCoachEntitlementPresentation)
@@ -1208,6 +1250,10 @@ struct SubscriptionPageSheet: View {
                 if SubscriptionPagePolicy.presentation(for: subscriptionModel.launchDecision)
                     .showsTransactionControls {
                     manageSubscriptionsFooter
+                    // ⑦：付费用户看不到购买面，也就够不到 Apple 那套政策链接——在这里补回来。
+                    policyLinks
+                        .padding(.horizontal, RedeSpace.page)
+                        .padding(.bottom, 12)
                 }
             case .entitlement(let presentation):
                 entitlementContent(presentation)
@@ -1283,6 +1329,30 @@ struct SubscriptionPageSheet: View {
         }
     }
 
+    private var recoveryControls: RedeCoachRecoveryPolicy.Controls {
+        RedeCoachRecoveryPolicy.controls(
+            entitlement: subscriptionModel.entitlement,
+            launchDecision: subscriptionModel.launchDecision
+        )
+    }
+
+    /// 隐私政策 / 使用条款两条文字链（⑦）。URL 取自发布配置——**不硬编码**，
+    /// 配置里没有就整块不出现（那种情况下 launch gate 本来也进不了 store 态）。
+    @ViewBuilder private var policyLinks: some View {
+        if recoveryControls.showsPolicyLinks,
+           let privacy = configuration.privacyPolicyURL,
+           let terms = configuration.termsOfUseURL {
+            HStack(spacing: 16) {
+                Link(s.subscriptionPolicyPrivacy, destination: privacy)
+                Link(s.subscriptionPolicyTerms, destination: terms)
+                Spacer()
+            }
+            .font(.redeCaption)
+            .tint(Color.redeT3)
+            .accessibilityIdentifier("subscription-page-policies")
+        }
+    }
+
     private func entitlementContent(_ presentation: RedeCoachEntitlementPresentation) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -1315,6 +1385,30 @@ struct SubscriptionPageSheet: View {
                         EmbButton(icon: "arrow.clockwise", title: s.settingsSubscriptionRetry) {
                             Task { await subscriptionModel.refresh() }
                         }
+                        // ⑦：核对不出权益的人最需要的是向 Apple 重新同步，而不是重读本地缓存。
+                        // 只在商店就绪时给——闸没开时 sync 也无从谈起。
+                        if recoveryControls.showsRestore {
+                            Button {
+                                Task { await subscriptionModel.restore() }
+                            } label: {
+                                Text(subscriptionModel.operation == .restoring
+                                     ? s.settingsSubscriptionChecking
+                                     : s.settingsSubscriptionRestore)
+                                    .font(.redeBody)
+                                    .foregroundStyle(Color.redeT2)
+                                    .frame(maxWidth: .infinity, minHeight: RedeShape.controlHeight, alignment: .leading)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.redePressableRow)
+                            .disabled(subscriptionModel.operation == .restoring)
+                            .accessibilityIdentifier("subscription-page-restore")
+                            if subscriptionModel.operation == .succeeded(.restore) {
+                                Text(s.settingsSubscriptionRestored)
+                                    .font(.redeCaption)
+                                    .foregroundStyle(Color.redeT3)
+                            }
+                        }
+                        policyLinks
                     }
                     .accessibilityIdentifier("subscription-page-entitlement-unavailable")
                 }
