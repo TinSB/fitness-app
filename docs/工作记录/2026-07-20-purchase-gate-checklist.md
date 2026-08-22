@@ -48,13 +48,21 @@
 - [ ] **⑥ 定价与 founder beta 锚点对齐**：ASC 正式定价须与官网 founder beta 承诺
   （annual_5999_high 锚点系）对账——founder 报名者拿到的价格/权益不劣于公开价，
   公开价不打脸已发出的 beta 沟通；定价决定本身由 owner 拍板并留书面记录。
-- [ ] **⑦ 恢复购买与条款链接的可达性收口（2026-07-20 验收批发现）**：设置页订阅区收敛后，
+- [x] **⑦ 恢复购买与条款链接的可达性收口（2026-07-20 验收批发现 → 2026-08-20 PR #745 收口）**：设置页订阅区收敛后，
   「恢复购买」唯一入口是 Coach 页购买面——按既有 entitlement 矩阵，**unknown/checking/付费态
   永远看不到购买面**，其中 unknown×store-ready 格最尖锐（权益无法核对的用户恰是
   `AppStore.sync()` 强制重同步的目标人群，现仅剩语义不等价的本地「重新读取」）；付费态同时
   失去订阅条款链接。开闸前必须落地：Coach 页 entitlement `.unavailable` 态在 store ready 时
   补「恢复购买」入口，付费态页脚补条款链接（或另行裁定的等价方案）；今日购买闸恒 blocked
   故不可达，不构成现网缺口。
+
+  **收据（PR #745）**：`RedeCoachRecoveryPolicy`（`ios/Rede/SettingsSheet.swift`）按
+  权益 × 开闸判定 决定两个控件——商店没就绪一个都不给（没有可指向的地址）/ `.unknown` 给
+  「恢复购买」+ 两条政策链接 / 付费态只给链接 / `.freeCore` 与 `.checking` 不给（Apple 购买面
+  自带同款控件；后者是瞬态）。恢复按钮走模型真实的 `restore()`。证据：`RedeCoachRecoveryPolicyTests`
+  6/6（全矩阵，含过期付费回落 Free Core）、quality-gate PASS，以及三张模拟器实拍（unknown 态两控件
+  齐全 / 点恢复真解出权益并切到购买态 / 付费态页脚链接齐全）。
+  ⚠️ 本项已收口不代表可开闸：**①②③④⑤⑥ 仍未完成**。
 
 ## 完成定义
 
