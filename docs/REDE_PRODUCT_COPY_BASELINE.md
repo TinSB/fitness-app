@@ -666,6 +666,27 @@ App Store Connect 里的名称 / 副标题 / 关键词 / 类别 **以本节为�
 
 ---
 
+### 6.4.1 1.11.0 发版元数据补充（Apple Watch）
+
+1.11.0 是第一个带 Apple Watch app 的版本。App Store 会自动标出「Apple Watch 版」徽章，
+但**描述正文不提就等于没说**——搜索索引读描述，用户读第一屏。发版时把下面这句加进描述，
+位置在第一段之后、功能清单之前（描述是本节唯一不落库在 ASC 之外的字段，改前先改这里）。
+
+| 语言 | 加进描述的句子 |
+|---|---|
+| en | Rede runs on Apple Watch. See the set's weight and reps on your wrist, log it, and start the rest timer — your phone can stay in the bag. Watch and phone are the same session: a set logged on either side shows up on the other. |
+| zh | Rede 支持 Apple Watch。手表上就能看到这一组多重、几次，打勾记组，休息自动倒计时，手机可以放在包里。手表和手机是同一场训练，任一边记的组另一边立刻可见。 |
+
+写法理由：两句都只讲**已经交付的事实**（§6 的既定纪律），第一句给可搜索的具体名词
+（Apple Watch / rest timer），第二句回答用户看到手表版本时的第一个疑问——两块屏会不会打架。
+不写「无缝」「全面」这类空泛词。
+
+**随本版一起做的三项 ASO 改动见 §6.4 表格**（副标题 / 关键词 / 次要类别），
+ASC 锁定规则决定它们只能随新版本提交，三项一次到位。
+
+**手表截图**：已产出中英各四张（记组 / 休息 / 今日清单 / 练完态），**416×496**，
+ASC 的 46 mm 档尺寸，在 `.ai-tmp/appstore-watch-2026-08/`。手表截图与 iPhone 截图分开上传。
+
 ## 7. 风险红线
 
 ### 7.1 医疗与伤病
