@@ -858,7 +858,9 @@ struct RestCountdownView: View {
             Group {
                 if link.pendingTransfers > 0 {
                     Text(verbatim: s.watchPendingSets(link.pendingTransfers))
-                } else if !link.isReachable {
+                } else if !link.isReachable, !WatchPreview.isActive {
+                    // 截图钩子下没有配对手机，「不可达」永远为真——它会顶掉下面那行真正要展示的
+                    // 内容（同 `SkipSetSheet` 的 disabled 守卫）。生产路径不受影响。
                     Text(verbatim: s.watchPhoneUnreachable)
                 } else {
                     // 手机渲染的「下一组 · 第 3 组 · 60 kg × 6」/「接下来 · 高位下拉」；
