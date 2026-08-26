@@ -191,7 +191,7 @@ struct TodayWatchView: View {
                 // · 「完成」按钮必须永远整颗可见。小号表上一滚动它就只剩半截，
                 //   而这是这块屏上唯一重要的操作（owner 真机反馈）
                 // 所以这一屏必须在最小表盘上一屏放下——放不下就是设计要减，不是加滚动。
-                ActiveSetView(active: active, store: store)
+                ActiveSetView(active: active, store: store, workout: workout)
                     .padding(.horizontal, 6)
                     .transition(WatchMotion.morphTransition(reduceMotion: reduceMotion))
             } else {
@@ -419,6 +419,8 @@ struct HealthGateView: View {
 struct ActiveSetView: View {
     let active: WatchPrescription.Active
     let store: WatchPrescriptionStore
+    /// 只为读实时心率与开练时刻。表上的 HK 会话本来就在跑，这里不改它的生命周期。
+    @ObservedObject var workout: WorkoutSessionKeeper
 
     /// 表冠此刻在调哪个读数。
     enum Field: Hashable { case weight, reps, rir }
@@ -469,13 +471,16 @@ struct ActiveSetView: View {
         return active.isWarmup ? s.warmupDone : s.trainLogSet
     }
 
-    /// 只在真有东西排队时出现。**不能只说「已记录」**——手机够不着时那是半个真话，
-    /// 组确实记下了，但还没过去。说清楚「排队中」，用户才知道不用重按、也没丢。
-    @ViewBuilder private var pendingHint: some View {
+    /// 按钮上方那一条状态带。同一个位置两种内容，**排队优先**：
+    /// 「已记录」在手机够不着时是半个真话——组确实记下了但还没过去，说清楚用户才不会重按。
+    /// 没有排队时这一条显示心率与已练时长（数据早就在采，之前一个数都没露）。
+    @ViewBuilder private var statusLine: some View {
         if link.pendingTransfers > 0 {
             Text(verbatim: s.watchPendingSets(link.pendingTransfers))
                 .font(.system(size: 10))
                 .foregroundStyle(WatchPalette.t3)
+        } else {
+            VitalsLine(bpm: workout.heartRateBpm, startedAt: workout.startedAt)
         }
     }
 
@@ -489,7 +494,7 @@ struct ActiveSetView: View {
         // 记完一组按钮变「已记录」、手机推回休息、环淡入，是一个连贯的手势而不是三次硬切。
         ZStack {
             if active.isResting {
-                RestCountdownView(active: active, store: store)
+                RestCountdownView(active: active, store: store, workout: workout)
                     .transition(WatchMotion.morphTransition(reduceMotion: reduceMotion))
             } else if active.isWarmup {
                 warmupBody
@@ -562,7 +567,7 @@ struct ActiveSetView: View {
             .opacity(justLogged ? 0.6 : 1)
 
             Spacer(minLength: 3)
-            pendingHint
+            statusLine
 
             EmbWatchButton(icon: "checkmark", title: buttonTitle, enabled: !justLogged) {
                 store.logSet(active: active, weightKg: chosenWeightKg, reps: reps, rir: rir.map(Double.init))
@@ -690,7 +695,7 @@ struct ActiveSetView: View {
                 .padding(.top, 8 * WatchMetrics.scale)
 
             Spacer(minLength: 3)
-            pendingHint
+            statusLine
 
             // 跳过热身走 message：手机不可达时不给按——按了没反应比按不了更糟。
             // 文字级操作而不是第二颗按钮：热身屏只有一个主动作（完成），跳过是让路的次选，
@@ -806,6 +811,7 @@ struct SkipSetSheet: View {
 struct RestCountdownView: View {
     let active: WatchPrescription.Active
     let store: WatchPrescriptionStore
+    @ObservedObject var workout: WorkoutSessionKeeper
     @ObservedObject private var link = WatchLink.shared
     /// 常亮显示（手腕放下、屏幕变暗）时为 true。这时屏上只该剩「还剩多久」：
     /// 两颗圆钮收起（暗屏下也按不着，抬腕点亮再出现），环与数字留着，
@@ -824,6 +830,13 @@ struct RestCountdownView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // 环上方这条带是这一屏唯一没被占的横向空间（记组屏上同样的内容在按钮正上方——
+            // 两屏都放「该屏最不挤的那条带」，位置不同但规则同一条）。
+            // 常亮低亮时收起：那一刻屏上只该剩「还剩多久」，与两颗圆钮同一处置。
+            if !luminanceReduced {
+                VitalsLine(bpm: workout.heartRateBpm, startedAt: workout.startedAt)
+                    .padding(.bottom, 2)
+            }
             // TimelineView 而不是自己跑 Timer：系统按需重绘，表被抬起时才刷，省电。
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 let remaining = countdown.remaining(now: context.date)
