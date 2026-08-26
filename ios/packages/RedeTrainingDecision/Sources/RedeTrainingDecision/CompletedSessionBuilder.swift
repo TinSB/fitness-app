@@ -49,6 +49,8 @@ public enum CompletedSessionBuilder {
                 ]
                 if let rir = obs.rir { set["rir"] = weightValue(rir) }
                 if obs.painReported { set["painFlag"] = .bool(true) }
+                // 只在真有时刻时写这一位：没盖章的组不写空串，历史里 nil 与 "" 的区别是真的。
+                if let at = obs.completedAt { set["completedAt"] = .string(at) }
                 sets.append(.object(set))
             }
 

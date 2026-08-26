@@ -350,11 +350,14 @@ struct ProgressModel {
                             let key = "\(session.id)|\(exercise.exerciseId)|\(index + 1)|\(set.weight)|\(set.reps)"
                             return suspectKeys.contains(key)
                                 ? nil
-                                : SnapshotSetRecord(weightKg: set.weight, reps: set.reps)
+                                : SnapshotSetRecord(weightKg: set.weight, reps: set.reps,
+                                                    completedAtISO: set.completedAt)
                         }
                     )
                 },
-                durationMinutes: nil
+                durationMinutes: nil,
+                startedAtISO: session.startedAt,
+                finishedAtISO: session.finishedAt
             )
         }
     }

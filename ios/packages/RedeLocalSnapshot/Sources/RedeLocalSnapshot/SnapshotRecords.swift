@@ -5,10 +5,14 @@
 public struct SnapshotSetRecord: Equatable, Sendable {
     public let weightKg: Double
     public let reps: Int
+    /// 记下这一组的时刻（ISO8601）。把「组」放回时间轴的坐标——单场记录页要用它
+    /// 把每一组标在心率曲线上。nil = 旧数据没有这一位，那一场就只画曲线不标组。
+    public let completedAtISO: String?
 
-    public init(weightKg: Double, reps: Int) {
+    public init(weightKg: Double, reps: Int, completedAtISO: String? = nil) {
         self.weightKg = weightKg
         self.reps = reps
+        self.completedAtISO = completedAtISO
     }
 }
 
@@ -28,11 +32,19 @@ public struct SnapshotSessionRecord: Equatable, Sendable {
     public let dateISO: String
     public let exercises: [SnapshotExerciseRecord]
     public let durationMinutes: Int?
+    /// 这一场的开始 / 结束时刻（ISO8601）。用来把这一场对回「健康」里的那条体能训练
+    /// （按时间窗匹配），也是时间轴的两端。
+    public let startedAtISO: String?
+    public let finishedAtISO: String?
 
-    public init(id: String, dateISO: String, exercises: [SnapshotExerciseRecord], durationMinutes: Int? = nil) {
+    public init(id: String, dateISO: String, exercises: [SnapshotExerciseRecord],
+                durationMinutes: Int? = nil,
+                startedAtISO: String? = nil, finishedAtISO: String? = nil) {
         self.id = id
         self.dateISO = dateISO
         self.exercises = exercises
         self.durationMinutes = durationMinutes
+        self.startedAtISO = startedAtISO
+        self.finishedAtISO = finishedAtISO
     }
 }
