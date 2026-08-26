@@ -66,7 +66,9 @@ public enum CleanAppDataViewBuilder {
                 id: id,
                 date: date,
                 exercises: exercises,
-                painDiscomfortExerciseIds: painDiscomfortExerciseIds
+                painDiscomfortExerciseIds: painDiscomfortExerciseIds,
+                startedAt: session.startedAt,
+                finishedAt: session.finishedAt
             ))
         }
 
@@ -162,7 +164,8 @@ public enum CleanAppDataViewBuilder {
                     weight: weight,
                     reps: reps,
                     rir: rir,
-                    painFlag: set.painFlag == true
+                    painFlag: set.painFlag == true,
+                    completedAt: set.completedAt
                 ))
             }
             result.append(CleanExercise(

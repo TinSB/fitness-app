@@ -2264,6 +2264,12 @@ final class SessionStore {
     /// 休息提醒，让它此刻送达（前台经 delegate 呈现 / 后台系统送达）。手动「下一组」提前结束或收尾才取消。
     func apply(_ event: TrainFlowEvent, restCompletedNaturally: Bool = false) {
         guard flow != nil else { return }
+        // 记组时刻在这里盖章而不是在七个构造点各盖一次：引擎包无时钟（硬纪律），
+        // 而这里是 app 层唯一一条 .logSet 必经之路。已经带了时刻的（未来若有）不覆盖。
+        var event = event
+        if case .logSet(let obs) = event, obs.completedAt == nil {
+            event = .logSet(obs.stamped(at: ISO8601DateFormatter().string(from: Date())))
+        }
         _ = reduce(event)
         syncRestCountdown(after: event, restCompletedNaturally: restCompletedNaturally)
         enqueueDraftSave()
