@@ -190,6 +190,33 @@ extension RedeStrings {
         return locale == .zh ? "\(base)，\(historyPRBadge)" : "\(base), \(historyPRBadge)"
     }
     public var historyDetailSets: String { locale == .zh ? "逐组明细" : "Set by set" }
+
+    // MARK: - 单场生命体征（自有运动记录 A2/B，2026-08-26）
+    //
+    // 只描述已经发生的事实，一个形容词都不加（§6 纪律）。单位全部靠标签说清楚，
+    // 数值本身不带单位——数字要能横向对齐扫读。
+
+    /// 曲线上方的 overline。不叫「数据」「分析」这类空词，就叫它是什么。
+    public var vitalsOverline: String { locale == .zh ? "心率" : "HEART RATE" }
+    public var vitalsDuration: String { locale == .zh ? "时长" : "Duration" }
+    public var vitalsAvgHeartRate: String { locale == .zh ? "平均心率" : "Avg heart rate" }
+    public var vitalsPeakHeartRate: String { locale == .zh ? "峰值" : "Peak" }
+    public var vitalsActiveEnergy: String { locale == .zh ? "活动能量" : "Active energy" }
+    /// 分钟数。与小结那行同口径，不写「大约」。
+    public func vitalsMinutes(_ minutes: Int) -> String {
+        locale == .zh ? "\(minutes) 分" : "\(minutes) min"
+    }
+    public func vitalsKcal(_ kcal: Int) -> String {
+        locale == .zh ? "\(kcal) 千卡" : "\(kcal) kcal"
+    }
+    /// 曲线下方那条时间轴的两端。
+    public func vitalsElapsedMark(_ minutes: Int) -> String {
+        locale == .zh ? "\(minutes) 分" : "\(minutes) min"
+    }
+    /// 曲线上组标记的说明。**只说它是什么，不解释怎么读**——图自己会说话。
+    public var vitalsSetMarksNote: String {
+        locale == .zh ? "刻线 = 记下一组的时刻" : "Ticks mark each logged set"
+    }
     /// 明细行 "60 kg × 6"
     public func historySetLine(kg: String, reps: Int) -> String { "\(kg) \(unitLabel) × \(reps)" }
 

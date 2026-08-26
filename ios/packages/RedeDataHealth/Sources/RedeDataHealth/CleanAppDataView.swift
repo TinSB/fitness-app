@@ -16,12 +16,18 @@ public struct CleanLoggedSet: Equatable, Sendable {
     public let rir: Double?
     /// 训练中由用户登记的不适事实；只阻止它被误判为一次“正常完成”。
     public let painFlag: Bool
+    /// 这一组是什么时候记下的（ISO8601）。**只透传，不做质量判定**：它不是用户事实
+    /// （不是重量也不是次数），是把「组」放回时间轴的坐标。坏值在消费端解析成 nil 即可，
+    /// 不值得为它新增一类 issue。nil = 旧数据没有这一位。
+    public let completedAt: String?
 
-    public init(weight: Double, reps: Int, rir: Double?, painFlag: Bool = false) {
+    public init(weight: Double, reps: Int, rir: Double?, painFlag: Bool = false,
+                completedAt: String? = nil) {
         self.weight = weight
         self.reps = reps
         self.rir = rir
         self.painFlag = painFlag
+        self.completedAt = completedAt
     }
 }
 
@@ -71,17 +77,25 @@ public struct CleanTrainingSession: Equatable, Sendable {
     public let exercises: [CleanExercise]
     /// 本场因 painDiscomfort 跳过过组或整动作的动作 id；同场去重。
     public let painDiscomfortExerciseIds: Set<String>
+    /// 这一场的开始 / 结束时刻（ISO8601）。与 completedAt 同理：只透传，不判定。
+    /// 有了它才能把这一场对回「健康」里的那条体能训练，以及把每一组放上时间轴。
+    public let startedAt: String?
+    public let finishedAt: String?
 
     public init(
         id: String,
         date: String,
         exercises: [CleanExercise],
-        painDiscomfortExerciseIds: Set<String> = []
+        painDiscomfortExerciseIds: Set<String> = [],
+        startedAt: String? = nil,
+        finishedAt: String? = nil
     ) {
         self.id = id
         self.date = date
         self.exercises = exercises
         self.painDiscomfortExerciseIds = painDiscomfortExerciseIds
+        self.startedAt = startedAt
+        self.finishedAt = finishedAt
     }
 }
 

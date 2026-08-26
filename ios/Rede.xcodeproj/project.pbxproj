@@ -21,6 +21,7 @@
 		7B3C91D42A18E5F6C2000001 /* RedeWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6A0000001 /* RedeWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		7B3C91D42A18E5F6C3000002 /* WatchLoggedSetIntakeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6C3000001 /* WatchLoggedSetIntakeTests.swift */; };
 		7B3C91D42A18E5F6E3000002 /* PaidCoachBoundaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6E3000001 /* PaidCoachBoundaryTests.swift */; };
+		7B3C91D42A18E5F6E3000004 /* SessionVitalsTimelineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6E3000003 /* SessionVitalsTimelineTests.swift */; };
 		7B3C91D42A18E5F6C4000002 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6C4000001 /* Assets.xcassets */; };
 		81CAB2673030B84900D641E6 /* RedeSync in Frameworks */ = {isa = PBXBuildFile; productRef = A100000000000000000000B1 /* RedeSync */; };
 		81CAB2683030B84900D641E6 /* RedeSyncSupabase in Frameworks */ = {isa = PBXBuildFile; productRef = A100000000000000000000B2 /* RedeSyncSupabase */; };
@@ -84,6 +85,7 @@
 		FF00000000000000000000A1 /* RedeEntitlements in Frameworks */ = {isa = PBXBuildFile; productRef = FF00000000000000000000B1 /* RedeEntitlements */; };
 		FF00000000000000000000D1 /* SubscriptionRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000000000000000000D2 /* SubscriptionRuntime.swift */; };
 		FF00000000000000000000E1 /* PaidCoachAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000000000000000000E2 /* PaidCoachAccess.swift */; };
+		FF00000000000000000000E3 /* SessionVitalsBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000000000000000000E4 /* SessionVitalsBlock.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -144,6 +146,7 @@
 		7B3C91D42A18E5F6D1000003 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		7B3C91D42A18E5F6C3000001 /* WatchLoggedSetIntakeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchLoggedSetIntakeTests.swift; sourceTree = "<group>"; };
 		7B3C91D42A18E5F6E3000001 /* PaidCoachBoundaryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaidCoachBoundaryTests.swift; sourceTree = "<group>"; };
+		7B3C91D42A18E5F6E3000003 /* SessionVitalsTimelineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionVitalsTimelineTests.swift; sourceTree = "<group>"; };
 		7B3C91D42A18E5F6C4000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A100000000000000000000E1 /* SyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncService.swift; sourceTree = "<group>"; };
 		A100000000000000000000E3 /* SyncSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSheet.swift; sourceTree = "<group>"; };
@@ -199,6 +202,7 @@
 		FD0000000000000000000002 /* SessionStoreDraftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStoreDraftTests.swift; sourceTree = "<group>"; };
 		FF00000000000000000000D2 /* SubscriptionRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionRuntime.swift; sourceTree = "<group>"; };
 		FF00000000000000000000E2 /* PaidCoachAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaidCoachAccess.swift; sourceTree = "<group>"; };
+		FF00000000000000000000E4 /* SessionVitalsBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionVitalsBlock.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -308,6 +312,7 @@
 				BB0000000000000000000F12 /* HealthModel.swift */,
 				FF00000000000000000000D2 /* SubscriptionRuntime.swift */,
 				FF00000000000000000000E2 /* PaidCoachAccess.swift */,
+				FF00000000000000000000E4 /* SessionVitalsBlock.swift */,
 				F20000000000000000000002 /* WeeklyCoachReviewView.swift */,
 				FA0000000000000000000004 /* AppUpdateRuntime.swift */,
 				FA0000000000000000000006 /* AppUpdateViews.swift */,
@@ -354,6 +359,7 @@
 				A100000000000000000000E5 /* SyncWriteSlotTests.swift */,
 				7B3C91D42A18E5F6C3000001 /* WatchLoggedSetIntakeTests.swift */,
 				7B3C91D42A18E5F6E3000001 /* PaidCoachBoundaryTests.swift */,
+				7B3C91D42A18E5F6E3000003 /* SessionVitalsTimelineTests.swift */,
 				F10000000000000000000005 /* StoreKitEntitlementsTests.swift */,
 				FA0000000000000000000002 /* AppUpdateRuntimeTests.swift */,
 				FD0000000000000000000002 /* SessionStoreDraftTests.swift */,
@@ -593,6 +599,7 @@
 				BB0000000000000000000F11 /* HealthModel.swift in Sources */,
 				FF00000000000000000000D1 /* SubscriptionRuntime.swift in Sources */,
 				FF00000000000000000000E1 /* PaidCoachAccess.swift in Sources */,
+				FF00000000000000000000E3 /* SessionVitalsBlock.swift in Sources */,
 				F20000000000000000000001 /* WeeklyCoachReviewView.swift in Sources */,
 				FA0000000000000000000003 /* AppUpdateRuntime.swift in Sources */,
 				FA0000000000000000000005 /* AppUpdateViews.swift in Sources */,
@@ -634,6 +641,7 @@
 				A100000000000000000000E6 /* SyncWriteSlotTests.swift in Sources */,
 				7B3C91D42A18E5F6C3000002 /* WatchLoggedSetIntakeTests.swift in Sources */,
 				7B3C91D42A18E5F6E3000002 /* PaidCoachBoundaryTests.swift in Sources */,
+				7B3C91D42A18E5F6E3000004 /* SessionVitalsTimelineTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
