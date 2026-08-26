@@ -21,6 +21,16 @@ final class WorkoutSessionKeeper: NSObject, ObservableObject {
     /// 出错就记一行，不弹窗。表上练到一半弹权限失败的框，比没有 session 还糟。
     @Published private(set) var lastError: String?
 
+    /// 最近一次心率（bpm）。nil = 还没读到（刚开始、模拟器、或用户没给读权限）。
+    ///
+    /// 数据一直都在采——`HKLiveWorkoutDataSource` 默认就收心率与能量，这一片从切片 6 起就在跑。
+    /// 之前只是**一个数都没往外露**，于是用户仍然去开苹果的体能训练 app。这两个值就是把
+    /// 已经在手腕上产生的东西显示出来，不新增任何采集、不新增权限（读权限早就在要）。
+    @Published private(set) var heartRateBpm: Int?
+    /// 这一场的开始时刻。已练时长由表自己按墙钟算——与休息倒计时同一纪律（传时刻不传秒数）：
+    /// 不必每秒发布一次，`TimelineView` 自己刷新，app 被挂起再回来也是准的。
+    @Published private(set) var startedAt: Date?
+
     /// 「健身记录」写入权限（v3.2，owner 拍板：**整个表 app 都以它为前提**）。
     /// nil = 系统还没问过；false = 用户拒绝过（系统不会再弹框，只能去设置里开）；true = 已允许。
     /// 只看 share 状态：HealthKit 对写入类型如实报告，读类型出于隐私永远报 notDetermined。
@@ -43,6 +53,12 @@ final class WorkoutSessionKeeper: NSObject, ObservableObject {
         super.init()
         // 启动即知道权限状态：不然已授权用户每次冷启动都会先闪一帧权限门再 morph 走（审查 m1）。
         refreshAuthorization()
+        // 截图钩子：模拟器没有心率传感器，不给固定值这两行在预览里永远是空的、验不了版式。
+        // 生产路径不可达（-watchPreview 才为真）。
+        if WatchPreview.isActive {
+            heartRateBpm = 132
+            startedAt = Date().addingTimeInterval(-24 * 60 - 10)
+        }
     }
 
     /// 重读权限状态：启动时、回到前台时（用户可能刚去设置里开了）、请求授权之后。
@@ -115,6 +131,7 @@ final class WorkoutSessionKeeper: NSObject, ObservableObject {
             let builder = session.associatedWorkoutBuilder()
             builder.dataSource = HKLiveWorkoutDataSource(healthStore: store, workoutConfiguration: config)
             session.delegate = self
+            builder.delegate = self   // 心率靠它推过来；不挂就永远读不到（数据照采、只是没人取）
             self.session = session
             self.builder = builder
 
@@ -122,6 +139,7 @@ final class WorkoutSessionKeeper: NSObject, ObservableObject {
             session.startActivity(with: now)
             try await builder.beginCollection(at: now)
             isRunning = true
+            startedAt = now
             lastError = nil
         } catch {
             lastError = "训练会话启动失败：\(error.localizedDescription)"
@@ -150,7 +168,30 @@ final class WorkoutSessionKeeper: NSObject, ObservableObject {
         self.session = nil
         self.builder = nil
         isRunning = false
+        // 这一场结束，读数就不再属于任何一场。留着会在下一场开始前显示上一场的心率。
+        heartRateBpm = nil
+        startedAt = nil
     }
+}
+
+// MARK: - 实时读数
+
+extension WorkoutSessionKeeper: HKLiveWorkoutBuilderDelegate {
+    nonisolated func workoutBuilder(_ workoutBuilder: HKLiveWorkoutBuilder,
+                                    didCollectDataOf collectedTypes: Set<HKSampleType>) {
+        guard collectedTypes.contains(HKQuantityType(.heartRate)) else { return }
+        // statistics 取最近一条而不是平均：屏上要回答的是「我现在多少」，不是「这一场平均多少」。
+        // 平均值留给手机小结（那边从健康把整场读回来算）。
+        let bpm = workoutBuilder.statistics(for: HKQuantityType(.heartRate))?
+            .mostRecentQuantity()?
+            .doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+        Task { @MainActor in
+            guard let bpm, bpm > 0 else { return }
+            self.heartRateBpm = Int(bpm.rounded())
+        }
+    }
+
+    nonisolated func workoutBuilderDidCollectEvent(_ workoutBuilder: HKLiveWorkoutBuilder) {}
 }
 
 extension WorkoutSessionKeeper: HKWorkoutSessionDelegate {
