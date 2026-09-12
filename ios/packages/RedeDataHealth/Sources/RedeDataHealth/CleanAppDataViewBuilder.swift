@@ -66,7 +66,9 @@ public enum CleanAppDataViewBuilder {
                 id: id,
                 date: date,
                 exercises: exercises,
-                painDiscomfortExerciseIds: painDiscomfortExerciseIds
+                painDiscomfortExerciseIds: painDiscomfortExerciseIds,
+                // 空串等同缺失：不产 issue（它不是用户事实，只是归属坐标）。
+                templateId: session.templateId.flatMap { $0.isEmpty ? nil : $0 }
             ))
         }
 

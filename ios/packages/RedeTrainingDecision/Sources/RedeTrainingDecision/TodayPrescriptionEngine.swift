@@ -605,7 +605,7 @@ public enum TodayPrescriptionEngine {
             daySlots = defaultSlots
         }
         let patternCounts = daySlots.reduce(into: [String: Int]()) { $0[$1.pattern, default: 0] += 1 }
-        let lastActual = lastActualByPattern(sessions: input.sessions, catalog: catalog)
+        let lastActual = lastActualByPattern(sessions: input.sessions, catalog: catalog, dayCode: dayCode)
 
         /// 自动均衡每场加量预算（合计最多 +2 组——温和偏置，不是重写计划）。
         var boostBudget = priorityMuscles.isEmpty ? 0 : 2
@@ -1227,6 +1227,13 @@ public enum TodayPrescriptionEngine {
         let minRir: Double?
     }
 
+    /// sticky 代表 + 它是不是用户显式换来的（替换链终点）。两者的作用域不同：
+    /// 换来的是用户选择，跨训练日有效；没换过的只是模板在那天排了什么，不该跨日。
+    private struct StickyRepresentative {
+        let exerciseId: String
+        let wasReplaced: Bool
+    }
+
     private struct StickyReplacementKey: Hashable {
         let originalExerciseId: String
         let actualExerciseId: String
@@ -1236,22 +1243,33 @@ public enum TodayPrescriptionEngine {
     /// sticky swaps（wave-9，owner 拍板）：每个 movementPattern → 最近一场含该 pattern
     /// 的 session 里第一个槽位代表。FR-TR6 替换链以终点 actual id 代表链首槽位；
     /// 普通计划动作与 FR-TR14 临时加练仍各自代表自身，保持旧「第一个」语义。
+    ///
+    /// **训练日边界（2026-09-11）**：sticky 记的是「用户在这个训练日选了什么」，
+    /// 不是「最近一次碰这个 pattern 做了什么」。此前按 pattern 全局取最近，模板刻意
+    /// 安排的跨日动作差异（full-a 杠铃卧推 / full-c 哑铃卧推）会被当成用户选择固化：
+    /// 后练的永久顶替先练的，第二轮起 A/B 分化被同化，且**不需要用户做任何事**
+    /// （新用户、零换动作、照着练就会发生；原注释断言的「A/B 由槽位约束天然区分」
+    /// 经探针实测不成立）。故先只在同 templateId 的历史里找。
+    /// 旧场次没有 templateId（升级前落盘），无从判断归属 → 单独一遍回退全局，
+    /// 逐字保持修复前行为（goldens 零变化）。
     private static func lastActualByPattern(
         sessions: [CleanTrainingSession],
-        catalog: ExerciseCatalog
+        catalog: ExerciseCatalog,
+        dayCode: String
     ) -> [String: String] {
-        // sticky 仍按 pattern 全局取「上次实际做的」。已知边界（6 天 PPL A/B，Slice 1）：
-        // 同 pattern 若同时出现在 A 与 B 日，且用户手动换的动作能同时满足两天的 equipment 约束，
-        // 该换会跨 A/B 粘住；新用户无换动作时 A/B 由槽位 equipment/kind 约束天然区分，不受影响。
-        // dayCode 级 sticky 需会话存 dayCode 真值（templateId），留作后续增强。
         let ordered = sessions.compactMap { session -> (day: Int, session: CleanTrainingSession)? in
             TrainingDay.dayNumber(fromISO: session.date).map { ($0, session) }
         }.sorted { $0.day > $1.day }   // 最新在前
         var result: [String: String] = [:]
         for (_, session) in ordered {
-            for exerciseId in stickyRepresentatives(in: session.exercises) {
-                guard let pattern = catalog.entry(id: exerciseId)?.movementPattern else { continue }
-                if result[pattern] == nil { result[pattern] = exerciseId }
+            // 旧场次没有 templateId（升级前落盘）→ 无从判断归属，按修复前的全局语义收下。
+            let sameDay = session.templateId == nil || session.templateId == dayCode
+            for rep in stickyRepresentatives(in: session.exercises) {
+                // 用户显式换过的动作是真实用户选择，跨训练日继续记住（FR-TR6 原义）；
+                // 没换过的只是模板那天排了什么，不得越过训练日顶替本日槽位。
+                guard rep.wasReplaced || sameDay else { continue }
+                guard let pattern = catalog.entry(id: rep.exerciseId)?.movementPattern else { continue }
+                if result[pattern] == nil { result[pattern] = rep.exerciseId }
             }
         }
         return result
@@ -1260,7 +1278,7 @@ public enum TodayPrescriptionEngine {
     /// occurrence 原序扫描替换边：同一边的 original 端与其后第一个未消费 actual 端
     /// FIFO 配对。链代表放在链首位置、取终点 occurrence id；没有成对替换边的元素
     /// 保持自身，因而同 pattern 临时加练不会冒充 FR-TR6 sticky。
-    private static func stickyRepresentatives(in exercises: [CleanExercise]) -> [String] {
+    private static func stickyRepresentatives(in exercises: [CleanExercise]) -> [StickyRepresentative] {
         var pendingOriginals: [StickyReplacementKey: [Int]] = [:]
         var successorByIndex: [Int: Int] = [:]
         var indicesWithPredecessor = Set<Int>()
@@ -1293,14 +1311,18 @@ public enum TodayPrescriptionEngine {
             }
         }
 
-        var representatives: [String] = []
+        var representatives: [StickyRepresentative] = []
         for index in exercises.indices where !indicesWithPredecessor.contains(index) {
             var terminal = index
             var visited: Set<Int> = [index]
             while let next = successorByIndex[terminal], visited.insert(next).inserted {
                 terminal = next
             }
-            representatives.append(exercises[terminal].exerciseId)
+            // terminal != index ⟺ 这个槽位走过至少一跳替换链 = 用户在场内显式换过动作。
+            representatives.append(StickyRepresentative(
+                exerciseId: exercises[terminal].exerciseId,
+                wasReplaced: terminal != index
+            ))
         }
         return representatives
     }
