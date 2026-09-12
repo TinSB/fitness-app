@@ -12,6 +12,9 @@ public struct TrainingSession: Equatable, Sendable {
 
     public var id: String? { storage["id"]?.asString }
     public var date: String? { storage["date"]?.asString }
+    /// 这一场属于哪个训练日（dayCode）。CompletedSessionBuilder 落盘时写入；
+    /// 升级前的旧场次没有这一位 → nil，消费端据此回退到不分训练日的旧语义。
+    public var templateId: String? { storage["templateId"]?.asString }
     public var startedAt: String? { storage["startedAt"]?.asString }
     public var finishedAt: String? { storage["finishedAt"]?.asString }
     public var durationMin: Double? { storage["durationMin"]?.asDouble }

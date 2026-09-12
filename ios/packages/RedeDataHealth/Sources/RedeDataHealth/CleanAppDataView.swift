@@ -71,17 +71,22 @@ public struct CleanTrainingSession: Equatable, Sendable {
     public let exercises: [CleanExercise]
     /// 本场因 painDiscomfort 跳过过组或整动作的动作 id；同场去重。
     public let painDiscomfortExerciseIds: Set<String>
+    /// 这一场属于哪个训练日（dayCode）。只透传、不判定：引擎据此把 sticky 限制在
+    /// 同一训练日内，旧场次没有这一位（nil）时消费端回退旧语义。
+    public let templateId: String?
 
     public init(
         id: String,
         date: String,
         exercises: [CleanExercise],
-        painDiscomfortExerciseIds: Set<String> = []
+        painDiscomfortExerciseIds: Set<String> = [],
+        templateId: String? = nil
     ) {
         self.id = id
         self.date = date
         self.exercises = exercises
         self.painDiscomfortExerciseIds = painDiscomfortExerciseIds
+        self.templateId = templateId
     }
 }
 
