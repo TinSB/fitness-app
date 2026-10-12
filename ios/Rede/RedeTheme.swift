@@ -66,7 +66,9 @@ extension Color {
 // .environment(\.sizeCategory) 的局部覆盖（当前全库无此用法）；② 勿把 .redeX
 // 缓存进 let 常量复用——会固化取值时的档位，请始终在 view body 里直接引用。
 extension Font {
-    private static func redeScaled(_ base: CGFloat, _ style: UIFont.TextStyle) -> CGFloat {
+    /// 按系统文字样式缩放一个基准字号。LoadCluster 等「字号由调用方传入」的组件也走这里，
+    /// 与 .redeX 同一套 UIFontMetrics 缩放（NFR-7）。
+    static func redeScaled(_ base: CGFloat, _ style: UIFont.TextStyle) -> CGFloat {
         UIFontMetrics(forTextStyle: style).scaledValue(for: base)
     }
     static var redeDisplay: Font { .system(size: redeScaled(54, .largeTitle), weight: .bold) }     // lh 1, -0.02em
@@ -85,6 +87,13 @@ enum RedeSpace {
     static let card: CGFloat = 16      // 卡内
     /// 底栏避让由悬浮标尺 tab bar 的实际高度和内容呼吸推导，改 tab bar 几何会自动跟上。
     static let bottomBar = RedeTabBarMetrics.height + RedeTabBarMetrics.contentClearance
+    /// 悬浮主 CTA（FloatingPrimaryCTA：今日 / 训练待机的「开始训练」）本体高度 = 上边距 + 按钮高。
+    /// 撤销条等要让位于 CTA 的浮层引用它，不再各写各的魔数。
+    static let floatingCTATop: CGFloat = 10
+    static let floatingCTA: CGFloat = floatingCTATop + RedeShape.primaryButtonHeight
+    /// 页面内容侧给悬浮 CTA 留的静态底部留白 = tab bar 避让 + CTA 本体 + 14 呼吸。
+    /// 不用 safeAreaInset（带条件内容首帧 inset 为 0，model 到位后不重算）。
+    static let floatingCTAContentInset = bottomBar + floatingCTA + 14
 }
 
 enum RedeShape {
@@ -96,6 +105,8 @@ enum RedeShape {
     static let buttonRadius: CGFloat = 10
     static let steelRadius: CGFloat = 8
     static let controlHeight: CGFloat = 44
+    /// 主 CTA（EmbButton 默认）高度。
+    static let primaryButtonHeight: CGFloat = 50
 }
 
 enum RedeTabBarMetrics {

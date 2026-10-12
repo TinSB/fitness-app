@@ -212,36 +212,66 @@ struct LoadCluster: View {
     var value: String? = nil     // "37.5"；自重/弹力带为 nil
     var unit: String? = nil      // "kg"
     var tail: String? = nil      // "× 6"
-    var size: CGFloat = 19       // 数值字号；hero 用 30
+    var size: CGFloat = 19       // 数值基准字号（默认档）；hero 用 30
+    /// 随 Dynamic Type 缩放时锚定的系统文字样式（DL §12.4c / NFR-7：禁固定 pt）。
+    /// 行内 19pt 锚 title3，hero 30pt 锚 title1——与 redeHeadline / redeTitle 同一套缩放曲线。
+    var textStyle: UIFont.TextStyle = .title3
     /// 自重/弹力带只有 "× 6"，此时把次数升格成主数值——否则整行只剩一个小字。
     private var repsIsPrimary: Bool { value == nil }
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 0) {
+        // 在 body 里求值（同 Font.redeX 的约定：不缓存），默认档数值与 size 逐点相同。
+        let scaled = Font.redeScaled(size, textStyle)
+        return HStack(alignment: .firstTextBaseline, spacing: 0) {
             if let prefix {
                 Text("\(prefix) ")
-                    .font(.system(size: size * 0.63, weight: .medium))
+                    .font(.system(size: scaled * 0.63, weight: .medium))
                     .foregroundStyle(Color.redeT3)
             }
             if let value {
                 Text(value)
-                    .font(.system(size: size, weight: .semibold))
+                    .font(.system(size: scaled, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(Color.redeT1)
             }
             if let unit {
                 Text(" \(unit)")
-                    .font(.system(size: size * 0.47, weight: .regular))
+                    .font(.system(size: scaled * 0.47, weight: .regular))
                     .foregroundStyle(Color.redeT4)
             }
             if let tail {
                 Text(value == nil ? tail : "  \(tail)")
-                    .font(.system(size: repsIsPrimary ? size : size * 0.63,
+                    .font(.system(size: repsIsPrimary ? scaled : scaled * 0.63,
                                   weight: repsIsPrimary ? .semibold : .medium))
                     .monospacedDigit()
                     .foregroundStyle(repsIsPrimary ? Color.redeT1 : Color.redeT3)
             }
         }
+    }
+}
+
+/// 处方目标（重量 × 次数）的分段数值簇 + 整串无障碍标签——今日页动作行 / hero 与
+/// 训练页待机预览共用，两页同一批动作读出同一个样子。分段来自 L10n 的 targetParts
+/// （与 targetLine 逐字一致，见 RedeL10n 契约测试），视图层不解析字符串；
+/// VoiceOver 念完整串，避免读出「37.5 停顿 kg 停顿 乘 6」。
+struct PrescriptionTarget: View {
+    let strings: RedeStrings
+    let exercise: ExercisePrescriptionPlan
+    var size: CGFloat = 19
+    var textStyle: UIFont.TextStyle = .title3
+
+    var body: some View {
+        let parts = strings.targetParts(
+            loadType: exercise.loadType,
+            weightKg: exercise.targetWeightKg,
+            reps: exercise.targetReps)
+        LoadCluster(prefix: parts.prefix, value: parts.value, unit: parts.unit,
+                    tail: parts.reps, size: size, textStyle: textStyle)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(strings.targetLine(
+                loadType: exercise.loadType,
+                weightKg: exercise.targetWeightKg,
+                reps: exercise.targetReps))
     }
 }
 
@@ -443,6 +473,8 @@ struct EmbButton: View {
     var fontSize: CGFloat = 16
     /// 与其他控件并排的语境收回内容宽（唯一现用点：训练页休息条）；页面主 CTA 默认全宽。
     var hug: Bool = false
+    /// 默认 50（页面主 CTA）；与 SteelButton 并排时传 RedeShape.controlHeight，上下沿才齐。
+    var minHeight: CGFloat = RedeShape.primaryButtonHeight
     let action: () -> Void
 
     // M1 提权（2026-07-06 去 AI 感中期批次）：主 CTA 曾 hug 半宽 + 锻面底与面板
@@ -468,7 +500,7 @@ struct EmbButton: View {
             .font(.system(size: fontSize, weight: .semibold))
             .foregroundStyle(Color.redeT1)
             .padding(.horizontal, 18)
-            .frame(minHeight: 50)
+            .frame(minHeight: minHeight)
             .frame(maxWidth: hug ? nil : .infinity)
             .background(Color.redeRaised)
             .clipShape(RoundedRectangle(cornerRadius: RedeShape.buttonRadius))
@@ -482,6 +514,38 @@ struct EmbButton: View {
             .clipShape(RoundedRectangle(cornerRadius: RedeShape.buttonRadius))
         }
         .buttonStyle(.redePressable)
+    }
+}
+
+// MARK: - 悬浮主 CTA（今日 / 训练待机共用）
+//
+// 用法：页面 ScrollView 上 `.overlay(alignment: .bottom) { if 条件 { FloatingPrimaryCTA(...) } }`，
+// 内容侧底部留白用 RedeSpace.floatingCTAContentInset，要避让它的浮层用 RedeSpace.floatingCTA。
+// **不用 safeAreaInset**：它的 content 带条件（model 未加载时为空），首帧算出的 inset 是 0，
+// model 到位后不会重算——真机上表现为 CTA 压住最后一个动作（2026-08-10 用户实拍反馈）。
+// 改成 overlay + 内容侧静态留白，留白量与 CTA 实际高度对齐，不依赖任何时序。
+
+struct FloatingPrimaryCTA: View {
+    let icon: String
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        EmbButton(icon: icon, title: title, action: action)
+            .padding(.horizontal, RedeSpace.page)
+            .padding(.top, RedeSpace.floatingCTATop)
+            // 垫开 tab bar：tab bar 是 RootTabView 的兄弟层、压在本视图之上。
+            .padding(.bottom, RedeSpace.bottomBar)
+            .background {
+                ZStack(alignment: .top) {
+                    Color.redeBase.ignoresSafeArea(edges: .bottom)
+                    // 上方 24pt 渐隐，列表内容滑到 CTA 下不露出半截字。
+                    LinearGradient(colors: [Color.redeBase.opacity(0), Color.redeBase],
+                                   startPoint: .top, endPoint: .bottom)
+                        .frame(height: 24)
+                        .offset(y: -24)
+                }
+            }
     }
 }
 

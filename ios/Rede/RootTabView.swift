@@ -129,10 +129,14 @@ struct RootTabView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
+            // GeometryReader 自己不能忽略安全区，否则读到的 top 恒为 0；
+            // 读完真实刘海高度后，遮罩本体再向上铺到屏幕最顶（y=0）。
             GeometryReader { proxy in
                 RedeTopEdgeFade(safeAreaTop: proxy.safeAreaInsets.top)
+                    .ignoresSafeArea(edges: .top)
             }
-            .ignoresSafeArea()
+            // 2026-08-07 tab bar 改悬浮后，这里原本垫的整条 redeTabBar 背板成了残留黑块——
+            // 悬浮块自带锻面与圆角，底下不需要任何背板，内容就该从它两侧和下方透出来。
             RedeTabBar(selection: $selection)
             }
 

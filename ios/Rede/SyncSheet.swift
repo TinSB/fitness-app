@@ -147,7 +147,7 @@ struct SyncSheet: View {
     }
 
     private var header: some View {
-        HStack(alignment: .firstTextBaseline) {
+        HStack(alignment: .lastTextBaseline) {
             VStack(alignment: .leading, spacing: 4) {
                 Overline(text: s.syncPanelOverline)
                 Text(s.syncTitle)

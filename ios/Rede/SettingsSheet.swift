@@ -487,7 +487,7 @@ struct SettingsSheet: View {
     // MARK: - 面板铭牌头（固定，不随滚动走）
 
     private var header: some View {
-        HStack(alignment: .firstTextBaseline) {
+        HStack(alignment: .lastTextBaseline) {
             VStack(alignment: .leading, spacing: 4) {
                 Overline(text: s.settingsPanelOverline)
                 Text(s.settingsTitle)
@@ -1550,7 +1550,7 @@ struct PlateQuestionEditView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .firstTextBaseline) {
+            HStack(alignment: .lastTextBaseline) {
                 VStack(alignment: .leading, spacing: 4) {
                     if question != .injury {
                         Overline(text: s.settingsBackground)
