@@ -16,7 +16,7 @@ import RedeWidgetShared
 /// 品牌色本地副本（extension 不编 app target 的 RedeTheme.swift；hex 与其同值——
 /// base 0x131211 / T1 0xE9E6E1 / T3 0x948F87 / ember 0xC85A2E）。
 private // ⚠️ 品牌色本地副本（extension 无共享色 token 包）——四值必须与
-// ios/Rede/RedeTheme.swift 逐值一致；改 ember/基色时两处同改（审查 NIT 漂移风险留痕）。
+// ios/Rede/RedeTheme.swift 逐值一致；改 ember/基色时三处同改（含 RedeWatch 的 WatchPalette）。
 enum RestPalette {
     private static func hex(_ value: UInt32) -> Color {
         Color(

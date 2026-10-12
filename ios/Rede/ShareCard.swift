@@ -219,7 +219,7 @@ struct ShareCardView: View {
                 footer
             }
             .padding(28)
-            RegMark(corner: .topRight).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(20)
+            RegMark().frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(20)
         }
         .frame(width: Self.logicalSize.width, height: Self.logicalSize.height)
         .clipped()

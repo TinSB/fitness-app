@@ -28,10 +28,12 @@ struct Overline: View {
             .font(.redeOverline)
             .tracking(RedeTracking.overline)
             .foregroundStyle(color)
+            // SwiftUI 会把 tracking 也加在末字符之后；收回这段空白让居中/右对齐按字形对齐。
+            .padding(.trailing, -RedeTracking.overline)
     }
 }
 
-// MARK: - 锻面颗粒(.forged::after 噪声,~1.5% 可见度)
+// MARK: - 锻面颗粒（默认对角拉丝；强度待真机校准）
 
 struct ForgedGrain: View {
     /// 材质走向。噪点是各向同性的「砂面」；拉丝有方向，读起来才是**被加工过的金属**。
@@ -46,8 +48,8 @@ struct ForgedGrain: View {
     /// 有走向的织理才读作「被加工过的金属」，也和 RegMark 的斜角标、EngraveDivider 的
     /// 刻度构成同一套加工面语言。
     ///
-    /// ⚠️ **强度待真机校准**：噪点那档 1.5% 是真机 25% 亮度下校准过的定值，拉丝是新的、
-    /// 只在模拟器上看过。健身房暗光 + OLED 会比模拟器明显，下次 TestFlight 需实看后再定。
+    /// ⚠️ **强度待真机校准**：默认对角拉丝只在模拟器上看过。健身房暗光 + OLED 会比模拟器
+    /// 明显，下次 TestFlight 需实看后再定。
     /// 调参钩子：-grainTexture noise|brushed|diagonal。
     static var defaultTexture: Texture {
         let args = ProcessInfo.processInfo.arguments
@@ -137,27 +139,12 @@ struct ForgedGrain: View {
 
 // MARK: - Registration 角标(.reg 11×11 刻线)
 
-enum RegCorner { case topRight, topLeft, bottomRight }
-
 struct RegMark: View {
-    let corner: RegCorner
-
     var body: some View {
         Path { p in
-            switch corner {
-            case .topRight:
-                p.move(to: CGPoint(x: 2, y: 0))
-                p.addLine(to: CGPoint(x: 11, y: 0))
-                p.addLine(to: CGPoint(x: 11, y: 9))
-            case .topLeft:
-                p.move(to: CGPoint(x: 0, y: 9))
-                p.addLine(to: CGPoint(x: 0, y: 0))
-                p.addLine(to: CGPoint(x: 9, y: 0))
-            case .bottomRight:
-                p.move(to: CGPoint(x: 0, y: 11))
-                p.addLine(to: CGPoint(x: 11, y: 11))
-                p.addLine(to: CGPoint(x: 11, y: 2))
-            }
+            p.move(to: CGPoint(x: 2, y: 0))
+            p.addLine(to: CGPoint(x: 11, y: 0))
+            p.addLine(to: CGPoint(x: 11, y: 9))
         }
         .stroke(Color.redeRegMark, lineWidth: 1)
         .frame(width: 11, height: 11)
@@ -194,7 +181,7 @@ struct ForgedCard<Content: View>: View {
                     .padding(.leading, radius * 0.30)
             }
             if showReg {
-                RegMark(corner: .topRight)
+                RegMark()
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                     .padding(max(11, radius * 0.52))
             }
@@ -344,7 +331,7 @@ struct CueList: View {
 //
 // 代价（有意接受）：overlay 只覆盖宿主视图，盖不住 RootTabView 的 tab bar。
 // 这反而贴合「我还在这一页、只是展开了一张卡」的心智——不是进入新页面。
-// 遮罩因此也止于 tab bar 上沿，不做假的全屏黑幕。
+// 遮罩铺满宿主；悬浮 tab bar 是 RootTabView 的兄弟层，始终画在遮罩之上。
 
 struct MorphExpansion<Content: View>: View {
     var topInset: CGFloat = 92
@@ -458,7 +445,7 @@ struct EmbButton: View {
     var hug: Bool = false
     let action: () -> Void
 
-    // M1 提权（2026-07-06 去 AI 感中期批次）：主 CTA 曾 hug 半宽 + redeBtn 底与面板
+    // M1 提权（2026-07-06 去 AI 感中期批次）：主 CTA 曾 hug 半宽 + 锻面底与面板
     // 明度几乎无差，读作次级按钮。提权限 Ember 公理内（锻面 + ember 左缘，禁 ember
     // 填充）：默认全宽 + 底提亮一档（redeRaised）+ hair 轮廓 + 50pt + 3px 缘 + 16pt 字。
     /// 点击计数——驱动图标的一次性弹跳（symbolEffect 需要一个变化的值做触发）。
@@ -526,24 +513,6 @@ struct SteelButton: View {
             .clipShape(RoundedRectangle(cornerRadius: RedeShape.steelRadius))
         }
         .buttonStyle(.redePressable)
-    }
-}
-
-// MARK: - Ring 节点(.ring: 扁平描环)
-
-struct RingDot: View {
-    var size: CGFloat = 14
-    var fill: Color = .redeEmber
-
-    var body: some View {
-        Circle()
-            .fill(fill)
-            .frame(width: size, height: size)
-            .overlay(
-                Circle()
-                    .stroke(Color.redeEmber.opacity(0.5), lineWidth: 2)
-                    .padding(-2)
-            )
     }
 }
 
@@ -654,13 +623,13 @@ struct SteelToggle: View {
                     .frame(width: 20, height: 20)
                     .padding(2)
             }
-            .frame(minWidth: RedeShape.controlHeight, minHeight: RedeShape.controlHeight)
+            .frame(minWidth: RedeShape.controlHeight, minHeight: RedeShape.controlHeight, alignment: .trailing)
         }
         .buttonStyle(.plain)
     }
 }
 
-// MARK: - 自定义 Tab Bar(.tb: h64 / #100E0B / 选中 ember)
+// MARK: - 悬浮标尺 Tab Bar（锻面块 + 行程标尺 + ember 游标）
 
 struct RedeTabBar: View {
     @Binding var selection: RootTab
@@ -694,10 +663,11 @@ struct RedeTabBar: View {
                             Image(systemName: item.icon)
                                 .font(.system(size: 21, weight: .medium))
                                 .symbolRenderingMode(.monochrome)
+                                .frame(height: RedeTabBarMetrics.iconSlotHeight)
                             Text(item.label).font(.system(size: 9.5, weight: .medium))
                         }
                         .foregroundStyle(selection == item.tab ? Color.redeEmber : Color.redeT4)
-                        .frame(maxWidth: .infinity, minHeight: RedeShape.controlHeight)
+                        .frame(maxWidth: .infinity, minHeight: RedeTabBarMetrics.controlHeight)
                     }
                     .buttonStyle(.plain)
                     // VoiceOver：图标+文字合成一条原子标签，并报当前选中态（图标本身不单独念）
@@ -708,7 +678,7 @@ struct RedeTabBar: View {
             }
             ruler
         }
-        .padding(.top, 8)
+        .padding(.top, RedeTabBarMetrics.topInset)
         .background(
             ZStack {
                 // 读 token，不硬编码——曾经写死过一组冷调色值，换主题时 tab bar 整块掉队。
@@ -717,16 +687,16 @@ struct RedeTabBar: View {
                 ForgedGrain(intensity: 0.4)
             }
         )
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: RedeTabBarMetrics.cornerRadius, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
+            RoundedRectangle(cornerRadius: RedeTabBarMetrics.cornerRadius, style: .continuous)
                 .strokeBorder(LinearGradient(
                     colors: [Color.redeT1.opacity(0.14), Color.redeT1.opacity(0.02), .clear],
                     startPoint: .top, endPoint: .bottom), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.6), radius: 17, y: 8)
-        .padding(.horizontal, 14)
-        .padding(.bottom, 12)
+        .padding(.horizontal, RedeSpace.page)
+        .padding(.bottom, RedeTabBarMetrics.bottomInset)
         .sensoryFeedback(.selection, trigger: selection) // tab 切换触觉确认
     }
 
@@ -759,12 +729,17 @@ struct RedeTabBar: View {
             }
             .frame(width: w, height: geo.size.height, alignment: .bottomLeading)
         }
-        .frame(height: 15)
+        .frame(height: RedeTabBarMetrics.rulerHeight)
         .accessibilityHidden(true)      // 纯装饰：选中态已由每个 tab 的 .isSelected 播报
     }
 }
 
 // MARK: - 页头(.hdr)
+
+private enum ScreenHeaderMetrics {
+    /// 44pt 热区内的图标与 22pt 标题首行视觉中心对齐（像素审计校准）。
+    static let trailingIconTitleCenterAdjustment: CGFloat = -9
+}
 
 struct ScreenHeader: View {
     let title: String
@@ -794,7 +769,10 @@ struct ScreenHeader: View {
                     Image(systemName: trailingIcon)
                         .font(.system(size: 20))
                         .foregroundStyle(Color.redeT4)
-                        .frame(minWidth: RedeShape.controlHeight, minHeight: RedeShape.controlHeight)
+                        .frame(width: RedeShape.controlHeight, height: RedeShape.controlHeight, alignment: .trailing)
+                        .padding(.top, ScreenHeaderMetrics.trailingIconTitleCenterAdjustment)
+                        .frame(width: RedeShape.controlHeight, height: RedeShape.controlHeight, alignment: .top)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.redePressable)
                 .disabled(onTrailingTap == nil)

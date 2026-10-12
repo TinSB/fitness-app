@@ -105,7 +105,7 @@ struct AppUpdateWhatsNewSheet: View {
                     Image(systemName: "xmark")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(Color.redeT2)
-                        .frame(width: RedeShape.controlHeight, height: RedeShape.controlHeight)
+                        .frame(width: RedeShape.controlHeight, height: RedeShape.controlHeight, alignment: .trailing)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.redePressable)
@@ -113,7 +113,7 @@ struct AppUpdateWhatsNewSheet: View {
                 .accessibilityIdentifier("app-update-whats-new-close")
             }
             .padding(.leading, RedeSpace.page)
-            .padding(.trailing, 8)
+            .padding(.trailing, RedeSpace.page)
             .overlay(alignment: .bottom) {
                 Rectangle().fill(Color.redeHair2).frame(height: 1)
             }

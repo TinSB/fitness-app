@@ -231,12 +231,15 @@ struct TodayTabView: View {
                     .padding(.top, 10)
                     // 垫开 tab bar：tab bar 是 RootTabView 的兄弟层、压在本视图之上。
                     .padding(.bottom, RedeSpace.bottomBar)
-                    .background(
-                        LinearGradient(colors: [Color.redeBase.opacity(0), Color.redeBase.opacity(0.92),
-                                                Color.redeBase],
-                                       startPoint: .top, endPoint: .bottom)
-                            .ignoresSafeArea(edges: .bottom)
-                    )
+                    .background {
+                        ZStack(alignment: .top) {
+                            Color.redeBase.ignoresSafeArea(edges: .bottom)
+                            LinearGradient(colors: [Color.redeBase.opacity(0), Color.redeBase],
+                                           startPoint: .top, endPoint: .bottom)
+                                .frame(height: 24)
+                                .offset(y: -24)
+                        }
+                    }
             }
         }
         // 切片6c：撤销条挂今日页根、避开 tab 栏；独立于教练卡，卡 reload 消失也不丢撤销入口。

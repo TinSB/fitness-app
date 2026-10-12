@@ -11,6 +11,20 @@ enum RootTab: Hashable {
     case plan
 }
 
+private struct RedeTopEdgeFade: View {
+    let safeAreaTop: CGFloat
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Color.redeBase.frame(height: safeAreaTop)
+            LinearGradient(colors: [Color.redeBase, .clear], startPoint: .top, endPoint: .bottom)
+                .frame(height: 12)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .allowsHitTesting(false)
+    }
+}
+
 struct RootTabView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var selection: RootTab
@@ -70,11 +84,7 @@ struct RootTabView: View {
     }
 
     var body: some View {
-        // 动效方向样例（临时脚手架）：-motionSample 直接进对比页，不走正常 tab 结构。
-        if ProcessInfo.processInfo.arguments.contains("-motionSample") {
-            return AnyView(MotionSampleView().environment(localeStore))
-        }
-        return AnyView(mainBody)
+        mainBody
     }
 
     private var mainBody: some View {
@@ -119,8 +129,10 @@ struct RootTabView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // 2026-08-07 tab bar 改悬浮后，这里原本垫的整条 redeTabBar 背板成了残留黑块——
-            // 悬浮块自带锻面与圆角，底下不需要任何背板，内容就该从它两侧和下方透出来。
+            GeometryReader { proxy in
+                RedeTopEdgeFade(safeAreaTop: proxy.safeAreaInsets.top)
+            }
+            .ignoresSafeArea()
             RedeTabBar(selection: $selection)
             }
 
