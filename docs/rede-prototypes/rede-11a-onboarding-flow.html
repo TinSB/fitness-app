@@ -1,14 +1,15 @@
 <!DOCTYPE html><html lang="en"><head>
+<!-- 2026-10-12：本文件是 2026-06/07 历史设计稿；色值已机械更新，多数结构仍非现行 App，现行视觉以 App 代码为准。 -->
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Rede — Onboarding A · 判断式对话流 (interactive prototype)</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <style>
 /* tokens —— 与 docs/rede-prototypes/rede-app.html 完全一致（K1 locked） */
 :root{
- --base:#15130F;--surface:#1F1C17;--raised:#262219;--btn:#211E18;--hair:#2A261F;--hair2:#221F1B;
- --t1:#ECE6D8;--t2:#C9C2B4;--t3:#9C9484;--t4:#908A7C;
- --ember:#E1652B;--ember2:#F0875A;--rec:#2F7D5B;--rec2:#56B083;--caution:#C79A3A;--risk:#C2413A;
- --steel:#8C8A86;--neu:#4A453B;
+ --base:#131211;--surface:#1D1B19;--raised:#232120;--btn:#1F1D1B;--hair:#2A2724;--hair2:#222020;
+ --t1:#E9E6E1;--t2:#C2BFB9;--t3:#948F87;--t4:#8A857E;
+ --ember:#C85A2E;--ember2:#E0855C;--rec:#2F7D5B;--rec2:#56B083;--caution:#C79A3A;--risk:#C2413A;
+ --steel:#8C8884;--neu:#4A463F;
  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,sans-serif;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0}
@@ -31,9 +32,9 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .clamp3{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
 
 /* phone（同 rede-app.html，384px 框） */
-.phone{width:384px;height:824px;background:var(--base);border-radius:46px;border:1px solid #322c23;padding:9px;position:relative;box-shadow:inset 0 0 0 6px #050403}
+.phone{width:384px;height:824px;background:var(--base);border-radius:46px;border:1px solid #2d2b28;padding:9px;position:relative;box-shadow:inset 0 0 0 6px #040404}
 .frame{position:absolute;inset:9px;border-radius:38px;overflow:hidden;display:flex;flex-direction:column;background:var(--base)}
-.notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:28px;background:#050403;border-radius:0 0 15px 15px;z-index:50}
+.notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:28px;background:#040404;border-radius:0 0 15px 15px;z-index:50}
 .sb{height:46px;flex:0 0 auto;display:flex;justify-content:space-between;align-items:flex-end;padding:0 26px 6px;font-size:13px;font-weight:600;color:var(--t2);z-index:30}
 .sb .r{display:flex;gap:6px;align-items:center}
 .screens{flex:1;position:relative;overflow:hidden}
@@ -49,18 +50,18 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 
 /* 主操作（D-A：锻面 + ember 左缘，左锚非全宽）/ 次级钢色 / 控制 chip */
 .emb{background:var(--btn);color:var(--t1);font-weight:600;font-size:15px;padding:0 18px;min-height:44px;border-radius:10px;border-left:2px solid var(--ember);display:inline-flex;align-items:center;justify-content:center;gap:7px}
-.emb:active{background:#2A261D}
+.emb:active{background:#2A2724}
 .ctrlchip{min-height:44px;padding:0 14px;border:1px solid var(--hair);color:var(--t2);border-radius:8px;font-size:12px;display:inline-flex;align-items:center}
 .discl{display:flex;align-items:center;gap:6px;width:100%;text-align:left;min-height:44px;padding:11px 0;color:var(--t3);font-size:14px;font-weight:450}
 
 /* 锻面卡（颗粒 + 顶缘高光 + registration）+ embar 结构件 */
-.forged{position:relative;background:var(--surface);border-radius:12px;border-top:1px solid rgba(236,230,216,0.09);overflow:hidden}
+.forged{position:relative;background:var(--surface);border-radius:12px;border-top:1px solid rgba(233,230,225,0.09);overflow:hidden}
 .forged::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='90' height='90' filter='url(%23n)' opacity='0.03'/></svg>")}
 .reg{position:absolute;width:11px;height:11px;pointer-events:none}
 .embar{position:absolute;left:0;width:2px;border-radius:2px;background:var(--ember)}
 
 /* tab bar（落地 Today 后才出现） */
-.tb{position:absolute;left:0;right:0;bottom:0;height:64px;background:#100E0B;border-top:1px solid var(--hair2);display:flex;align-items:stretch;padding-bottom:6px;z-index:20}
+.tb{position:absolute;left:0;right:0;bottom:0;height:64px;background:#111010;border-top:1px solid var(--hair2);display:flex;align-items:stretch;padding-bottom:6px;z-index:20}
 .tb a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:10px;font-weight:500;color:var(--t4);min-height:44px;text-decoration:none;cursor:pointer}
 .tb a i{font-size:22px}
 .tb a[aria-selected="true"]{color:var(--ember)}
@@ -82,14 +83,14 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .optcol{display:flex;flex-direction:column;gap:8px;margin-top:12px}
 .opt{min-height:44px;flex:1;display:inline-flex;align-items:center;justify-content:center;padding:0 8px;border:1px solid var(--hair);border-radius:999px;background:var(--surface);color:var(--t2);font-size:14px;font-weight:500;white-space:nowrap;transition:color .15s,background .15s,border-color .15s}
 .opt:active{background:var(--raised)}
-.opt[aria-checked="true"]{border-color:var(--steel);background:rgba(140,138,134,.15);color:var(--t1);font-weight:600}  /* 选中 = 钢色调性抬升，不用 ember（口音守恒） */
+.opt[aria-checked="true"]{border-color:var(--steel);background:rgba(140,136,132,.15);color:var(--t1);font-weight:600}  /* 选中 = 钢色调性抬升，不用 ember（口音守恒） */
 .optw{border-radius:10px;justify-content:space-between;padding:0 14px;min-height:48px}
 .optw .cap{font-size:12px;color:var(--t4);font-weight:400;transition:color .15s}
 .optw[aria-checked="true"] .cap{color:var(--t3)}
 .opt.dn{font-size:16px;font-weight:600}                                    /* 天数 = 仪表数字胶囊 */
 .qb.done .qq{color:var(--t3)}                                              /* 已答降级：亮度回落 */
 .qb.done .opt{color:var(--t4);border-color:var(--hair2);background:transparent}
-.qb.done .opt[aria-checked="true"]{color:var(--t2);border-color:#4A463E;background:rgba(140,138,134,.07);font-weight:600}
+.qb.done .opt[aria-checked="true"]{color:var(--t2);border-color:#4A463F;background:rgba(140,136,132,.07);font-weight:600}
 .qnote{display:none;margin-top:14px;align-items:flex-start;gap:6px}        /* FR-ON2 背景先验说明：克制一句，不承诺不吹捧 */
 .qnote.show{display:flex;animation:receiptIn .22s ease-out}
 .qnote .ptick{margin-top:7px}
@@ -110,8 +111,8 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 
 #toast{position:absolute;left:50%;transform:translateX(-50%) translateY(4px);bottom:84px;background:var(--raised);border:1px solid var(--hair);color:var(--t2);padding:10px 14px;border-radius:10px;font-size:12px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:70;width:max-content;max-width:300px;text-align:center}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);color:#564f43;font-size:11px;text-align:center;max-width:360px}
-.hint b{color:#857c6c}
+.hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);color:#514e48;font-size:11px;text-align:center;max-width:360px}
+.hint b{color:#807a71}
 </style></head>
 <body>
 <div class="phone">
@@ -192,7 +193,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
      <div class="sect" id="final" style="margin-top:24px">
        <div class="forged" style="padding:18px 16px">
          <span class="embar" style="top:18px;bottom:18px"></span>
-         <svg class="reg" style="right:11px;top:11px" viewBox="0 0 11 11"><path d="M2 0 L11 0 L11 9" stroke="#5F594C" fill="none"/></svg>
+         <svg class="reg" style="right:11px;top:11px" viewBox="0 0 11 11"><path d="M2 0 L11 0 L11 9" stroke="#5F5B52" fill="none"/></svg>
          <div style="padding-left:13px">
            <div style="display:flex;align-items:center;gap:7px"><span style="width:7px;height:7px;border-radius:50%;background:var(--rec)"></span><span class="ov" style="color:var(--rec2)">First plan</span></div>
            <div class="headline clamp3" id="fVerdict" style="margin-top:11px"></div>
@@ -221,7 +222,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
      <div class="hdr"><div><div class="headline">Today</div><div class="ov num" style="margin-top:6px">Mon · Jun 10 · Week 1</div></div><button class="iconbtn" aria-label="Settings"><i class="ti ti-settings gear"></i></button></div>
      <div class="forged sect" style="padding:18px 16px;margin-top:20px">
        <span class="embar" style="top:18px;bottom:18px"></span>
-       <svg class="reg" style="right:11px;top:11px" viewBox="0 0 11 11"><path d="M2 0 L11 0 L11 9" stroke="#5F594C" fill="none"/></svg>
+       <svg class="reg" style="right:11px;top:11px" viewBox="0 0 11 11"><path d="M2 0 L11 0 L11 9" stroke="#5F5B52" fill="none"/></svg>
        <div style="padding-left:13px">
          <div style="display:flex;align-items:center;gap:7px"><span style="width:7px;height:7px;border-radius:50%;background:var(--rec)"></span><span class="ov" style="color:var(--rec2)">Ready to train</span></div>
          <div class="headline clamp3" id="tVerdict" style="margin-top:11px"></div>

@@ -1,15 +1,16 @@
 <!DOCTYPE html><html lang="en"><head>
+<!-- 2026-10-12：本文件是 2026-06/07 历史设计稿；色值已机械更新，多数结构仍非现行 App，现行视觉以 App 代码为准。 -->
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Rede — Quick Adjust · B Instrument Readout (craft prototype)</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <style>
 :root{
- --base:#15130F;--surface:#1F1C17;--raised:#262219;--btn:#211E18;--hair:#2A261F;--hair2:#221F1B;
+ --base:#131211;--surface:#1D1B19;--raised:#232120;--btn:#1F1D1B;--hair:#2A2724;--hair2:#222020;
  /* P0-3 对比度：--t4 提亮到 AA（在 surface 上 ~4.9:1）；--rec2 绿提一档 */
- --t1:#ECE6D8;--t2:#C9C2B4;--t3:#9C9484;--t4:#908A7C;
- --ember:#E1652B;--ember2:#F0875A;--rec:#2F7D5B;--rec2:#56B083;--caution:#C79A3A;--risk:#C2413A;
+ --t1:#E9E6E1;--t2:#C2BFB9;--t3:#948F87;--t4:#8A857E;
+ --ember:#C85A2E;--ember2:#E0855C;--rec:#2F7D5B;--rec2:#56B083;--caution:#C79A3A;--risk:#C2413A;
  /* D-A：次级控件改钢色（去 ember） */
- --steel:#8C8A86;--neu:#4A453B;
+ --steel:#8C8884;--neu:#4A463F;
  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",system-ui,sans-serif;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0}
@@ -34,9 +35,9 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .clamp3{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
 
 /* phone */
-.phone{width:384px;height:824px;background:var(--base);border-radius:46px;border:1px solid #322c23;padding:9px;position:relative;box-shadow:inset 0 0 0 6px #050403}
+.phone{width:384px;height:824px;background:var(--base);border-radius:46px;border:1px solid #2d2b28;padding:9px;position:relative;box-shadow:inset 0 0 0 6px #040404}
 .frame{position:absolute;inset:9px;border-radius:38px;overflow:hidden;display:flex;flex-direction:column;background:var(--base)}
-.notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:28px;background:#050403;border-radius:0 0 15px 15px;z-index:50}
+.notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:112px;height:28px;background:#040404;border-radius:0 0 15px 15px;z-index:50}
 .sb{height:46px;flex:0 0 auto;display:flex;justify-content:space-between;align-items:flex-end;padding:0 26px 6px;font-size:13px;font-weight:600;color:var(--t2);z-index:30}
 .sb .r{display:flex;gap:6px;align-items:center}
 
@@ -52,25 +53,25 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .ghost{min-height:44px;display:inline-flex;align-items:center;padding:0 12px;color:var(--t3);font-size:13px}
 .sect{padding:0 20px;margin-top:24px}                 /* 区块之间 = 24 */
 
-/* D-A：主操作 = 锻面按钮（bg #211E18 + 左缘 2px ember、左锚、非全宽、≥44pt）。ember 退出填充，只作"下一步"口音 */
+/* D-A：主操作 = 锻面按钮（bg #1F1D1B + 左缘 2px ember、左锚、非全宽、≥44pt）。ember 退出填充，只作"下一步"口音 */
 .emb{background:var(--btn);color:var(--t1);font-weight:600;font-size:15px;padding:0 18px;min-height:44px;border-radius:10px;border-left:2px solid var(--ember);display:inline-flex;align-items:center;justify-content:center;gap:7px}
-.emb:active{background:#2A261D}
+.emb:active{background:#2A2724}
 /* D-A：次级控件 = 钢色（去 ember） */
 .btn2{color:var(--t2);border:1px solid var(--steel);border-radius:8px;padding:0 13px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:500;white-space:nowrap}
-.btn2:active{background:rgba(140,138,134,.12)}
-.btn2.on{color:var(--t1);background:rgba(140,138,134,.16)}
+.btn2:active{background:rgba(140,136,132,.12)}
+.btn2.on{color:var(--t1);background:rgba(140,136,132,.16)}
 .rule{height:1px;background:var(--hair2);margin:24px 20px}
 
 /* 锻面 hero 卡：顶缘高光 + 颗粒 + 角标 registration */
-.forged{position:relative;background:var(--surface);border-radius:12px;border-top:1px solid rgba(236,230,216,0.09);overflow:hidden}
+.forged{position:relative;background:var(--surface);border-radius:12px;border-top:1px solid rgba(233,230,225,0.09);overflow:hidden}
 .forged::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='90' height='90' filter='url(%23n)' opacity='0.03'/></svg>")}
 .reg{position:absolute;width:11px;height:11px;pointer-events:none}
 .embar{position:absolute;left:0;width:2px;border-radius:2px;background:var(--ember)}
 /* P2-2：扁平描环代替 glow */
-.ring{box-shadow:0 0 0 2px rgba(225,101,43,.5)}
+.ring{box-shadow:0 0 0 2px rgba(200,90,46,.5)}
 
 /* tab bar */
-.tb{position:absolute;left:0;right:0;bottom:0;height:64px;background:#100E0B;border-top:1px solid var(--hair2);display:flex;align-items:stretch;padding-bottom:6px;z-index:20}
+.tb{position:absolute;left:0;right:0;bottom:0;height:64px;background:#111010;border-top:1px solid var(--hair2);display:flex;align-items:stretch;padding-bottom:6px;z-index:20}
 .tb a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:10px;font-weight:500;color:var(--t4);min-height:44px;text-decoration:none}
 .tb a i{font-size:22px}
 .tb a[aria-selected="true"]{color:var(--ember)}
@@ -78,10 +79,10 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .trow{display:flex;padding:9px 0;border-bottom:1px solid var(--hair2)}
 
 /* overlay */
-.ovl{position:absolute;inset:0;background:rgba(8,7,5,.74);z-index:60;display:none;align-items:flex-end}
+.ovl{position:absolute;inset:0;background:rgba(7,7,6,.74);z-index:60;display:none;align-items:flex-end}
 .ovl.on{display:flex}
 .sheet{width:100%;background:var(--base);border-radius:22px 22px 0 0;border-top:1px solid var(--hair);max-height:92%;overflow-y:auto;padding-bottom:22px}
-.seg{display:flex;background:#1A1712;border-radius:9px;padding:3px;margin:16px 20px 0}
+.seg{display:flex;background:#1A1917;border-radius:9px;padding:3px;margin:16px 20px 0}
 .seg button{flex:1;text-align:center;font-size:12px;font-weight:500;color:var(--t3);min-height:44px;border-radius:7px}
 .seg button[aria-selected="true"]{background:var(--hair);color:var(--t1)}
 .lvrow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--hair2)}
@@ -103,10 +104,10 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
    去盒化：档位 = 纯排版仪表读数（9px 刻字标签 + 23px tabular 数值），零边框零底色；
    选中 = 亮度跃迁 + 2px ember 短下划线 draw-on（面板唯一 ember 口音）；
    预演 = Emberline 微缩「形」（线 + 三角节点）但取钢色——口音已让给被采纳的档位；
-   分隔一律 S2 刻线（#2E2A22 短竖线 / 刻线横规），不用整框描边 */
+   分隔一律 S2 刻线（#333029 短竖线 / 刻线横规），不用整框描边 */
 .adjwrap{max-height:0;opacity:0;overflow:hidden;transition:max-height .25s ease,opacity .22s ease}
 .adjwrap.on{max-height:360px;opacity:1}
-.glab{font-size:9px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:#6B6457;line-height:1}
+.glab{font-size:9px;font-weight:500;letter-spacing:.24em;text-transform:uppercase;color:#8A857E;line-height:1}
 .gearrow{display:flex;align-items:flex-end;flex-wrap:wrap;row-gap:2px;margin-top:14px}
 .gear{display:inline-flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:48px;min-width:44px;padding:2px 0 0;justify-content:flex-end}
 .gear .gnum{position:relative;font-size:23px;font-weight:600;line-height:1;color:var(--t3);padding-bottom:7px;letter-spacing:-.01em}
@@ -114,23 +115,23 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .gear.on .gnum{color:var(--t1)}
 .gear .gul{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--ember);transform-origin:left;animation:drawX .22s ease-out}
 .gear.exact .gnum{font-size:16px;padding-bottom:9px}
-.gtick{width:1px;height:9px;background:#2E2A22;margin:0 5px 9px;align-self:flex-end;flex:0 0 auto}
+.gtick{width:1px;height:9px;background:#333029;margin:0 5px 9px;align-self:flex-end;flex:0 0 auto}
 .fineops{display:inline-flex;align-items:flex-end;margin-left:auto}
 .fineop{min-width:44px;min-height:44px;display:inline-flex;flex-direction:column;align-items:center;justify-content:flex-end;color:var(--t4);font-size:15px;font-weight:500;padding-bottom:8px}
 .fineop .glab{color:var(--t4)}
 .fineop:active,.gear:active{opacity:.7}
 .erule{position:relative;height:7px;margin:16px 0 12px;background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='7'><rect width='1' height='7' fill='%232E2A22'/></svg>") repeat-x left bottom}
-.erule::before,.erule::after{content:"";position:absolute;bottom:0;width:1px;height:10px;background:#2E2A22}
+.erule::before,.erule::after{content:"";position:absolute;bottom:0;width:1px;height:10px;background:#333029}
 .erule::before{left:0}.erule::after{right:0}
 .iband{display:flex;align-items:stretch;margin-top:3px}
 .iband button{flex:1;min-height:44px;position:relative;text-align:left;padding-left:2px;font-size:14px;font-weight:500;color:var(--t3)}
 .iband button.on{color:var(--t1);font-weight:600}
 .iband .mark{position:absolute;left:2px;bottom:8px;width:7px;height:2px;background:var(--neu)}
 .iband .mark.cz{background:rgba(199,154,58,.5)}
-.iband .vtick{flex:0 0 1px;background:#2E2A22;margin:14px 6px 14px 0}
+.iband .vtick{flex:0 0 1px;background:#333029;margin:14px 6px 14px 0}
 .pvrow{display:flex;align-items:center;gap:8px;margin-top:14px;min-height:16px}
-.pvline{position:relative;width:16px;height:2px;background:#5F594C;flex:0 0 auto}
-.pvline::after{content:"";position:absolute;right:-4px;top:-2.5px;border-left:5px solid #5F594C;border-top:3.5px solid transparent;border-bottom:3.5px solid transparent}
+.pvline{position:relative;width:16px;height:2px;background:#5F5B52;flex:0 0 auto}
+.pvline::after{content:"";position:absolute;right:-4px;top:-2.5px;border-left:5px solid #5F5B52;border-top:3.5px solid transparent;border-bottom:3.5px solid transparent}
 /* 编排：展开时三区块 30ms 级联淡入上移；预演线最后 draw-on（Reduce Motion 下全部瞬切） */
 .adjwrap.on .csc{animation:riseIn .22s ease-out both}
 .adjwrap.on #subRow{animation-delay:.03s}
@@ -150,8 +151,8 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 @keyframes rOd{to{transform:translateY(105%);opacity:0}}
 @keyframes rId{from{transform:translateY(-105%);opacity:0}to{transform:none;opacity:1}}
 #exactIn::-webkit-outer-spin-button,#exactIn::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-.hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);color:#564f43;font-size:11px;text-align:center;max-width:360px}
-.hint b{color:#857c6c}
+.hint{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);color:#514e48;font-size:11px;text-align:center;max-width:360px}
+.hint b{color:#807a71}
 </style></head>
 <body>
 <div class="phone">
@@ -167,7 +168,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
      <!-- HERO = 判断块（D-B：判断句独占 hero；185 降到 ~20px 作次级预览） -->
      <div class="forged sect" style="padding:18px 16px;margin-top:20px">
        <span class="embar" style="top:18px;bottom:18px"></span>
-       <svg class="reg" style="right:11px;top:11px" viewBox="0 0 11 11"><path d="M11 0 L11 0 M2 0 L11 0 L11 9" stroke="#5F594C" fill="none"/></svg>
+       <svg class="reg" style="right:11px;top:11px" viewBox="0 0 11 11"><path d="M11 0 L11 0 M2 0 L11 0 L11 9" stroke="#5F5B52" fill="none"/></svg>
        <div style="padding-left:13px">
          <div style="display:flex;align-items:center;gap:7px"><span style="width:7px;height:7px;border-radius:50%;background:var(--rec)"></span><span class="ov" style="color:var(--rec2)">Ready to train</span></div>
          <!-- P0/D-B 判断句：headline 22/600，该屏唯一最大元素 -->
@@ -211,7 +212,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
          <div style="position:absolute;left:8%;right:8%;top:7px;height:2px;background:var(--hair)"></div>
          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:33%;z-index:2"><span style="width:14px;height:14px;border-radius:50%;background:var(--t4)"></span><span class="callout num t3">180×5</span><span class="ov">Jun 5</span></div>
          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:33%;z-index:2"><span class="ring" style="width:14px;height:14px;border-radius:50%;background:var(--ember)"></span><span class="callout num" style="color:var(--t1)">185×5</span><span class="ov em">Today</span></div>
-         <div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:33%;z-index:2"><span style="width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid #3A352B"></span><span class="callout num t3">190×5</span><span class="ov">Next</span></div>
+         <div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:33%;z-index:2"><span style="width:14px;height:14px;border-radius:50%;background:var(--surface);border:2px solid #373430"></span><span class="callout num t3">190×5</span><span class="ov">Next</span></div>
        </div>
      </div>
    </section>
@@ -219,12 +220,12 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
    <!-- ===================== TRAIN ===================== -->
    <section class="screen" id="s-train" role="tabpanel" aria-label="Train">
      <div class="hdr"><div><div class="headline">Push A</div><div class="ov num" style="margin-top:6px">Exercise 1 of 6 · Set 3 of 4</div></div><button class="ghost" onclick="confirmFinish()">Finish</button></div>
-     <div style="height:3px;background:#1B1813;margin:14px 20px 0;border-radius:2px"><div style="height:3px;width:42%;background:var(--neu);border-radius:2px"></div></div>
+     <div style="height:3px;background:#1F1D1A;margin:14px 20px 0;border-radius:2px"><div style="height:3px;width:42%;background:var(--neu);border-radius:2px"></div></div>
 
      <!-- HERO = 仪表读数（P2-1：固定 frame，Set⇄Rest 原地 morph） -->
      <div class="forged sect" id="hero" style="padding:0;margin-top:24px">
        <span class="embar" id="heroBar" style="top:18px;bottom:18px;background:var(--ember)"></span>
-       <svg class="reg" style="right:11px;top:11px" viewBox="0 0 11 11"><path d="M2 0 L11 0 L11 9" stroke="#5F594C" fill="none"/></svg>
+       <svg class="reg" style="right:11px;top:11px" viewBox="0 0 11 11"><path d="M2 0 L11 0 L11 9" stroke="#5F5B52" fill="none"/></svg>
        <div id="setState" class="hstate">
          <div class="subhead">Bench press</div>
          <!-- M5 快改入口：大数字可点（M4-4 可供性沿用）→ 原地展开档位面板 -->
@@ -259,13 +260,13 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
          </div>
          <div style="display:flex;gap:8px;margin-top:16px;align-items:center">
            <button class="emb" onclick="logSet()"><i class="ti ti-check" style="font-size:16px"></i>Log set</button>
-           <span class="callout t3" style="display:flex;align-items:center;gap:5px;border:1px solid #3A352B;border-radius:10px;padding:0 15px;min-height:44px"><i class="ti ti-clock" style="font-size:15px"></i><span class="num">2:00</span></span>
+           <span class="callout t3" style="display:flex;align-items:center;gap:5px;border:1px solid #373430;border-radius:10px;padding:0 15px;min-height:44px"><i class="ti ti-clock" style="font-size:15px"></i><span class="num">2:00</span></span>
          </div>
        </div>
        <div id="restState" class="hstate out" style="display:flex;flex-direction:column;justify-content:center;text-align:center;padding-left:13px">
          <div class="ov" style="color:var(--rec2)">Rest</div>
          <div class="display num" id="restClock" style="margin:10px 0 2px">2:00</div>
-         <div style="height:3px;background:#231F19;border-radius:2px;margin:6px 8px 0"><div id="restMeter" style="height:3px;width:100%;background:var(--neu);border-radius:2px;transition:width 1s linear"></div></div>
+         <div style="height:3px;background:#1F1D1A;border-radius:2px;margin:6px 8px 0"><div id="restMeter" style="height:3px;width:100%;background:var(--neu);border-radius:2px;transition:width 1s linear"></div></div>
          <div class="callout t3" style="margin:12px 0 16px">Next · Set <span id="nextNo" class="num">4</span> · <span class="num" id="nextLoad">180 lb × 5</span></div>
          <div style="display:flex;gap:8px;justify-content:center;align-items:center">
            <button class="btn2" onclick="addRest()">+30s</button>
@@ -311,7 +312,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
    <!-- ===================== PLAN ===================== -->
    <section class="screen" id="s-plan" role="tabpanel" aria-label="Plan">
      <div class="hdr"><div><div class="headline">Plan</div><div class="ov num" style="margin-top:6px">Hypertrophy · Week 3 of 5</div></div><button class="iconbtn" aria-label="Adjust plan"><i class="ti ti-adjustments gear"></i></button></div>
-     <div style="display:flex;gap:5px;padding:16px 20px 0"><span style="flex:1;height:4px;border-radius:2px;background:var(--ember)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--ember)"></span><span style="flex:1;height:4px;border-radius:2px;background:#3A352B"></span><span style="flex:1;height:4px;border-radius:2px;background:#3A352B"></span><span style="flex:1;height:4px;border-radius:2px;background:#3A352B"></span></div>
+     <div style="display:flex;gap:5px;padding:16px 20px 0"><span style="flex:1;height:4px;border-radius:2px;background:var(--ember)"></span><span style="flex:1;height:4px;border-radius:2px;background:var(--ember)"></span><span style="flex:1;height:4px;border-radius:2px;background:#373430"></span><span style="flex:1;height:4px;border-radius:2px;background:#373430"></span><span style="flex:1;height:4px;border-radius:2px;background:#373430"></span></div>
 
      <div style="margin-top:20px">
        <!-- 已完成（P2，降级暗色） -->
@@ -324,7 +325,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
            <div class="forged" style="padding:14px;margin-top:8px"><span class="embar" style="top:14px;bottom:14px"></span><div style="padding-left:11px"><div class="subhead" style="font-size:19px">Push B</div><div class="caption t3" style="margin-top:4px">Overhead eased · 6 lifts · Bench 185 next</div><button class="emb" style="margin-top:12px;font-size:13px" onclick="go('train')"><i class="ti ti-player-play" style="font-size:14px"></i>Start training</button></div></div>
          </div></div>
 
-       <div style="display:flex;gap:14px;padding:0 20px"><div style="flex:0 0 auto;width:16px;display:flex;flex-direction:column;align-items:center"><span style="width:2px;flex:1;background:var(--hair)"></span><span style="width:13px;height:13px;border-radius:50%;background:var(--base);border:2px solid #3A352B;margin:2px 0"></span><span style="width:2px;flex:1;background:transparent"></span></div><div style="flex:1;padding-bottom:6px"><div class="ov">Sun · next</div><div class="body t2" style="font-weight:600;margin-top:3px">Legs</div><div class="caption t3">Squat · RDL · Calf · 5 lifts</div></div></div>
+       <div style="display:flex;gap:14px;padding:0 20px"><div style="flex:0 0 auto;width:16px;display:flex;flex-direction:column;align-items:center"><span style="width:2px;flex:1;background:var(--hair)"></span><span style="width:13px;height:13px;border-radius:50%;background:var(--base);border:2px solid #373430;margin:2px 0"></span><span style="width:2px;flex:1;background:transparent"></span></div><div style="flex:1;padding-bottom:6px"><div class="ov">Sun · next</div><div class="body t2" style="font-weight:600;margin-top:3px">Legs</div><div class="caption t3">Squat · RDL · Calf · 5 lifts</div></div></div>
      </div>
 
      <div class="rule"></div>
@@ -349,7 +350,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
     <div style="padding:24px 20px 8px"><div class="ov">End workout?</div><div class="headline" style="margin-top:10px">5 exercises left</div><div class="caption t3" style="margin-top:6px">Set 3 of 4 · your logged sets are kept.</div></div>
     <div style="display:flex;flex-direction:column;gap:10px;padding:8px 20px 0">
       <button class="emb" style="border-left-color:var(--risk)" onclick="openSummary()">End workout</button>
-      <button class="body t2" style="border:1px solid #3A352B;padding:13px;border-radius:10px;min-height:44px" onclick="closeConfirm()">Keep training</button>
+      <button class="body t2" style="border:1px solid #373430;padding:13px;border-radius:10px;min-height:44px" onclick="closeConfirm()">Keep training</button>
     </div>
   </div></div>
 
@@ -367,8 +368,8 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
   <div class="ovl" id="ovl-share" onclick="if(event.target===this)closeOvl()"><div class="sheet">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px"><button class="iconbtn" aria-label="Back" onclick="shareBack()"><i class="ti ti-chevron-left" style="font-size:21px;color:var(--t3)"></i></button><div class="subhead">Share</div><button class="iconbtn" aria-label="Close" onclick="closeOvl()"><i class="ti ti-x" style="font-size:21px;color:var(--t4)"></i></button></div>
     <div class="forged" style="margin:4px auto 16px;width:190px;height:178px;padding:16px;position:relative">
-      <svg class="reg" style="left:10px;top:10px" viewBox="0 0 11 11"><path d="M0 9 L0 0 L9 0" stroke="#5F594C" fill="none"/></svg>
-      <svg class="reg" style="right:10px;bottom:34px" viewBox="0 0 11 11"><path d="M0 11 L11 11 L11 2" stroke="#5F594C" fill="none"/></svg>
+      <svg class="reg" style="left:10px;top:10px" viewBox="0 0 11 11"><path d="M0 9 L0 0 L9 0" stroke="#5F5B52" fill="none"/></svg>
+      <svg class="reg" style="right:10px;bottom:34px" viewBox="0 0 11 11"><path d="M0 11 L11 11 L11 2" stroke="#5F5B52" fill="none"/></svg>
       <div class="ov">Personal record</div>
       <div class="caption t3" style="margin-top:16px">Bench press</div>
       <div style="display:flex;align-items:flex-end;gap:5px;margin-top:4px"><span class="title num" id="shareW">195</span><span class="subhead num" style="color:var(--ember);padding-bottom:3px" id="shareReps">× 3</span></div>
@@ -581,7 +582,7 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
      trend:[40,56,72,90],deload:54,cap:'Week 5 is a planned deload — single ember marks it.'}
  };
  function bodyMap(h){            // 单色背视身体，背阔肌点 ember（P1-4 / D2 单色）
-   const n='#4A453B', e='#E1652B';
+   const n='#4A463F', e='#C85A2E';
    return '<svg viewBox="0 0 70 150" width="'+(h*0.46)+'" height="'+h+'" fill="none" aria-label="Back focus">'
      +'<circle cx="35" cy="12" r="9" fill="'+n+'"/>'
      +'<path d="M25 21 L45 21 L49 33 L21 33 Z" fill="'+n+'"/>'

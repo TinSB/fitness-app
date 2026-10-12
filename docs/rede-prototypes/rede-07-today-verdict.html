@@ -1,18 +1,19 @@
 <!DOCTYPE html><html lang="en"><head>
+<!-- 2026-10-12：本文件是 2026-06/07 历史设计稿；色值已机械更新，多数结构仍非现行 App，现行视觉以 App 代码为准。 -->
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Rede — Today · verdict</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <style>
-:root{--color-background-secondary:#0c0b08;--color-text-primary:#ECE6D8;--color-text-secondary:#9C9484;--color-text-tertiary:#6B6457;--font-mono:ui-monospace,"SF Mono",Menlo,monospace;--font-sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;--border-radius-lg:16px}
+:root{--color-background-secondary:#0b0a09;--color-text-primary:#E9E6E1;--color-text-secondary:#948F87;--color-text-tertiary:#8A857E;--font-mono:ui-monospace,"SF Mono",Menlo,monospace;--font-sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;--border-radius-lg:16px}
 body{margin:0;background:#000;font-family:var(--font-sans);padding:18px;color:var(--color-text-primary)}
 .stage{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:20px;display:flex;gap:18px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
 .cap{font-size:12px;color:var(--color-text-secondary);text-align:center;margin-bottom:9px}
-.ph{width:320px;height:712px;border-radius:32px;overflow:hidden;position:relative;background:#15130F;box-sizing:border-box}
+.ph{width:320px;height:712px;border-radius:32px;overflow:hidden;position:relative;background:#131211;box-sizing:border-box}
 .num{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
-.sb{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 4px;font-size:12px;color:#9C9484}
-.ov{font-size:11px;letter-spacing:2.2px;color:#6B6457}
-.tb{position:absolute;left:0;right:0;bottom:0;height:58px;background:#100E0B;border-top:1px solid #221F1B;display:flex;justify-content:space-around;align-items:center;padding-bottom:6px}
-.tb a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#6B6457}
+.sb{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 4px;font-size:12px;color:#948F87}
+.ov{font-size:11px;letter-spacing:2.2px;color:#8A857E}
+.tb{position:absolute;left:0;right:0;bottom:0;height:58px;background:#111010;border-top:1px solid #222020;display:flex;justify-content:space-around;align-items:center;padding-bottom:6px}
+.tb a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#8A857E}
 .tb i{font-size:21px}
 </style></head><body>
 <div class="stage">
@@ -23,58 +24,58 @@ body{margin:0;background:#000;font-family:var(--font-sans);padding:18px;color:va
       <div class="sb"><span class="num">9:41</span><span style="display:flex;gap:6px;align-items:center"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-3" style="font-size:16px"></i></span></div>
 
       <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:6px 18px 10px">
-        <div><div style="font-size:22px;font-weight:600;color:#ECE6D8">Today</div><div class="num" style="font-size:11px;letter-spacing:1.4px;color:#6B6457;margin-top:4px">SAT · JUN 8 · WEEK 3</div></div>
-        <i class="ti ti-settings" style="font-size:20px;color:#6B6457"></i>
+        <div><div style="font-size:22px;font-weight:600;color:#E9E6E1">Today</div><div class="num" style="font-size:11px;letter-spacing:1.4px;color:#8A857E;margin-top:4px">SAT · JUN 8 · WEEK 3</div></div>
+        <i class="ti ti-settings" style="font-size:20px;color:#8A857E"></i>
       </div>
 
       <!-- HERO = Decision Receipt + Load Plate（单一重心，ember 左缘 = 唯一口音） -->
-      <div style="background:#1F1C17;border-top:1px solid rgba(236,230,216,0.10);border-radius:12px;margin:0 18px 12px;padding:16px 15px;position:relative">
-        <div style="position:absolute;left:0;top:16px;bottom:16px;width:2px;background:#E1652B;border-radius:2px"></div>
+      <div style="background:#1D1B19;border-top:1px solid rgba(233,230,225,0.10);border-radius:12px;margin:0 18px 12px;padding:16px 15px;position:relative">
+        <div style="position:absolute;left:0;top:16px;bottom:16px;width:2px;background:#C85A2E;border-radius:2px"></div>
         <div style="padding-left:11px">
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:9px"><span style="width:7px;height:7px;border-radius:50%;background:#2F7D5B"></span><span class="ov" style="color:#3E8F68">READY TO TRAIN</span></div>
-          <div style="font-size:19px;font-weight:600;color:#ECE6D8;line-height:1.32">Train today. Push A stays, pressing volume capped.</div>
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:9px"><span style="width:7px;height:7px;border-radius:50%;background:#2F7D5B"></span><span class="ov" style="color:#56B083">READY TO TRAIN</span></div>
+          <div style="font-size:19px;font-weight:600;color:#E9E6E1;line-height:1.32">Train today. Push A stays, pressing volume capped.</div>
 
           <!-- Load Plate（数字容器，非环） -->
-          <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:15px;padding-top:13px;border-top:1px solid #2A261F">
+          <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:15px;padding-top:13px;border-top:1px solid #2A2724">
             <div>
-              <div class="ov" style="color:#F0875A">START HERE</div>
-              <div style="font-size:15px;color:#ECE6D8;margin-top:6px">Bench press</div>
-              <div style="display:flex;align-items:flex-end;gap:6px;margin-top:3px"><span class="num" style="font-size:38px;font-weight:700;color:#ECE6D8;line-height:.85">185</span><span class="num" style="font-size:13px;color:#6B6457;padding-bottom:5px">lb · × 5 · RIR 2</span></div>
+              <div class="ov" style="color:#E0855C">START HERE</div>
+              <div style="font-size:15px;color:#E9E6E1;margin-top:6px">Bench press</div>
+              <div style="display:flex;align-items:flex-end;gap:6px;margin-top:3px"><span class="num" style="font-size:38px;font-weight:700;color:#E9E6E1;line-height:.85">185</span><span class="num" style="font-size:13px;color:#8A857E;padding-bottom:5px">lb · × 5 · RIR 2</span></div>
             </div>
             <div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:7px">
-              <span class="num" style="font-size:11px;color:#6B6457">then Incline DB</span>
-              <span style="display:flex;align-items:center;gap:5px;color:#6B6457;font-size:11px"><span style="width:14px;height:2px;background:#E1652B"></span><span class="num">then Cable fly</span></span>
+              <span class="num" style="font-size:11px;color:#8A857E">then Incline DB</span>
+              <span style="display:flex;align-items:center;gap:5px;color:#8A857E;font-size:11px"><span style="width:14px;height:2px;background:#C85A2E"></span><span class="num">then Cable fly</span></span>
             </div>
           </div>
 
           <div style="display:flex;gap:8px;margin-top:14px">
-            <div class="num" style="flex:1;background:#E1652B;color:#15130F;font-size:14px;font-weight:600;padding:12px;border-radius:10px;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ti ti-player-play" style="font-size:15px"></i>Start training</div>
+            <div class="num" style="flex:1;background:#C85A2E;color:#131211;font-size:14px;font-weight:600;padding:12px;border-radius:10px;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ti ti-player-play" style="font-size:15px"></i>Start training</div>
           </div>
         </div>
       </div>
 
       <!-- Decision Receipt 收起态：一句结论 + Show reason（渐进披露） -->
       <div style="padding:0 20px">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0 4px"><span class="ov">REDE TRAINING RECEIPT</span><span class="num" style="font-size:11px;color:#F0875A">TODAY</span></div>
-        <div style="font-size:15px;color:#ECE6D8;line-height:1.4;margin-top:4px">Pressing volume is capped this week.</div>
-        <div style="display:flex;align-items:center;gap:4px;color:#6B6457;font-size:13px;margin-top:9px">Show reason <i class="ti ti-chevron-down" style="font-size:14px"></i></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0 4px"><span class="ov">REDE TRAINING RECEIPT</span><span class="num" style="font-size:11px;color:#E0855C">TODAY</span></div>
+        <div style="font-size:15px;color:#E9E6E1;line-height:1.4;margin-top:4px">Pressing volume is capped this week.</div>
+        <div style="display:flex;align-items:center;gap:4px;color:#8A857E;font-size:13px;margin-top:9px">Show reason <i class="ti ti-chevron-down" style="font-size:14px"></i></div>
       </div>
 
       <!-- 刻线分隔 -->
-      <div style="height:1px;background:#221F1B;margin:16px 20px"></div>
+      <div style="height:1px;background:#222020;margin:16px 20px"></div>
 
       <!-- Progress Rail：last → today → next（无 confidence 字样） -->
       <div style="padding:0 20px">
         <div class="ov" style="margin-bottom:13px">BENCH · LAST TO NEXT</div>
         <div style="display:flex;align-items:flex-start;justify-content:space-between;position:relative">
-          <div style="position:absolute;left:8%;right:8%;top:7px;height:2px;background:#2A261F"></div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:7px;width:33%;z-index:2"><span style="width:14px;height:14px;border-radius:50%;background:#6B6457"></span><span class="num" style="font-size:12px;color:#9C9484">180×5</span><span class="ov" style="font-size:9px">JUN 5</span></div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:7px;width:33%;z-index:2"><span style="width:14px;height:14px;border-radius:50%;background:#E1652B;box-shadow:0 0 0 4px rgba(225,101,43,.16)"></span><span class="num" style="font-size:12px;color:#ECE6D8">185×5</span><span class="ov" style="font-size:9px;color:#F0875A">TODAY</span></div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:7px;width:33%;z-index:2"><span style="width:14px;height:14px;border-radius:50%;background:#1F1C17;border:2px solid #3A352B"></span><span class="num" style="font-size:12px;color:#6B6457">190×5</span><span class="ov" style="font-size:9px">NEXT</span></div>
+          <div style="position:absolute;left:8%;right:8%;top:7px;height:2px;background:#2A2724"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:7px;width:33%;z-index:2"><span style="width:14px;height:14px;border-radius:50%;background:#8A857E"></span><span class="num" style="font-size:12px;color:#948F87">180×5</span><span class="ov" style="font-size:9px">JUN 5</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:7px;width:33%;z-index:2"><span style="width:14px;height:14px;border-radius:50%;background:#C85A2E;box-shadow:0 0 0 4px rgba(200,90,46,.16)"></span><span class="num" style="font-size:12px;color:#E9E6E1">185×5</span><span class="ov" style="font-size:9px;color:#E0855C">TODAY</span></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:7px;width:33%;z-index:2"><span style="width:14px;height:14px;border-radius:50%;background:#1D1B19;border:2px solid #373430"></span><span class="num" style="font-size:12px;color:#8A857E">190×5</span><span class="ov" style="font-size:9px">NEXT</span></div>
         </div>
       </div>
 
-      <div class="tb"><a style="color:#E1652B"><i class="ti ti-home"></i>Today</a><a><i class="ti ti-barbell"></i>Train</a><a><i class="ti ti-trending-up"></i>Progress</a><a><i class="ti ti-calendar"></i>Plan</a></div>
+      <div class="tb"><a style="color:#C85A2E"><i class="ti ti-home"></i>Today</a><a><i class="ti ti-barbell"></i>Train</a><a><i class="ti ti-trending-up"></i>Progress</a><a><i class="ti ti-calendar"></i>Plan</a></div>
     </div>
   </div>
 

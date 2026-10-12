@@ -1,7 +1,10 @@
 # Rede Product Design Language — 产品设计语言
 
 > **状态:** Canonical / living design-language baseline
-> **最后更新:** 2026-07-27（§12.3 增补 FR-PL7③ 训练日类型选择器开放行 idiom；§13「密而干净」、§11 dark locked tokens 与 §12 整面板公理仍在）
+> **最后更新:** 2026-10-12（视觉对齐轮：补记 2026-08-07 低饱和换代，并写回导航 chrome、悬浮 CTA、卡面材质、排版、Widget 与 Apple Watch 契约）
+> **视觉现行版本:** 2026-08-07 低饱和暖锻铁换代；2026-10-12 对账后的角色、比例、禁区与组件契约以本文为准。
+> **数值真源:** App 色值、字阶、圆角与间距以 `ios/Rede/RedeTheme.swift` 为准，组件几何以 `ios/Rede/RedeComponents.swift` 为准；发生冲突时以代码为准。`WatchTheme.swift` 的 `WatchPalette` 与 `RestLiveActivity.swift` 的 `RestPalette` 是本地副本，改基础色时三处同改。
+> **开放校准项:** `ForgedGrain.diagonal` 对角拉丝已成为默认材质；其强度尚待真机暗光 / OLED 校准，校准完成前不把当前强度写成永久合同。
 > **适用范围:** 产品视觉品牌、App UI 方向、landing page、widget、App Store 截图、v0 / 原型生成、设计 QA
 > **权威边界:** 本文只定义 Rede 应该长什么样、给人什么感觉、哪些视觉方向不能用。它不授权新功能、网络、云、账号、HealthKit 范围、订阅基础设施、source-of-truth 变更或任何 Swift package 边界变化。功能与架构边界以 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 和 `docs/REDE_iOS_SYSTEM_LOGIC.md` 为准。文案语气以 `docs/REDE_PRODUCT_COPY_BASELINE.md` 为准。
 
@@ -223,6 +226,8 @@ Rede 可以使用卡片,但不能堆卡片。
 
 ### 3.1 色彩角色
 
+> 下表是 2026-06 的冷调探索与浅色 theme 参考族，**不是现行 App 深色 token**；深色主模式的可消费色值见 §11.2。Trust 是未接入现行 App 的预留色位，不得据此新增可信度读数。
+
 | Token | 用途 | 建议色 |
 |---|---|---|
 | Graphite 900 | 深色模式页面底 | `#111312` |
@@ -236,15 +241,15 @@ Rede 可以使用卡片,但不能堆卡片。
 | Recovery 500 | 恢复 / 可练 | `#2F7D5B` |
 | Caution 500 | 注意 / 降载 | `#C79A3A` |
 | Risk 500 | 风险 / 疼痛 / 破坏性动作 | `#C2413A` |
-| Trust 500 | 数据可信度 / 导入证据 | `#3267B7` |
+| Trust 500（预留，当前未使用） | 未来数据可信度 / 导入证据候选；现行 App 无对应 token 或 UI | `#3267B7` |
 
 ### 3.2 使用比例
 
-推荐单屏比例:
+推荐单屏比例（约束上限，不是配色目标）:
 
 - 中性 surface:70 到 85%。
 - 文字与结构线:10 到 20%。
-- Ember:3 到 8%。
+- Ember 只标下一步与变化，日常页面面积上限约 3%；普通页面应自然显著低于上限，数据着色页除外。
 - 语义色:只在需要判断时出现。
 
 如果一屏看起来是"黑橙主题",而不是"训练判断界面",就已经偏了。
@@ -273,17 +278,19 @@ Rede 可以使用卡片,但不能堆卡片。
 - Web / v0 原型:`Inter` 或系统 sans
 - 数字:使用 tabular numbers
 
+数值簇必须拆成「数值大、单位小、标签最小」，不要把 `37.5 kg × 6` 渲染成同字号字符串。动作名是索引，使用 medium + T2；重量是答案，使用 semibold + T1。工序序号可使用 SF Mono，执行参数三列可使用 SF Rounded；这是 2026-08-06 owner 确认保留的窄例外，不授权全局引入代码字体或装饰字体。
+
 不要引入装饰字体、军事字体、机甲字体、仿金属字体。
 
 ### 4.2 字重
 
 | 场景 | 字重 |
 |---|---|
-| 关键数字 | 700 |
-| 页面标题 | 650 到 700 |
-| 卡片标题 | 600 |
-| 正文 | 400 到 500 |
-| 标签 | 500 |
+| 关键数字 | `LoadCluster` / 对应 `Font.rede*` 的 semibold 或 bold 档；重量读数优先 semibold + T1 |
+| 页面标题 | 对应 `Font.redeHeadline` / `Font.redeTitle` |
+| 卡片标题 | 对应 `Font.redeSubhead` |
+| 正文 | 对应 `Font.redeBody` / `Font.redeCallout` |
+| 标签 | 对应 `Font.redeOverline` |
 
 不要把整屏都做成粗体。力量感来自秩序,不是字体发狠。
 
@@ -295,17 +302,20 @@ Rede 可以使用卡片,但不能堆卡片。
 
 ### 4.4 圆角
 
-Rede 的圆角要克制。
+Rede 的圆角要克制，克制来自层级一致与材质节制，不等于把实体卡压扁。精确数值只从 `RedeShape` / `RedeTabBarMetrics` 读取：
 
 | 元素 | 圆角 |
 |---|---:|
-| 卡片 / row group | 8 pt |
-| 小按钮 | 8 pt |
-| icon button | 8 pt |
+| 默认 `ForgedCard` / 列表内容卡 | `RedeShape.cardRadiusL` |
+| 展开态卡 | `RedeShape.cardRadiusXL` |
+| 次级子面 | `RedeShape.cardRadius` |
+| 主按钮 | `RedeShape.buttonRadius` |
+| steel 控件 / icon button | `RedeShape.steelRadius` |
+| 悬浮标尺 tab bar | `RedeTabBarMetrics.cornerRadius` |
 | badge / pill | capsule |
 | iOS sheet / modal | 遵循平台默认 |
 
-不要用 16 到 36 pt 的大圆角把产品做成玩具感或消费金融感。
+不要靠圆角、彩色填充或玻璃感把产品做成玩具感或消费金融感。
 
 ---
 
@@ -447,11 +457,13 @@ Launch / App Store 素材必须在 clean runtime 可真实演示后再制作。A
 
 ## 7. Widget
 
+> **实现范围（2026-10-12）:** Readiness Widget 仅支持 `.systemSmall` / `.systemMedium`。锁屏 Widget 尚未实现；§7.1 的锁屏 / 灵动岛表面是休息 Live Activity，不等同于锁屏 Widget。
+
 Widget 只回答一个问题:
 
 > 今天我该不该开始训练?
 
-Small:
+主屏 Readiness Widget 采用锻铁品牌样式：暗底、ember 左缘、instrument overline 与数值簇；不回退到系统库存卡片的通用层级。Small:
 
 - 状态:Train / Hold / Deload。
 - 一个训练日名称。
@@ -466,10 +478,7 @@ Medium:
 
 Small / Medium 在非校准且已有等级时，可在判断之下显示至多两行最高等级肌群，作为被动上下文而不是第二个判断；校准中、缺失或无等级时完全不显示，不能抢 headline/advice 的层级。
 
-Lock Screen:
-
-- 只显示状态和入口。
-- 不显示疼痛、体重、私人筛查、详细训练数据。
+隐私纪律不变：任何 Widget 都不显示疼痛、体重、私人筛查或详细训练数据。未来若实现锁屏 Widget，须另行定义 family、密度与验收，不得把本节主屏规格自动外推。
 
 ### 7.1 休息 Live Activity（锁屏 + 灵动岛）· 2026-07-16 质感批定稿
 
@@ -487,6 +496,15 @@ Live Activity 只回答一个问题：**这段休息还剩多久**。锻铁暗�
 - **ember 单焦点 = 倒计时**：数字 + 其图形化身（进度环/条）同 ember；其余 T1/T3。进度环/条用 ember 是 §15.2「时间流逝=钢色」的 **scoped 豁免**（该面无任何操作，无 CTA 需要让位——豁免条款见 §15.2）。
 - **进度条构造**：系统 `ProgressView(timerInterval:)` 原生自驱动（零推送零轮询），linear 轨道不可定制 → `t3 @ 0.25` Capsule 垫底。
 - **陈旧态全灰化**：`isStale`（到点滞留期）数字/环/条/keyline 全部退 T3——**不许任何橙色假活**。
+
+### 7.2 Apple Watch 视觉
+
+Apple Watch 不是另一套库存 watchOS 卡片，而是同一件锻铁仪器的表盘。表侧通过 `WatchTheme.swift` 的 `WatchPalette` 维护基础色本地副本；其值必须与 `RedeTheme.swift`、`RestLiveActivity.RestPalette` 同步，不另立色板真源。
+
+- 一块连续暗色锻面，数字直接蚀刻；分区靠刻度轨，主按钮是锻面件，次操作使用机加工圆钮或文字级操作。
+- Ember 只允许落在当前组改动、刻度轨指针、主操作边缘，以及休息倒计时。休息倒计时沿用 §7.1 的 scoped 豁免；背景、整圈边框与成功态不得染 ember。
+- 陈旧倒计时全灰化，不得以 ember 冒充仍在推进。
+- 数值簇遵守手机同一规则：数值大、单位小、标签最小；主读数优先，动作名退为索引。表盘尺寸缩放由 `WatchMetrics` 负责，不复制手机的固定字号。
 
 ---
 
@@ -552,8 +570,8 @@ UI rules:
 - No AI wording in headings or primary copy.
 - Visible UI copy must not use: AI, smart, intelligent, algorithm, magic, assistant, chatbot, optimize, personalized journey.
 - Use one clear primary action per screen.
-- Keep cards to 12pt radius, buttons 10pt.
-- Use system typography (SF Pro) and tabular numbers; letter-spacing 0 on body, ~2.2 on uppercase instrument labels.
+- Use the current Rede card proportions: `RedeShape.cardRadiusL` by default, `RedeShape.cardRadiusXL` when expanded, and `RedeShape.cardRadius` only for secondary inset surfaces; buttons use `RedeShape.buttonRadius`.
+- Use system typography (SF Pro) and tabular numbers; body tracking stays neutral and uppercase instrument labels use `RedeTracking.overline`.
 - Dark mode is the primary app theme; light is a supported secondary theme, still restrained.
 
 Core copy:
@@ -584,40 +602,44 @@ Core copy:
 
 ---
 
-## 11. 视觉执行决定 (2026-06-08 · owner review)
+## 11. 视觉执行决定（2026-06-08 owner review；2026-08-07 换代）
 
-创始人审完整套设计稿后拍板的视觉执行决定。**与前文冲突处以本节为准**；IA、命名组件、页面语言、文案、禁区均不变。详细品质层 / 构建规格另见 `docs/REDE_CRAFT_SPEC.md`（2026-06-11 转正登记，原 .ai-tmp 工作稿）。
+创始人 2026-06-08 审完整套设计稿后拍板视觉方向；2026-08-07 在不改变品牌角色的前提下完成低饱和换代。**与前文冲突处以本节为准**；数值与实现冲突时以 `RedeTheme.swift` 为准。详细方法与历史构建规格见 `docs/REDE_CRAFT_SPEC.md`。
 
 ### 11.1 主模式 ＝ 深色暖锻铁
 App 主模式深色（见 §3.3 更新）。浅色为受支持的次级 theme，token 双模备好。
 
-### 11.2 Locked tokens（深色主模式，覆盖 §3.1 的偏冷取值）
-采用暖锻铁 craft skin：
+### 11.2 现行 tokens（深色主模式，覆盖 §3.1 的历史参考）
 
-| 角色 | locked |
+下表取自 `RedeTheme.swift` @2026-08-07，供官网、商店图与原型提示词直接取色；若与代码冲突，以代码为准。
+
+| 角色 | 现行值 |
 |---|---|
-| Base / Surface / Hairline | `#15130F` / `#1F1C17` / `#2A261F` |
-| Text 主 / 次 / 三（chalk·steel） | `#ECE6D8` / `#C9C2B4` / `#9C9484` |
-| Ember 500 / 300 | `#E1652B` / `#F0875A` |
-| Recovery / Caution / Risk / Trust（仅判断时） | `#2F7D5B` / `#C79A3A` / `#C2413A` / `#3267B7` |
+| Base / Surface / Raised / Hairline | `#131211` / `#1D1B19` / `#232120` / `#2A2724` |
+| Text T1 / T2 / T3 / T4 | `#E9E6E1` / `#C2BFB9` / `#948F87` / `#8A857E` |
+| Ember / Ember 2 | `#C85A2E` / `#E0855C` |
+| Recovery / Recovery 2 / Caution / Risk | `#2F7D5B` / `#56B083` / `#C79A3A` / `#C2413A` |
+| Steel / Neutral / Etch / Registration | `#8C8884` / `#4A463F` / `#333029` / `#5F5B52` |
+| Trust（预留，当前 App 未使用） | `#3267B7`；没有 `redeTrust` token，不得用于现行验收 |
 
-比例不变：中性 70–85% / 文字·线 10–20% / Ember 3–8% / 语义仅判断时。§3.1 的 Graphite / Steel / Chalk 仍是参考族与浅色 theme 取值。
+比例纪律：中性面占主导；Ember 只标下一步与变化，日常页面面积上限约 3% 而非目标值，数据着色页除外；语义色仅在确有判断时使用。§3.1 只保留为 2026-06 历史 / 浅色 theme 参考族。
 
 ### 11.3 字体·形状例外（覆盖 §4.3 / §4.4）
-- **仪表标签（overline / 小标签）用大写 + letter-spacing ~2.2**（instrument 风格）；**正文 / 判断句 / 文案仍 letter-spacing 0 + sentence case + 真实文案**——§4.3 主旨不变，仅标签例外。
-- **卡片圆角 12px**（§4.4 的 8pt 上调；按钮 10、chip = capsule 不变）。
+- **仪表标签（overline / 小标签）用大写 + `RedeTracking.overline`**（instrument 风格）；**正文 / 判断句 / 文案仍 tracking 0 + sentence case + 真实文案**——§4.3 主旨不变，仅标签例外。
+- **形状只取 `RedeShape`：** 默认 `ForgedCard` 用 `cardRadiusL`，展开态用 `cardRadiusXL`，次级子面用 `cardRadius`，按钮用 `buttonRadius`，steel 控件用 `steelRadius`；chip = capsule。悬浮 tab bar 另见 §17。
 - 数字：SF Pro + tabular（§4.1 不变）。
-- 材质：锻面颗粒 ~1.5% + 顶缘高光 ~8% alpha + 四角 registration（hero / 关键卡）。
+- 数值簇：数值大、单位小、标签最小；名称 medium + T2，重量 semibold + T1。执行参数三列可用 SF Rounded，工序序号可用 SF Mono。
+- 材质：默认卡面以 `redeRaised → redeSurface` 的极微垂直渐变制造厚度，叠一像素顶缘渐隐高光、`ForgedGrain.diagonal` 对角拉丝与必要的 registration。拉丝强度仍待真机校准。
 
 ### 11.4 确认项（与文档一致，重申）
 - 底部 **4 tab：Today / Train / Progress / Plan**；Settings 顶部入口、非 tab。
 - 命名组件 Load Plate / Decision Receipt（Call·Signal·Change·Control）/ Progress Rail / Steel Cards 必用。
 - 肌群等级 `Lv.1–20` + 均衡度 + 趋势为 Progress 核心。**置信度 / 数据可信度仅引擎内部、不作 UI 读数显示（见 `REDE_PRODUCT_COPY_BASELINE.md` §3.4）。**
 - 文案四锚点与禁区不变。
-- 像素基准：**Today 像素终稿（2026-06-08）是其余屏的对齐基准。**
+- 历史基准：2026-06-08 Today 像素稿只保留为设计过程记录；2026-08-07 换代后的现行对齐以 App 代码与真实运行结果为准。
 
 ### 11.5 覆盖关系
-本节覆盖：§3.1（暖 locked tokens）、§3.3（dark 为主）、§4.3（标签 letterspacing 例外）、§4.4（卡片 12px）。**§9 v0-prompt 三行（`8pt radius` / `letter spacing of 0` / `light mode first-class`）已就地更新为 12pt / 标签 letterspacing / dark-first。** 其余全部不变。
+本节覆盖：§3.1（历史 / 浅色参考）、§3.3（dark 为主）、§4.3（标签 tracking 例外）、§4.4（`RedeShape` 形状层级）。§9 v0 prompt 已同步为 token 名、标签 tracking 与 dark-first；2026-06 的旧 locked 值已被 2026-08-07 换代取代。
 
 ---
 
@@ -633,7 +655,7 @@ App 主模式深色（见 §3.3 更新）。浅色为受支持的次级 theme，
 
 ### 12.2 铭牌语义（卡 = 物件，不是布局容器）
 
-卡片只允许是「可锻造的语义物件」：今日判断牌、训练仪表读数、设备铭牌（设置背景）、PR 成就牌（小结）、分享工件、引导题卡/结果卡、计划「今天」节点。顶缘高光 + registration 角标 + 颗粒为 **hero 铭牌专属身份**，不再是卡的通用皮。base 自身获得 ≤1% 全屏锻面颗粒（实体感，真机 25% 亮度校准后定值）。
+卡片只允许是「可锻造的语义物件」：今日判断牌、训练仪表读数、设备铭牌（设置背景）、PR 成就牌（小结）、分享工件、引导题卡/结果卡、计划「今天」节点。卡面厚度由极微垂直渐变、顶缘渐隐高光与对角拉丝共同表达；registration 只在需要校准语义的 hero / 关键卡出现。噪点档曾做过真机校准，默认对角拉丝档仍待真机校准。四个 tab 页当前以不透明 `redeBase` 覆盖根层，因此用户实际看到的页面 base 是平涂，不宣称有全屏颗粒。§17 的悬浮 tab bar 是导航 chrome，不是 `ForgedCard`，其锻面材质是本节明确例外。
 
 ### 12.3 弹层规范
 
@@ -662,19 +684,13 @@ redeEtch 细描边无填充（灰屏语义延续，蚀刻图纸观感）。点�
 a11yPrimary 主板一次（防 rotor 重复）。热力图是文字行列表的**入口增强不替换**（信息
 完整性红线）。**声明的例外**：①区块命中区 <44pt 且无 §12.4 三件套——文字行列表保留
 为合规主入口，热力图为冗余增强入口（本节即 §12.4 例外记录）；②成熟档案下双人形
-大面积 ember 填充——§3.2「Ember 3-8%」比例纪律对**数据着色**不适用（该纪律管的是
+大面积 ember 填充——§3.2 的 Ember 日常页面面积上限对**数据着色**不适用（该纪律管的是
 操作/强调色，热力着色是数据语义，同 §13 周量图橙柱先例）。
 禁做：本周量双语义着色、图片资产、第三方绘图库、把剪影拆回断开的散块。
 
 ### 12.4c 清单内 Hero 条目（批次 G 2026-07-13）
 
-「当前 / 下一个」条目在清单内的放大层级（今日页首个待练动作首用）：动作名升
-redeHeadline、目标值 **.redeTitle + tracking(title) + monospacedDigit**（练完态总结卡
-同款、走 redeScaled 随 Dynamic Type 缩放——禁固定 pt 值，防大字号档层级反转）、
-橙条 4pt（普通行 3pt）、垂直 padding 16（行 11）、同款 hairline 收尾。**仍是清单
-条目而非独立盒子**（沿 §12/§13 公理：不新增描边卡、不占 ForgedCard 预算、无说明
-性小字——放大本身就是焦点语言）。大字号可访问性：数值行 lineLimit(1) +
-minimumScaleFactor(0.6) 收缩不截断。
+「当前 / 下一个」条目在清单内放大，但仍是清单条目而非独立盒子。Hero 行的动作名与垂直节奏略高于普通行，并保留 ember 竖条；普通行已经移除橙条，只保留同宽透明占位以维持对齐。普通行使用 2026-08-07 的“放开”行节奏，副信息统一走 `.redeCallout`；精确间距以 `TodayTabView` 实现为准，不在本文复制魔法数。所有行都遵守**名称让位数据**：动作名 medium + T2，重量 semibold + T1；目标由 `LoadCluster` 分段呈现，数值大、单位小、标签最小。行末以同款 hairline 收尾，不新增描边卡、不占 `ForgedCard` 预算。**已知缺口（DOC-M1）:** 当前 `LoadCluster` 的尺寸输入仍是固定值，只用单行收缩避免截断，尚未随 Dynamic Type 放大；后续须实现缩放并实拍验收，或由 owner 明确收窄 PRD NFR-7，不能把现状写成已满足。
 
 ### 12.5 空态规范
 
@@ -689,6 +705,7 @@ minimumScaleFactor(0.6) 收缩不截断。
 - 收紧 §2.5：「5 张以上＝IA 错」→ **每屏常驻铭牌至多 1 张**。
 - 收紧品质层 S5：「一屏 ≤3 层 surface」→ **base + hero 铭牌 1 层 + 控件态（seg 凹槽/选中填充）**。
 - 防回潮：质量门禁含每视图 ForgedCard 预算检查（`.claude/quality-gate.cmd`）。
+- §17 的悬浮 tab bar 是导航 chrome，不是 `ForgedCard`，不计入每屏铭牌预算。
 
 ---
 
@@ -702,7 +719,7 @@ minimumScaleFactor(0.6) 收缩不截断。
 
 ### 13.2 今日（覆盖 §5.1 + §2.3 Decision Receipt 主次 + §2.4 Progress Rail）
 
-状态行（可训练 + **周分段条 + 本周次数**）→ 判断行（训练日名 · N 个动作 + 依据句）→ **全天动作清单**（每行：动作名 / 组数·休息·RIR / 目标 W×次 / 跟上次比 ↑↓保持）→ 合计 → 开始训练 → 查看依据折叠（**信号/调整两行**——「控制」宣示行 2026-07-14 退役：控制权由真实按钮表达，静态能力清单=教学小字，同 §13.3b 图例禁令一类病）。原「hero 判断牌 + Decision Receipt + Progress Rail」三件套退役：判断降为一行；Rail 的「上次→今天」并进每行的「上次 X」；Receipt 降为可折叠的「查看依据」。
+状态行（可训练 + **周分段条 + 本周次数**）→ 判断行（训练日名 · N 个动作 + 依据句）→ **全天动作清单**（每行：动作名 / 组数·休息·RIR / 目标 W×次 / 跟上次比 ↑↓保持）→ 合计 → 查看依据折叠（**信号/调整两行**——「控制」宣示行 2026-07-14 退役：控制权由真实按钮表达，静态能力清单=教学小字，同 §13.3b 图例禁令一类病）。「开始训练」已移出滚动流，按 §17 作为 tab bar 上方的悬浮主 CTA；滚动内容用静态底部留白避让。原「hero 判断牌 + Decision Receipt + Progress Rail」三件套退役：判断降为一行；Rail 的「上次→今天」并进每行的「上次 X」；Receipt 降为可折叠的「查看依据」。
 
 **13.2b 今日页图形语言（N3，2026-07-14）**：
 
@@ -775,6 +792,12 @@ minimumScaleFactor(0.6) 收缩不截断。
 - 更新信号与 What's New 在 Reduce Motion 开启时直接出现/消失，不做位移、缩放或自动滚动；按压仍保留降亮反馈。
 - 余下入场动效（图表/折线 grow-in、numericText 数字滚动）属后续 Phase——见 DEV_LOG。
 
+### 14.4 详情连续变形（2026-08-06 排版与动效基准）
+
+详情类交互必须让被点元素在同一呈现上下文中连续长大，而不是让列表项淡出、另一个无关面板淡入。详情与列表同层，用页内 overlay 处理遮罩、拖拽关闭与无障碍焦点；**不要用 sheet 承载需要连续变形的详情**，因为 `matchedGeometryEffect` 无法跨过 sheet 边界。设置等真正“去了另一个地方”的低频流程仍可使用 sheet。
+
+容器先落位、内容后以透明度与轻位移进入，避免文字跟着缩放变糊。具体曲线由共享组件实现负责；开启 Reduce Motion 时必须降级为无位移 / 无缩放的直接切换或透明度变化。
+
 ---
 
 ## 15. 视觉纠偏 (2026-06-20 · owner Phase 2)
@@ -816,3 +839,26 @@ owner 拍板，细化 §1.3：
 ### 16.3 空态主按钮纪律
 
 - 大锻面主按钮（emb 左缘）= **空态承接专用**（§12.5）。有真内容时的次级导航降为**文字级链接 + chevron**——计划页有真排期时「回今日」用文字链，不用大主按钮。
+
+---
+
+## 17. 导航 chrome（2026-08-07 换代；2026-10-12 对齐）
+
+### 17.1 悬浮标尺 tab bar
+
+- Tab bar 是不贴底的独立悬浮锻面件：`redeRaised → redeSurface` 极微渐变、顶缘渐隐描边、`ForgedGrain.diagonal` 拉丝与纯黑浮层阴影。它不是 `ForgedCard`，不计入 §12.6 的每屏铭牌预算。
+- 横向留边使用 `RedeSpace.page`，与页面边距及悬浮 CTA 对齐；圆角、上下内距、标尺高度、底部离边等几何全部收进 `RedeTabBarMetrics`。`RedeSpace.bottomBar` 必须由这些 metrics 推导，页面不得复制一组近似常量。
+- 四项固定为 Today / Train / Progress / Plan，使用 SF Symbols `target` / `dumbbell` / `chart.bar` / `calendar` 加文字标签；四个标签共享同一基线。选中态的图标与标签使用 ember。
+- 块内底部是行程标尺：主刻度对齐四个 tab 中心，次刻度位于相邻中心之间，ember 游标随选中项滑动；开启 Reduce Motion 时取消位移插值。
+- 2026-08-07 已裁定拆除旧通栏背板。tab bar 两侧与下方刻意不垫任何背板，滚动内容可从空隙透出。
+- 训练进行中仍显示悬浮 tab bar，不因“专注训练”隐藏；各页统一通过 `RedeSpace.bottomBar` 避让。
+
+### 17.2 顶部滚动遮罩
+
+Today / Train / Progress / Plan 四页在状态栏区域铺 `redeBase`，安全区下沿接一段短渐隐，避免滚动文字直接切进系统状态栏。渐隐长度归页面 chrome metrics 管理，与底部 CTA 的渐隐使用同一语言，不在各页散落硬编码。
+
+### 17.3 悬浮主 CTA
+
+- 今日页「开始训练」与训练页待机态「开始训练」固定悬浮在 tab bar 上方，用 overlay 呈现；按钮水平边与 `RedeSpace.page` 对齐，上方以短渐隐把内容压回 base。
+- 滚动内容必须预留与 CTA + tab bar 同源的静态底部空间，确保最后一行可以完整滚出遮挡区。
+- **禁止用 `safeAreaInset` 承载条件出现的主 CTA。** 2026-08-10 真机已验证：条件内容首帧为空时 inset 会按零计算，数据到位后不可靠重算，导致 CTA 压住合计与末行。使用 overlay + 内容侧静态留白，避免布局依赖加载时序。
