@@ -107,6 +107,9 @@ enum RedeShape {
     static let controlHeight: CGFloat = 44
     /// 主 CTA（EmbButton 默认）高度。
     static let primaryButtonHeight: CGFloat = 50
+    /// 裸药丸选中键的视觉高度（命中区仍是 controlHeight）。进展页 SegControl 与计划页日选药丸共用，
+    /// 同色同圆角的同类控件不再各写各的。
+    static let segmentKeyHeight: CGFloat = 28
 }
 
 enum RedeTabBarMetrics {

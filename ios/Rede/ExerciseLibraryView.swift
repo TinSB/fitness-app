@@ -49,10 +49,13 @@ struct ExerciseLibraryView: View {
         let total = sections.reduce(0) { $0 + $1.entries.count }
         return ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
+                // 标题行与编排 / 编辑 sheet 同口径：minHeight 44（那两处靠右上 ✕ 撑到 44，标题垂直居中）。
+                // 裸 Text 只有 ≈28pt 行高、顶对齐，标题会比另两个 sheet 高约 9pt。
                 Text(s.exerciseLibraryTitle)
                     .font(.redeHeadline)
                     .tracking(RedeTracking.headline)
                     .foregroundStyle(Color.redeT1)
+                    .frame(maxWidth: .infinity, minHeight: RedeShape.controlHeight, alignment: .leading)
                 Text(s.planDayExercises(total))
                     .font(.redeCaption).monospacedDigit()
                     .foregroundStyle(Color.redeT4)
@@ -101,10 +104,7 @@ struct ExerciseLibraryView: View {
                             .foregroundStyle(Color.redeT4)
                     }
                     Spacer(minLength: 8)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.redeT4)
-                        .accessibilityHidden(true) // 装饰性 affordance；行 Button 已承载动作
+                    DisclosureChevron()
                 }
                 .padding(.vertical, 8)
                 .frame(minHeight: RedeShape.controlHeight)

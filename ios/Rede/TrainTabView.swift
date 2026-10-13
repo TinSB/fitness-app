@@ -381,6 +381,7 @@ struct TrainTabView: View {
                     Text(exercise.map { localeStore.exerciseName($0.exerciseId) } ?? "")
                         .font(.redeSubhead)
                         .foregroundStyle(Color.redeT2)
+                    // 紧跟名称的内联披露（不是行尾 chevron）：字号随名称，不走 DisclosureChevron。
                     Image(systemName: "chevron.right")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(Color.redeT4)
@@ -1228,9 +1229,7 @@ struct TrainTabView: View {
     /// 不可打开时（休息中）只是看不见、仍占位：记组 ⇄ 休息每组切换一次，
     /// chevron 一增一删会让右侧名称整体横跳约 20pt。
     private func sessionOrderChevron(visible: Bool) -> some View {
-        Image(systemName: "chevron.right")
-            .font(.system(size: 11, weight: .medium))
-            .foregroundStyle(Color.redeT4)
+        DisclosureChevron()
             .opacity(visible ? 1 : 0)
             .accessibilityHidden(true)
     }
@@ -1419,10 +1418,7 @@ struct TrainTabView: View {
                         .font(.redeBody)
                         .foregroundStyle(Color.redeT2)
                     Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.redeT4)
-                        .accessibilityHidden(true) // 装饰性 affordance；行 Button 已承载动作
+                    DisclosureChevron()
                 }
                 .frame(minHeight: 44)
                 if divider {
@@ -1752,12 +1748,12 @@ struct TrainTabView: View {
                 HStack(spacing: 12) {
                     sessionEditRemovedLabel(name: name)
                     Spacer(minLength: 8)
-                    sessionEditUndoButton(removal, name: name)
+                    sessionEditUndoButton(removal, name: name, labelAlignment: .trailing)
                 }
             case .vertical:
                 VStack(alignment: .leading, spacing: 0) {
                     sessionEditRemovedLabel(name: name)
-                    sessionEditUndoButton(removal, name: name)
+                    sessionEditUndoButton(removal, name: name, labelAlignment: .leading)
                 }
                 .padding(.vertical, 8)
             }
@@ -1773,16 +1769,18 @@ struct TrainTabView: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
+    /// labelAlignment：横排贴右缘；竖排与同列左对齐的名称 / 「现在练」同缘（.leading）。
     private func sessionEditUndoButton(
         _ removal: SessionExerciseRemoval,
-        name: String
+        name: String,
+        labelAlignment: Alignment
     ) -> some View {
         Button {
             undoSessionRemoval(removal, name: name)
         } label: {
             Text(s.sessionEditUndo)
                 .font(.redeCallout)
-                .frame(minWidth: 44, minHeight: 44, alignment: .trailing)
+                .frame(minWidth: 44, minHeight: 44, alignment: labelAlignment)
                 .contentShape(Rectangle())
         }
         .foregroundStyle(Color.redeEmber)
@@ -1854,7 +1852,8 @@ struct TrainTabView: View {
                     position: position,
                     canMove: canMove
                 )
-                sessionEditRemoveButton(exercise: exercise, position: position, name: name)
+                sessionEditRemoveButton(exercise: exercise, position: position, name: name,
+                                        labelAlignment: .trailing)
             }
         case .vertical:
             VStack(alignment: .leading, spacing: 0) {
@@ -1864,7 +1863,8 @@ struct TrainTabView: View {
                     position: position,
                     canMove: canMove
                 )
-                sessionEditRemoveButton(exercise: exercise, position: position, name: name)
+                sessionEditRemoveButton(exercise: exercise, position: position, name: name,
+                                        labelAlignment: .leading)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -1894,10 +1894,12 @@ struct TrainTabView: View {
         }
     }
 
+    /// labelAlignment：横排贴右缘；竖排与同列左对齐的「现在练」同缘（.leading）。
     private func sessionEditRemoveButton(
         exercise: ExerciseSetPlan,
         position: Int,
-        name: String
+        name: String,
+        labelAlignment: Alignment
     ) -> some View {
         // 渲染时捕获该 id 的份数，供陈旧回调防线比对（重复 occurrence 防连删）。
         let occurrenceCount = flow?.plan.exercises
@@ -1910,7 +1912,7 @@ struct TrainTabView: View {
         } label: {
             Text(s.sessionEditRemove)
                 .font(.redeCallout)
-                .frame(minWidth: 44, minHeight: 44, alignment: .trailing)
+                .frame(minWidth: 44, minHeight: 44, alignment: labelAlignment)
                 .contentShape(Rectangle())
         }
         .foregroundStyle(Color.redeT3)

@@ -53,6 +53,9 @@ struct ProgressTabView: View {
     /// 免费态点肌群行进的 Rede Coach 页（FR-SUB1 修订）。
     @State private var showCoachPage = false
     @Environment(SessionStore.self) private var sessionStore
+    /// 柱顶浮标（caption）高出最高柱的头部空间：标签框 ≈14 − descent ≈3 + 距柱顶 7 ≈ 18，
+    /// 容器本身已有 ≈3 的余量，取 16；随 caption 字号缩放，最高柱 fraction=1 时标签不会被裁。
+    @ScaledMetric(relativeTo: .caption) private var barTagHeadroom: CGFloat = 16
     /// 点历史行进详情的触感脉冲（单调自增）——不绑 detailRecord?.id：那是 .sheet(item:) 会回落 nil 的
     /// 呈现态，关 sheet 时 id→nil 会幽灵多震一次（审查确认）。只在「打开」自增 → 关闭不误触。
     @State private var historyOpenPulse = 0
@@ -213,10 +216,25 @@ struct ProgressTabView: View {
         .accessibilityHidden(true)
     }
 
+    /// 以 44pt 命中高的列表行收尾的区块，其末行文字下方自带的留白（≈(44 − 行高)/2）。
+    /// 传给 RuleDivider(topInset:)，让分隔线上下留白近似等距。
+    private static let listRowTrailingInset: CGFloat = 14
+
     // MARK: - 真数据内容
 
     private func content(_ model: ProgressModel) -> some View {
         let view = scaleView(model)
+        // 分隔线要不要抵消「上一区块末行」的行内留白：发展区（有行时以分享行收尾）与里程碑区都以
+        // 44pt 命中高的行收尾，文字上下各自带 ≈14pt 空白；文字型区块（柱图 / 连续性）则没有。
+        let developmentEndsWithRow = developmentHasRows(model)
+        let showsMilestones = !model.milestones.isEmpty
+        let milestonesEndWithRow = showsMilestones && !milestoneRows(model.milestones).isEmpty
+        let insetAfterRow = Self.listRowTrailingInset
+        let insetBeforeMilestones = developmentEndsWithRow ? insetAfterRow : 0
+        let insetBeforeContinuity = (showsMilestones ? milestonesEndWithRow : developmentEndsWithRow) ? insetAfterRow : 0
+        let insetBeforeHistory = model.continuity != nil ? 0
+            : (showsMilestones ? (milestonesEndWithRow ? insetAfterRow : 0)
+                               : (developmentEndsWithRow ? insetAfterRow : 0))
         return VStack(alignment: .leading, spacing: 0) {
             // 尺度切换。2026-08-09 一度在下面补过一条带刻度的尺身（想表达
             // 单次/本周/周期 是同一根时间轴上的三个倍率），owner 判「不好看」——
@@ -297,8 +315,8 @@ struct ProgressTabView: View {
                 .id("development")   // -progressScrollTo 锚点
 
             // FR-PR7 力量里程碑（实测达成；杠铃配片阈值）——非空才显示，含前导分隔线。
-            if !model.milestones.isEmpty {
-                RuleDivider()
+            if showsMilestones {
+                RuleDivider(topInset: insetBeforeMilestones)
 
                 milestonesSection(model)
                     .padding(.horizontal, RedeSpace.page)
@@ -307,14 +325,14 @@ struct ProgressTabView: View {
 
             // 连续性段（含其前导分隔线）随 continuity 一同存在/消失，避免 nil 时双分隔线黏合（审查 MINOR-1）。
             if let month = model.continuity {
-                RuleDivider()
+                RuleDivider(topInset: insetBeforeContinuity)
 
                 continuitySection(month)
                     .padding(.horizontal, RedeSpace.page)
                     .id("continuity")   // -progressScrollTo 锚点
             }
 
-            RuleDivider()
+            RuleDivider(topInset: insetBeforeHistory)
 
             historySection(model)
                 .padding(.horizontal, RedeSpace.page)
@@ -582,8 +600,9 @@ struct ProgressTabView: View {
         let delta = trend.latestE1RmKg - (trend.points.first?.e1RmKg ?? trend.latestE1RmKg)
         return VStack(spacing: 0) {
             HStack(spacing: 12) {
+                // 名称让位于数据（2026-08-06 基准②）：medium + T2，右侧读数才是重心。
                 Text(localeStore.exerciseName(trend.exerciseId))
-                    .font(.redeSubhead).foregroundStyle(Color.redeT1)
+                    .font(Font.redeSubhead.weight(.medium)).foregroundStyle(Color.redeT2)
                 Spacer()
                 MiniSparkline(values: values).frame(width: 80, height: 26)
                 VStack(alignment: .trailing, spacing: 3) {
@@ -617,27 +636,30 @@ struct ProgressTabView: View {
     // MARK: - 柱图（原型形态：120pt 区、唯一 ember、标签浮顶）
 
     private func barChart(_ bars: [(label: String, fraction: CGFloat, tag: String?, ember: Bool, a11y: String)]) -> some View {
-        // 仅当有 PR 标签时才预留顶部标签头位（offset -19 的浮标）；无标签时去掉那 27pt 死空间。
+        // 仅当有 PR 标签时才在柱区上方预留标签头位；无标签时不占空间。
         let hasTag = bars.contains { $0.tag != nil }
         return HStack(alignment: .bottom, spacing: 11) {
             ForEach(Array(bars.enumerated()), id: \.offset) { _, bar in
                 VStack(spacing: 8) {
-                    ZStack(alignment: .top) {
-                        if let tag = bar.tag {
-                            Text(tag)
-                                .font(.redeCaption)
-                                .monospacedDigit()
-                                .foregroundStyle(Color.redeEmber2)
-                                .offset(y: -19)
-                        }
-                    }
-                    .frame(height: 0)
                     UnevenRoundedRectangle(topLeadingRadius: 3, topTrailingRadius: 3)
                         .fill(bar.ember ? Color.redeEmber : Color.redeNeu)
-                        .frame(height: max(8, bar.fraction * 96)) // 柱区高 96（hasTag 时容器额外预留 27pt 给浮标头位）
+                        .frame(height: max(8, bar.fraction * 96)) // 柱区高 96（hasTag 时容器额外预留 barTagHeadroom 给浮标头位）
                         // 柱宽上限（审计 2026-07-13）：等分槽内居中、不再满槽填充——
                         // 62pt 满宽砖块 → 柱形（Apple Health 柱:距比例口径）
                         .frame(maxWidth: 40)
+                        // 浮标挂在柱自身上：与柱同心、随柱高走，不再靠 0 高 ZStack + offset 魔数悬空。
+                        // top 参考线取标签的文字基线 + 7：数字字形底边（= 基线）落在柱顶上方 7pt，
+                        // 与字体 descent 无关、随 Dynamic Type 缩放保持同一视觉间距。
+                        .overlay(alignment: .top) {
+                            if let tag = bar.tag {
+                                Text(tag)
+                                    .font(.redeCaption)
+                                    .monospacedDigit()
+                                    .foregroundStyle(Color.redeEmber2)
+                                    .fixedSize()
+                                    .alignmentGuide(.top) { $0[.lastTextBaseline] + 7 }
+                            }
+                        }
                     Overline(text: bar.label, color: bar.ember ? .redeEmber2 : .redeT4)
                         .lineLimit(1)
                         .minimumScaleFactor(0.7)
@@ -656,7 +678,7 @@ struct ProgressTabView: View {
                     .accessibilityHidden(true)
             }
         }
-        .frame(height: 120 + (hasTag ? 27 : 0), alignment: .bottom)
+        .frame(height: 120 + (hasTag ? barTagHeadroom : 0), alignment: .bottom)
         .frame(maxWidth: .infinity)
     }
 
@@ -726,6 +748,16 @@ struct ProgressTabView: View {
     // 面，floor 影响由展开依据行 milestoneFloorApplied 表达——同为执行中收敛）；
     // 点行展开 evidence/limitation 人话=解释入口。判断全在包内，此层只渲染。
 
+    private func developmentHasRows(_ model: ProgressModel) -> Bool {
+        model.muscleProfile.estimates.contains { $0.decision != .insufficientData }
+    }
+
+    /// 人形热力图的光学居中补偿（只在 ProgressTabView 一侧调 padding，不动 MuscleHeatmapView 的 canvas——
+    /// 动 canvas 会连带热点命中与缩放）。canvas 内人形实际只占 y≈5–207/220：上死区 ≈6pt、下死区 ≈15pt，
+    /// 下方首个肌群行又自带 ≈15pt 行内留白，所以人形离上方「整体级别」近、离下方首行远（实测 26 : 49）。
+    /// 整体下移 11pt（上 +11、下 −11，总高不变），使人形在上下两条内容之间的墨迹间距近似相等。
+    private static let heatmapOpticalShift: CGFloat = 11
+
     private func developmentSection(_ model: ProgressModel) -> some View {
         let profile = model.muscleProfile
         let unlocked = profile.estimates
@@ -774,10 +806,11 @@ struct ProgressTabView: View {
                     onTap: { raw in openMuscleDetail(raw, model: model) }
                 )
                 .frame(height: 240)
-                .padding(.vertical, 4)
+                .padding(.top, 4 + Self.heatmapOpticalShift)
+                .padding(.bottom, 4 - Self.heatmapOpticalShift)
 
                 // 行间距 0：行自身 44pt 命中高（HIG 最小命中区，审计 2026-07-13）——
-                // 密度与历史区行一致，不再靠 section 的 spacing 14 拉开
+                // 发展 / 里程碑 / 历史三类列表行同为 44pt 行距，不再靠 section 的 spacing 拉开
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(unlocked, id: \.muscleId.rawValue) { estimate in
                         developmentRow(estimate, subLevels: model.subLevelsByMuscle[estimate.muscleId] ?? [])
@@ -797,18 +830,18 @@ struct ProgressTabView: View {
                         snapshots: [Self.muscleLevelShareSnapshot(from: profile)]
                             + model.eventShareSnapshots)
                 } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "square.and.arrow.up").font(.redeCaption)
+                    HStack(spacing: 8) {
+                        RowLeadIcon(systemName: "square.and.arrow.up")
                         Text(s.developmentShareAction)
                         Spacer()
-                        Image(systemName: "chevron.right").font(.redeCaption).foregroundStyle(Color.redeT4)
+                        DisclosureChevron()
                     }
                     .font(.redeCallout)
                     .foregroundStyle(Color.redeEmber2)
                     .frame(minHeight: RedeShape.controlHeight)
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.redePressableRow)
             }
         }
     }
@@ -880,6 +913,9 @@ struct ProgressTabView: View {
                 // Lv 内进度（抬底命中时引擎已置 0——「刚进入此级」如实从零）
                 // 0.28：0 进度时空轨道仍可见（审计 2026-07-13——0.18 在 base 底上
                 // 近隐形，「刚进入此级」的行看着像坏了）
+                // 进度条与 chevron 没有文字基线，默认以底边落在基线上、整体低于字的视觉中线——
+                // 用 alignedToTextMidline 把它们的中心对到同行文字的视觉中线（行内仍按首行基线对齐，
+                // 因为「· 正在补足」小字要与名称同基线）。
                 Capsule()
                     .fill(Color.redeT3.opacity(0.28))
                     .frame(width: 64, height: 4)
@@ -888,14 +924,14 @@ struct ProgressTabView: View {
                             .fill(Color.redeEmber)
                             .frame(width: 64 * min(max(estimate.levelProgress, 0), 1), height: 4)
                     }
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(Color.redeT4)
+                    .alignedToTextMidline()
+                DisclosureChevron()
+                    .alignedToTextMidline()
             }
             .frame(minHeight: 44)   // HIG 最小命中区（审计 2026-07-13：原内容高 ~20pt）
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.redePressableRow)
         .accessibilityLabel(s.developmentRowA11y(muscle: name, level: estimate.currentLevel,
                                                  decision: decisionLabel))
         .accessibilityHint(s.developmentExpandHint)
@@ -940,7 +976,8 @@ struct ProgressTabView: View {
     }
 
     private func milestonesSection(_ model: ProgressModel) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        // 行间距 0：行自身 44pt 命中高（与发展区、历史区同一行节距）。
+        VStack(alignment: .leading, spacing: 0) {
             Overline(text: s.milestonesTitle)
             ForEach(milestoneRows(model.milestones), id: \.exerciseId) { row in
                 let name = localeStore.exerciseName(row.exerciseId)
@@ -977,10 +1014,7 @@ struct ProgressTabView: View {
                                 .font(.redeCallout).monospacedDigit()
                                 .foregroundStyle(Color.redeT3)
                         }
-                        Image(systemName: "chevron.right")
-                            .font(.redeCaption)
-                            .foregroundStyle(Color.redeT4)
-                            .accessibilityHidden(true)
+                        DisclosureChevron()
                     }
                     .frame(minHeight: 44)
                     .contentShape(Rectangle())
@@ -1022,7 +1056,6 @@ struct ProgressTabView: View {
     private func historySection(_ model: ProgressModel) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Overline(text: s.historyTitle)
-                .padding(.bottom, 8)
             ForEach(Array(model.snapshot.history.prefix(10).enumerated()), id: \.element.sessionId) { index, entry in
                 Button {
                     detailRecord = model.records.first { $0.id == entry.sessionId }
@@ -1045,12 +1078,9 @@ struct ProgressTabView: View {
                             .monospacedDigit()
                             .foregroundStyle(Color.redeT3)
                         // 可点线索：整行可点开当次详情，尾部 chevron 明示（affordance 三件套之一）。
-                        Image(systemName: "chevron.right")
-                            .font(.redeCaption)
-                            .foregroundStyle(Color.redeT4)
-                            .accessibilityHidden(true) // 装饰性线索；行的可点性已由 Button 表达
+                        DisclosureChevron()
                     }
-                    .padding(.vertical, 10)
+                    .frame(minHeight: 44)   // 与发展行 / 里程碑行同一 44pt 行高（HIG 命中区）
                     .contentShape(Rectangle()) // 整行可点（含 Spacer）+ 按压反馈覆盖全行
                 }
                 .buttonStyle(.redePressableRow)

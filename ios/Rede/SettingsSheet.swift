@@ -344,10 +344,7 @@ struct SettingsSheet: View {
                     .fixedSize(horizontal: false, vertical: true)   // 大字号下让右值换行，不截断
             }
             if showsChevron {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color.redeT4)
-                    .accessibilityHidden(true)
+                DisclosureChevron()
             }
         }
         .frame(minHeight: RedeShape.controlHeight)
@@ -440,10 +437,7 @@ struct SettingsSheet: View {
                     .font(.redeBody)
                     .foregroundStyle(Color.redeT2)
                 Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color.redeT4)
-                    .accessibilityHidden(true)
+                DisclosureChevron()
             }
             .frame(minHeight: RedeShape.controlHeight)
             .contentShape(Rectangle())
@@ -577,9 +571,7 @@ struct SettingsSheet: View {
                     // 开关换成进 Coach 页的 chevron：用户的落库设置原样保留，订阅后立刻恢复，
                     // 不需要回来再点一次；在这里给一个开不动的开关才是骗人。
                     Button { showSubscriptionPage = true } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(Color.redeT4)
+                        DisclosureChevron()
                             .frame(minWidth: 44, minHeight: RedeShape.controlHeight, alignment: .trailing)
                             .contentShape(Rectangle())
                     }
@@ -774,9 +766,7 @@ struct SettingsSheet: View {
                     .foregroundStyle(Color.redeT1)
                 // 审查 NIT-1：档案不完整时铭牌只读，不显示「能点」的暗示
                 if profileComplete || question == .injury {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.redeT4)
+                    DisclosureChevron()
                 }
             }
             .padding(.vertical, 9)
@@ -855,10 +845,7 @@ struct SettingsSheet: View {
                         .font(.redeBody)
                         .foregroundStyle(Color.redeT2)
                     Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.redeT4)
-                        .accessibilityHidden(true)
+                    DisclosureChevron()
                 }
                 .frame(minHeight: RedeShape.controlHeight)
                 .contentShape(Rectangle())
@@ -1242,10 +1229,7 @@ struct SubscriptionPageSheet: View {
                     .font(.redeBody)
                     .foregroundStyle(Color.redeT2)
                 Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color.redeT4)
-                    .accessibilityHidden(true)
+                DisclosureChevron()
             }
             .padding(.horizontal, RedeSpace.page)
             .frame(minHeight: RedeShape.controlHeight)
@@ -1418,10 +1402,7 @@ struct SubscriptionPageSheet: View {
                             .font(.redeCallout)
                             .foregroundStyle(Color.redeT3)
                         Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(Color.redeT4)
-                            .accessibilityHidden(true)
+                        DisclosureChevron()
                     }
                     .frame(minHeight: RedeShape.controlHeight)
                     .contentShape(Rectangle())

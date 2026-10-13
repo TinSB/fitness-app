@@ -133,9 +133,10 @@ struct PlanTabView: View {
                             .padding(.horizontal, RedeSpace.page)
                             .padding(.top, 4)
                         // FR-PL7②/③：训练日编排入口（开放行下钻编辑器）。
+                        // 与上方「编辑这一天」、下方动作库同为一组三条入口（dayDetail 里那条发丝线把这一组
+                        // 与动作列表隔开）：三条都是 44pt 行、行距相等，不再单给中间一行加间距。
                         daySequenceEntryRow
                             .padding(.horizontal, RedeSpace.page)
-                            .padding(.top, 8)
                         // K2：动作库入口（同款行式披露语法，非按钮非卡；唯一入口——裁定 1）。
                         libraryEntryRow
                             .padding(.horizontal, RedeSpace.page)
@@ -245,11 +246,10 @@ struct PlanTabView: View {
         let count = ExerciseCatalog.minimal.entries.filter { !$0.deprecated }.count
         return Button { showLibrary = true } label: {
             HStack(spacing: 8) {
-                Image(systemName: "list.bullet").font(.redeCaption).foregroundStyle(Color.redeT3)
+                RowLeadIcon(systemName: "list.bullet").foregroundStyle(Color.redeT3)
                 Text(s.exerciseLibraryEntry(count)).font(.redeSubhead).foregroundStyle(Color.redeT1)
                 Spacer()
-                Image(systemName: "chevron.right").font(.redeCaption).foregroundStyle(Color.redeT4)
-                    .accessibilityHidden(true)   // 装饰性 affordance（审查 NIT，与同屏行拉平）
+                DisclosureChevron()
             }
             .frame(minHeight: RedeShape.controlHeight)
             .contentShape(Rectangle())
@@ -363,10 +363,7 @@ struct PlanTabView: View {
                         .foregroundStyle(Color.redeT4)
                 }
                 Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color.redeT4)
-                    .accessibilityHidden(true)
+                DisclosureChevron()
             }
             .frame(minHeight: RedeShape.controlHeight)
             .contentShape(Rectangle())
@@ -581,7 +578,7 @@ struct PlanTabView: View {
                             .font(.system(size: 13, weight: on ? .semibold : .medium))
                             .foregroundStyle(on ? Color.redeT1 : Color.redeT4)
                             .padding(.horizontal, 14)
-                            .frame(minHeight: 32)
+                            .frame(minHeight: RedeShape.segmentKeyHeight)
                             .background { if on { Capsule(style: .continuous).fill(Color.redeHair) } }
                             .frame(minHeight: RedeShape.controlHeight)
                             .contentShape(Rectangle())
@@ -601,11 +598,11 @@ struct PlanTabView: View {
             // 药丸条里已经写着当前是哪一天，详情再放一个同名大标题是白重复一遍
             //（Alpha Progression 有这个重复，但它的 tab 条会滚出视野、标题才需要锚点；
             // Rede 的药丸条就贴在上面，重复读起来只是吵）。所以这里只留一行元信息。
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
+            // spacing 3：第二个「·」在 planDayMeta 字符串里自带两个空格，两侧间隙 ≈5pt；
+            // 这里独立的第一个「·」与它取同一量级（原 6 会让两个点两侧 8 / 5 忽松忽紧）。
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
                 if isNext {
-                    Text(s.planNextTag)
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(Color.redeEmber2)
+                    Overline(text: s.planNextTag, color: .redeEmber2)
                     Text("·").font(.redeCaption).foregroundStyle(Color.redeT4)
                 }
                 Text(s.planDayMeta(count: day.exerciseCount,
@@ -620,23 +617,24 @@ struct PlanTabView: View {
             VStack(spacing: 0) {
                 ForEach(ids, id: \.self) { id in
                     exerciseRow(id)
-                    if id != ids.last {
-                        Rectangle().fill(Color.redeHair2).frame(height: 1)
-                    }
+                    // 末行也画：这条线同时是「动作列表 | 下面三条入口」的边界（否则入口读起来像第 N+1 个动作）。
+                    Rectangle().fill(Color.redeHair2).frame(height: 1)
                 }
             }
             .padding(.top, 10)
 
+            // 三条入口（编辑这一天 / 编排训练日 / 动作库）自此成组：统一 44pt 行，行距相等。
             Button { editingDay = PlanEditTarget(dayCode: day.dayCode) } label: {
                 HStack(spacing: 8) {
-                    Image(systemName: "square.and.pencil").font(.redeCaption).foregroundStyle(Color.redeT3)
+                    RowLeadIcon(systemName: "square.and.pencil").foregroundStyle(Color.redeT3)
                     Text(s.planDayEditEntry).font(.redeSubhead).foregroundStyle(Color.redeT1)
                     Spacer()
-                    Image(systemName: "chevron.right").font(.redeCaption).foregroundStyle(Color.redeT4)
+                    DisclosureChevron()
                 }
                 .frame(minHeight: RedeShape.controlHeight)
                 .contentShape(Rectangle())
             }
+            .padding(.top, 4)
             .buttonStyle(.redePressableRow)
             .accessibilityHint(s.planEditDayHint)
         }
@@ -646,28 +644,32 @@ struct PlanTabView: View {
 
     private func exerciseRow(_ id: String) -> some View {
         let entry = ExerciseCatalog.minimal.entry(id: id)
+        // 与今日页动作行同一节奏与字阶：名称 medium + T2（让位于右侧数据）、副信息 callout、
+        // 垂直内距 15——行高随字号走，不再写死 minHeight。
         return HStack(alignment: .firstTextBaseline, spacing: 10) {
             Text(localeStore.exerciseName(id))
-                .font(.redeBody)
+                .font(Font.redeSubhead.weight(.medium))
                 .foregroundStyle(Color.redeT2)
+                .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 8)
             if let entry {
                 Text(s.planExerciseAttrs(muscle: entry.primaryMuscle, equipment: entry.equipment))
-                    .font(.system(size: 11))
+                    .font(.redeCallout)
                     .foregroundStyle(Color.redeT4)
+                    .multilineTextAlignment(.trailing)
             }
         }
-        .frame(minHeight: 38)
+        .padding(.vertical, 15)
     }
 
     /// FR-PL7②/③：训练日编排入口（开放行，点开编辑器 sheet）。
     private var daySequenceEntryRow: some View {
         Button { showSequenceEditor = true } label: {
             HStack(spacing: 8) {
-                Image(systemName: "arrow.up.arrow.down").font(.redeCaption).foregroundStyle(Color.redeT3)
+                RowLeadIcon(systemName: "arrow.up.arrow.down").foregroundStyle(Color.redeT3)
                 Text(s.planSeqEditEntry).font(.redeSubhead).foregroundStyle(Color.redeT1)
                 Spacer()
-                Image(systemName: "chevron.right").font(.redeCaption).foregroundStyle(Color.redeT4)
+                DisclosureChevron()
             }
             .frame(minHeight: RedeShape.controlHeight)
             .contentShape(Rectangle())

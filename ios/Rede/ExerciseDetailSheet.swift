@@ -21,6 +21,9 @@ struct ExerciseDetailSheet<HeaderAccessory: View, AlternativesSection: View>: Vi
 
     private var s: RedeStrings { localeStore.strings }
 
+    /// 各分组「小标题 → 内容首行」的统一间距（技术要点 / 调整难度 / 注意事项 / 元数据 / 循证同一值）。
+    private let labelGap: CGFloat = 6
+
     var body: some View {
         let entry = ExerciseCatalog.minimal.entry(id: exerciseId)
         return ScrollView {
@@ -40,7 +43,7 @@ struct ExerciseDetailSheet<HeaderAccessory: View, AlternativesSection: View>: Vi
                 if let entry {
                     // FR-EX2 技术要点（双语自由 prose；缺则不显示）——放元数据前，最有用内容优先。
                     if let cues = (s.locale == .zh ? entry.techniqueCuesZh : entry.techniqueCuesEn), !cues.isEmpty {
-                        VStack(alignment: .leading, spacing: 10) {
+                        VStack(alignment: .leading, spacing: labelGap) {
                             Overline(text: s.exerciseDetailTechnique)
                             // 2026-08-06 排版基准：`·` 只说明「这是一条」，序号说明「这是第几步」。
                             // 技术要点本就有先后（先稳定、再控制、后收尾），且可指认（"第二点没做到"）。
@@ -52,18 +55,21 @@ struct ExerciseDetailSheet<HeaderAccessory: View, AlternativesSection: View>: Vi
                     let regression = s.locale == .zh ? entry.regressionZh : entry.regressionEn
                     let progression = s.locale == .zh ? entry.progressionZh : entry.progressionEn
                     if regression?.isEmpty == false || progression?.isEmpty == false {
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: labelGap) {
                             Overline(text: s.exerciseDetailScaling)
-                            if let r = regression, !r.isEmpty { scalingRow(s.exerciseDetailRegression, r) }
-                            if let p = progression, !p.isEmpty { scalingRow(s.exerciseDetailProgression, p) }
+                            // 条间距 13 = CueList 的条间距，两段并列条目同一个节奏。
+                            VStack(alignment: .leading, spacing: 13) {
+                                if let r = regression, !r.isEmpty { scalingRow(s.exerciseDetailRegression, r) }
+                                if let p = progression, !p.isEmpty { scalingRow(s.exerciseDetailProgression, p) }
+                            }
                         }
                     }
 
                     // FR-EX2 注意事项（保守安全提示；§7.1 fitness≠medical，中性呈现不施压；缺则不显示）。
                     if let safety = (s.locale == .zh ? entry.safetyNoteZh : entry.safetyNoteEn), !safety.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: labelGap) {
                             Overline(text: s.exerciseDetailSafety)
-                            Text(safety).font(.redeBody).foregroundStyle(Color.redeT2)
+                            Text(safety).redeProse()
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
@@ -80,7 +86,7 @@ struct ExerciseDetailSheet<HeaderAccessory: View, AlternativesSection: View>: Vi
 
                     // FR-EX2 循证依据（真实可核验来源；缺则不显示）——置底作引用脚注，可点开真实出处。
                     if let tag = entry.evidenceTag, !tag.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: labelGap) {
                             Overline(text: s.exerciseDetailEvidence)
                             Text(tag).font(.redeCaption).foregroundStyle(Color.redeT3)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -104,21 +110,21 @@ struct ExerciseDetailSheet<HeaderAccessory: View, AlternativesSection: View>: Vi
     }
 
     private func detailRow(_ label: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: labelGap) {
             Overline(text: label)
             Text(value).font(.redeBody).foregroundStyle(Color.redeT1)
         }
     }
 
-    // FR-EX2 退阶/进阶行：行内小标签（退阶/进阶）+ 双语 prose。
+    // FR-EX2 退阶/进阶行：上标签、下正文——正文左缘与技术要点 / 注意事项同在内容栏左缘，
+    // 不再因标签宽度（zh 两字 / en Easier、Harder 不等宽）把正文推到各不相同的位置。
     private func scalingRow(_ label: String, _ text: String) -> some View {
-        HStack(alignment: .top, spacing: 7) {
+        VStack(alignment: .leading, spacing: 2) {
             Text(label)
                 .font(.redeCaption).foregroundStyle(Color.redeT3)
                 .lineLimit(1)
-                .frame(minWidth: 30, alignment: .leading)
             Text(text)
-                .font(.redeBody).foregroundStyle(Color.redeT2)
+                .redeProse()
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

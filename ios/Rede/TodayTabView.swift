@@ -898,29 +898,27 @@ struct TodayTabView: View {
                             .font(Font.redeHeadline.weight(.medium))
                             .tracking(RedeTracking.headline)
                             .foregroundStyle(Color.redeT2)
-                        if swapOriginalId(for: ex.exerciseId) != nil {
-                            Overline(text: s.exerciseSwappedBadge, color: .redeEmber2)
-                        } else if oneTimeOriginalId(for: ex.exerciseId) != nil {
-                            Overline(text: s.exerciseSwappedOnceBadge, color: .redeEmber2)
-                        }
+                        swapBadge(ex)
                     }
                     PrescriptionTarget(strings: s, exercise: ex, size: 30, textStyle: .title1)
                         .lineLimit(1).minimumScaleFactor(0.6)   // 大字号可访问性下收缩不截断
                     // 副信息与普通行同级（callout）：当前焦点动作的次要信息不能比下面的行更小；
                     // 两段字号不同，必须按首行基线对齐。
-                    HStack(alignment: .firstTextBaseline, spacing: 10) {
-                        Text(s.exerciseMetaLine(sets: ex.sets, restSeconds: ex.restSeconds, rir: ex.targetRir))
-                            .font(.redeCallout).monospacedDigit()
-                            .foregroundStyle(Color.redeT4)
-                        lastChangeView(ex)
+                    // 两段并排放不下（大字号 / 窄屏）就整体改竖排，不挤成两列互相折行。
+                    ViewThatFits(in: .horizontal) {
+                        HStack(alignment: .firstTextBaseline, spacing: 10) {
+                            heroMetaText(ex)
+                            lastChangeView(ex)
+                        }
+                        VStack(alignment: .leading, spacing: 3) {
+                            heroMetaText(ex)
+                            lastChangeView(ex)
+                        }
                     }
                 }
                 Spacer()
                 // chevron 垂直居中（与普通行/进展历史行同节奏——审查 NIT）
-                VStack { Spacer(); Image(systemName: "chevron.right")
-                    .font(.redeCaption)
-                    .foregroundStyle(Color.redeT4)
-                    .accessibilityHidden(true); Spacer() }
+                VStack { Spacer(); DisclosureChevron(); Spacer() }
             }
             .padding(.top, 16)
             .padding(.bottom, progressionPauseLine(ex) == nil ? 16 : 7)
@@ -938,45 +936,33 @@ struct TodayTabView: View {
         }
     }
 
+    private func heroMetaText(_ ex: ExercisePrescriptionPlan) -> some View {
+        Text(s.exerciseMetaLine(sets: ex.sets, restSeconds: ex.restSeconds, rir: ex.targetRir))
+            .font(.redeCallout).monospacedDigit()
+            .foregroundStyle(Color.redeT4)
+    }
+
+    /// 「已换 / 今天换」微标（切片6c / FR-TR6）：hero 与普通行共用判定，无则不占位。
+    @ViewBuilder
+    private func swapBadge(_ ex: ExercisePrescriptionPlan) -> some View {
+        // 切片6c：该动作是某到顶动作的替代 → 微标（长存、读落库 map）；点行进 detail 可换回。
+        // FR-TR6：永久替代显「已换」；今天临时替代显「今天换」（提示次日自动恢复）。
+        if swapOriginalId(for: ex.exerciseId) != nil {
+            Overline(text: s.exerciseSwappedBadge, color: .redeEmber2)
+        } else if oneTimeOriginalId(for: ex.exerciseId) != nil {
+            Overline(text: s.exerciseSwappedOnceBadge, color: .redeEmber2)
+        }
+    }
+
     // 单动作行：名称 / 组数·休息·RIR / 目标 / 跟上次比。
     // isCurrent 橙条已由 hero 卡取代（批次 G N2）——参数删除，普通行不再点亮。
     private func exerciseRow(_ ex: ExercisePrescriptionPlan) -> some View {
         VStack(spacing: 0) {
-            // 名称与右侧目标重量按首行基线对齐（顶对齐会让 19pt 数字比 16pt 名称低 3-4pt）。
-            HStack(alignment: .firstTextBaseline, spacing: ExerciseRowLead.gap) {
-                // 与 hero 的 ember 条同宽的透明占位：hero ⇄ 行切换时文字左缘不横跳。
-                // 高度 0 = 不参与基线对齐与行高。
-                Color.clear.frame(width: ExerciseRowLead.barWidth, height: 0)
-                VStack(alignment: .leading, spacing: 5) {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        // 名称让位于数据（2026-08-06 基准②）：medium + T2，右侧重量 semibold + T1 才是重心。
-                        Text(localeStore.exerciseName(ex.exerciseId))
-                            .font(Font.redeSubhead.weight(.medium))
-                            .foregroundStyle(Color.redeT2)
-                        // 切片6c：该动作是某到顶动作的替代 → 微标（长存、读落库 map）；点行进 detail 可换回。
-                        // FR-TR6：永久替代显「已换」；今天临时替代显「今天换」（提示次日自动恢复）。
-                        if swapOriginalId(for: ex.exerciseId) != nil {
-                            Overline(text: s.exerciseSwappedBadge, color: .redeEmber2)
-                        } else if oneTimeOriginalId(for: ex.exerciseId) != nil {
-                            Overline(text: s.exerciseSwappedOnceBadge, color: .redeEmber2)
-                        }
-                    }
-                    Text(s.exerciseMetaLine(sets: ex.sets, restSeconds: ex.restSeconds, rir: ex.targetRir))
-                        .font(.redeCallout).monospacedDigit()
-                        .foregroundStyle(Color.redeT4)
-                }
-                Spacer()
-                // 本组向外层传出的首行基线 = 目标重量；chevron 在组内与目标/升降列垂直居中（与进展历史行一致）。
-                HStack(alignment: .center, spacing: 8) {
-                    VStack(alignment: .trailing, spacing: 3) {
-                        PrescriptionTarget(strings: s, exercise: ex)
-                        lastChangeView(ex)
-                    }
-                    // 可点线索（affordance 三件套之一）：整行可点开动作详情，尾部 chevron 明示。
-                    Image(systemName: "chevron.right")
-                        .font(.redeCaption)
-                        .foregroundStyle(Color.redeT4)
-                        .accessibilityHidden(true) // 装饰性线索；行的可点性已由 Button + hint 表达
+            Group {
+                if dynamicTypeSize.isAccessibilitySize {
+                    exerciseRowStacked(ex)
+                } else {
+                    exerciseRowInline(ex)
                 }
             }
             .padding(.top, 15)
@@ -992,6 +978,71 @@ struct TodayTabView: View {
                     .padding(.bottom, 11)
             }
             Rectangle().fill(Color.redeHair2).frame(height: 1)
+        }
+    }
+
+    /// 常规字号：名称在左、目标在右，两侧按首行基线对齐。
+    private func exerciseRowInline(_ ex: ExercisePrescriptionPlan) -> some View {
+        // 名称与右侧目标重量按首行基线对齐（顶对齐会让 19pt 数字比 16pt 名称低 3-4pt）。
+        HStack(alignment: .firstTextBaseline, spacing: ExerciseRowLead.gap) {
+            // 与 hero 的 ember 条同宽的透明占位：hero ⇄ 行切换时文字左缘不横跳。
+            // 高度 0 = 不参与基线对齐与行高。
+            Color.clear.frame(width: ExerciseRowLead.barWidth, height: 0)
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    // 名称让位于数据（2026-08-06 基准②）：medium + T2，右侧重量 semibold + T1 才是重心。
+                    Text(localeStore.exerciseName(ex.exerciseId))
+                        .font(Font.redeSubhead.weight(.medium))
+                        .foregroundStyle(Color.redeT2)
+                    swapBadge(ex)
+                }
+                Text(s.exerciseMetaLine(sets: ex.sets, restSeconds: ex.restSeconds, rir: ex.targetRir))
+                    .font(.redeCallout).monospacedDigit()
+                    .foregroundStyle(Color.redeT4)
+            }
+            Spacer()
+            // 本组向外层传出的首行基线 = 目标重量；chevron 在组内与目标/升降列垂直居中（与进展历史行一致）。
+            HStack(alignment: .center, spacing: 8) {
+                VStack(alignment: .trailing, spacing: 3) {
+                    PrescriptionTarget(strings: s, exercise: ex)
+                    lastChangeView(ex)
+                }
+                // 可点线索（affordance 三件套之一）：整行可点开动作详情，尾部 chevron 明示。
+                // 基线取框底：无「上次」副行（首练）时 chevron 不会因基线更高抢走整行的首行基线，
+                // 把名称与重量拉开 1-1.5pt。
+                DisclosureChevron()
+                    .alignmentGuide(.firstTextBaseline) { $0[.bottom] }
+            }
+        }
+    }
+
+    /// 辅助功能大字号：名称一行、组数休息 RIR 一行、目标数值簇 + 「上次」一行（放不下再各占一行），
+    /// 与训练待机预览行在大字号下的做法一致——数字永不折行，整行靠上下堆叠吃掉宽度。
+    private func exerciseRowStacked(_ ex: ExercisePrescriptionPlan) -> some View {
+        HStack(alignment: .center, spacing: ExerciseRowLead.gap) {
+            Color.clear.frame(width: ExerciseRowLead.barWidth, height: 0)
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(localeStore.exerciseName(ex.exerciseId))
+                        .font(Font.redeSubhead.weight(.medium))
+                        .foregroundStyle(Color.redeT2)
+                        .fixedSize(horizontal: false, vertical: true)
+                    swapBadge(ex)
+                }
+                heroMetaText(ex)
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        PrescriptionTarget(strings: s, exercise: ex)
+                        lastChangeView(ex)
+                    }
+                    VStack(alignment: .leading, spacing: 3) {
+                        PrescriptionTarget(strings: s, exercise: ex)
+                        lastChangeView(ex)
+                    }
+                }
+            }
+            Spacer(minLength: 8)
+            DisclosureChevron()
         }
     }
 
@@ -1249,9 +1300,7 @@ struct TodayTabView: View {
                             Image(systemName: "square.and.arrow.up")
                                 .font(.redeCaption)
                                 .foregroundStyle(Color.redeEmber2)
-                            Image(systemName: "chevron.right")
-                                .font(.redeCaption)
-                                .foregroundStyle(Color.redeT4)
+                            DisclosureChevron()
                         }
                         .frame(minHeight: RedeShape.controlHeight)
                         .contentShape(Rectangle())
@@ -1283,7 +1332,7 @@ struct TodayTabView: View {
                         Image(systemName: "square.and.arrow.up").font(.redeCaption)
                         Text(s.todayDoneShareAction)
                         Spacer()
-                        Image(systemName: "chevron.right").font(.redeCaption).foregroundStyle(Color.redeT4)
+                        DisclosureChevron()
                     }
                     .font(.redeCallout)
                     .foregroundStyle(Color.redeEmber2)
@@ -1372,10 +1421,7 @@ struct TodayTabView: View {
             Text(s.saveToPlanAction)
                 .font(.redeCaption)
                 .foregroundStyle(Color.redeEmber2)
-            Image(systemName: "chevron.right")
-                .font(.redeCaption)
-                .foregroundStyle(Color.redeT4)
-                .accessibilityHidden(true)
+            DisclosureChevron()
         }
     }
 
@@ -1417,10 +1463,7 @@ struct TodayTabView: View {
                     .font(.redeCallout).monospacedDigit()
                     .foregroundStyle(Color.redeT1)
                 Spacer(minLength: 8)
-                Image(systemName: "chevron.right")
-                    .font(.redeCaption)
-                    .foregroundStyle(Color.redeT4)
-                    .accessibilityHidden(true) // 装饰性 affordance；行 Button 已承载动作
+                DisclosureChevron()
             }
             .frame(minHeight: RedeShape.controlHeight)
             .contentShape(Rectangle())

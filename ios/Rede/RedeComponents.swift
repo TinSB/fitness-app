@@ -223,21 +223,27 @@ struct LoadCluster: View {
         // 在 body 里求值（同 Font.redeX 的约定：不缓存），默认档数值与 size 逐点相同。
         let scaled = Font.redeScaled(size, textStyle)
         return HStack(alignment: .firstTextBaseline, spacing: 0) {
+            // 各段单行；数值段 fixedSize——数字永不折成「62.」与「5」两行（大字号下宁可整簇变宽，
+            // 由调用方在 isAccessibilitySize 下改上下堆叠，见今日页动作行）。
             if let prefix {
                 Text("\(prefix) ")
                     .font(.system(size: scaled * 0.63, weight: .medium))
                     .foregroundStyle(Color.redeT3)
+                    .lineLimit(1)
             }
             if let value {
                 Text(value)
                     .font(.system(size: scaled, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(Color.redeT1)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
             }
             if let unit {
                 Text(" \(unit)")
                     .font(.system(size: scaled * 0.47, weight: .regular))
                     .foregroundStyle(Color.redeT4)
+                    .lineLimit(1)
             }
             if let tail {
                 Text(value == nil ? tail : "  \(tail)")
@@ -245,6 +251,7 @@ struct LoadCluster: View {
                                   weight: repsIsPrimary ? .semibold : .medium))
                     .monospacedDigit()
                     .foregroundStyle(repsIsPrimary ? Color.redeT1 : Color.redeT3)
+                    .lineLimit(1)
             }
         }
     }
@@ -322,6 +329,19 @@ struct StatStrip: View {
 // 基准巧思二：`·` 只说明「这是一条」，序号说明「这是第几步」——技术要点本就有先后，
 // 且可指认（"第二点没做到"）。序号压到极暗，只在余光里起编排作用。
 
+extension Font {
+    /// 长段说明正文（动作详情的技术要点 / 退阶进阶 / 注意事项共用）：14.5 锚 body，随 Dynamic Type 缩放。
+    static var redeProse: Font { .system(size: redeScaled(14.5, .body), weight: .regular) }
+}
+
+extension View {
+    /// 长段说明正文的统一排版：redeProse + 行距 4 + T2。同一个 sheet 内的几段正文必须同款，
+    /// 否则读起来像两种排版混用。
+    func redeProse() -> some View {
+        font(.redeProse).lineSpacing(4).foregroundStyle(Color.redeT2)
+    }
+}
+
 struct CueList: View {
     let items: [String]
 
@@ -335,9 +355,7 @@ struct CueList: View {
                         .padding(.top, 3)
                         .accessibilityHidden(true)   // 序号是排版，不念给 VoiceOver
                     Text(text)
-                        .font(.system(size: 14.5))
-                        .lineSpacing(4)
-                        .foregroundStyle(Color.redeT2)
+                        .redeProse()
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -583,13 +601,63 @@ struct SteelButton: View {
 // MARK: - 刻线分隔(.rule)
 
 struct RuleDivider: View {
+    /// 上方区块若以 44pt 命中高的行收尾，行内文字上下已自带 ≈14pt 留白，再叠 12pt 上边距会变成
+    /// 上 28 / 下 14。topInset = 上方已有的留白量，从上边距里扣掉（不低于 0），使线上下近似等距。
+    /// 默认 0 = 紧跟文字型区块，行为不变。
+    var topInset: CGFloat = 0
+
     var body: some View {
         Rectangle()
             .fill(Color.redeHair2)
             .frame(height: 1)
             .padding(.horizontal, RedeSpace.page)
-            .padding(.vertical, RedeSpace.section / 2)
+            .padding(.top, max(0, RedeSpace.section / 2 - topInset))
+            .padding(.bottom, RedeSpace.section / 2)
     }
+}
+
+// MARK: - 行尾披露箭头 / 行首图标槽 / 文字中线对齐
+
+/// 行尾披露 chevron——全 App 唯一规格：.redeCaption 常规字重 + T4，装饰性（VoiceOver 隐藏，
+/// 行的可点性由 Button 与 hint 表达）。禁止再写 `Image(systemName: "chevron.right")` + 自选字号字重。
+/// 不含「文字 + chevron」的行内动作链接（那是另一类，随文字字号）。
+struct DisclosureChevron: View {
+    var body: some View {
+        Image(systemName: "chevron.right")
+            .font(.redeCaption)
+            .foregroundStyle(Color.redeT4)
+            .accessibilityHidden(true)
+    }
+}
+
+/// 开放行的行首图标：固定宽度槽（随 caption 字号缩放），不同宽度的 SF Symbol 不再把标题推到
+/// 不同的竖线上。与图标后的标题间距统一 8（调用方 HStack(spacing: 8)）。
+/// 颜色继承外层 foregroundStyle；对 VoiceOver 隐藏（行标题自解释）。
+struct RowLeadIcon: View {
+    let systemName: String
+    @ScaledMetric(relativeTo: .caption) private var slot: CGFloat = 16
+
+    var body: some View {
+        Image(systemName: systemName)
+            .font(.redeCaption)
+            .frame(width: slot, alignment: .leading)
+            .accessibilityHidden(true)
+    }
+}
+
+/// 让没有文字基线的元素（进度条 Capsule、chevron）在 `.firstTextBaseline` 行里居中于同行 body 字的
+/// 视觉中线：无基线的元素默认以底边落在基线上，会整体低于字的视觉中线。
+/// 4.5 = 14pt 正文字形中线到基线的高度（实测 4.7），随 body 字号缩放。
+private struct TextMidlineAligned: ViewModifier {
+    @ScaledMetric(relativeTo: .body) private var rise: CGFloat = 4.5
+
+    func body(content: Content) -> some View {
+        content.alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + rise }
+    }
+}
+
+extension View {
+    func alignedToTextMidline() -> some View { modifier(TextMidlineAligned()) }
 }
 
 // MARK: - 分段控件(.seg)
@@ -629,8 +697,6 @@ struct SegControl: View {
     /// 每个 SegControl 实例各自的命名空间——同页多个控件的键不会互相吸附。
     @Namespace private var keySlot
 
-    private let keyHeight: CGFloat = 28
-
     var body: some View {
         HStack(spacing: 0) {
             ForEach(options, id: \.self) { option in
@@ -659,7 +725,7 @@ struct SegControl: View {
                     if isOn {
                         Capsule(style: .continuous)
                             .fill(Color.redeHair)
-                            .frame(height: keyHeight)
+                            .frame(height: RedeShape.segmentKeyHeight)
                             .matchedGeometryEffect(id: "segKey", in: keySlot)
                     }
                 }
@@ -950,10 +1016,7 @@ struct RedeChoiceSheet: View {
                         }
                     }
                     Spacer(minLength: 8)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.redeT4)
-                        .accessibilityHidden(true)  // 装饰性 affordance；行 Button 已承载动作
+                    DisclosureChevron()
                 }
                 .frame(minHeight: RedeShape.controlHeight)
                 .padding(.vertical, opt.subtitle != nil ? 6 : 0)
