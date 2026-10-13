@@ -115,7 +115,8 @@ struct SettingsSheet: View {
                         periodizationSection          // 2 训练周期：影响每天练什么
                         EngraveDivider(above: Self.dividerAfterCard)   // 周期组以说明小字收尾，不是 44pt 行
                         notificationsSection          // 3 通知：影响什么时候被叫
-                        EngraveDivider(above: Self.dividerAfterRow)
+                        // 授权被拒时通知组以红色说明小字收尾，不是 44pt 行
+                        EngraveDivider(above: notifPermissionDenied ? Self.dividerAfterCard : Self.dividerAfterRow)
                         dataGroup                     // 4 数据：同步 + 健康 + 导出
                             .id("data")               // -settingsScrollTo 锚点
                         EngraveDivider(above: Self.dividerAfterRow)
@@ -222,7 +223,7 @@ struct SettingsSheet: View {
     /// 紧接卡片 / 说明小字——内容盒底就是可见底，留 RedeSpace.section；
     /// 紧接 44pt 命中行（开关 / 分段键 / 列表行）——行盒里本来就带约 11pt 不可见内边距，扣掉再量。
     private static let dividerAfterCard: CGFloat = RedeSpace.section
-    private static let dividerAfterRow: CGFloat = RedeSpace.section - 11
+    private static let dividerAfterRow: CGFloat = RedeSpace.section - RedeSpace.rowTrailingInset
     /// 分组小标题到首个 44pt 行盒顶的距离：全页统一（原先 7 / 9 / 10 / 12 各一套）。
     private static let overlineToRow: CGFloat = 10
 
@@ -1578,9 +1579,9 @@ struct PlateQuestionEditView: View {
                             questionBody
                         }
                         .padding(.vertical, 18)
-                        // 左内距 = 引导题卡的 13 + 卡内距：选项组向左外挂 OnbOptionRows.hang，
+                        // 左内距 = 卡内距 + 题卡让位 optionRowHang：选项组向左外挂 OnbOptionRows.hang，
                         // 钢色缘不至于贴到卡边。
-                        .padding(.leading, RedeSpace.card + 13)
+                        .padding(.leading, RedeSpace.card + RedeSpace.optionRowHang)
                         .padding(.trailing, RedeSpace.card)
                     }
                     .padding(.top, 16)

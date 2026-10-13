@@ -32,7 +32,7 @@
 
 ### 视觉真源层级（DOC-13，2026-10-12 对账）
 
-1. **现行数值与几何:** App 代码为准——基础 token 读 `ios/Rede/RedeTheme.swift`，组件几何 / 材质读 `ios/Rede/RedeComponents.swift`。`WatchTheme.swift` 的 `WatchPalette` 与 `RestLiveActivity.swift` 的 `RestPalette` 是本地副本，改基础色时三处同改。
+1. **现行数值与几何:** App 代码为准——基础 token 读 `ios/Rede/RedeTheme.swift`，组件几何 / 材质读 `ios/Rede/RedeComponents.swift`。`WatchTheme.swift` 的 `WatchPalette` 与 `RestLiveActivity.swift` 的 `WidgetPalette`（小组件与休息 Live Activity 共用） 是本地副本，改基础色时三处同改。
 2. **设计契约:** `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md` 定义角色、比例、禁区与组件契约；`docs/REDE_CRAFT_SPEC.md` 保存方法与工艺纪律。它们不得用历史数值反向覆盖现行代码。
 3. **历史原型:** `docs/rede-prototypes/*.html` 是 2026-06/07 设计稿。机械换色不等于结构已对齐，不作为取值或验收依据；需要当前截图时，以真实 App 运行结果为准。
 

@@ -55,14 +55,36 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
         public let name: String
         /// 「4 组」这类已渲染的组数串。传串而不传 Int，理由同上：数字后面跟什么词是语言问题。
         public let setsText: String
-        /// 已渲染的目标，如「60 kg · ×8-10」「自重 · ×12」。重量已过器械梯子吸附。
+        /// 已渲染的整串目标，如「60 kg × 8」；自重 / 弹力带只有「× 8」。重量已过器械梯子吸附。
+        /// 无障碍标签与旧手机的退路都用它。
         public let targetText: String
+        /// targetText 的分段（2026-10，视觉对齐）：表上清单行按「数值大、单位小」排字阶。
+        /// 可选 additive：旧手机不带这一位时解码为 nil，表退回整串 targetText 同字号。
+        /// 分段由手机用 RedeL10n.targetParts 渲染，各段拼起来与 targetText 逐字一致；表不解析字符串。
+        public let targetParts: TargetParts?
 
-        public init(exerciseId: String, name: String, setsText: String, targetText: String) {
+        public init(exerciseId: String, name: String, setsText: String, targetText: String,
+                    targetParts: TargetParts? = nil) {
             self.exerciseId = exerciseId
             self.name = name
             self.setsText = setsText
             self.targetText = targetText
+            self.targetParts = targetParts
+        }
+    }
+
+    /// 目标串的分段，字段与 RedeL10n.TargetParts 同义（本包不依赖 L10n，故各自一份）。
+    public struct TargetParts: Codable, Equatable, Sendable {
+        public let prefix: String?   // 「辅助」「负重」（en 侧多为 nil）
+        public let value: String?    // 「37.5」「+10」；自重 / 弹力带为 nil
+        public let unit: String?     // 「kg」「lb」；辅助与负重不带单位
+        public let reps: String      // 「× 6」
+
+        public init(prefix: String?, value: String?, unit: String?, reps: String) {
+            self.prefix = prefix
+            self.value = value
+            self.unit = unit
+            self.reps = reps
         }
     }
 

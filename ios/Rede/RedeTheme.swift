@@ -40,7 +40,7 @@ extension Color {
 
     // 品牌与语义
     // ⚠️ 色值有三份本地副本：本文件、ios/RedeWatch/WatchTheme.swift 的 WatchPalette、
-    // ios/RedeWidget/RestLiveActivity.swift 的 RestPalette。extension 无共享 token 包，改值三处同改。
+    // ios/RedeWidget/RestLiveActivity.swift 的 WidgetPalette。extension 无共享 token 包，改值三处同改。
     static let redeEmber = Color(redeHex: 0xC85A2E)
     static let redeEmber2 = Color(redeHex: 0xE0855C)
     static let redeRec = Color(redeHex: 0x2F7D5B)
@@ -85,6 +85,12 @@ enum RedeSpace {
     static let page: CGFloat = 20      // 页边距
     static let section: CGFloat = 24   // 区块间
     static let card: CGFloat = 16      // 卡内
+    /// 以 44pt 命中高的列表行收尾时，末行文字下方带的不可见留白（≈11pt）。
+    /// 分隔线要扣掉它，上下留白才近似等距（进展页 RuleDivider(topInset:)、设置页 EngraveDivider(above:) 同引）。
+    static let rowTrailingInset: CGFloat = 11
+    /// 单选题卡（引导 / 设置单题编辑）的左内距额外让位：OnbOptionRows 整组向左外挂 14（钢色缘 2 + 内距 12），
+    /// 题卡左内距 = 卡内距 + 这个量，选中缘才不贴卡边。
+    static let optionRowHang: CGFloat = 13
     /// 底栏避让由悬浮标尺 tab bar 的实际高度和内容呼吸推导，改 tab bar 几何会自动跟上。
     static let bottomBar = RedeTabBarMetrics.height + RedeTabBarMetrics.contentClearance
     /// 悬浮主 CTA（FloatingPrimaryCTA：今日 / 训练待机的「开始训练」）本体高度 = 上边距 + 按钮高。

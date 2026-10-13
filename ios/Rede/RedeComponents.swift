@@ -604,8 +604,8 @@ struct SteelButton: View {
 // MARK: - 刻线分隔(.rule)
 
 struct RuleDivider: View {
-    /// 上方区块若以 44pt 命中高的行收尾，行内文字上下已自带 ≈14pt 留白，再叠 12pt 上边距会变成
-    /// 上 28 / 下 14。topInset = 上方已有的留白量，从上边距里扣掉（不低于 0），使线上下近似等距。
+    /// 上方区块若以 44pt 命中高的行收尾，行内文字下方已自带 RedeSpace.rowTrailingInset 的留白，再叠 12pt 上边距，
+    /// 线上方就比下方松一截。topInset = 上方已有的留白量，从上边距里扣掉（不低于 0），使线上下近似等距。
     /// 默认 0 = 紧跟文字型区块，行为不变。
     var topInset: CGFloat = 0
 
@@ -740,6 +740,7 @@ struct SegControl: View {
                 .contentShape(Rectangle()) // 透明区域也可点中（默认只命中不透明像素）
         }
         .buttonStyle(.redePressableRow)
+        .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }
 

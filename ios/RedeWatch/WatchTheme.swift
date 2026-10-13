@@ -1,5 +1,6 @@
 import SwiftUI
 import WatchKit
+import RedeWatchLink
 
 // 表侧视觉基底（v3，2026-08-15）。
 //
@@ -15,7 +16,7 @@ import WatchKit
 //   或文字级操作。
 // · 陈旧态全灰化：倒计时停在 0:00 等手机时，数字与环退 T3，不许橙色假活。
 //
-// ⚠️ 色值与 ios/Rede/RedeTheme.swift、ios/RedeWidget/RestLiveActivity.swift 的 RestPalette
+// ⚠️ 色值与 ios/Rede/RedeTheme.swift、ios/RedeWidget/RestLiveActivity.swift 的 WidgetPalette
 // 是三份本地副本（extension / watch target 无共享 token 包）——改值三处同改。
 enum WatchPalette {
     private static func hex(_ value: UInt32) -> Color {
@@ -211,6 +212,50 @@ struct SetMarks: View {
                     .animation(WatchMotion.tint, value: current)
             }
         }
+    }
+}
+
+// MARK: - 目标串分段簇（清单行）：与手机 LoadCluster 同一层级——数值大 semibold T1、单位小 T4、次数中 medium T3
+//
+// 自重 / 弹力带没有数值段，此时次数升格成主数值（同 LoadCluster）。分段只是视觉：
+// VoiceOver 念手机渲染好的整串（避免读成「60 停顿 kg 停顿 乘 8」）。
+// 单位取 0.5 倍而非手机的 0.47：表上字小，再小就低于 10pt 读不清。
+
+struct WatchTargetCluster: View {
+    let parts: WatchPrescription.TargetParts
+    /// 数值字号（单位、次数按比例缩小）。
+    let size: CGFloat
+    /// 整串，给无障碍。
+    let spoken: String
+
+    private var repsIsPrimary: Bool { parts.value == nil }
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 0) {
+            if let prefix = parts.prefix {
+                Text(verbatim: "\(prefix) ")
+                    .font(.system(size: size * 0.63, weight: .medium))
+                    .foregroundStyle(WatchPalette.t3)
+            }
+            if let value = parts.value {
+                Text(verbatim: value)
+                    .font(.system(size: size, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(WatchPalette.t1)
+            }
+            if let unit = parts.unit {
+                Text(verbatim: " \(unit)")
+                    .font(.system(size: size * 0.5))
+                    .foregroundStyle(WatchPalette.t4)
+            }
+            Text(verbatim: repsIsPrimary ? parts.reps : "  \(parts.reps)")
+                .font(.system(size: repsIsPrimary ? size : size * 0.63, weight: repsIsPrimary ? .semibold : .medium))
+                .monospacedDigit()
+                .foregroundStyle(repsIsPrimary ? WatchPalette.t1 : WatchPalette.t3)
+        }
+        .lineLimit(1).minimumScaleFactor(0.8)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: spoken))
     }
 }
 

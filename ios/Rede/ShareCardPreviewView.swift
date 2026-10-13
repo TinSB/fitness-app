@@ -58,11 +58,10 @@ struct ShareCardPreviewView: View {
             }
             .padding(RedeSpace.page).frame(maxWidth: .infinity)
         }
-        // 主操作固定在底部（sheet 内没有 tab bar）。按钮本身无条件存在（无内容时 disabled），
+        // 主操作固定在底部（sheet 内没有 tab bar）。按钮本身无条件存在（无内容时点击为空操作，share() 内有 guard），
         // 所以 inset 首帧就是真实高度，不会有「带条件内容首帧 inset=0」的问题（见 FloatingPrimaryCTA 头注）。
         .safeAreaInset(edge: .bottom, spacing: 0) {
             EmbButton(icon: "square.and.arrow.up", title: s.shareCardShareAction) { share() }
-                .disabled(current == nil)
                 .padding(.horizontal, RedeSpace.page)
                 .padding(.top, RedeSpace.floatingCTATop)
                 .padding(.bottom, RedeSpace.page)

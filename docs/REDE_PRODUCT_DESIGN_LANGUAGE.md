@@ -3,7 +3,7 @@
 > **状态:** Canonical / living design-language baseline
 > **最后更新:** 2026-10-12（视觉对齐轮：补记 2026-08-07 低饱和换代，并写回导航 chrome、悬浮 CTA、卡面材质、排版、Widget 与 Apple Watch 契约）
 > **视觉现行版本:** 2026-08-07 低饱和暖锻铁换代；2026-10-12 对账后的角色、比例、禁区与组件契约以本文为准。
-> **数值真源:** App 色值、字阶、圆角与间距以 `ios/Rede/RedeTheme.swift` 为准，组件几何以 `ios/Rede/RedeComponents.swift` 为准；发生冲突时以代码为准。`WatchTheme.swift` 的 `WatchPalette` 与 `RestLiveActivity.swift` 的 `RestPalette` 是本地副本，改基础色时三处同改。
+> **数值真源:** App 色值、字阶、圆角与间距以 `ios/Rede/RedeTheme.swift` 为准，组件几何以 `ios/Rede/RedeComponents.swift` 为准；发生冲突时以代码为准。`WatchTheme.swift` 的 `WatchPalette` 与 `RestLiveActivity.swift` 的 `WidgetPalette`（小组件与休息 Live Activity 共用） 是本地副本，改基础色时三处同改。
 > **开放校准项:** `ForgedGrain.diagonal` 对角拉丝已成为默认材质；其强度尚待真机暗光 / OLED 校准，校准完成前不把当前强度写成永久合同。
 > **适用范围:** 产品视觉品牌、App UI 方向、landing page、widget、App Store 截图、v0 / 原型生成、设计 QA
 > **权威边界:** 本文只定义 Rede 应该长什么样、给人什么感觉、哪些视觉方向不能用。它不授权新功能、网络、云、账号、HealthKit 范围、订阅基础设施、source-of-truth 变更或任何 Swift package 边界变化。功能与架构边界以 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 和 `docs/REDE_iOS_SYSTEM_LOGIC.md` 为准。文案语气以 `docs/REDE_PRODUCT_COPY_BASELINE.md` 为准。
@@ -463,7 +463,7 @@ Widget 只回答一个问题:
 
 > 今天我该不该开始训练?
 
-主屏 Readiness Widget 采用锻铁品牌样式：暗底、ember 左缘、instrument overline 与数值簇；不回退到系统库存卡片的通用层级。Small:
+主屏 Readiness Widget 采用锻铁品牌样式：锻面暗底、instrument overline 与数值簇（ember 左缘需快照契约带出「今日该不该练」后才能按语义画，2026-10-12 暂未画）；不回退到系统库存卡片的通用层级。Small:
 
 - 状态:Train / Hold / Deload。
 - 一个训练日名称。
@@ -499,7 +499,7 @@ Live Activity 只回答一个问题：**这段休息还剩多久**。锻铁暗�
 
 ### 7.2 Apple Watch 视觉
 
-Apple Watch 不是另一套库存 watchOS 卡片，而是同一件锻铁仪器的表盘。表侧通过 `WatchTheme.swift` 的 `WatchPalette` 维护基础色本地副本；其值必须与 `RedeTheme.swift`、`RestLiveActivity.RestPalette` 同步，不另立色板真源。
+Apple Watch 不是另一套库存 watchOS 卡片，而是同一件锻铁仪器的表盘。表侧通过 `WatchTheme.swift` 的 `WatchPalette` 维护基础色本地副本；其值必须与 `RedeTheme.swift`、`RestLiveActivity.swift` 的 `WidgetPalette` 同步，不另立色板真源。
 
 - 一块连续暗色锻面，数字直接蚀刻；分区靠刻度轨，主按钮是锻面件，次操作使用机加工圆钮或文字级操作。
 - Ember 只允许落在当前组改动、刻度轨指针、主操作边缘，以及休息倒计时。休息倒计时沿用 §7.1 的 scoped 豁免；背景、整圈边框与成功态不得染 ember。

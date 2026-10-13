@@ -207,7 +207,7 @@ struct OnboardingView: View {
                                   selected: level, option: s.onbLevelOption) { pick($0) }
                 }
             }
-            .padding(.leading, 13)
+            .padding(.leading, RedeSpace.optionRowHang)
             .padding(.vertical, 20)
             .padding(.horizontal, RedeSpace.card)
             .frame(maxWidth: .infinity, minHeight: 470, alignment: .topLeading)
@@ -372,7 +372,7 @@ struct OnboardingView: View {
                         .padding(.top, 16)
                 }
             }
-            .padding(.leading, 13)
+            .padding(.leading, RedeSpace.optionRowHang)
             .padding(.vertical, 20)
             .padding(.horizontal, RedeSpace.card)
             .frame(maxWidth: .infinity, minHeight: 470, alignment: .topLeading)

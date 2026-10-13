@@ -216,20 +216,16 @@ struct ProgressTabView: View {
         .accessibilityHidden(true)
     }
 
-    /// 以 44pt 命中高的列表行收尾的区块，其末行文字下方自带的留白（≈(44 − 行高)/2）。
-    /// 传给 RuleDivider(topInset:)，让分隔线上下留白近似等距。
-    private static let listRowTrailingInset: CGFloat = 14
-
     // MARK: - 真数据内容
 
     private func content(_ model: ProgressModel) -> some View {
         let view = scaleView(model)
         // 分隔线要不要抵消「上一区块末行」的行内留白：以 44pt 命中高的行收尾的区块（发展区有行时以分享行收尾、
-        // 里程碑区有行时）文字上下各带 ≈14pt 空白；文字型区块（柱图 / 连续性）没有。
+        // 里程碑区有行时）文字上下各带 ≈RedeSpace.rowTrailingInset 的空白；文字型区块（柱图 / 连续性）没有。
         // 按区块出场顺序累计 endsWithRow（「上一块是否以行收尾」），每个分隔线只读它——
         // 不再另写一份「谁显示谁不显示」的嵌套判断。
         let showsMilestones = !model.milestones.isEmpty
-        func rowInset(_ afterRow: Bool) -> CGFloat { afterRow ? Self.listRowTrailingInset : 0 }
+        func rowInset(_ afterRow: Bool) -> CGFloat { afterRow ? RedeSpace.rowTrailingInset : 0 }
         var endsWithRow = developmentHasRows(model)
         let insetBeforeMilestones = rowInset(endsWithRow)
         if showsMilestones { endsWithRow = !milestoneRows(model.milestones).isEmpty }
