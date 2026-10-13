@@ -49,12 +49,16 @@ struct OnboardingView: View {
                 .padding(.horizontal, RedeSpace.page)
                 .padding(.top, 12)
             ZStack(alignment: .topLeading) {
+                // 卡回到内容高度（不低于各卡自带的 470 设计最小高）：ForgedCard 里的颗粒 Canvas 与 ember 竖条
+                // 都是贪婪视图，不加 fixedSize 会吃掉整屏剩余高度——三个选项只占顶部 1/3，下面一大块空白。
                 if step < Step.allCases.count {
                     questionCard(Step(rawValue: step) ?? .goal)
+                        .fixedSize(horizontal: false, vertical: true)
                         .transition(cardTransition)
                         .id(step)
                 } else {
                     resultCard
+                        .fixedSize(horizontal: false, vertical: true)
                         .transition(cardTransition)
                 }
             }
@@ -387,11 +391,18 @@ struct OnboardingView: View {
 
 /// 选项行：标题 + 副注，64pt 行高；选中 = 钢色左缘 + 钢色底 0.13 + 副注提亮；
 /// 行间 hairline 分隔（末行不画）。ember 不出现（口音只给下一步）。
+///
+/// 缩进按原型 rede-11b-onboarding-step.html 的 `.opt{padding:8px 12px; margin-left:-14px; border-left:2px}`：
+/// 整组向左外挂 14，行内再缩回 2（钢色缘）+ 12（内距）= 14，所以**文字与题目标题 / overline 左缘对齐**，
+/// 只有钢色左缘与选中底色挂在文字栏之外。宿主卡的左内距须 ≥ 14（引导题卡 29、设置单题编辑 29）。
 struct OnbOptionRows: View {
     let codes: [String]
     let selected: String?
     let option: (String) -> (title: String, caption: String)
     let action: (String) -> Void
+
+    /// 整组向左外挂的量，同时也是行内文字起点（钢色缘 2 + 内距 12）。
+    static let hang: CGFloat = 14
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -408,7 +419,7 @@ struct OnbOptionRows: View {
                             .foregroundStyle(isOn ? Color.redeT3 : Color.redeT4)
                     }
                     .padding(.vertical, 11)
-                    .padding(.leading, 10)
+                    .padding(.leading, Self.hang)
                     .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
                     .overlay(alignment: .leading) {
                         if isOn { Rectangle().fill(Color.redeSteel).frame(width: 2) }
@@ -416,7 +427,7 @@ struct OnbOptionRows: View {
                     .background(isOn ? Color.redeSteel.opacity(0.13) : Color.clear)
                     .overlay(alignment: .bottom) {
                         if index < codes.count - 1 {
-                            Rectangle().fill(Color.redeHair2).frame(height: 1).padding(.leading, 10)
+                            Rectangle().fill(Color.redeHair2).frame(height: 1).padding(.leading, Self.hang)
                         }
                     }
                     .contentShape(Rectangle())
@@ -426,6 +437,7 @@ struct OnbOptionRows: View {
             }
         }
         .padding(.top, 10)
+        .padding(.leading, -Self.hang)
     }
 }
 

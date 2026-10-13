@@ -345,8 +345,11 @@ extension View {
 struct CueList: View {
     let items: [String]
 
+    /// 条间距（技术要点 / 退阶·进阶两段并列条目共用同一个节奏）。
+    static let itemGap: CGFloat = 13
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 13) {
+        VStack(alignment: .leading, spacing: Self.itemGap) {
             ForEach(Array(items.enumerated()), id: \.offset) { i, text in
                 HStack(alignment: .top, spacing: 13) {
                     Text(String(format: "%02d", i + 1))
@@ -664,6 +667,10 @@ extension View {
 
 /// S2 刻线分组分隔（设置面板首用，rede-app.html .etick）：短竖刻线序列，两端略长收边。
 struct EngraveDivider: View {
+    /// 上方留白。默认 0 = 由调用方自己在外面补（既有用法）；设置页用它按「上一块是什么收尾」取值
+    ///（紧接 44pt 行要扣掉行盒里不可见的内边距），见 SettingsSheet.dividerAfterRow。
+    var above: CGFloat = 0
+
     var body: some View {
         HStack(spacing: 20) {
             ForEach(0..<9, id: \.self) { i in
@@ -673,6 +680,7 @@ struct EngraveDivider: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .center)
+        .padding(.top, above)
     }
 }
 

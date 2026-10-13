@@ -14,6 +14,7 @@ struct PlanTabView: View {
     @Environment(LocaleStore.self) private var localeStore
     @Environment(SessionStore.self) private var sessionStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var template: SessionStore.TemplateFacts?
     @State private var cycle: MesocycleCycleState?
     /// FR-PL2：本周/下周训练日排期（只读派生；空 = 无模板/不可读，退占位）。
@@ -644,19 +645,30 @@ struct PlanTabView: View {
 
     private func exerciseRow(_ id: String) -> some View {
         let entry = ExerciseCatalog.minimal.entry(id: id)
+        let name = Text(localeStore.exerciseName(id))
+            .font(Font.redeSubhead.weight(.medium))
+            .foregroundStyle(Color.redeT2)
+        let attrs = entry.map {
+            Text(s.planExerciseAttrs(muscle: $0.primaryMuscle, equipment: $0.equipment))
+                .font(.redeCallout)
+                .foregroundStyle(Color.redeT4)
+        }
         // 与今日页动作行同一节奏与字阶：名称 medium + T2（让位于右侧数据）、副信息 callout、
-        // 垂直内距 15——行高随字号走，不再写死 minHeight。
-        return HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Text(localeStore.exerciseName(id))
-                .font(Font.redeSubhead.weight(.medium))
-                .foregroundStyle(Color.redeT2)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 8)
-            if let entry {
-                Text(s.planExerciseAttrs(muscle: entry.primaryMuscle, equipment: entry.equipment))
-                    .font(.redeCallout)
-                    .foregroundStyle(Color.redeT4)
-                    .multilineTextAlignment(.trailing)
+        // 垂直内距 15——行高随字号走，不再写死 minHeight。辅助功能大字号下改上下堆叠
+        // （与今日页 exerciseRowStacked 同思路：名称一行、属性一行，左对齐），免得右侧属性被挤成窄列折行。
+        return Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 5) {
+                    name.fixedSize(horizontal: false, vertical: true)
+                    if let attrs { attrs }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    name.fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 8)
+                    if let attrs { attrs.multilineTextAlignment(.trailing) }
+                }
             }
         }
         .padding(.vertical, 15)

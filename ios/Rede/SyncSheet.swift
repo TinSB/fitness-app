@@ -191,7 +191,7 @@ struct SyncSheet: View {
                     .monospacedDigit()
                     .foregroundStyle(Color.redeT1)
                 Text(s.syncAtRisk(count: service.localSessionCount))
-                    .font(.system(size: 12.5))
+                    .font(.redeCaption)
                     .foregroundStyle(Color.redeT3)
             }
             .padding(.bottom, 4)
@@ -323,7 +323,7 @@ struct SyncSheet: View {
             }
         }()
         return Text(text)
-            .font(.system(size: 11.5))
+            .font(.redeCaption)
             .monospacedDigit()
             .foregroundStyle(tint)
             .frame(maxWidth: .infinity, alignment: .center)
@@ -391,7 +391,7 @@ struct SyncSheet: View {
         let word = s.syncDeleteConfirmWord
         return VStack(alignment: .leading, spacing: 0) {
             Text(s.syncDeleteAccount)
-                .font(.system(size: 15.5, weight: .semibold))
+                .font(.redeSubhead)
                 .foregroundStyle(Color.redeT1)
                 .padding(.bottom, 8)
             Text(
@@ -406,7 +406,7 @@ struct SyncSheet: View {
             TextField(word, text: $deleteConfirmText)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
-                .font(.system(size: 13.5))
+                .font(.redeCallout)
                 .foregroundStyle(Color.redeT1)
                 .padding(.horizontal, 12)
                 .frame(minHeight: 42)
@@ -439,7 +439,7 @@ struct SyncSheet: View {
             .disabled(deleteConfirmText != word)
 
             Button(s.syncCancel) { showDeleteConfirm = false }
-                .font(.system(size: 13.5))
+                .font(.redeCallout)
                 .foregroundStyle(Color.redeT3)
                 .frame(maxWidth: .infinity, minHeight: 42)
                 .buttonStyle(.redePressable)

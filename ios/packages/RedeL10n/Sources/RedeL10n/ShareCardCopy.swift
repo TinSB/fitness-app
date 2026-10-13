@@ -18,6 +18,10 @@ extension RedeStrings {
     public var shareCardBalanceTitle: String { locale == .zh ? "均衡改善" : "Balance improved" }
     /// 力量里程碑卡标题（与 PR 共视觉家族、数据 case 独立）。
     public var shareCardMilestoneTitle: String { locale == .zh ? "力量里程碑" : "Strength milestone" }
+    /// 分享预览切换条上的里程碑页签。实测与估算合并的里程碑行会产出两张卡，切换条以标题区分，
+    /// 两张的标题必须各不相同（共用 shareCardMilestoneTitle 会读成两个一模一样的页签）。
+    public var shareCardMilestoneMeasuredTab: String { locale == .zh ? "里程碑 · 实测" : "Milestone · Measured" }
+    public var shareCardMilestoneEstimatedTab: String { locale == .zh ? "里程碑 · 估算" : "Milestone · Estimated" }
 
     public var shareCardStatExercises: String { locale == .zh ? "动作" : "Exercises" }
     public var shareCardStatSets: String { locale == .zh ? "组" : "Sets" }

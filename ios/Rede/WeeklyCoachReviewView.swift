@@ -513,31 +513,31 @@ struct WeeklyCoachReviewView: View {
 
     private func spotlightCard(_ review: WeeklyCoachReview) -> some View {
         let presentation = spotlightPresentation(review)
-        return VStack(alignment: .leading, spacing: 0) {
-            Overline(text: presentation.overline, color: .redeEmber2)
-            Text(presentation.title)
-                .font(.redeHeadline)
-                .tracking(RedeTracking.headline)
-                .foregroundStyle(Color.redeT1)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 14)
-            Text(presentation.detail)
-                .font(.redeCaption)
-                .foregroundStyle(Color.redeT3)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 4)
+        // 与 statusCard 同一套卡面（ForgedCard：20 圆角 + 渐变 + 顶缘高光 + 颗粒）。
+        // 铭牌角标：statusCard 只出现在空态 / 不可读态，聚焦卡只出现在有复盘时——互斥，同屏始终只有一张带角标。
+        // fixedSize：ForgedCard 内的颗粒 Canvas 是贪婪视图，外层 VStack 里还有 Spacer，不锁高度会被分去多余空间撑高。
+        return ForgedCard(showReg: true) {
+            VStack(alignment: .leading, spacing: 0) {
+                Overline(text: presentation.overline, color: .redeEmber2)
+                Text(presentation.title)
+                    .font(.redeHeadline)
+                    .tracking(RedeTracking.headline)
+                    .foregroundStyle(Color.redeT1)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 14)
+                Text(presentation.detail)
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeT3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 4)
 
-            spotlightValue(presentation)
-                .padding(.top, 22)
+                spotlightValue(presentation)
+                    .padding(.top, 22)
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, minHeight: 190, alignment: .topLeading)
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, minHeight: 190, alignment: .topLeading)
-        .background(Color.redeRaised)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.redeHair, lineWidth: 1)
-        }
+        .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(presentation.accessibilityLabel)
         .accessibilityIdentifier("weekly-review-spotlight")
@@ -631,6 +631,8 @@ struct WeeklyCoachReviewView: View {
         .accessibilityLabel(presentation.accessibilityLabel)
     }
 
+    /// 本页唯一的可操作行：蚀刻式（§12.1/§15.1 去通用圆角描边盒）——顶部一条 hair2 发丝线收边，
+    /// 内容直落 base，左右落页栅格（与今日页教练卡 / 计划页调整卡同语言）。
     private func reviewAction(_ action: WeeklyCoachReviewAction) -> some View {
         let title = s.weeklyCoachReviewAction(code: actionCode(action))
         return Button {
@@ -650,14 +652,12 @@ struct WeeklyCoachReviewView: View {
                     .foregroundStyle(Color.redeEmber2)
                     .accessibilityHidden(true)
             }
-            .padding(.horizontal, 18)
+            .padding(.vertical, 14)
             .frame(maxWidth: .infinity, minHeight: 66, alignment: .leading)
-            .background(Color.redeSurface)
-            .clipShape(RoundedRectangle(cornerRadius: RedeShape.cardRadius, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: RedeShape.cardRadius, style: .continuous)
-                    .stroke(Color.redeHair2, lineWidth: 1)
+            .overlay(alignment: .top) {
+                Rectangle().fill(Color.redeHair2).frame(height: 1)
             }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.redePressableRow)
         .accessibilityLabel(title)

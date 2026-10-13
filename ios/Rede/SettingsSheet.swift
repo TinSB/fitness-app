@@ -111,19 +111,19 @@ struct SettingsSheet: View {
                     // 通知按 owner 2026-08-09 指示保持独立成组，不并进「训练周期」。
                     VStack(alignment: .leading, spacing: 0) {
                         backgroundPlate               // 1 训练背景：决定引擎怎么排计划 = 这一页的身份区
-                        EngraveDivider().padding(.top, RedeSpace.section)
+                        EngraveDivider(above: Self.dividerAfterCard)
                         periodizationSection          // 2 训练周期：影响每天练什么
-                        EngraveDivider().padding(.top, RedeSpace.section)
+                        EngraveDivider(above: Self.dividerAfterCard)   // 周期组以说明小字收尾，不是 44pt 行
                         notificationsSection          // 3 通知：影响什么时候被叫
-                        EngraveDivider().padding(.top, RedeSpace.section)
+                        EngraveDivider(above: Self.dividerAfterRow)
                         dataGroup                     // 4 数据：同步 + 健康 + 导出
                             .id("data")               // -settingsScrollTo 锚点
-                        EngraveDivider().padding(.top, RedeSpace.section)
+                        EngraveDivider(above: Self.dividerAfterRow)
                         displaySection                // 5 显示：只改写法，不改行为
-                        EngraveDivider().padding(.top, RedeSpace.section)
+                        EngraveDivider(above: Self.dividerAfterRow)
                         subscriptionSection           // 6 方案
                             .id("subscription")
-                        EngraveDivider().padding(.top, RedeSpace.section)
+                        EngraveDivider(above: Self.dividerAfterRow)
                         aboutGroup                    // 7 关于：版本 + 隐私 + 免责 + 反馈
                     }
                     .padding(.horizontal, RedeSpace.page)
@@ -218,6 +218,14 @@ struct SettingsSheet: View {
         }
     }
 
+    /// 刻线分隔上方留白。下方到下一组标题恒定，上方要看上一块是什么收尾，否则刻线忽近忽远：
+    /// 紧接卡片 / 说明小字——内容盒底就是可见底，留 RedeSpace.section；
+    /// 紧接 44pt 命中行（开关 / 分段键 / 列表行）——行盒里本来就带约 11pt 不可见内边距，扣掉再量。
+    private static let dividerAfterCard: CGFloat = RedeSpace.section
+    private static let dividerAfterRow: CGFloat = RedeSpace.section - 11
+    /// 分组小标题到首个 44pt 行盒顶的距离：全页统一（原先 7 / 9 / 10 / 12 各一套）。
+    private static let overlineToRow: CGFloat = 10
+
     // MARK: - 数据组（2026-08-09 IA 重排）：云端同步 / Apple 健康 / 导出训练数据 三行一组
     //
     // 合并理由（owner：「不像一个成熟的产品」）：三者回答同一个问题——我的数据在哪、去哪、
@@ -229,7 +237,7 @@ struct SettingsSheet: View {
         VStack(alignment: .leading, spacing: 0) {
             Overline(text: s.settingsData)
                 .padding(.top, 18)
-                .padding(.bottom, 7)
+                .padding(.bottom, Self.overlineToRow)
 
             // 云端同步（FR-ACC1）：右值只有未开启／已开启两种——不加徽标、不加小红点、不在首页推销。
             Button {
@@ -509,7 +517,7 @@ struct SettingsSheet: View {
     // 重排后它不再是「第一组」，所以补一个分组头，不然会被读成上一组（数据）的续行。
 
     private var displaySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Self.overlineToRow) {
             Overline(text: s.settingsDisplayOverline).padding(.top, 18)
             preferenceRow(s.settingsUnit, options: RedeUnit.allCases.map(\.displayName), selection: Binding(
                 get: { store.unit.displayName },
@@ -533,6 +541,8 @@ struct SettingsSheet: View {
                     Task { await sessionStore.savePreferences(unitSystem: nil, locale: locale.rawValue) }
                 }
             ))
+            // 两行之间保持 12（VStack 间距已收成 overline→首行的 10，这里补回 2）。
+            .padding(.top, 2)
         }
     }
 
@@ -731,7 +741,10 @@ struct SettingsSheet: View {
                         question: .injury
                     )
                 }
-                .padding(.vertical, 5)
+                // 顶部让出右上角标（RegMark，卡内 11pt、竖笔下探到 ≈20pt）的角区：
+                // 首行 chevron 与角标竖笔末端留 ≥8pt 垂直间隙，不再读成「括号压在箭头上」。
+                .padding(.top, 16)
+                .padding(.bottom, 5)
                 .padding(.horizontal, 16)
             }
             .padding(.top, 9)
@@ -757,16 +770,22 @@ struct SettingsSheet: View {
             guard profileComplete || question == .injury else { return }
             editing = question
         } label: {
+            // 外层只让小标签与右侧「值 + chevron」组按首行基线对齐；chevron 在组内与值垂直居中，
+            // 不再跟着基线落到值的视觉中心之下。
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Overline(text: label)
                 Spacer()
-                Text((value ?? nil) ?? "—")
-                    .font(.system(size: 15, weight: .semibold))
-                    .monospacedDigit()
-                    .foregroundStyle(Color.redeT1)
-                // 审查 NIT-1：档案不完整时铭牌只读，不显示「能点」的暗示
-                if profileComplete || question == .injury {
-                    DisclosureChevron()
+                HStack(spacing: 8) {
+                    Text((value ?? nil) ?? "—")
+                        .font(.system(size: 15, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(Color.redeT1)
+                    // 审查 NIT-1：档案不完整时铭牌只读，不显示「能点」的暗示
+                    if profileComplete || question == .injury {
+                        DisclosureChevron()
+                            // 组的首行基线由值文字决定（chevron 取框底，永远不会抢先）。
+                            .alignmentGuide(.firstTextBaseline) { $0[.bottom] }
+                    }
                 }
             }
             .padding(.vertical, 9)
@@ -785,7 +804,7 @@ struct SettingsSheet: View {
         VStack(alignment: .leading, spacing: 0) {
             Overline(text: s.settingsAbout)
                 .padding(.top, 18)
-                .padding(.bottom, 7)
+                .padding(.bottom, Self.overlineToRow)
             appUpdateRows
                 .id("update")   // -settingsScrollTo 锚点（重排前版本是独立分组，锚点沿用）
             infoRow(id: "privacy", title: s.settingsPrivacy, detail: s.settingsPrivacyNote)
@@ -1559,7 +1578,10 @@ struct PlateQuestionEditView: View {
                             questionBody
                         }
                         .padding(.vertical, 18)
-                        .padding(.horizontal, RedeSpace.card)
+                        // 左内距 = 引导题卡的 13 + 卡内距：选项组向左外挂 OnbOptionRows.hang，
+                        // 钢色缘不至于贴到卡边。
+                        .padding(.leading, RedeSpace.card + 13)
+                        .padding(.trailing, RedeSpace.card)
                     }
                     .padding(.top, 16)
 

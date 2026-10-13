@@ -57,8 +57,8 @@ struct ExerciseDetailSheet<HeaderAccessory: View, AlternativesSection: View>: Vi
                     if regression?.isEmpty == false || progression?.isEmpty == false {
                         VStack(alignment: .leading, spacing: labelGap) {
                             Overline(text: s.exerciseDetailScaling)
-                            // 条间距 13 = CueList 的条间距，两段并列条目同一个节奏。
-                            VStack(alignment: .leading, spacing: 13) {
+                            // 条间距 = CueList 的条间距，两段并列条目同一个节奏。
+                            VStack(alignment: .leading, spacing: CueList.itemGap) {
                                 if let r = regression, !r.isEmpty { scalingRow(s.exerciseDetailRegression, r) }
                                 if let p = progression, !p.isEmpty { scalingRow(s.exerciseDetailProgression, p) }
                             }

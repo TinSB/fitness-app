@@ -224,17 +224,18 @@ struct ProgressTabView: View {
 
     private func content(_ model: ProgressModel) -> some View {
         let view = scaleView(model)
-        // 分隔线要不要抵消「上一区块末行」的行内留白：发展区（有行时以分享行收尾）与里程碑区都以
-        // 44pt 命中高的行收尾，文字上下各自带 ≈14pt 空白；文字型区块（柱图 / 连续性）则没有。
-        let developmentEndsWithRow = developmentHasRows(model)
+        // 分隔线要不要抵消「上一区块末行」的行内留白：以 44pt 命中高的行收尾的区块（发展区有行时以分享行收尾、
+        // 里程碑区有行时）文字上下各带 ≈14pt 空白；文字型区块（柱图 / 连续性）没有。
+        // 按区块出场顺序累计 endsWithRow（「上一块是否以行收尾」），每个分隔线只读它——
+        // 不再另写一份「谁显示谁不显示」的嵌套判断。
         let showsMilestones = !model.milestones.isEmpty
-        let milestonesEndWithRow = showsMilestones && !milestoneRows(model.milestones).isEmpty
-        let insetAfterRow = Self.listRowTrailingInset
-        let insetBeforeMilestones = developmentEndsWithRow ? insetAfterRow : 0
-        let insetBeforeContinuity = (showsMilestones ? milestonesEndWithRow : developmentEndsWithRow) ? insetAfterRow : 0
-        let insetBeforeHistory = model.continuity != nil ? 0
-            : (showsMilestones ? (milestonesEndWithRow ? insetAfterRow : 0)
-                               : (developmentEndsWithRow ? insetAfterRow : 0))
+        func rowInset(_ afterRow: Bool) -> CGFloat { afterRow ? Self.listRowTrailingInset : 0 }
+        var endsWithRow = developmentHasRows(model)
+        let insetBeforeMilestones = rowInset(endsWithRow)
+        if showsMilestones { endsWithRow = !milestoneRows(model.milestones).isEmpty }
+        let insetBeforeContinuity = rowInset(endsWithRow)
+        if model.continuity != nil { endsWithRow = false }
+        let insetBeforeHistory = rowInset(endsWithRow)
         return VStack(alignment: .leading, spacing: 0) {
             // 尺度切换。2026-08-09 一度在下面补过一条带刻度的尺身（想表达
             // 单次/本周/周期 是同一根时间轴上的三个倍率），owner 判「不好看」——
@@ -1080,7 +1081,9 @@ struct ProgressTabView: View {
                         // 可点线索：整行可点开当次详情，尾部 chevron 明示（affordance 三件套之一）。
                         DisclosureChevron()
                     }
-                    .frame(minHeight: 44)   // 与发展行 / 里程碑行同一 44pt 行高（HIG 命中区）
+                    // 与发展行 / 里程碑行同一 44pt 行高（HIG 命中区）；上下 6pt 内距让大字号下发丝线不贴字。
+                    .padding(.vertical, 6)
+                    .frame(minHeight: 44)
                     .contentShape(Rectangle()) // 整行可点（含 Spacer）+ 按压反馈覆盖全行
                 }
                 .buttonStyle(.redePressableRow)
