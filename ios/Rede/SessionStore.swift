@@ -288,7 +288,10 @@ final class SessionStore {
             formatter.dateFormat = "yyyy-MM-dd"
 
             let items = plans.map { ex in
-                WatchPrescription.Item(
+                // 分段与整串同源（targetParts 各段拼起来与 targetLine 逐字一致，L10n 契约测试锁定），
+                // 表上清单行按分段排「数值大、单位小」，整串留给无障碍标签与旧表的退路。
+                let parts = strings.targetParts(loadType: ex.loadType, weightKg: ex.targetWeightKg, reps: ex.targetReps)
+                return WatchPrescription.Item(
                     exerciseId: ex.exerciseId,
                     name: ExerciseCatalog.minimal.displayName(ex.exerciseId, localeCode: strings.locale.rawValue),
                     setsText: strings.exerciseMetaLine(sets: ex.sets, restSeconds: ex.restSeconds, rir: ex.targetRir),
@@ -297,7 +300,8 @@ final class SessionStore {
                     targetText: strings.targetLine(
                         loadType: ex.loadType,
                         weightKg: ex.targetWeightKg,
-                        reps: ex.targetReps)
+                        reps: ex.targetReps),
+                    targetParts: .init(prefix: parts.prefix, value: parts.value, unit: parts.unit, reps: parts.reps)
                 )
             }
             let active = live.map { l in

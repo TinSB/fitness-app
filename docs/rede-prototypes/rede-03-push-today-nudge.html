@@ -1,8 +1,9 @@
 <!DOCTYPE html><html lang="en"><head>
+<!-- 2026-10-12：本文件是 2026-06/07 历史设计稿；色值已机械更新，多数结构仍非现行 App，现行视觉以 App 代码为准。 -->
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Rede — Push + Today nudge</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
-<style>:root{--color-background-secondary:#0c0b08;--color-text-primary:#ECE6D8;--color-text-secondary:#9C9484;--color-text-tertiary:#6B6457;--font-mono:ui-monospace,"SF Mono",Menlo,monospace;--font-sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;--border-radius-lg:16px}body{margin:0;background:#000;font-family:var(--font-sans);padding:18px;color:var(--color-text-primary)}</style>
+<style>:root{--color-background-secondary:#0b0a09;--color-text-primary:#E9E6E1;--color-text-secondary:#948F87;--color-text-tertiary:#8A857E;--font-mono:ui-monospace,"SF Mono",Menlo,monospace;--font-sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;--border-radius-lg:16px}body{margin:0;background:#000;font-family:var(--font-sans);padding:18px;color:var(--color-text-primary)}</style>
 </head><body>
 <style>
 .stage{background:var(--color-background-secondary);border-radius:var(--border-radius-lg);padding:20px;display:flex;gap:20px;justify-content:center;flex-wrap:wrap}
@@ -12,13 +13,13 @@
 .lock{width:300px;height:610px;border-radius:34px;background:#0C0C0E;position:relative;overflow:hidden;box-sizing:border-box;padding:20px 14px}
 .note{background:rgba(28,27,30,0.92);border-radius:18px;padding:12px 13px;margin-bottom:10px}
 .nhd{display:flex;align-items:center;gap:7px;margin-bottom:5px}
-.nic{width:20px;height:20px;border-radius:5px;background:#1F1C17;display:flex;align-items:center;justify-content:center}
+.nic{width:20px;height:20px;border-radius:5px;background:#1D1B19;display:flex;align-items:center;justify-content:center}
 .nap{font-size:11px;letter-spacing:1.2px;color:#9A968E;flex:1}
-.ph{width:300px;height:610px;border-radius:30px;overflow:hidden;position:relative;background:#15130F;box-sizing:border-box}
-.ov{font-size:11px;letter-spacing:2.2px;color:#6B6457}
-.card{background:#1F1C17;border-top:1px solid rgba(236,230,216,0.08);border-radius:12px;margin:0 16px 11px;padding:14px}
-.emb{background:#E1652B;color:#15130F;font-size:14px;font-weight:600;padding:12px;border-radius:10px;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px}
-.sb{display:flex;justify-content:space-between;align-items:center;padding:9px 18px 4px;font-size:12px;color:#9C9484}
+.ph{width:300px;height:610px;border-radius:30px;overflow:hidden;position:relative;background:#131211;box-sizing:border-box}
+.ov{font-size:11px;letter-spacing:2.2px;color:#8A857E}
+.card{background:#1D1B19;border-top:1px solid rgba(233,230,225,0.08);border-radius:12px;margin:0 16px 11px;padding:14px}
+.emb{background:#C85A2E;color:#131211;font-size:14px;font-weight:600;padding:12px;border-radius:10px;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px}
+.sb{display:flex;justify-content:space-between;align-items:center;padding:9px 18px 4px;font-size:12px;color:#948F87}
 </style>
 
 <div class="stage">
@@ -30,19 +31,19 @@
       <div style="text-align:center;color:#C9CAD0;font-size:13px;margin-bottom:18px">Monday, June 8</div>
 
       <div class="note">
-        <div class="nhd"><span class="nic"><i class="ti ti-barbell" style="font-size:13px;color:#E1652B"></i></span><span class="nap">REDE</span><span style="font-size:11px;color:#7E7B82">8:00 AM</span></div>
+        <div class="nhd"><span class="nic"><i class="ti ti-barbell" style="font-size:13px;color:#C85A2E"></i></span><span class="nap">REDE</span><span style="font-size:11px;color:#7E7B82">8:00 AM</span></div>
         <div style="font-size:14px;font-weight:600;color:#F3F3F5">Train today</div>
         <div style="font-size:13px;color:#C9CAD0;line-height:1.4;margin-top:1px">Push A — overhead eased · start with bench 185 × 5</div>
       </div>
 
       <div class="note">
-        <div class="nhd"><span class="nic"><i class="ti ti-barbell" style="font-size:13px;color:#E1652B"></i></span><span class="nap">REDE</span><span style="font-size:11px;color:#7E7B82">now</span></div>
+        <div class="nhd"><span class="nic"><i class="ti ti-barbell" style="font-size:13px;color:#C85A2E"></i></span><span class="nap">REDE</span><span style="font-size:11px;color:#7E7B82">now</span></div>
         <div style="font-size:14px;font-weight:600;color:#F3F3F5">Plan updated for next week</div>
         <div style="font-size:13px;color:#C9CAD0;line-height:1.4;margin-top:1px">Back is catching up — pull day adds one set · preview anytime</div>
       </div>
 
       <div class="note">
-        <div class="nhd"><span class="nic"><i class="ti ti-barbell" style="font-size:13px;color:#E1652B"></i></span><span class="nap">REDE</span><span style="font-size:11px;color:#7E7B82">6:30 PM</span></div>
+        <div class="nhd"><span class="nic"><i class="ti ti-barbell" style="font-size:13px;color:#C85A2E"></i></span><span class="nap">REDE</span><span style="font-size:11px;color:#7E7B82">6:30 PM</span></div>
         <div style="font-size:14px;font-weight:600;color:#F3F3F5">Ready when you are</div>
         <div style="font-size:13px;color:#C9CAD0;line-height:1.4;margin-top:1px">Push A is still queued for today — no rush</div>
       </div>
@@ -60,33 +61,33 @@
     <div class="ph">
       <div class="sb"><span class="num">9:41</span><span style="display:flex;gap:6px;align-items:center"><i class="ti ti-wifi" style="font-size:14px"></i><i class="ti ti-battery-3" style="font-size:16px"></i></span></div>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:6px 16px 8px">
-        <div><div style="font-size:22px;font-weight:600;color:#ECE6D8">Today</div><div class="num" style="font-size:11px;letter-spacing:1.4px;color:#6B6457;margin-top:4px">WED, JUN 10</div></div>
-        <i class="ti ti-settings" style="font-size:20px;color:#6B6457"></i>
+        <div><div style="font-size:22px;font-weight:600;color:#E9E6E1">Today</div><div class="num" style="font-size:11px;letter-spacing:1.4px;color:#8A857E;margin-top:4px">WED, JUN 10</div></div>
+        <i class="ti ti-settings" style="font-size:20px;color:#8A857E"></i>
       </div>
 
-      <div style="display:flex;align-items:center;justify-content:space-between;margin:0 18px 14px;padding:9px 13px;background:#1A1712;border-radius:10px">
-        <span style="font-size:12px;color:#9C9484">This week</span>
-        <div style="display:flex;align-items:center;gap:8px"><div style="display:flex;gap:4px"><span style="width:18px;height:5px;border-radius:3px;background:#E1652B"></span><span style="width:18px;height:5px;border-radius:3px;background:#3A352B"></span></div><span class="num" style="font-size:12px;color:#9C9484">1 of 2</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:0 18px 14px;padding:9px 13px;background:#1A1917;border-radius:10px">
+        <span style="font-size:12px;color:#948F87">This week</span>
+        <div style="display:flex;align-items:center;gap:8px"><div style="display:flex;gap:4px"><span style="width:18px;height:5px;border-radius:3px;background:#C85A2E"></span><span style="width:18px;height:5px;border-radius:3px;background:#373430"></span></div><span class="num" style="font-size:12px;color:#948F87">1 of 2</span></div>
       </div>
 
       <div class="card" style="padding:15px">
-        <div style="display:flex;align-items:center;gap:7px;margin-bottom:9px"><span style="width:7px;height:7px;border-radius:50%;background:#2F7D5B"></span><span class="ov" style="color:#3E8F68">READY TO TRAIN</span></div>
-        <div style="font-size:19px;font-weight:600;color:#ECE6D8">Train today</div>
-        <div style="font-size:14px;color:#9C9484;margin-top:6px">Pull B — back is catching up, add one set</div>
-        <div style="font-size:13px;color:#6B6457;margin-top:13px;display:flex;align-items:center;gap:4px">See why <i class="ti ti-chevron-right" style="font-size:14px"></i></div>
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:9px"><span style="width:7px;height:7px;border-radius:50%;background:#2F7D5B"></span><span class="ov" style="color:#56B083">READY TO TRAIN</span></div>
+        <div style="font-size:19px;font-weight:600;color:#E9E6E1">Train today</div>
+        <div style="font-size:14px;color:#948F87;margin-top:6px">Pull B — back is catching up, add one set</div>
+        <div style="font-size:13px;color:#8A857E;margin-top:13px;display:flex;align-items:center;gap:4px">See why <i class="ti ti-chevron-right" style="font-size:14px"></i></div>
       </div>
       <div style="margin:2px 16px 18px"><div class="emb"><i class="ti ti-player-play" style="font-size:15px"></i>Start training</div></div>
 
       <div style="padding:0 20px">
         <div class="ov" style="margin-bottom:10px">THE NUDGE IS NEUTRAL</div>
-        <div style="font-size:13px;color:#9C9484;line-height:1.7">"This week · 1 of 2" 是中性事实，不是"还差就完蛋"<br><span style="color:#6B6457">没有连胜、没有"别断"、没有红色焦虑——只把"今天的判断"和"本周节奏"摆出来，练不练用户自己定。</span></div>
+        <div style="font-size:13px;color:#948F87;line-height:1.7">"This week · 1 of 2" 是中性事实，不是"还差就完蛋"<br><span style="color:#8A857E">没有连胜、没有"别断"、没有红色焦虑——只把"今天的判断"和"本周节奏"摆出来，练不练用户自己定。</span></div>
       </div>
 
-      <div style="position:absolute;left:0;right:0;bottom:0;height:56px;background:#100E0B;border-top:1px solid #221F1B;display:flex;justify-content:space-around;align-items:center;padding-bottom:5px">
-        <a style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#E1652B"><i class="ti ti-home" style="font-size:20px"></i>Today</a>
-        <a style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#6B6457"><i class="ti ti-barbell" style="font-size:20px"></i>Train</a>
-        <a style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#6B6457"><i class="ti ti-trending-up" style="font-size:20px"></i>Progress</a>
-        <a style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#6B6457"><i class="ti ti-calendar" style="font-size:20px"></i>Plan</a>
+      <div style="position:absolute;left:0;right:0;bottom:0;height:56px;background:#111010;border-top:1px solid #222020;display:flex;justify-content:space-around;align-items:center;padding-bottom:5px">
+        <a style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#C85A2E"><i class="ti ti-home" style="font-size:20px"></i>Today</a>
+        <a style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#8A857E"><i class="ti ti-barbell" style="font-size:20px"></i>Train</a>
+        <a style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#8A857E"><i class="ti ti-trending-up" style="font-size:20px"></i>Progress</a>
+        <a style="display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:#8A857E"><i class="ti ti-calendar" style="font-size:20px"></i>Plan</a>
       </div>
     </div>
   </div>

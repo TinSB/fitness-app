@@ -88,5 +88,27 @@ final class ShareCardCopyTests: XCTestCase {
         }
     }
 
+    /// 分享预览切换条以标题为键：实测 / 估算两张里程碑卡的页签必须各不相同，
+    /// 也不得与其它卡的页签撞名；文案走同一套声音基线（无句末标点、无破折号）。
+    func testMilestoneTabTitlesAreDistinctAndExact() {
+        XCTAssertEqual(zh.shareCardMilestoneMeasuredTab, "里程碑 · 实测")
+        XCTAssertEqual(zh.shareCardMilestoneEstimatedTab, "里程碑 · 估算")
+        XCTAssertEqual(en.shareCardMilestoneMeasuredTab, "Milestone · Measured")
+        XCTAssertEqual(en.shareCardMilestoneEstimatedTab, "Milestone · Estimated")
+        for t in [zh, en] {
+            let tabs = [
+                t.shareCardWorkoutTitle, t.shareCardPRTitle, t.shareCardMuscleLevelTitle,
+                t.shareCardLevelUpTitle, t.shareCardBalanceTitle,
+                t.shareCardMilestoneMeasuredTab, t.shareCardMilestoneEstimatedTab,
+            ]
+            XCTAssertEqual(Set(tabs).count, tabs.count, "分享预览页签标题须两两不同")
+            for value in [t.shareCardMilestoneMeasuredTab, t.shareCardMilestoneEstimatedTab] {
+                XCTAssertFalse(value.hasSuffix("。"), value)
+                XCTAssertFalse(value.hasSuffix("."), value)
+                XCTAssertFalse(value.contains("—"), value)
+            }
+        }
+    }
+
     private var allBands: [ShareDurationBandLabel] { [.under30, .m30to45, .m45to60, .m60to90, .over90] }
 }

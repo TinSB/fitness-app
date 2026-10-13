@@ -1,4 +1,5 @@
 <!doctype html>
+<!-- 2026-10-12：本文件是 2026-06/07 历史设计稿；色值已机械更新，多数结构仍非现行 App，现行视觉以 App 代码为准。 -->
 <!-- 设置页工艺重做方向稿（2026-06-10，owner 反馈「UX 不够好 UI 不够高级」）。
      三镜头调研（合规审计/UX 架构/仪器隐喻）收敛为「检修面板」架构：
      面板铭牌头 + 机加工分段开关 + 设备铭牌 spec plate（hero）+ 背板蚀刻渐进披露。
@@ -11,9 +12,9 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
 <style>
 :root{
- --base:#15130F;--surface:#1F1C17;--raised:#262219;--btn:#211E18;--hair:#2A261F;--hair2:#221F1B;
- --t1:#ECE6D8;--t2:#C9C2B4;--t3:#9C9484;--t4:#908A7C;
- --ember:#E1652B;--ember2:#F0875A;--steel:#8C8A86;--seg:#1A1712;--etch:#2E2A22;
+ --base:#131211;--surface:#1D1B19;--raised:#232120;--btn:#1F1D1B;--hair:#2A2724;--hair2:#222020;
+ --t1:#E9E6E1;--t2:#C2BFB9;--t3:#948F87;--t4:#8A857E;
+ --ember:#C85A2E;--ember2:#E0855C;--steel:#8C8884;--seg:#1A1917;--etch:#333029;
  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
 }
 *{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
@@ -29,8 +30,8 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 
 .col{display:flex;flex-direction:column;gap:14px;align-items:center}
 .lab{font-size:13px;color:var(--t3)}
-.phone{width:384px;height:780px;background:#0E0C09;border-radius:46px;border:1px solid #322c23;padding:9px;position:relative;box-shadow:inset 0 0 0 6px #050403}
-.frame{position:absolute;inset:9px;border-radius:38px;overflow:hidden;display:flex;flex-direction:column;background:rgba(8,7,5,.74)}
+.phone{width:384px;height:780px;background:#0C0C0B;border-radius:46px;border:1px solid #2d2b28;padding:9px;position:relative;box-shadow:inset 0 0 0 6px #040404}
+.frame{position:absolute;inset:9px;border-radius:38px;overflow:hidden;display:flex;flex-direction:column;background:rgba(7,7,6,.74)}
 
 /* sheet：顶缘 1px hair 分界 + grabber + 固定 header */
 .sheet{margin-top:64px;flex:1;display:flex;flex-direction:column;background:var(--base);border-radius:22px 22px 0 0;border-top:1px solid var(--hair);overflow:hidden}
@@ -53,9 +54,9 @@ button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
 .etick i:first-child,.etick i:last-child{height:9px}
 
 /* 设备铭牌 spec plate = 本屏唯一 hero：锻面+顶缘高光+颗粒+registration */
-.plate{position:relative;background:var(--surface);border-radius:12px;border-top:1px solid rgba(236,230,216,.09);overflow:hidden;margin-top:16px;padding:14px 16px 6px}
+.plate{position:relative;background:var(--surface);border-radius:12px;border-top:1px solid rgba(233,230,225,.09);overflow:hidden;margin-top:16px;padding:14px 16px 6px}
 .plate::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90' height='90'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix type='saturate' values='0'/></filter><rect width='90' height='90' filter='url(%23n)' opacity='0.03'/></svg>")}
-.reg{position:absolute;top:8px;right:8px;width:11px;height:11px;border-top:1px solid #5F594C;border-right:1px solid #5F594C;opacity:.7}
+.reg{position:absolute;top:8px;right:8px;width:11px;height:11px;border-top:1px solid #5F5B52;border-right:1px solid #5F5B52;opacity:.7}
 .srow{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0}
 .srow+.srow{border-top:1px solid var(--hair2)}
 .srow .val{font-size:15px;font-weight:600;color:var(--t1)}

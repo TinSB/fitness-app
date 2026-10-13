@@ -187,7 +187,7 @@ struct PlanDaySequenceEditorView: View {
             Image(systemName: icon)
                 .font(.redeCaption)
                 .foregroundStyle(enabled ? Color.redeT3 : Color.redeT4.opacity(0.4))
-                .frame(width: 30, height: RedeShape.controlHeight)
+                .frame(minWidth: RedeShape.controlHeight, minHeight: RedeShape.controlHeight, alignment: .trailing)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.redePressable)
@@ -377,7 +377,7 @@ struct PlanDaySequenceEditorView: View {
             Image(systemName: "xmark")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Color.redeT2)
-                .frame(width: RedeShape.controlHeight, height: RedeShape.controlHeight)
+                .frame(width: RedeShape.controlHeight, height: RedeShape.controlHeight, alignment: .trailing)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.redePressable)

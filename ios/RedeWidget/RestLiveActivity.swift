@@ -13,11 +13,11 @@ import SwiftUI
 import WidgetKit
 import RedeWidgetShared
 
-/// 品牌色本地副本（extension 不编 app target 的 RedeTheme.swift；hex 与其同值——
-/// base 0x131211 / T1 0xE9E6E1 / T3 0x948F87 / ember 0xC85A2E）。
-private // ⚠️ 品牌色本地副本（extension 无共享色 token 包）——四值必须与
-// ios/Rede/RedeTheme.swift 逐值一致；改 ember/基色时两处同改（审查 NIT 漂移风险留痕）。
-enum RestPalette {
+/// 品牌色本地副本（extension 不编 app target 的 RedeTheme.swift；hex 与其同值）。
+/// 休息 Live Activity 与主屏 Readiness widget 同属本 extension，共用这一份。
+// ⚠️ 品牌色本地副本（extension 无共享色 token 包）——下列各值必须与
+// ios/Rede/RedeTheme.swift 逐值一致；改 ember/基色等任一值时三处同改（含 RedeWatch 的 WatchPalette）。
+enum WidgetPalette {
     private static func hex(_ value: UInt32) -> Color {
         Color(
             .sRGB,
@@ -28,8 +28,13 @@ enum RestPalette {
     }
 
     static let base = hex(0x131211)
+    static let surface = hex(0x1D1B19)
+    static let raised = hex(0x232120)
+    static let hair = hex(0x2A2724)
     static let t1 = hex(0xE9E6E1)
+    static let t2 = hex(0xC2BFB9)
     static let t3 = hex(0x948F87)
+    static let t4 = hex(0x8A857E)
     static let ember = hex(0xC85A2E)
 }
 
@@ -43,12 +48,12 @@ struct RestLiveActivity: Widget {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(context.attributes.exerciseName)
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundStyle(RestPalette.t1)
+                            .foregroundStyle(WidgetPalette.t1)
                             .lineLimit(1)
                         Text(context.attributes.targetLine)
                             .font(.system(size: 13))
                             .monospacedDigit()
-                            .foregroundStyle(RestPalette.t3)
+                            .foregroundStyle(WidgetPalette.t3)
                             .lineLimit(1)
                     }
                     Spacer(minLength: 8)
@@ -58,15 +63,15 @@ struct RestLiveActivity: Widget {
                         .multilineTextAlignment(.trailing)
                         // 陈旧态灰化（审查 NIT：后台自然到点后系统只标 stale 不撤显——
                         // 0:00 滞留期不再用 ember 冒充「活着的下一步」）
-                        .foregroundStyle(context.isStale ? RestPalette.t3 : RestPalette.ember)
+                        .foregroundStyle(context.isStale ? WidgetPalette.t3 : WidgetPalette.ember)
                         .frame(maxWidth: 120)
                 }
                 RestProgressBar(state: context.state, isStale: context.isStale)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 14)
-            .activityBackgroundTint(RestPalette.base)
-            .activitySystemActionForegroundColor(RestPalette.t1)
+            .activityBackgroundTint(WidgetPalette.base)
+            .activitySystemActionForegroundColor(WidgetPalette.t1)
         } dynamicIsland: { context in
             DynamicIsland {
                 // expanded：动作 + 目标（左）· 倒计时（右）
@@ -74,12 +79,12 @@ struct RestLiveActivity: Widget {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(context.attributes.exerciseName)
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(RestPalette.t1)
+                            .foregroundStyle(WidgetPalette.t1)
                             .lineLimit(1)
                         Text(context.attributes.targetLine)
                             .font(.system(size: 12))
                             .monospacedDigit()
-                            .foregroundStyle(RestPalette.t3)
+                            .foregroundStyle(WidgetPalette.t3)
                             .lineLimit(1)
                     }
                     // Bug 修复（owner 真机 1.7(24)）：两 region 默认顶对齐、内容偏上——
@@ -92,7 +97,7 @@ struct RestLiveActivity: Widget {
                         .font(.system(size: 28, weight: .semibold))
                         .monospacedDigit()
                         .multilineTextAlignment(.trailing)
-                        .foregroundStyle(context.isStale ? RestPalette.t3 : RestPalette.ember)
+                        .foregroundStyle(context.isStale ? WidgetPalette.t3 : WidgetPalette.ember)
                         .frame(maxWidth: 84, maxHeight: .infinity, alignment: .trailing)
                         .padding(.trailing, 4)
                 }
@@ -111,7 +116,7 @@ struct RestLiveActivity: Widget {
                     .font(.system(size: 13, weight: .medium))
                     .monospacedDigit()
                     .multilineTextAlignment(.trailing)
-                    .foregroundStyle(context.isStale ? RestPalette.t3 : RestPalette.ember)
+                    .foregroundStyle(context.isStale ? WidgetPalette.t3 : WidgetPalette.ember)
                     // Bug 修复（owner 真机 1.7(24)）：Text(timerInterval:) 理想宽度按最坏
                     // 计时串贪婪测量，maxWidth 约束不了它——超出 compactTrailing 宽度预算时
                     // 系统整个丢弃该视图（胶囊右侧空白）。固定宽度绕开贪婪测量；40pt 实测
@@ -123,7 +128,7 @@ struct RestLiveActivity: Widget {
                 RestProgressRing(state: context.state, isStale: context.isStale)
             }
             // 灰化全家桶闭环（审查 NIT）：keyline 与数字/环/条同退——滞留期无任何橙色假活。
-            .keylineTint(context.isStale ? RestPalette.t3 : RestPalette.ember)
+            .keylineTint(context.isStale ? WidgetPalette.t3 : WidgetPalette.ember)
         }
     }
 
@@ -154,7 +159,7 @@ private struct RestProgressBar: View {
         ZStack {
             // t3 低透明轨道（系统 linear 样式轨道色不可定制——垫底成 t3 色调）
             Capsule()
-                .fill(RestPalette.t3.opacity(0.25))
+                .fill(WidgetPalette.t3.opacity(0.25))
                 .frame(height: 4)
             ProgressView(
                 timerInterval: RestLiveActivity.progressRange(state),
@@ -163,7 +168,7 @@ private struct RestProgressBar: View {
                 currentValueLabel: { EmptyView() }
             )
             .progressViewStyle(.linear)
-            .tint(isStale ? RestPalette.t3 : RestPalette.ember)
+            .tint(isStale ? WidgetPalette.t3 : WidgetPalette.ember)
         }
     }
 }
@@ -182,6 +187,6 @@ private struct RestProgressRing: View {
             currentValueLabel: { EmptyView() }
         )
         .progressViewStyle(.circular)
-        .tint(isStale ? RestPalette.t3 : RestPalette.ember)
+        .tint(isStale ? WidgetPalette.t3 : WidgetPalette.ember)
     }
 }

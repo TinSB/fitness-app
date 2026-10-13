@@ -28,10 +28,12 @@ struct Overline: View {
             .font(.redeOverline)
             .tracking(RedeTracking.overline)
             .foregroundStyle(color)
+            // SwiftUI 会把 tracking 也加在末字符之后；收回这段空白让居中/右对齐按字形对齐。
+            .padding(.trailing, -RedeTracking.overline)
     }
 }
 
-// MARK: - 锻面颗粒(.forged::after 噪声,~1.5% 可见度)
+// MARK: - 锻面颗粒（默认对角拉丝；强度待真机校准）
 
 struct ForgedGrain: View {
     /// 材质走向。噪点是各向同性的「砂面」；拉丝有方向，读起来才是**被加工过的金属**。
@@ -46,8 +48,8 @@ struct ForgedGrain: View {
     /// 有走向的织理才读作「被加工过的金属」，也和 RegMark 的斜角标、EngraveDivider 的
     /// 刻度构成同一套加工面语言。
     ///
-    /// ⚠️ **强度待真机校准**：噪点那档 1.5% 是真机 25% 亮度下校准过的定值，拉丝是新的、
-    /// 只在模拟器上看过。健身房暗光 + OLED 会比模拟器明显，下次 TestFlight 需实看后再定。
+    /// ⚠️ **强度待真机校准**：默认对角拉丝只在模拟器上看过。健身房暗光 + OLED 会比模拟器
+    /// 明显，下次 TestFlight 需实看后再定。
     /// 调参钩子：-grainTexture noise|brushed|diagonal。
     static var defaultTexture: Texture {
         let args = ProcessInfo.processInfo.arguments
@@ -137,27 +139,12 @@ struct ForgedGrain: View {
 
 // MARK: - Registration 角标(.reg 11×11 刻线)
 
-enum RegCorner { case topRight, topLeft, bottomRight }
-
 struct RegMark: View {
-    let corner: RegCorner
-
     var body: some View {
         Path { p in
-            switch corner {
-            case .topRight:
-                p.move(to: CGPoint(x: 2, y: 0))
-                p.addLine(to: CGPoint(x: 11, y: 0))
-                p.addLine(to: CGPoint(x: 11, y: 9))
-            case .topLeft:
-                p.move(to: CGPoint(x: 0, y: 9))
-                p.addLine(to: CGPoint(x: 0, y: 0))
-                p.addLine(to: CGPoint(x: 9, y: 0))
-            case .bottomRight:
-                p.move(to: CGPoint(x: 0, y: 11))
-                p.addLine(to: CGPoint(x: 11, y: 11))
-                p.addLine(to: CGPoint(x: 11, y: 2))
-            }
+            p.move(to: CGPoint(x: 2, y: 0))
+            p.addLine(to: CGPoint(x: 11, y: 0))
+            p.addLine(to: CGPoint(x: 11, y: 9))
         }
         .stroke(Color.redeRegMark, lineWidth: 1)
         .frame(width: 11, height: 11)
@@ -194,7 +181,7 @@ struct ForgedCard<Content: View>: View {
                     .padding(.leading, radius * 0.30)
             }
             if showReg {
-                RegMark(corner: .topRight)
+                RegMark()
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                     .padding(max(11, radius * 0.52))
             }
@@ -225,36 +212,73 @@ struct LoadCluster: View {
     var value: String? = nil     // "37.5"；自重/弹力带为 nil
     var unit: String? = nil      // "kg"
     var tail: String? = nil      // "× 6"
-    var size: CGFloat = 19       // 数值字号；hero 用 30
+    var size: CGFloat = 19       // 数值基准字号（默认档）；hero 用 30
+    /// 随 Dynamic Type 缩放时锚定的系统文字样式（DL §12.4c / NFR-7：禁固定 pt）。
+    /// 行内 19pt 锚 title3，hero 30pt 锚 title1——与 redeHeadline / redeTitle 同一套缩放曲线。
+    var textStyle: UIFont.TextStyle = .title3
     /// 自重/弹力带只有 "× 6"，此时把次数升格成主数值——否则整行只剩一个小字。
     private var repsIsPrimary: Bool { value == nil }
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 0) {
+        // 在 body 里求值（同 Font.redeX 的约定：不缓存），默认档数值与 size 逐点相同。
+        let scaled = Font.redeScaled(size, textStyle)
+        return HStack(alignment: .firstTextBaseline, spacing: 0) {
+            // 各段单行；数值段 fixedSize——数字永不折成「62.」与「5」两行（大字号下宁可整簇变宽，
+            // 由调用方在 isAccessibilitySize 下改上下堆叠，见今日页动作行）。
             if let prefix {
                 Text("\(prefix) ")
-                    .font(.system(size: size * 0.63, weight: .medium))
+                    .font(.system(size: scaled * 0.63, weight: .medium))
                     .foregroundStyle(Color.redeT3)
+                    .lineLimit(1)
             }
             if let value {
                 Text(value)
-                    .font(.system(size: size, weight: .semibold))
+                    .font(.system(size: scaled, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(Color.redeT1)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
             }
             if let unit {
                 Text(" \(unit)")
-                    .font(.system(size: size * 0.47, weight: .regular))
+                    .font(.system(size: scaled * 0.47, weight: .regular))
                     .foregroundStyle(Color.redeT4)
+                    .lineLimit(1)
             }
             if let tail {
                 Text(value == nil ? tail : "  \(tail)")
-                    .font(.system(size: repsIsPrimary ? size : size * 0.63,
+                    .font(.system(size: repsIsPrimary ? scaled : scaled * 0.63,
                                   weight: repsIsPrimary ? .semibold : .medium))
                     .monospacedDigit()
                     .foregroundStyle(repsIsPrimary ? Color.redeT1 : Color.redeT3)
+                    .lineLimit(1)
             }
         }
+    }
+}
+
+/// 处方目标（重量 × 次数）的分段数值簇 + 整串无障碍标签——今日页动作行 / hero 与
+/// 训练页待机预览共用，两页同一批动作读出同一个样子。分段来自 L10n 的 targetParts
+/// （与 targetLine 逐字一致，见 RedeL10n 契约测试），视图层不解析字符串；
+/// VoiceOver 念完整串，避免读出「37.5 停顿 kg 停顿 乘 6」。
+struct PrescriptionTarget: View {
+    let strings: RedeStrings
+    let exercise: ExercisePrescriptionPlan
+    var size: CGFloat = 19
+    var textStyle: UIFont.TextStyle = .title3
+
+    var body: some View {
+        let parts = strings.targetParts(
+            loadType: exercise.loadType,
+            weightKg: exercise.targetWeightKg,
+            reps: exercise.targetReps)
+        LoadCluster(prefix: parts.prefix, value: parts.value, unit: parts.unit,
+                    tail: parts.reps, size: size, textStyle: textStyle)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(strings.targetLine(
+                loadType: exercise.loadType,
+                weightKg: exercise.targetWeightKg,
+                reps: exercise.targetReps))
     }
 }
 
@@ -305,11 +329,27 @@ struct StatStrip: View {
 // 基准巧思二：`·` 只说明「这是一条」，序号说明「这是第几步」——技术要点本就有先后，
 // 且可指认（"第二点没做到"）。序号压到极暗，只在余光里起编排作用。
 
+extension Font {
+    /// 长段说明正文（动作详情的技术要点 / 退阶进阶 / 注意事项共用）：14.5 锚 body，随 Dynamic Type 缩放。
+    static var redeProse: Font { .system(size: redeScaled(14.5, .body), weight: .regular) }
+}
+
+extension View {
+    /// 长段说明正文的统一排版：redeProse + 行距 4 + T2。同一个 sheet 内的几段正文必须同款，
+    /// 否则读起来像两种排版混用。
+    func redeProse() -> some View {
+        font(.redeProse).lineSpacing(4).foregroundStyle(Color.redeT2)
+    }
+}
+
 struct CueList: View {
     let items: [String]
 
+    /// 条间距（技术要点 / 退阶·进阶两段并列条目共用同一个节奏）。
+    static let itemGap: CGFloat = 13
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 13) {
+        VStack(alignment: .leading, spacing: Self.itemGap) {
             ForEach(Array(items.enumerated()), id: \.offset) { i, text in
                 HStack(alignment: .top, spacing: 13) {
                     Text(String(format: "%02d", i + 1))
@@ -318,9 +358,7 @@ struct CueList: View {
                         .padding(.top, 3)
                         .accessibilityHidden(true)   // 序号是排版，不念给 VoiceOver
                     Text(text)
-                        .font(.system(size: 14.5))
-                        .lineSpacing(4)
-                        .foregroundStyle(Color.redeT2)
+                        .redeProse()
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -344,7 +382,7 @@ struct CueList: View {
 //
 // 代价（有意接受）：overlay 只覆盖宿主视图，盖不住 RootTabView 的 tab bar。
 // 这反而贴合「我还在这一页、只是展开了一张卡」的心智——不是进入新页面。
-// 遮罩因此也止于 tab bar 上沿，不做假的全屏黑幕。
+// 遮罩铺满宿主；悬浮 tab bar 是 RootTabView 的兄弟层，始终画在遮罩之上。
 
 struct MorphExpansion<Content: View>: View {
     var topInset: CGFloat = 92
@@ -456,9 +494,11 @@ struct EmbButton: View {
     var fontSize: CGFloat = 16
     /// 与其他控件并排的语境收回内容宽（唯一现用点：训练页休息条）；页面主 CTA 默认全宽。
     var hug: Bool = false
+    /// 默认 50（页面主 CTA）；与 SteelButton 并排时传 RedeShape.controlHeight，上下沿才齐。
+    var minHeight: CGFloat = RedeShape.primaryButtonHeight
     let action: () -> Void
 
-    // M1 提权（2026-07-06 去 AI 感中期批次）：主 CTA 曾 hug 半宽 + redeBtn 底与面板
+    // M1 提权（2026-07-06 去 AI 感中期批次）：主 CTA 曾 hug 半宽 + 锻面底与面板
     // 明度几乎无差，读作次级按钮。提权限 Ember 公理内（锻面 + ember 左缘，禁 ember
     // 填充）：默认全宽 + 底提亮一档（redeRaised）+ hair 轮廓 + 50pt + 3px 缘 + 16pt 字。
     /// 点击计数——驱动图标的一次性弹跳（symbolEffect 需要一个变化的值做触发）。
@@ -481,7 +521,7 @@ struct EmbButton: View {
             .font(.system(size: fontSize, weight: .semibold))
             .foregroundStyle(Color.redeT1)
             .padding(.horizontal, 18)
-            .frame(minHeight: 50)
+            .frame(minHeight: minHeight)
             .frame(maxWidth: hug ? nil : .infinity)
             .background(Color.redeRaised)
             .clipShape(RoundedRectangle(cornerRadius: RedeShape.buttonRadius))
@@ -495,6 +535,38 @@ struct EmbButton: View {
             .clipShape(RoundedRectangle(cornerRadius: RedeShape.buttonRadius))
         }
         .buttonStyle(.redePressable)
+    }
+}
+
+// MARK: - 悬浮主 CTA（今日 / 训练待机共用）
+//
+// 用法：页面 ScrollView 上 `.overlay(alignment: .bottom) { if 条件 { FloatingPrimaryCTA(...) } }`，
+// 内容侧底部留白用 RedeSpace.floatingCTAContentInset，要避让它的浮层用 RedeSpace.floatingCTA。
+// **不用 safeAreaInset**：它的 content 带条件（model 未加载时为空），首帧算出的 inset 是 0，
+// model 到位后不会重算——真机上表现为 CTA 压住最后一个动作（2026-08-10 用户实拍反馈）。
+// 改成 overlay + 内容侧静态留白，留白量与 CTA 实际高度对齐，不依赖任何时序。
+
+struct FloatingPrimaryCTA: View {
+    let icon: String
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        EmbButton(icon: icon, title: title, action: action)
+            .padding(.horizontal, RedeSpace.page)
+            .padding(.top, RedeSpace.floatingCTATop)
+            // 垫开 tab bar：tab bar 是 RootTabView 的兄弟层、压在本视图之上。
+            .padding(.bottom, RedeSpace.bottomBar)
+            .background {
+                ZStack(alignment: .top) {
+                    Color.redeBase.ignoresSafeArea(edges: .bottom)
+                    // 上方 24pt 渐隐，列表内容滑到 CTA 下不露出半截字。
+                    LinearGradient(colors: [Color.redeBase.opacity(0), Color.redeBase],
+                                   startPoint: .top, endPoint: .bottom)
+                        .frame(height: 24)
+                        .offset(y: -24)
+                }
+            }
     }
 }
 
@@ -529,40 +601,76 @@ struct SteelButton: View {
     }
 }
 
-// MARK: - Ring 节点(.ring: 扁平描环)
-
-struct RingDot: View {
-    var size: CGFloat = 14
-    var fill: Color = .redeEmber
-
-    var body: some View {
-        Circle()
-            .fill(fill)
-            .frame(width: size, height: size)
-            .overlay(
-                Circle()
-                    .stroke(Color.redeEmber.opacity(0.5), lineWidth: 2)
-                    .padding(-2)
-            )
-    }
-}
-
 // MARK: - 刻线分隔(.rule)
 
 struct RuleDivider: View {
+    /// 上方区块若以 44pt 命中高的行收尾，行内文字下方已自带 RedeSpace.rowTrailingInset 的留白，再叠 12pt 上边距，
+    /// 线上方就比下方松一截。topInset = 上方已有的留白量，从上边距里扣掉（不低于 0），使线上下近似等距。
+    /// 默认 0 = 紧跟文字型区块，行为不变。
+    var topInset: CGFloat = 0
+
     var body: some View {
         Rectangle()
             .fill(Color.redeHair2)
             .frame(height: 1)
             .padding(.horizontal, RedeSpace.page)
-            .padding(.vertical, RedeSpace.section / 2)
+            .padding(.top, max(0, RedeSpace.section / 2 - topInset))
+            .padding(.bottom, RedeSpace.section / 2)
     }
+}
+
+// MARK: - 行尾披露箭头 / 行首图标槽 / 文字中线对齐
+
+/// 行尾披露 chevron——全 App 唯一规格：.redeCaption 常规字重 + T4，装饰性（VoiceOver 隐藏，
+/// 行的可点性由 Button 与 hint 表达）。禁止再写 `Image(systemName: "chevron.right")` + 自选字号字重。
+/// 不含「文字 + chevron」的行内动作链接（那是另一类，随文字字号）。
+struct DisclosureChevron: View {
+    var body: some View {
+        Image(systemName: "chevron.right")
+            .font(.redeCaption)
+            .foregroundStyle(Color.redeT4)
+            .accessibilityHidden(true)
+    }
+}
+
+/// 开放行的行首图标：固定宽度槽（随 caption 字号缩放），不同宽度的 SF Symbol 不再把标题推到
+/// 不同的竖线上。与图标后的标题间距统一 8（调用方 HStack(spacing: 8)）。
+/// 颜色继承外层 foregroundStyle；对 VoiceOver 隐藏（行标题自解释）。
+struct RowLeadIcon: View {
+    let systemName: String
+    @ScaledMetric(relativeTo: .caption) private var slot: CGFloat = 16
+
+    var body: some View {
+        Image(systemName: systemName)
+            .font(.redeCaption)
+            .frame(width: slot, alignment: .leading)
+            .accessibilityHidden(true)
+    }
+}
+
+/// 让没有文字基线的元素（进度条 Capsule、chevron）在 `.firstTextBaseline` 行里居中于同行 body 字的
+/// 视觉中线：无基线的元素默认以底边落在基线上，会整体低于字的视觉中线。
+/// 4.5 = 14pt 正文字形中线到基线的高度（实测 4.7），随 body 字号缩放。
+private struct TextMidlineAligned: ViewModifier {
+    @ScaledMetric(relativeTo: .body) private var rise: CGFloat = 4.5
+
+    func body(content: Content) -> some View {
+        content.alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + rise }
+    }
+}
+
+extension View {
+    func alignedToTextMidline() -> some View { modifier(TextMidlineAligned()) }
 }
 
 // MARK: - 分段控件(.seg)
 
 /// S2 刻线分组分隔（设置面板首用，rede-app.html .etick）：短竖刻线序列，两端略长收边。
 struct EngraveDivider: View {
+    /// 上方留白。默认 0 = 由调用方自己在外面补（既有用法）；设置页用它按「上一块是什么收尾」取值
+    ///（紧接 44pt 行要扣掉行盒里不可见的内边距），见 SettingsSheet.dividerAfterRow。
+    var above: CGFloat = 0
+
     var body: some View {
         HStack(spacing: 20) {
             ForEach(0..<9, id: \.self) { i in
@@ -572,6 +680,7 @@ struct EngraveDivider: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .center)
+        .padding(.top, above)
     }
 }
 
@@ -595,8 +704,6 @@ struct SegControl: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// 每个 SegControl 实例各自的命名空间——同页多个控件的键不会互相吸附。
     @Namespace private var keySlot
-
-    private let keyHeight: CGFloat = 28
 
     var body: some View {
         HStack(spacing: 0) {
@@ -626,13 +733,14 @@ struct SegControl: View {
                     if isOn {
                         Capsule(style: .continuous)
                             .fill(Color.redeHair)
-                            .frame(height: keyHeight)
+                            .frame(height: RedeShape.segmentKeyHeight)
                             .matchedGeometryEffect(id: "segKey", in: keySlot)
                     }
                 }
                 .contentShape(Rectangle()) // 透明区域也可点中（默认只命中不透明像素）
         }
         .buttonStyle(.redePressableRow)
+        .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }
 
@@ -654,13 +762,13 @@ struct SteelToggle: View {
                     .frame(width: 20, height: 20)
                     .padding(2)
             }
-            .frame(minWidth: RedeShape.controlHeight, minHeight: RedeShape.controlHeight)
+            .frame(minWidth: RedeShape.controlHeight, minHeight: RedeShape.controlHeight, alignment: .trailing)
         }
         .buttonStyle(.plain)
     }
 }
 
-// MARK: - 自定义 Tab Bar(.tb: h64 / #100E0B / 选中 ember)
+// MARK: - 悬浮标尺 Tab Bar（锻面块 + 行程标尺 + ember 游标）
 
 struct RedeTabBar: View {
     @Binding var selection: RootTab
@@ -694,10 +802,11 @@ struct RedeTabBar: View {
                             Image(systemName: item.icon)
                                 .font(.system(size: 21, weight: .medium))
                                 .symbolRenderingMode(.monochrome)
+                                .frame(height: RedeTabBarMetrics.iconSlotHeight)
                             Text(item.label).font(.system(size: 9.5, weight: .medium))
                         }
                         .foregroundStyle(selection == item.tab ? Color.redeEmber : Color.redeT4)
-                        .frame(maxWidth: .infinity, minHeight: RedeShape.controlHeight)
+                        .frame(maxWidth: .infinity, minHeight: RedeTabBarMetrics.controlHeight)
                     }
                     .buttonStyle(.plain)
                     // VoiceOver：图标+文字合成一条原子标签，并报当前选中态（图标本身不单独念）
@@ -708,7 +817,7 @@ struct RedeTabBar: View {
             }
             ruler
         }
-        .padding(.top, 8)
+        .padding(.top, RedeTabBarMetrics.topInset)
         .background(
             ZStack {
                 // 读 token，不硬编码——曾经写死过一组冷调色值，换主题时 tab bar 整块掉队。
@@ -717,16 +826,16 @@ struct RedeTabBar: View {
                 ForgedGrain(intensity: 0.4)
             }
         )
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: RedeTabBarMetrics.cornerRadius, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
+            RoundedRectangle(cornerRadius: RedeTabBarMetrics.cornerRadius, style: .continuous)
                 .strokeBorder(LinearGradient(
                     colors: [Color.redeT1.opacity(0.14), Color.redeT1.opacity(0.02), .clear],
                     startPoint: .top, endPoint: .bottom), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.6), radius: 17, y: 8)
-        .padding(.horizontal, 14)
-        .padding(.bottom, 12)
+        .padding(.horizontal, RedeSpace.page)
+        .padding(.bottom, RedeTabBarMetrics.bottomInset)
         .sensoryFeedback(.selection, trigger: selection) // tab 切换触觉确认
     }
 
@@ -759,12 +868,17 @@ struct RedeTabBar: View {
             }
             .frame(width: w, height: geo.size.height, alignment: .bottomLeading)
         }
-        .frame(height: 15)
+        .frame(height: RedeTabBarMetrics.rulerHeight)
         .accessibilityHidden(true)      // 纯装饰：选中态已由每个 tab 的 .isSelected 播报
     }
 }
 
 // MARK: - 页头(.hdr)
+
+private enum ScreenHeaderMetrics {
+    /// 44pt 热区内的图标与 22pt 标题首行视觉中心对齐（像素审计校准）。
+    static let trailingIconTitleCenterAdjustment: CGFloat = -9
+}
 
 struct ScreenHeader: View {
     let title: String
@@ -794,7 +908,10 @@ struct ScreenHeader: View {
                     Image(systemName: trailingIcon)
                         .font(.system(size: 20))
                         .foregroundStyle(Color.redeT4)
-                        .frame(minWidth: RedeShape.controlHeight, minHeight: RedeShape.controlHeight)
+                        .frame(width: RedeShape.controlHeight, height: RedeShape.controlHeight, alignment: .trailing)
+                        .padding(.top, ScreenHeaderMetrics.trailingIconTitleCenterAdjustment)
+                        .frame(width: RedeShape.controlHeight, height: RedeShape.controlHeight, alignment: .top)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.redePressable)
                 .disabled(onTrailingTap == nil)
@@ -908,10 +1025,7 @@ struct RedeChoiceSheet: View {
                         }
                     }
                     Spacer(minLength: 8)
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.redeT4)
-                        .accessibilityHidden(true)  // 装饰性 affordance；行 Button 已承载动作
+                    DisclosureChevron()
                 }
                 .frame(minHeight: RedeShape.controlHeight)
                 .padding(.vertical, opt.subtitle != nil ? 6 : 0)

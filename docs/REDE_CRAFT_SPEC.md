@@ -3,8 +3,8 @@
 > **状态:** Canonical（2026-06-11 自 .ai-tmp 工作稿转正，登记于 DOCS_MANIFEST）· **日期:** 2026-06-08（首版） · **聚焦:** Rede（方法跑通后套用 Larder）
 > **为什么有这份:** 上一版设计路线稿（早期 `DESIGN_SYSTEM_ROADMAP` 工作稿，未进仓库、已并入本文 Part C）只给了 token 与流程。但 **token 只保证「一致」，不保证「不通用」**。AI 做设计必然回归训练均值＝组件堆叠。这份补上 token **之上**的一层——把「锻铁/Emberline」这种词，变成可机器复刻、可被 CI 强制的规格。
 > **配套:** 本会话已渲染 `Rede Today` 的 generic→crafted 对比图，本文 Part B 是其像素级落地。
-> **实现状态（2026-06-13）:** 本工艺层已在 `ios/Rede` 原生落地并随 App shipping——`RedeTheme`（locked tokens：base `#15130F` / ember `#E1652B` 等）、`RedeComponents`（`ForgedCard` / `ForgedGrain` / `EngraveDivider` 等签名组件）、`quality-gate.cmd` 的每视图 ForgedCard 预算门禁。以下 Part B–K 的 Phase / brief 为规格与历史规划，落地实现以代码为准。
-> **⚠ 2026-06-08 修正（先读 Part J）:** 通读全部设计文档后发现 A–I 里有我自造、与 canonical 冲突的参数。视觉真源 ＝ `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md`。凡冲突**以 Part J 为准**：导航是 **4 tab（Today / Train / Progress / Plan）**，Settings 非 tab；并有 Recovery / Caution / Risk / Trust 语义色。**⚠ 视觉最终 locked 以 §11 / Part J·J8 / Part K 为准（owner 定的暖底 `#15130F` / Ember `#E1652B` / 卡片 12px / 仪表标签 letterspacing / SF Pro tabular）——本行早期写的 `#111312` / `#E85D2A` / 8pt / ls0 已被 J8 反转，勿用。**
+> **实现状态（2026-10-12）:** 2026-08-07 低饱和换代后，色值、圆角、间距与字阶以 `ios/Rede/RedeTheme.swift` 为准，组件几何以 `RedeComponents.swift` 为准。本文出现的 hex / px 多为 2026-06 历史取值，只保留方法、构图与工艺推理，不得抄回现行 App。
+> **当前执行入口:** 视觉角色、比例、禁区与组件契约见 `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md`；导航 chrome 统一见该文 §17。Part J / K 中 2026-06 “locked” 记录已被 2026-08-07 换代取代。
 
 ---
 
@@ -18,14 +18,14 @@
 
 **S1 · Emberline（熔铁线）— 第一签名**
 - **定义:** 一条克制的熔铁色路径，只表示「下一步」。
-- **规格:** 宽 2px；色 `#E1652B`（ember，唯一品牌橙）；直线或单段 90° 折线；端点为实心三角节点，指向目标；长度＝从判断到下一步元素的实际距离，不为装饰延长。
+- **规格:** 几何取对应组件 token，颜色只取 `Color.redeEmber`；直线或单段 90° 折线；端点为实心三角节点，指向目标；长度＝从判断到下一步元素的实际距离，不为装饰延长。
 - **唯一性:** **每屏至多一条**，必须指向当前唯一的「下一步」（建议 / 当前组 / 主操作三者之一）。出现两条＝错。
 - **运动:** 只沿自身方向「推进」（draw-on 200–250ms ease-out）；不闪烁、不发光、不脉冲。
 - **禁用:** 背景、卡片边框、图标着色、成功/恢复态、分隔线、glow。
 
 **S2 · 刻线（Engrave / Knurl）— 结构分隔与刻度**
 - **定义:** 取自杠铃滚花与刻度的短竖线节奏，作分隔与标尺，替代通用 1px 描边。
-- **规格:** 竖线高 6–9px、间距 20px、宽 1px、色＝separator `#2E2A22`（暖灰、低对比）；端点两根略长收边。用于区块分隔、数值轨道、进度标尺。
+- **规格:** 主次刻度几何由对应组件 metrics 管理，颜色使用 `Color.redeEtch`；端点可用略长刻线收边。用于区块分隔、数值轨道、进度标尺。
 - **唯一性:** 分隔优先用刻线而非整条描边；同屏刻线风格统一。
 - **禁用:** 当装饰纹理铺满；当圆角卡片外框。
 
@@ -42,9 +42,9 @@
 - **禁用:** 用图表 / 模块墙开屏；用「分析中」制造黑箱。
 
 **S5 · 锻铁面（Forged surface）— 材质签名**
-- **定义:** 暖调石墨深色，靠色调抬升，不靠渐变 / 阴影 / 玻璃堆叠。
-- **规格:** 不用纯黑纯白（base `#15130F` · raised `#211E18` · sunken `#100E0B` · 文字 `#ECE6D8`）；抬升＝surface 色调上移 + 至多极轻暖阴影；一屏 ≤ 3 层 surface；允许极细颗粒，禁渐变。
-- **禁用:** 彩色渐变 hero、玻璃叠玻璃、霓虹、纯黑底。
+- **定义:** 暖调低饱和石墨深色，以近色阶、极微垂直渐变与加工纹理制造厚度，不靠可见渐变、光晕或玻璃堆叠。
+- **规格:** 面与文字只取 `RedeTheme`；常规卡允许 `redeRaised → redeSurface` 的极微垂直渐变、两端淡出的顶缘渐变高光与 `ForgedGrain.diagonal`。阴影只用于浮层（悬浮 tab bar、展开态卡），保持纯黑；常规卡不加 drop shadow。一屏仍不超过三层 surface。
+- **禁用:** 彩色渐变、强对比可见渐变、玻璃叠玻璃、glow、霓虹、纯黑底。
 
 ### A2. 构图法则 (Composition Doctrine) — 直接杀死「组件堆叠」
 
@@ -69,12 +69,12 @@
 | 渐变 / 发光的 readiness 大环 | 数据被「庆祝」、黑箱感 | 判断块一句给结论；数字仪表化 |
 | 全宽彩色 pill 主按钮 | 通用 SaaS 味、抢重心 | 单一锻铁主操作 + ember 左缘 |
 | 问候语 + emoji + 日期开屏 | 填充、去专业 | 刻线 overline + 判断块直入 |
-| 每卡一个 drop shadow | 通用 Material 味 | 色调抬升，至多极轻暖阴影 |
+| 每卡一个 drop shadow | 通用 Material 味 | 常规卡无阴影；只有悬浮导航与展开态卡可用纯黑浮层阴影 |
 | 彩色圆形 / emoji 图标 | 玩具感，与锻铁气质冲突 | 单线刻线风图标，单色 |
 | 什么都居中、全局等距 | 安全＝平庸 | 左锚、密度节奏、不对称 |
 | 彩虹色数据可视化 | 颜色当装饰 | 单色 + 唯一 ember 口音 |
 | 「AI 分析中…」spinner | 制造黑箱、拖延判断 | 立即给判断，依据可展开 |
-| 圆角 + 玻璃 + 渐变叠满 | 堆材质冒充高级 | 减法纪律才出高级 |
+| 圆角 + 玻璃 + 强对比渐变 / glow 叠满 | 堆材质冒充高级 | 只保留同色相极微卡面渐变与顶缘渐隐高光 |
 
 ### A4. 工艺清单 (Craft Checklist) — 每屏过审 pass/fail
 
@@ -82,7 +82,7 @@
 - [ ] Emberline 是否**恰好一条**且指向真实的「下一步」？
 - [ ] 主数字是否等宽、右对齐、单位弱于数值、未超大化？
 - [ ] 分隔是否优先用刻线而非整框描边？
-- [ ] 是否**零渐变、零 glow、零纯黑纯白**？抬升是否靠色调？
+- [ ] 是否**零彩色 / 强对比可见渐变、零 glow、零纯黑纯白**？仅保留允许的卡面微渐变与顶缘渐隐高光了吗？
 - [ ] 是否**只有一处 ember 口音**，其余单色调？
 - [ ] 是否**没有等高卡墙**？次要信息是否收成数据条？
 - [ ] 主操作是否唯一、非全宽彩色 pill？
@@ -97,6 +97,8 @@
 
 ## Part B — Today 页工艺规格 (pixel-level，对应对比图右屏)
 
+> **历史状态:** 本 Part 的像素数值是 2026-06 方法示范，不是现行取值。现行 token 读 `RedeTheme.swift`；现行导航 chrome 只按设计语言 §17。
+
 把对比图右侧拆成可实现规格。这是「用一个真实页把方法砸实」。
 
 - **画布:** 375 × 812（@1x 基准），安全边距 20px，锻铁面 base `#15130F`，无渐变。
@@ -107,7 +109,7 @@
 - **区 4 · NEXT 读数:** `NEXT` 11px / ls2 / tertiary；左「Bench press」15px / primary，右 `185`（34px / mono / 500 / primary）+ `lb`（13px / tertiary）；下行 `5 reps · RIR 2` 12px / mono / secondary，右对齐。
 - **区 5 · 数据条（降级）:** `Readiness 82 · Sleep 7:10 · HRV 48 · Vol 14k`，12px / mono / tertiary，中点分隔；无图标、无卡。
 - **区 6 · 主操作:** 单按钮 `Start`，bg `#211E18`，左缘 2px ember，14px / 500 / primary，左锚不全宽；其右 `View reasoning` 13px / tertiary（保留控制权）。
-- **区 7 · Tab:** 4 个单线图标 tertiary，active（home）顶加 2px × 14 ember tick；细、退后。
+- **区 7 · Tab:** 历史示意已退役；现行采用设计语言 §17 的悬浮标尺 tab bar（SF Symbols + 标签 + 块内标尺与 ember 游标），不得照本 Part 的旧底栏像素复刻。
 - **节奏:** 判断块四周松（≥ 20）、数据条内紧；左锚不对称；全屏一处 ember 口音。
 
 > 这是**方法示范**，不是终稿设计。它证明同样的信息，靠 S1/S3/S4 + 减法就能从「组件堆叠」变成有重心、有性格。
@@ -116,7 +118,9 @@
 
 ## Part C — 路线下钻到文件级
 
-> 把早期设计路线稿的 Phase 展到文件 / token / 脚本级（该路线稿已并入本文 Part C），并且——**把 Part A 的品质层做成机器可强制的 lint/CI**，这才是防 AI 味回潮的关键。
+> **未实施（2026-10-12 核对）:** 仓库没有本 Part 设想的 `packages/tokens/`，也没有 `verify-craft`。以下目录、JSON、Style Dictionary、生成物与 CI 是 2026-06 历史方案，保留用于解释方法，不代表现行文件、数值或门禁；不得声称已经落地。
+
+把早期设计路线稿的 Phase 展到文件 / token / 脚本级（该路线稿已并入本文 Part C），并且——设想把 Part A 的品质层做成可机器强制的 lint / CI。
 
 ### C1. Token 仓库目录树（决策 C1 分层落地）
 
@@ -271,7 +275,7 @@ public enum IPSpace { public static let md: CGFloat = 16 }
 
 - **用途:** 单组执行，瞄一眼就走。
 - **hero:** **仪表读数本身**（`185 lb`），不是判断块。
-- **签名应用:** S3 升为 hero；S1 + S2 合并成左侧「进度轨」（4 组刻度，当前组 ember 节点）；专注态**全程无 Tab**，chrome 全退。休息计时走 mono 仪表 + 单色消耗条，**不做环、不庆祝**。
+- **签名应用:** S3 升为 hero；S1 + S2 合并成左侧进度轨，当前组由 ember 节点标记。训练进行中保留设计语言 §17 的悬浮 tab bar，内容按 `RedeSpace.bottomBar` 避让；如要改为隐藏，属于新的产品决定，须 owner 拍板。休息计时走仪表数字 + 单色消耗条，**不做环、不庆祝**。
 - **缺口 1 → hero 不止「判断块」一种。** 动作页的 hero 是仪表。需要「hero 原型」分类（D4）。
 - **缺口 2 → Emberline 会「前进」。** 记一组后 ember 节点下移到下一组——S1 的运动不只 draw-on，还有「沿进度轨推进」。
 
@@ -318,7 +322,7 @@ public enum IPSpace { public static let md: CGFloat = 16 }
 
 ### D5. 遗留问题（留给你拍板）
 
-1. 专注态（训练中）是否**完全隐藏 Tab**？倾向是，但导航取舍需你确认。
+1. ~~专注态（训练中）是否完全隐藏 Tab？~~ **已按 2026-08 现状关闭：保留悬浮 tab bar。** 若未来隐藏，须作为产品决定重新提请 owner。
 2. 路径模 ember 是否允许**单段 90° 折线**跨越非相邻节点？建议否，保持直读。
 3. 多图页的「唯一 ember 标记」怎么办？建议：一屏一个总结论 ember，各图内不再各自标，避免口音泛滥。
 
@@ -342,7 +346,7 @@ public enum IPSpace { public static let md: CGFloat = 16 }
 
 ### E2. 真实密度规则（补进 A2 构图法则，续 9–13）
 
-9. **App 骨架必备。** 每屏含：状态栏、导航头（标题 + 真实控件）、可滚动内容、真实 Tab / 底栏。专注态（训练中）可隐 Tab，但保留 header 控件（如暂停、Skip）。
+9. **App 骨架必备。** 每屏含：状态栏、导航头（标题 + 真实控件）、可滚动内容、真实悬浮 tab bar。训练中仍保留 tab bar，并保留 header 控件（如暂停、Skip）。
 10. **签名兼作功能件。** Emberline ＝ 主操作 / 当前项的功能标记（按钮左缘、当前组 tick、当前日高亮），不是独立装饰条；仪表数字活在真实控件里（步进器、set 表）；刻线 ＝ 真实分隔 / 进度，不是纹样。
 11. **真实可点性。** 控件长得能点：filled 按钮、步进器（−/＋）、chevron 行、勾选、Skip；**不是一行文字假装按钮**。
 12. **有层级地密。** 列表给足行（可滚动）、信息够用；hero 仍唯一，但其余是「功能性降级」，不是「删到只剩一句」。**减法是去冗余，不是去功能。**
@@ -371,20 +375,18 @@ public enum IPSpace { public static let md: CGFloat = 16 }
 
 ### F1. Rede 模块化字阶 (Type ramp)
 
-| tier | px | 用途 | 字重 | mono |
-|---|---|---|---|---|
-| display | 56–60 | 休息计时、关键大读数 | 700 | ✓ |
-| title | 28 | 主数值（重量 / PR） | 700 | ✓ |
-| headline | 20 | 屏标题（Today） | 600 | |
-| subhead | 17 | 卡片标题（Push A） | 600 | |
-| body | 15 | 主行文本（动作名、判断句） | 400 | |
-| callout | 13 | 次级数值（set 数据） | 400 | ✓（数字） |
-| caption | 12 | 元信息、子标签 | 400 | |
-| overline | 11 | 字段 / 区块标签 | 500 | （仅此档可 letterspacing） |
+| tier | 现行 token | 用途 |
+|---|---|---|
+| display | `Font.redeDisplay` | 休息计时、唯一关键大读数 |
+| title | `Font.redeTitle` | 主数值（重量 / PR） |
+| headline | `Font.redeHeadline` | 屏标题、hero 名称 |
+| subhead | `Font.redeSubhead` | 卡片与普通行标题 |
+| body | `Font.redeBody` | 主行文本、判断句 |
+| callout | `Font.redeCallout` | 副信息、次级数值 |
+| caption | `Font.redeCaption` | 元信息、子标签 |
+| overline | `Font.redeOverline` + `RedeTracking.overline` | 字段 / 区块标签 |
 
-规则：相邻档对比 ≥ ~1.3×；每屏用 3–4 档 + **一个 display / title 时刻**；数字档 tabular mono；正文档位以 400 / 500 为主，hero / 铭牌 / 仪表数字按 Part J·K 升至 **600 / 700**（与 `ios/Rede/RedeTheme` 实现一致：regular/medium/semibold/bold）；**禁止全屏统一字号**。各档映射 iOS Text Style 以继承 Dynamic Type（至 AX5）。
-
-→ 这套进 `foundation/type.json`（决策 C1 的共享 foundation；Larder 已有同构 8 级字阶，Rede 对齐——**比例共享、字族各自**）。
+精确字号、字重、间距与缩放映射只读 `RedeTheme.swift`。每屏用三至四档，并保留一个 display / title 时刻；数字用 tabular figures。`LoadCluster` 遵守数值大、单位小、标签最小；动作名 medium + T2，重量 semibold + T1。执行参数三列可用 SF Rounded，工序序号可用 SF Mono；其余正文保持系统字体。**禁止全屏统一字号。**
 
 ### F2. 高级感来自字阶对比（补进 A2，续 14）
 
@@ -451,8 +453,8 @@ public enum IPSpace { public static let md: CGFloat = 16 }
 
 - **Today（强）:** hero 块 ＝「现在该做什么」。四态：Ready（判断 + 开始）/ 进行中（set x/n + 继续）/ 完成（今日 recap + 下一次预告）/ 休息日（无 ember）。位置恒定，内容与 ember 落点随状态。**休息日没有「下一步」就不点 ember**——签名守纪律的范例。
 - **复盘（中）:** 顶部分段控件 `Session / Week / Cycle` ＝ 状态；一个判断 hero 随尺度**重读**（`This week: back lagging` → `This cycle: +5% e1RM, deload due`），单色图 + 唯一 ember 标记跟着尺度换。注意：这是**用户驱动**的 state（切分段控件），不是自动推进——morph 用**即时切换**，不做循环、不做计时式过渡。
-  - **已渲染确认（三态）。** 落定的细节：① 图**类型**随尺度换——Session 按动作柱 / Week 按肌群柱 / Cycle 趋势线；② 每尺度只一个 ember 标记 ＝ 该尺度的结论（Session 点 PR / Week 点缺口 / Cycle 点 deload），判断句**指名**它；③ 判断 hero 靠**字号**突出（headline 19/500），不靠 ember，守 F2。
-  - **「一处 ember 口音」细化（补进 A2 rule 7）:** 分段控件选中态用**色调填充（raised tone），不点 ember**——ember 留给内容区那一处洞察。持久导航 chrome（底栏 active tab）可带**极小** ember 作系统级指示；即「**内容区一处 ember ＝ 洞察；chrome 的 active 态是另一层，最小化**」。
+  - **已渲染确认（三态）。** 落定的细节：① 图**类型**随尺度换——Session 按动作柱 / Week 按肌群柱 / Cycle 趋势线；② 每尺度只一个 ember 标记 ＝ 该尺度的结论（Session 点 PR / Week 点缺口 / Cycle 点 deload），判断句**指名**它；③ 判断 hero 靠字阶突出，不靠 ember，守 F2。
+  - **「一处 ember 口音」细化（补进 A2 rule 7）:** 分段控件选中态用**色调填充（raised tone），不点 ember**——ember 留给内容区那一处洞察。持久导航 chrome 按设计语言 §17，以选中图标 / 标签 + 标尺游标表达 active；这是 chrome 层唯一 ember，不占内容区洞察名额。
 - **计划（弱）:** 路径是 path-led hero，是稳定的**概览**，不该原地 morph（它是多项导航，morph 会破坏全局可读）。正确用法：把路径上「今天 / 下一次」那个节点做成**内嵌的 Today 式状态块**（复用同一组件），其余节点是静态行。即「**块复用，屏不强套**」。
 
 ### H3. 总规则（补进 D4 hero 原型）
@@ -471,9 +473,10 @@ public enum IPSpace { public static let md: CGFloat = 16 }
 
 ### I1. 材质 (Materiality) — 让「锻铁面」在屏上成立，不只在文档里
 
-- **锻面颗粒:** 极细噪点 / 网格纹（透明度 ~2%），给深色面实体感、不是平涂。仪表 hairline 基线网格可同时承担「颗粒」与「仪表」双重含义。
-- **顶缘高光:** raised 面顶边 1px 暖白高光（~10–14% alpha）、底边极暗——模拟光打在锻铁棱上，给厚度。
-- **色调深度:** 用 ≥ 3 档极近的暖灰叠层（base / raised / raised-edge），靠 tonal 不靠阴影；一屏仍 ≤ 3 层。
+- **锻面拉丝:** `ForgedGrain.diagonal` 是默认材质；断续、抖动的对角细丝表达加工方向。旧噪点档仅作调参参照。对角拉丝强度尚待真机暗光 / OLED 校准。
+- **卡面厚度:** `redeRaised → redeSurface` 的极微垂直渐变叠一像素、两端淡出的顶缘渐变高光；必须近到“看不见效果、只感到厚度”。禁止彩色、强对比或可见渐变。
+- **阴影边界:** 常规卡不加阴影；纯黑阴影只属于悬浮 tab bar 与展开态卡等浮层。
+- **页面 base:** 四个 tab 页当前是不透明 `redeBase` 平涂，根层纹理被覆盖；不要把未显示的全屏颗粒当成现行效果。
 
 ### I2. 仪表精修 (Instrument detail) — 把「工具感」做实
 
@@ -510,13 +513,16 @@ public enum IPSpace { public static let md: CGFloat = 16 }
 
 ## Part J — 与 canonical 设计语言对齐：修正清单 (Reconciliation)
 
-> **2026-06-08 通读全部设计文档后的修正。** 视觉 canonical 真源 ＝ `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md`（含 IA、色板、组件、页面语言、验收 10 条）。A–I 的方法/品质层仍有效，但其中**占位值与即兴决定凡与 canonical 冲突，以下为准**。我之前未通读文档、自造了部分参数——已纠正，预览已按修正重做。
+> **2026-06-08 通读全部设计文档后的历史修正。** 现行权威层级已在 2026-10-12 重排：`REDE_PRODUCT_DESIGN_LANGUAGE.md` 管角色 / 比例 / 禁区 / 组件契约，App 代码管数值与几何。A–I 的方法仍有效；本 Part 的旧值只解释当时如何收敛，不再覆盖现行实现。
 
 ### J1. 导航修正（关键）
 - ❌ 之前：5 tab（Today / Plan / Train / Stats / You）——正是 design language §9 v0-prompt（及 §0.1 / §8 的 command center / dashboard 禁区）明令禁止的「五 tab / command center」。
-- ✅ canonical：**底部恰好 4 tab：Today / Train / Progress / Plan**。Settings / Profile 是**右上角低频入口，非 tab**；Coach 也不是 tab。
+- ✅ canonical：**恰好 4 tab：Today / Train / Progress / Plan**。Settings / Profile 是**右上角低频入口，非 tab**；Coach 也不是 tab。现行悬浮标尺形态、避让与 CTA 关系统一见设计语言 §17。
 
 ### J2. 色板修正（停用自造值）
+
+> **历史记录:** 下表是 2026-06 对账值，同年 08-07 已被低饱和换代取代。现行值只读 `RedeTheme.swift` / 设计语言 §11.2。
+
 | 角色 | 值 |
 |---|---|
 | Graphite 900 / 800（深色底 / surface） | `#111312` / `#1B1E20` |
@@ -525,14 +531,14 @@ public enum IPSpace { public static let md: CGFloat = 16 }
 | Ember 500 / 300（品牌·主操作·当前组 / 轻强调） | `#E85D2A` / `#F28A5C` |
 | Recovery / Caution / Risk / Trust（语义，仅判断需要时） | `#2F7D5B` / `#B7791F` / `#C2413A` / `#3267B7` |
 
-- ⚠ **此「作废」已被 J8 / Part K 反转**：`#15130F` / `#E1652B`（暖）是 owner 最终 locked 值（见 §11 / Part K），**不作废**；当时改用 `#111312` / `#E85D2A` 的判断后被 owner 视觉决定推翻。**Rede 有失败红（Risk #C2413A）**——「无失败红」是 Larder 的规、不适用 Rede（此句仍有效）。
-- 色彩比例：中性 70–85% / 文字·结构线 10–20% / **Ember 3–8%** / 语义色仅判断时。「像黑橙主题」就偏了。
+- `#111312` / `#E85D2A` 与随后 2026-06 定稿的 `#15130F` / `#E1652B` 都只属于历史；2026-08-07 换代后不得从本表取现行色。**Rede 有 Risk 语义色**——「无失败红」是 Larder 规则，不适用 Rede（此句仍有效）。
+- 色彩比例以设计语言 §3.2 / §11.2 为准：Ember 是上限约束，不是必须填满的目标。
 
 ### J3. 形状·字体修正
-- **圆角 8pt**（卡片 / 按钮 / icon button）；pill = capsule。停用大圆角。
-- **letter-spacing 0**：禁负字距、禁装饰性大写 overline（之前 letterspaced caps 作废）；层级靠字号 / 字重 / 颜色 + **sentence case**。
-- 数字：**系统 sans（SF Pro）+ tabular-nums**，非等宽代码体（之前 mono 作废）。
-- 字重：关键数字 700 / 标题 650–700 / 卡片标题 600 / 正文 400–500 / 标签 500。不整屏粗体。
+- **圆角:** 现行层级只读 `RedeShape`；默认卡、展开态卡、次级子面、按钮与 steel 控件各有明确 token，pill = capsule。
+- **tracking:** 正文与判断句保持 0；instrument overline 使用 `RedeTracking.overline`。禁用为“高级感”而加的任意负字距。
+- **数字:** 系统 SF Pro + tabular figures；执行参数三列可用 SF Rounded，工序序号可用 SF Mono，除此不引入代码体。
+- **字重:** 只读 `Font.rede*` 与 `LoadCluster`；名称让位数据，不整屏粗体。
 
 ### J4. 必用的命名组件（之前漏用）
 - **Load Plate**：重量数字容器，中心一个关键数 + ≤2 辅助信号 + 一行理由（`185 lb / Bench press / 3×5 RIR 2 / Hold today.`）。非多环仪表。
@@ -555,24 +561,25 @@ docs 主张**克制**，但克制 ≠ 空。信息完整靠两条，不靠平铺
 
 ### J8. 视觉方向决定（owner，2026-06-08）
 
-owner 审完两版后**选定视觉 ＝ Parts A–I 的「暖锻铁 + 仪表」品质层皮**，不是 design language 字面值：
+> **历史状态:** 这是 2026-06 当时的定稿，已被 2026-08-07 低饱和换代取代；保留用来说明“暖锻铁 + 仪表”的方向如何形成，不再提供现行数值。
+
+owner 审完两版后选定 Parts A–I 的「暖锻铁 + 仪表」品质层皮：
 - 暖底 `#15130F` 系 + 暖 Ember `#E1652B`（vs 文档 `#111312` / `#E85D2A`，差异小，可后续微调对齐）。
 - **letterspaced 大写仪表标签**（仅 overline / 小标签；正文与判断句仍 sentence case + 真实文案）——vs 文档 letter-spacing 0。
 - 卡片圆角 ~12px + 顶缘高光 + 角标 registration（Part I 材质）——vs 文档 8pt。
 - mono tabular 数字（仪表感）——vs 文档 sans tabular。
 
-**分工定死：皮按品质层（A–I），骨架 / IA / 组件 / 文案按 canonical。** 语义色（Recovery / Caution / Risk / Trust）仍按文档在判断时出现。
-✅ 已回写 canonical §11（2026-06-08）：locked tokens（base `#15130F` / Ember `#E1652B` …）+ 仪表标签 letterspacing 例外 + 卡片 12px，均登记在案。
+**仍有效的分工：皮按品质层方法，骨架 / IA / 组件 / 文案按 canonical。** 具体色值、字阶、形状与间距已由 2026-08-07 换代接管；Trust 仅为未使用预留色位。
 
-**Part J 小结:** 方法层（品质层、状态化 hero、材质精修）成立；结构层对齐文档（4 tab、命名组件、肌群等级、真实文案）；视觉层 owner 选定品质层暖皮。三层分工：**结构=canonical，视觉=Parts A–I 暖皮，冲突项已回写 canonical §11（2026-06-08，无遗留文档欠债）。**
+**Part J 小结:** 方法层（品质层、状态化 hero、材质精修）成立；结构层对齐文档（4 tab、命名组件、肌群等级、真实文案）；现行数值由 `RedeTheme.swift` 接管，导航由设计语言 §17 接管。
 
 ---
 
-## Part K — 像素基准 Today + Locked Tokens (2026-06-08)
+## Part K — 像素基准 Today + 2026-06 Locked Tokens（历史）
 
-> **Today 像素终稿 ＝ 其余屏对齐基准。** 以下值已锁定并回写 canonical §11；真机最后只微调颗粒 / 高光 1–2%。
+> **历史状态:** 2026-06 Today 稿曾是其余屏对齐基准；2026-08-07 视觉换代已取代其数值。下表只作变更史，现行值见 `RedeTheme.swift` / 设计语言 §11.2。
 
-### K1. Locked tokens
+### K1. 2026-06 locked tokens（已被 2026-08-07 取代）
 | 角色 | 值 |
 |---|---|
 | Base / Surface / Hairline | `#15130F` / `#1F1C17` / `#2A261F` |
@@ -581,13 +588,12 @@ owner 审完两版后**选定视觉 ＝ Parts A–I 的「暖锻铁 + 仪表」�
 | Recovery / Caution / Risk / Trust（判断时） | `#2F7D5B` / `#C79A3A` / `#C2413A` / `#3267B7` |
 
 ### K2. 字阶·形状·材质·间距
-- **字阶：** 关键数字 700（**SF Pro + tabular-nums**；渲染中的 `mono` 仅 widget 近似，最终**不引入等宽代码体**，遵 design §4.1/§11.3、避 §4.1 装饰字体红线——本条覆盖 A–J 中所有「mono 数字」表述）· 屏标题 23/600 · 卡片标题 16/600 · 正文 14/400–500 · 仪表标签 11 caps ls2.2 tertiary · caption 12。
-- **形状：** 卡片圆角 12 · 按钮 10 · chip = capsule。
-- **材质：** 锻面颗粒 ~1.5% · 顶缘高光 `rgba(236,230,216,0.08)` · 四角 registration L 12px / stroke `#5F594C` 1px（hero / 关键卡）。
-- **间距：** 页边距 18 · 卡片内边 14 · 8pt 节奏。
+- **字阶:** 只读 `Font.rede*` 与 `RedeTracking`；数字使用 SF Pro tabular。窄例外：工序序号 SF Mono、执行参数三列 SF Rounded。
+- **形状:** 默认卡、展开态卡、次级子面、按钮与 steel 控件只读 `RedeShape`；悬浮 tab bar 读 `RedeTabBarMetrics`；chip = capsule。
+- **材质:** 卡面使用 `redeRaised → redeSurface` 极微垂直渐变、顶缘渐隐高光与 `ForgedGrain.diagonal`；registration 读 `redeRegMark`。拉丝强度待真机校准。
+- **间距:** 只读 `RedeSpace`；底栏避让由 `RedeTabBarMetrics` 推导，不复制像素常量。
 
 ### K3. Today 件清单（其余屏照搬）
-锻面 + 顶缘高光卡 · **Decision Receipt**（Ready 点 + Call + Signal/Change + Apply/Hold/Swap + Why⌄）· 会话卡含 **Load Plate**（右上 `185 lb · NEXT`）· Start training（ember）· **Progress Rail**（last→today→next + 置信度）· 4-tab 底栏。
+锻面 + 顶缘高光卡 · **Decision Receipt**（Ready 点 + Call + Signal/Change + Apply/Hold/Swap + Why⌄）· 会话卡含 **Load Plate** · Start training（ember 边缘）· **Progress Rail**。4-tab 导航不再照本 Part 的历史底栏稿，统一采用设计语言 §17 的悬浮标尺 tab bar；训练进行中照常显示。
 
-**Part K 小结:** Today 锁定 → 其余屏按 K1–K3 对齐即一致。下一步可起 **Phase 1**：K1 写成 `foundation` + `material.json`，把 Decision Receipt / Load Plate / Progress Rail / StateHero 写成组件交 Claude Code。
-
+**Part K 小结:** K1 只保留历史；现行实现按 `RedeTheme` / `RedeComponents` 与设计语言 §17 对齐。Part C 的 token pipeline 未实施，不把它作为下一步既定工程计划。

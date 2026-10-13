@@ -343,11 +343,16 @@ struct TodayWatchView: View {
                     .foregroundStyle(WatchPalette.t2)
                     .lineLimit(2)
                 // 目标是这一屏唯一要在两米外看清的东西——练的时候手表离眼睛就那么远。
-                Text(verbatim: item.targetText)
-                    .font(.system(size: 17, weight: .semibold))
-                    .monospacedDigit()
-                    .foregroundStyle(WatchPalette.t1)
-                    .lineLimit(1).minimumScaleFactor(0.8)
+                // 有分段按「数值大、单位小」排；旧手机不带分段时退回整串同字号。
+                if let parts = item.targetParts {
+                    WatchTargetCluster(parts: parts, size: 20, spoken: item.targetText)
+                } else {
+                    Text(verbatim: item.targetText)
+                        .font(.system(size: 17, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(WatchPalette.t1)
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                }
                 Text(verbatim: item.setsText)
                     .font(.system(size: 11))
                     .foregroundStyle(WatchPalette.t3)
@@ -964,15 +969,26 @@ enum WatchPreview {
         let localeCode = args.firstIndex(of: "-watchPreviewLocale").flatMap { args.indices.contains($0 + 1) ? args[$0 + 1] : nil } ?? "zh"
         let zh = localeCode == "zh"
         let today = WatchPrescriptionStore.todayISO
+        // 副信息、目标串与分段都走生产同一批 RedeL10n（exerciseMetaLine / targetLine / targetParts），
+        // 夹具不再手写会过期的字面量（商店截图与真机逐字一致）。
+        let strings = RedeStrings(locale: zh ? .zh : .en)
+        func item(_ id: String, _ name: String, sets: Int, rest: Int, rir: Double,
+                  loadType: String, kg: Double, reps: Int) -> WatchPrescription.Item {
+            let parts = strings.targetParts(loadType: loadType, weightKg: kg, reps: reps)
+            return .init(exerciseId: id, name: name,
+                         setsText: strings.exerciseMetaLine(sets: sets, restSeconds: rest, rir: rir),
+                         targetText: strings.targetLine(loadType: loadType, weightKg: kg, reps: reps),
+                         targetParts: .init(prefix: parts.prefix, value: parts.value, unit: parts.unit, reps: parts.reps))
+        }
         let items: [WatchPrescription.Item] = [
-            .init(exerciseId: "bench-press", name: zh ? "杠铃卧推" : "Barbell bench press",
-                  setsText: zh ? "4 组 · 休息 2 分" : "4 sets · rest 2 min", targetText: "60 kg · ×8"),
-            .init(exerciseId: "row", name: zh ? "杠铃划船" : "Barbell row",
-                  setsText: zh ? "3 组 · 休息 90 秒" : "3 sets · rest 90 s", targetText: "50 kg · ×10"),
-            .init(exerciseId: "pull-up", name: zh ? "引体向上" : "Pull-up",
-                  setsText: zh ? "3 组" : "3 sets", targetText: zh ? "自重 · ×8" : "Bodyweight · ×8"),
-            .init(exerciseId: "lateral-raise", name: zh ? "哑铃侧平举" : "Lateral raise",
-                  setsText: zh ? "3 组" : "3 sets", targetText: "10 kg · ×12"),
+            item("bench-press", zh ? "杠铃卧推" : "Barbell bench press", sets: 4, rest: 120, rir: 2,
+                 loadType: "external", kg: 60, reps: 8),
+            item("row", zh ? "杠铃划船" : "Barbell row", sets: 3, rest: 90, rir: 2,
+                 loadType: "external", kg: 50, reps: 10),
+            item("pull-up", zh ? "引体向上" : "Pull-up", sets: 3, rest: 90, rir: 2,
+                 loadType: "bodyweight", kg: 0, reps: 8),
+            item("lateral-raise", zh ? "哑铃侧平举" : "Lateral raise", sets: 3, rest: 60, rir: 1,
+                 loadType: "external", kg: 10, reps: 12),
         ]
         let ladder: [WatchPrescription.WeightRung] = stride(from: 30.0, through: 90.0, by: 2.5).map {
             .init(kg: $0, text: $0 == $0.rounded() ? String(Int($0)) : String($0))
@@ -988,7 +1004,7 @@ enum WatchPreview {
         case "bodyweight":
             active = .init(exerciseId: "pull-up", exerciseName: zh ? "引体向上" : "Pull-up",
                            setNumber: 1, setTotal: 3, exerciseNumber: 4, exerciseTotal: 6,
-                           targetText: zh ? "自重 × 8" : "Bodyweight × 8", targetWeightKg: 0, targetReps: 8, targetRir: 2,
+                           targetText: strings.targetLine(loadType: "bodyweight", weightKg: 0, reps: 8), targetWeightKg: 0, targetReps: 8, targetRir: 2,
                            isResting: false, adjust: .init(weightRungs: [], weightCaption: ""))
         case "warmup":
             active = .init(exerciseId: "bench-press", exerciseName: zh ? "杠铃卧推" : "Barbell bench press",

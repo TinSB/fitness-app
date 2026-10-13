@@ -12,8 +12,8 @@
 | **系统逻辑** | `docs/REDE_iOS_SYSTEM_LOGIC.md` | 全部功能 + 决策回路 + 干净重写目标 / reference inventory / 缺口状态 | 任何引擎 / 决策逻辑 / 功能改动 |
 | **决策日志** | `docs/REDE_REBUILD_00_IRONRULES_AND_CLOUD.md` · `docs/CLOUD_DECISIONS_ARCHIVE.md` | iOS 原生账号 / 云 / 同步 / CRDT / watchOS 的未来决策记录;不授权第一版干净 runtime | 任何架构 / 产品决策拍板 |
 | **产品文案** | `docs/REDE_PRODUCT_COPY_BASELINE.md` | 产品定位 · 双语 voice/tone · UI / paywall / App Store / v0 文案基底 · 风险禁区 | 任何用户可见文案 / 双语 locale / onboarding / paywall / App Store 素材 / 原型生成文案变更 |
-| **产品设计语言** | `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md` | 视觉品牌 · 色彩 / 字体 / 形状 / 动效 · 核心组件隐喻 · App / landing / widget / v0 视觉生成基底；文案文档只管语言,视觉系统单独成文 | 任何用户可见 UI 视觉方向 / 原型生成 / App Store 截图 / landing page / widget 设计变更 |
-| **工艺规格** | `docs/REDE_CRAFT_SPEC.md` | 品质层签名系统(S1-S5)·构图法则·AI 味禁区·工艺清单·真实密度·字阶·像素基准——设计语言的执行细则,§11/§12 引用本文件;视觉方向真源仍是设计语言文档 | 任何签名系统 / 构图法则 / 工艺验收标准变更(2026-06-11 自 .ai-tmp 工作稿转正) |
+| **产品设计语言** | `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md` | 视觉品牌 · 角色 / 比例 / 禁区 / 组件契约 · App / landing / widget / v0 视觉生成基底；现行数值与几何由 App 代码提供，本文不复制易腐实现常量（对外消费色表除外） | 任何用户可见 UI 视觉方向 / 原型生成 / App Store 截图 / landing page / widget 设计变更 |
+| **工艺规格** | `docs/REDE_CRAFT_SPEC.md` | 品质层签名系统(S1-S5)·构图法则·AI 味禁区·工艺清单·真实密度·方法基准——设计语言的执行细则；其中 hex / px 多为明确标注的 2026-06 历史取值，不是现行 token 真源 | 任何签名系统 / 构图法则 / 工艺验收标准变更(2026-06-11 自 .ai-tmp 工作稿转正) |
 | **动作内容系统** | `docs/REDE_EXERCISE_CONTENT_SYSTEM.md` | Catalog 层数据合同与扩容手册:exercises.json 字段/注册表/rank 匹配/覆盖矩阵 golden/id 永生/填充流水线(wave);产品层目标仍以系统逻辑为准 | 任何目录字段 / 注册表 / 匹配策略 / 内容批次规则变更(2026-06-11 owner 拍板创建) |
 | **路线图** | `COMMERCIALIZATION_ROADMAP.md` | 商业化 + 外部付费意向验证 + 干净重写路线 + 待办优先级 | 任何阶段 / 优先级变化 |
 | **产品需求 PRD** | `docs/REDE_PRD.md` | 产品需求真源:给谁做/解决什么/功能需求(FR 编号+用户故事+验收)/优先级(MVP·FF·LATER·GATE)/NFR/指标/发布映射。引擎合同以系统逻辑为准,架构以 Master 为准,商业节奏以 Roadmap 为准 | 任何产品范围 / 功能优先级 / 验收标准 / 发布映射变化 |
@@ -23,12 +23,18 @@
 ## 二、参考文档(留存 · 非每次更新)
 - `docs/REDE_PRODUCT_OVERVIEW_CN.md` — 面向用户的功能说明
 - `docs/REDE_iOS_DECISION_CIRCUIT.html` — 系统回路视觉参考,不得覆盖 `docs/REDE_iOS_SYSTEM_LOGIC.md` 或 Master Architecture
-- **Rede MVP 原型集**:`docs/rede-prototypes/`(index + 01–09 单屏 + 10a/10b/10c 调参工艺三稿 + 11a/11b onboarding 两稿 + 12 设置仪表 + rede-app 整合稿 + rede-landing-mocks + review-shots/ 改版前后对比截图)— MVP 核心页/推送/widget/分享卡/落地页的 v0 HTML 实现参照;视觉真源仍是 `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md`,不得覆盖系统逻辑/架构/MVP 实现文档
+- **Rede MVP 原型集**:`docs/rede-prototypes/`(index + 01–09 单屏 + 10a/10b/10c 调参工艺三稿 + 11a/11b onboarding 两稿 + 12 设置仪表 + rede-app 整合稿 + rede-landing-mocks + review-shots/)— 2026-06/07 的历史 HTML 设计稿；2026-10-12 已机械换成现行色值，但多数结构仍是旧版（通栏 tab bar、旧卡片比例），不是现行数值或结构依据。`review-shots/` 是 2026-06-09 历史截图，也不代表当前 App。
 - **饮食子项目(Larder)** — 已于 2026-06-13 **分家为独立 App / 独立仓 `~/Developer/Larder`**(与 Rede 平级),连同其设计/文案/调研/Blender 简报、HTML 原型、146 个 clay 食物图标资产全部迁出本仓,Rede 不再承载饮食材料。真相清单见该仓自己的 `DOCS_MANIFEST.md`;两仓互不覆盖(Larder 可只读联动 Rede 的目标/活动数据)。
 - **Agent 支撑文档**:`docs/agents/domain.md` · `docs/agents/issue-tracker.md` · `docs/agents/triage-labels.md` — 只服务 agent 工作流和 issue triage,不覆盖产品/架构真源
 
 ## 三、仓库元(标准,不在约束内)
 `README.md` · `AGENTS.md` · `CONTRIBUTING.md` · `SECURITY.md`
+
+### 视觉真源层级（DOC-13，2026-10-12 对账）
+
+1. **现行数值与几何:** App 代码为准——基础 token 读 `ios/Rede/RedeTheme.swift`，组件几何 / 材质读 `ios/Rede/RedeComponents.swift`。`WatchTheme.swift` 的 `WatchPalette` 与 `RestLiveActivity.swift` 的 `WidgetPalette`（小组件与休息 Live Activity 共用） 是本地副本，改基础色时三处同改。
+2. **设计契约:** `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md` 定义角色、比例、禁区与组件契约；`docs/REDE_CRAFT_SPEC.md` 保存方法与工艺纪律。它们不得用历史数值反向覆盖现行代码。
+3. **历史原型:** `docs/rede-prototypes/*.html` 是 2026-06/07 设计稿。机械换色不等于结构已对齐，不作为取值或验收依据；需要当前截图时，以真实 App 运行结果为准。
 
 ## 四、硬规则(同步写入 AGENTS.md,所有 agent / PR 遵守)
 1. **改代码 → 必同步更新**受影响的 canonical 活文档(架构 / 系统逻辑 / 决策 / 路线图 / 变更)。clean rewrite 阶段以文档为目标真源;旧代码与文档不一致时,不得把旧代码当作必须保留的事实。

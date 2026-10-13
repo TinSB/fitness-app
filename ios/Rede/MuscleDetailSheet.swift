@@ -74,7 +74,7 @@ struct MuscleDetailSheet: View {
                             .foregroundStyle(Color.redeT3)
                     }
                     Capsule()
-                        .fill(Color.redeT3.opacity(0.18))
+                        .fill(Color.redeT3.opacity(0.28))   // 同主页发展行轨道（0.18 在 base 上近隐形）
                         .frame(height: 5)
                         .overlay(alignment: .leading) {
                             GeometryReader { geo in
@@ -139,14 +139,16 @@ struct MuscleDetailSheet: View {
                 .font(.redeCaption)
                 .foregroundStyle(Color.redeT4)
             Spacer(minLength: 12)
+            // 条没有文字基线：按文字视觉中线居中，不让它坠在基线下（同主页发展行）。
             Capsule()
-                .fill(Color.redeT3.opacity(0.18))
+                .fill(Color.redeT3.opacity(0.28))
                 .frame(width: 64, height: 4)
                 .overlay(alignment: .leading) {
                     Capsule()
                         .fill(sub.weeklyEffectiveAvg > 0 ? Color.redeEmber : Color.clear)
                         .frame(width: 64 * min(max(sub.progress, 0), 1), height: 4)
                 }
+                .alignedToTextMidline()
         }
         .accessibilityElement(children: .combine)
     }

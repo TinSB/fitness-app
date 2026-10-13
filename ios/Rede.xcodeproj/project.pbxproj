@@ -54,7 +54,6 @@
 		CA00000000000000000000B5 /* PlanTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA00000000000000000000A5 /* PlanTabView.swift */; };
 		CAEB00000000000000000002 /* ExerciseLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAEB00000000000000000001 /* ExerciseLibraryView.swift */; };
 		CAED00000000000000000002 /* ExerciseDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAED00000000000000000001 /* ExerciseDetailSheet.swift */; };
-		CAED000000000000000000A2 /* MotionSampleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAED000000000000000000A1 /* MotionSampleView.swift */; };
 		CAMD00000000000000000002 /* MuscleDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAMD00000000000000000001 /* MuscleDetailSheet.swift */; };
 		CAMH00000000000000000002 /* MuscleHeatmapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAMH00000000000000000001 /* MuscleHeatmapView.swift */; };
 		CARL00000000000000000002 /* RestLiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CARL00000000000000000001 /* RestLiveActivityController.swift */; };
@@ -173,7 +172,6 @@
 		CA00000000000000000000A5 /* PlanTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanTabView.swift; sourceTree = "<group>"; };
 		CAEB00000000000000000001 /* ExerciseLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseLibraryView.swift; sourceTree = "<group>"; };
 		CAED00000000000000000001 /* ExerciseDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseDetailSheet.swift; sourceTree = "<group>"; };
-		CAED000000000000000000A1 /* MotionSampleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MotionSampleView.swift; sourceTree = "<group>"; };
 		CAMD00000000000000000001 /* MuscleDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleDetailSheet.swift; sourceTree = "<group>"; };
 		CAMH00000000000000000001 /* MuscleHeatmapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MuscleHeatmapView.swift; sourceTree = "<group>"; };
 		CARL00000000000000000001 /* RestLiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestLiveActivityController.swift; sourceTree = "<group>"; };
@@ -319,7 +317,6 @@
 				CAMD00000000000000000001 /* MuscleDetailSheet.swift */,
 				CAMH00000000000000000001 /* MuscleHeatmapView.swift */,
 				CAED00000000000000000001 /* ExerciseDetailSheet.swift */,
-				CAED000000000000000000A1 /* MotionSampleView.swift */,
 				A100000000000000000000E1 /* SyncService.swift */,
 				A100000000000000000000E3 /* SyncSheet.swift */,
 				A1000000000000000000FD02 /* OnboardingRestoreSheet.swift */,
@@ -604,7 +601,6 @@
 				CAMD00000000000000000002 /* MuscleDetailSheet.swift in Sources */,
 				CAMH00000000000000000002 /* MuscleHeatmapView.swift in Sources */,
 				CAED00000000000000000002 /* ExerciseDetailSheet.swift in Sources */,
-				CAED000000000000000000A2 /* MotionSampleView.swift in Sources */,
 				A100000000000000000000E2 /* SyncService.swift in Sources */,
 				A100000000000000000000E4 /* SyncSheet.swift in Sources */,
 				A1000000000000000000FD01 /* OnboardingRestoreSheet.swift in Sources */,

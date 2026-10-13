@@ -219,7 +219,7 @@ struct ShareCardView: View {
                 footer
             }
             .padding(28)
-            RegMark(corner: .topRight).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(20)
+            RegMark().frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing).padding(20)
         }
         .frame(width: Self.logicalSize.width, height: Self.logicalSize.height)
         .clipped()
@@ -331,7 +331,9 @@ struct ShareCardView: View {
             }
             HStack(alignment: .top, spacing: 0) {
                 ForEach(Array(w.stats.enumerated()), id: \.offset) { i, stat in
-                    if i > 0 { Rectangle().fill(Color.redeHair).frame(width: 1, height: 40) }
+                    // 竖线与整列（数字 + 标签）等高：高度跟随本行（下方 fixedSize 把本行收到内容高），
+                    // 不写死 40——写死时线只盖住数字、标签落在线外。
+                    if i > 0 { Rectangle().fill(Color.redeHair).frame(width: 1).frame(maxHeight: .infinity) }
                     VStack(alignment: .leading, spacing: 3) {
                         // 数值行「大数字 + 小单位」两段字号；lineLimit(1) 锁单行——
                         // 时长档（"60–90"）在等分列宽下曾破成三行（T5）。
@@ -351,6 +353,7 @@ struct ShareCardView: View {
                     .padding(.leading, i > 0 ? 14 : 0)
                 }
             }
+            .fixedSize(horizontal: false, vertical: true)
             if !w.patternText.isEmpty {
                 Text(w.patternText).font(.system(size: 13)).foregroundStyle(Color.redeT3)
                     .fixedSize(horizontal: false, vertical: true)

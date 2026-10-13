@@ -162,6 +162,10 @@ struct TrainTabView: View {
     /// 质量清洗丢弃的场不计入。
     private var completedSessionCount: Int { sessionStore.todayModel?.cleanView.sessions.count ?? 0 }
     private var flow: TrainFlowState? { sessionStore.flow }
+    /// 待机态是否显示悬浮「开始训练」：无会话、且今日有处方（与 standbyState 的 trainingStandby 分支同条件）。
+    private var showsStandbyStartCTA: Bool {
+        flow == nil && sessionStore.todayModel?.prescription?.exercises.isEmpty == false
+    }
     /// 当前组的身份（动作位置 + 组号 + 热身态）。变了 = 指针换组，本组暂存作废。
     private var setPointerKey: String {
         guard let flow else { return "-" }
@@ -210,14 +214,23 @@ struct TrainTabView: View {
                         .padding(.horizontal, RedeSpace.page)
                         .padding(.top, 12)
                 } else {
+                    // 顶部内距与 ScreenHeader 同值（8）：切 tab 时首行字形不上下跳。
                     standbyState
                         .padding(.horizontal, RedeSpace.page)
-                        .padding(.top, 24)
+                        .padding(.top, 8)
                 }
             }
-            .padding(.bottom, RedeSpace.bottomBar)
+            .padding(.bottom, showsStandbyStartCTA ? RedeSpace.floatingCTAContentInset : RedeSpace.bottomBar)
         }
         .background(Color.redeBase)
+        // 训练日待机的「开始训练」：与今日页同一个悬浮 CTA（FloatingPrimaryCTA），不在滚动流里。
+        .overlay(alignment: .bottom) {
+            if showsStandbyStartCTA {
+                FloatingPrimaryCTA(icon: "play.fill", title: s.startTraining, action: {
+                    Task { await sessionStore.startSessionLoadingIfNeeded() }
+                })
+            }
+        }
         .sensoryFeedback(.success, trigger: logPulse)
         .sensoryFeedback(.selection, trigger: actionPulse) // Hold/More/休息控件等动作确认
         .sensoryFeedback(.warning, trigger: painPulse)      // 登记不适 = caution 口音
@@ -277,9 +290,12 @@ struct TrainTabView: View {
 
     private func header(_ flow: TrainFlowState) -> some View {
         HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
+                // 29pt 日名是进行中的身份标识，有意比其它 tab 的 22pt 页标题大一档；
+                // 顶部内距 / 标题间距与 ScreenHeader 同值，首行字形顶落在同一高度。
                 Text(s.trainingDayName(flow.plan.dayCode))
                     .font(.redeTitle)
+                    .tracking(RedeTracking.title)
                     .foregroundStyle(Color.redeT1)
                 Overline(text: s.trainProgress(
                     exercise: flow.progress.exerciseNumber,
@@ -298,7 +314,7 @@ struct TrainTabView: View {
             .buttonStyle(.redePressable)
         }
         .padding(.horizontal, RedeSpace.page)
-        .padding(.top, 14)
+        .padding(.top, 8)
     }
 
     private var overallFraction: Double {
@@ -331,7 +347,10 @@ struct TrainTabView: View {
                 }
                     .opacity(flow.phase == .resting ? 0 : 1)
                     .scaleEffect(flow.phase == .resting ? 0.98 : 1)
+                // 休息层在卡内上下居中：卡高由记组层决定，休息层更矮，topLeading 会把多出的
+                // 空白全堆在内容下方（内容贴顶、卡底一条空带）。maxHeight 让它拿到容器终高。
                 restState(flow)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                     .opacity(flow.phase == .resting ? 1 : 0)
                     .scaleEffect(flow.phase == .resting ? 1 : 0.98)
             }
@@ -362,6 +381,7 @@ struct TrainTabView: View {
                     Text(exercise.map { localeStore.exerciseName($0.exerciseId) } ?? "")
                         .font(.redeSubhead)
                         .foregroundStyle(Color.redeT2)
+                    // 紧跟名称的内联披露（不是行尾 chevron）：字号随名称，不走 DisclosureChevron。
                     Image(systemName: "chevron.right")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(Color.redeT4)
@@ -378,7 +398,9 @@ struct TrainTabView: View {
             Button(action: { startAdjust(targetKg: targetKg, recommendation: recommendation) }) {
                 let staging = showAdjust || hasAdjustment
                 let heroReps = staging ? adjustReps : (recommendation?.targetReps ?? exercise?.sets.first?.targetReps ?? 0)
-                HStack(alignment: .bottom, spacing: 8) {
+                // 整串按末行基线对齐：大数字、后缀同基线，不再用 padding 魔数硬顶（数字随
+                // Dynamic Type 缩放，固定 padding 的偏差会随字号变大）。
+                HStack(alignment: .lastTextBaseline, spacing: 8) {
                     // 三态大数字（wave-9）：自重=次数、辅助=「辅助 N」、其余=重量。
                     Text(s.heroNumber(
                         loadType: flow.currentExercise?.loadType ?? "external",
@@ -400,12 +422,12 @@ struct TrainTabView: View {
                     .font(.redeCallout)
                     .monospacedDigit()
                     .foregroundStyle(Color.redeT3)
-                    .padding(.bottom, 8)
                     // 可调暗示（FR-TR2 可见性）；已调整且收起 = ember（「被采纳的调整」合法口音）
                     Image(systemName: "slider.horizontal.3")
                         .font(.system(size: 13))
                         .foregroundStyle(hasAdjustment && !showAdjust ? Color.redeEmber : Color.redeT4)
-                        .padding(.bottom, 10)
+                        // 图标没有文字基线：以自身中心为准、落在后缀 13pt 字的半个字高处。
+                        .alignmentGuide(.lastTextBaseline) { $0[VerticalAlignment.center] + 4 }
                 }
                 .contentShape(Rectangle())
             }
@@ -579,7 +601,7 @@ struct TrainTabView: View {
                 // 并排语境收回内容宽（M1 审查 MAJOR）：默认全宽会把两个次级钢按钮挤成
                 // 窄方块；主次由 ember 缘表达，不靠宽度悬殊。
                 EmbButton(icon: "forward.fill", title: s.restNextSet, iconSize: 13, fontSize: 14,
-                          hug: true, action: { finishRest() })
+                          hug: true, minHeight: RedeShape.controlHeight, action: { finishRest() })
             }
             .padding(.top, 4)
         }
@@ -976,19 +998,31 @@ struct TrainTabView: View {
         }
     }
 
+    /// 组表列几何：表头与数据行共用同一组常量与同一个 HStack 间距——表头少一个间距，
+    /// 弹性的重量列就会被撑宽，后面的「次数」「RIR」整体右偏 8pt。
+    private enum SetTableColumns {
+        static let spacing: CGFloat = 8
+        static let number: CGFloat = 44
+        static let reps: CGFloat = 60
+        static let rir: CGFloat = 44
+        static let marker: CGFloat = 22
+        /// 标记（勾 / 当前组圆点 / 跳过横线）统一占的方槽：槽内居中，三者中心同轴。
+        static let markerGlyph: CGFloat = 14
+    }
+
     private func setTable(_ flow: TrainFlowState) -> some View {
         let exercise = flow.currentExercise
         let statuses = Self.rowStatuses(flow)
         return VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Overline(text: s.trainColSet).frame(width: 44, alignment: .leading)
+            HStack(spacing: SetTableColumns.spacing) {
+                Overline(text: s.trainColSet).frame(width: SetTableColumns.number, alignment: .leading)
                 if !currentIsRepBased {
                     Overline(text: currentIsAssisted ? s.trainColAssist : (currentIsBodyweightPlus ? s.trainColWeighted : s.trainColWeight)).frame(maxWidth: .infinity, alignment: .leading)
                 }
                 // 自重无重量列：次数接管弹性空间（整列移除而非留空，2026-06-13 owner 反馈）
-                Overline(text: s.trainColReps).frame(maxWidth: currentIsRepBased ? .infinity : 60, alignment: .leading)
-                Overline(text: s.trainColRir).frame(width: 44, alignment: .leading)
-                Spacer().frame(width: 22)
+                Overline(text: s.trainColReps).frame(maxWidth: currentIsRepBased ? .infinity : SetTableColumns.reps, alignment: .leading)
+                Overline(text: s.trainColRir).frame(width: SetTableColumns.rir, alignment: .leading)
+                Color.clear.frame(width: SetTableColumns.marker, height: 0)   // 标记列占位，与数据行同宽
             }
             .padding(.bottom, 7)
 
@@ -1051,8 +1085,8 @@ struct TrainTabView: View {
         case .skipped, .pending: .redeT4
         }
         let isActive = marker == .active
-        return HStack {
-            Text("\(number)").frame(width: 44, alignment: .leading)
+        return HStack(spacing: SetTableColumns.spacing) {
+            Text("\(number)").frame(width: SetTableColumns.number, alignment: .leading)
             if !hideWeight {
                 // 排版基准：数值大、单位小。组表是密集列表，数值维持行字号，
                 // 只把单位压到 0.72 倍 + T4——四行重量叠在一起时，眼睛只需扫数值。
@@ -1064,8 +1098,8 @@ struct TrainTabView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            Text(reps).frame(maxWidth: hideWeight ? .infinity : 60, alignment: .leading)
-            Text(rir).frame(width: 44, alignment: .leading)
+            Text(reps).frame(maxWidth: hideWeight ? .infinity : SetTableColumns.reps, alignment: .leading)
+            Text(rir).frame(width: SetTableColumns.rir, alignment: .leading)
             Group {
                 switch marker {
                 case .done:
@@ -1078,14 +1112,16 @@ struct TrainTabView: View {
                     Color.clear
                 }
             }
-            .frame(width: 22, alignment: .trailing)
+            .frame(width: SetTableColumns.markerGlyph)
+            .frame(width: SetTableColumns.marker, alignment: .trailing)
         }
         .font(.redeBody)
         .monospacedDigit()
         .foregroundStyle(textColor)
         .strikethrough(marker == .skipped, color: .redeT4)
         .padding(.vertical, 9)
-        .padding(.leading, isActive ? 8 : 0)
+        // 当前组不缩进内容：ember 竖条悬挂在页边距里（-10），已经是「当前」的标记，
+        // 再把组号/重量右推只会让这一行的列与上下行错开。
         .overlay(alignment: .leading) {
             if isActive { Rectangle().fill(Color.redeEmber).frame(width: 2).padding(.leading, -10) }
         }
@@ -1155,7 +1191,7 @@ struct TrainTabView: View {
                             .foregroundStyle(Color.redeT4)
                     }
                     Spacer(minLength: 8)
-                    if showsDisclosure { sessionOrderChevron }
+                    sessionOrderChevron(visible: showsDisclosure)
                 }
             }
             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
@@ -1182,7 +1218,7 @@ struct TrainTabView: View {
                         .foregroundStyle(Color.redeT4)
                         .fixedSize(horizontal: true, vertical: false)
                 }
-                if showsDisclosure { sessionOrderChevron }
+                sessionOrderChevron(visible: showsDisclosure)
             }
             .frame(maxWidth: .infinity, minHeight: 44)
             .contentShape(Rectangle())
@@ -1190,10 +1226,11 @@ struct TrainTabView: View {
         }
     }
 
-    private var sessionOrderChevron: some View {
-        Image(systemName: "chevron.right")
-            .font(.system(size: 11, weight: .medium))
-            .foregroundStyle(Color.redeT4)
+    /// 不可打开时（休息中）只是看不见、仍占位：记组 ⇄ 休息每组切换一次，
+    /// chevron 一增一删会让右侧名称整体横跳约 20pt。
+    private func sessionOrderChevron(visible: Bool) -> some View {
+        DisclosureChevron()
+            .opacity(visible ? 1 : 0)
             .accessibilityHidden(true)
     }
 
@@ -1255,8 +1292,9 @@ struct TrainTabView: View {
         }
     }
 
-    /// 训练日待机：headline + 「开始训练」直启（裁定 2：loadToday → startSession，
-    /// 与 -autoStartSession 钩子同源路径）+ 「今天这场」预览 + 「上次」事实行。
+    /// 训练日待机：headline + 「今天这场」预览 + 「上次」事实行；「开始训练」直启
+    /// （裁定 2：loadToday → startSession，与 -autoStartSession 钩子同源路径）是 body 里
+    /// 悬浮的共享 CTA，不在本滚动流内。
     /// 本屏唯一 ember = 开始按钮（裁定 5）；预览/上次全中性色。
     private func trainingStandby(_ prescription: TodayPrescription) -> some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -1264,10 +1302,6 @@ struct TrainTabView: View {
                 .font(.redeHeadline)
                 .tracking(RedeTracking.headline)
                 .foregroundStyle(Color.redeT1)
-            EmbButton(icon: "play.fill", title: s.startTraining, action: {
-                Task { await sessionStore.startSessionLoadingIfNeeded() }
-            })
-            .padding(.top, 16)
 
             Rectangle().fill(Color.redeHair2).frame(height: 1)
                 .padding(.vertical, RedeSpace.section)
@@ -1328,22 +1362,19 @@ struct TrainTabView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// 预览行：动作名 + 目标 W×次（中性色；目标如实显示，与今日页 targetSummary 同口径）。
+    /// 预览行：与今日页动作行同一节奏（同一批动作、同一批目标）——行内距 15、
+    /// 名称 medium + T2、目标走 PrescriptionTarget 分段数值簇（今日页共用件，整串无障碍标签）。
     /// a11y：整行合成一条读法；XXL 下名称/目标各自换行不挤压。
     private func standbyPreviewRow(_ ex: ExercisePrescriptionPlan) -> some View {
         HStack(alignment: .firstTextBaseline) {
             Text(localeStore.exerciseName(ex.exerciseId))
-                .font(.redeBody)
+                .font(Font.redeSubhead.weight(.medium))
                 .foregroundStyle(Color.redeT2)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 12)
-            Text(s.targetLine(loadType: ex.loadType,
-                              weightKg: ex.targetWeightKg,
-                              reps: ex.targetReps))
-                .font(.redeCallout).monospacedDigit()
-                .foregroundStyle(Color.redeT3)
+            PrescriptionTarget(strings: s, exercise: ex)
         }
-        .padding(.vertical, 9)
+        .padding(.vertical, 15)
         .overlay(alignment: .bottom) { Rectangle().fill(Color.redeHair2).frame(height: 1) }
         .accessibilityElement(children: .combine)
     }
@@ -1371,7 +1402,6 @@ struct TrainTabView: View {
             EmbButton(icon: "arrow.left", title: s.trainEmptyAction, action: onGoToday)
                 .padding(.top, 4)
         }
-        .padding(.top, 24)
     }
 
     // MARK: - Sheets
@@ -1388,10 +1418,7 @@ struct TrainTabView: View {
                         .font(.redeBody)
                         .foregroundStyle(Color.redeT2)
                     Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(Color.redeT4)
-                        .accessibilityHidden(true) // 装饰性 affordance；行 Button 已承载动作
+                    DisclosureChevron()
                 }
                 .frame(minHeight: 44)
                 if divider {
@@ -1436,7 +1463,7 @@ struct TrainTabView: View {
             }
             Spacer()
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, RedeSpace.page)
         .presentationDetents([.height(380)])
         .presentationDragIndicator(.visible)
         .presentationBackground(Color.redeBase)
@@ -1467,7 +1494,7 @@ struct TrainTabView: View {
                 Spacer()
             }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, RedeSpace.page)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .presentationBackground(Color.redeBase)
@@ -1481,7 +1508,7 @@ struct TrainTabView: View {
                 sessionEditOverview
             }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, RedeSpace.page)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .presentationBackground(Color.redeBase)
@@ -1675,9 +1702,10 @@ struct TrainTabView: View {
         let canIncrease = flow.phase == .activeSet && total < 8
         return HStack(spacing: 12) {
             Button(action: { adjustRemainingSets(-1) }) {
+                // 命中区仍是 44×44；glyph 贴内容边（「−」靠左、「+」靠右），不在框里居中内缩。
                 Image(systemName: "minus")
                     .font(.system(size: 15, weight: .semibold))
-                    .frame(width: 44, height: 44)
+                    .frame(width: 44, height: 44, alignment: .leading)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.redePressable)
@@ -1696,7 +1724,7 @@ struct TrainTabView: View {
             Button(action: { adjustRemainingSets(1) }) {
                 Image(systemName: "plus")
                     .font(.system(size: 15, weight: .semibold))
-                    .frame(width: 44, height: 44)
+                    .frame(width: 44, height: 44, alignment: .trailing)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.redePressable)
@@ -1720,12 +1748,12 @@ struct TrainTabView: View {
                 HStack(spacing: 12) {
                     sessionEditRemovedLabel(name: name)
                     Spacer(minLength: 8)
-                    sessionEditUndoButton(removal, name: name)
+                    sessionEditUndoButton(removal, name: name, labelAlignment: .trailing)
                 }
             case .vertical:
                 VStack(alignment: .leading, spacing: 0) {
                     sessionEditRemovedLabel(name: name)
-                    sessionEditUndoButton(removal, name: name)
+                    sessionEditUndoButton(removal, name: name, labelAlignment: .leading)
                 }
                 .padding(.vertical, 8)
             }
@@ -1741,16 +1769,18 @@ struct TrainTabView: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
+    /// labelAlignment：横排贴右缘；竖排与同列左对齐的名称 / 「现在练」同缘（.leading）。
     private func sessionEditUndoButton(
         _ removal: SessionExerciseRemoval,
-        name: String
+        name: String,
+        labelAlignment: Alignment
     ) -> some View {
         Button {
             undoSessionRemoval(removal, name: name)
         } label: {
             Text(s.sessionEditUndo)
                 .font(.redeCallout)
-                .frame(minWidth: 44, minHeight: 44)
+                .frame(minWidth: 44, minHeight: 44, alignment: labelAlignment)
                 .contentShape(Rectangle())
         }
         .foregroundStyle(Color.redeEmber)
@@ -1822,7 +1852,8 @@ struct TrainTabView: View {
                     position: position,
                     canMove: canMove
                 )
-                sessionEditRemoveButton(exercise: exercise, position: position, name: name)
+                sessionEditRemoveButton(exercise: exercise, position: position, name: name,
+                                        labelAlignment: .trailing)
             }
         case .vertical:
             VStack(alignment: .leading, spacing: 0) {
@@ -1832,7 +1863,8 @@ struct TrainTabView: View {
                     position: position,
                     canMove: canMove
                 )
-                sessionEditRemoveButton(exercise: exercise, position: position, name: name)
+                sessionEditRemoveButton(exercise: exercise, position: position, name: name,
+                                        labelAlignment: .leading)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -1862,10 +1894,12 @@ struct TrainTabView: View {
         }
     }
 
+    /// labelAlignment：横排贴右缘；竖排与同列左对齐的「现在练」同缘（.leading）。
     private func sessionEditRemoveButton(
         exercise: ExerciseSetPlan,
         position: Int,
-        name: String
+        name: String,
+        labelAlignment: Alignment
     ) -> some View {
         // 渲染时捕获该 id 的份数，供陈旧回调防线比对（重复 occurrence 防连删）。
         let occurrenceCount = flow?.plan.exercises
@@ -1878,7 +1912,7 @@ struct TrainTabView: View {
         } label: {
             Text(s.sessionEditRemove)
                 .font(.redeCallout)
-                .frame(minWidth: 44, minHeight: 44)
+                .frame(minWidth: 44, minHeight: 44, alignment: labelAlignment)
                 .contentShape(Rectangle())
         }
         .foregroundStyle(Color.redeT3)
@@ -1958,7 +1992,7 @@ struct TrainTabView: View {
             .buttonStyle(.redePressableRow)
             Spacer()
         }
-        .padding(20)
+        .padding(RedeSpace.page)
         .presentationDetents([.height(360)])
         .presentationDragIndicator(.visible) // 审查 MINOR-2：§12.3 grabber
         .presentationBackground(Color.redeBase)
@@ -2051,7 +2085,7 @@ struct TrainTabView: View {
             }
             Spacer()
         }
-        .padding(20)
+        .padding(RedeSpace.page)
         .presentationDetents([.height(440)])
         .presentationBackground(Color.redeBase)
         .interactiveDismissDisabled(true)

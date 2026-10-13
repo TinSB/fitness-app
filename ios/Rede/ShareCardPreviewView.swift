@@ -26,48 +26,62 @@ struct ShareCardPreviewView: View {
         ScrollView {
             VStack(spacing: 18) {
                 if snapshots.count > 1 {
-                    Picker("", selection: $index) {
-                        ForEach(Array(snapshots.enumerated()), id: \.offset) { i, snap in
-                            Text(tabTitle(snap)).tag(i)
-                        }
-                    }
-                    .pickerStyle(.segmented)
+                    // 与进展页 / 设置页同一个分段键（不用系统 segmented Picker）。SegControl 以标题为键，
+                    // 所以 tabTitle 必须两两不同（实测 / 估算两张里程碑卡各有各的页签）。
+                    SegControl(options: snapshots.map(tabTitle), selection: tabSelection)
                 }
 
                 if let current {
                     let model = ShareCardModel.make(from: current, localeStore: localeStore)
-                    // 原生 360×450，按可用宽缩放预览。GeometryReader 取真实可用宽（不用 UIScreen，
-                    // iPad/分屏安全），外层用 aspectRatio 给它一个 4:5 高度（审查 MINOR）。
+                    // 原生 360×450，按可用宽等比缩放（放大也行，卡边落在页边距上，与切换条同宽）。
+                    // 只缩放预览这一层：导出 PNG 走 ShareCardRenderer，固定 360×450 ×3，不经过这里。
+                    // GeometryReader 取真实可用宽（不用 UIScreen，iPad/分屏安全），外层用 aspectRatio
+                    // 给它一个 4:5 高度（审查 MINOR）。
                     GeometryReader { geo in
-                        let scale = min(1, geo.size.width / ShareCardView.logicalSize.width)
+                        let scale = geo.size.width / ShareCardView.logicalSize.width
+                        let shape = RoundedRectangle(cornerRadius: RedeShape.cardRadiusL, style: .continuous)
                         ShareCardView(model: model)
                             .scaleEffect(scale, anchor: .topLeading)
+                            // topLeading：缩放以左上角为锚，布局框也必须贴左上，否则放大后整张卡被居中偏移。
                             .frame(width: ShareCardView.logicalSize.width * scale,
-                                   height: ShareCardView.logicalSize.height * scale)
-                            .frame(maxWidth: .infinity, alignment: .center)
+                                   height: ShareCardView.logicalSize.height * scale,
+                                   alignment: .topLeading)
+                            // 卡底色与 sheet 底同为 redeBase，没有边界就读成「页内缩进的字」：
+                            // 预览层给它一圈连续圆角 + 1pt 发丝描边（卡本体与导出图不动）。
+                            .clipShape(shape)
+                            .overlay(shape.strokeBorder(Color.redeHair, lineWidth: 1))
                     }
                     .aspectRatio(ShareCardView.logicalSize.width / ShareCardView.logicalSize.height, contentMode: .fit)
-
-                    Button { share() } label: {
-                        HStack(spacing: 7) {
-                            Image(systemName: "square.and.arrow.up").font(.system(size: 15))
-                            Text(s.shareCardShareAction)
-                        }
-                        .font(.redeBody.weight(.semibold)).foregroundStyle(Color.redeEmber2)
-                        .frame(minHeight: RedeShape.controlHeight)
-                    }
-                    .buttonStyle(.redePressable)
                 } else {
                     Text(s.shareCardNothing).font(.redeBody).foregroundStyle(Color.redeT3).padding(.top, 40)
                 }
             }
-            .padding(20).frame(maxWidth: .infinity)
+            .padding(RedeSpace.page).frame(maxWidth: .infinity)
+        }
+        // 主操作固定在底部（sheet 内没有 tab bar）。按钮本身无条件存在（无内容时点击为空操作，share() 内有 guard），
+        // 所以 inset 首帧就是真实高度，不会有「带条件内容首帧 inset=0」的问题（见 FloatingPrimaryCTA 头注）。
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            EmbButton(icon: "square.and.arrow.up", title: s.shareCardShareAction) { share() }
+                .padding(.horizontal, RedeSpace.page)
+                .padding(.top, RedeSpace.floatingCTATop)
+                .padding(.bottom, RedeSpace.page)
+                .background(Color.redeBase)
         }
         .presentationBackground(Color.redeBase)
         .presentationDragIndicator(.visible)
         .sheet(item: $activityImage) { wrap in
             ActivityView(items: [wrap.image, shareText()])
         }
+    }
+
+    /// SegControl 以标题字符串做选中键；这里把它映射回快照下标。
+    private var tabSelection: Binding<String> {
+        Binding(
+            get: { snapshots.indices.contains(index) ? tabTitle(snapshots[index]) : "" },
+            set: { picked in
+                if let i = snapshots.firstIndex(where: { tabTitle($0) == picked }) { index = i }
+            }
+        )
     }
 
     private func tabTitle(_ snap: ShareSnapshot) -> String {
@@ -77,7 +91,9 @@ struct ShareCardPreviewView: View {
         case .muscleLevel: return s.shareCardMuscleLevelTitle
         case .levelUp: return s.shareCardLevelUpTitle
         case .balanceImprovement: return s.shareCardBalanceTitle
-        case .strengthMilestone: return s.shareCardMilestoneTitle
+        case .strengthMilestone(let milestone):
+            // 实测与估算合并的里程碑行产出两张卡，页签标题必须区分。
+            return milestone.isEstimated ? s.shareCardMilestoneEstimatedTab : s.shareCardMilestoneMeasuredTab
         }
     }
 

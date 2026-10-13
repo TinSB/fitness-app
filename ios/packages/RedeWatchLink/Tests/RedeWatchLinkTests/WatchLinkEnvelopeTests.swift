@@ -48,8 +48,8 @@ final class WatchPrescriptionTests: XCTestCase {
 
     private var sample: WatchPrescription {
         WatchPrescription(dateISO: "2026-08-15", dayTitle: "上肢", exercises: [
-            .init(exerciseId: "bench-press", name: "卧推", setsText: "4 组", targetText: "60 kg · ×8-10"),
-            .init(exerciseId: "pull-up", name: "引体向上", setsText: "3 组", targetText: "自重 · ×8")
+            .init(exerciseId: "bench-press", name: "卧推", setsText: "4 组", targetText: "60 kg × 8"),
+            .init(exerciseId: "pull-up", name: "引体向上", setsText: "3 组", targetText: "× 8")
         ])
     }
 
@@ -87,6 +87,33 @@ final class WatchPrescriptionTests: XCTestCase {
     func testGarbagePayloadDecodesToNilInsteadOfCrashing() {
         // 版本不同步时表可能收到看不懂的载荷。必须安静失败——表上显示「等手机」，不是崩。
         XCTAssertNil(WatchPrescription(decoding: Data([0x00, 0x01, 0x02])))
+    }
+
+    // 清单行目标串分段（2026-10，additive 可选字段）：新手机带分段、旧手机不带，两种都必须解得出。
+
+    func testTargetPartsRoundTrip() {
+        let parts = WatchPrescription.TargetParts(prefix: "辅助", value: "37.5", unit: nil, reps: "× 8")
+        let rx = WatchPrescription(dateISO: "2026-10-12", dayTitle: "上肢", exercises: [
+            .init(exerciseId: "bench-press", name: "卧推", setsText: "4 组", targetText: "60 kg × 8",
+                  targetParts: .init(prefix: nil, value: "60", unit: "kg", reps: "× 8")),
+            .init(exerciseId: "assisted-pull-up", name: "辅助引体", setsText: "3 组", targetText: "辅助 37.5 × 8",
+                  targetParts: parts),
+            .init(exerciseId: "pull-up", name: "引体向上", setsText: "3 组", targetText: "× 8",
+                  targetParts: .init(prefix: nil, value: nil, unit: nil, reps: "× 8")),
+        ])
+        let back = rx.encoded.flatMap(WatchPrescription.init(decoding:))
+        XCTAssertEqual(back, rx)
+        XCTAssertEqual(back?.exercises[1].targetParts, parts)
+        XCTAssertNil(back?.exercises[2].targetParts?.value, "自重没有数值段，必须原样是 nil 而不是空串")
+    }
+
+    func testLegacyPayloadWithoutTargetPartsStillDecodes() {
+        // 旧手机的载荷没有 targetParts 键：必须照旧解出来，分段为 nil，表退回整串 targetText。
+        let legacy = #"{"dateISO":"2026-08-15","dayTitle":"上肢","exercises":[{"exerciseId":"bench-press","name":"卧推","setsText":"4 组","targetText":"60 kg × 8"}]}"#
+        let back = WatchPrescription(decoding: Data(legacy.utf8))
+        XCTAssertEqual(back?.exercises.count, 1)
+        XCTAssertEqual(back?.exercises.first?.targetText, "60 kg × 8")
+        XCTAssertNil(back?.exercises.first?.targetParts)
     }
 }
 
