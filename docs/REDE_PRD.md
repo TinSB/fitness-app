@@ -7,7 +7,7 @@
 - **状态**：Active / canonical 活文档
 - **版本**：1.3
 - **创建**：2026-06-09
-- **最后更新**：2026-10-14（手表 / 小组件 / 休息 Live Activity 现状对账：FR-WD1、FR-TR13、FR-PR8 状态格据代码校正，§1.4 与 §8 的 watchOS 行加现状注；不改任何需求、优先级或门禁。上一次实质更新 2026-07-30：FR-TR6 中途换动作 occurrence 链闭合）
+- **最后更新**：2026-10-14（手表 / 小组件 / 休息 Live Activity 现状对账：FR-WD1、FR-TR13、FR-PR8 状态格据代码校正；§0 门禁说明、§1.4、§8 R4+ 行加现状注；不改任何需求、优先级或门禁。上一次实质更新 2026-07-30：FR-TR6 中途换动作 occurrence 链闭合）
 - **维护触发**：产品范围、功能优先级、验收标准、发布映射变化；MVP 达成后据实更新 §8 发布映射并支撑开发规划
 
 ---
@@ -23,7 +23,7 @@
 
 > **门禁说明**：任何条目（含 FF / LATER）实现时都必须走 rewrite slice 流程并同步文档，这是默认纪律，不另标记。**⚠️GATE 专指须先修订 Master Architecture 的禁用系统**；具体条目标为“架构已批准”后，仍须另走 runtime 实现切片与真实验证。HealthKit 展示、本地通知、Widget 属于 Master §9 已批准平台范围；其承载包 `RedeHealthKit`、`RedeNotifications`、`RedeWidgetShared` 均已存在。Apple 公共 App Store 版本查询已由 Master v3.5 批准为唯一窄网络例外；它不授权其他 remote API。订阅 StoreKit 2 边界已由 Master v3.2 批准，`RedeEntitlements` 与 production-disabled 基础 runtime 已于 2026-07-18 创建；FR-SUB3 已成为首个实现完成的 Paid Coach capability，但在真实商品/价格/试用、有效政策页、StoreKitTest 全生命周期与 Sandbox/TestFlight 证据齐备前，生产购买入口仍必须关闭。
 >
-> **现状注（2026-10-14，不改门禁）**：两项已在代码中的能力不在上述批准范围的字面内——①休息 Live Activity（FR-TR13，ActivityKit）：Master 从未点名 ActivityKit，既不在允许清单也不在禁用清单；②Apple Watch app（`ios/RedeWatch` + `RedeWatchLink`，首见于 1.11.0）：watchOS / WatchConnectivity 仍在 Master §9 禁用清单，手表实现未走本文 ⚠️GATE 流程。两者都是待 owner 裁定的架构冲突，见 Master 头部 2026-10-14 现状对账；在裁定前，本文的 ⚠️GATE 定义照常适用于它列举的系统，包括任何**新增**的 watchOS 范围；ActivityKit 不在其列举之内，本注对它不作任何规定。
+> **现状注（2026-10-14，不改门禁）**：两项已在代码中的能力不在上述批准范围的字面内——①休息 Live Activity（FR-TR13，ActivityKit）：Master §9 的允许清单与禁用清单都未列 ActivityKit（仅 2026-10-14 现状注提及）；②Apple Watch app（`ios/RedeWatch` + `RedeWatchLink`，自 #732 起内嵌于 iPhone 包——1.10.2 build 36 已上 TestFlight，1.11.0 是首个为它抬升的版本号）：watchOS / WatchConnectivity 仍在 Master §9 禁用清单，手表实现未走本文 ⚠️GATE 流程。两者都是待 owner 裁定的架构冲突，见 Master 头部 2026-10-14 现状对账；本文 ⚠️GATE 定义的文字与效力不变；本注既不批准现有手表代码，也不要求下线，它如何适用于现有手表代码及对它的改动，属 owner 裁定的一部分。ActivityKit 不在 GATE 列举之内，本注对它不作任何规定。
 
 ---
 
@@ -59,7 +59,7 @@ Rede 把「教练的脑子」装进 App：**决策在前，记录在后**——�
 
 公开 feed、好友/私信、排行榜、自动发布、账号体系、云同步、watchOS、远程推送、医疗诊断/治疗承诺、按分享解锁功能、把安全必要动作藏进任何付费墙。（系统逻辑 §9.10、§6.4、Master §9、云决策档案）
 
-> **现状注（2026-10-14）**：本节描述的是第一版（R0）范围。其后 1.11.0 已带入 Apple Watch app（现状见系统逻辑 §7.2）；本文目前没有对应的手表 FR。是否把 watchOS 从非目标 / R4+ 中移出、是否补一条手表 FR，属产品范围决定，待 owner 拍板。
+> **现状注（2026-10-14）**：当前代码已含 Apple Watch app（自 #732 起内嵌，1.11.0 是首个为它抬升的版本号；现状见系统逻辑 §7.2），与本节的 watchOS 非目标冲突；本文没有对应的手表 FR。FR-SUB1（2026-08-18）已把「Apple Watch 全部能力」划入 Free Core，但那是定价边界，不是范围或架构批准。是否调整本节、§8 R4+ 映射、是否补一条手表 FR，属产品范围决定，待 owner 拍板。
 
 ---
 
@@ -233,7 +233,7 @@ Rede 把「教练的脑子」装进 App：**决策在前，记录在后**——�
 | FR-NT1 | 休息结束提醒 | 组间锁屏也想被叫回来 | 本地通知在休息倒计时结束时提醒（可关） | FF · 🟡 R1 部分（#570–572：休息结束本地通知 + 设置开关 + 系统授权 opt-in；休息开始排、结束/放弃取消；待真机验收） | 系统逻辑 §3（Notifications）、§5（写入合同）；Master §9 |
 | FR-NT2 | 每周训练提醒 | 帮我保持节奏但别骚扰 | 每周训练日提醒，价值先行、中性语气、禁羞辱/断签施压 | FF · 🟡 R1 部分（#573：每周固定 2 条·周一上午/周四傍晚 repeats + 设置开关；时间/频率 MVP 待校准、按 daysPerWeek 缩放后置；待真机验收） | 文案基线 §7.3；系统逻辑 §5；原型 03 |
 | FR-NT3 | 召回提醒（缺席变奏） | 我停练了，把我叫回来但别烦我 | 停练后 5/12/21 天各一条（21=回归协议重启线同源——通知承诺「循环已重置、从轻起步」即引擎真实行为）；发送时刻=历史训练时段中位（贴个人节奏）；练一场全部取消重排、三条发完永久安静；档 1 带动态训练日名（仅顺延模式）；文案 Apple 风格（owner 三轮定稿：观察式完整句、零施压零羞辱）；重排时过期档跳过不迟发 | FF · ✅ 已实现（批次 F 2026-07-10：ComebackReminderPolicy 纯函数+replaceComeback 幂等清全集+设置「久未训练提醒」开关**缺省开**（opt-out，区别于 NT1/2——已授权用户默认受益、未授权系统不投递）；排程实机探针验证三档 fireAt 精确+过期跳过+日名投影；banner 视觉与 G1 并入真机清单） | 文案基线 §7.3；系统逻辑 §5；回归协议（引擎 21 天线） |
-| FR-WD1 | Readiness Widget | 不开 App 想知道今天练不练 | 主屏 small/medium widget 以「今天该不该练」+ 训练日名 + 短理由为主；非校准且已有等级时附最多两行最高等级肌群，校准中/缺文件/坏文件/无等级保持原样；只读快照、不显示敏感数据 | FF · 🟡 已上线、真机验收记录缺（2026-10-14 对账：extension 自 #431 存在、#550 接通写入侧、#719 接等级 rows、#751 换成锻面暗底视觉；只有 `.systemSmall` / `.systemMedium`，无锁屏 / accessory 家族；快照只在 App 重算今日裁决（`SessionStore.loadToday()` 结果为可读）时写入，单纯回前台不触发；复用 schema v1 既有 rows，不改类型；等级可能滞后到最近一次 Progress/练完态加载；2026-10-13 视觉对齐时观察到快照里的等级 rows 实际一直为空，数据层未修；真机时间线验收无记录） | Master §5（RedeWidgetShared）；系统逻辑 §3、§10；设计语言 §7 |
+| FR-WD1 | Readiness Widget | 不开 App 想知道今天练不练 | 主屏 small/medium widget 以「今天该不该练」+ 训练日名 + 短理由为主；非校准且已有等级时附最多两行最高等级肌群，校准中/缺文件/坏文件/无等级保持原样；只读快照、不显示敏感数据 | 🟡 已上线、真机验收记录缺（2026-10-14 对账：extension 自 #431 存在、#550 接通写入侧、#719 接等级 rows、#751 换成锻面暗底视觉；只有 `.systemSmall` / `.systemMedium`，无锁屏 / accessory 家族；快照只在 App 重算今日裁决（`SessionStore.loadToday()` 结果为可读）时写入，单纯回前台不触发；复用 schema v1 既有 rows，不改类型；等级可能滞后到最近一次 Progress/练完态加载；2026-10-13 视觉对齐时在模拟器中观察到快照等级 rows 为空，原因未查（代码与单测表明：非校准且有等级记忆时应写出 rows）；真机时间线验收无记录） | Master §5（RedeWidgetShared）；系统逻辑 §3、§10；设计语言 §7 |
 
 ### 5.10 数据、隐私与商业化
 
@@ -293,7 +293,7 @@ Rede 把「教练的脑子」装进 App：**决策在前，记录在后**——�
 | **R1 · Fast-follow** | FF 集合：Plan 只读+调整回滚、肌群等级+里程碑、分享卡 S0、热身/组形、通知、Widget、HealthKit display、真实导出、筛查 | P1 尾部–P3 | 各功能独立 slice 验收；公开上架准备并行 |
 | **R2 · 公开上架** | R1 基础上：FR-SE10 更新感知、母语级英文验收、App Store 素材/隐私标签/合规、ASO | P3 | 更新提示与 What's New 完成 Simulator/离线验收；App Store 过审；英文价值面母语验收 |
 | **R3 · 商业化** | FR-SUB1/2/3（Free/Paid 边界、StoreKit 2 订阅、每周教练复盘）；远程埋点是独立架构 gate，不是首个收费闭环前置 | P2/P4 | 🟡 Master v3.4：首个 paid capability 已完成本地实现与 Simulator 验收，production 继续 fail-closed；StoreKitTest + Sandbox/TestFlight 全链、真实商品与政策页仍未过；软启动前再决定远程漏斗方案 |
-| **R4+ · 信任与扩展** | FR-ACC1（账号/云）、S1/S2 分享、器械校准全集、watchOS | P5 | 各自架构 gate + 商业证据（2026-10-14 现状注：Apple Watch app 已提前随 1.11.0 落地，未经 Master 修订；本行映射是否改写待 owner，见 §1.4 现状注） |
+| **R4+ · 信任与扩展** | FR-ACC1（账号/云）、S1/S2 分享、器械校准全集、watchOS | P5 | 各自架构 gate + 商业证据（2026-10-14 现状注：Apple Watch app 已在 R4+ 映射之外落地——自 #732 起内嵌，1.11.0 是首个为它抬升的版本号——未经 Master 修订；本行映射是否改写待 owner，见 §1.4 现状注） |
 
 > R0 已于 2026-06-16 上 TestFlight（内部测试）= 本文 §5 标 MVP 的条目；交付记录见 `CHANGELOG.md`（原 MVP 实现计划已按 §11 收官删除，git 历史可恢复）。R3 前必须完成定价与 Apple 政策刷新（Roadmap §4）。
 

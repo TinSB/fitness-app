@@ -10,7 +10,7 @@ Sensitive surfaces:
 - DataHealth cleaning and repair before engine consumption.
 - WidgetKit read-only readiness snapshots (shipped Readiness widget via `RedeWidgetShared` + the widget extension, App Group `group.com.tinsab.rede`, used for nothing else).
 - The rest-timer Live Activity (ActivityKit; local only with `pushType: nil`, no push token; display-only).
-- The Apple Watch companion app (as of 2026-10-14; first included in 1.11.0): WatchConnectivity between phone and watch via `RedeWatchLink`. The watch writes no canonical data and keeps no files, App Group or `UserDefaults` of its own. Its HealthKit workout session requests read access to heart rate and active energy; only heart rate and elapsed time are displayed, on the watch. It writes the workout to Apple Health on a normal end, and that workout is the watch's only persisted output. Built without a Master amendment; see the Master Architecture header.
+- The Apple Watch companion app (status 2026-10-14; embedded in the iOS app since #732, 1.10.2 build 36 on TestFlight; current marketing version 1.11.0): WatchConnectivity between phone and watch via `RedeWatchLink`. The watch writes no canonical data and keeps no files, App Group or `UserDefaults` of its own. Its HealthKit workout session requests share (write) access for workouts and read access to heart rate and active energy, and the whole watch app is gated on the workout-write permission. Only heart rate and elapsed time are displayed, on the watch. It writes the workout to Apple Health on a normal end, and that workout is the watch's only persisted output. Built without a Master amendment; see the Master Architecture header.
 - Local notifications for rest and weekly-training reminders (planned; no notification adapter is implemented yet).
 - HealthKit (status 2026-10-14): on iPhone, only the read-only body-weight adapter in `RedeHealthKit` exists; workout import is not implemented. The watch target uses HealthKit directly for the workout session above, outside `RedeHealthKit`. That is an open architecture conflict, pending the owner's decision.
 - Future account/cloud/sync/CRDT work, decisioned in the living docs but not implemented in first-version runtime code.
@@ -21,7 +21,7 @@ Sensitive surfaces:
 - Raw `AppData` must not enter training engines.
 - Derived stores, widgets, HealthKit exports, UI view models, and local snapshots are not sources of truth.
 - Secrets must not be committed. `.env*` and local tool state are ignored.
-- No network, auth SDK, cloud SDK, WebView, SQLite, CoreData, SwiftData, remote push, watchOS, WatchConnectivity, or CRDT runtime may be added without an approved Master Architecture amendment and implementation slice. (Status 2026-10-14: the existing watchOS / WatchConnectivity code predates any such amendment; see the Master header. This rule still applies to any new scope.)
+- No network, auth SDK, cloud SDK, WebView, SQLite, CoreData, SwiftData, remote push, watchOS, WatchConnectivity, or CRDT runtime may be added without an approved Master Architecture amendment and implementation slice. (Status 2026-10-14: the existing watchOS / WatchConnectivity code was added without such an amendment and is an open conflict, neither authorized nor ordered removed; see the Master header.)
 - Health and pain guidance must stay fitness-support guidance, not medical diagnosis.
 
 ## Verification

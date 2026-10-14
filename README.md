@@ -37,7 +37,7 @@ Systems that are not approved first-version runtime:
 
 Those systems require a new approved architecture amendment and a fresh Swift-native design before implementation.
 
-> **Status (2026-10-14):** a watchOS companion app (`ios/RedeWatch` + `RedeWatchLink`, using WatchConnectivity and a watch-side HealthKit workout session) is already in the code. Version 1.11.0 is the first to include it. It was built without that amendment, and it is a single-authority design, not CRDT co-editing. The conflict is recorded in the Master Architecture header (2026-10-14 status reconciliation) and is pending the owner's decision. Cloud sync (`RedeSync` / `RedeSyncSupabase`) is likewise in the code and is not reconciled there.
+> **Status (2026-10-14):** a watchOS companion app (`ios/RedeWatch` + `RedeWatchLink`, using WatchConnectivity and a watch-side HealthKit workout session) is already in the code. It has been embedded in the iOS app since #732 (2026-08-15, 1.10.2 build 36, which reached TestFlight), and 1.11.0 (build 38, #743) is the first marketing version raised for it. It was built without that amendment, and it is a single-authority design, not CRDT co-editing. The conflict is recorded in the Master Architecture header (2026-10-14 status reconciliation) and is pending the owner's decision. Cloud sync (`RedeSync` / `RedeSyncSupabase`) is likewise in the code and is not reconciled there.
 
 ## Target Architecture
 

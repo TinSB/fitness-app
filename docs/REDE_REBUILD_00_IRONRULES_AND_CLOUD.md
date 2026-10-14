@@ -2,7 +2,7 @@
 
 > **状态:** 已拍板的未来原生架构输入。本文不授权第一版干净 runtime 引入账号、网络、云、CRDT 或 watchOS。任何实现必须先修改并通过 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 的 architecture gate。
 >
-> **现状注（2026-10-14，只记事实，不改本文任何决策）：** Apple Watch app（`ios/RedeWatch` + `RedeWatchLink`，首见于 1.11.0）已在**未经** Master 修订的情况下落地。它采用单权威设计——手机是唯一决策方；手机→手表只用 `applicationContext` 单槽推一份手机渲染好的处方；手表→手机用 `transferUserInfo` 回传已记的组，手机只收它正在等的那一组（`exerciseId + setNumber` 幂等）——**不是**下文 §4 的 CRDT 并发共编，也没有 operation journal。§4 / §6 第 5 项是否被这套已上线设计取代、还是仍为长期目标，待 owner 裁定（见 Master 头部 2026-10-14 现状对账）。云同步（`RedeSync` / `RedeSyncSupabase`，#727）同样已在代码中，本注不覆盖其对账。
+> **现状注（2026-10-14，只记事实，不改本文任何决策）：** Apple Watch app（`ios/RedeWatch` + `RedeWatchLink`，自 #732 起内嵌于 iPhone 包——1.10.2 build 36 已上 TestFlight，1.11.0 是首个为它抬升的版本号）已在**未经** Master 修订的情况下落地。它采用单权威设计——手机是唯一决策方；手机→手表只用 `applicationContext` 单槽推一份手机渲染好的处方；手表→手机用 `transferUserInfo` 回传已记的组，手机只收它正在等的那一组（`exerciseId + setNumber` 幂等）——**不是**下文 §4 的 CRDT 并发共编，也没有 §3 / §6 第 4 项那种跨端 CRDT operation journal（手机只有单端的 in-session 草稿事件重放）。§1 表的 watchOS 行、§3 的「训练中手机/手表并发编辑」、§4、§6 第 5 项是否被这套已上线设计取代、还是仍为长期目标，待 owner 裁定（见 Master 头部 2026-10-14 现状对账）。云同步（`RedeSync` / `RedeSyncSupabase`，#727）同样已在代码中，本注不覆盖其对账。
 
 ## 1. 保留决策
 
