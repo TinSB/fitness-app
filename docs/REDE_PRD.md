@@ -7,7 +7,7 @@
 - **状态**：Active / canonical 活文档
 - **版本**：1.3
 - **创建**：2026-06-09
-- **最后更新**：2026-10-14（Master v3.6 批准有边界的 Apple Watch 随行 / WatchConnectivity 架构（提案 A）：§0 GATE 图例据此改为「超出 Master v3.6 手表边界的 watchOS」；手表 / 小组件 / 休息 Live Activity 现状对账：FR-WD1、FR-TR13、FR-PR8 状态格据代码校正，§0 门禁说明、§1.4、§8 R4+ 行加现状注；不改任何需求或优先级，手表产品范围仍待提案 E。上一次实质更新 2026-07-30：FR-TR6 中途换动作 occurrence 链闭合）
+- **最后更新**：2026-10-14（Master v3.6 批准有边界的 Apple Watch 随行 / WatchConnectivity 架构（提案 A）：§0 GATE 图例据此改为「超出 Master v3.6 手表随行边界的 watchOS」；手表 / 小组件 / 休息 Live Activity 现状对账：FR-WD1、FR-TR13、FR-PR8 状态格据代码校正，§0 门禁说明、§1.4、§8 R4+ 行加现状注；不改任何需求或优先级，手表产品范围仍待提案 E。上一次实质更新 2026-07-30：FR-TR6 中途换动作 occurrence 链闭合）
 - **维护触发**：产品范围、功能优先级、验收标准、发布映射变化；MVP 达成后据实更新 §8 发布映射并支撑开发规划
 
 ---
@@ -23,7 +23,7 @@
 
 > **门禁说明**：任何条目（含 FF / LATER）实现时都必须走 rewrite slice 流程并同步文档，这是默认纪律，不另标记。**⚠️GATE 专指须先修订 Master Architecture 的禁用系统**；具体条目标为“架构已批准”后，仍须另走 runtime 实现切片与真实验证。HealthKit 展示、本地通知、Widget 属于 Master §9 已批准平台范围；其承载包 `RedeHealthKit`、`RedeNotifications`、`RedeWidgetShared` 均已存在。Apple 公共 App Store 版本查询已由 Master v3.5 批准为唯一窄网络例外；它不授权其他 remote API。订阅 StoreKit 2 边界已由 Master v3.2 批准，`RedeEntitlements` 与 production-disabled 基础 runtime 已于 2026-07-18 创建；FR-SUB3 已成为首个实现完成的 Paid Coach capability，但在真实商品/价格/试用、有效政策页、StoreKitTest 全生命周期与 Sandbox/TestFlight 证据齐备前，生产购买入口仍必须关闭。
 >
-> **现状注（2026-10-14，不改门禁）**：两项已在代码中的能力不在上述批准范围的字面内——①休息 Live Activity（FR-TR13，ActivityKit）：Master §9 的允许清单与禁用清单都未列 ActivityKit（仅 2026-10-14 现状注提及）；②Apple Watch app（`ios/RedeWatch` + `RedeWatchLink`，自 #732 起内嵌于 iPhone 包——1.10.2 build 36 已上 TestFlight，1.11.0 是首个为它抬升的版本号）：最初未走本文 ⚠️GATE 流程；2026-10-14 owner 批准提案 A 后，Master v3.6 已按现有通道纪律批准其随行 / WatchConnectivity 架构（Master §5 Apple Watch Companion Boundary），超出该边界的 watchOS 仍属 ⚠️GATE。仍待 owner 裁定的是：手表 target 直接使用 HealthKit 并写 HKWorkout（Master 冲突 b），以及 ①的 ActivityKit（冲突 c，不在 GATE 列举之内，本注对它不作任何规定）。手表的产品范围（FR、§1.4、R4+）属提案 E。
+> **现状注（2026-10-14；⚠️GATE 图例仅 watchOS 一项随 Master v3.6 提案 A 收窄，GATE 定义与其余各项不变）**：两项已在代码中的能力不在上述批准范围的字面内——①休息 Live Activity（FR-TR13，ActivityKit）：Master §9 的允许清单与禁用清单都未列 ActivityKit（仅 2026-10-14 现状注提及）；②Apple Watch app（`ios/RedeWatch` + `RedeWatchLink`，自 #732 起内嵌于 iPhone 包——1.10.2 build 36 已上 TestFlight，1.11.0 是首个为它抬升的版本号）：最初未走本文 ⚠️GATE 流程；2026-10-14 owner 批准提案 A 后，Master v3.6 已按现有通道纪律批准其随行 / WatchConnectivity 架构（Master §5 Apple Watch Companion Boundary），超出该边界的 watchOS 仍属 ⚠️GATE。仍待 owner 裁定的是：手表 target 直接使用 HealthKit 并写 HKWorkout（Master 冲突 b），以及 ①的 ActivityKit（冲突 c，不在 GATE 列举之内，本注对它不作任何规定）。手表的产品范围（FR、§1.4、R4+）属提案 E。
 
 ---
 

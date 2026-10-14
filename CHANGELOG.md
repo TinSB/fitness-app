@@ -11,9 +11,9 @@ All notable native iOS product, architecture, repository-governance, and documen
     - Phone → watch only via `updateApplicationContext`, from the one sender, carrying one phone-rendered `WatchPrescription`. Every field rides in that payload, and no second applicationContext sender is allowed.
     - Watch → phone facts (logged sets, warm-up steps) only via `transferUserInfo`.
     - Watch → phone commands only via reachable-only, droppable `sendMessage`, executed against the phone's current state.
-    - The phone is the only decision maker. No engines or persistence are called from the watch; pure value helpers and `RedeL10n` are allowed.
-    - Exact-set idempotent intake through the existing in-session paths. Canonical writes only via `CanonicalSessionWriter`, never from the watch.
-    - No watch-side persistence.
+    - The phone is the only decision maker. The watch uses only `RestCountdown`, `RedeL10n` copy and the `RedeWatchLink` API; no engines or persistence, and any further package API needs a further amendment.
+    - Exact-set idempotent intake into the phone's non-canonical in-session state (`apply(.logSet)` with a live flow, the watch-specific `appendWatchSetToDraft` without one). Canonical writes only via `CanonicalSessionWriter`, never from the watch.
+    - No Rede-owned watch-side storage (the Apple Health workout is outside the amendment).
     - Watch sensor/health data never enters AppData or engines.
     - An explicit "not covered" list.
     - Validation: keep `RedeWatchLink` package tests and `WatchLoggedSetIntakeTests` passing.
@@ -31,7 +31,7 @@ All notable native iOS product, architecture, repository-governance, and documen
     - (E) PRD scope and a required `RedeWatch` CI build.
   - **System logic.** Header block, §0 note, iron rule 6 ("watchOS / WatchConnectivity beyond the v3.6 boundary"), §4 package table (`RedeWatchLink` row), §7.1 note, §10 watchOS / CRDT rows and §11 note are updated. §7.2's 真源纪律, three channels, intake/canonical path and persistence paragraphs now cite their v3.6 rules. The HealthKit paragraph is marked outside the approval.
   - **PRD.** The GATE legend now reads "超出 Master v3.6 手表随行边界的 watchOS". The gate note, §1.4 and R4+ notes state that the architecture is approved but product scope (E) is not.
-  - **Mirrors.** README, SECURITY, CONTRIBUTING, AGENTS, REBUILD_00 and the Roadmap now say "beyond the v3.6 boundary" where they forbade watchOS. AGENTS records that watch work inside the boundary follows normal rules while the watch HealthKit code stays under stop-and-ask.
+  - **Mirrors.** README, SECURITY, CONTRIBUTING and AGENTS now say "beyond the v3.6 boundary" where they forbade watchOS; the REBUILD_00 and Roadmap status notes record the v3.6 approval. AGENTS records that watch work inside the boundary follows normal rules while the watch HealthKit code stays under stop-and-ask.
   - No code, `project.pbxproj` or package manifest changed. Validation: `git diff --check`, plus an adversarial scope/fact/consistency pass on the amendment.
 
 - **Doc-reality reconcile: watchOS, Readiness widget and rest Live Activity status (docs only; WATCH-10; no contract amendment)**: the 2026-10-12 visual audit found that the canonical docs still treated the Apple Watch as unimplemented and called `ios/RedeWidget` an "old widget, reference only".
