@@ -4,6 +4,36 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 ## 2026-10-14
 
+- **Master v3.6: bounded Apple Watch companion / WatchConnectivity boundary (owner approved proposal A of WATCH-10; docs only)**: the owner approved writing the existing watch channel discipline into the Master as an amendment.
+  - **Master.** Version 3.5 → 3.6. A new **§5 Apple Watch Companion Boundary** codifies eleven rules:
+    - watchOS only as the embedded `RedeWatch` companion plus `RedeWatchLink`, as a remote control for the live phone session.
+    - WatchConnectivity only in `RedeWatchLink` (`WatchLink.swift` is the single `WCSession` wrapper).
+    - Phone → watch only via `updateApplicationContext`, from the one sender, carrying one phone-rendered `WatchPrescription`. Every field rides in that payload, and no second applicationContext sender is allowed.
+    - Watch → phone facts (logged sets, warm-up steps) only via `transferUserInfo`.
+    - Watch → phone commands only via reachable-only, droppable `sendMessage`, executed against the phone's current state.
+    - The phone is the only decision maker. No engines or persistence are called from the watch; pure value helpers and `RedeL10n` are allowed.
+    - Exact-set idempotent intake through the existing in-session paths. Canonical writes only via `CanonicalSessionWriter`, never from the watch.
+    - No watch-side persistence.
+    - Watch sensor/health data never enters AppData or engines.
+    - An explicit "not covered" list.
+    - Validation: keep `RedeWatchLink` package tests and `WatchLoggedSetIntakeTests` passing.
+  - **Other Master sections.**
+    - §2: Target platform scope gains the boundary; Deferred systems now reads "watchOS beyond the §5 boundary". The Code status row and the active-surfaces bullet name the companion and drop the volatile package count.
+    - §4: the tree gains `RedeWatch/`.
+    - §5: the approved package table gains `RedeWatchLink` (11 approved; the dated inventory note keeps the 13-on-disk count and the unapproved `RedeSync` / `RedeSyncSupabase`).
+    - §6: derived records include the `WatchPrescription` payload.
+    - §9: the allowed list gains WatchConnectivity under the boundary; the forbidden entry becomes "watchOS / WatchConnectivity beyond the §5 boundary".
+    - The 2026-10-14 header reconciliation and the §2/§9/§10 notes mark conflict (a) resolved.
+  - **Explicitly not decided.**
+    - (b) The watch target's direct HealthKit use and HKWorkout write. §9 "HealthKit only inside `RedeHealthKit`" still stands, so changes there need the owner first.
+    - (c) ActivityKit.
+    - (d) Whether single authority supersedes REBUILD_00's CRDT co-editing direction. Concurrent multi-writer editing stays deferred.
+    - (E) PRD scope and a required `RedeWatch` CI build.
+  - **System logic.** Header block, §0 note, iron rule 6 ("watchOS / WatchConnectivity beyond the v3.6 boundary"), §4 package table (`RedeWatchLink` row), §7.1 note, §10 watchOS / CRDT rows and §11 note are updated. §7.2's 真源纪律, three channels, intake/canonical path and persistence paragraphs now cite their v3.6 rules. The HealthKit paragraph is marked outside the approval.
+  - **PRD.** The GATE legend now reads "超出 Master v3.6 手表随行边界的 watchOS". The gate note, §1.4 and R4+ notes state that the architecture is approved but product scope (E) is not.
+  - **Mirrors.** README, SECURITY, CONTRIBUTING, AGENTS, REBUILD_00 and the Roadmap now say "beyond the v3.6 boundary" where they forbade watchOS. AGENTS records that watch work inside the boundary follows normal rules while the watch HealthKit code stays under stop-and-ask.
+  - No code, `project.pbxproj` or package manifest changed. Validation: `git diff --check`, plus an adversarial scope/fact/consistency pass on the amendment.
+
 - **Doc-reality reconcile: watchOS, Readiness widget and rest Live Activity status (docs only; WATCH-10; no contract amendment)**: the 2026-10-12 visual audit found that the canonical docs still treated the Apple Watch as unimplemented and called `ios/RedeWidget` an "old widget, reference only".
   - **Method.** A read-only inventory (watch code, widget/Live Activity code, PR history #431/#550/#701/#704/#719/#732–#751, every doc claim, plus a completeness critic) checked each statement against code at `e94cc09`. Two adversarial verification rounds then re-checked the diff. The first had six lanes for facts, policy-neutrality and cross-doc consistency. The second covered the delta and re-ran policy/consistency over the whole diff. In both rounds each finding was challenged by an independent skeptic.
   - **Principle.** Every change is a dated 2026-10-14 note beside unchanged contract text. Master stays v3.5. Its §2 baseline cells, §5 package table and §9 lists are verbatim; dated notes sit under §2, §4, §5, §9 and §10 and in a new header reconciliation. The §5 note gives the real inventory (13 packages; `RedeWatchLink`, `RedeSync`, `RedeSyncSupabase` outside the approved table) and the incomplete `RedeWidgetShared` / `RedeHealthKit` rows.

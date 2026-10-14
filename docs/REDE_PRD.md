@@ -7,7 +7,7 @@
 - **状态**：Active / canonical 活文档
 - **版本**：1.3
 - **创建**：2026-06-09
-- **最后更新**：2026-10-14（手表 / 小组件 / 休息 Live Activity 现状对账：FR-WD1、FR-TR13、FR-PR8 状态格据代码校正；§0 门禁说明、§1.4、§8 R4+ 行加现状注；不改任何需求、优先级或门禁。上一次实质更新 2026-07-30：FR-TR6 中途换动作 occurrence 链闭合）
+- **最后更新**：2026-10-14（Master v3.6 批准有边界的 Apple Watch 随行 / WatchConnectivity 架构（提案 A）：§0 GATE 图例据此改为「超出 Master v3.6 手表边界的 watchOS」；手表 / 小组件 / 休息 Live Activity 现状对账：FR-WD1、FR-TR13、FR-PR8 状态格据代码校正，§0 门禁说明、§1.4、§8 R4+ 行加现状注；不改任何需求或优先级，手表产品范围仍待提案 E。上一次实质更新 2026-07-30：FR-TR6 中途换动作 occurrence 链闭合）
 - **维护触发**：产品范围、功能优先级、验收标准、发布映射变化；MVP 达成后据实更新 §8 发布映射并支撑开发规划
 
 ---
@@ -19,11 +19,11 @@
 | **MVP** | 首个可上线版本（TestFlight 免费 beta）必须包含 = R0 已交付范围（2026-06-16 上 TestFlight）。 |
 | **FF** | Fast-follow：MVP 上线后紧随的第一批增强（公开上架前后）。 |
 | **LATER** | 更远期，按 Roadmap 阶段推进。 |
-| **⚠️GATE** | 叠加标记：实现前必须先修订 Master Architecture（涉及网络 / 账号 / 云 / StoreKit / HealthKit 进引擎 / watchOS 等禁用系统）。 |
+| **⚠️GATE** | 叠加标记：实现前必须先修订 Master Architecture（涉及网络 / 账号 / 云 / StoreKit / HealthKit 进引擎 / 超出 Master v3.6 手表随行边界的 watchOS 等禁用系统）。 |
 
 > **门禁说明**：任何条目（含 FF / LATER）实现时都必须走 rewrite slice 流程并同步文档，这是默认纪律，不另标记。**⚠️GATE 专指须先修订 Master Architecture 的禁用系统**；具体条目标为“架构已批准”后，仍须另走 runtime 实现切片与真实验证。HealthKit 展示、本地通知、Widget 属于 Master §9 已批准平台范围；其承载包 `RedeHealthKit`、`RedeNotifications`、`RedeWidgetShared` 均已存在。Apple 公共 App Store 版本查询已由 Master v3.5 批准为唯一窄网络例外；它不授权其他 remote API。订阅 StoreKit 2 边界已由 Master v3.2 批准，`RedeEntitlements` 与 production-disabled 基础 runtime 已于 2026-07-18 创建；FR-SUB3 已成为首个实现完成的 Paid Coach capability，但在真实商品/价格/试用、有效政策页、StoreKitTest 全生命周期与 Sandbox/TestFlight 证据齐备前，生产购买入口仍必须关闭。
 >
-> **现状注（2026-10-14，不改门禁）**：两项已在代码中的能力不在上述批准范围的字面内——①休息 Live Activity（FR-TR13，ActivityKit）：Master §9 的允许清单与禁用清单都未列 ActivityKit（仅 2026-10-14 现状注提及）；②Apple Watch app（`ios/RedeWatch` + `RedeWatchLink`，自 #732 起内嵌于 iPhone 包——1.10.2 build 36 已上 TestFlight，1.11.0 是首个为它抬升的版本号）：watchOS / WatchConnectivity 仍在 Master §9 禁用清单，手表实现未走本文 ⚠️GATE 流程。两者都是待 owner 裁定的架构冲突，见 Master 头部 2026-10-14 现状对账；本文 ⚠️GATE 定义的文字与效力不变；本注既不批准现有手表代码，也不要求下线，它如何适用于现有手表代码及对它的改动，属 owner 裁定的一部分。ActivityKit 不在 GATE 列举之内，本注对它不作任何规定。
+> **现状注（2026-10-14，不改门禁）**：两项已在代码中的能力不在上述批准范围的字面内——①休息 Live Activity（FR-TR13，ActivityKit）：Master §9 的允许清单与禁用清单都未列 ActivityKit（仅 2026-10-14 现状注提及）；②Apple Watch app（`ios/RedeWatch` + `RedeWatchLink`，自 #732 起内嵌于 iPhone 包——1.10.2 build 36 已上 TestFlight，1.11.0 是首个为它抬升的版本号）：最初未走本文 ⚠️GATE 流程；2026-10-14 owner 批准提案 A 后，Master v3.6 已按现有通道纪律批准其随行 / WatchConnectivity 架构（Master §5 Apple Watch Companion Boundary），超出该边界的 watchOS 仍属 ⚠️GATE。仍待 owner 裁定的是：手表 target 直接使用 HealthKit 并写 HKWorkout（Master 冲突 b），以及 ①的 ActivityKit（冲突 c，不在 GATE 列举之内，本注对它不作任何规定）。手表的产品范围（FR、§1.4、R4+）属提案 E。
 
 ---
 
@@ -59,7 +59,7 @@ Rede 把「教练的脑子」装进 App：**决策在前，记录在后**——�
 
 公开 feed、好友/私信、排行榜、自动发布、账号体系、云同步、watchOS、远程推送、医疗诊断/治疗承诺、按分享解锁功能、把安全必要动作藏进任何付费墙。（系统逻辑 §9.10、§6.4、Master §9、云决策档案）
 
-> **现状注（2026-10-14）**：当前代码已含 Apple Watch app（自 #732 起内嵌，1.11.0 是首个为它抬升的版本号；现状见系统逻辑 §7.2），与本节的 watchOS 非目标冲突；本文没有对应的手表 FR。FR-SUB1（2026-08-18）已把「Apple Watch 全部能力」划入 Free Core；它不是 Master 架构修订，是否同时构成范围决定属提案 E（见 `DEV_LOG.md` 2026-10-14），待 owner 拍板。是否调整本节、§8 R4+ 映射、是否补一条手表 FR，属产品范围决定，待 owner 拍板。
+> **现状注（2026-10-14）**：当前代码已含 Apple Watch app（自 #732 起内嵌，1.11.0 是首个为它抬升的版本号；规则与现状见系统逻辑 §7.2），与本节的 watchOS 非目标冲突；本文没有对应的手表 FR。其架构边界已由 Master v3.6 批准（提案 A），但这不是产品范围决定。FR-SUB1（2026-08-18）已把「Apple Watch 全部能力」划入 Free Core；它不是 Master 架构修订，是否同时构成范围决定属提案 E（见 `DEV_LOG.md` 2026-10-14），待 owner 拍板。是否调整本节、§8 R4+ 映射、是否补一条手表 FR，属产品范围决定，待 owner 拍板。
 
 ---
 
@@ -293,7 +293,7 @@ Rede 把「教练的脑子」装进 App：**决策在前，记录在后**——�
 | **R1 · Fast-follow** | FF 集合：Plan 只读+调整回滚、肌群等级+里程碑、分享卡 S0、热身/组形、通知、Widget、HealthKit display、真实导出、筛查 | P1 尾部–P3 | 各功能独立 slice 验收；公开上架准备并行 |
 | **R2 · 公开上架** | R1 基础上：FR-SE10 更新感知、母语级英文验收、App Store 素材/隐私标签/合规、ASO | P3 | 更新提示与 What's New 完成 Simulator/离线验收；App Store 过审；英文价值面母语验收 |
 | **R3 · 商业化** | FR-SUB1/2/3（Free/Paid 边界、StoreKit 2 订阅、每周教练复盘）；远程埋点是独立架构 gate，不是首个收费闭环前置 | P2/P4 | 🟡 Master v3.4：首个 paid capability 已完成本地实现与 Simulator 验收，production 继续 fail-closed；StoreKitTest + Sandbox/TestFlight 全链、真实商品与政策页仍未过；软启动前再决定远程漏斗方案 |
-| **R4+ · 信任与扩展** | FR-ACC1（账号/云）、S1/S2 分享、器械校准全集、watchOS | P5 | 各自架构 gate + 商业证据（2026-10-14 现状注：Apple Watch app 已在 R4+ 映射之外落地——自 #732 起内嵌，1.11.0 是首个为它抬升的版本号——未经 Master 修订；本行映射是否改写待 owner，见 §1.4 现状注） |
+| **R4+ · 信任与扩展** | FR-ACC1（账号/云）、S1/S2 分享、器械校准全集、watchOS | P5 | 各自架构 gate + 商业证据（2026-10-14 现状注：Apple Watch app 已在 R4+ 映射之外落地——自 #732 起内嵌，1.11.0 是首个为它抬升的版本号；其架构边界已由 Master v3.6 批准（提案 A）。本行映射是否改写属产品范围，待 owner（提案 E），见 §1.4 现状注） |
 
 > R0 已于 2026-06-16 上 TestFlight（内部测试）= 本文 §5 标 MVP 的条目；交付记录见 `CHANGELOG.md`（原 MVP 实现计划已按 §11 收官删除，git 历史可恢复）。R3 前必须完成定价与 Apple 政策刷新（Roadmap §4）。
 

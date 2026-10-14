@@ -30,14 +30,14 @@ The commercial target is defined in `docs/REDE_iOS_SYSTEM_LOGIC.md` and `AGENTS.
 Systems that are not approved first-version runtime:
 
 - Cloud sync runtime, Supabase client/runtime implementation, account auth runtime, and remote networking.
-- watchOS, WatchConnectivity, and CRDT active-session co-editing.
+- watchOS / WatchConnectivity beyond the Master v3.6 Apple Watch Companion Boundary, and CRDT active-session co-editing.
 - Full AppData restore.
 - Remote push notifications.
 - Third-party subscription SDK or remote entitlement infrastructure. The approved native StoreKit 2 boundary lives only in `RedeEntitlements` and is production-disabled until release gates pass.
 
 Those systems require a new approved architecture amendment and a fresh Swift-native design before implementation.
 
-> **Status (2026-10-14):** a watchOS companion app (`ios/RedeWatch` + `RedeWatchLink`, using WatchConnectivity and a watch-side HealthKit workout session) is already in the code. It has been embedded in the iOS app since #732 (2026-08-15, 1.10.2 build 36, which reached TestFlight), and 1.11.0 (build 38, #743) is the first marketing version raised for it. It was built without that amendment, and it is a single-authority design, not CRDT co-editing. The conflict is recorded in the Master Architecture header (2026-10-14 status reconciliation) and is pending the owner's decision. Cloud sync (`RedeSync` / `RedeSyncSupabase`) is likewise in the code and is not reconciled there.
+> **Status (2026-10-14):** a watchOS companion app (`ios/RedeWatch` + `RedeWatchLink`, using WatchConnectivity and a watch-side HealthKit workout session) is already in the code. It has been embedded in the iOS app since #732 (2026-08-15, 1.10.2 build 36, which reached TestFlight), and 1.11.0 (build 38, #743) is the first marketing version raised for it. It was built without an amendment and is a single-authority design, not CRDT co-editing. On 2026-10-14 the owner approved its companion / WatchConnectivity architecture as Master v3.6 (§5 Apple Watch Companion Boundary). The watch target's direct HealthKit use is not covered by v3.6 and is still pending the owner's decision (Master header, open conflict (b)). Cloud sync (`RedeSync` / `RedeSyncSupabase`) is likewise in the code and is not reconciled there.
 
 ## Target Architecture
 
@@ -57,7 +57,7 @@ Local Swift packages that exist today (under `ios/packages/`, all in the CI test
 | `RedeNotifications` | Local notification policy plus the narrow UserNotifications adapter. |
 | `RedeHealthKit` | Read-only body-weight policy seam plus the narrow HealthKit adapter. |
 | `RedeEntitlements` | Free Core/Paid Coach access policy, StoreKit 2 adapter, lifecycle model, fail-closed launch gate, and StoreKit UI wrappers. |
-| `RedeWatchLink` | Phone ↔ watch message shapes and the single `WCSession` wrapper. Present since #732 without an architecture amendment; see the status note above. |
+| `RedeWatchLink` | Phone ↔ watch message shapes and the single `WCSession` wrapper (approved by Master v3.6; rules in Master §5 Apple Watch Companion Boundary). |
 
 Also on disk and in the CI matrix, but not covered by this table's reconciliation: `RedeSync` and `RedeSyncSupabase` (cloud sync, #727). That makes 13 packages as of 2026-10-14.
 
@@ -164,7 +164,7 @@ Before opening a pull request:
 - Treat existing `ios/` code as reference-only unless a rewrite slice approves reuse.
 - Keep app-layer changes thin.
 - Keep logic in Swift packages.
-- Do not add cloud runtime, auth runtime, networking, watchOS, CRDT, CoreData, SwiftData, SQLite, remote push, or new persistence mechanisms without an approved architecture amendment.
+- Do not add cloud runtime, auth runtime, networking, watchOS beyond the Master v3.6 watch boundary, CRDT, CoreData, SwiftData, SQLite, remote push, or new persistence mechanisms without an approved architecture amendment.
 - Do not change `project.pbxproj` or package manifests unless the task explicitly requires it.
 - Update the affected living docs when behavior, architecture, or product direction changes.
 - Run docs validation for docs-only changes and the relevant Swift package tests, Xcode build, or manual simulator validation for runtime slices.
