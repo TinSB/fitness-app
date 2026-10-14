@@ -37,6 +37,8 @@ Systems that are not approved first-version runtime:
 
 Those systems require a new approved architecture amendment and a fresh Swift-native design before implementation.
 
+> **Status (2026-10-14):** a watchOS companion app (`ios/RedeWatch` + `RedeWatchLink`, using WatchConnectivity and a watch-side HealthKit workout session) is already in the code. Version 1.11.0 is the first to include it. It was built without that amendment, and it is a single-authority design, not CRDT co-editing. The conflict is recorded in the Master Architecture header (2026-10-14 status reconciliation) and is pending the owner's decision. Cloud sync (`RedeSync` / `RedeSyncSupabase`) is likewise in the code and is not reconciled there.
+
 ## Target Architecture
 
 Rede keeps the iOS app layer thin. SwiftUI views should render state and connect IO seams; business logic belongs in local Swift packages.
@@ -50,11 +52,14 @@ Local Swift packages that exist today (under `ios/packages/`, all in the CI test
 | `RedeTrainingDecision` | Training decision, scheduling, readiness, insights, and coach-action engines. |
 | `RedePersistence` | Local JSON persistence and canonical write infrastructure. |
 | `RedeLocalSnapshot` | Derived local display snapshots for Focus/session projections. |
-| `RedeWidgetShared` | Read-only widget snapshot model (drives the shipped Readiness widget). |
+| `RedeWidgetShared` | Read-only widget snapshot model (drives the shipped Readiness widget) plus the rest Live Activity's `RestActivityAttributes`. |
 | `RedeL10n` | Terms and formatting support. |
 | `RedeNotifications` | Local notification policy plus the narrow UserNotifications adapter. |
 | `RedeHealthKit` | Read-only body-weight policy seam plus the narrow HealthKit adapter. |
 | `RedeEntitlements` | Free Core/Paid Coach access policy, StoreKit 2 adapter, lifecycle model, fail-closed launch gate, and StoreKit UI wrappers. |
+| `RedeWatchLink` | Phone ↔ watch message shapes and the single `WCSession` wrapper. Present since #732 without an architecture amendment; see the status note above. |
+
+Also on disk and in the CI matrix, but not covered by this table's reconciliation: `RedeSync` and `RedeSyncSupabase` (cloud sync, #727). That makes 13 packages as of 2026-10-14.
 
 Planned target package names that do **not** yet exist on disk (named in the Master Architecture as future boundaries; creating them requires an approved architecture slice): `RedeBackup`, `RedeUIKit`.
 
@@ -90,7 +95,7 @@ To inspect available schemes from the command line:
 xcodebuild -list -project ios/Rede.xcodeproj
 ```
 
-`Rede` is the production-like shared scheme and never injects local products. `Rede-StoreKitTest` is the isolated local StoreKit scheme; its product IDs and prices are test fixtures only and must never become App Store Connect configuration.
+`Rede` is the production-like shared scheme and never injects local products. `Rede-StoreKitTest` is the isolated local StoreKit scheme; its product IDs and prices are test fixtures only and must never become App Store Connect configuration. `RedeWatch` (since #746) builds the installable watchOS app. An iOS-destination build of `Rede` only embeds a resource-only watch stub, and `-target RedeWatch` cannot resolve the local packages.
 
 To build the active app from the command line:
 
@@ -129,7 +134,7 @@ done
 
 App-level behavior requires Xcode build or simulator validation when the clean runtime touches iOS frameworks, entitlements, HealthKit, notifications, WidgetKit, or app wiring.
 
-The authoritative local gate mirrors CI, runs all ten packages, builds the production scheme, and proves production subscription configuration fails closed:
+The authoritative local gate mirrors CI, runs every package in `EXPECTED_PACKAGES` (13 as of 2026-10-14), builds the production scheme (not the `RedeWatch` scheme), and proves production subscription configuration fails closed:
 
 ```bash
 bash .claude/quality-gate.cmd

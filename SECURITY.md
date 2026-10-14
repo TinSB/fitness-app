@@ -8,9 +8,11 @@ Sensitive surfaces:
 
 - Local canonical `AppData` JSON files written through the implemented gated persistence boundary (`RedePersistence.CanonicalSessionWriter`).
 - DataHealth cleaning and repair before engine consumption.
-- WidgetKit read-only readiness snapshots (shipped Readiness widget via `RedeWidgetShared` + the widget extension).
+- WidgetKit read-only readiness snapshots (shipped Readiness widget via `RedeWidgetShared` + the widget extension, App Group `group.com.tinsab.rede`, used for nothing else).
+- The rest-timer Live Activity (ActivityKit; local only with `pushType: nil`, no push token; display-only).
+- The Apple Watch companion app (as of 2026-10-14; first included in 1.11.0): WatchConnectivity between phone and watch via `RedeWatchLink`. The watch writes no canonical data and persists nothing locally. Its HealthKit workout session reads heart rate and active energy for on-watch display only and writes the workout to Apple Health on a normal end. Built without a Master amendment; see the Master Architecture header.
 - Local notifications for rest and weekly-training reminders (planned; no notification adapter is implemented yet).
-- HealthKit adapters for body-weight/workout import and native workout export — planned future surface; no HealthKit code exists yet.
+- HealthKit (status 2026-10-14): on iPhone, only the read-only body-weight adapter in `RedeHealthKit` exists; workout import is not implemented. The watch target uses HealthKit directly for the workout session above, outside `RedeHealthKit`. That is an open architecture conflict, pending the owner's decision.
 - Future account/cloud/sync/CRDT work, decisioned in the living docs but not implemented in first-version runtime code.
 
 ## Security Boundaries
@@ -19,7 +21,7 @@ Sensitive surfaces:
 - Raw `AppData` must not enter training engines.
 - Derived stores, widgets, HealthKit exports, UI view models, and local snapshots are not sources of truth.
 - Secrets must not be committed. `.env*` and local tool state are ignored.
-- No network, auth SDK, cloud SDK, WebView, SQLite, CoreData, SwiftData, remote push, watchOS, WatchConnectivity, or CRDT runtime may be added without an approved Master Architecture amendment and implementation slice.
+- No network, auth SDK, cloud SDK, WebView, SQLite, CoreData, SwiftData, remote push, watchOS, WatchConnectivity, or CRDT runtime may be added without an approved Master Architecture amendment and implementation slice. (Status 2026-10-14: the existing watchOS / WatchConnectivity code predates any such amendment; see the Master header. This rule still applies to any new scope.)
 - Health and pain guidance must stay fitness-support guidance, not medical diagnosis.
 
 ## Verification

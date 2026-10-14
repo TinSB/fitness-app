@@ -86,5 +86,5 @@ Before a PR is ready:
 
 1. Run `git diff --check`.
 2. Run the relevant Swift package tests when runtime package code changed.
-3. Run the Xcode build when clean app wiring, entitlements, HealthKit, notifications, widgets, or project settings changed.
+3. Run the Xcode build when clean app wiring, entitlements, HealthKit, notifications, widgets, or project settings changed. Watch code (`ios/RedeWatch`, `RedeWatchLink`) only builds for real through the shared `RedeWatch` scheme. The iOS `Rede` build embeds just a resource stub of the watch app (status 2026-10-14; see the Master Architecture header).
 4. Confirm no old web runtime, Node/Vite command, browser test, or cloud runtime implementation was reintroduced.
