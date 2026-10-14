@@ -52,7 +52,7 @@ Local Swift packages that exist today (under `ios/packages/`, all in the CI test
 | `RedeTrainingDecision` | Training decision, scheduling, readiness, insights, and coach-action engines. |
 | `RedePersistence` | Local JSON persistence and canonical write infrastructure. |
 | `RedeLocalSnapshot` | Derived local display snapshots for Focus/session projections. |
-| `RedeWidgetShared` | Read-only widget snapshot model (drives the shipped Readiness widget) plus the rest Live Activity's `RestActivityAttributes`. |
+| `RedeWidgetShared` | Read-only widget snapshot model (drives the shipped Readiness widget) plus, as of 2026-10-14, the rest Live Activity's `RestActivityAttributes` (imports ActivityKit, which neither Master §9 list names; pending the owner's decision, see the Master Architecture header). |
 | `RedeL10n` | Terms and formatting support. |
 | `RedeNotifications` | Local notification policy plus the narrow UserNotifications adapter. |
 | `RedeHealthKit` | Read-only body-weight policy seam plus the narrow HealthKit adapter. |
