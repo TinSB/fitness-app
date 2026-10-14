@@ -1198,7 +1198,7 @@ FR-TR14 的「本次训练」是上述边界的窄例外：只编辑 `TrainFlowS
 
 ### 7.2 Apple Watch 随行记录（as-built 现状 · 2026-10-14 对账）
 
-> **本节只描述已在代码中的现状**（#732–#748，#751 视觉；自 #732 起内嵌于 iPhone 包，1.10.2 build 36 已上 TestFlight；1.11.0 (38) 是首个为它抬升的版本号，#743 2026-08-20），**不是架构批准，也不是规格规则**。下文转述的「纪律」出自代码注释，是否成为规则见提案 A。watchOS / WatchConnectivity 仍在 Master §9 禁用清单；手表直接 import HealthKit，在 `RedeHealthKit` 之外，并写 HKWorkout，这也与 Master §5/§9 冲突；单权威设计与 `REDE_REBUILD_00` §4 的 CRDT 共编方向不同。三者都待 owner 裁定（Master 头部 2026-10-14 现状对账）。裁定前，本节不授权任何新增手表范围。
+> **本节只描述已在代码中的现状**（#732–#748，#751 视觉；自 #732 起内嵌于 iPhone 包，1.10.2 build 36 已上 TestFlight；1.11.0 (38) 是首个为它抬升的版本号，#743 2026-08-20），**不是架构批准，也不是规格规则**。下文转述的「纪律」出自代码注释，是否成为规则见提案 A。watchOS / WatchConnectivity 仍在 Master §9 禁用清单；手表直接 import HealthKit，在 `RedeHealthKit` 之外，并写 HKWorkout，这也与 Master §5/§9 冲突；单权威设计与 `REDE_REBUILD_00` §4 的 CRDT 共编方向不同。三者都待 owner 裁定（Master 头部 2026-10-14 现状对账）。本节不授权任何手表范围，包括对现有手表代码的修改；Master 与 §1 铁律 6 的条文照原文有效。
 
 **形态。** watchOS 10 companion app `ios/RedeWatch`（`com.tinsab.rede.watchkitapp`，经 Embed Watch Content 嵌在 iPhone app 内，shared scheme `RedeWatch`）加双端共用包 `RedeWatchLink`（iOS 17 + watchOS 10，零依赖；纯 Codable 消息形状 + 唯一 `WCSession` 封装，WatchConnectivity 只在 `WatchLink.swift`）。手机侧接线在 `RootTabView`（激活 + 收包分发）和 `SessionStore`（推送 + 收组 / 收命令）。手表是遥控器，不是第二个 App。它有三种运行态：健康权限门、今日清单（含练完态、休息日提示、过期提示）、进行中（当前组可用表冠调重量档 / 次数 / RIR、热身、休息环 +30 / 暂停 / 下一组）。手机上没有任何手表相关界面：设置页没有手表行，也不显示手表的健康授权状态。手表 UI 语言跟随手机已保存的语言设置（`WatchPrescription.localeCode`），载荷不带语言时退回手表系统语言；权限弹窗等 Info.plist 级文案跟随手表系统语言。#732 slice 1 为证明引擎能在表上链接运行，给 6 个核心包加了 `.watchOS(.v10)`，因此共有 7 个包声明 watchOS（含 `RedeWatchLink`）。
 

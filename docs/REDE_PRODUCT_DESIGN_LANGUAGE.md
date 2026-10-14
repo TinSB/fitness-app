@@ -476,7 +476,7 @@ Medium:
 - 一个简短信号。
 - 进入 App 的动作。
 
-> **现状（2026-10-14 对账，只记事实）：** 上面的 Small / Medium 清单是设计目标，不是已实现的布局。快照（schema v1）只带 headline、advice、footnote 和至多两行等级读数，不带状态码：「Train / Hold / Deload」只以本地化前缀的形式出现在 headline 文字里。Medium 实际是左栏判断 / 理由 / 更新时间加右栏读数，没有「推荐起始动作」、独立「信号」位，也没有进入 App 的深链动作（widget 未设 `widgetURL` / `Link`）。补齐与否待 owner 决定。
+> **现状（2026-10-14 对账，只记事实）：** 上面的 Small / Medium 清单是设计目标，不是已实现的布局。快照（schema v1）只带 headline、advice、生成时间（`generatedAtIso`）、可选 locale 和至多两行等级读数，不带状态码；「今日更新 / 更新于…」脚注不在快照里，由 widget 端按生成时间合成。状态只以本地化前缀出现在 headline 文字里（`verdictStatus`：可以训练 / 今天轻练 / 今天休息 / 减载周，再接「· 训练日名」），词表与上面的 Train / Hold / Deload 不同，没有 Hold 一档。Medium 实际是左栏判断 / 理由 / 更新时间加右栏读数，没有「推荐起始动作」、独立「信号」位，也没有进入 App 的深链动作（widget 未设 `widgetURL` / `Link`）。补齐与否待 owner 决定。
 
 Small / Medium 在非校准且已有等级时，可在判断之下显示至多两行最高等级肌群，作为被动上下文而不是第二个判断；校准中、缺失或无等级时完全不显示，不能抢 headline/advice 的层级。
 
