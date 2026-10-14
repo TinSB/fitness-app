@@ -7,7 +7,7 @@
 - **状态**：Active / canonical 活文档
 - **版本**：1.3
 - **创建**：2026-06-09
-- **最后更新**：2026-10-14（owner 批准 WATCH-10 提案 A–E：Master v3.6/v3.7 批准 Apple Watch 随行边界、手表体能训练 HealthKit 窄例外与休息 Live Activity 的 ActivityKit；本文新增 §5.11 Apple Watch（FR-AW1–3），§1.4 移出 watchOS 非目标，§8 R4+ 移出 watchOS、R1 记入手表交付，§0 GATE 图例改为「超出 Master v3.6 手表随行边界的 watchOS」；此前同日的现状对账：FR-WD1、FR-TR13、FR-PR8 状态格据代码校正。上一次实质更新 2026-07-30：FR-TR6 中途换动作 occurrence 链闭合）
+- **最后更新**：2026-10-14（owner 批准 WATCH-10 提案 A–E：Master v3.6/v3.7 批准 Apple Watch 随行边界、手表体能训练 HealthKit 窄例外与休息 Live Activity 的 ActivityKit；本文新增 §5.11 Apple Watch（FR-AW1–3），§1.4 移出 watchOS 非目标，§8 R4+ 移出 watchOS、R1 记入手表交付，§0 GATE 图例改为「超出 Master v3.6/v3.7 手表随行边界的 watchOS」；此前同日的现状对账：FR-WD1、FR-TR13、FR-PR8 状态格据代码校正。上一次实质更新 2026-07-30：FR-TR6 中途换动作 occurrence 链闭合）
 - **维护触发**：产品范围、功能优先级、验收标准、发布映射变化；MVP 达成后据实更新 §8 发布映射并支撑开发规划
 
 ---
@@ -19,11 +19,11 @@
 | **MVP** | 首个可上线版本（TestFlight 免费 beta）必须包含 = R0 已交付范围（2026-06-16 上 TestFlight）。 |
 | **FF** | Fast-follow：MVP 上线后紧随的第一批增强（公开上架前后）。 |
 | **LATER** | 更远期，按 Roadmap 阶段推进。 |
-| **⚠️GATE** | 叠加标记：实现前必须先修订 Master Architecture（涉及网络 / 账号 / 云 / StoreKit / HealthKit 进引擎 / 超出 Master v3.6 手表随行边界的 watchOS 等禁用系统）。 |
+| **⚠️GATE** | 叠加标记：实现前必须先修订 Master Architecture（涉及网络 / 账号 / 云 / StoreKit / HealthKit 进引擎 / 超出 Master v3.6/v3.7 手表随行边界的 watchOS 等禁用系统）。 |
 
 > **门禁说明**：任何条目（含 FF / LATER）实现时都必须走 rewrite slice 流程并同步文档，这是默认纪律，不另标记。**⚠️GATE 专指须先修订 Master Architecture 的禁用系统**；具体条目标为“架构已批准”后，仍须另走 runtime 实现切片与真实验证。HealthKit 展示、本地通知、Widget 属于 Master §9 已批准平台范围；其承载包 `RedeHealthKit`、`RedeNotifications`、`RedeWidgetShared` 均已存在。Apple 公共 App Store 版本查询已由 Master v3.5 批准为唯一窄网络例外；它不授权其他 remote API。订阅 StoreKit 2 边界已由 Master v3.2 批准，`RedeEntitlements` 与 production-disabled 基础 runtime 已于 2026-07-18 创建；FR-SUB3 已成为首个实现完成的 Paid Coach capability，但在真实商品/价格/试用、有效政策页、StoreKitTest 全生命周期与 Sandbox/TestFlight 证据齐备前，生产购买入口仍必须关闭。
 >
-> **现状注（2026-10-14；⚠️GATE 图例仅 watchOS 一项随 Master v3.6 提案 A 收窄，GATE 定义与其余各项不变）**：两项起初未走本文 ⚠️GATE 流程的已上线能力，已于 2026-10-14 由 owner 补批并写进 Master——①休息 Live Activity（FR-TR13）：ActivityKit 以「只用于休息 Live Activity、纯本地、只做显示」的边界进入 Master §9 允许清单（v3.7，提案 C）；②Apple Watch app（`ios/RedeWatch` + `RedeWatchLink`，自 #732 起内嵌于 iPhone 包——1.10.2 build 36 已上 TestFlight，1.11.0 是首个为它抬升的版本号）：随行 / WatchConnectivity 架构由 Master v3.6 批准（提案 A），手表 target 的体能训练会话作为 HealthKit 窄例外由 v3.7 批准（提案 B），产品需求见 §5.11（提案 E）。超出 Master §5 Apple Watch Companion Boundary 的 watchOS 仍属 ⚠️GATE。
+> **现状注（2026-10-14；⚠️GATE 图例仅 watchOS 一项随 Master v3.6 提案 A 与 v3.7 提案 B 收窄，GATE 定义与其余各项不变）**：两项起初未走本文 ⚠️GATE 流程的已上线能力，已于 2026-10-14 由 owner 补批并写进 Master——①休息 Live Activity（FR-TR13）：ActivityKit 以「只用于休息 Live Activity、纯本地、只做显示」的边界进入 Master §9 允许清单（v3.7，提案 C）；②Apple Watch app（`ios/RedeWatch` + `RedeWatchLink`，自 #732 起内嵌于 iPhone 包——1.10.2 build 36 已上 TestFlight，1.11.0 是首个为它抬升的版本号）：随行 / WatchConnectivity 架构由 Master v3.6 批准（提案 A），手表 target 的体能训练会话作为 HealthKit 窄例外由 v3.7 批准（提案 B），产品需求见 §5.11（提案 E）。超出 Master §5 Apple Watch Companion Boundary 的 watchOS 仍属 ⚠️GATE。
 
 ---
 
@@ -254,9 +254,9 @@ Rede 把「教练的脑子」装进 App：**决策在前，记录在后**——�
 
 | ID | 需求 | 用户故事 | 验收标准 | 优先级 | 合同来源 |
 |---|---|---|---|---|---|
-| FR-AW1 | 手表看组、记组 | 手机放包里，我也想在手表上看这组练多重、几次，打勾记组 | 手表显示手机推来的今日清单与当前组目标（动作、重量、次数、RIR），文案与重量档位都由手机渲染；表冠可在手机下发的真实档位间调重量，也可改次数与 RIR，然后「完成本组」。手机只收它正在等的那一组（动作 + 组号），与手机上点「完成本组」走同一路径；手机 App 被杀时先记进训练草稿，恢复后可见。手表不计算处方、不自己推进到下一组；不适登记、换动作、跳过整个动作只在手机上做 | FF · ✅ 已实现（#732–#748；1.10.2 build 36 起内嵌，1.11.0 为首个对外版本；`docs/工作记录/2026-08-20-watch-device-acceptance.md` 的 22 项真机验收无完成记录） | Master §5 Apple Watch Companion Boundary；系统逻辑 §7.2 |
-| FR-AW2 | 手表上的休息与快捷操作 | 组间不掏手机，也想看休息还剩多久，顺手 +30 或跳过 | 休息环按手机下发的绝对结束时刻倒计时；+30 / 暂停与继续 / 跳过休息 / 跳过热身 / 跳过本组（选原因）在手机够得着时生效，够不着时按钮置灰、休息屏提示「手机不可达」；到点时手表振动并通知手机收尾，iPhone 的休息 Live Activity 随之同步 | FF · ✅ 已实现（同 FR-AW1；读代码推断的边界情况见系统逻辑 §7.2，未真机复现） | Master §5 Apple Watch Companion Boundary；系统逻辑 §7.1、§7.2 |
-| FR-AW3 | 手表体能训练记录 | 用手表练，也想让这场训练进 Apple 健康、计入活动圆环 | 第一次打开手表 app 先授权「写入体能训练」，不授权进不去；训练进行中手表跑体能训练会话（放下手腕后手表 app 仍保持运行），表上显示心率与已练时长；正常练完写入一条传统力量训练，手机报告放弃或 60 分钟没收到手机更新则丢弃不写；健康数据不回手机、不进训练记录、不影响训练建议 | FF · ✅ 已实现（#733、#740、#748；Master v3.7 HealthKit 窄例外，提案 B）。iPhone 写入用途说明串仍写「不写入任何数据」，修正待随版本发出（#749） | Master §5 Apple Watch Companion Boundary 第 10 条、§9；系统逻辑 §7.2 |
+| FR-AW1 | 手表看组、记组 | 手机放包里，我也想在手表上看这组练多重、几次，打勾记组 | 手表显示手机推来的今日清单与当前组目标（动作、重量、次数、RIR），文案与重量档位都由手机渲染；表冠可在手机下发的真实档位间调重量，也可改次数与 RIR，然后「完成本组」。手机只收它正在等的那一组（动作 + 组号），与手机上点「完成本组」走同一路径；手机 App 被杀时先记进训练草稿，恢复后可见。手表不计算处方、不自己推进到下一组；「登记不适」、换动作、跳过整个动作只在手机上做（手表跳过本组选「不适/疼痛」时，手机照 FR-TR7 记 `painDiscomfort`） | FF · ✅ 已实现（#732–#748；1.10.2 build 36 起内嵌，1.11.0 是首个为它抬升的版本号；`docs/工作记录/2026-08-20-watch-device-acceptance.md` 的 22 项真机验收无完成记录） | Master §5 Apple Watch Companion Boundary；系统逻辑 §7.2 |
+| FR-AW2 | 手表上的休息与快捷操作 | 组间不掏手机，也想看休息还剩多久，顺手 +30 或跳过 | 休息环按手机下发的绝对结束时刻倒计时；+30 / 暂停与继续 / 跳过休息 / 跳过热身 / 跳过本组（选原因）在手机够得着时生效，够不着时按钮置灰、休息屏提示「手机不可达」（有组排队时改显示「N 组待同步」）；到点时手表振动并通知手机收尾，iPhone 的休息 Live Activity 随之同步 | FF · ✅ 已实现（同 FR-AW1；读代码推断的边界情况见系统逻辑 §7.2，未真机复现） | Master §5 Apple Watch Companion Boundary；系统逻辑 §7.1、§7.2 |
+| FR-AW3 | 手表体能训练记录 | 用手表练，也想让这场训练进 Apple 健康、计入活动圆环 | 第一次打开手表 app 先授权写入体能训练，不授权进不去；训练进行中手表跑体能训练会话（放下手腕后手表 app 仍保持运行），表上显示心率与已练时长；正常练完写入一条传统力量训练，手机报告放弃、或停在组 / 休息屏时 60 分钟没收到手机更新则丢弃不写；健康数据不回手机、不进训练记录、不影响训练建议 | FF · ✅ 已实现（#733、#737、#740、#748；Master v3.7 HealthKit 窄例外，提案 B）。iPhone 写入用途说明串仍写「不写入任何数据」，修正待随版本发出（#749） | Master §5 Apple Watch Companion Boundary 第 10 条、§9；系统逻辑 §7.2 |
 
 ---
 

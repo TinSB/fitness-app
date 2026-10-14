@@ -2,7 +2,7 @@
 
 > **状态:** 已拍板的未来原生架构输入。本文不授权第一版干净 runtime 引入账号、网络、云、CRDT 或 watchOS（watchOS 的现有随行架构已由 Master v3.6/v3.7 授权，见下注与 §4）。任何实现必须先修改并通过 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 的 architecture gate。
 >
-> **2026-10-14 决策更新（owner 拍板提案 D，Master v3.7）：** Apple Watch app（`ios/RedeWatch` + `RedeWatchLink`，自 #732 起内嵌于 iPhone 包——1.10.2 build 36 已上 TestFlight，1.11.0 是首个为它抬升的版本号）最初在未经 Master 修订的情况下落地。它采用单权威设计：手机是唯一决策方；手机→手表只用 `applicationContext` 单槽推一份手机渲染好的处方；手表→手机用 `transferUserInfo` 回传已记的组，手机只收它正在等的那一组（`exerciseId + setNumber` 幂等）。Master v3.6 批准了这套随行架构（提案 A），v3.7 又确认**单权威取代本文原先「手机/手表 CRDT 并发共编」的方向**（提案 D）。据此本文 §1 watchOS 行、§3 CRDT 行、§4、§6 第 5 项已改写；记录级 CRDT 作为云同步的合并模型仍是本文的方向，是否采用另由云同步对账与架构闸决定。云同步（`RedeSync` / `RedeSyncSupabase`，#727）已在代码中，本注不覆盖其对账。
+> **2026-10-14 决策更新（owner 拍板提案 D，Master v3.7）：** Apple Watch app（`ios/RedeWatch` + `RedeWatchLink`，自 #732 起内嵌于 iPhone 包——1.10.2 build 36 已上 TestFlight，1.11.0 是首个为它抬升的版本号）最初在未经 Master 修订的情况下落地。它采用单权威设计：手机是唯一决策方；手机→手表只用 `applicationContext` 单槽推一份手机渲染好的处方；手表→手机用 `transferUserInfo` 回传已记的组，手机只收它正在等的那一组（`exerciseId + setNumber` 幂等）。Master v3.6 批准了这套随行架构（提案 A），v3.7 又确认**单权威取代本文原先「手机/手表 CRDT 并发共编」的方向**（提案 D）。据此本文 §1 watchOS 行、§3 CRDT 行、§4、§6 第 5 项已改写；记录级 CRDT 作为云同步合并模型的既定方向（§1 合并模型行、§3）不受本次修订影响，实现仍须另行修订并通过 Master 的 architecture gate。云同步（`RedeSync` / `RedeSyncSupabase`，#727）已在代码中，本注不覆盖其对账。
 
 ## 1. 保留决策
 
@@ -37,7 +37,7 @@ Rede 的目标实现仍是 native iOS local-first app:本地 JSON AppData 是唯
 
 | 数据形态 | 职责 |
 |---|---|
-| 记录级 CRDT / operation journal | active session、completed set、session event、训练历史追加（跨设备同步场景）。原列的「训练中手机/手表并发编辑」已于 2026-10-14 取消，见 §4。 |
+| 记录级 CRDT / operation journal | active session、completed set、session event、训练历史追加。原列的「训练中手机/手表并发编辑」已于 2026-10-14 取消，见 §4。 |
 | Typed config record | profile scalar、unit setting、screening、program config、template confirmation 等低频配置;需要明确 owner、schemaVersion 和 conflict policy。 |
 | AppData snapshot | 备份、导出、恢复锚点、schema migration check、灾难恢复;不是训练日志并发合并算法。 |
 | Derived projection | DataHealth、analytics、e1RM、muscle level、share snapshot;可重算,不作为云端 source of truth。 |
