@@ -4,6 +4,30 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 ## 2026-10-14
 
+- **Master v3.7: watch HealthKit workout-session exception, bounded ActivityKit, single authority over CRDT for the watch, watch PRD scope and a required watchOS build (owner approved proposals B–E of WATCH-10)**: the owner approved the four remaining proposals (「bcde都做」). No app code changed; CI and the local quality gate gained a watchOS build step.
+  - **(B) Watch HealthKit.** New §5 Apple Watch Companion Boundary rule 10 makes the watch target's workout session a narrow, named exception to §9 "HealthKit only inside `RedeHealthKit`":
+    - HealthKit only in `WorkoutSessionKeeper.swift`, one live session at a time (`HKWorkoutSession` + `HKLiveWorkoutBuilder` + `HKLiveWorkoutDataSource`, traditional strength training, indoor).
+    - Authorization limited to sharing workouts and reading heart rate and active energy; the watch app stays gated on workout-write authorization.
+    - The session follows the phone-pushed `trainingInProgress`, writes one workout on a normal end, and discards it on an abandoned session or the 60-minute no-update stop-loss.
+    - Health data is display-only on the watch and never crosses `RedeWatchLink`. Any other watch HealthKit use needs a further amendment.
+    - The iPhone stays limited to `RedeHealthKit`'s read-only body weight; workout import and iPhone HKWorkout writes stay deferred.
+    - §5 `RedeHealthKit` row, §6 derived records and §9 updated to match.
+  - **(C) ActivityKit.** Added to the §9 allowed list, bounded to the existing rest Live Activity:
+    - the app-target `RestLiveActivityController`, the `#if os(iOS)` `RestActivityAttributes` in `RedeWidgetShared`, and the widget-target UI;
+    - local only (`pushType: nil`, no push tokens), display-only, never canonical, never engine input.
+    - The §5 `RedeWidgetShared` row now lists the WidgetKit reloader and `RestActivityAttributes`.
+  - **(D) Single authority.** New rule 11: the phone ↔ watch active session is single-writer and supersedes the CRDT co-editing direction for the watch; CRDT stays deferred, and its recorded record-level merge direction for future cloud sync is unchanged.
+    - `docs/REDE_REBUILD_00_IRONRULES_AND_CLOUD.md` §1/§3/§4/§6 amended with the original requirement kept on record.
+    - `docs/CLOUD_DECISIONS_ARCHIVE.md` §7 annotated.
+  - **(E) Product scope and CI.**
+    - PRD 1.3: new §5.11 Apple Watch with FR-AW1 (view and log sets), FR-AW2 (rest and quick commands) and FR-AW3 (watch workout recording), all FF · implemented.
+    - watchOS removed from §1.4 non-goals and from the R4+ row; R1 records the watch delivery; FR-PR8 and FR-TR13 notes updated.
+    - Rule 12 and §10: CI (`.github/workflows/rede-ci.yml`, step "Build watchOS app") and `.claude/quality-gate.cmd` build the `RedeWatch` scheme for `generic/platform=watchOS Simulator`. The CI step downloads the watchOS platform and retries once if the first build fails.
+  - **Mirrors.** System logic header, §0, rule 6, §3/§4 rows, §7.1/§7.2, §10 and §11, plus `README.md`, `SECURITY.md`, `CONTRIBUTING.md`, `AGENTS.md`, `COMMERCIALIZATION_ROADMAP.md` and the copy baseline, updated to the v3.6/v3.7 state.
+  - **Not covered.**
+    - The iPhone `NSHealthUpdateUsageDescription` still says Rede writes nothing to Apple Health; the rewrite is a runtime change carried by the unmerged #749.
+    - Cloud sync (`RedeSync` / `RedeSyncSupabase`, #727) remains unreconciled.
+  - **Validation:** `git diff --check`; YAML parse of the workflow; `bash -n .claude/quality-gate.cmd`; the watchOS build is proven on the CI runner.
 - **Master v3.6: bounded Apple Watch companion / WatchConnectivity boundary (owner approved proposal A of WATCH-10; docs only)**: the owner approved writing the existing watch channel discipline into the Master as an amendment.
   - **Master.** Version 3.5 → 3.6. A new **§5 Apple Watch Companion Boundary** codifies eleven rules:
     - watchOS only as the embedded `RedeWatch` companion plus `RedeWatchLink`, as a remote control for the live phone session.

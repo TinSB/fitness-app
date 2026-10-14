@@ -515,7 +515,7 @@ What's New 的当前内置叙事（**1.9.2**）= **一句 hero 主打句 + 三�
 
 > **实现状态（2026-06-13）:** 下面的 Apple Health / HealthKit 文案是 **FF 目标表面，当前未实现**——代码里没有 HealthKit。已 ship 的 Settings 隐私串遵循「未上线不提」（HealthKit 实装时再加这段）。本段保留为 HealthKit slice 落地时的文案基线。已 ship 的设置文案以 `RedeL10n` 实际串为准。
 >
-> **现状注（2026-10-14）：** 上面「代码里没有 HealthKit」已过时。iPhone 侧 `RedeHealthKit` 只读体重已上线（FR-PR8 范围 A，#617-619）。手表 target 会把练完的力量训练写入 Apple 健康，手表自己的权限说明（en）是："Rede uses heart rate and activity data to record this strength session." / "Rede saves your finished strength session to Health so it counts toward your Activity rings."。与此同时，iPhone 的 `NSHealthUpdateUsageDescription` 仍写「Rede 不向 Apple 健康写入任何数据」，这句已与手表行为不符；建议随下个版本修正（提案，待 owner；见 `DEV_LOG.md` 2026-10-14「待你拍板」提案 B，对应 Master 头部 2026-10-14 现状对账的 open conflict (b)）。下方示例只覆盖读取 / 导入，不含手表写入；手表的健康边界见系统逻辑 §7.2。
+> **现状注（2026-10-14）：** 上面「代码里没有 HealthKit」已过时。iPhone 侧 `RedeHealthKit` 只读体重已上线（FR-PR8 范围 A，#617-619）。手表 target 会把练完的力量训练写入 Apple 健康，手表自己的权限说明（en）是："Rede uses heart rate and activity data to record this strength session." / "Rede saves your finished strength session to Health so it counts toward your Activity rings."。与此同时，iPhone 的 `NSHealthUpdateUsageDescription` 仍写「Rede 不向 Apple 健康写入任何数据」，这句已与手表行为不符。手表的写入已由 Master v3.7 作为窄例外批准（提案 B），所以这句应随下个版本修正（未合并的 #749 带有改写稿；这是用户可见文案的运行时改动，不在 v3.7 文档修订内）。下方示例只覆盖读取 / 导入，不含手表写入；手表的健康边界见系统逻辑 §7.2。
 
 示例（FF·HealthKit slice 落地时启用）:
 

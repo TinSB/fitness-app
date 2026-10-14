@@ -93,7 +93,7 @@
 1. CRDT 选型:Automerge-swift、Yjs bridge 或自研 operation model。
 2. record 粒度:set、exercise event、session event、program config 的边界。
 3. operation journal 与 canonical JSON AppData 的重建/校验关系。
-4. WatchConnectivity 与 Supabase transport 的 ordering、retry 和 reconciliation。
+4. WatchConnectivity 与 Supabase transport 的 ordering、retry 和 reconciliation。（2026-10-14 注：手表侧已定为单权威，见 Master v3.6/v3.7 与 `REDE_REBUILD_00` §4；WatchConnectivity 不与云同步共享 CRDT 语义，本项只剩云同步自身。）
 5. backup/export/restore 与 CRDT records 的一致性证明。
 6. account binding UX、delete/export UX 和 privacy labels。
 7. analytics / referral / share attribution 是否以及何时进入云 gate。

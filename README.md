@@ -30,14 +30,14 @@ The commercial target is defined in `docs/REDE_iOS_SYSTEM_LOGIC.md` and `AGENTS.
 Systems that are not approved first-version runtime:
 
 - Cloud sync runtime, Supabase client/runtime implementation, account auth runtime, and remote networking.
-- watchOS / WatchConnectivity beyond the Master v3.6 Apple Watch Companion Boundary, and CRDT active-session co-editing.
+- watchOS / WatchConnectivity beyond the Master v3.6/v3.7 Apple Watch Companion Boundary, and CRDT active-session co-editing (superseded for the watch by single authority, v3.7).
 - Full AppData restore.
 - Remote push notifications.
 - Third-party subscription SDK or remote entitlement infrastructure. The approved native StoreKit 2 boundary lives only in `RedeEntitlements` and is production-disabled until release gates pass.
 
 Those systems require a new approved architecture amendment and a fresh Swift-native design before implementation.
 
-> **Status (2026-10-14):** a watchOS companion app (`ios/RedeWatch` + `RedeWatchLink`, using WatchConnectivity and a watch-side HealthKit workout session) is already in the code. It has been embedded in the iOS app since #732 (2026-08-15, 1.10.2 build 36, which reached TestFlight), and 1.11.0 (build 38, #743) is the first marketing version raised for it. It was built without an amendment and is a single-authority design, not CRDT co-editing. On 2026-10-14 the owner approved its companion / WatchConnectivity architecture as Master v3.6 (§5 Apple Watch Companion Boundary). The watch target's direct HealthKit use is not covered by v3.6 and is still pending the owner's decision (Master header, open conflict (b)). Cloud sync (`RedeSync` / `RedeSyncSupabase`) is likewise in the code and is not reconciled there.
+> **Status (2026-10-14):** a watchOS companion app (`ios/RedeWatch` + `RedeWatchLink`, using WatchConnectivity and a watch-side HealthKit workout session) is already in the code. It has been embedded in the iOS app since #732 (2026-08-15, 1.10.2 build 36, which reached TestFlight), and 1.11.0 (build 38, #743) is the first marketing version raised for it. It was built without an amendment and is a single-authority design, not CRDT co-editing. On 2026-10-14 the owner approved its companion / WatchConnectivity architecture as Master v3.6 (§5 Apple Watch Companion Boundary), then its watch workout-session HealthKit use as a narrow exception, single authority over CRDT co-editing, and a required `RedeWatch` CI build as Master v3.7. PRD §5.11 (FR-AW1–3) holds the watch requirements. Cloud sync (`RedeSync` / `RedeSyncSupabase`) is likewise in the code and is not reconciled there.
 
 ## Target Architecture
 
@@ -52,7 +52,7 @@ Local Swift packages that exist today (under `ios/packages/`, all in the CI test
 | `RedeTrainingDecision` | Training decision, scheduling, readiness, insights, and coach-action engines. |
 | `RedePersistence` | Local JSON persistence and canonical write infrastructure. |
 | `RedeLocalSnapshot` | Derived local display snapshots for Focus/session projections. |
-| `RedeWidgetShared` | Read-only widget snapshot model (drives the shipped Readiness widget) plus, as of 2026-10-14, the rest Live Activity's `RestActivityAttributes` (imports ActivityKit, which neither Master §9 list names; pending the owner's decision, see the Master Architecture header). |
+| `RedeWidgetShared` | Read-only widget snapshot model (drives the shipped Readiness widget) plus, as of 2026-10-14, the rest Live Activity's `RestActivityAttributes` (imports ActivityKit, allowed for the rest Live Activity only by Master v3.7 §9). |
 | `RedeL10n` | Terms and formatting support. |
 | `RedeNotifications` | Local notification policy plus the narrow UserNotifications adapter. |
 | `RedeHealthKit` | Read-only body-weight policy seam plus the narrow HealthKit adapter. |
@@ -95,7 +95,7 @@ To inspect available schemes from the command line:
 xcodebuild -list -project ios/Rede.xcodeproj
 ```
 
-`Rede` is the production-like shared scheme and never injects local products. `Rede-StoreKitTest` is the isolated local StoreKit scheme; its product IDs and prices are test fixtures only and must never become App Store Connect configuration. `RedeWatch` (since #746) builds the installable watchOS app. An iOS-destination build of `Rede` only embeds a resource-only watch stub, and `-target RedeWatch` cannot resolve the local packages.
+`Rede` is the production-like shared scheme and never injects local products. `Rede-StoreKitTest` is the isolated local StoreKit scheme; its product IDs and prices are test fixtures only and must never become App Store Connect configuration. `RedeWatch` (since #746) builds the installable watchOS app; CI and the quality gate build it for a generic watchOS Simulator destination (Master v3.7). An iOS-destination build of `Rede` only embeds a resource-only watch stub, and `-target RedeWatch` cannot resolve the local packages.
 
 To build the active app from the command line:
 
@@ -134,7 +134,7 @@ done
 
 App-level behavior requires Xcode build or simulator validation when the clean runtime touches iOS frameworks, entitlements, HealthKit, notifications, WidgetKit, or app wiring.
 
-The authoritative local gate mirrors CI, runs every package in `EXPECTED_PACKAGES` (13 as of 2026-10-14), builds the production scheme (not the `RedeWatch` scheme), and proves production subscription configuration fails closed:
+The authoritative local gate mirrors CI, runs every package in `EXPECTED_PACKAGES` (13 as of 2026-10-14), builds the production scheme and the `RedeWatch` scheme, and proves production subscription configuration fails closed:
 
 ```bash
 bash .claude/quality-gate.cmd
@@ -164,7 +164,7 @@ Before opening a pull request:
 - Treat existing `ios/` code as reference-only unless a rewrite slice approves reuse.
 - Keep app-layer changes thin.
 - Keep logic in Swift packages.
-- Do not add cloud runtime, auth runtime, networking, watchOS beyond the Master v3.6 watch boundary, CRDT, CoreData, SwiftData, SQLite, remote push, or new persistence mechanisms without an approved architecture amendment.
+- Do not add cloud runtime, auth runtime, networking, watchOS beyond the Master v3.6/v3.7 watch boundary, CRDT, CoreData, SwiftData, SQLite, remote push, or new persistence mechanisms without an approved architecture amendment.
 - Do not change `project.pbxproj` or package manifests unless the task explicitly requires it.
 - Update the affected living docs when behavior, architecture, or product direction changes.
 - Run docs validation for docs-only changes and the relevant Swift package tests, Xcode build, or manual simulator validation for runtime slices.
