@@ -544,7 +544,7 @@ Rede 保留用户可理解、可分享、可用于训练决策的肌群等级系
 
 等级系统不是新 package、不是 persistence 层、不是 app view model 逻辑。V1 落包拍板(2026-07-07 批次 A,替代本节旧「属于 RedeTrainingDecision」单包措辞):
 
-- **引擎纯函数落 `RedeLocalSnapshot`**(MuscleLevelTypes / MuscleVolumeAggregator / MuscleLevelEstimator / MuscleProfileAssembler / MuscleMilestoneCatalog):该包 Foundation-only 零依赖(Master §5 硬合同),widget 与主 app 共享,等级最终要进 App Group 快照供 widget 展示,放这里避免跨包搬运。
+- **引擎纯函数落 `RedeLocalSnapshot`**(MuscleLevelTypes / MuscleVolumeAggregator / MuscleLevelEstimator / MuscleProfileAssembler / MuscleMilestoneCatalog):该包 Foundation-only 零依赖(Master §5 硬合同),widget 与主 app 共享,等级最终要进 App Group 快照供 widget 展示,放这里避免跨包搬运。（2026-10-14 现状：widget extension 只链接 `RedeWidgetShared`，并不链接本包；等级由 App 侧读 `muscle-level-memory.json` 投影成快照 rows 后进入 widget，见 §6.5.12 的「Widget 只读等级投影」。）
 - **目录→肌群翻译层留 `RedeTrainingDecision`**(MuscleGroupMapping,口径见 §6.5.2):它要读 ExerciseCatalog,而 RedeLocalSnapshot 禁止依赖目录包。
 - 两包各持一份同值 `MuscleGroupID` 枚举(Master §5 禁跨包依赖),双侧文件锚句互指 + rawValue 契约测试防漂移;跨包传递用 rawValue 字符串。
 
@@ -1188,23 +1188,23 @@ FR-TR14 的「本次训练」是上述边界的窄例外：只编辑 `TrainFlowS
 - **归属契约（why，owner 2026-06-15 反馈修复）**：剩余秒数**不得**放进 `TrainTabView` 的 `@State`。`RootTabView` 用 `switch selection` 渲染各 tab，切页会销毁整棵视图树 → 视图 `@State` 归 0 → 回到训练页倒计时显示 `0:00` 并立即结束。锚点必须放在根级常驻的 `SessionStore`（跨切页、跨切应用存活），且按墙钟求剩余 → 离屏（切 tab 或切出应用）期间真实时间照常流逝。
 - **生命周期**：进入 `resting`（仅 `logSet` 一条路）由 `SessionStore.apply` 起锚；`restFinished` / 落到 `summary` / 结束·放弃·新开会话清空；`resting→confirmEnd→resting`（结束确认弹层取消后继续训练）折返期间**不动**锚点，剩余随墙钟延续不重置。跨进程恢复（FR-TR9）若落在 `resting` 按计划秒数重新起算（不留旧 deadline）。
 - **显示与收尾分离**：倒计时显示由 `runRestTimer` 这个 `.task` 循环每秒递增 `restTick` 触发按墙钟重算重绘（**不用 `TimelineView`**——其在「切出应用再回前台」时不保证恢复逐秒刷新，owner 2026-06-15 二次反馈）；同一 `.task` 兼任「到点自动进下一组」（先判后睡，回来若已到点立即收尾、不闪 `0:00`）。`.task` 的 id（`restTaskKey`）含 `scenePhase`：**回前台时 key 变 → task 重启**（等价于切 tab 重建视图的效果），保证既追平离屏期间流逝、又续走逐秒刷新；后台不空转（`scenePhase != .active` 直接返回）。`+30` / 暂停 / 继续经 `SessionStore.addRestTime` / `toggleRestPause` 改锚点。
-- **手表侧的休息事件**：手表回传的组和休息命令走手机同一 `apply` / `addRestTime` / `toggleRestPause` 路径（§7.2），所以 iPhone 的休息 Live Activity 会一起开始、加时、暂停或继续，不另设手表专用端点。
+- **手表侧的休息事件**：手表回传的组和休息命令走手机同一 `apply` / `addRestTime` / `toggleRestPause` 路径（§7.2），所以 iPhone 的休息 Live Activity 会一起开始、加时、暂停或继续，不另设手表专用端点。手表倒计时到点时发出的自动跳过，是本节 `runRestTimer` 之外的第二个「到点收尾」触发点：手机不在前台时也会推进训练流（条件与细节见 §7.2）。
 - **进度条与倒计时同步（owner 2026-06-15 三次反馈）**：进度条比例 = `RestCountdown.fraction()` = `剩余 / totalSeconds`，与倒计时数字同源 → 满格起步、`0:00` 精确归零。`totalSeconds` 是「本段休息总时长」，`+30` 时**同步增长**（`begin` 设值、`add` 累加、`clear` 归零）——故 `+30` 后进度条不会因 `剩余 > 初始计划` 卡在满格，而是按新总时长继续平滑下降。分母**不得**用 `restSecondsPlanned`（固定值会在 `+30` 后被 `min(1,·)` 钳成满格、与倒计时脱钩）。
 
 ### 7.2 Apple Watch 随行记录（as-built 现状 · 2026-10-14 对账）
 
 > **本节只描述已在代码中的现状**（#732–#748，#751 视觉；首见于 1.11.0 (38)，版本号 #743 2026-08-20 抬升），**不是架构批准**。watchOS / WatchConnectivity 仍在 Master §9 禁用清单；手表直接 import HealthKit，在 `RedeHealthKit` 之外，并写 HKWorkout，这也与 Master §5/§9 冲突；单权威设计与 `REDE_REBUILD_00` §4 的 CRDT 共编方向不同。三者都待 owner 裁定（Master 头部 2026-10-14 现状对账）。裁定前，本节不授权任何新增手表范围。
 
-**形态。** watchOS 10 companion app `ios/RedeWatch`（`com.tinsab.rede.watchkitapp`，经 Embed Watch Content 嵌在 iPhone app 内，shared scheme `RedeWatch`）加双端共用包 `RedeWatchLink`（iOS 17 + watchOS 10，零依赖；纯 Codable 消息形状 + 唯一 `WCSession` 封装，WatchConnectivity 只在 `WatchLink.swift`）。手机侧接线在 `RootTabView`（激活 + 收包分发）和 `SessionStore`（推送 + 收组 / 收命令）。手表是遥控器，不是第二个 App。它有三种运行态：健康权限门、今日清单（含练完态、休息日提示、过期提示）、进行中（当前组可用表冠调重量档 / 次数 / RIR、热身、休息环 +30 / 暂停 / 下一组）。
+**形态。** watchOS 10 companion app `ios/RedeWatch`（`com.tinsab.rede.watchkitapp`，经 Embed Watch Content 嵌在 iPhone app 内，shared scheme `RedeWatch`）加双端共用包 `RedeWatchLink`（iOS 17 + watchOS 10，零依赖；纯 Codable 消息形状 + 唯一 `WCSession` 封装，WatchConnectivity 只在 `WatchLink.swift`）。手机侧接线在 `RootTabView`（激活 + 收包分发）和 `SessionStore`（推送 + 收组 / 收命令）。手表是遥控器，不是第二个 App。它有三种运行态：健康权限门、今日清单（含练完态、休息日提示、过期提示）、进行中（当前组可用表冠调重量档 / 次数 / RIR、热身、休息环 +30 / 暂停 / 下一组）。手机上没有任何手表相关界面：设置页没有手表行，也不显示手表的健康授权状态。手表 UI 语言跟随手机已保存的语言设置（`WatchPrescription.localeCode`），载荷不带语言时退回手表系统语言；权限弹窗等 Info.plist 级文案跟随手表系统语言。#732 slice 1 为证明引擎能在表上链接运行，给 6 个核心包加了 `.watchOS(.v10)`，因此共有 7 个包声明 watchOS（含 `RedeWatchLink`）。
 
 **真源纪律。** 手机是唯一决策方（owner 2026-08-15 裁定）。手表不复算处方，也不本地推进到下一组；记完一组后等手机推回新状态。显示串、重量档位梯（按真实 LoadGrid 器械×单位，±12 档）和休息预告都由手机渲染后下发。手表 target 链接了 7 个本地包，但只 import `RedeL10n`、`RedeWatchLink`，以及 `RedeTrainingDecision` 里的 `RestCountdown`（墙钟休息计算）。它不跑任何决策引擎。（#746 的 CHANGELOG 说手表「在腕上跑决策引擎」，与代码不符。）
 
 **三条通道（WatchConnectivity 通道纪律）。**
 1. **手机 → 手表：只用 `updateApplicationContext`。** 手机唯一的发送点是 `SessionStore.pushWatchPrescription`。它在 `loadToday()`、每次 `flow` 变化、每次 `restCountdown` 变化时推一份手机渲染好的 `WatchPrescription`：今日清单、`active` 当前组、休息绝对结束时刻、`trainingInProgress`、`sessionOutcome`、`completedSetsToday`。只有今日结果可读时才推；代际计数丢弃乱序渲染。**applicationContext 只有一个槽位，后写覆盖前写**：所有手机 → 手表的字段都必须并进这一份载荷，任何第二个 applicationContext 发送方都会冲掉处方（slice 3 因此删掉了 ping/pong）。手表激活时主动读系统保存的 `receivedApplicationContext`，因为启动时不重放 `didReceiveApplicationContext`。手机从不用 userInfo 或 sendMessage 向手表发东西。
 2. **手表 → 手机，已记的组：只用 `transferUserInfo`**（排队、保证送达、可跨断连；绝不用 `sendMessage`）。重量取手机给的目标值或手机下发档位梯里选中的那一档；手表自己不算重量。热身步同走此通道，带 `isWarmup=true`。手机只收「正在等的那一组」：`flow.phase == .activeSet`，且 `exerciseId + setNumber` 与当前一致（幂等键）。热身期拒收正式组；热身步只在内存里推进，不记录。正式组走既有 `apply(.logSet)`，与手机上点「完成本组」是同一条 reducer / 休息 / 草稿保存路径。手机训练流不在时（App 被杀、草稿尚未恢复），`appendWatchSetToDraft` 用同样的键核对后追加进 durable 草稿。canonical AppData 仍只由手机的完成训练路径经 `CanonicalSessionWriter` 写入：没有新写路径，也没有新 mutation 类。
-3. **手表 → 手机，命令：只用 `sendMessage`。** 命令有 +30 休息、跳过休息（含倒计时到点的自动跳过）、暂停 / 继续、跳过热身、跳过本组（带四码原因和 `setNumber`）。手机不可达时命令直接丢弃；手表按钮置灰并显示「iPhone 不在身边」。手机只对当前状态执行：`exerciseId` 必须一致，阶段必须匹配；自动跳过在手机自身倒计时还剩 >1s 或已暂停时忽略。命令全部路由到手机自己的方法。不适 / 疼痛登记、换动作、跳过整个动作只在手机上做（owner 2026-08-16 裁定）。
+3. **手表 → 手机，命令：只用 `sendMessage`。** 命令有 +30 休息、跳过休息（含倒计时到点的自动跳过）、暂停 / 继续、跳过热身、跳过本组（带四码原因和 `setNumber`）。手机不可达时命令直接丢弃：手表上对应按钮置灰；休息屏在没有排队传输时显示「手机不可达」/「iPhone out of reach」。休息倒计时到点时，手表会做两件事：自己振动（`.notification` 触感，独立于 iPhone 的 FR-NT1 休息通知），并总是发一条 `restSkip(auto: true)`。手机收到后，只要自身倒计时还剩 ≤1s 且未暂停，就按自然结束收尾（`.restFinished`，不取消 FR-NT1 通知，结束休息 Live Activity）。这是 §7.1 `runRestTimer` 之外的第二个到点触发点，手机不在前台时也会推进训练流。手机只对当前状态执行：`exerciseId` 必须一致，阶段必须匹配；自动跳过在手机自身倒计时还剩 >1s 或已暂停时忽略。命令全部路由到手机自己的方法。不适 / 疼痛登记、换动作、跳过整个动作只在手机上做（owner 2026-08-16 裁定）。
 
-**持久化。** 手表本地什么都不存：无 App Group、无文件、无 UserDefaults、无 complication。处方只在内存里，加上系统保存的 applicationContext 和系统排队中的 userInfo 传输。
+**持久化。** 手表本地不存任何自有数据：无 App Group、无文件、无 UserDefaults、无 complication。处方只在内存里，加上系统保存的 applicationContext 和系统排队中的 userInfo 传输。它唯一持久化的产出是下文写入 Apple 健康的体能训练。手表能间接引起的手机侧写入只有两种：手机训练流不在时写进非 canonical 的 `active-session-draft.json`（与 canonical 同目录，不经 AppData 写闸），以及最终经 `CanonicalSessionWriter` 的完成训练 append。
 
 **HealthKit（手表 target 直接 import，不经 `RedeHealthKit`）。** `WorkoutSessionKeeper` 跑 `HKWorkoutSession` + `HKLiveWorkoutBuilder` + `HKLiveWorkoutDataSource`（传统力量训练、室内）。这是手表 app 抬腕外仍能存活的前提（#733）。请求的权限是 share=体能训练、read=心率 / 活动能量；整个手表 app 挡在「允许写入体能训练」的健康权限门后。会话完全跟随手机推来的状态：`trainingInProgress`（手机侧 = 训练流存在且不在练完摘要）为真时开，结束时按情况分三种——
 - `trainingInProgress` 变为假（通常是手机进入练完摘要），且不属于下面两种情况：`finishWorkout`，写入 Apple 健康，计入活动圆环。
@@ -1218,8 +1218,10 @@ FR-TR14 的「本次训练」是上述边界的窄例外：只编辑 `TrainFlowS
 - 训练中手机 App 被杀后重启时，首推 `trainingInProgress=false` 且无 outcome，可能导致手表先写入一次不完整的体能训练，恢复后再开一次，把一场训练拆成两条健康记录。
 - 写健康发生在手机进入练完摘要时，早于 canonical 保存成功。
 - 只请求了体能训练的 share 权限，心率 / 能量样本是否随 workout 一并存入健康未验证。
+- 60 分钟止损用手表当前时间减手机盖的 `sentAt`，没有时钟偏差容差；两端时钟不一致会让止损提前或推迟。
+- 1.11.0 内置 What's New 对用户承诺「断联超过一小时会停下来，不把不确定的数据写进健康」「任一边记的组另一边立刻可见」。前两条边界情况下，第一句并不总成立；第二句的「立刻」取决于连接，且手表的组只在与手机当前组一致时才被收下。
 
-**验证现状。** `RedeWatchLink` 包测试（28 项，消息编解码 / 向后兼容）、App 层 `WatchLoggedSetIntakeTests`（32 项，收组 / 命令 / 档位梯）、`RedeL10n` `WatchCopyTests`（6 项）都在 CI 和门禁里。CI 只构建 `Rede` scheme 的 iOS 目标，那样只产出资源壳，不构建 `RedeWatch` scheme。`transferUserInfo` 在模拟器上无法验证。`docs/工作记录/2026-08-20-watch-device-acceptance.md` 的 24 项真机验收没有完成记录。
+**验证现状。** `RedeWatchLink` 包测试（28 项，消息编解码 / 向后兼容）、App 层 `WatchLoggedSetIntakeTests`（32 项，收组 / 命令 / 档位梯）、`RedeL10n` `WatchCopyTests`（6 项）都在 CI 和门禁里。CI 只构建 `Rede` scheme 的 iOS 目标，那样只产出资源壳，不构建 `RedeWatch` scheme。没有自动化测试锁住三条通道纪律：它只靠三个发送点和注释维持；`WatchLink.swift` 整体在 `#if canImport(WatchConnectivity)` 内，host 上的 `swift test` 编不到它。门禁锁了 `IPHONEOS_DEPLOYMENT_TARGET = 17.0`，没锁 `WATCHOS_DEPLOYMENT_TARGET`（现为 10.0）；版本号三 target 同号守卫覆盖手表。`transferUserInfo` 在模拟器上无法验证。`docs/工作记录/2026-08-20-watch-device-acceptance.md` 的 24 项真机验收没有完成记录。
 
 ## 8. Progress / Plan / Settings 边界
 

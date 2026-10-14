@@ -1,7 +1,7 @@
 # Rede Product Copy Baseline — 产品文案基底
 
 > **状态:** Canonical / living copy baseline
-> **最后更新:** 2026-07-30（FR-TR14 练完存进计划双语合同已实现；生产购买仍关闭）
+> **最后更新:** 2026-10-14（手表对账：§5.5 What's New 与 HealthKit 段加现状注，未改文案）；上一次实质更新 2026-07-30（FR-TR14 练完存进计划双语合同已实现；生产购买仍关闭）
 > **适用范围:** 产品定位、v0 / 原型生成、App Store 文案、onboarding、paywall、UI microcopy、空状态、错误、通知、双语 locale
 > **权威边界:** 本文定义 Rede 如何说话,视觉品牌与原型画面方向以 `docs/REDE_PRODUCT_DESIGN_LANGUAGE.md` 为准。本文不授权任何新功能、网络、云、HealthKit 范围、医疗判断或 source-of-truth 变更。功能与架构边界以 `docs/REDE_MASTER_TECHNICAL_ARCHITECTURE.md` 和 `docs/REDE_iOS_SYSTEM_LOGIC.md` 为准。
 
@@ -510,8 +510,12 @@ What's New 的当前内置叙事（**1.9.2**）= **一句 hero 主打句 + 三�
 
 > **版本门三处同改纪律（bump 必查）**：`RedeL10n.appUpdateHeroLine` / `appUpdateHighlights` 两个 guard + app 侧 `RedeAppUpdateRuntime.bundledWhatsNewVersions` 注册表——漏改任一处，门禁 `testCurrentRedeMarketingVersionHasBundledReleaseNotes` 会红（1.9 bump 时实际抓到过）。
 > 前版叙事（1.9.1「训练现场，顺序随你调」+ 接下来现在练/编辑器防误删/更新感知；1.8「每块肌肉，都有自己的等级」）随版本切换移除，正文存 git history。
+>
+> **现状注（2026-10-14，手表对账顺带发现，未改上表）：** 代码里内置的已是 **1.11.0** 叙事（`RedeL10n` `appUpdateHeroLine` / `appUpdateHighlights`，`bundledWhatsNewVersions = ["1.11.0"]`）：hero「手表上就能练完一场 / Train a full session from your wrist」+ 8 条亮点，前 3 条讲 Apple Watch。上表仍是 1.9.2，未随 bump 写回，整段写回属单独的文案对账。其中两句手表承诺与 as-built 有出入，见系统逻辑 §7.2「读代码推断的边界情况」：「断联超过一小时会停下来，不把不确定的数据写进健康」，以及「任一边记的组另一边立刻可见」。
 
 > **实现状态（2026-06-13）:** 下面的 Apple Health / HealthKit 文案是 **FF 目标表面，当前未实现**——代码里没有 HealthKit。已 ship 的 Settings 隐私串遵循「未上线不提」（HealthKit 实装时再加这段）。本段保留为 HealthKit slice 落地时的文案基线。已 ship 的设置文案以 `RedeL10n` 实际串为准。
+>
+> **现状注（2026-10-14）：** 上面「代码里没有 HealthKit」已过时。iPhone 侧 `RedeHealthKit` 只读体重已上线（FR-PR8 范围 A，#617-619）。手表 target 会把练完的力量训练写入 Apple 健康，手表自己的权限说明（en）是："Rede uses heart rate and activity data to record this strength session." / "Rede saves your finished strength session to Health so it counts toward your Activity rings."。与此同时，iPhone 的 `NSHealthUpdateUsageDescription` 仍写「Rede 不向 Apple 健康写入任何数据」，这句已与手表行为不符，待随下个版本修正。下方示例只覆盖读取 / 导入，不含手表写入；手表的健康边界见系统逻辑 §7.2。
 
 示例（FF·HealthKit slice 落地时启用）:
 

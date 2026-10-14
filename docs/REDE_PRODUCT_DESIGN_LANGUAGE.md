@@ -1,7 +1,7 @@
 # Rede Product Design Language — 产品设计语言
 
 > **状态:** Canonical / living design-language baseline
-> **最后更新:** 2026-10-12（视觉对齐轮：补记 2026-08-07 低饱和换代，并写回导航 chrome、悬浮 CTA、卡面材质、排版、Widget 与 Apple Watch 契约）
+> **最后更新:** 2026-10-14（手表 / 小组件对账：§7 Widget 加现状注，契约未改）；上一次实质更新 2026-10-12（视觉对齐轮：补记 2026-08-07 低饱和换代，并写回导航 chrome、悬浮 CTA、卡面材质、排版、Widget 与 Apple Watch 契约）
 > **视觉现行版本:** 2026-08-07 低饱和暖锻铁换代；2026-10-12 对账后的角色、比例、禁区与组件契约以本文为准。
 > **数值真源:** App 色值、字阶、圆角与间距以 `ios/Rede/RedeTheme.swift` 为准，组件几何以 `ios/Rede/RedeComponents.swift` 为准；发生冲突时以代码为准。`WatchTheme.swift` 的 `WatchPalette` 与 `RestLiveActivity.swift` 的 `WidgetPalette`（小组件与休息 Live Activity 共用） 是本地副本，改基础色时三处同改。
 > **开放校准项:** `ForgedGrain.diagonal` 对角拉丝已成为默认材质；其强度尚待真机暗光 / OLED 校准，校准完成前不把当前强度写成永久合同。
@@ -475,6 +475,8 @@ Medium:
 - 推荐起始动作。
 - 一个简短信号。
 - 进入 App 的动作。
+
+> **现状（2026-10-14 对账，只记事实）：** 上面的 Small / Medium 清单是设计目标，不是已实现的布局。快照（schema v1）只带 headline、advice、footnote 和至多两行等级读数，不带状态码：「Train / Hold / Deload」只以本地化前缀的形式出现在 headline 文字里。Medium 实际是左栏判断 / 理由 / 更新时间加右栏读数，没有「推荐起始动作」、独立「信号」位，也没有进入 App 的深链动作（widget 未设 `widgetURL` / `Link`）。补齐与否待 owner 决定。
 
 Small / Medium 在非校准且已有等级时，可在判断之下显示至多两行最高等级肌群，作为被动上下文而不是第二个判断；校准中、缺失或无等级时完全不显示，不能抢 headline/advice 的层级。
 
