@@ -86,5 +86,5 @@ Before a PR is ready:
 
 1. Run `git diff --check`.
 2. Run the relevant Swift package tests when runtime package code changed.
-3. Run the Xcode build when clean app wiring, entitlements, HealthKit, notifications, widgets, or project settings changed. For information (status 2026-10-14; see Master §10): the watchOS app (`ios/RedeWatch`) and the watchOS slice of `RedeWatchLink` only build for real through the shared `RedeWatch` scheme. The iOS `Rede` build compiles `RedeWatchLink`'s iOS side but embeds only a resource stub of the watch app. Whether a `RedeWatch` build is a required PR check is pending the owner's watchOS decision.
+3. Run the Xcode build when clean app wiring, entitlements, HealthKit, notifications, widgets, or project settings changed. For information (status 2026-10-14; see Master §10): the installable watchOS app (`ios/RedeWatch`, which links `RedeWatchLink`'s watchOS slice) only builds through the shared `RedeWatch` scheme; watchOS-capable packages can also be built on their own for a watchOS destination. The iOS `Rede` build compiles `RedeWatchLink`'s iOS side but embeds only a resource stub of the watch app. Whether a `RedeWatch` build is a required PR check is pending the owner's watchOS decision.
 4. Confirm no old web runtime, Node/Vite command, browser test, or cloud runtime implementation was reintroduced.
