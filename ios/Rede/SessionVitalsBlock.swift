@@ -155,7 +155,10 @@ extension ProgressTabView {
     /// 与其按日期猜一条，不如什么都不显示。
     static func loadVitals(for record: SnapshotSessionRecord) async -> SessionVitals? {
         #if DEBUG
-        if CommandLine.arguments.contains("-historyDetailFixture") { return vitalsFixture }
+        if CommandLine.arguments.contains("-historyDetailFixture") {
+            // -historyDetailNoVitals：同一场夹具、但健康里没有对应记录——验「没心率」的版式。
+            return CommandLine.arguments.contains("-historyDetailNoVitals") ? nil : vitalsFixture
+        }
         #endif
         guard let start = isoDate(record.startedAtISO), let end = isoDate(record.finishedAtISO) else { return nil }
         let reader = HKSessionVitalsReader()

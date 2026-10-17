@@ -1108,26 +1108,31 @@ struct ProgressTabView: View {
     private func historyDetailSheet(_ record: SnapshotSessionRecord) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: RedeSpace.section) {
-                Text(s.shortDate(fromISO: record.dateISO))
-                    .font(.redeHeadline)
-                    .tracking(RedeTracking.headline)
-                    .foregroundStyle(Color.redeT1)
+                // 日期与「逐组明细」仍是 6pt 一组：绝大多数场次没有心率，它们的版式与加心率块之前
+                // 一模一样（审查 2026-10-17）。只有真有心率块时，块的上下才各留出一个区块间距。
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(s.shortDate(fromISO: record.dateISO))
+                        .font(.redeHeadline)
+                        .tracking(RedeTracking.headline)
+                        .foregroundStyle(Color.redeT1)
 
-                // 这一场的生命体征。放在逐组明细之前：先答「这一场是怎么回事」，再看每一组。
-                if let vitals = detailVitals?.belonging(to: record.id), vitals.hasHeartRateOrEnergy {
-                    VStack(alignment: .leading, spacing: 12) {
-                        SessionVitalsStats(vitals: vitals, s: s)
-                        if !vitals.heartRateSeries.isEmpty {
-                            Overline(text: s.vitalsOverline)
-                            HeartRateTrace(series: vitals.heartRateSeries,
-                                           setMarks: Self.setMarks(in: record),
-                                           totalSeconds: vitals.durationSeconds,
-                                           s: s)
+                    // 这一场的生命体征。放在逐组明细之前：先答「这一场是怎么回事」，再看每一组。
+                    if let vitals = detailVitals?.belonging(to: record.id), vitals.hasHeartRateOrEnergy {
+                        VStack(alignment: .leading, spacing: 12) {
+                            SessionVitalsStats(vitals: vitals, s: s)
+                            if !vitals.heartRateSeries.isEmpty {
+                                Overline(text: s.vitalsOverline)
+                                HeartRateTrace(series: vitals.heartRateSeries,
+                                               setMarks: Self.setMarks(in: record),
+                                               totalSeconds: vitals.durationSeconds,
+                                               s: s)
+                            }
                         }
+                        .padding(.vertical, RedeSpace.section - 6)
                     }
-                }
 
-                Overline(text: s.historyDetailSets)
+                    Overline(text: s.historyDetailSets)
+                }
                 ForEach(Array(record.exercises.enumerated()), id: \.offset) { _, exercise in
                     VStack(alignment: .leading, spacing: 6) {
                         Text(localeStore.exerciseName(exercise.exerciseId))
