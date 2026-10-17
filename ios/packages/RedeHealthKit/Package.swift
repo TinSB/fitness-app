@@ -10,7 +10,7 @@
 // 复刻 RedeNotifications 边界范式（不引入新模式）：
 //  - 纯层（默认编译、host `swift test` 全覆盖）：BodyWeightSample 值类型 + 协议 seam
 //    BodyWeightReading（授权/读最新）。无 HealthKit 依赖、Foundation-only、可单测。
-//  - 平台适配层（`#if os(iOS)`、host test 排除）：唯一 import HealthKit 的 HKBodyWeightReader，
+//  - 平台适配层（`#if os(iOS)`、host test 排除）：import HealthKit 的只有这一层的适配器文件，体重是 HKBodyWeightReader，
 //    HKHealthStore 请求 bodyMass 只读授权 + 查最新样本。
 //
 // 红线（Master §211/220）：HealthKit 导入是 DERIVED 派生展示——绝不读/写 canonical AppData、

@@ -460,8 +460,31 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         store.startSession()
 
         await fulfillment(of: [asked], timeout: 2)
+        // 给可能存在的第二次请求留出落地时间再读计数：请求发生在 SessionStore 起的 Task 里，
+        // 紧接着 fulfillment 就读，第二次哪怕真的发生了也可能还没到 actor，读到 1 而误判通过。
+        try await Task.sleep(for: .milliseconds(300))
         let calls = await launcher.calls
         XCTAssertEqual(calls, 1)
+    }
+
+    func testRestoringAnInterruptedSessionDoesNotAskTheWatchAgain() async throws {
+        // 规格（Master 第 13 条）写明「只在新开一场时拉起，恢复草稿不拉起」：恢复不是用户
+        // 点开始的那一刻，那时表上的会话多半还在跑。这里钉住它——以后谁把拉起挪进
+        // flow 建立的公共路径，这条就会红。
+        let asked = expectation(description: "恢复草稿不应请求拉起手表")
+        asked.isInverted = true
+        let launcher = LaunchRecorder(onCall: asked)
+        let store = try storeForStart(launcher: launcher, watchPresent: true, prescription: prescription())
+        store.pendingDraft = TrainSessionDraft(
+            dateISO: "2026-10-17", startedAt: Date(), prescription: prescription(),
+            events: [], catalogVersion: ExerciseCatalog.minimal.catalogVersion)
+
+        store.restorePendingDraft()
+
+        XCTAssertNotNil(store.flow, "前提：草稿真的恢复成了进行中的训练")
+        await fulfillment(of: [asked], timeout: 0.5)
+        let calls = await launcher.calls
+        XCTAssertEqual(calls, 0)
     }
 
     func testNoPairedWatchMeansNoLaunchRequestAndTrainingStillStarts() async throws {

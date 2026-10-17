@@ -1227,9 +1227,10 @@ FR-TR14 的「本次训练」是上述边界的窄例外：只编辑 `TrainFlowS
 - 只请求了体能训练的 share 权限，心率 / 能量样本是否随 workout 一并存入健康未验证。
 - 60 分钟止损用手表当前时间减手机盖的 `sentAt`，没有时钟偏差容差；两端时钟不一致会让止损提前或推迟。
 - 1.11.0 内置 What's New 对用户承诺「断联超过一小时会停下来，不把不确定的数据写进健康」「任一边记的组另一边立刻可见」。前两条边界情况下，第一句并不总成立；第二句的「立刻」取决于连接，且手表的组只在与手机当前组一致时才被收下。
-- （v3.8）开训拉起手表依赖两台设备时钟大致一致（秒级）。唯一会判错的情形是拉起后几秒内就放弃：那份「放弃」可能被当成旧状态，结局是走 60 分钟止损并丢弃，不写健康。`startWatchApp` 能否在表锁屏、放下手腕、表 app 刚装好时可靠拉起，Apple 文档没有说明，论坛另有「只在充电时生效」的单帖报告；这些都只能真机验证。
+- （v3.8）开训拉起手表依赖两台设备时钟大致一致（秒级）。拉起后几秒内就放弃，或者拉起请求晚于「放弃」到达，那份「放弃」都可能被当成旧状态，结局是走 60 分钟止损并丢弃，不写健康。例外是这 60 分钟内用户又开了一场真训练：新处方会确认这个还在跑的会话，健康里那一条的开始时间被提前到误触那一刻。触发它需要几秒内完成放弃（要经菜单和确认）；独立审查（2026-10-17）定为 MINOR，没有为此改调和循环。
+- （v3.8）被后台拉起后，确认依赖表 app 收到手机的处方，而 WatchConnectivity 的激活和收包挂在视图的 `.task` 上。如果后台拉起时界面完全不渲染，用户又整场（超过 60 分钟）一次都不抬腕，「等手机确认」的止损会把这一场真训练整场丢弃，不写进健康；手机上的训练记录不受影响。抬一次腕，正在跑的体能训练就会把 Rede 带到前台，接着完成确认。后台拉起时界面渲不渲染没有得到证实，所以没有为此把收发通道提到 app 级；真机验收清单第零节有专门的一条来测它。`startWatchApp` 能否在表锁屏、放下手腕、表 app 刚装好时可靠拉起，Apple 文档没有说明，论坛另有「只在充电时生效」的单帖报告；这些都只能真机验证。
 
-**验证现状。** `RedeWatchLink` 包测试（28 项，消息编解码 / 向后兼容）、App 层 `WatchLoggedSetIntakeTests`（35 项，收组 / 命令 / 档位梯；v3.8 起含开训拉起手表的三条：有表请求恰好一次、没表不请求且照常开训、休息日不开训也不请求）、`RedeL10n` `WatchCopyTests`（6 项）都在 CI 和门禁里。`Rede` scheme 的 iOS 构建只给内嵌手表 app 产出资源壳；自 Master v3.7（2026-10-14）起，CI 与门禁另构建 `RedeWatch` scheme（generic watchOS Simulator，见 §11）。没有自动化测试锁住三条通道纪律：它只靠三个发送点和注释维持；`WatchLink.swift` 整体在 `#if canImport(WatchConnectivity)` 内，host 上的 `swift test` 编不到它。门禁锁了 `IPHONEOS_DEPLOYMENT_TARGET = 17.0`，没锁 `WATCHOS_DEPLOYMENT_TARGET`（现为 10.0）；版本号三 target 同号守卫覆盖手表。`transferUserInfo` 在模拟器上无法验证。`docs/工作记录/2026-08-20-watch-device-acceptance.md` 的 22 项真机验收没有完成记录（#747 的 CHANGELOG 记作 24 项，实为 22 行）。
+**验证现状。** `RedeWatchLink` 包测试（28 项，消息编解码 / 向后兼容）、App 层 `WatchLoggedSetIntakeTests`（36 项，收组 / 命令 / 档位梯；v3.8 起含开训拉起手表的四条：有表请求恰好一次、没表不请求且照常开训、休息日不开训也不请求、恢复草稿不请求）、`RedeL10n` `WatchCopyTests`（6 项）都在 CI 和门禁里。`Rede` scheme 的 iOS 构建只给内嵌手表 app 产出资源壳；自 Master v3.7（2026-10-14）起，CI 与门禁另构建 `RedeWatch` scheme（generic watchOS Simulator，见 §11）。没有自动化测试锁住三条通道纪律：它只靠三个发送点和注释维持；`WatchLink.swift` 整体在 `#if canImport(WatchConnectivity)` 内，host 上的 `swift test` 编不到它。门禁锁了 `IPHONEOS_DEPLOYMENT_TARGET = 17.0`，没锁 `WATCHOS_DEPLOYMENT_TARGET`（现为 10.0）；版本号三 target 同号守卫覆盖手表。`transferUserInfo` 在模拟器上无法验证。`docs/工作记录/2026-08-20-watch-device-acceptance.md` 的 22 项真机验收没有完成记录（#747 的 CHANGELOG 记作 24 项，实为 22 行）。
 
 ## 8. Progress / Plan / Settings 边界
 
