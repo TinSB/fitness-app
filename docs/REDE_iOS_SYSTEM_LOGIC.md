@@ -1213,7 +1213,7 @@ FR-TR14 的「本次训练」是上述边界的窄例外：只编辑 `TrainFlowS
 - 手机报告 `abandoned`：`discardWorkout`，不写健康。
 - 在组 / 休息屏上 60 分钟没收到手机推送（以手机侧 `sentAt` 计）：止损，`discardWorkout`，不写健康。此规则由 #740 引入，同一 60 分钟规则也取代了 #737 的 8 小时过期判定。
 
-心率（最近读数）和已练时长在手表上显示（#748）。`WatchLoggedSet` / `WatchCommand` 不带任何健康数据，所以 AppData 和引擎都拿不到这些数据。iPhone 侧不写任何 HKWorkout；它与体能训练相关的只有两件事，都在 `RedeHealthKit` 内（Master v3.8）：开训时请求拉起手表（下一段），以及只读这一场的训练记录、心率与能量，供单场记录页展示（#749，`toShare` 为空）。
+心率（最近读数）和已练时长在手表上显示（#748）。`WatchLoggedSet` / `WatchCommand` 不带任何健康数据，所以 AppData 和引擎都拿不到这些数据。iPhone 侧不写任何 HKWorkout；它与体能训练相关的只有两件事，都在 `RedeHealthKit` 内（Master v3.8）：开训时请求拉起手表（下一段），以及只读这一场的训练记录、心率与能量，供单场记录页展示（`toShare` 为空；v3.8 已批准，代码随 PR #749 落地，#749 合入 main 之前包里还没有这段）。
 
 **开训拉起手表（Master v3.8，§5 Apple Watch 第 13 条 · 2026-10-17）。** 此前会话只在手表 app **已经在跑**时才会跟着手机开起来：手机推给手表的只有 applicationContext，而 Apple 文档对 WatchConnectivity 三条通道都只承诺「对端醒来时能读到」，从不承诺能启动未运行的表 app。所以用户要么先抬腕点开表上的 Rede，要么像 owner 那样每次自己去开苹果的体能训练。v3.8 补上这一步：
 - **手机侧。** `SessionStore.startSession` 在 `flow` 建好、草稿入队之后调 `requestWatchWorkout()`。只有 `WatchLink.hasCounterpart` 为真（配对了且表上装着 Rede）时，才经 `RedeHealthKit` 的 `WatchWorkoutLaunching` seam 调 `HKHealthStore.startWatchApp(toHandle:)`，配置为传统力量训练、室内。恢复草稿时不调，因为恢复不是用户点开始的那一刻。iPhone 不为此申请任何 HealthKit 授权；Apple 文档只把授权责任放在手表端（watchOS 6 起手表独立授权）。结果只写 `os.Logger`（subsystem `com.tinsab.rede`，category `WatchLaunch`），不进界面。失败时用户仍可自己开表 app，行为与此前完全一样。
