@@ -310,6 +310,15 @@ public struct RedeStrings: Sendable {
     }
     public var settingsSubscriptionManage: String { t("管理订阅", "Manage subscriptions") }
     public var settingsSubscriptionRetry: String { t("重新核对", "Check again") }
+    /// 开闸 checklist ⑦：权益核对不出时唯一语义正确的自救动作（向 Apple 重新同步购买），
+    /// 与本地「重新核对」不是一回事——后者只重读已缓存的结论。
+    public var settingsSubscriptionRestore: String { t("恢复购买", "Restore purchases") }
+    public var settingsSubscriptionRestored: String {
+        t("已向 Apple 重新同步购买", "Purchases re-synced with Apple")
+    }
+    /// 付费态页脚的两条政策链接（购买面只在可购买时出现，付费用户够不到 Apple 那套原生链接）。
+    public var subscriptionPolicyPrivacy: String { t("隐私政策", "Privacy Policy") }
+    public var subscriptionPolicyTerms: String { t("使用条款", "Terms of Use") }
     public var settingsSubscriptionOperationFailed: String {
         t("暂时无法完成　稍后再试　Free Core 不受影响",
           "Couldn't complete that right now. Try again later. Free Core is unaffected")
