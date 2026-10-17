@@ -1,6 +1,8 @@
 import Foundation
+import os
 import RedeDataHealth
 import RedeDomain
+import RedeHealthKit
 import RedeL10n
 import RedeLocalSnapshot
 import RedeNotifications
@@ -120,6 +122,14 @@ final class SessionStore {
     private let restLiveActivity = RestLiveActivityController()
     /// 进行中训练 draft 存取；生产默认仍落原文件，测试注入 fake，禁止触碰真实 AppData。
     private let draftStore: any TrainSessionDraftStoring
+    /// v3.8 开训时拉起手表 app 的 seam：生产走 RedeHealthKit 的 startWatchApp 适配器，测试注入 fake。
+    private let watchWorkoutLauncher: any WatchWorkoutLaunching
+    /// 「这台手机有没有装着 Rede 的配对手表」。注入而不是直接读 WatchLink：
+    /// app-hosted 单测跑在没有配对手表的模拟器上，直接读永远是 false，「有表才拉起」那一支就测不到。
+    private let watchCounterpartPresent: @MainActor () -> Bool
+    /// 拉起结果只进系统日志、不进界面（同 RestLiveActivityController 的诊断口径）：
+    /// 真机验收时手表没亮，连上 Mac 用 Console 按 subsystem 过滤就能看到系统给的原因。
+    private let watchLaunchLogger = Logger(subsystem: "com.tinsab.rede", category: "WatchLaunch")
     /// 计划写入文件。生产固定 canonical；app-hosted 测试注入临时文件以实走同一写闸，
     /// 不触碰测试宿主的真实 AppData。
     private let planWriteFileURL: URL
@@ -131,10 +141,14 @@ final class SessionStore {
 
     init(
         draftStore: any TrainSessionDraftStoring = FileTrainSessionDraftStore(),
-        planWriteFileURL: URL = TodayModel.canonicalFileURL()
+        planWriteFileURL: URL = TodayModel.canonicalFileURL(),
+        watchWorkoutLauncher: any WatchWorkoutLaunching = HKWatchWorkoutLauncher(),
+        watchCounterpartPresent: @escaping @MainActor () -> Bool = { WatchLink.shared.hasCounterpart }
     ) {
         self.draftStore = draftStore
         self.planWriteFileURL = planWriteFileURL
+        self.watchWorkoutLauncher = watchWorkoutLauncher
+        self.watchCounterpartPresent = watchCounterpartPresent
         // K6 启动清理：上个进程被杀（训练异常中断）可能留下孤儿 Live Activity——
         // 新进程首次构造时必无休息在跑，全部收掉（controller 串行链保证先于 begin）。
         if !Self.didRunLaunchCleanup {
@@ -2533,6 +2547,29 @@ final class SessionStore {
         restCountdown.clear() // 新会话从 activeSet 起步，旧倒计时不得滞留
         restLiveActivity.end(endpoint: "session-start")   // K6：旧视觉层同不得滞留
         enqueueDraftSave()
+        requestWatchWorkout()
+    }
+
+    /// v3.8：开训时请系统把配对手表上的 Rede 拉起来，让它自己开一场力量训练会话——
+    /// 用户不必再抬腕点开表 app（owner 2026-10-17：此前他每次都得自己去开苹果的体能训练）。
+    ///
+    /// · 没有装着 Rede 的配对手表 → 什么都不做。绝大多数用户没有手表；不判就是每次开训
+    ///   都去敲一扇不存在的门（与 WatchLink.hasCounterpart 守推送是同一条理由）。
+    /// · 失败只进系统日志、不进界面：手表没被叫醒时，用户仍能自己打开表 app，
+    ///   表侧会从已存的处方接上——与这一片之前完全一样，没有任何东西变坏。
+    /// · 只在真正开一场新训练时调，恢复 draft 时不调：恢复不是「用户点开始」的那一刻，
+    ///   而那时表上的会话多半还在跑。
+    private func requestWatchWorkout() {
+        guard watchCounterpartPresent() else { return }
+        let launcher = watchWorkoutLauncher
+        let logger = watchLaunchLogger
+        Task {
+            switch await launcher.launchStrengthWorkout() {
+            case .requested: logger.log("watch-launch requested")
+            case .unavailable: logger.log("watch-launch unavailable")
+            case .failed(let reason): logger.log("watch-launch failed: \(reason, privacy: .public)")
+            }
+        }
     }
 
     /// 今日尚未加载时先加载再开训（Plan tab 直接开训路径）。

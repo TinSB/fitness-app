@@ -1,4 +1,7 @@
 import XCTest
+import RedeDataHealth
+import RedeDomain
+import RedeHealthKit
 import RedeL10n
 import RedeTrainingDecision
 import RedeWatchLink
@@ -418,6 +421,101 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         XCTAssertTrue(external.weightRungs.map(\.text).contains(where: { $0 == "130" || $0 == "135" }),
                       "\(external.weightRungs.map(\.text))")
     }
+
+    // MARK: - v3.8：开训时拉起手表（startWatchApp 的手机那一半）
+    //
+    // 「表真的亮起来、真的开始采心率」只能真机验（模拟器不配对、也没有心率）。
+    // 但手机这一半**什么时候该敲门、什么时候绝不能敲**是纯逻辑，钉死在这里：
+    // 敲多了是每次开训都给没表的用户制造一条系统错误；敲漏了就是 owner 原来那个问题。
+
+    /// 一个真正能开训的今日（有处方）。startSession 的 guard 认的就是 todayModel?.prescription。
+    private func storeForStart(launcher: LaunchRecorder, watchPresent: Bool,
+                               prescription rx: TodayPrescription?) throws -> SessionStore {
+        let store = SessionStore(draftStore: FakeDraftStore(),
+                                 watchWorkoutLauncher: launcher,
+                                 watchCounterpartPresent: { watchPresent })
+        let raw = try JSONDecoder().decode(AppData.self, from: Data(#"{"schemaVersion":11}"#.utf8))
+        store.todayOutcome = .ready(TodayModel(
+            verdict: TodayVerdict(call: .train, reason: .normalProgression, signals: []),
+            prescription: rx,
+            cleanView: CleanAppDataView(raw: raw, sessions: [],
+                                        profile: CleanProfile(equipmentScenario: nil, unitSystem: "kg"),
+                                        program: CleanProgram(splitType: "push-pull-legs"), issues: []),
+            now: Date(),
+            coachActions: [], substitutions: [:], oneTimeSubstitutions: [:],
+            equipmentScenario: nil, daySequence: ["push-a"], scheduledDayCode: "push-a",
+            weeklyCycleRestart: false))
+        return store
+    }
+
+    func testStartingTrainingAsksTheWatchToStartExactlyOnce() async throws {
+        let asked = expectation(description: "手机请求拉起手表")
+        asked.expectedFulfillmentCount = 1   // 默认 assertForOverFulfill：第二次敲门直接判失败
+        let launcher = LaunchRecorder(onCall: asked)
+        let store = try storeForStart(launcher: launcher, watchPresent: true, prescription: prescription())
+
+        store.startSession()
+        XCTAssertNotNil(store.flow, "前提：这一场真的开起来了")
+        // 训练已在进行时再点一次开始：startSession 的 guard 挡住，不能再敲一次门。
+        store.startSession()
+
+        await fulfillment(of: [asked], timeout: 2)
+        // 给可能存在的第二次请求留出落地时间再读计数：请求发生在 SessionStore 起的 Task 里，
+        // 紧接着 fulfillment 就读，第二次哪怕真的发生了也可能还没到 actor，读到 1 而误判通过。
+        try await Task.sleep(for: .milliseconds(300))
+        let calls = await launcher.calls
+        XCTAssertEqual(calls, 1)
+    }
+
+    func testRestoringAnInterruptedSessionDoesNotAskTheWatchAgain() async throws {
+        // 规格（Master 第 13 条）写明「只在新开一场时拉起，恢复草稿不拉起」：恢复不是用户
+        // 点开始的那一刻，那时表上的会话多半还在跑。这里钉住它——以后谁把拉起挪进
+        // flow 建立的公共路径，这条就会红。
+        let asked = expectation(description: "恢复草稿不应请求拉起手表")
+        asked.isInverted = true
+        let launcher = LaunchRecorder(onCall: asked)
+        let store = try storeForStart(launcher: launcher, watchPresent: true, prescription: prescription())
+        store.pendingDraft = TrainSessionDraft(
+            dateISO: "2026-10-17", startedAt: Date(), prescription: prescription(),
+            events: [], catalogVersion: ExerciseCatalog.minimal.catalogVersion)
+
+        store.restorePendingDraft()
+
+        XCTAssertNotNil(store.flow, "前提：草稿真的恢复成了进行中的训练")
+        await fulfillment(of: [asked], timeout: 0.5)
+        let calls = await launcher.calls
+        XCTAssertEqual(calls, 0)
+    }
+
+    func testNoPairedWatchMeansNoLaunchRequestAndTrainingStillStarts() async throws {
+        let asked = expectation(description: "不应请求拉起手表")
+        asked.isInverted = true
+        let launcher = LaunchRecorder(onCall: asked)
+        let store = try storeForStart(launcher: launcher, watchPresent: false, prescription: prescription())
+
+        store.startSession()
+
+        // 绝大多数用户没有手表：开训照常，只是不去敲一扇不存在的门。
+        XCTAssertNotNil(store.flow)
+        await fulfillment(of: [asked], timeout: 0.5)
+        let calls = await launcher.calls
+        XCTAssertEqual(calls, 0)
+    }
+
+    func testRestDayStartsNothingAndAsksNothing() async throws {
+        let asked = expectation(description: "休息日不应请求拉起手表")
+        asked.isInverted = true
+        let launcher = LaunchRecorder(onCall: asked)
+        let store = try storeForStart(launcher: launcher, watchPresent: true, prescription: nil)
+
+        store.startSession()
+
+        // 没有处方就没有这一场；手表上更不能凭空冒出一场训练写进健康。
+        XCTAssertNil(store.flow)
+        await fulfillment(of: [asked], timeout: 0.5)
+        let calls = await launcher.calls
+        XCTAssertEqual(calls, 0)
+    }
 }
 
 private final class FakeDraftStore: TrainSessionDraftStoring {
@@ -426,4 +524,17 @@ private final class FakeDraftStore: TrainSessionDraftStoring {
     func clear() { stored = nil }
     func enqueueSave(_ draft: TrainSessionDraft) { stored = draft }
     func saveDurably(_ draft: TrainSessionDraft) -> Bool { stored = draft; return true }
+}
+
+/// 记录手机有没有请求拉起手表（v3.8）。用 actor：调用发生在 SessionStore 起的 Task 里，
+/// 与测试本身并发，裸写计数就是数据竞态——RedeEntitlements 的测试替身就因此出过偶发段错误。
+private actor LaunchRecorder: WatchWorkoutLaunching {
+    private(set) var calls = 0
+    private let onCall: XCTestExpectation
+    init(onCall: XCTestExpectation) { self.onCall = onCall }
+    func launchStrengthWorkout() async -> WatchWorkoutLaunchResult {
+        calls += 1
+        onCall.fulfill()
+        return .requested
+    }
 }
