@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Rede 手表隐私清单（2026-10-17）。按手表包自己的实际用法申报，不照抄 iPhone 那份：
+	     · 不追踪、无追踪域名。
+	     · 采集类型为空：手表不联网（无 URLSession / CloudKit），也不做云同步。心率、活动能量
+	       只在手表上显示；训练记录经 HealthKit 写进本机健康。Apple 对「采集」的定义是传出设备，
+	       本机处理不算（App privacy details「only on device」一条）。iPhone 那份申报的三类
+	       来自云同步，手表没有这条路径。
+	     · 无 required-reason API：手表源码及其链接的 7 个包里没有 UserDefaults、文件时间戳、
+	       磁盘空间、开机时长、活动键盘这五类调用；构建出的手表二进制 `nm -u` 也查不到对应符号。
+	     以后手表若用上其中任何一类（例如拿 UserDefaults 存偏好），必须在这里同改。 -->
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array/>
+</dict>
+</plist>
