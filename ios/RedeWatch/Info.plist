@@ -13,5 +13,9 @@
 	<array>
 		<string>workout-processing</string>
 	</array>
+	<!-- 出口加密声明：与 Rede / RedeWidget 两个 Info.plist 同口径（Boolean false）。手表不联网，
+	     只用系统自带的 WatchConnectivity 与 HealthKit，没有自带加密。 -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>

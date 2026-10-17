@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		7B3C91D42A18E5F6A0000003 /* RedeWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6A0000002 /* RedeWatchApp.swift */; };
+		7B3C91D42A18E5F6F1000002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6F1000001 /* PrivacyInfo.xcprivacy */; };
 		7B3C91D42A18E5F6C5000002 /* WorkoutSessionKeeper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6C5000001 /* WorkoutSessionKeeper.swift */; };
 		7B3C91D42A18E5F6D0000002 /* WatchTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6D0000001 /* WatchTheme.swift */; };
 		7B3C91D42A18E5F6D1000004 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 7B3C91D42A18E5F6D1000001 /* InfoPlist.strings */; };
@@ -137,6 +138,7 @@
 /* Begin PBXFileReference section */
 		7B3C91D42A18E5F6A0000001 /* RedeWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RedeWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B3C91D42A18E5F6A0000002 /* RedeWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RedeWatchApp.swift; sourceTree = "<group>"; };
+		7B3C91D42A18E5F6F1000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		7B3C91D42A18E5F6C5000001 /* WorkoutSessionKeeper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutSessionKeeper.swift; sourceTree = "<group>"; };
 		7B3C91D42A18E5F6D0000001 /* WatchTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTheme.swift; sourceTree = "<group>"; };
 		7B3C91D42A18E5F6D1000002 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -261,6 +263,7 @@
 				7B3C91D42A18E5F6D0000001 /* WatchTheme.swift */,
 				7B3C91D42A18E5F6C4000001 /* Assets.xcassets */,
 				7B3C91D42A18E5F6D1000001 /* InfoPlist.strings */,
+				7B3C91D42A18E5F6F1000001 /* PrivacyInfo.xcprivacy */,
 			);
 			path = RedeWatch;
 			sourceTree = "<group>";
@@ -527,6 +530,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7B3C91D42A18E5F6C4000002 /* Assets.xcassets in Resources */,
+				7B3C91D42A18E5F6F1000002 /* PrivacyInfo.xcprivacy in Resources */,
 				7B3C91D42A18E5F6D1000004 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
