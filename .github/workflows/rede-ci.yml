@@ -132,6 +132,26 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             build
 
+      # 手表 app 只有经 RedeWatch scheme 才真正编译：上面 Rede scheme 的 iOS 构建只嵌一个资源壳。
+      # Master v3.7（2026-10-14，WATCH-10 提案 E）起为必跑项；与 .claude/quality-gate.cmd 同步。
+      # runner 缺 watchOS 平台时下载一次再重试；第二次失败即真实失败。
+      - name: Build watchOS app
+        shell: bash
+        run: |
+          set -euo pipefail
+          build_watch() {
+            xcodebuild \
+              -project ios/Rede.xcodeproj \
+              -scheme RedeWatch \
+              -destination 'generic/platform=watchOS Simulator' \
+              build
+          }
+          if ! build_watch; then
+            echo "::warning::RedeWatch build failed; downloading the watchOS platform and retrying once"
+            xcodebuild -downloadPlatform watchOS
+            build_watch
+          fi
+
       - name: App-hosted policy tests (fail-closed subscription + review + update + drafts)
         shell: bash
         run: |

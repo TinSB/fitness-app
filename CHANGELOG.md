@@ -2,6 +2,106 @@
 
 All notable native iOS product, architecture, repository-governance, and documentation changes should be recorded here.
 
+## 2026-10-14
+
+- **Master v3.7: watch HealthKit workout-session exception, bounded ActivityKit, single authority over CRDT for the watch, watch PRD scope and a required watchOS build (owner approved proposals B–E of WATCH-10)**: the owner approved the four remaining proposals (「bcde都做」). No app code changed; CI and the local quality gate gained a watchOS build step.
+  - **(B) Watch HealthKit.** New §5 Apple Watch Companion Boundary rule 10 makes the watch target's workout session a narrow, named exception to §9 "HealthKit only inside `RedeHealthKit`":
+    - HealthKit only in `WorkoutSessionKeeper.swift`, one live session at a time (`HKWorkoutSession` + `HKLiveWorkoutBuilder` + `HKLiveWorkoutDataSource`, traditional strength training, indoor).
+    - Authorization limited to sharing workouts and reading heart rate and active energy. The existing whole-app workout-write permission gate (owner ruling, #737) stays product behaviour in PRD FR-AW3, not a boundary rule.
+    - The session follows the phone-pushed `trainingInProgress`, writes one workout on a normal end, and discards it on an abandoned session or the 60-minute no-update stop-loss.
+    - Health data is display-only on the watch and never crosses `RedeWatchLink`. Any other watch HealthKit use needs a further amendment.
+    - The iPhone stays limited to `RedeHealthKit`'s read-only body weight; workout import and iPhone HKWorkout writes stay deferred.
+    - §5 `RedeHealthKit` row, §6 derived records and §9 updated to match.
+  - **(C) ActivityKit.** Added to the §9 allowed list, bounded to the existing rest Live Activity:
+    - the app-target `RestLiveActivityController`, the `#if os(iOS)` `RestActivityAttributes` in `RedeWidgetShared`, and the widget-target UI;
+    - local only (`pushType: nil`, no push tokens), display-only, never canonical, never engine input.
+    - The §5 `RedeWidgetShared` row now lists the WidgetKit reloader and `RestActivityAttributes`.
+  - **(D) Single authority.** New rule 11: the phone ↔ watch active session is single-writer and supersedes the CRDT co-editing direction for the watch; CRDT stays deferred, and its recorded record-level merge direction for future cloud sync is unchanged.
+    - `docs/REDE_REBUILD_00_IRONRULES_AND_CLOUD.md` §1/§3/§4/§6 amended with the original requirement kept on record.
+    - `docs/CLOUD_DECISIONS_ARCHIVE.md` §7 annotated.
+  - **(E) Product scope and CI.**
+    - PRD 1.3: new §5.11 Apple Watch with FR-AW1 (view and log sets), FR-AW2 (rest and quick commands) and FR-AW3 (watch workout recording), all FF · implemented.
+    - watchOS removed from §1.4 non-goals and from the R4+ row; R1 records the watch delivery; FR-PR8 and FR-TR13 notes updated.
+    - Rule 12 and §10: CI (`.github/workflows/rede-ci.yml`, step "Build watchOS app") and `.claude/quality-gate.cmd` build the `RedeWatch` scheme for `generic/platform=watchOS Simulator`. The CI step downloads the watchOS platform and retries once if the first build fails.
+  - **Other Master text.** Version 3.6 → 3.7. The §2 Target platform scope row gains the watch HealthKit exception and the rest Live Activity. The §2 status note, the active-implementation bullet, the 2026-10-14 header reconciliation notes, the §5 dated inventory note and the §9 status note now record the v3.7 approvals; only the cloud-sync drift stays unreconciled. The boundary preamble and rule 8 point to the new rules 10–12, which replace the former "Not covered" list.
+  - **Mirrors.** System logic header, §0, rule 6, §3/§4 rows, §7.1/§7.2, §10 and §11, plus `README.md`, `SECURITY.md`, `CONTRIBUTING.md`, `AGENTS.md`, `COMMERCIALIZATION_ROADMAP.md` and the copy baseline, updated to the v3.6/v3.7 state.
+  - **Not covered.**
+    - The iPhone `NSHealthUpdateUsageDescription` still says Rede writes nothing to Apple Health; the rewrite is a runtime change carried by the unmerged #749.
+    - Cloud sync (`RedeSync` / `RedeSyncSupabase`, #727) remains unreconciled.
+  - **Validation:** `git diff --check`; YAML parse of the workflow; `bash -n .claude/quality-gate.cmd`; the new CI step built the `RedeWatch` scheme on the first attempt on the runner's Xcode 26.6, with no platform download (Swift Validation, step "Build watchOS app").
+- **Master v3.6: bounded Apple Watch companion / WatchConnectivity boundary (owner approved proposal A of WATCH-10; docs only)**: the owner approved writing the existing watch channel discipline into the Master as an amendment.
+  - **Master.** Version 3.5 → 3.6. A new **§5 Apple Watch Companion Boundary** codifies eleven rules:
+    - watchOS only as the embedded `RedeWatch` companion plus `RedeWatchLink`, as a remote control for the live phone session.
+    - WatchConnectivity only in `RedeWatchLink` (`WatchLink.swift` is the single `WCSession` wrapper).
+    - Phone → watch only via `updateApplicationContext`, from the one sender, carrying one phone-rendered `WatchPrescription`. Every field rides in that payload, and no second applicationContext sender is allowed.
+    - Watch → phone facts (logged sets, warm-up steps) only via `transferUserInfo`.
+    - Watch → phone commands only via reachable-only, droppable `sendMessage`, executed against the phone's current state.
+    - The phone is the only decision maker. The watch uses only `RestCountdown`, `RedeL10n` copy and the `RedeWatchLink` API; no engines or persistence, and any further package API needs a further amendment.
+    - Exact-set idempotent intake into the phone's non-canonical in-session state (`apply(.logSet)` with a live flow, the watch-specific `appendWatchSetToDraft` without one). Canonical writes only via `CanonicalSessionWriter`, never from the watch.
+    - No Rede-owned watch-side storage (the Apple Health workout is outside the amendment).
+    - Watch sensor/health data never enters AppData or engines.
+    - An explicit "not covered" list.
+    - Validation: keep `RedeWatchLink` package tests and `WatchLoggedSetIntakeTests` passing.
+  - **Other Master sections.**
+    - §2: Target platform scope gains the boundary; Deferred systems now reads "watchOS beyond the §5 boundary". The Code status row and the active-surfaces bullet name the companion and drop the volatile package count.
+    - §4: the tree gains `RedeWatch/`.
+    - §5: the approved package table gains `RedeWatchLink` (11 approved; the dated inventory note keeps the 13-on-disk count and the unapproved `RedeSync` / `RedeSyncSupabase`).
+    - §6: derived records include the `WatchPrescription` payload.
+    - §9: the allowed list gains WatchConnectivity under the boundary; the forbidden entry becomes "watchOS / WatchConnectivity beyond the §5 boundary".
+    - The 2026-10-14 header reconciliation and the §2/§9/§10 notes mark conflict (a) resolved.
+  - **Explicitly not decided.**
+    - (b) The watch target's direct HealthKit use and HKWorkout write. §9 "HealthKit only inside `RedeHealthKit`" still stands, so changes there need the owner first.
+    - (c) ActivityKit.
+    - (d) Whether single authority supersedes REBUILD_00's CRDT co-editing direction. Concurrent multi-writer editing stays deferred.
+    - (E) PRD scope and a required `RedeWatch` CI build.
+  - **System logic.** Header block, §0 note, iron rule 6 ("watchOS / WatchConnectivity beyond the v3.6 boundary"), §4 package table (`RedeWatchLink` row), §7.1 note, §10 watchOS / CRDT rows and §11 note are updated. §7.2's 真源纪律, three channels, intake/canonical path and persistence paragraphs now cite their v3.6 rules. The HealthKit paragraph is marked outside the approval.
+  - **PRD.** The GATE legend now reads "超出 Master v3.6 手表随行边界的 watchOS". The gate note, §1.4 and R4+ notes state that the architecture is approved but product scope (E) is not.
+  - **Mirrors.** README, SECURITY, CONTRIBUTING and AGENTS now say "beyond the v3.6 boundary" where they forbade watchOS; the REBUILD_00 and Roadmap status notes record the v3.6 approval. AGENTS records that watch work inside the boundary follows normal rules while the watch HealthKit code stays under stop-and-ask.
+  - No code, `project.pbxproj` or package manifest changed. Validation: `git diff --check`, plus an adversarial scope/fact/consistency pass on the amendment.
+
+- **Doc-reality reconcile: watchOS, Readiness widget and rest Live Activity status (docs only; WATCH-10; no contract amendment)**: the 2026-10-12 visual audit found that the canonical docs still treated the Apple Watch as unimplemented and called `ios/RedeWidget` an "old widget, reference only".
+  - **Method.** A read-only inventory (watch code, widget/Live Activity code, PR history #431/#550/#701/#704/#719/#732–#751, every doc claim, plus a completeness critic) checked each statement against code at `e94cc09`. Two adversarial verification rounds then re-checked the diff. The first had six lanes for facts, policy-neutrality and cross-doc consistency. The second covered the delta and re-ran policy/consistency over the whole diff. In both rounds each finding was challenged by an independent skeptic.
+  - **Principle.** Every change is a dated 2026-10-14 note beside unchanged contract text. Master stays v3.5. Its §2 baseline cells, §5 package table and §9 lists are verbatim; dated notes sit under §2, §4, §5, §9 and §10 and in a new header reconciliation. The §5 note gives the real inventory (13 packages; `RedeWatchLink`, `RedeSync`, `RedeSyncSupabase` outside the approved table) and the incomplete `RedeWidgetShared` / `RedeHealthKit` rows.
+  - **System logic.**
+    - Gets a dated status block and removes `ios/RedeWidget` from the legacy list.
+    - The §3 and §4 target tables keep their text and get notes.
+    - A new **§7.2** describes the watch as built, explicitly as description rather than spec rules:
+      - The phone is the sole decision maker. This holds by code convention: the watch links seven packages but uses only `RestCountdown`, `RedeL10n` and `RedeWatchLink`.
+      - Phone→watch uses only `updateApplicationContext`, a single last-writer-wins slot, so today every field rides in one `WatchPrescription`.
+      - Watch→phone sets use `transferUserInfo` and are accepted only as the set the phone is waiting for (`exerciseId` + `setNumber`). With a live flow they take `apply(.logSet)`. Without one they take a watch-specific draft write path (`appendWatchSetToDraft`, non-canonical `active-session-draft.json`). No canonical writer is added.
+      - Commands use reachable-only `sendMessage`. An automatic rest-end skip is a second rest-end trigger that can advance a backgrounded phone and leaves the FR-NT1 notification in place.
+      - The watch keeps no local data. Its watch-target `HKWorkoutSession` finishes to Health, or discards on abandon or the 60-minute stop-loss.
+      - §7.2 also covers code-read edge cases (not device-reproduced) and validation status.
+    - §10 splits `watchOS/CRDT`, adds Readiness Widget and Live Activity rows, and points the stale cloud row at the pending sync reconcile.
+  - **PRD.** Header bumped. FR-WD1, FR-TR13 (seven → thirteen endpoints) and FR-PR8 status cells corrected, with no priority change. Dated notes on the gate legend, §1.4 non-goals and the R4+ row.
+  - **Other docs.** Dated notes in REBUILD_00, the Roadmap's 1.8-era cell, README (package table, schemes, gate count), SECURITY, CONTRIBUTING (informational: watch builds need the `RedeWatch` scheme), the design language §7 (the Small/Medium widget lists are targets: no state-code field, no recommended first exercise, no deep link) and the copy baseline (§5.5 still shows 1.9.2 while 1.11.0's watch narrative is bundled; the "no HealthKit in code" line is stale). AGENTS keeps its HealthKit rule sentence verbatim. A dated note says the "no HealthKit adapter exists yet" parenthetical is stale and that the master doc sets HealthKit scope. It records the watch conflict neutrally: the master's rules stay as written, so watch work goes through the stop-and-ask rule.
+  - **Fixed during verification.**
+    - "First included in 1.11.0" was wrong: the watch has been embedded since #732 at 1.10.2 (build 36, uploaded to TestFlight per #733), and 1.11.0 (38) is the first version raised for it.
+    - A non-existent watch UI quote was replaced by the real 「手机不可达」.
+    - The device checklist has 22 rows, not 24.
+    - Sentences saying the forbidden entries apply only to **new** watch scope implied grandfathering the existing code, so they became neutral.
+    - In-place edits to contract cells (Master §2/§5, system logic §3/§4, the AGENTS HealthKit parenthetical, a SECURITY surface bullet) were reverted into dated notes. One revert had split the Master §5 table, which was repaired.
+    - The watch's HKWorkout write is no longer classified as "not native workout export"; that call is left to the owner.
+    - Owner-ruling attributions now match the record: only 「表永远不自己推进」 (`WatchCommand.swift`, 2026-08-15) and 「登记不适不做」 (#737) are owner rulings. "Phone is the sole decision maker" is a code-comment convention.
+  - **Not decided here — proposed to the owner:**
+    - (A) Whether watchOS/WatchConnectivity becomes a bounded allowed integration under the as-built channel usage, and what applies to the existing watch code meanwhile.
+    - (B) Whether the watch target's direct HealthKit use and HKWorkout write become a bounded exception or move into a package (`RedeHealthKit` is iOS-only today).
+    - (C) Whether ActivityKit, which neither §9 list names, joins the allowed list (local-only, `pushType: nil`).
+    - (D) Whether the single-authority watch design supersedes REBUILD_00's CRDT co-editing direction.
+    - (E) PRD scope: a watch FR, §1.4 / R4+ mapping, and whether a `RedeWatch` build joins CI.
+  - **Corrections to earlier records.**
+    - #746's "runs the decision engine on the wrist" is inaccurate.
+    - #747's "24 rows" is 22.
+    - #748's "averages belong to the phone's post-session summary" has no implementation on main.
+    - The PRD's FR-TR13 "seven endpoints" was the drift #704 already fixed in system logic.
+  - **Out of scope, reported only.**
+    - Cloud sync (`RedeSync` / `RedeSyncSupabase`, #727) has the same unamended-boundary drift (§9 Supabase / `URLSession` / account-auth).
+    - The iPhone `NSHealthUpdateUsageDescription` still says Rede writes nothing to Health.
+    - The watch target has no `PrivacyInfo.xcprivacy` and no `ITSAppUsesNonExemptEncryption` key; whether an embedded watch app needs them is unverified.
+    - Several code comments cite pre-v3 Master section numbers or stale watch values.
+    - No 1.11.0 upload or release record exists in the repo.
+  - **Validation.** `git diff --check`.
+
 ## 2026-10-13
 
 - **Visual alignment pass: every surface catches up with the 2026-08-07 visual generation, plus pixel-level alignment and centring fixes**: the August low-saturation palette, 20/30 card radii, diagonal brushed material, floating ruler tab bar and floating Today CTA had shipped in #727 without any spec write-back, and several surfaces (watch list, home-screen widget, website, store screenshots, prototypes) never followed. Two read-only multi-agent audits (code/docs, and pixel measurement on 48 full-resolution simulator screenshots, each lane with an adversarial verifier) confirmed ~120 deduplicated findings, implemented serially in slices with an independent reviewer per slice. App: tab labels share one baseline (icons get a fixed 22pt slot) and the bar insets to `RedeSpace.page`; tab bar geometry lives in `RedeTabBarMetrics` and `RedeSpace.bottomBar` is derived from it; a top safe-area fade stops scrolled content colliding with the status bar; a shared `FloatingPrimaryCTA` now serves Today and the Train standby screen (overlay + static inset, never `safeAreaInset`); set-table header/data columns share one column spec (header was 8pt off); Today rows use one lead constant, names yield to data (medium + T2), `LoadCluster` scales with Dynamic Type and never splits a number; Progress rows align bars/chevrons to the text midline (`alignedToTextMidline()`), rows share a 44pt pitch, the bar tag hangs off its bar; Plan entry rows share `RowLeadIcon`; exercise detail shares `redeProse`; all row chevrons are `DisclosureChevron`; Settings/Sync/Share preview/Onboarding/Weekly Coach Review fixes (Share preview drops the stock segmented `Picker` for `SegControl`, which gains an `.isSelected` trait; milestone tabs distinguish measured/estimated with two new L10n keys + test). Widget: `RestPalette` becomes the target-shared `WidgetPalette`; the Readiness widget moves from system stock styling to the forged-dark tile with an instrument overline (system fallback in non-full-colour rendering modes). Watch: `WatchPrescription.Item` gains an optional additive `targetParts` (legacy payloads decode to nil; round-trip + backward-compat tests) so list rows render as a value cluster; the `-watchPreview` fixture now uses the production copy functions. Launch screen colour follows the new base; the `MotionSampleView` scaffold and dead tokens are removed. Docs: design language (current colour table, radii, material, new §17 navigation chrome), craft spec (old locked values marked historical; Part C marked unimplemented), PRD NFR-8, DOCS_MANIFEST visual source-of-truth order; 18 HTML prototypes mechanically recoloured and marked historical. Verified: 13 package suites 0 failures, app-level 122 tests 0 failures, iPhone + watch builds succeed, before/after screenshots per slice; home-screen widget checked on the simulator. Website and store screenshots ship separately (TinSB/rede-web PR; store assets regenerated locally for the next version).

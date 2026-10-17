@@ -134,6 +134,15 @@ xcodebuild \
   -destination 'generic/platform=iOS Simulator' \
   build
 
+# 手表 app 只有经 RedeWatch scheme 才真正编译（Rede scheme 的 iOS 构建只嵌资源壳）。
+# Master v3.7（2026-10-14，WATCH-10 提案 E）起必跑；与 rede-ci.yml 的 Build watchOS app 同步。
+echo "== xcodebuild: scheme RedeWatch (watchOS) =="
+xcodebuild \
+  -project ios/Rede.xcodeproj \
+  -scheme RedeWatch \
+  -destination 'generic/platform=watchOS Simulator' \
+  build
+
 echo "== xcodebuild: subscription + Weekly Coach Review + app update + session draft tests =="
 # 2026-07-20 收口：白名单补入 SessionStoreDraftTests（FR-TR14 S1 durable draft，5 条）
 # 与周复盘政策测试（MemoPolicy/DatePolicy/LiftSignalPolicy）。保持与 rede-ci.yml 同一份清单。

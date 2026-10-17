@@ -21,7 +21,7 @@
 
 | Workstream | 重写基线 | 距离 / 难度 |
 |---|---|---|
-| iOS 原生 | 产品系统逻辑、训练决策合同、设计语言和文案基线已明确;干净 iOS 实现已是活跃实现,旧 IronPath/PWA 代码已退役（git tag `legacy-parity-final`） | ✅ **Rede 1.8 (build 25) 已于 2026-07-17 提交 App Store 审核，当前 Waiting for Review**。现役 app + widget + 10 个本地包已覆盖完整 1.8 Free Core 与 production-disabled 订阅地基；公开商店发布仍以 Apple 审核结果为准 |
+| iOS 原生 | 产品系统逻辑、训练决策合同、设计语言和文案基线已明确;干净 iOS 实现已是活跃实现,旧 IronPath/PWA 代码已退役（git tag `legacy-parity-final`） | ✅ **Rede 1.8 (build 25) 已于 2026-07-17 提交 App Store 审核，当前 Waiting for Review**。现役 app + widget + 10 个本地包已覆盖完整 1.8 Free Core 与 production-disabled 订阅地基；公开商店发布仍以 Apple 审核结果为准。（2026-10-14 注：此格停在 1.8 时点；其后 Apple Watch app 与 `RedeWatchLink` 已自 #732 起内嵌（1.11.0 是首个为它抬升的版本号），其随行架构与相关 HealthKit / ActivityKit 边界已由 Master v3.6/v3.7 批准，产品需求见 PRD §5.11；现状与未决架构冲突见 Master 头部 2026-10-14 现状对账。） |
 | 更新透明度 | 1.8 及更早二进制只能依赖 App Store 自动更新/系统通知；没有应用内版本感知 | ✅ 下一发布包已完成 Apple 公共版本查询、Today 非阻断提示、Settings 三入口与内置 What's New 的本地实现与 Simulator 验收；不引入 push、强更、服务器、remote copy 或 analytics。实时 Apple 目录与 TestFlight 仍待发布链验证 |
 | 账号 + Auth | 无 first-version runtime；iOS 原生方向保留在 `docs/REDE_REBUILD_00_IRONRULES_AND_CLOUD.md` 与 `docs/CLOUD_DECISIONS_ARCHIVE.md` | **近 greenfield**。服务 opt-in 云同步、跨设备恢复和账号级支持;不阻塞首个 App Store 订阅闭环 |
 | 云同步 | 无 first-version runtime；已拍板方向是 local-first + opt-in + CRDT 记录级合并 | 未实现。offline-first 冲突合并是最贵、最容易返工的一块;进入实现前必须先通过 Master Architecture gate |
