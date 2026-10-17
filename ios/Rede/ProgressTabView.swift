@@ -1,4 +1,5 @@
 import RedeDataHealth
+import RedeHealthKit
 import RedeLocalSnapshot
 import SwiftUI
 import RedeL10n
@@ -45,6 +46,9 @@ struct ProgressTabView: View {
     }()
     @State private var outcome: ProgressModel.LoadOutcome?
     @State private var detailRecord: SnapshotSessionRecord?
+    /// 这一场在「健康」里那条记录的读值（自有运动记录 A2/B）。nil = 还没读到 / 那一场没有。
+    /// 读不到就整块不出现——不显示占位、不解释为什么没有。带场次 id，见 `LoadedSessionVitals`。
+    @State private var detailVitals: LoadedSessionVitals?
     /// MLE 分享卡预览（B5：Development 块入口 → 现算 projection → 预览 sheet）。
     @State private var muscleSharePreview: SharePreviewItem?
     /// FR-PR6 肌群详情页（钻取层 2026-07-09：行内展开升级为详情 sheet——
@@ -91,7 +95,16 @@ struct ProgressTabView: View {
             .sensoryFeedback(.selection, trigger: historyOpenPulse)  // 点历史行进详情 = 轻选择（仅开启时）
             // .task 自动在视图消失时取消、重现时重跑——杜绝 .onAppear{Task{}} 的无结构化并发
             //（多次进出页并发 Task 乱序完成会用过期数据覆盖 outcome，审计 MAJOR）。
-            .task { outcome = await ProgressModel.loadOutcomeAsync() }
+            .task {
+                outcome = await ProgressModel.loadOutcomeAsync()
+                #if DEBUG
+                // 截图钩子（沿 -autoOpen* 先例）：直接掀开一场夹具训练的详情。
+                // 模拟器既没有心率传感器也没有真实历史，不给这条路这一整块永远验不了版式。
+                if CommandLine.arguments.contains("-historyDetailFixture") {
+                    detailRecord = Self.historyRecordFixture
+                }
+                #endif
+            }
             .sheet(item: $detailRecord) { record in
                 historyDetailSheet(record)
             }
@@ -1095,11 +1108,29 @@ struct ProgressTabView: View {
     private func historyDetailSheet(_ record: SnapshotSessionRecord) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: RedeSpace.section) {
+                // 日期与「逐组明细」仍是 6pt 一组：绝大多数场次没有心率，它们的版式与加心率块之前
+                // 一模一样（审查 2026-10-17）。只有真有心率块时，块的上下才各留出一个区块间距。
                 VStack(alignment: .leading, spacing: 6) {
                     Text(s.shortDate(fromISO: record.dateISO))
                         .font(.redeHeadline)
                         .tracking(RedeTracking.headline)
                         .foregroundStyle(Color.redeT1)
+
+                    // 这一场的生命体征。放在逐组明细之前：先答「这一场是怎么回事」，再看每一组。
+                    if let vitals = detailVitals?.belonging(to: record.id), vitals.hasHeartRateOrEnergy {
+                        VStack(alignment: .leading, spacing: 12) {
+                            SessionVitalsStats(vitals: vitals, s: s)
+                            if !vitals.heartRateSeries.isEmpty {
+                                Overline(text: s.vitalsOverline)
+                                HeartRateTrace(series: vitals.heartRateSeries,
+                                               setMarks: Self.setMarks(in: record),
+                                               totalSeconds: vitals.durationSeconds,
+                                               s: s)
+                            }
+                        }
+                        .padding(.vertical, RedeSpace.section - 6)
+                    }
+
                     Overline(text: s.historyDetailSets)
                 }
                 ForEach(Array(record.exercises.enumerated()), id: \.offset) { _, exercise in
@@ -1126,6 +1157,12 @@ struct ProgressTabView: View {
             }
             .padding(RedeSpace.page)
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .task(id: record.id) {
+            let vitals = await Self.loadVitals(for: record)
+            // 这一页已经换走或关掉：晚到的结果丢掉，不去覆盖正在看的那一场。
+            guard !Task.isCancelled else { return }
+            detailVitals = vitals.map { LoadedSessionVitals(recordId: record.id, vitals: $0) }
         }
         // 整面板公理（2026-06-11）：sheet = 掀开的 base 锻面；raised 是抬升层语义，不当整面底。
         // 审查 MINOR-3：用 presentationBackground（盖整个 sheet chrome），不是内容 background

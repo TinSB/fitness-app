@@ -10,12 +10,25 @@ public struct CompletedSetObservation: Equatable, Sendable, Codable {
     public let reps: Int
     public let rir: Double?
     public let painReported: Bool
+    /// 记下这一组的时刻（ISO8601，UTC）。**引擎永远不读它**——本包无时钟是硬纪律，
+    /// 任何依赖「现在几点」的判断都会让同一份输入产生不同输出。它在这里只为搭一程车：
+    /// 从记组那一刻一路带到 CompletedSessionBuilder 落盘，供事后把每一组放回时间轴。
+    /// nil = 调用方没盖章（旧草稿、测试构造），落盘时该组就没有这一位。
+    public let completedAt: String?
 
-    public init(weightKg: Double, reps: Int, rir: Double? = nil, painReported: Bool = false) {
+    public init(weightKg: Double, reps: Int, rir: Double? = nil, painReported: Bool = false,
+                completedAt: String? = nil) {
         self.weightKg = weightKg
         self.reps = reps
         self.rir = rir
         self.painReported = painReported
+        self.completedAt = completedAt
+    }
+
+    /// 盖上时刻的同一条观察。app 层在唯一漏斗里调用（见 SessionStore.apply）。
+    public func stamped(at iso: String) -> CompletedSetObservation {
+        CompletedSetObservation(weightKg: weightKg, reps: reps, rir: rir,
+                                painReported: painReported, completedAt: iso)
     }
 }
 

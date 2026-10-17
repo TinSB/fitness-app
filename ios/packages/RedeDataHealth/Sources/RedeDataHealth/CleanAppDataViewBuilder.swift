@@ -68,7 +68,9 @@ public enum CleanAppDataViewBuilder {
                 exercises: exercises,
                 painDiscomfortExerciseIds: painDiscomfortExerciseIds,
                 // 空串等同缺失：不产 issue（它不是用户事实，只是归属坐标）。
-                templateId: session.templateId.flatMap { $0.isEmpty ? nil : $0 }
+                templateId: session.templateId.flatMap { $0.isEmpty ? nil : $0 },
+                startedAt: session.startedAt,
+                finishedAt: session.finishedAt
             ))
         }
 
@@ -164,7 +166,8 @@ public enum CleanAppDataViewBuilder {
                     weight: weight,
                     reps: reps,
                     rir: rir,
-                    painFlag: set.painFlag == true
+                    painFlag: set.painFlag == true,
+                    completedAt: set.completedAt
                 ))
             }
             result.append(CleanExercise(
