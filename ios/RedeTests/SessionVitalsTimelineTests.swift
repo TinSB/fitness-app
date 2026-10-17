@@ -102,6 +102,17 @@ final class SessionVitalsTimelineTests: XCTestCase {
         XCTAssertTrue(SessionVitals(durationSeconds: 2520, activeEnergyKcal: 342).hasHeartRateOrEnergy)
     }
 
+    func testVitalsLoadedForAnotherSessionAreNeverShownOnThisOne() {
+        // 审查 2026-10-17：读值存在 sheet 外面、关掉不清空。先看 A 再点开 B 时，
+        // B 拿到的必须是「没有」，而不是 A 的心率与消耗。
+        let loadedForA = LoadedSessionVitals(
+            recordId: "session-a",
+            vitals: SessionVitals(durationSeconds: 2520, averageHeartRate: 128, activeEnergyKcal: 342)
+        )
+        XCTAssertNil(loadedForA.belonging(to: "session-b"))
+        XCTAssertEqual(loadedForA.belonging(to: "session-a")?.averageHeartRate, 128)
+    }
+
     // MARK: - 辅助
 
     /// 走真实处方引擎造 flow（同 EndToEndWriteTests）：手搓 flow 会绕开

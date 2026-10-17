@@ -47,8 +47,8 @@ struct ProgressTabView: View {
     @State private var outcome: ProgressModel.LoadOutcome?
     @State private var detailRecord: SnapshotSessionRecord?
     /// 这一场在「健康」里那条记录的读值（自有运动记录 A2/B）。nil = 还没读到 / 那一场没有。
-    /// 读不到就整块不出现——不显示占位、不解释为什么没有。
-    @State private var detailVitals: SessionVitals?
+    /// 读不到就整块不出现——不显示占位、不解释为什么没有。带场次 id，见 `LoadedSessionVitals`。
+    @State private var detailVitals: LoadedSessionVitals?
     /// MLE 分享卡预览（B5：Development 块入口 → 现算 projection → 预览 sheet）。
     @State private var muscleSharePreview: SharePreviewItem?
     /// FR-PR6 肌群详情页（钻取层 2026-07-09：行内展开升级为详情 sheet——
@@ -1114,7 +1114,7 @@ struct ProgressTabView: View {
                     .foregroundStyle(Color.redeT1)
 
                 // 这一场的生命体征。放在逐组明细之前：先答「这一场是怎么回事」，再看每一组。
-                if let vitals = detailVitals, vitals.hasHeartRateOrEnergy {
+                if let vitals = detailVitals?.belonging(to: record.id), vitals.hasHeartRateOrEnergy {
                     VStack(alignment: .leading, spacing: 12) {
                         SessionVitalsStats(vitals: vitals, s: s)
                         if !vitals.heartRateSeries.isEmpty {
@@ -1153,7 +1153,12 @@ struct ProgressTabView: View {
             .padding(RedeSpace.page)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .task(id: record.id) { detailVitals = await Self.loadVitals(for: record) }
+        .task(id: record.id) {
+            let vitals = await Self.loadVitals(for: record)
+            // 这一页已经换走或关掉：晚到的结果丢掉，不去覆盖正在看的那一场。
+            guard !Task.isCancelled else { return }
+            detailVitals = vitals.map { LoadedSessionVitals(recordId: record.id, vitals: $0) }
+        }
         // 整面板公理（2026-06-11）：sheet = 掀开的 base 锻面；raised 是抬升层语义，不当整面底。
         // 审查 MINOR-3：用 presentationBackground（盖整个 sheet chrome），不是内容 background
         .presentationBackground(Color.redeBase)

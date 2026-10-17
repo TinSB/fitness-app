@@ -127,6 +127,21 @@ struct HeartRateTrace: View {
     }
 }
 
+/// 读到的「健康」读值，连同它属于哪一场（审查 2026-10-17）。
+///
+/// 读值存在 ProgressTabView 的 `@State` 里，sheet 关掉后不清空。不带场次 id 的话，
+/// 打开 B 的头几帧会画上 A 的心率与消耗、底下压着 B 的组刻线；HealthKit 查询又不响应取消，
+/// A 晚到的结果还能把 B 的覆盖掉。进展页答的是「数据可不可信」，别的场次的生理数据一帧都不能出现。
+struct LoadedSessionVitals: Equatable {
+    let recordId: String
+    let vitals: SessionVitals
+
+    /// 只把属于这一场的读值交出去；别的场次的一律当作没有。
+    func belonging(to recordId: String) -> SessionVitals? {
+        self.recordId == recordId ? vitals : nil
+    }
+}
+
 // MARK: - 读取与截图夹具
 //
 // 放在这里而不是 ProgressTabView：那份文件已经够长，而这一整块（读健康 + 组刻线换算 +
