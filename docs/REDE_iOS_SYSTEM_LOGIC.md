@@ -60,7 +60,7 @@ Profile / Settings 是低频入口，不占底部 tab。它拥有个人资料、
 | Training | 专注训练是训练中唯一一等页面;不恢复完整训练 dashboard。 |
 | Today | 读 canonical AppData,经 DataHealth 和 TrainingDecision 渲染今日状态。 |
 | Progress / Settings / Plan | 直接实现目标职责,不继承旧 History/Profile transitional IA。 |
-| HealthKit | 体重导入、训练历史导入、native workout export,均在 `RedeHealthKit` 边界内。（2026-10-14：`RedeHealthKit` 只有只读体重；训练历史导入与 iPhone 侧 native workout export 均未实现。手表 target 在 `RedeHealthKit` 之外直接跑 `HKWorkoutSession`、训练结束时写一条传统力量训练 HKWorkout，已由 Master v3.7 作为窄例外批准（Master §5 Apple Watch 第 10 条，见 §7.2），它不改变本行对 iPhone 侧的目标。） |
+| HealthKit | 体重导入、训练历史导入、native workout export,均在 `RedeHealthKit` 边界内。（2026-10-14：`RedeHealthKit` 只有只读体重；训练历史导入与 iPhone 侧 native workout export 均未实现。手表 target 在 `RedeHealthKit` 之外直接跑 `HKWorkoutSession`、训练结束时写一条传统力量训练 HKWorkout，已由 Master v3.7 作为窄例外批准（Master §5 Apple Watch 第 10 条，见 §7.2），它不改变本行对 iPhone 侧的目标。2026-10-17 Master v3.8：`RedeHealthKit` 另加两样，都不写健康数据——开训时请求拉起手表（`HKWatchWorkoutLauncher`，第 13 条），以及只读单场心率与能量（`HKSessionVitalsReader`，#749）。） |
 | Notifications | 本地 rest timer 和 weekly training reminder;不做 remote push。 |
 | Test fixtures | 建立干净 rewrite fixtures/goldens。旧 `ios/ParityFixtures` 可作参考输入,不得锁死新实现。 |
 
@@ -1193,7 +1193,7 @@ FR-TR14 的「本次训练」是上述边界的窄例外：只编辑 `TrainFlowS
 - **手表侧的休息事件（2026-10-14 现状，as-built 描述；手表的随行架构由 Master v3.6/v3.7 批准，见 §7.2）**：手机训练流在时，手表回传的组和休息命令走手机同一 `apply` / `addRestTime` / `toggleRestPause` 路径，所以 iPhone 的休息 Live Activity 随之开始、加时，暂停时收起、继续时重挂（与本节「休息 Live Activity」段「暂停 = end、继续 = begin 新活动」同口径）。手机训练流不在时，手表的组写入草稿，不起 Live Activity。目前没有手表专用端点。手表倒计时到点时发出的自动跳过，是本节 `runRestTimer` 之外的第二个「到点收尾」触发点：手机 App 仍在后台存活且训练流在时，即使不在前台也会推进训练流（条件见 §7.2）。
 - **进度条与倒计时同步（owner 2026-06-15 三次反馈）**：进度条比例 = `RestCountdown.fraction()` = `剩余 / totalSeconds`，与倒计时数字同源 → 满格起步、`0:00` 精确归零。`totalSeconds` 是「本段休息总时长」，`+30` 时**同步增长**（`begin` 设值、`add` 累加、`clear` 归零）——故 `+30` 后进度条不会因 `剩余 > 初始计划` 卡在满格，而是按新总时长继续平滑下降。分母**不得**用 `restSecondsPlanned`（固定值会在 `+30` 后被 `min(1,·)` 钳成满格、与倒计时脱钩）。
 
-### 7.2 Apple Watch 随行记录（Master v3.6/v3.7 边界 + as-built 细节 · 2026-10-14）
+### 7.2 Apple Watch 随行记录（Master v3.6/v3.7/v3.8 边界 + as-built 细节 · 2026-10-17）
 
 > **架构状态（2026-10-14）**：手表最初在未经 Master 修订的情况下落地（#732–#748，#751 视觉；自 #732 起内嵌于 iPhone 包，1.10.2 build 36 已上 TestFlight；1.11.0 (38) 是首个为它抬升的版本号，#743 2026-08-20）。2026-10-14 owner 先批准提案 A（Master v3.6），把下文的**真源纪律、三条通道、收组与 canonical 写入、手表不落地 Rede 自有数据**写成规则（Master §5 该节第 1–9 条）；随后批准 B、D、E（Master v3.7）：下文「HealthKit」段写成第 10 条窄例外，单权威取代手表 CRDT 共编方向（第 11 条），CI 与门禁构建 `RedeWatch`（第 12 条）。产品需求见 PRD §5.11（FR-AW1–3）。超出该边界的手表工作仍须另行修订。下文的形态、触发点、边界情况等细节是 as-built 描述，不是额外规则。
 
@@ -1213,7 +1213,12 @@ FR-TR14 的「本次训练」是上述边界的窄例外：只编辑 `TrainFlowS
 - 手机报告 `abandoned`：`discardWorkout`，不写健康。
 - 在组 / 休息屏上 60 分钟没收到手机推送（以手机侧 `sentAt` 计）：止损，`discardWorkout`，不写健康。此规则由 #740 引入，同一 60 分钟规则也取代了 #737 的 8 小时过期判定。
 
-心率（最近读数）和已练时长只在手表上显示（#748）。`WatchLoggedSet` / `WatchCommand` 不带任何健康数据，所以手机、AppData 和引擎都拿不到这些数据。iPhone 侧至今没有任何 HKWorkout 代码。
+心率（最近读数）和已练时长在手表上显示（#748）。`WatchLoggedSet` / `WatchCommand` 不带任何健康数据，所以 AppData 和引擎都拿不到这些数据。iPhone 侧不写任何 HKWorkout；它与体能训练相关的只有两件事，都在 `RedeHealthKit` 内（Master v3.8）：开训时请求拉起手表（下一段），以及只读这一场的训练记录、心率与能量，供单场记录页展示（#749，`toShare` 为空）。
+
+**开训拉起手表（Master v3.8，§5 Apple Watch 第 13 条 · 2026-10-17）。** 此前会话只在手表 app **已经在跑**时才会跟着手机开起来：手机推给手表的只有 applicationContext，而 Apple 文档对 WatchConnectivity 三条通道都只承诺「对端醒来时能读到」，从不承诺能启动未运行的表 app。所以用户要么先抬腕点开表上的 Rede，要么像 owner 那样每次自己去开苹果的体能训练。v3.8 补上这一步：
+- **手机侧。** `SessionStore.startSession` 在 `flow` 建好、草稿入队之后调 `requestWatchWorkout()`。只有 `WatchLink.hasCounterpart` 为真（配对了且表上装着 Rede）时，才经 `RedeHealthKit` 的 `WatchWorkoutLaunching` seam 调 `HKHealthStore.startWatchApp(toHandle:)`，配置为传统力量训练、室内。恢复草稿时不调，因为恢复不是用户点开始的那一刻。iPhone 不为此申请任何 HealthKit 授权；Apple 文档只把授权责任放在手表端（watchOS 6 起手表独立授权）。结果只写 `os.Logger`（subsystem `com.tinsab.rede`，category `WatchLaunch`），不进界面。失败时用户仍可自己开表 app，行为与此前完全一样。
+- **手表侧。** `RedeWatchApp` 经 `@WKApplicationDelegateAdaptor` 挂 `WatchAppDelegate`。系统拉起或唤醒表 app 后调它的 `handle(_ workoutConfiguration:)`。为了让表侧 HealthKit 仍只在一个文件里，这个类写在 `WorkoutSessionKeeper.swift`。它不信传进来的配置（论坛报告称从 watchOS 7 起可能收到默认值），只调 `WorkoutSessionKeeper.shared.phoneRequestedWorkout()`。会话守护从视图的 `@StateObject` 提为 app 级单例，因为被后台拉起时界面可能还没渲染。起会话仍只走守护那一条串行调和循环，没有第二条 start 路径。
+- **等手机确认期间的新旧判断。** 被拉起后，守护记下拉起时刻（表的时钟），在手机确认前这样处理收到的状态：「在练」立即收下；「不在练」只收手机在拉起之后发出的。原因是系统替表保存的最后一份 applicationContext，在开新一场之前永远是上一场结束时那份，冷启动时它一定先到；照它收会话，会把刚开的这一场当场掐掉，还会往健康里写一条几秒钟的训练。反过来，如果表 app 直到练完才被看到，那时 applicationContext 只剩最后那份「练完了」，它比拉起时刻新，所以照常收下并写入健康。为此视图的 `onChange` 键里带上了处方的 `sentAt`，每份新处方都重新交给 `sync` 判一次。60 分钟内等不到确认，就收掉并丢弃，不写健康。拉起时如果表上还没给「健身记录」写入权限，就什么都不做，因为后台被拉起的 app 弹不出授权框。表 app 本来就开着、且处方先到时，这次拉起是多余的，什么都不做。
 
 **读代码推断的边界情况（未真机复现，留作验收线索）。**
 - 手机停在结束确认弹层（`.confirmEnd`，此时 `active` 为空）时，60 分钟止损不触发。
@@ -1222,8 +1227,9 @@ FR-TR14 的「本次训练」是上述边界的窄例外：只编辑 `TrainFlowS
 - 只请求了体能训练的 share 权限，心率 / 能量样本是否随 workout 一并存入健康未验证。
 - 60 分钟止损用手表当前时间减手机盖的 `sentAt`，没有时钟偏差容差；两端时钟不一致会让止损提前或推迟。
 - 1.11.0 内置 What's New 对用户承诺「断联超过一小时会停下来，不把不确定的数据写进健康」「任一边记的组另一边立刻可见」。前两条边界情况下，第一句并不总成立；第二句的「立刻」取决于连接，且手表的组只在与手机当前组一致时才被收下。
+- （v3.8）开训拉起手表依赖两台设备时钟大致一致（秒级）。唯一会判错的情形是拉起后几秒内就放弃：那份「放弃」可能被当成旧状态，结局是走 60 分钟止损并丢弃，不写健康。`startWatchApp` 能否在表锁屏、放下手腕、表 app 刚装好时可靠拉起，Apple 文档没有说明，论坛另有「只在充电时生效」的单帖报告；这些都只能真机验证。
 
-**验证现状。** `RedeWatchLink` 包测试（28 项，消息编解码 / 向后兼容）、App 层 `WatchLoggedSetIntakeTests`（32 项，收组 / 命令 / 档位梯）、`RedeL10n` `WatchCopyTests`（6 项）都在 CI 和门禁里。`Rede` scheme 的 iOS 构建只给内嵌手表 app 产出资源壳；自 Master v3.7（2026-10-14）起，CI 与门禁另构建 `RedeWatch` scheme（generic watchOS Simulator，见 §11）。没有自动化测试锁住三条通道纪律：它只靠三个发送点和注释维持；`WatchLink.swift` 整体在 `#if canImport(WatchConnectivity)` 内，host 上的 `swift test` 编不到它。门禁锁了 `IPHONEOS_DEPLOYMENT_TARGET = 17.0`，没锁 `WATCHOS_DEPLOYMENT_TARGET`（现为 10.0）；版本号三 target 同号守卫覆盖手表。`transferUserInfo` 在模拟器上无法验证。`docs/工作记录/2026-08-20-watch-device-acceptance.md` 的 22 项真机验收没有完成记录（#747 的 CHANGELOG 记作 24 项，实为 22 行）。
+**验证现状。** `RedeWatchLink` 包测试（28 项，消息编解码 / 向后兼容）、App 层 `WatchLoggedSetIntakeTests`（35 项，收组 / 命令 / 档位梯；v3.8 起含开训拉起手表的三条：有表请求恰好一次、没表不请求且照常开训、休息日不开训也不请求）、`RedeL10n` `WatchCopyTests`（6 项）都在 CI 和门禁里。`Rede` scheme 的 iOS 构建只给内嵌手表 app 产出资源壳；自 Master v3.7（2026-10-14）起，CI 与门禁另构建 `RedeWatch` scheme（generic watchOS Simulator，见 §11）。没有自动化测试锁住三条通道纪律：它只靠三个发送点和注释维持；`WatchLink.swift` 整体在 `#if canImport(WatchConnectivity)` 内，host 上的 `swift test` 编不到它。门禁锁了 `IPHONEOS_DEPLOYMENT_TARGET = 17.0`，没锁 `WATCHOS_DEPLOYMENT_TARGET`（现为 10.0）；版本号三 target 同号守卫覆盖手表。`transferUserInfo` 在模拟器上无法验证。`docs/工作记录/2026-08-20-watch-device-acceptance.md` 的 22 项真机验收没有完成记录（#747 的 CHANGELOG 记作 24 项，实为 22 行）。
 
 ## 8. Progress / Plan / Settings 边界
 

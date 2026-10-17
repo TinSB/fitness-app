@@ -3,6 +3,9 @@
 //
 // 已批准能力（范围 A，owner 2026-06-24 拍板）：**只读** Apple 健康体重（bodyMass）用于展示。
 // **不写**（不写回 HKWorkout——那是范围 B，未采纳）。
+// Master v3.8（2026-10-17）另加：开训时请求拉起手表开练（WatchWorkoutLaunching /
+// HKWatchWorkoutLauncher，只调 startWatchApp，不读不写任何健康数据、不申请任何授权）。
+// 那一场训练仍只由手表写进健康（Master §5 Apple Watch 第 10、13 条）。
 //
 // 复刻 RedeNotifications 边界范式（不引入新模式）：
 //  - 纯层（默认编译、host `swift test` 全覆盖）：BodyWeightSample 值类型 + 协议 seam

@@ -25,6 +25,10 @@ import RedeWatchLink
 // v2 的重量梯子也是手机渲染好推来的：表只在格子间选，不算数。
 @main
 struct RedeWatchApp: App {
+    /// v3.8：接住手机的 startWatchApp（手机点「开始训练」→ 系统把表 app 拉起来）。
+    /// 必须挂在 App 级：被拉起时多半在后台、界面还没渲染，挂在视图 .task 里的东西都来不及跑。
+    @WKApplicationDelegateAdaptor(WatchAppDelegate.self) private var appDelegate
+
     var body: some Scene {
         WindowGroup {
             TodayWatchView()
@@ -133,7 +137,9 @@ final class WatchPrescriptionStore {
 struct TodayWatchView: View {
     @StateObject private var link = WatchLink.shared
     @State private var store = WatchPrescriptionStore()
-    @StateObject private var workout = WorkoutSessionKeeper()
+    /// 不是 @StateObject：会话守护归 app 级所有（v3.8，WorkoutSessionKeeper.shared 的注释），
+    /// 视图只是看它。被手机从后台拉起时，视图出现之前会话可能已经在跑了。
+    @ObservedObject private var workout = WorkoutSessionKeeper.shared
 
     private var s: RedeStrings { store.strings }
 
@@ -226,9 +232,13 @@ struct TodayWatchView: View {
         // 倒计时死在半路）；手机说练完 → 收掉并写回健康；说放弃 / 表侧过期 → 收掉并丢弃。
         // 用 onChange 而不是在 body 里调：sync 虽然幂等，但每帧调一次是噪音。
         // 权限门没过时不拉（起不来）；门一开（authorized 翻 true）这条 onChange 的键也变，会立刻补拉。
-        .onChange(of: "\(trainingActive)#\(discardOnEnd)#\(workout.workoutWriteAuthorized == true)", initial: true) { _, _ in
+        // v3.8：键里带上处方的发出时刻，每份新处方都重新交给 sync 判一次——被手机拉起后，
+        // 守护要按「这份比拉起那一刻新不新」来决定信不信它（见 WorkoutSessionKeeper.sync）。
+        // 不带的话，「旧的不在练」被判作残影之后，一份「新的不在练」到来时键没变、onChange 不响，
+        // 这一场真的练完了却收不掉，最后被 60 分钟止损整场丢弃。sync 幂等，每份处方调一次不是噪音。
+        .onChange(of: "\(trainingActive)#\(discardOnEnd)#\(workout.workoutWriteAuthorized == true)#\(store.sentAt?.timeIntervalSince1970 ?? 0)", initial: true) { _, _ in
             guard !WatchPreview.isActive, workout.workoutWriteAuthorized == true else { return }
-            workout.sync(trainingActive: trainingActive, discardOnEnd: discardOnEnd)
+            workout.sync(trainingActive: trainingActive, discardOnEnd: discardOnEnd, phoneSentAt: store.sentAt)
         }
         // 过期止损定时：手机最后一次推送 + staleLimit 到点，翻一次 tick 让上面重估。
         // 每次新推送都会重启这条 task（键 = sentAt）。
