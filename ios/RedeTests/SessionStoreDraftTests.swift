@@ -415,6 +415,157 @@ final class SessionStoreDraftTests: XCTestCase {
         XCTAssertEqual(sessionStore.flow, before)
     }
 
+    // MARK: - P0 不丢（2026-10-18）
+
+    // 小结阶段也落草稿，带结束时刻；被杀后恢复落回小结，结束时刻不被「重新打开的时刻」顶掉。
+    func testSummaryPhaseSavesDraftWithEndTimeAndRestoresIntoSummary() throws {
+        let draftStore = FakeTrainSessionDraftStore()
+        let sessionStore = makeSessionStore(draftStore: draftStore)
+        sessionStore.apply(.logSet(CompletedSetObservation(weightKg: 60, reps: 10, rir: 2)))
+        sessionStore.apply(.requestFinish)
+        sessionStore.apply(.confirmEnd(.timeUp))
+
+        let saved = try XCTUnwrap(draftStore.attemptedDrafts.last)
+        XCTAssertEqual(saved.events.last, .confirmEnd(.timeUp), "此前到小结就不再存，末段事件只在内存里")
+        let endedAt = try XCTUnwrap(saved.endedAt)
+        XCTAssertEqual(sessionStore.sessionEndedAt, endedAt)
+
+        let relaunched = SessionStore(draftStore: FakeTrainSessionDraftStore())
+        relaunched.pendingDraft = saved
+        relaunched.restorePendingDraft()
+        XCTAssertEqual(relaunched.flow?.phase, .summary)
+        XCTAssertEqual(relaunched.sessionEndedAt, endedAt)
+    }
+
+    // 一组没记的一场不写盘（小结只给放弃）：守卫在任何 IO 之前。
+    func testZeroSetSessionIsNeverPersisted() async throws {
+        let sessionStore = makeSessionStore(draftStore: FakeTrainSessionDraftStore())
+        sessionStore.apply(.requestFinish)
+        sessionStore.apply(.confirmEnd(.timeUp))
+        XCTAssertEqual(sessionStore.flow?.phase, .summary)
+
+        let saved = await sessionStore.completeAndPersistSession()
+
+        XCTAssertFalse(saved)
+        XCTAssertNotNil(sessionStore.flow, "没写盘，会话原样留着")
+    }
+
+    // 恢复提示里点过「稍后再说」后再点开始训练：先问，不开新的、不写一笔（此前新草稿直接盖掉上一场）。
+    func testStartSessionAsksInsteadOfOverwritingAnUnsavedSession() throws {
+        let draftStore = FakeTrainSessionDraftStore()
+        let unsaved = todayDraft(events: [.logSet(CompletedSetObservation(weightKg: 60, reps: 10, rir: 2))])
+        draftStore.loadedDraft = unsaved
+        let sessionStore = SessionStore(draftStore: draftStore)
+        sessionStore.todayOutcome = .ready(try makeTodayModel(equipmentScenario: nil, unitSystem: "kg"))
+
+        sessionStore.startSession()
+
+        XCTAssertNil(sessionStore.flow)
+        XCTAssertEqual(sessionStore.pendingDraft, unsaved)
+        XCTAssertTrue(draftStore.attemptedDrafts.isEmpty, "上一场原样留在盘上")
+
+        // 跨天且一组没记的草稿没有可丢的东西：照常开新的。
+        sessionStore.pendingDraft = nil
+        draftStore.loadedDraft = makeDraft(events: [.toggleHold])
+        sessionStore.startSession()
+        XCTAssertNotNil(sessionStore.flow)
+    }
+
+    // 审查 2026-10-18：恢复面板挂在 RootTabView，loadToday（存计划、改设置、同步后都会跑）
+    // 每次都重新弹会在任一页面反复冒出来。选过「稍后再说」本次运行就不再自己弹，
+    // 只有再点「开始训练」撞上它时才重新问。
+    func testLaterKeepsThePromptQuietUntilStartIsTappedAgain() throws {
+        let draftStore = FakeTrainSessionDraftStore()
+        draftStore.loadedDraft = todayDraft(events: [.logSet(CompletedSetObservation(weightKg: 60, reps: 10, rir: 2))])
+        let sessionStore = SessionStore(draftStore: draftStore)
+        sessionStore.todayOutcome = .ready(try makeTodayModel(equipmentScenario: nil, unitSystem: "kg"))
+
+        sessionStore.checkForRestorableDraft()
+        XCTAssertNotNil(sessionStore.pendingDraft, "启动时照常问一次")
+        sessionStore.deferPendingDraft()
+        sessionStore.checkForRestorableDraft()
+        XCTAssertNil(sessionStore.pendingDraft, "选过稍后再说：之后的 loadToday 不再自己弹")
+        XCTAssertEqual(draftStore.clearCallCount, 0, "草稿还留着")
+
+        sessionStore.startSession()
+        XCTAssertNotNil(sessionStore.pendingDraft, "再点开始训练撞上它时才重新问")
+        XCTAssertNil(sessionStore.flow)
+    }
+
+    func testWatchSessionStateFollowsWhetherTheSessionCanBeSaved() throws {
+        XCTAssertTrue(SessionStore.watchSessionState(flow: nil, lastSessionOutcome: "abandoned") == (false, "abandoned"))
+
+        var flow = TrainFlowState(prescription: makePrescription())
+        XCTAssertTrue(SessionStore.watchSessionState(flow: flow, lastSessionOutcome: nil) == (true, nil))
+        flow.requestFinish()
+        XCTAssertTrue(SessionStore.watchSessionState(flow: flow, lastSessionOutcome: nil) == (true, nil),
+                      "结束确认层仍算进行中")
+        flow.confirmEnd(reason: .timeUp)
+        XCTAssertTrue(SessionStore.watchSessionState(flow: flow, lastSessionOutcome: nil) == (false, "abandoned"),
+                      "0 组小结只能放弃：手表那场不进健康")
+
+        var logged = TrainFlowState(prescription: makePrescription())
+        logged.logSet(CompletedSetObservation(weightKg: 60, reps: 10, rir: 2))
+        logged.requestFinish()
+        logged.confirmEnd(reason: .timeUp)
+        XCTAssertTrue(SessionStore.watchSessionState(flow: logged, lastSessionOutcome: nil) == (false, "completed"))
+
+        var pain = TrainFlowState(prescription: makePrescription())
+        pain.skipExercise(reason: .painDiscomfort)
+        pain.requestFinish()
+        pain.confirmEnd(reason: .pain)
+        XCTAssertTrue(SessionStore.watchSessionState(flow: pain, lastSessionOutcome: nil) == (false, "completed"),
+                      "疼痛跳过的一场能保存，手表也按完成收")
+    }
+
+    func testCompletedSessionTimingEndsWhenTheSummaryAppearedNotWhenSaved() {
+        let start = Date(timeIntervalSince1970: 1_790_000_000)
+        let ended = start.addingTimeInterval(47 * 60 + 30)
+        let savedLater = ended.addingTimeInterval(3 * 3_600)
+
+        let timing = SessionStore.completedSessionTiming(startedAt: start, endedAt: ended, now: savedLater)
+        XCTAssertEqual(timing.endedAt, ended)
+        XCTAssertEqual(timing.durationMinutes, 47)
+
+        let legacy = SessionStore.completedSessionTiming(startedAt: start, endedAt: nil, now: savedLater)
+        XCTAssertEqual(legacy.endedAt, savedLater, "旧草稿没有结束时刻：退回保存时刻")
+    }
+
+    func testScreenStaysAwakeOnlyWhileTrainingIsInProgress() {
+        let sessionStore = makeSessionStore(draftStore: FakeTrainSessionDraftStore())
+        XCTAssertTrue(sessionStore.keepsScreenAwake, "组中")
+        sessionStore.apply(.logSet(CompletedSetObservation(weightKg: 60, reps: 10, rir: 2)))
+        XCTAssertTrue(sessionStore.keepsScreenAwake, "休息中")
+        sessionStore.apply(.requestFinish)
+        XCTAssertTrue(sessionStore.keepsScreenAwake, "结束确认层")
+        sessionStore.apply(.confirmEnd(.timeUp))
+        XCTAssertFalse(sessionStore.keepsScreenAwake, "小结")
+        sessionStore.endSession()
+        XCTAssertFalse(sessionStore.keepsScreenAwake, "没有训练")
+    }
+
+    // 换动作用新动作自己的起始负重（与临时加动作同规则），解析一次随事件落草稿。
+    func testSwapEventCarriesTheNewExercisesOwnStartingLoad() throws {
+        let sessionStore = makeSessionStore(draftStore: FakeTrainSessionDraftStore())
+        sessionStore.todayOutcome = .ready(try makeTodayModel(
+            equipmentScenario: nil, unitSystem: "kg",
+            sessions: [CleanTrainingSession(id: "h1", date: "2026-07-10", exercises: [
+                CleanExercise(exerciseId: "db-bench-press", sets: [
+                    CleanLoggedSet(weight: 24, reps: 10, rir: 2),
+                    CleanLoggedSet(weight: 26, reps: 8, rir: 1),
+                ]),
+            ])]
+        ))
+        XCTAssertTrue(sessionStore.flow?.replacementCandidates.contains("db-bench-press") ?? false)
+
+        let event = sessionStore.replaceExerciseEvent(exerciseId: "db-bench-press")
+        XCTAssertEqual(event, .replaceExerciseWithLoad("db-bench-press", 26))
+        sessionStore.apply(event)
+
+        XCTAssertEqual(sessionStore.flow?.currentExercise?.sets.map(\.targetWeightKg), [26, 26, 26],
+                       "不再沿用杠铃卧推的 60")
+    }
+
     func testAcceptedDurableMoveSavesExactlyOnceBeforeReportingSuccess() throws {
         let draftStore = FakeTrainSessionDraftStore()
         let sessionStore = makeSessionStore(draftStore: draftStore)
@@ -2304,6 +2455,17 @@ final class SessionStoreDraftTests: XCTestCase {
                 makeExercise(id: targetId, weightKg: 30),
             ],
             dayReasons: []
+        )
+    }
+
+    /// 今天开练的草稿（跨天规则不介入）。
+    private func todayDraft(events: [TrainFlowEvent]) -> TrainSessionDraft {
+        TrainSessionDraft(
+            dateISO: SessionStore.localDayISO(Date()),
+            startedAt: Date(),
+            prescription: makePrescription(),
+            events: events,
+            catalogVersion: ExerciseCatalog.minimal.catalogVersion
         )
     }
 

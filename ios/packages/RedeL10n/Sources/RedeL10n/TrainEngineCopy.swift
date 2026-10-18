@@ -427,6 +427,10 @@ extension RedeStrings {
     public var summaryDone: String { locale == .zh ? "完成" : "Done" }
     public var summarySaveAndFinish: String { locale == .zh ? "保存并完成" : "Save & finish" }
     public var summaryRetrySave: String { locale == .zh ? "重试保存" : "Retry save" }
+    /// 一组都没记的一场只能放弃（P0 2026-10-18）：空记录会占掉当天的训练日、而且删不掉。
+    public var summaryNoSetsNote: String {
+        locale == .zh ? "这场一组都没记，不会留下记录" : "No sets logged, so nothing will be saved"
+    }
     /// 写入失败如实呈现（FR-TR8：绝不假装成功）。
     public var saveFailedLine: String {
         locale == .zh ? "保存失败　你的记录还在本页，可重试" : "Save failed. Your sets are still here. Try again"

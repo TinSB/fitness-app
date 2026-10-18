@@ -1520,7 +1520,7 @@ struct TrainTabView: View {
                         ForEach(Array(candidates.enumerated()), id: \.element) { idx, id in
                             sheetActionRow(localeStore.exerciseName(id), divider: idx < candidates.count - 1) {
                                 clearAdjustment() // 换动作 = 新目标，旧暂存作废
-                                sessionStore.apply(.replaceExercise(id))
+                                sessionStore.apply(sessionStore.replaceExerciseEvent(exerciseId: id))
                                 showSwapSheet = false
                             }
                         }
@@ -2083,45 +2083,57 @@ struct TrainTabView: View {
                     .foregroundStyle(Color.redeT2)
             }
 
-            if let errorText = sessionStore.saveErrorText {
-                Text(s.saveFailedLine)
+            if flow?.canBeSaved == false {
+                // 0 组（也没有因疼痛跳过）：只给「放弃」。保存会写进一场空记录、占掉当天的训练日，而且删不掉。
+                Text(s.summaryNoSetsNote)
                     .font(.redeCallout)
-                    .foregroundStyle(Color.redeRisk)
-                Text(errorText)
-                    .font(.redeCaption)
-                    .foregroundStyle(Color.redeT4)
-                    .lineLimit(2)
-            }
-            EmbButton(icon: nil, title: sessionStore.saveErrorText == nil ? s.summarySaveAndFinish : s.summaryRetrySave, action: {
-                Task {
-                    if await sessionStore.completeAndPersistSession() {
-                        onGoToday()
-                        // 保存完成→回 Today 后，在稳定屏幕上尝试请求评分（受节流策略约束）。
-                        requestReviewAfterCompletedSession()
-                    }
+                    .foregroundStyle(Color.redeT3)
+                EmbButton(icon: nil, title: s.endWorkoutDiscard, action: {
+                    sessionStore.abandonActiveSession()
+                    onGoToday()
+                })
+                Spacer()
+            } else {
+                if let errorText = sessionStore.saveErrorText {
+                    Text(s.saveFailedLine)
+                        .font(.redeCallout)
+                        .foregroundStyle(Color.redeRisk)
+                    Text(errorText)
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeT4)
+                        .lineLimit(2)
                 }
-            })
-            .disabled(sessionStore.isSaving)
-            .opacity(sessionStore.isSaving ? 0.5 : 1)
+                EmbButton(icon: nil, title: sessionStore.saveErrorText == nil ? s.summarySaveAndFinish : s.summaryRetrySave, action: {
+                    Task {
+                        if await sessionStore.completeAndPersistSession() {
+                            onGoToday()
+                            // 保存完成→回 Today 后，在稳定屏幕上尝试请求评分（受节流策略约束）。
+                            requestReviewAfterCompletedSession()
+                        }
+                    }
+                })
+                .disabled(sessionStore.isSaving)
+                .opacity(sessionStore.isSaving ? 0.5 : 1)
 
-            // 次级文字动作，同一行、不与「保存完成」争主操作：
-            // FR-SH1 分享成绩（带 Rede 品牌的成就卡 → 系统分享）；
-            // 修改最后一组（末组打勾直接进小结，没有休息可供校正——这里是它唯一的改正机会）。
-            HStack(spacing: 24) {
-                if let summary, let plan = flow?.prescription {
-                    summaryTextAction(icon: "square.and.arrow.up", title: s.shareCardShareAction) {
-                        sharePreview = SharePreviewItem(snapshots: SessionShareSnapshotBuilder.build(
-                            summary: summary, plan: plan))
+                // 次级文字动作，同一行、不与「保存完成」争主操作：
+                // FR-SH1 分享成绩（带 Rede 品牌的成就卡 → 系统分享）；
+                // 修改最后一组（末组打勾直接进小结，没有休息可供校正——这里是它唯一的改正机会）。
+                HStack(spacing: 24) {
+                    if let summary, let plan = flow?.prescription {
+                        summaryTextAction(icon: "square.and.arrow.up", title: s.shareCardShareAction) {
+                            sharePreview = SharePreviewItem(snapshots: SessionShareSnapshotBuilder.build(
+                                summary: summary, plan: plan))
+                        }
+                    }
+                    if let count = flow?.completedInCurrentExercise.count, count > 0 {
+                        summaryTextAction(icon: "pencil", title: s.summaryAmendLastSet) {
+                            openAmend(offset: count - 1, inSummary: true)
+                        }
                     }
                 }
-                if let count = flow?.completedInCurrentExercise.count, count > 0 {
-                    summaryTextAction(icon: "pencil", title: s.summaryAmendLastSet) {
-                        openAmend(offset: count - 1, inSummary: true)
-                    }
-                }
+                .disabled(sessionStore.isSaving)
+                Spacer()
             }
-            .disabled(sessionStore.isSaving)
-            Spacer()
         }
         .padding(RedeSpace.page)
         .presentationDetents([.height(440)])

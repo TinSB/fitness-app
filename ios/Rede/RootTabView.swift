@@ -103,7 +103,8 @@ struct RootTabView: View {
                             if sessionStore.flow == nil {
                                 await sessionStore.startSessionLoadingIfNeeded()
                             }
-                            selection = .train
+                            // 没开成（盘上有未保存的上一场，恢复面板正在问）就留在原地。
+                            if sessionStore.flow != nil { selection = .train }
                         }
                     }, onReviewData: {
                         progressScrollTarget = .dataQuality
@@ -220,6 +221,39 @@ struct RootTabView: View {
         }
         .sheet(item: $sharePreviewSample) { item in
             ShareCardPreviewView(snapshots: item.snapshots)
+        }
+        // FR-TR9 恢复面板（Task 5 2026-07-04 品牌化；2026-10-18 从今日页上移到这里）：
+        // 启动时发现未保存的一场会问；任一 tab 点「开始训练」撞上它（之前点过「稍后再说」）
+        // 也会问——不再直接开新的把它覆盖掉。三选一：恢复接续 flow / 稍后再说（留 draft，
+        // 下次再问）/ 放弃清 draft；销毁行不与主操作相邻。restore/discard 内部清 pendingDraft，
+        // binding 自动收面板。
+        .sheet(isPresented: Binding(
+            get: { showOnboarding != nil && sessionStore.pendingDraft != nil },
+            // 滑走 = 稍后再说：留着 draft，本次运行不再主动问（再点开始训练时才会问）
+            set: { if !$0, sessionStore.pendingDraft != nil { sessionStore.deferPendingDraft() } }
+        )) {
+            let s = localeStore.strings
+            RedeChoiceSheet(
+                title: s.resumeSessionTitle,
+                message: s.resumeSessionMessage,
+                options: [
+                    RedeChoiceOption(title: s.resumeSessionContinue, emphasis: true, action: {
+                        sessionStore.restorePendingDraft()
+                        if sessionStore.flow != nil { selection = .train }
+                    }),
+                    RedeChoiceOption(title: s.resumeSessionLater, action: {
+                        sessionStore.deferPendingDraft()
+                    }),
+                    RedeChoiceOption(title: s.resumeSessionDiscard, role: .destructive, action: {
+                        sessionStore.discardPendingDraft()
+                    }),
+                ],
+                onCancel: {}  // 无独立取消行：「稍后再说」已是显式行，滑走同义
+            )
+        }
+        // P0 2026-10-18：训练进行中屏幕常亮（组间拿起手机不用再解锁），到小结 / 结束即恢复。
+        .onChange(of: sessionStore.keepsScreenAwake, initial: true) { _, awake in
+            UIApplication.shared.isIdleTimerDisabled = awake
         }
         // 截图/UI 验证钩子（仅测试脚手架）:
         // -autoStartSession 直接载入今日并开训；
