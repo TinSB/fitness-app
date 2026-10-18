@@ -39,6 +39,9 @@ struct TodayModel {
     let scheduledDayCode: String?
     /// 每周循环模式（换天弹窗/撤销条文案分流：weekly 下不承诺「顺延补回」——审查 S1）。
     let weeklyCycleRestart: Bool
+    /// 训练小结 PR 的基线：每个动作历史最重一组，已剔除数据质量可疑组（与进展页同一口径）。
+    /// 加载时算一次——小结视图每次重绘都会读它，不能在那里现算数据质量报告。
+    var prBaselineBestWeights: [String: Double] = [:]
 
     /// Rail「上次」节点：首个处方动作最近一次实绩（重量×次数 + 日期）。
     struct RailLast {
@@ -175,7 +178,8 @@ struct TodayModel {
         // FR-T5 收尾：算数据质量报告（与进展页同口径，DataQualityComposer）→ 可疑组条数喂修数据卡。
         // 可疑组数（"看起来不对劲、去核对"）才触发卡；静默净化的丢弃/忽略不算（无可核对项）。
         // 注：此处为取 count 算了全量报告（进展页加载时会再算一次，不共享缓存）——健身数据量级小、可接受。
-        let dataFindingCount = DataQualityComposer.report(cleanView: cleanView).suspectSets.count
+        let suspectSets = DataQualityComposer.report(cleanView: cleanView).suspectSets
+        let dataFindingCount = suspectSets.count
         // 周口径迁移（2026-07-15）：引擎信号已是日历周训练天数（周一始）——
         // 与下方 weekStartISO 抑制键、状态行分段条同口径（同卡不再两种周口径）。
         var trainedThisWeek = 0, planned = 0
@@ -211,7 +215,10 @@ struct TodayModel {
             equipmentScenario: input.profile.equipmentScenario,
             daySequence: daySequence,
             scheduledDayCode: scheduledDayCode,
-            weeklyCycleRestart: appData.weeklyCycleRestart
+            weeklyCycleRestart: appData.weeklyCycleRestart,
+            prBaselineBestWeights: SessionSummaryBuilder.previousBestWeights(
+                sessions: cleanView.sessions, excluding: suspectSets
+            )
         ))
     }
 }

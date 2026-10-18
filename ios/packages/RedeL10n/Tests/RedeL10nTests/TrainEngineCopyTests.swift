@@ -32,10 +32,22 @@ final class TrainEngineCopyTests: XCTestCase {
         XCTAssertEqual(zh.firstSetWhy, "")
         XCTAssertEqual(en.firstSetWhy, "")
         XCTAssertEqual(zh.holdLabel(kg: "60"), "按计划 60")
-        XCTAssertEqual(en.holdLabel(kg: "60"), "Plan 60")
+        XCTAssertEqual(en.holdLabel(kg: "60"), "Use plan 60")
     }
 
     func testRestAnchors() {
+        // 2026-10-18 P2：按钮字面 = 实际作用；休息 ±15；RIR 一句解释；休息到点通知分「下一组 / 下一个动作」。
+        XCTAssertEqual(zh.trainFinish, "结束训练")
+        XCTAssertEqual(en.trainFinish, "End workout")
+        XCTAssertEqual(zh.restNextSet, "下一组")
+        XCTAssertEqual(zh.restNextExerciseAction, "下个动作")
+        XCTAssertEqual(en.restNextExerciseAction, "Next lift")
+        XCTAssertEqual([zh.restSubtract15, zh.restAdd15], ["−15s", "+15s"])
+        XCTAssertEqual(zh.rirHint, "还能再做几次")
+        XCTAssertEqual(zh.notificationRestEndBody, "可以开始下一组了")
+        XCTAssertEqual(zh.notificationRestEndBodyNextExercise, "可以开始下一个动作了")
+        XCTAssertEqual(zh.holdLabelAssisted(kg: "30"), "按计划 辅助 30")
+        XCTAssertEqual(zh.restLastSetLine(load: "70", reps: 6, rir: 3), "刚才这组 · 70 kg × 6 · RIR 3")
         XCTAssertEqual(zh.restNextPreview(setNumber: 2, kg: "60", reps: 6), "下一组 · 第 2 组 · 60 kg × 6")
         XCTAssertEqual(en.restNextExercise("Lat pulldown"), "Up next · Lat pulldown")
     }

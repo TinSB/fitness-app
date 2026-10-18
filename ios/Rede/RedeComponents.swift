@@ -598,6 +598,8 @@ struct SteelButton: View {
             .clipShape(RoundedRectangle(cornerRadius: RedeShape.steelRadius))
         }
         .buttonStyle(.redePressable)
+        // 开关态（「按计划」「暂停」）只靠底色区分，读屏要能听到「已选中」（审查 2026-10-18）。
+        .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }
 

@@ -640,7 +640,7 @@ struct TrainTabView: View {
                 // 窄方块；主次由 ember 缘表达，不靠宽度悬殊。
                 // 动作做完后的这段休息，按钮去的是下一个动作（热身或首组），不叫「下一组」。
                 EmbButton(icon: "forward.fill",
-                          title: Self.restEndsExercise(flow) ? s.restNextExerciseAction : s.restNextSet,
+                          title: flow.currentExerciseIsDone ? s.restNextExerciseAction : s.restNextSet,
                           iconSize: 13, fontSize: 14,
                           hug: true, minHeight: RedeShape.controlHeight, action: { finishRest() })
             }
@@ -652,14 +652,8 @@ struct TrainTabView: View {
         .frame(maxWidth: .infinity)
     }
 
-    /// 这段休息之后换动作（当前动作的组都做完 / 跳过了）。
-    static func restEndsExercise(_ flow: TrainFlowState) -> Bool {
-        guard let exercise = flow.currentExercise else { return false }
-        return flow.completedInCurrentExercise.count + flow.skippedInCurrentExercise >= exercise.sets.count
-    }
-
     private func restPreviewText(_ flow: TrainFlowState) -> String {
-        if Self.restEndsExercise(flow) {
+        if flow.currentExerciseIsDone {
             let next = flow.plan.exercises.indices.contains(flow.exerciseIndex + 1)
                 ? flow.plan.exercises[flow.exerciseIndex + 1] : nil
             return next.map { s.restNextExercise(localeStore.exerciseName($0.exerciseId)) } ?? ""
@@ -993,15 +987,17 @@ struct TrainTabView: View {
         }
     }
 
-    /// 引擎把这组重量从计划值改了（力竭 / 掉出区间 / 不适 / RIR 掉得快）。纯次数动作没有重量轴，
-    /// 「按计划」对它不改任何东西——不算。
+    /// 引擎在这一组上把重量从计划值改了（力竭 / 掉出区间 / 不适 / RIR 掉得快——why 行此时正好在说原因）。
+    /// 只看「建议 ≠ 计划」不够：用户自己上一组加了重，引擎照常延续（onPlan）也会 ≠ 计划，
+    /// 那时冒出一个没有原因的「按计划」正是要消除的困惑（审查 2026-10-18）。
+    /// 纯次数动作没有重量轴，「按计划」对它不改任何东西——不算。
     static func engineChangedLoad(_ flow: TrainFlowState) -> Bool {
         guard let exercise = flow.currentExercise, !exercise.sets.isEmpty,
               exercise.loadType != "bodyweight", exercise.loadType != "band",
-              let recommended = flow.currentRecommendation?.targetWeightKg
+              let recommendation = flow.currentRecommendation, recommendation.reason != .onPlan
         else { return false }
         let pointer = min(flow.completedInCurrentExercise.count + flow.skippedInCurrentExercise, exercise.sets.count - 1)
-        return abs(recommended - exercise.sets[pointer].targetWeightKg) > 0.001
+        return abs(recommendation.targetWeightKg - exercise.sets[pointer].targetWeightKg) > 0.001
     }
 
     private var stripDivider: some View {
@@ -2102,7 +2098,8 @@ struct TrainTabView: View {
             .padding(.top, 4)
 
             // 整面板：PR 时刻 = 本弹层唯一铭牌（原型 #sumPRcard 语法，两端统一拍板 2026-06-11）
-            if summary?.isPersonalRecord == true, let top = summary?.topSet {
+            // PR 铭牌写破纪录的那个动作（prTopSet），不是全场最重一组（审查 2026-10-18）。
+            if let top = summary?.prTopSet {
                 ForgedCard {
                     HStack(spacing: 11) {
                         Image(systemName: "trophy")

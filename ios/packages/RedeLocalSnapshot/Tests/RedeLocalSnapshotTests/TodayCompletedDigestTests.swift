@@ -60,6 +60,27 @@ final class TodayCompletedDigestTests: XCTestCase {
         } else { XCTFail("expected personalRecord") }
     }
 
+    // 2026-10-18：PR 是「任一动作超过自己的历史最好」——全场最重一组（深蹲）没破纪录、
+    // 侧平举破了时，PR 卡必须写侧平举，不能把 PR 安在深蹲上。
+    func testPRCardNamesTheExerciseThatSetTheRecordNotTheHeaviestSet() {
+        let top = ProgressSnapshot.TopSet(exerciseId: "squat", weightKg: 100, reps: 5)
+        let session = SnapshotSessionRecord(id: "s1", dateISO: today, exercises: [
+            SnapshotExerciseRecord(exerciseId: "squat", sets: [SnapshotSetRecord(weightKg: 100, reps: 5)]),
+            SnapshotExerciseRecord(exerciseId: "lateral-raise", sets: [
+                SnapshotSetRecord(weightKg: 10, reps: 15),
+                SnapshotSetRecord(weightKg: 12.5, reps: 10),
+            ]),
+        ])
+        let digest = TodayCompletedDigestBuilder.digest(
+            latest: entry(dateISO: today, prIds: ["lateral-raise"], topSet: top),
+            record: session, dayCode: nil, durationMinutes: 45, patterns: [])
+        if case let .personalRecord(pr)? = digest?.shareSnapshots.last?.content {
+            XCTAssertEqual(pr.exerciseId, "lateral-raise")
+            XCTAssertEqual(pr.weightKg, 12.5)
+            XCTAssertEqual(pr.reps, 10)
+        } else { XCTFail("expected personalRecord") }
+    }
+
     // K3（2026-07-16）：最近一场不是今天也产出——休息日「上一场」回执；
     // dateISO 透传真实日期，分享快照日期 = 场次日期（不编成今天）。
     func testLatestNotTodayStillProducesDigestWithRealDate() {

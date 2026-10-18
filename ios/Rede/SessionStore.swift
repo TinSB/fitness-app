@@ -2458,9 +2458,13 @@ final class SessionStore {
     ///（只在本场内存里，不落盘、不跨场——跨场记忆要动 schema，另议）。
     func addRestTime(_ seconds: Int) {
         guard restCountdown.isActive else { return }   // 不在休息：不加时，也不记调整
-        restCountdown.add(seconds: seconds)
+        // 减时最多减到剩 1 秒：界面的「剩不到 15 秒置灰」按秒刷新，会慢半拍；真减到 0 会让休息
+        // 直接结束、还留下一条按旧剩余排的休息提醒（审查 2026-10-18）。结束休息是「下一组」的事。
+        let applied = seconds < 0 ? max(seconds, -(restCountdown.remaining() - 1)) : seconds
+        guard applied != 0 else { return }
+        restCountdown.add(seconds: applied)
         if let id = flow?.currentExercise?.exerciseId {
-            restAdjustmentByExercise[id, default: 0] += seconds
+            restAdjustmentByExercise[id, default: 0] += applied
         }
         if !restCountdown.isPaused {
             scheduleRestNotification(restSecondsPlanned: restCountdown.remaining())
@@ -2529,7 +2533,8 @@ final class SessionStore {
             id: plan.notificationId,
             fireAfterSeconds: plan.fireAfterSeconds,
             title: strings.notificationRestEndTitle,
-            body: strings.notificationRestEndBody
+            body: flow?.currentExerciseIsDone == true
+                ? strings.notificationRestEndBodyNextExercise : strings.notificationRestEndBody
         )
     }
 
@@ -2782,9 +2787,7 @@ final class SessionStore {
         return SessionSummaryBuilder.build(
             observations: flow.observationsByExercise,
             durationSeconds: max(0, duration),
-            previousBestWeightKg: SessionSummaryBuilder.previousBestWeights(
-                sessions: todayModel?.cleanView.sessions ?? []
-            )
+            previousBestWeightKg: todayModel?.prBaselineBestWeights ?? [:]
         )
     }
 }

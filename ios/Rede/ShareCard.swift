@@ -407,7 +407,7 @@ enum SessionShareSnapshotBuilder {
                 exerciseCount: plan.exercises.count, setCount: summary.completedSetCount,
                 durationSeconds: summary.durationSeconds, patterns: patterns, hadPR: summary.isPersonalRecord)
         ]
-        if summary.isPersonalRecord, let top = summary.topSet {
+        if let top = summary.prTopSet {   // 破纪录的那个动作，不是全场最重一组
             out.append(SharePrivacyFilter.personalRecord(
                 generatedDateISO: dateISO, exerciseId: top.exerciseId, weightKg: top.weightKg,
                 reps: top.reps, isEstimated: false))

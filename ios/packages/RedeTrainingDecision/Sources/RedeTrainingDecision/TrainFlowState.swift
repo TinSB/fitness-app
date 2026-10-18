@@ -221,7 +221,8 @@ public struct TrainFlowState: Equatable, Sendable {
         )
     }
 
-    private var currentExerciseIsDone: Bool {
+    /// 当前动作的组都做完 / 跳过了（之后的休息结束 = 换到下一个动作；UI 据此把「下一组」说成「下个动作」）。
+    public var currentExerciseIsDone: Bool {
         guard let exercise = currentExercise else { return true }
         return completedInCurrentExercise.count + skippedInCurrentExercise >= exercise.sets.count
     }

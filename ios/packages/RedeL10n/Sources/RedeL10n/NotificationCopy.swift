@@ -10,6 +10,8 @@ extension RedeStrings {
     // MARK: FR-NT1 休息结束提醒（锁屏召回，事实+引导）
     public var notificationRestEndTitle: String { t2n("休息结束", "Rest complete") }
     public var notificationRestEndBody: String { t2n("可以开始下一组了", "Ready for your next set") }
+    /// 动作做完后的那段休息到点：去的是下一个动作（与训练页「下个动作」按钮一致，2026-10-18）。
+    public var notificationRestEndBodyNextExercise: String { t2n("可以开始下一个动作了", "Ready for your next exercise") }
 
     // MARK: 设置页通知 section
     public var notificationsSectionTitle: String { t2n("通知", "Notifications") }

@@ -5,6 +5,7 @@
 import Foundation
 import XCTest
 import RedeDataHealth
+import RedeDomain
 @testable import RedeTrainingDecision
 
 final class SessionSummaryTests: XCTestCase {
@@ -68,8 +69,8 @@ final class SessionSummaryTests: XCTestCase {
         XCTAssertFalse(tie.isPersonalRecord, "持平不算（严格大于）")
     }
 
-    // 任一动作破纪录即 PR，不限于全场最重那组（与进展页 prExerciseIds 非空同义）；
-    // 顶组展示仍是全场最重一组（与今日页练完块一致）。
+    // 任一动作破纪录即 PR，不限于全场最重那组（与进展页 prExerciseIds 非空同义）。
+    // PR 铭牌 / 分享卡写破纪录的那个动作（prTopSet），不是全场最重一组（审查 2026-10-18）。
     func testPrOnAnyExerciseCountsEvenWhenItIsNotTheTopSet() {
         let summary = SessionSummaryBuilder.build(
             observations: [
@@ -80,7 +81,9 @@ final class SessionSummaryTests: XCTestCase {
             previousBestWeightKg: ["bench-press": 75, "lateral-raise": 10]
         )
         XCTAssertTrue(summary.isPersonalRecord)
-        XCTAssertEqual(summary.topSet?.exerciseId, "bench-press")
+        XCTAssertEqual(summary.topSet?.exerciseId, "bench-press", "全场最重一组不变")
+        XCTAssertEqual(summary.prTopSet, SessionSummary.TopSet(exerciseId: "lateral-raise", weightKg: 12.5, reps: 10),
+                       "PR 卡写真正破纪录的动作")
     }
 
     // 换入动作只和它自己的历史比；辅助器械不参与 PR，也不进基线。
@@ -99,6 +102,27 @@ final class SessionSummaryTests: XCTestCase {
             previousBestWeightKg: ["assisted-pull-up": 30]
         )
         XCTAssertFalse(assisted.isPersonalRecord)
+    }
+
+    // 审查 2026-10-18：进展页的 PR 是剔除数据质量可疑组之后算的；小结的基线也要剔除，
+    // 否则历史里一次手滑的 120（真实最好 50）会让今天 55 在小结里不算 PR、存完进展页却算。
+    func testBaselineIgnoresSetsTheDataQualityReportFlags() throws {
+        let sessions = [
+            session("2026-06-01", "lat-pulldown", [50]),
+            session("2026-06-08", "lat-pulldown", [120]),
+        ]
+        let raw = try JSONDecoder().decode(AppData.self, from: Data(#"{"schemaVersion":11}"#.utf8))
+        let view = CleanAppDataView(raw: raw, sessions: sessions, profile: CleanProfile(),
+                                    program: CleanProgram(splitType: "push-pull-legs"), issues: [])
+        let suspects = DataQualityReportBuilder.build(view: view).suspectSets
+        XCTAssertEqual(suspects.map(\.weightKg), [120], "前置：120 被标为可疑")
+
+        XCTAssertEqual(SessionSummaryBuilder.previousBestWeights(sessions: sessions)["lat-pulldown"], 120)
+        let best = SessionSummaryBuilder.previousBestWeights(sessions: sessions, excluding: suspects)
+        XCTAssertEqual(best["lat-pulldown"], 50)
+        XCTAssertTrue(SessionSummaryBuilder.build(
+            observations: ["lat-pulldown": [obs(55, 10)]], durationSeconds: 600, previousBestWeightKg: best
+        ).isPersonalRecord)
     }
 
     func testEmptyObservationsYieldEmptySummary() {

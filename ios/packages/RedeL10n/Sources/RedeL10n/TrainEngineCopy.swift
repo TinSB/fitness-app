@@ -59,7 +59,7 @@ extension RedeStrings {
     /// Hold 按钮（2026-10-18 改名）：只在引擎改了这组重量时出现，读作「仍按计划」的选择——
     /// 原来的「保持 60」字面看不出是「暂停自动微调、按计划重量做」。已选中靠按钮态表达（文字不变）。
     public func holdLabel(kg: String) -> String {
-        locale == .zh ? "按计划 \(kg)" : "Plan \(kg)"
+        locale == .zh ? "按计划 \(kg)" : "Use plan \(kg)"
     }
 
     public var holdWhyLine: String {
@@ -83,7 +83,7 @@ extension RedeStrings {
     public var restResume: String { locale == .zh ? "继续" : "Resume" }
     public var restNextSet: String { locale == .zh ? "下一组" : "Next set" }
     /// 动作做完后的休息按钮：去的是下一个动作（热身或首组），不是「下一组」。
-    public var restNextExerciseAction: String { locale == .zh ? "下个动作" : "Next exercise" }
+    public var restNextExerciseAction: String { locale == .zh ? "下个动作" : "Next lift" }   // 「Next exercise」在四键一行里放不下
 
     /// "下一组 · 第 2 组 · 60 kg × 6"。
     public func restNextPreview(setNumber: Int, kg: String, reps: Int) -> String {
@@ -173,7 +173,7 @@ extension RedeStrings {
 
     /// Hold 按钮（自重）：保持目标次数。
     public func holdLabelBodyweight(reps: Int) -> String {
-        locale == .zh ? "按计划 ×\(reps)" : "Plan ×\(reps)"
+        locale == .zh ? "按计划 ×\(reps)" : "Use plan ×\(reps)"
     }
 
     /// 休息预告（自重）：第 N 组 · ×次。
@@ -201,7 +201,7 @@ extension RedeStrings {
 
     /// Hold 按钮（辅助）：保持当前辅助量。
     public func holdLabelAssisted(kg: String) -> String {
-        locale == .zh ? "按计划 辅助 \(kg)" : "Plan assist \(kg)"
+        locale == .zh ? "按计划 辅助 \(kg)" : "Use plan assist \(kg)"
     }
 
     /// 休息预告（辅助）：第 N 组 · 辅助 重 × 次。
@@ -255,7 +255,7 @@ extension RedeStrings {
 
     /// Hold 按钮（负重自重）：保持当前外挂负重。
     public func holdLabelBodyweightPlus(kg: String) -> String {
-        locale == .zh ? "按计划 负重 +\(kg)" : "Plan weighted +\(kg)"
+        locale == .zh ? "按计划 负重 +\(kg)" : "Use plan +\(kg)"
     }
 
     /// 休息预告（负重自重）：第 N 组 · 负重 +重 × 次。

@@ -1191,11 +1191,11 @@ FR-TR14 的「本次训练」是上述边界的窄例外：只编辑 `TrainFlowS
 
 **说清楚（P2，2026-10-18 owner「把 P2 文案搭上」）。** 字面意思与实际作用对不上的几处按钮与叫法一并改正：
 - 右上角「完成」→「结束训练」（`trainFinish`）：它收的是整场，和「完成本组」同名会让人误点。
-- 动作做完后的那段休息，按钮叫「下个动作」（`restNextExerciseAction`，`TrainTabView.restEndsExercise`）：去的是下一个动作的热身或首组，不是「下一组」。四个按钮一行，放不下时字略缩（`lineLimit(1)` + `minimumScaleFactor(0.75)`），不折行。
-- 「保持 70」→「按计划 70」（各负荷类型同改，`holdLabel*`），且只在引擎真的把这组重量从计划值改了（力竭 / 掉出区间 / 不适 / RIR 掉得快）或已选中时出现（`TrainTabView.engineChangedLoad`；纯次数动作没有重量轴，不出现）。why 行给原因，「按计划」就是「仍按计划」的选择；选中时 why 行改为「按计划重量做，这个动作不再自动调整」。语义不变：Hold = 暂停引擎微调、按计划值，跨组延续、不跨动作。
+- 动作做完后的那段休息，按钮叫「下个动作 / Next lift」（`restNextExerciseAction`，判据 `TrainFlowState.currentExerciseIsDone`）：去的是下一个动作的热身或首组，不是「下一组」；这段休息到点的锁屏提醒同样写「可以开始下一个动作了」（`notificationRestEndBodyNextExercise`）。四个按钮一行，放不下时字略缩（`lineLimit(1)` + `minimumScaleFactor(0.75)`），不折行。手表跳过休息键是图标，读屏名仍是「下一组」——手表端不知道这一组是不是动作的最后一组，要改得加协议字段，未做。
+- 「保持 70」→「按计划 70 / Use plan 70」（各负荷类型同改，`holdLabel*`），且只在引擎在**这一组**上把重量从计划值改了（建议 reason ≠ onPlan 且建议重量 ≠ 计划值：力竭 / 掉出区间 / 不适 / RIR 掉得快——why 行此时正在说原因）或已选中时出现（`TrainTabView.engineChangedLoad`；纯次数动作没有重量轴，不出现）。用户自己上一组加了重、引擎照常延续时建议也 ≠ 计划，但那不是引擎改的，不出现。选中时 why 行改为「按计划重量做，这个动作不再自动调整」，按钮带读屏「已选中」态（`SteelButton` 的 isOn → `.isSelected`）。语义不变：Hold = 暂停引擎微调、按计划值，跨组延续、不跨动作。
 - RIR 统一叫「RIR」：why 行与快改预演里的「余力掉得快」改为「RIR 掉得快」；快改面板与更正面板的 RIR 标签旁常驻一句「还能再做几次」（不弹窗）。「接近力竭」照旧（它描述 RIR 0–1，不是另一个指标）。
-- 休息 ±15 秒（原 +30）：`SessionStore.addRestTime` 把调整记在本场当前动作上（`restAdjustmentByExercise`，只在内存、开训 / 结束清空、不落 draft），这个动作下一段休息按 `restSeconds(for:) = max(15, 计划秒数 + 调整)` 开始；休息提醒、Live Activity、手表倒计时都跟着这段时长。剩不到 15 秒时「−15s」置灰。手表的 +30 命令同样记入。跨场记忆需要动 canonical schema，未做。
-- 小结的 PR 与进展页 / 今日页同一口径（`SessionSummaryBuilder`，与 `ProgressSnapshotBuilder` 一致）：本场任一动作的顶组重量严格大于该动作全部已存历史的最重一组（`previousBestWeights(sessions:)`，辅助器械不参与，从没练过的不判）。此前只和「上次」比——三周前 75、上次 65、今天 70 会在小结报 PR、存完进展页却没有。顶组展示仍是全场最重一组。
+- 休息 ±15 秒（原 +30）：`SessionStore.addRestTime` 把调整记在本场当前动作上（`restAdjustmentByExercise`，只在内存、开训 / 结束清空、不落 draft），这个动作下一段休息按 `restSeconds(for:) = max(15, 计划秒数 + 调整)` 开始；休息提醒、Live Activity、手表倒计时都跟着这段时长。剩 15 秒及以下时「−15s」置灰；存储层另设下限——减时最多减到剩 1 秒（界面置灰按秒刷新会慢半拍，真减到 0 会直接结束休息并留下按旧剩余排的提醒），记入的调整也按实际减掉的量。手表的 +30 命令同样记入。跨场记忆需要动 canonical schema，未做。
+- 小结的 PR 与进展页 / 今日页同一口径（`SessionSummaryBuilder`，与 `ProgressSnapshotBuilder` 一致）：本场任一动作的顶组重量严格大于该动作全部已存历史的最重一组（`previousBestWeights(sessions:excluding:)`：辅助器械不参与，数据质量报告标出的可疑组不进基线——与进展页 `ProgressModel.mapToRecords` 同一把键；从没练过的不判）。基线在 `TodayModel` 加载时算一次（`prBaselineBestWeights`），小结重绘不现算质量报告。此前只和「上次」比——三周前 75、上次 65、今天 70 会在小结报 PR、存完进展页却没有。PR 铭牌与 PR 分享卡写**破纪录的那个动作**的最重一组（`prTopSet`），今日页练完块的 PR 卡同样改为取 `prExerciseIds` 对应动作在本场的最重一组；非 PR 时的顶组展示仍是全场最重一组。已知差异：本场里手滑输入的离谱重量在小结里仍会判 PR，存盘后进展页会把它当可疑组剔除。
 
 **训练不丢（FR-TR8 / FR-TR9，2026-10-18 P0）。**
 - **小结阶段也落草稿**：`currentDraft()` 不再在 `summary` 返回 nil，草稿带 `endedAt`（第一次落到小结的时刻，`SessionStore.sessionEndedAt`，由 flow 的 didSet 记）。被杀后恢复落回小结；完成写入的 `finishedAt` 与时长、小结显示的时长都用 `endedAt`——在小结停多久、被杀后多久才重开，都不算进训练时长。旧草稿无 `endedAt` 时退回「现在」。
