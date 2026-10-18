@@ -2,6 +2,10 @@
 
 All notable native iOS product, architecture, repository-governance, and documentation changes should be recorded here.
 
+## 2026-10-18
+
+- **CI and the quality gate now run three suites that had never run, plus a Thread Sanitizer pass**: `SessionVitalsTimelineTests` (#749), `PaidCoachBoundaryTests` (#743) and `RedeCoachRecoveryPolicyTests` (#745) were merged without being added to the app-hosted `-only-testing` list, so neither CI nor the local gate executed them. All three are added to both lists, which stay identical (15 entries each). A new step runs `RedeEntitlements` under `swift test --sanitize=thread`: its test double's unlocked array had surfaced only as an intermittent signal 11 in CI (#754), and TSan turns that class of race into a deterministic failure. Master §10 records the TSan requirement. Local proof before wiring: the three suites ran 24/24 on an iPhone simulator (xcresult `Passed`), and `RedeEntitlements` ran 28/28 under TSan with zero warnings. No app code changed.
+
 ## 2026-10-17
 
 - **Release 1.11.0 build 39 (archive ready; upload blocked by Apple account contract state)**: `CURRENT_PROJECT_VERSION` 38 → 39 in all 6 build configurations (App, Widget, Watch × Debug/Release); `MARKETING_VERSION` stays 1.11.0. The archive includes everything merged through #755. The pre-upload audit passed: app, widget and watch all 1.11.0 (39); three valid privacy manifests; `ITSAppUsesNonExemptEncryption=false` in all three; none of the four `RedeSubscription*` keys present, so the purchase gate stays closed; the watch executable is real (`arm64_32 arm64`); the binaries contain the `startWatchAppWithWorkoutConfiguration:completion:` and `handleWorkoutConfiguration:` selectors. The App Store Connect upload failed twice with HTTP 403 `FORBIDDEN_ERROR.CONTRACT_NOT_VALID` (request IDs `3f312c73-…` and `b281c67e-…`) on the `buildUploads` call. Distribution signing succeeded, the team was the paid 47K95GV3X5, and the owner sees no pending agreement. Build 39 was not consumed.
