@@ -489,17 +489,21 @@ struct TrainTabView: View {
             }
 
             HStack(spacing: 8) {
-                SteelButton(
-                    title: currentIsAssisted
-                        ? s.holdLabelAssisted(kg: s.formatKg(plannedWeight(flow)), holding: flow.isHolding)
-                        : (currentIsBodyweightPlus
-                            ? s.holdLabelBodyweightPlus(kg: s.formatKg(plannedWeight(flow)), holding: flow.isHolding)
-                            : (currentIsRepBased
-                                ? s.holdLabelBodyweight(reps: flow.currentRecommendation?.targetReps ?? plannedSetReps(flow), holding: flow.isHolding)
-                                : s.holdLabel(kg: s.formatKg(plannedWeight(flow)), holding: flow.isHolding))),
-                    isOn: flow.isHolding,
-                    action: { sessionStore.apply(.toggleHold); actionPulse += 1 }
-                )
+                // 「按计划」只在引擎真的改了这组重量时出现（或已选中时保留，好让人能撤回）：
+                // 第一组、照计划延续时它什么也不改，摆在最显眼的位置只会让人猜它是干嘛的（2026-10-18）。
+                if flow.isHolding || Self.engineChangedLoad(flow) {
+                    SteelButton(
+                        title: currentIsAssisted
+                            ? s.holdLabelAssisted(kg: s.formatKg(plannedWeight(flow)))
+                            : (currentIsBodyweightPlus
+                                ? s.holdLabelBodyweightPlus(kg: s.formatKg(plannedWeight(flow)))
+                                : (currentIsRepBased
+                                    ? s.holdLabelBodyweight(reps: flow.currentRecommendation?.targetReps ?? plannedSetReps(flow))
+                                    : s.holdLabel(kg: s.formatKg(plannedWeight(flow))))),
+                        isOn: flow.isHolding,
+                        action: { sessionStore.apply(.toggleHold); actionPulse += 1 }
+                    )
+                }
                 SteelButton(title: s.painAction, action: registerPain)
                 SteelButton(title: s.moreActions, action: { showMoreSheet = true; actionPulse += 1 })
             }
@@ -623,23 +627,33 @@ struct TrainTabView: View {
                 .foregroundStyle(Color.redeT3)
 
             HStack(spacing: 8) {
-                SteelButton(title: s.restAdd30, action: { sessionStore.addRestTime(30); actionPulse += 1 })
+                // ±15 秒（2026-10-18，原 +30）：调整记在本场这个动作上，它下一段休息按调整后的时长开始。
+                // 剩不到 15 秒时 −15 置灰——再减就是直接结束休息，那是「下一组」的事。
+                SteelButton(title: s.restSubtract15, action: { sessionStore.addRestTime(-15); actionPulse += 1 })
+                    .disabled(remaining <= 15)
+                    .opacity(remaining <= 15 ? 0.4 : 1)
+                SteelButton(title: s.restAdd15, action: { sessionStore.addRestTime(15); actionPulse += 1 })
                 SteelButton(title: sessionStore.restIsPaused ? s.restResume : s.restPause,
                             isOn: sessionStore.restIsPaused,
                             action: { sessionStore.toggleRestPause(); actionPulse += 1 })
                 // 并排语境收回内容宽（M1 审查 MAJOR）：默认全宽会把两个次级钢按钮挤成
                 // 窄方块；主次由 ember 缘表达，不靠宽度悬殊。
-                EmbButton(icon: "forward.fill", title: s.restNextSet, iconSize: 13, fontSize: 14,
+                // 动作做完后的这段休息，按钮去的是下一个动作（热身或首组），不叫「下一组」。
+                EmbButton(icon: "forward.fill",
+                          title: flow.currentExerciseIsDone ? s.restNextExerciseAction : s.restNextSet,
+                          iconSize: 13, fontSize: 14,
                           hug: true, minHeight: RedeShape.controlHeight, action: { finishRest() })
             }
+            // 四个按钮一行：放不下时字略缩，绝不折成两行（「下个动作」/英文 / 大字号）。
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
             .padding(.top, 4)
         }
         .frame(maxWidth: .infinity)
     }
 
     private func restPreviewText(_ flow: TrainFlowState) -> String {
-        if let exercise = flow.currentExercise,
-           flow.completedInCurrentExercise.count + flow.skippedInCurrentExercise >= exercise.sets.count {
+        if flow.currentExerciseIsDone {
             let next = flow.plan.exercises.indices.contains(flow.exerciseIndex + 1)
                 ? flow.plan.exercises[flow.exerciseIndex + 1] : nil
             return next.map { s.restNextExercise(localeStore.exerciseName($0.exerciseId)) } ?? ""
@@ -683,7 +697,7 @@ struct TrainTabView: View {
             repsStrip(selection: $adjustReps, target: flow.currentRecommendation?.targetReps) { hasAdjustment = true }
                 .padding(.top, 2)
                 .modifier(CascadeIn(index: 2, enabled: !reduceMotion))
-            Overline(text: s.adjustRir)
+            rirLabel
                 .padding(.top, 12)
                 .modifier(CascadeIn(index: 3, enabled: !reduceMotion))
             rirStrip(selection: $adjustRir) { hasAdjustment = true }
@@ -961,6 +975,29 @@ struct TrainTabView: View {
                 .accessibilityAddTraits(value == selection.wrappedValue ? .isSelected : [])
             }
         }
+    }
+
+    /// 「RIR」标签 + 常驻一句解释（2026-10-18 统一叫法：全页只叫 RIR，第一次见到的人也能看懂）。
+    private var rirLabel: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Overline(text: s.adjustRir)
+            Text(s.rirHint)
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT4)
+        }
+    }
+
+    /// 引擎在这一组上把重量从计划值改了（力竭 / 掉出区间 / 不适 / RIR 掉得快——why 行此时正好在说原因）。
+    /// 只看「建议 ≠ 计划」不够：用户自己上一组加了重，引擎照常延续（onPlan）也会 ≠ 计划，
+    /// 那时冒出一个没有原因的「按计划」正是要消除的困惑（审查 2026-10-18）。
+    /// 纯次数动作没有重量轴，「按计划」对它不改任何东西——不算。
+    static func engineChangedLoad(_ flow: TrainFlowState) -> Bool {
+        guard let exercise = flow.currentExercise, !exercise.sets.isEmpty,
+              exercise.loadType != "bodyweight", exercise.loadType != "band",
+              let recommendation = flow.currentRecommendation, recommendation.reason != .onPlan
+        else { return false }
+        let pointer = min(flow.completedInCurrentExercise.count + flow.skippedInCurrentExercise, exercise.sets.count - 1)
+        return abs(recommendation.targetWeightKg - exercise.sets[pointer].targetWeightKg) > 0.001
     }
 
     private var stripDivider: some View {
@@ -2061,7 +2098,8 @@ struct TrainTabView: View {
             .padding(.top, 4)
 
             // 整面板：PR 时刻 = 本弹层唯一铭牌（原型 #sumPRcard 语法，两端统一拍板 2026-06-11）
-            if summary?.isPersonalRecord == true, let top = summary?.topSet {
+            // PR 铭牌写破纪录的那个动作（prTopSet），不是全场最重一组（审查 2026-10-18）。
+            if let top = summary?.prTopSet {
                 ForgedCard {
                     HStack(spacing: 11) {
                         Image(systemName: "trophy")
@@ -2238,7 +2276,7 @@ struct TrainTabView: View {
                 .padding(.top, hasWeightAxis ? 16 : 18)
             repsStrip(selection: $amendReps, target: nil)
                 .padding(.top, 2)
-            Overline(text: s.adjustRir)
+            rirLabel
                 .padding(.top, 12)
             rirStrip(selection: $amendRir)
                 .padding(.top, 2)

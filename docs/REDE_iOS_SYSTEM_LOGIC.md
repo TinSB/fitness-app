@@ -1189,6 +1189,14 @@ FR-TR14 的「本次训练」是上述边界的窄例外：只编辑 `TrainFlowS
 - **已知且接受**：手表回传组的幂等键是「当前在等的组号」。撤销把指针退回后，同一组号一条迟到的手表回传会再次被接受。实际几乎不可达（排队通道按序送达，撤销时手机必在前台），不另设防。
 - 顺带修复：先「登记不适」再记组时，reducer 合并疼痛标记那一步曾丢掉 `completedAt`（该组在单场心率曲线上没有刻线），现已保留。
 
+**说清楚（P2，2026-10-18 owner「把 P2 文案搭上」）。** 字面意思与实际作用对不上的几处按钮与叫法一并改正：
+- 右上角「完成」→「结束训练」（`trainFinish`）：它收的是整场，和「完成本组」同名会让人误点。
+- 动作做完后的那段休息，按钮叫「下个动作 / Next lift」（`restNextExerciseAction`，判据 `TrainFlowState.currentExerciseIsDone`）：去的是下一个动作的热身或首组，不是「下一组」；这段休息到点的锁屏提醒同样写「可以开始下一个动作了」（`notificationRestEndBodyNextExercise`）。四个按钮一行，放不下时字略缩（`lineLimit(1)` + `minimumScaleFactor(0.75)`），不折行。手表跳过休息键是图标，读屏名仍是「下一组」——手表端不知道这一组是不是动作的最后一组，要改得加协议字段，未做。
+- 「保持 70」→「按计划 70 / Use plan 70」（各负荷类型同改，`holdLabel*`），且只在引擎在**这一组**上把重量从计划值改了（建议 reason ≠ onPlan 且建议重量 ≠ 计划值：力竭 / 掉出区间 / 不适 / RIR 掉得快——why 行此时正在说原因）或已选中时出现（`TrainTabView.engineChangedLoad`；纯次数动作没有重量轴，不出现）。用户自己上一组加了重、引擎照常延续时建议也 ≠ 计划，但那不是引擎改的，不出现。选中时 why 行改为「按计划重量做，这个动作不再自动调整」，按钮带读屏「已选中」态（`SteelButton` 的 isOn → `.isSelected`）。语义不变：Hold = 暂停引擎微调、按计划值，跨组延续、不跨动作。
+- RIR 统一叫「RIR」：why 行与快改预演里的「余力掉得快」改为「RIR 掉得快」；快改面板与更正面板的 RIR 标签旁常驻一句「还能再做几次」（不弹窗）。「接近力竭」照旧（它描述 RIR 0–1，不是另一个指标）。
+- 休息 ±15 秒（原 +30）：`SessionStore.addRestTime` 把调整记在本场当前动作上（`restAdjustmentByExercise`，只在内存、开训 / 结束清空、不落 draft），这个动作下一段休息按 `restSeconds(for:) = max(15, 计划秒数 + 调整)` 开始；休息提醒、Live Activity、手表倒计时都跟着这段时长。剩 15 秒及以下时「−15s」置灰；存储层另设下限——减时最多减到剩 1 秒（界面置灰按秒刷新会慢半拍，真减到 0 会直接结束休息并留下按旧剩余排的提醒），记入的调整也按实际减掉的量。手表的 +30 命令同样记入。跨场记忆需要动 canonical schema，未做。
+- 小结的 PR 与进展页 / 今日页同一口径（`SessionSummaryBuilder`，与 `ProgressSnapshotBuilder` 一致）：本场任一动作的顶组重量严格大于该动作全部已存历史的最重一组（`previousBestWeights(sessions:excluding:)`：辅助器械不参与，数据质量报告标出的可疑组不进基线——与进展页 `ProgressModel.mapToRecords` 同一把键；从没练过的不判）。基线在 `TodayModel` 加载时算一次（`prBaselineBestWeights`），小结重绘不现算质量报告。此前只和「上次」比——三周前 75、上次 65、今天 70 会在小结报 PR、存完进展页却没有。PR 铭牌与 PR 分享卡写**破纪录的那个动作**的最重一组（`prTopSet`），今日页练完块的 PR 卡同样改为取 `prExerciseIds` 对应动作在本场的最重一组；非 PR 时的顶组展示仍是全场最重一组。已知差异：本场里手滑输入的离谱重量在小结里仍会判 PR，存盘后进展页会把它当可疑组剔除。
+
 **训练不丢（FR-TR8 / FR-TR9，2026-10-18 P0）。**
 - **小结阶段也落草稿**：`currentDraft()` 不再在 `summary` 返回 nil，草稿带 `endedAt`（第一次落到小结的时刻，`SessionStore.sessionEndedAt`，由 flow 的 didSet 记）。被杀后恢复落回小结；完成写入的 `finishedAt` 与时长、小结显示的时长都用 `endedAt`——在小结停多久、被杀后多久才重开，都不算进训练时长。旧草稿无 `endedAt` 时退回「现在」。
 - **不能保存的一场只能放弃**：`TrainFlowState.canBeSaved` = 记过组，或因不适 / 疼痛跳过过（组或整个动作）。为假时小结只给「放弃本次训练」并说明不会留下记录；`completeAndPersistSession` 在任何 IO 之前同样拒写（空记录会占掉当天的训练日、且删不掉）。疼痛跳过例外是因为它是 FR-TR7「最近 4 场至少 2 场疼痛跳过」的证据，整场因疼痛没练成恰恰最该留下。推给手表的 `sessionOutcome`（`SessionStore.watchSessionState`）在不能保存的小结里是 `abandoned`，手表那场体能训练不进健康。
@@ -1204,8 +1212,8 @@ FR-TR14 的「本次训练」是上述边界的窄例外：只编辑 `TrainFlowS
 
 - **锚点形态**：`RestCountdown`（`RedeTrainingDecision` 包内纯值类型，`now` 注入故可单测）以**绝对结束时刻**记时——运行中存 `endDate`、暂停时冻结 `pausedRemaining`；任一帧的剩余秒数由「`endDate − 当下 Date`」求出，而非逐秒自减计数。
 - **归属契约（why，owner 2026-06-15 反馈修复）**：剩余秒数**不得**放进 `TrainTabView` 的 `@State`。`RootTabView` 用 `switch selection` 渲染各 tab，切页会销毁整棵视图树 → 视图 `@State` 归 0 → 回到训练页倒计时显示 `0:00` 并立即结束。锚点必须放在根级常驻的 `SessionStore`（跨切页、跨切应用存活），且按墙钟求剩余 → 离屏（切 tab 或切出应用）期间真实时间照常流逝。
-- **生命周期**：进入 `resting`（仅 `logSet` 一条路）由 `SessionStore.apply` 起锚；`restFinished` / 撤销上一组（`SessionStore.undoLastSet`）/ 落到 `summary` / 结束·放弃·新开会话清空；更正已记组不动锚点；`resting→confirmEnd→resting`（结束确认弹层取消后继续训练）折返期间**不动**锚点，剩余随墙钟延续不重置。跨进程恢复（FR-TR9）若落在 `resting` 按计划秒数重新起算（不留旧 deadline）。
-- **显示与收尾分离**：倒计时显示由 `runRestTimer` 这个 `.task` 循环每秒递增 `restTick` 触发按墙钟重算重绘（**不用 `TimelineView`**——其在「切出应用再回前台」时不保证恢复逐秒刷新，owner 2026-06-15 二次反馈）；同一 `.task` 兼任「到点自动进下一组」（先判后睡，回来若已到点立即收尾、不闪 `0:00`）。`.task` 的 id（`restTaskKey`）含 `scenePhase`：**回前台时 key 变 → task 重启**（等价于切 tab 重建视图的效果），保证既追平离屏期间流逝、又续走逐秒刷新；后台不空转（`scenePhase != .active` 直接返回）。`+30` / 暂停 / 继续经 `SessionStore.addRestTime` / `toggleRestPause` 改锚点。
+- **生命周期**：进入 `resting`（仅 `logSet` 一条路）由 `SessionStore.apply` 起锚，时长 = 计划秒数 + 本场对这个动作的 ±15 调整（最少 15 秒，见 §7「说清楚」）；`restFinished` / 撤销上一组（`SessionStore.undoLastSet`）/ 落到 `summary` / 结束·放弃·新开会话清空；更正已记组不动锚点；`resting→confirmEnd→resting`（结束确认弹层取消后继续训练）折返期间**不动**锚点，剩余随墙钟延续不重置。跨进程恢复（FR-TR9）若落在 `resting` 按计划秒数重新起算（不留旧 deadline）。
+- **显示与收尾分离**：倒计时显示由 `runRestTimer` 这个 `.task` 循环每秒递增 `restTick` 触发按墙钟重算重绘（**不用 `TimelineView`**——其在「切出应用再回前台」时不保证恢复逐秒刷新，owner 2026-06-15 二次反馈）；同一 `.task` 兼任「到点自动进下一组」（先判后睡，回来若已到点立即收尾、不闪 `0:00`）。`.task` 的 id（`restTaskKey`）含 `scenePhase`：**回前台时 key 变 → task 重启**（等价于切 tab 重建视图的效果），保证既追平离屏期间流逝、又续走逐秒刷新；后台不空转（`scenePhase != .active` 直接返回）。`±15`（手表仍为 `+30`）/ 暂停 / 继续经 `SessionStore.addRestTime` / `toggleRestPause` 改锚点。
 - **手表侧的休息事件（2026-10-14 现状，as-built 描述；手表的随行架构由 Master v3.6/v3.7 批准，见 §7.2）**：手机训练流在时，手表回传的组和休息命令走手机同一 `apply` / `addRestTime` / `toggleRestPause` 路径，所以 iPhone 的休息 Live Activity 随之开始、加时，暂停时收起、继续时重挂（与本节「休息 Live Activity」段「暂停 = end、继续 = begin 新活动」同口径）。手机训练流不在时，手表的组写入草稿，不起 Live Activity。目前没有手表专用端点。手表倒计时到点时发出的自动跳过，是本节 `runRestTimer` 之外的第二个「到点收尾」触发点：手机 App 仍在后台存活且训练流在时，即使不在前台也会推进训练流（条件见 §7.2）。
 - **进度条与倒计时同步（owner 2026-06-15 三次反馈）**：进度条比例 = `RestCountdown.fraction()` = `剩余 / totalSeconds`，与倒计时数字同源 → 满格起步、`0:00` 精确归零。`totalSeconds` 是「本段休息总时长」，`+30` 时**同步增长**（`begin` 设值、`add` 累加、`clear` 归零）——故 `+30` 后进度条不会因 `剩余 > 初始计划` 卡在满格，而是按新总时长继续平滑下降。分母**不得**用 `restSecondsPlanned`（固定值会在 `+30` 后被 `min(1,·)` 钳成满格、与倒计时脱钩）。
 

@@ -896,12 +896,6 @@ public enum TodayPrescriptionEngine {
         rir = phase.rirTarget
     }
 
-    /// 该动作最近一次工作顶组重量（供换动作后的小结 PR 口径：换入动作
-    /// 只和它自己的历史比，§6.2 修复 2026-06-11）；无历史 → nil。
-    public static func lastTopWeightKg(exerciseId: String, sessions: [CleanTrainingSession]) -> Double? {
-        lastPerformance(exerciseId: exerciseId, sessions: sessions)?.topWeightKg
-    }
-
     /// 自重处方（owner 拍板 2026-06-13）：重量固定 0，按次数进阶到顶提示换难度。
     /// 上次力竭则保持、有余力则 +2 次、到 25 次封顶并提示加配重/换更难变体。
     /// wave-12：弹力带（band）复用本路径——只换两个参数：loadType（透传给显示层判渲染）

@@ -100,9 +100,8 @@ final class BodyweightPlusEngineTests: XCTestCase {
         let obs: [String: [CompletedSetObservation]] = [
             "weighted-pull-up": [CompletedSetObservation(weightKg: 20, reps: 8, rir: 2, painReported: false)],
         ]
-        let empty = TodayPrescription(dayCode: "pull-a", exercises: [], dayReasons: [])
         let summary = SessionSummaryBuilder.build(
-            prescription: empty, observations: obs, durationSeconds: 600, catalog: .minimal
+            observations: obs, durationSeconds: 600, catalog: .minimal
         )
         XCTAssertEqual(summary.totalVolumeKg, 160, "外加负重 20×8=160 计入吨位（不像 assisted 排除）")
     }

@@ -138,9 +138,8 @@ final class AssistedEngineTests: XCTestCase {
             "assisted-pull-up": [CompletedSetObservation(weightKg: 30, reps: 8, rir: 2, painReported: false)],
             "lateral-raise": [CompletedSetObservation(weightKg: 10, reps: 12, rir: 2, painReported: false)],
         ]
-        let empty = TodayPrescription(dayCode: "pull-a", exercises: [], dayReasons: [])
         let summary = SessionSummaryBuilder.build(
-            prescription: empty, observations: obs, durationSeconds: 600, catalog: .minimal
+            observations: obs, durationSeconds: 600, catalog: .minimal
         )
         XCTAssertEqual(summary.totalVolumeKg, 240, "吨位仅 lateral-raise 10×12×2(双哑铃)=240；辅助引体 30×8 不计")
         XCTAssertEqual(summary.topSet?.exerciseId, "lateral-raise", "辅助器械不当顶组（辅助 30>10 但被排除，否则假装最重）")

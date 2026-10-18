@@ -95,9 +95,10 @@ public struct RedeStrings: Sendable {
 
     public var trainDayTitle: String { t("推力 A", "Push A") }
     public var trainProgressLine: String { t("动作 1/6 · 第 3/4 组", "Exercise 1 of 6 · Set 3 of 4") }
-    public var trainFinish: String { t("完成", "Finish") }
+    /// 训练页右上角：结束整场（2026-10-18 由「完成」改名——与「完成本组」同名、实际却是收整场）。
+    public var trainFinish: String { t("结束训练", "End workout") }
     public var trainWhyLine: String { t("第 2 组偏慢，从 185 回调", "Eased from 185 after a slow set 2") }
-    public var trainHold185: String { t("保持 185", "Hold 185") }
+    public var trainHold185: String { t("按计划 185", "Use plan 185") }
     public var trainLogSet: String { t("完成本组", "Log set") }
     public var trainColSet: String { t("组", "Set") }
     public var trainColWeight: String { t("重量", "Weight") }

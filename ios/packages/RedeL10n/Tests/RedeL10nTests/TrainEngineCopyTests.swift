@@ -31,11 +31,23 @@ final class TrainEngineCopyTests: XCTestCase {
         XCTAssertEqual(en.nextSetWhyBodyweightPlus(reasonCode: "onPlan", fromKg: nil), "")
         XCTAssertEqual(zh.firstSetWhy, "")
         XCTAssertEqual(en.firstSetWhy, "")
-        XCTAssertEqual(zh.holdLabel(kg: "60", holding: false), "保持 60")
-        XCTAssertEqual(en.holdLabel(kg: "60", holding: true), "Holding 60")
+        XCTAssertEqual(zh.holdLabel(kg: "60"), "按计划 60")
+        XCTAssertEqual(en.holdLabel(kg: "60"), "Use plan 60")
     }
 
     func testRestAnchors() {
+        // 2026-10-18 P2：按钮字面 = 实际作用；休息 ±15；RIR 一句解释；休息到点通知分「下一组 / 下一个动作」。
+        XCTAssertEqual(zh.trainFinish, "结束训练")
+        XCTAssertEqual(en.trainFinish, "End workout")
+        XCTAssertEqual(zh.restNextSet, "下一组")
+        XCTAssertEqual(zh.restNextExerciseAction, "下个动作")
+        XCTAssertEqual(en.restNextExerciseAction, "Next lift")
+        XCTAssertEqual([zh.restSubtract15, zh.restAdd15], ["−15s", "+15s"])
+        XCTAssertEqual(zh.rirHint, "还能再做几次")
+        XCTAssertEqual(zh.notificationRestEndBody, "可以开始下一组了")
+        XCTAssertEqual(zh.notificationRestEndBodyNextExercise, "可以开始下一个动作了")
+        XCTAssertEqual(zh.holdLabelAssisted(kg: "30"), "按计划 辅助 30")
+        XCTAssertEqual(zh.restLastSetLine(load: "70", reps: 6, rir: 3), "刚才这组 · 70 kg × 6 · RIR 3")
         XCTAssertEqual(zh.restNextPreview(setNumber: 2, kg: "60", reps: 6), "下一组 · 第 2 组 · 60 kg × 6")
         XCTAssertEqual(en.restNextExercise("Lat pulldown"), "Up next · Lat pulldown")
     }
@@ -157,8 +169,8 @@ final class TrainEngineCopyTests: XCTestCase {
     // 掉速 why（2026-08-19 owner 真机）：四种负重语义各自的 why 行 + 预演注解都必须说话，
     // 不能掉进「没有真理由就不说话」的空串默认分支——降重是有真理由的，用户必须看到为什么。
     func testFatigueDropCopyAcrossLoadTypes() {
-        XCTAssertEqual(zh.nextSetWhy(reasonCode: "fatigueDrop", fromKg: "40"), "余力掉得快，从 40 回调")
-        XCTAssertEqual(en.nextSetWhy(reasonCode: "fatigueDrop", fromKg: "40"), "Eased from 40, reserve dropping fast")
+        XCTAssertEqual(zh.nextSetWhy(reasonCode: "fatigueDrop", fromKg: "40"), "RIR 掉得快，从 40 回调")
+        XCTAssertEqual(en.nextSetWhy(reasonCode: "fatigueDrop", fromKg: "40"), "Eased from 40, RIR dropping fast")
         XCTAssertFalse(zh.nextSetWhyBodyweight(reasonCode: "fatigueDrop").isEmpty)
         XCTAssertFalse(en.nextSetWhyBodyweight(reasonCode: "fatigueDrop").isEmpty)
         XCTAssertFalse(zh.nextSetWhyAssisted(reasonCode: "fatigueDrop").isEmpty)

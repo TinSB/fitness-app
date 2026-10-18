@@ -33,6 +33,8 @@ public enum TodayCompletedDigestBuilder {
     /// 同 id 的 A→B→A occurrence 只算一个动作，零组 occurrence 不算完成。
     /// 训练小结当场分享卡用处方数（SessionShareSnapshotBuilder「今天这套练什么」）——跳过
     /// 动作时两处数字有意不同：当场卡说这套、事后总结说实际完成。
+    /// PR 卡写破纪录的那个动作在本场的最重一组（2026-10-18）：PR 是「任一动作超过自己的历史最好」，
+    /// 全场最重一组常常是另一个没破纪录的动作。record 里找不到时退回 topSet。
     /// 输入契约：prExerciseIds 非空时 topSet 必非 nil（生产唯一数据源 ProgressSnapshotBuilder
     /// 保证；直接手拼 HistoryEntry 时需自行遵守，违反则 PR 徽标显示而 PR 卡缺席）。
     public static func digest(
@@ -64,11 +66,16 @@ public enum TodayCompletedDigestBuilder {
             ))
         }
         if !latest.prExerciseIds.isEmpty, let top = latest.topSet {
+            let prIds = Set(latest.prExerciseIds)
+            let prSet = record.exercises
+                .filter { prIds.contains($0.exerciseId) }
+                .flatMap { exercise in exercise.sets.map { (exercise.exerciseId, $0) } }
+                .max { ($0.1.weightKg, $0.1.reps) < ($1.1.weightKg, $1.1.reps) }
             snapshots.append(SharePrivacyFilter.personalRecord(
                 generatedDateISO: String(latest.dateISO.prefix(10)),
-                exerciseId: top.exerciseId,
-                weightKg: top.weightKg,
-                reps: top.reps,
+                exerciseId: prSet?.0 ?? top.exerciseId,
+                weightKg: prSet?.1.weightKg ?? top.weightKg,
+                reps: prSet?.1.reps ?? top.reps,
                 isEstimated: false
             ))
         }

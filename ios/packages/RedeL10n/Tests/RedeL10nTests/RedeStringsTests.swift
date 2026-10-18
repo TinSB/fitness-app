@@ -327,10 +327,14 @@ final class RedeStringsTests: XCTestCase {
                 "新增 Apple Watch App：手表上看这组多重、几次，打勾记组，休息自动倒计时；手机放包里也能练完整场",
                 "手表和手机是同一场训练：任一边记的组另一边立刻可见；断联超过一小时会停下来，不把不确定的数据写进健康",
                 "手表上可以改重量、次数、RIR，也能暂停或跳过本组",
+                "手机上点「开始训练」，手表自动开始记录，不用再自己打开体能训练",
+                "记错的组可以改：休息时点「刚才这组」就能改重量、次数、RIR，也能撤销刚记的那组；最后一组在小结里改",
+                "训练不容易丢了：在小结页被系统关掉、练过了零点、或者忘了上一场就开新的，都会先问你；一组都没记的一场不会存成空记录",
+                "训练中屏幕不再自动锁屏",
                 "引导流程里可以直接用 Apple 登录恢复：换手机后不用把年龄、器械、目标重新答一遍",
                 "设置页从 11 组归并成 7 组，用得多的排在前面",
                 "计划调整建议选「暂不」之后不再反复出现：同一条每周最多再提一次，连拒两次就不再提，直到训练数据本身变了",
-                "训练中连着两组余力明显下降时，下一组自动降一档重量；目标次数也跟着你实际做到的走，不再挂一个整场没到过的数",
+                "训练中连着两组 RIR 明显下降时，下一组自动降一档重量；目标次数也跟着你实际做到的走，不再挂一个整场没到过的数",
                 "修复：用「精确」手输的重量，大字上会显示成另一个数（选重机上最明显）",
             ]
         )
@@ -340,10 +344,14 @@ final class RedeStringsTests: XCTestCase {
                 "Apple Watch app: see the set's weight and reps, log it, and start the rest timer from your wrist. Your phone can stay in the bag",
                 "Watch and phone run one session: a set logged on either side appears on the other; after an hour disconnected the session stops rather than writing uncertain data to Health",
                 "Adjust weight, reps, and RIR on the watch, or pause and skip a set",
+                "Tap Start Training on your phone and the watch starts recording on its own",
+                "Fix a logged set: during rest, tap the last set to change weight, reps, or RIR, or undo it; fix the final set from the summary",
+                "Sessions are harder to lose: closing on the summary, training past midnight, or starting again before saving now asks first; a session with no sets is never saved as an empty record",
+                "The screen stays on while you train",
                 "Sign in with Apple during onboarding to restore your profile. No re-answering age, equipment, and goals after switching phones",
                 "Settings regrouped from 11 sections into 7, most-used first",
                 "Dismissing a plan suggestion now sticks: the same one returns at most once a week, and stops entirely after two dismissals until your training data changes",
-                "When your reserve drops sharply across two sets, the next set eases one notch; the rep target follows what you actually hit instead of a number you never reached",
+                "When your RIR drops sharply across two sets, the next set eases one notch; the rep target follows what you actually hit instead of a number you never reached",
                 "Fixed: a weight typed into Exact showed as a different number in the big readout (most visible on selectorized machines)",
             ]
         )
