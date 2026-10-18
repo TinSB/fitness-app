@@ -367,6 +367,54 @@ final class SessionStoreDraftTests: XCTestCase {
         )
     }
 
+    // P0 已记组更正（2026-10-18）：撤销刚记的组 = 休息作废（倒计时清零，否则会在用户还没做这组时
+    // 报「休息结束」）、回到这一组；draft 留存的是改写后的日志（那条记组被拿掉）。
+    func testUndoLastSetEndsRestAndPersistsRewrittenLog() throws {
+        let draftStore = FakeTrainSessionDraftStore()
+        let sessionStore = makeSessionStore(draftStore: draftStore)
+        sessionStore.apply(.logSet(CompletedSetObservation(weightKg: 60, reps: 10, rir: 2)))
+        XCTAssertEqual(sessionStore.flow?.phase, .resting)
+        XCTAssertGreaterThan(sessionStore.restRemainingSeconds, 0)
+
+        XCTAssertTrue(sessionStore.undoLastSet())
+
+        XCTAssertEqual(sessionStore.flow?.phase, .activeSet)
+        XCTAssertEqual(sessionStore.flow?.progress.setNumber, 1)
+        XCTAssertEqual(sessionStore.restRemainingSeconds, 0)
+        XCTAssertEqual(draftStore.saveKinds, [.ordinary, .ordinary])
+        XCTAssertEqual(draftStore.attemptedDrafts.last?.events, [])
+    }
+
+    // 更正不打断休息：倒计时照走；draft 里那条记组换成改后的值，记组时刻保留。
+    func testAmendKeepsRestRunningAndPersistsAmendedObservation() throws {
+        let draftStore = FakeTrainSessionDraftStore()
+        let sessionStore = makeSessionStore(draftStore: draftStore)
+        sessionStore.apply(.logSet(CompletedSetObservation(weightKg: 60, reps: 10, rir: 2)))
+        let stampedAt = try XCTUnwrap(sessionStore.flow?.completedInCurrentExercise.first?.completedAt)
+
+        XCTAssertTrue(sessionStore.amendCompletedSet(at: 0, weightKg: 57.5, reps: 8, rir: 0))
+
+        XCTAssertEqual(sessionStore.flow?.phase, .resting)
+        XCTAssertGreaterThan(sessionStore.restRemainingSeconds, 0)
+        XCTAssertEqual(draftStore.saveKinds, [.ordinary, .ordinary])
+        XCTAssertEqual(draftStore.attemptedDrafts.last?.events, [
+            .logSet(CompletedSetObservation(weightKg: 57.5, reps: 8, rir: 0, completedAt: stampedAt)),
+        ])
+        XCTAssertEqual(sessionStore.flow?.currentRecommendation?.reason, .lastSetNearFailure)
+    }
+
+    func testRejectedSetCorrectionNeitherSavesNorMutates() throws {
+        let draftStore = FakeTrainSessionDraftStore()
+        let sessionStore = makeSessionStore(draftStore: draftStore)
+        let before = try XCTUnwrap(sessionStore.flow)
+
+        XCTAssertFalse(sessionStore.amendCompletedSet(at: 0, weightKg: 60, reps: 8, rir: 1))
+        XCTAssertFalse(sessionStore.undoLastSet())
+
+        XCTAssertTrue(draftStore.saveKinds.isEmpty)
+        XCTAssertEqual(sessionStore.flow, before)
+    }
+
     func testAcceptedDurableMoveSavesExactlyOnceBeforeReportingSuccess() throws {
         let draftStore = FakeTrainSessionDraftStore()
         let sessionStore = makeSessionStore(draftStore: draftStore)

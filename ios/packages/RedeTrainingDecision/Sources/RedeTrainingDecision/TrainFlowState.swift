@@ -167,6 +167,9 @@ public struct TrainFlowState: Equatable, Sendable {
     private let loadUnit: LoadUnit
     /// 当前连续发生段；换动作、换序或推进动作时清空，确保同 id 回换也创建新 occurrence。
     private var currentFactSegmentIndex: Int?
+    /// 当前 occurrence 每个已完成组的 .logSet 在 `events` 里的下标，与 completedInCurrentExercise
+    /// 一一对应、一起清空。只供「更正 / 撤销」找到要改写的那一条。
+    private var currentExerciseLogEventIndices: [Int] = []
     private var deferredSegmentReplacements: [String: PendingSegmentReplacement] = [:]
     /// 仅内存/replay 派生的 occurrence 代次；不进 typed event 或 canonical。
     private var exerciseLifecycleGenerations: [String: Int] = [:]
@@ -329,10 +332,12 @@ public struct TrainFlowState: Equatable, Sendable {
     public mutating func logSet(_ observation: CompletedSetObservation) {
         guard phase == .activeSet, let exercise = currentExercise else { return }
         events.append(.logSet(observation))
+        currentExerciseLogEventIndices.append(events.count - 1)
         let merged = painReportedForCurrentSet
             ? CompletedSetObservation(
                 weightKg: observation.weightKg, reps: observation.reps,
-                rir: observation.rir, painReported: true
+                rir: observation.rir, painReported: true,
+                completedAt: observation.completedAt
               )
             : observation
         completedInCurrentExercise.append(merged)
@@ -518,6 +523,7 @@ public struct TrainFlowState: Equatable, Sendable {
         warmupPointer = 0
         if priorFactCount > 0 {
             completedInCurrentExercise = []
+            currentExerciseLogEventIndices = []
             skippedInCurrentExercise = 0
         }
         currentFactSegmentIndex = nil
@@ -539,6 +545,7 @@ public struct TrainFlowState: Equatable, Sendable {
         events.append(.moveExerciseToCurrent(exerciseId))
         plan = SessionSetPlan(dayCode: plan.dayCode, exercises: exercises)
         completedInCurrentExercise = []
+        currentExerciseLogEventIndices = []
         skippedInCurrentExercise = 0
         isHolding = false
         painReportedForCurrentSet = false
@@ -699,6 +706,62 @@ public struct TrainFlowState: Equatable, Sendable {
         guard phase == .confirmEnd else { return }
         events.append(.confirmEnd(reason))
         finishSession(reason: reason)
+    }
+
+    // MARK: - 已记组更正（P0 数据可信，owner 2026-10-18）
+    //
+    // 一键完成仍按处方目标记（不多一步）；记错了在这里改。两条都**不新增事件**：
+    // 直接改写日志里那条 .logSet（或删掉它），再用 restore 从头重放——
+    // 三份事实（当前组列表 / 按动作汇总 / occurrence 段）由同一条确定性路径重建，
+    // 不可能彼此对不上；draft 格式也不变，旧草稿照样恢复。
+    // 改动只影响观察值，不影响任何事件的守卫（守卫只看相位与计数），所以重放必然全收；
+    // 万一被拒，宁可不改也不留半改状态。
+
+    /// 休息里可以撤销刚记的那组。小结里不行：小结 = 手表那场体能训练已收尾，
+    /// 退回训练中会在手表上另起一场；小结里只能更正数值。
+    public var canUndoLastSet: Bool {
+        phase == .resting && !currentExerciseLogEventIndices.isEmpty
+    }
+
+    /// 更正当前动作第 `offset` 个已完成组（0 起）的重量 / 次数 / RIR。
+    /// 记组时刻与疼痛标记沿用原值。组中、休息、小结都可改；结束确认层里不改。
+    @discardableResult
+    public mutating func amendCompletedSet(at offset: Int, weightKg: Double, reps: Int, rir: Double?) -> Bool {
+        guard phase == .activeSet || phase == .resting || phase == .summary,
+              currentExerciseLogEventIndices.indices.contains(offset),
+              case .logSet(let original) = events[currentExerciseLogEventIndices[offset]]
+        else { return false }
+        let amended = CompletedSetObservation(
+            weightKg: weightKg, reps: reps, rir: rir,
+            painReported: original.painReported, completedAt: original.completedAt
+        )
+        guard amended != original else { return false }
+        var edited = events
+        edited[currentExerciseLogEventIndices[offset]] = .logSet(amended)
+        guard var rebuilt = replayed(edited) else { return false }
+        rebuilt.warmupPointer = warmupPointer
+        self = rebuilt
+        return true
+    }
+
+    /// 撤销刚记的那组：结果 ≡ 这一组从没记过（回到同一组、休息结束）。
+    /// 这个动作已经热过身，所以热身不重来。
+    @discardableResult
+    public mutating func undoLastSet() -> Bool {
+        guard canUndoLastSet, let last = currentExerciseLogEventIndices.last else { return false }
+        var edited = events
+        edited.remove(at: last)
+        guard var rebuilt = replayed(edited) else { return false }
+        rebuilt.warmupPointer = rebuilt.warmupStepsForCurrentExercise.count
+        self = rebuilt
+        return true
+    }
+
+    private func replayed(_ events: [TrainFlowEvent]) -> TrainFlowState? {
+        Self.restore(
+            prescription: prescription, events: events,
+            catalog: catalog, allowedEquipment: allowedEquipment, loadUnit: loadUnit
+        )
     }
 
     /// 恢复（M3-4）：同处方重放事件——reducer 确定性保证恢复态 ≡ 中断态。
@@ -875,6 +938,7 @@ public struct TrainFlowState: Equatable, Sendable {
     private mutating func advanceExercise() {
         exerciseIndex += 1
         completedInCurrentExercise = []
+        currentExerciseLogEventIndices = []
         skippedInCurrentExercise = 0
         isHolding = false
         painReportedForCurrentSet = false

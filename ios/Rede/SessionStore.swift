@@ -2295,6 +2295,28 @@ final class SessionStore {
         // 于是「表记一组 → 手机推下一组 → 表显示下一组」自动闭环。
     }
 
+    /// 更正当前动作已记的一组（休息卡「刚才这组」、组表点行、小结里改最后一组）。
+    /// 引擎改写日志里那条记组并重放，下一组建议随之重算；休息不打断，只留存 draft。
+    /// 手表跟着 flow 的 didSet 拿到重算后的下一组。
+    @discardableResult
+    func amendCompletedSet(at offset: Int, weightKg: Double, reps: Int, rir: Double?) -> Bool {
+        guard flow?.amendCompletedSet(at: offset, weightKg: weightKg, reps: reps, rir: rir) == true else { return false }
+        enqueueDraftSave()
+        return true
+    }
+
+    /// 撤销刚记的那组：回到这一组重新做。休息随之作废——倒计时、休息提醒、锁屏实时活动一起收掉，
+    /// 否则会在用户还没做这组时提示「休息结束」。
+    @discardableResult
+    func undoLastSet() -> Bool {
+        guard flow?.undoLastSet() == true else { return false }
+        restCountdown.clear()
+        cancelRestNotification()
+        restLiveActivity.end(endpoint: "undo-set")
+        enqueueDraftSave()
+        return true
+    }
+
     /// FR-TR14 的持久化提交：仅允许本次顺序 / 动作 / 组数编辑。
     /// reducer 接受且同步 draft 保存成功才提交；任何失败都恢复逐字段完全相同的 flow。
     @discardableResult
