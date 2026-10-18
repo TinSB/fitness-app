@@ -93,6 +93,26 @@ final class SessionDurabilityTests: XCTestCase {
 
     // MARK: - 0 组不能保存
 
+    // 只跳过、没记组的一场不能存——除非是因为疼痛跳过的（FR-TR7 的证据，审查 2026-10-18）。
+    func testSkipOnlySessionIsSaveableOnlyWhenPainWasTheReason() throws {
+        var fatigueOnly = try makeState()
+        fatigueOnly.skipSet(reason: .fatigue)
+        fatigueOnly.skipExercise(reason: .timeShort)
+        XCTAssertFalse(fatigueOnly.canBeSaved)
+
+        var painSet = try makeState()
+        painSet.skipSet(reason: .painDiscomfort)
+        XCTAssertTrue(painSet.canBeSaved)
+
+        var painExercise = try makeState()
+        painExercise.skipExercise(reason: .painDiscomfort)
+        XCTAssertTrue(painExercise.canBeSaved)
+
+        var logged = try makeState()
+        logged.logSet(obs(60, 6))
+        XCTAssertTrue(logged.canBeSaved)
+    }
+
     func testHasCompletedSetsTracksLoggedSetsOnly() throws {
         var state = try makeState()
         XCTAssertFalse(state.hasCompletedSets)
@@ -106,21 +126,28 @@ final class SessionDurabilityTests: XCTestCase {
 
     // MARK: - 草稿跨零点 / 小结时刻
 
-    func testCrossDayDraftIsRestorableOnlyWhenItHasLoggedSets() throws {
+    func testCrossDayDraftIsRestorableOnlyWithLoggedSetsAndWithin36Hours() throws {
         let prescription = try makeState().prescription
+        let startedAt = Date(timeIntervalSince1970: 1_781_000_000)
+        let hour: TimeInterval = 3_600
         let empty = TrainSessionDraft(
-            dateISO: "2026-06-09", startedAt: Date(timeIntervalSince1970: 0),
+            dateISO: "2026-06-09", startedAt: startedAt,
             prescription: prescription, events: [.toggleHold]
         )
-        XCTAssertTrue(empty.isRestorable(todayISO: "2026-06-09"))
-        XCTAssertFalse(empty.isRestorable(todayISO: "2026-06-10"), "跨天且一组没记：没有可丢的东西")
+        XCTAssertTrue(empty.isRestorable(todayISO: "2026-06-09", now: startedAt))
+        XCTAssertFalse(empty.isRestorable(todayISO: "2026-06-10", now: startedAt + 3 * hour),
+                       "跨天且一组没记：没有可丢的东西")
 
         let logged = TrainSessionDraft(
-            dateISO: "2026-06-09", startedAt: Date(timeIntervalSince1970: 0),
+            dateISO: "2026-06-09", startedAt: startedAt,
             prescription: prescription, events: [.logSet(obs(60, 6))]
         )
-        XCTAssertTrue(logged.isRestorable(todayISO: "2026-06-10"), "过了零点也不能把已记的组静默清掉")
-        XCTAssertTrue(logged.appending(.restFinished).isRestorable(todayISO: "2026-06-12"))
+        XCTAssertTrue(logged.isRestorable(todayISO: "2026-06-10", now: startedAt + 3 * hour),
+                      "过了零点也不能把已记的组静默清掉")
+        XCTAssertTrue(logged.appending(.restFinished).isRestorable(todayISO: "2026-06-10", now: startedAt + 35 * hour),
+                      "第二天晚上再打开仍在窗口内")
+        XCTAssertFalse(logged.isRestorable(todayISO: "2026-06-11", now: startedAt + 36 * hour),
+                       "超过 36 小时就不是「进行中」了：不再每次启动都问")
     }
 
     func testDraftCarriesEndedAtAndOldDraftsDecodeWithoutIt() throws {

@@ -229,8 +229,8 @@ struct RootTabView: View {
         // binding 自动收面板。
         .sheet(isPresented: Binding(
             get: { showOnboarding != nil && sessionStore.pendingDraft != nil },
-            // 滑走 = 稍后再说：清提示但保留 draft 文件，下次再问
-            set: { if !$0 { sessionStore.pendingDraft = nil } }
+            // 滑走 = 稍后再说：留着 draft，本次运行不再主动问（再点开始训练时才会问）
+            set: { if !$0, sessionStore.pendingDraft != nil { sessionStore.deferPendingDraft() } }
         )) {
             let s = localeStore.strings
             RedeChoiceSheet(
@@ -242,7 +242,7 @@ struct RootTabView: View {
                         if sessionStore.flow != nil { selection = .train }
                     }),
                     RedeChoiceOption(title: s.resumeSessionLater, action: {
-                        sessionStore.pendingDraft = nil
+                        sessionStore.deferPendingDraft()
                     }),
                     RedeChoiceOption(title: s.resumeSessionDiscard, role: .destructive, action: {
                         sessionStore.discardPendingDraft()

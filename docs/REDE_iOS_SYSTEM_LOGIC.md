@@ -1191,9 +1191,9 @@ FR-TR14 的「本次训练」是上述边界的窄例外：只编辑 `TrainFlowS
 
 **训练不丢（FR-TR8 / FR-TR9，2026-10-18 P0）。**
 - **小结阶段也落草稿**：`currentDraft()` 不再在 `summary` 返回 nil，草稿带 `endedAt`（第一次落到小结的时刻，`SessionStore.sessionEndedAt`，由 flow 的 didSet 记）。被杀后恢复落回小结；完成写入的 `finishedAt` 与时长、小结显示的时长都用 `endedAt`——在小结停多久、被杀后多久才重开，都不算进训练时长。旧草稿无 `endedAt` 时退回「现在」。
-- **0 组只能放弃**：`TrainFlowState.hasCompletedSets` 为假时，小结只给「放弃本次训练」并说明不会留下记录；`completeAndPersistSession` 在任何 IO 之前同样拒写（空记录会占掉当天的训练日、且删不掉）。推给手表的 `sessionOutcome` 在这种小结里是 `abandoned`，手表那场体能训练不进健康。
-- **不覆盖未保存的上一场**：`startSession` 先看盘上有没有可恢复的草稿（含恢复提示里点过「稍后再说」的），有就重新弹恢复面板、不开新的、不写一笔。恢复面板从今日页上移到 `RootTabView`，任一 tab 点「开始训练」撞上它都能问到；没开成时不跳训练页。
-- **跨零点**：`TrainSessionDraft.isRestorable` = 同一天，或记过至少一组（任意天）。晚上开练、过零点被杀，已记的组不再被静默清掉；跨天且一组没记的照旧作废。恢复后写入的 `date` 仍取开练那天。
+- **不能保存的一场只能放弃**：`TrainFlowState.canBeSaved` = 记过组，或因不适 / 疼痛跳过过（组或整个动作）。为假时小结只给「放弃本次训练」并说明不会留下记录；`completeAndPersistSession` 在任何 IO 之前同样拒写（空记录会占掉当天的训练日、且删不掉）。疼痛跳过例外是因为它是 FR-TR7「最近 4 场至少 2 场疼痛跳过」的证据，整场因疼痛没练成恰恰最该留下。推给手表的 `sessionOutcome`（`SessionStore.watchSessionState`）在不能保存的小结里是 `abandoned`，手表那场体能训练不进健康。
+- **不覆盖未保存的上一场**：`startSession` 先看盘上有没有可恢复的草稿（含恢复提示里点过「稍后再说」的），有就重新弹恢复面板、不开新的、不写一笔。恢复面板从今日页上移到 `RootTabView`，任一 tab 点「开始训练」撞上它都能问到；没开成时不跳训练页。「稍后再说」（含下滑关闭）在本次运行内生效：之后的 `loadToday`（存计划、改设置、同步后都会跑）不再主动弹，只有再点「开始训练」撞上它才重新问；重开 App 照常问一次。
+- **跨零点**：`TrainSessionDraft.isRestorable(todayISO:now:)` = 同一天；或记过至少一组、且开练不到 36 小时。晚上开练、过零点被杀，已记的组不再被静默清掉；跨天且一组没记的、或开练超过 36 小时的照旧作废——后者已不是「进行中」，不设上限会每次启动都问，恢复后时长还会按「到现在」算成几天。恢复后写入的 `date` 仍取开练那天。
 - **屏幕常亮**：`SessionStore.keepsScreenAwake`（有 flow 且未到小结，含休息与结束确认层）驱动 `UIApplication.isIdleTimerDisabled`（`RootTabView`），到小结 / 结束 / 放弃即恢复系统自动锁屏。
 
 ### 7.1 休息倒计时运行时合同

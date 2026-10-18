@@ -2083,8 +2083,8 @@ struct TrainTabView: View {
                     .foregroundStyle(Color.redeT2)
             }
 
-            if flow?.hasCompletedSets == false {
-                // 0 组：只给「放弃」。保存会写进一场空记录、占掉当天的训练日，而且删不掉。
+            if flow?.canBeSaved == false {
+                // 0 组（也没有因疼痛跳过）：只给「放弃」。保存会写进一场空记录、占掉当天的训练日，而且删不掉。
                 Text(s.summaryNoSetsNote)
                     .font(.redeCallout)
                     .foregroundStyle(Color.redeT3)

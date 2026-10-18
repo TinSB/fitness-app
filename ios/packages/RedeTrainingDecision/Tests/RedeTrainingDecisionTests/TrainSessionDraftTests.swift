@@ -403,8 +403,8 @@ final class TrainSessionDraftTests: XCTestCase {
             dateISO: "2026-06-10", startedAt: Date(timeIntervalSince1970: 0),
             prescription: try makeFlow().prescription, events: []
         )
-        XCTAssertTrue(draft.isRestorable(todayISO: "2026-06-10"))
-        XCTAssertFalse(draft.isRestorable(todayISO: "2026-06-11"))
+        XCTAssertTrue(draft.isRestorable(todayISO: "2026-06-10", now: Date(timeIntervalSince1970: 0)))
+        XCTAssertFalse(draft.isRestorable(todayISO: "2026-06-11", now: Date(timeIntervalSince1970: 3_600)), "跨天且没记过组")
     }
 
     // §6.2：draft 落盘附目录版本戳；旧 draft（无字段）解码为 nil 不作废

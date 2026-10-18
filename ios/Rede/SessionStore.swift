@@ -177,6 +177,8 @@ final class SessionStore {
     }
     /// 启动时发现的可恢复 draft（FR-TR9 提示「继续进行中的训练」）。
     var pendingDraft: TrainSessionDraft?
+    /// 本次运行里在恢复提示上选过「稍后再说」：loadToday 不再主动弹（见 checkForRestorableDraft）。
+    private var restorePromptDeferred = false
     /// 刚结束那场是怎么结束的（watchOS v3.3）："completed" / "abandoned"。放弃路径在清 flow 之前置位，
     /// 随 flow didSet 那次推送带给表——表据此决定 HK 会话 finish 还是 discard（放弃的训练不进健康）。
     /// 开训时清空。
@@ -303,10 +305,7 @@ final class SessionStore {
         let live = liveSetProjection()
         // 训练是否进行中（v3.3）：flow 在且没到小结。**表上的 HK 会话跟它走**，不跟 active 走——
         // 弹「结束训练？」确认层（.confirmEnd）时 active 是 nil，但训练没结束（审查 M1）。
-        let trainingInProgress = flow != nil && flow?.phase != .summary
-        // 一组没记的一场到了小结也只能放弃（不能保存）——提前告诉表按放弃收，那场体能训练不进健康。
-        let summaryOutcome = flow?.hasCompletedSets == true ? "completed" : "abandoned"
-        let outcome: String? = trainingInProgress ? nil : (flow?.phase == .summary ? summaryOutcome : lastSessionOutcome)
+        let (trainingInProgress, outcome) = Self.watchSessionState(flow: flow, lastSessionOutcome: lastSessionOutcome)
         // 今天已经练完的组数（v3.2）：canonical 记录里今天日期的场次总组数。
         // 没在训练且 > 0 → 表上清单头显示「今天练完了 · N 组」。
         let todayISO = Self.localDayISO(now)
@@ -522,12 +521,9 @@ final class SessionStore {
     ///（引擎明确不落 draft、不进事件日志），重放后本来就会从头热身。
     private func appendWatchSetToDraft(_ set: WatchLoggedSet) {
         guard !set.isWarmup else { return }
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
-        formatter.dateFormat = "yyyy-MM-dd"
+        let now = Date()
         guard let draft = draftStore.load(),
-              draft.isRestorable(todayISO: formatter.string(from: Date())),
+              draft.isRestorable(todayISO: Self.localDayISO(now), now: now),
               var replayed = draft.restoreFlow(allowedEquipment: allowedEquipment, loadUnit: loadUnit)
         else { return }
 
@@ -2251,23 +2247,31 @@ final class SessionStore {
         }
     }
 
-    /// 当日 draft → 恢复提示；跨天/无效 → 静默清除。
-    private func checkForRestorableDraft() {
-        guard flow == nil, pendingDraft == nil, let draft = draftStore.load() else { return }
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
-        formatter.dateFormat = "yyyy-MM-dd"
-        if draft.isRestorable(todayISO: formatter.string(from: Date())) {
+    /// 可恢复的 draft（规则见 TrainSessionDraft.isRestorable）→ 恢复提示；不可恢复 → 静默清除。
+    /// 本次运行里选过「稍后再说」就不再自己弹：loadToday 在存计划、改设置、同步后都会再跑，
+    /// 恢复面板挂在 RootTabView，不拦的话会在任一页面反复冒出来（审查 2026-10-18）。
+    /// 只有再点「开始训练」撞上它时才重新问（startSession）；重开 App 后照常问一次。
+    func checkForRestorableDraft() {
+        guard flow == nil, pendingDraft == nil, !restorePromptDeferred,
+              let draft = draftStore.load() else { return }
+        let now = Date()
+        if draft.isRestorable(todayISO: Self.localDayISO(now), now: now) {
             pendingDraft = draft
         } else {
             draftStore.clear()
         }
     }
 
+    /// 恢复提示里的「稍后再说」（含下滑关闭）：留着 draft，本次运行不再主动问。
+    func deferPendingDraft() {
+        pendingDraft = nil
+        restorePromptDeferred = true
+    }
+
     func restorePendingDraft() {
         guard let draft = pendingDraft else { return }
         pendingDraft = nil
+        restorePromptDeferred = false
         guard let restored = draft.restoreFlow(allowedEquipment: allowedEquipment, loadUnit: loadUnit) else {
             // 重放失败（如 catalog 漂移）：宁可不恢复，清掉过期 draft
             draftStore.clear()
@@ -2291,6 +2295,7 @@ final class SessionStore {
 
     func discardPendingDraft() {
         pendingDraft = nil
+        restorePromptDeferred = false
         draftStore.clear()
         // 放弃 = 训练废弃，旧进程在休息开始时排的 rest-end 提醒必然过期——撤掉，
         // 防「已放弃还弹休息结束」（Task 6 审查捞出的姊妹缺口）。「暂不」分支有意
@@ -2610,7 +2615,7 @@ final class SessionStore {
         // 盘上还有一场没保存的训练（恢复提示里点过「稍后再说」）：先问，不覆盖（P0 2026-10-18）。
         // 此前这里直接开新的，新草稿的第一笔写入就把上一场整份盖掉。
         if let unsaved = pendingDraft ?? draftStore.load(),
-           unsaved.isRestorable(todayISO: Self.localDayISO(now)) {
+           unsaved.isRestorable(todayISO: Self.localDayISO(now), now: now) {
             pendingDraft = unsaved
             return
         }
@@ -2673,13 +2678,16 @@ final class SessionStore {
 
     /// 完成写入（M3-3）：构建 canonical session → 真 DataHealth gate → 唯一写闸。
     /// 成功 → 清会话并重载今日（裁决翻转）；失败 → 如实报错、会话保留可重试。
+    /// now 只是兜底：结束时刻来自 sessionEndedAt（进入小结那一刻，flow 的 didSet 用真实时钟记），
+    /// 只有它缺失时才用 now——想测确定性时长请测 completedSessionTiming。
     func completeAndPersistSession(now: Date = Date()) async -> Bool {
-        // 一组没记不写：空记录会占掉当天的训练日、而且删不掉（小结只给「放弃」）。
-        guard let flow, flow.phase == .summary, flow.hasCompletedSets, !isSaving else { return false }
+        // 不能保存的一场不写：空记录会占掉当天的训练日、而且删不掉（小结只给「放弃」）。
+        guard let flow, flow.phase == .summary, flow.canBeSaved, !isSaving else { return false }
         isSaving = true
         defer { isSaving = false }
-        let startedAt = sessionStartedAt ?? now
-        let endedAt = sessionEndedAt ?? now
+        let timing = Self.completedSessionTiming(startedAt: sessionStartedAt, endedAt: sessionEndedAt, now: now)
+        let startedAt = timing.startedAt
+        let endedAt = timing.endedAt
         // 注意口径：date 为用户本地日（与引擎天序号一致）；startedAt/finishedAt 为
         // UTC ISO 时间戳——跨时区时两者日期字面可不一致，展示层取日期一律用 date 字段。
         let isoFormatter = ISO8601DateFormatter()
@@ -2694,7 +2702,7 @@ final class SessionStore {
             dateISO: dayFormatter.string(from: startedAt),
             startedAtISO: isoFormatter.string(from: startedAt),
             finishedAtISO: isoFormatter.string(from: endedAt),
-            durationMinutes: max(0, Int(endedAt.timeIntervalSince(startedAt)) / 60)
+            durationMinutes: timing.durationMinutes
         )
 
         let fileURL = TodayModel.canonicalFileURL()
@@ -2726,6 +2734,26 @@ final class SessionStore {
             saveErrorText = String(describing: error)
             return false
         }
+    }
+
+    /// 完成写入的起止与时长：结束取进入小结那一刻，缺失才用 now；起点缺失同理。
+    nonisolated static func completedSessionTiming(
+        startedAt: Date?, endedAt: Date?, now: Date
+    ) -> (startedAt: Date, endedAt: Date, durationMinutes: Int) {
+        let start = startedAt ?? now
+        let end = endedAt ?? now
+        return (start, end, max(0, Int(end.timeIntervalSince(start)) / 60))
+    }
+
+    /// 推给手表的训练状态：flow 在且没到小结 = 进行中（含「结束训练？」确认层）。
+    /// 到小结时，能保存的一场按 completed 收；不能保存的（只能放弃）按 abandoned 收，
+    /// 那场体能训练不进健康。没有 flow 时沿用刚结束那场的结局。
+    nonisolated static func watchSessionState(
+        flow: TrainFlowState?, lastSessionOutcome: String?
+    ) -> (trainingInProgress: Bool, outcome: String?) {
+        guard let flow else { return (false, lastSessionOutcome) }
+        guard flow.phase == .summary else { return (true, nil) }
+        return (false, flow.canBeSaved ? "completed" : "abandoned")
     }
 
     var sessionSummary: SessionSummary? {

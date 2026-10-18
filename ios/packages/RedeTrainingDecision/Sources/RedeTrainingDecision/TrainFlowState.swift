@@ -733,10 +733,19 @@ public struct TrainFlowState: Equatable, Sendable {
     // 改动只影响观察值，不影响任何事件的守卫（守卫只看相位与计数），所以重放必然全收；
     // 万一被拒，宁可不改也不留半改状态。
 
-    /// 本场是否记过至少一组正式组。0 组的一场不能保存（只能放弃）：
-    /// 它会写进一场空记录、占掉当天的训练日，而且事后删不掉。
+    /// 本场是否记过至少一组正式组。
     public var hasCompletedSets: Bool {
         observationsByExercise.values.contains { !$0.isEmpty }
+    }
+
+    /// 这一场能不能保存：记过组，或者因不适 / 疼痛跳过过（组或整个动作）。
+    /// 其余的 0 组场次只能放弃——空记录会占掉当天的训练日、而且删不掉。
+    /// 疼痛跳过例外：它是 FR-TR7「最近 4 场至少 2 场疼痛跳过 → 暂停自动加重」的证据，
+    /// 整场都因为疼痛没练成，恰恰是最该留下的一场（审查 2026-10-18）。
+    public var canBeSaved: Bool {
+        hasCompletedSets
+            || skippedSets.contains { $0.reason == .painDiscomfort }
+            || skippedExercises.contains { $0.reason == .painDiscomfort }
     }
 
     /// 休息里可以撤销刚记的那组。小结里不行：小结 = 手表那场体能训练已收尾，

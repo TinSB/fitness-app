@@ -2,8 +2,8 @@
 //
 // draft = 处方 + 事件日志，恢复 = TrainFlowState.restore 重放。
 // draft ≠ canonical 真相（Master：draft restore 是内存 draft 的落盘缓存）：
-// 独立文件、不经写闸、完成写入成功后即删除。当日的都可恢复；跨天只在记过组时恢复
-//（2026-10-18：晚上练过零点再打开不再被静默清掉），没记过组的跨天草稿作废。
+// 独立文件、不经写闸、完成写入成功后即删除。当日的都可恢复；跨天只在记过组、且开练不到
+// 36 小时时恢复（2026-10-18：晚上练过零点再打开不再被静默清掉），其余跨天草稿作废。
 
 import Foundation
 
@@ -68,11 +68,16 @@ public struct TrainSessionDraft: Equatable, Sendable, Codable {
         }
     }
 
-    /// 当日的草稿都可恢复；跨天只在记过至少一组时恢复——晚上开练、过了零点 App 被杀，
-    /// 已记的组不能因为日期翻页就被静默清掉（2026-10-18 P0「不丢」）。
-    /// 没记过组的跨天草稿没有可丢的东西，照旧作废，免得每天被一张空草稿打扰。
-    public func isRestorable(todayISO: String) -> Bool {
+    /// 当日的草稿都可恢复；跨天只在记过至少一组、且开练不到 36 小时时恢复——晚上开练、
+    /// 过了零点 App 被杀，已记的组不能因为日期翻页就被静默清掉（2026-10-18 P0「不丢」）。
+    /// 没记过组的跨天草稿没有可丢的东西；超过 36 小时的那一场也已不是「进行中」——
+    /// 不设上限会每次启动都问，恢复后时长还会按「到现在」算成几天（审查 2026-10-18）。
+    /// 引擎无时钟：now 由调用方传入。
+    public static let crossDayRestoreWindow: TimeInterval = 36 * 60 * 60
+
+    public func isRestorable(todayISO: String, now: Date) -> Bool {
         if dateISO == String(todayISO.prefix(10)) { return true }
+        guard now.timeIntervalSince(startedAt) < Self.crossDayRestoreWindow else { return false }
         return events.contains { if case .logSet = $0 { return true } else { return false } }
     }
 

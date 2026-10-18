@@ -276,7 +276,7 @@ struct TodayTabView: View {
                 switch CommandLine.arguments[idx + 1] {
                 case "resume": sessionStore.restorePendingDraft(); onStartTraining()
                 case "discard": sessionStore.discardPendingDraft()
-                default: sessionStore.pendingDraft = nil
+                default: sessionStore.deferPendingDraft()
                 }
             }
         }
