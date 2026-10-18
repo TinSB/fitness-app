@@ -99,12 +99,12 @@ extension RedeStrings {
 
     // MARK: - 已记组更正（P0：一键完成按目标记，休息时就地校正）
 
-    /// 休息卡上刚记的那组："刚才这组 · 60 kg × 6 · RIR 2"。load = nil 是纯次数动作（无重量轴）；
+    /// 休息卡上刚记的那组："上一组 · 60 kg × 6 · RIR 2"（owner 2026-10-18：原「刚才这组」改「上一组」）。load = nil 是纯次数动作（无重量轴）；
     /// 辅助 / 负重自重由调用方带前缀传入（"辅助 20"）。
     public func restLastSetLine(load: String?, reps: Int, rir: Double?) -> String {
         let rirText = "RIR \(rir.map(formatRir) ?? "—")"
         let body = load.map { "\($0) \(unitLabel) × \(reps)" } ?? "× \(reps)"
-        return locale == .zh ? "刚才这组 · \(body) · \(rirText)" : "Last set · \(body) · \(rirText)"
+        return locale == .zh ? "上一组 · \(body) · \(rirText)" : "Last set · \(body) · \(rirText)"
     }
 
     public var setAmendAction: String { locale == .zh ? "修改" : "Edit" }
