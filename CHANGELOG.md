@@ -2,6 +2,10 @@
 
 All notable native iOS product, architecture, repository-governance, and documentation changes should be recorded here.
 
+## 2026-10-18
+
+- **CI and the quality gate now run three suites that had never run, plus a Thread Sanitizer pass**: `SessionVitalsTimelineTests` (#749), `PaidCoachBoundaryTests` (#743) and `RedeCoachRecoveryPolicyTests` (#745) were merged without being added to the app-hosted `-only-testing` list, so neither CI nor the local gate executed them. All three are added to both lists, which stay identical (15 entries each). A new step runs `RedeEntitlements` under `swift test --sanitize=thread`: its test double's unlocked array had surfaced only as an intermittent signal 11 in CI (#754), and TSan turns that class of race into a deterministic failure. Master §10 records the TSan requirement. Local proof before wiring: the three suites ran 24/24 on an iPhone simulator (xcresult `Passed`), and `RedeEntitlements` ran 28/28 under TSan with zero warnings. No app code changed.
+
 ## 2026-10-17
 
 - **Phone-initiated watch workout launch (FR-AW4, Master v3.8 rule 13)**: tapping Start Training on the iPhone now asks the system to launch (or wake) Rede on the paired Apple Watch and start its traditional-strength-training session, so the user no longer has to open the watch app (the owner was opening Apple's Workout app by hand for every session). Before this, the watch's `WorkoutSessionKeeper` followed the phone's `trainingInProgress` only while the watch app was already running: the phone's only phone → watch path is `updateApplicationContext`, and Apple documents none of the three WatchConnectivity channels as able to launch a non-running watch app.

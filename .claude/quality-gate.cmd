@@ -34,6 +34,11 @@ for name in $EXPECTED_PACKAGES; do
   (cd "ios/packages/$name" && swift test)
 done
 
+# 线程检测（2026-10-17，#754）：RedeEntitlements 的测试替身曾因无锁数组偶发段错误，平时跑不出来。
+# 开 Thread Sanitizer 后，这类竞态会变成每次都复现的失败。与 rede-ci.yml 的 Thread Sanitizer 步骤同步。
+echo "== swift test --sanitize=thread: ios/packages/RedeEntitlements =="
+(cd ios/packages/RedeEntitlements && swift test --sanitize=thread)
+
 for package in ios/packages/*/; do
   [ -d "$package" ] || continue
   name="$(basename "$package")"
@@ -146,6 +151,8 @@ xcodebuild \
 echo "== xcodebuild: subscription + Weekly Coach Review + app update + session draft tests =="
 # 2026-07-20 收口：白名单补入 SessionStoreDraftTests（FR-TR14 S1 durable draft，5 条）
 # 与周复盘政策测试（MemoPolicy/DatePolicy/LiftSignalPolicy）。保持与 rede-ci.yml 同一份清单。
+# 2026-10-17 补入：SessionVitalsTimelineTests（#749）、PaidCoachBoundaryTests（#743）、
+# RedeCoachRecoveryPolicyTests（#745），这三组合并时漏登记，此前 CI 和门禁从未跑过。
 #
 # 显式排除（红测试，不进清单）：
 #   StoreKitEntitlementsTests/testLocalCatalogPurchasePendingRestoreRenewalExpirationAndRefund
@@ -176,6 +183,9 @@ xcodebuild \
   -only-testing:RedeTests/SessionStoreDraftTests \
   -only-testing:RedeTests/AppUpdateRuntimeTests \
   -only-testing:RedeTests/WatchLoggedSetIntakeTests \
+  -only-testing:RedeTests/SessionVitalsTimelineTests \
+  -only-testing:RedeTests/PaidCoachBoundaryTests \
+  -only-testing:RedeTests/RedeCoachRecoveryPolicyTests \
   test
 
 echo "QUALITY GATE: PASS"

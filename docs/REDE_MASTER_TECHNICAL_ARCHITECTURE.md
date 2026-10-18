@@ -337,6 +337,8 @@ xcodebuild \
 
 The GitHub workflow must remain Swift/Xcode based. Do not reintroduce Node, Vite, browser tests, or web build checks.
 
+CI and the quality gate also run `RedeEntitlements` under Thread Sanitizer (`swift test --sanitize=thread`, 2026-10-17). A race in its test double had shown up only as an intermittent CI crash (#754); under TSan the same kind of race fails on every run.
+
 The iOS build above only produces a resource-only stub of the embedded watch app, so CI and the quality gate also build the watch app through the shared `RedeWatch` scheme (v3.7):
 
 ```bash

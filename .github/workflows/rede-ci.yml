@@ -71,6 +71,14 @@ jobs:
             esac
           done
 
+      # 线程检测（2026-10-17，#754）：RedeEntitlements 的测试替身曾因无锁数组在 CI 上偶发段错误，
+      # 平时跑不出来。开 Thread Sanitizer 后，这类竞态会变成每次都复现的失败。与 .claude/quality-gate.cmd 同步。
+      - name: Thread Sanitizer (RedeEntitlements)
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd ios/packages/RedeEntitlements && swift test --sanitize=thread)
+
       # 文案声音守卫（文案基线 §3.4/3.5）。与 .claude/quality-gate.cmd 的 check_voice 同源，
       # 改一处必须同步另一处。规则此前只写在文档里靠人工翻，攒出十几处违规才被发现。
       - name: Copy voice guard
@@ -157,6 +165,8 @@ jobs:
         run: |
           set -euo pipefail
           # 2026-07-20: keep this -only-testing list identical to .claude/quality-gate.cmd.
+          # 2026-10-17: SessionVitalsTimelineTests (#749), PaidCoachBoundaryTests (#743) and
+          # RedeCoachRecoveryPolicyTests (#745) had been merged without being listed here, so CI never ran them.
           # Explicitly excluded (red, release blocker — not skipped):
           #   StoreKitEntitlementsTests/testLocalCatalogPurchasePendingRestoreRenewalExpirationAndRefund
           #   (SKInternalErrorDomain Code=3 saving the .storekit config on Xcode 26.6 + iOS 26.5;
@@ -185,4 +195,7 @@ jobs:
             -only-testing:RedeTests/SessionStoreDraftTests \
             -only-testing:RedeTests/AppUpdateRuntimeTests \
             -only-testing:RedeTests/WatchLoggedSetIntakeTests \
+            -only-testing:RedeTests/SessionVitalsTimelineTests \
+            -only-testing:RedeTests/PaidCoachBoundaryTests \
+            -only-testing:RedeTests/RedeCoachRecoveryPolicyTests \
             test
