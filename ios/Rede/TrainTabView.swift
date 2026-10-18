@@ -147,6 +147,10 @@ struct TrainTabView: View {
     @State private var amendTarget: SetAmendTarget?
     @State private var summaryAmendTarget: SetAmendTarget?
     @State private var amendWeight: Double = 0
+    /// 更正面板的重量可直接输入（owner 2026-10-18：只能 ± 不够）；按当前显示单位理解，同快改「精确」。
+    /// 平时为空、当前重量作为提示文字显示：一点就是「输入新值」，不会把光标落在旧数字中间。
+    @State private var amendWeightText = ""
+    @FocusState private var amendWeightFocused: Bool
     @State private var amendReps = 0
     @State private var amendRir: Int? = 2
     @State private var sharePreview: SharePreviewItem?   // FR-SH1：训练总结分享卡预览
@@ -1214,8 +1218,8 @@ struct TrainTabView: View {
             exercise.sets.first.map { "\(exercise.sets.count) × \($0.targetReps)" }
         }
         let a11yLabel = name.map { nextName in
-            setsPreview.map { "\(s.sessionOrderEntry), \(nextName), \($0)" }
-                ?? "\(s.sessionOrderEntry), \(nextName)"
+            setsPreview.map { "\(s.sessionOrderLater), \(nextName), \($0)" }
+                ?? "\(s.sessionOrderLater), \(nextName)"
         } ?? s.sessionOrderEntry
 
         if TrainSessionEditEntryPolicy.canOpen(flow) {
@@ -1250,7 +1254,7 @@ struct TrainTabView: View {
     private func sessionOrderEntryContent(name: String?, setsPreview: String?, showsDisclosure: Bool) -> some View {
         if dynamicTypeSize.isAccessibilitySize {
             VStack(alignment: .leading, spacing: 4) {
-                Text(s.sessionOrderEntry)
+                Text(name == nil ? s.sessionOrderEntry : s.sessionOrderLater)
                     .font(.redeCaption)
                     .foregroundStyle(Color.redeT4)
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -1275,7 +1279,10 @@ struct TrainTabView: View {
             .overlay(alignment: .bottom) { Rectangle().fill(Color.redeHair2).frame(height: 1) }
         } else {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Text(s.sessionOrderEntry)
+                // 右边是**下一个**动作，左边就写「接下来」——写「本次训练」会读成「这场练的是它」，
+                // 和上面卡片里正在练的动作对不上（owner 2026-10-18 截图）。点开仍是「本次训练」编辑面。
+                // 最后一个动作没有「下一个」时，这一行只剩入口，仍叫「本次训练」。
+                Text(name == nil ? s.sessionOrderEntry : s.sessionOrderLater)
                     .font(.redeCaption)
                     .foregroundStyle(Color.redeT4)
                     .fixedSize(horizontal: true, vertical: false)
@@ -2227,6 +2234,7 @@ struct TrainTabView: View {
         guard let flow, flow.completedInCurrentExercise.indices.contains(offset) else { return }
         let obs = flow.completedInCurrentExercise[offset]
         amendWeight = obs.weightKg
+        amendWeightText = ""
         amendReps = obs.reps
         amendRir = obs.rir.map { Int($0.rounded()) }
         let skippedPrefixCount = min(flow.skippedInCurrentExercise, flow.currentExercise?.sets.count ?? 0)
@@ -2256,11 +2264,28 @@ struct TrainTabView: View {
                 HStack(spacing: 0) {
                     amendStepButton("minus", label: s.adjustOptionLabel("lighter")) { stepAmendWeight(-currentStepKg) }
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text(s.formatKg(amendWeight))
+                        // 点数字直接输入；± 仍按动作步长走。刻线式输入可供性同快改「精确」框。
+                        // 输入框平时为空，当前重量以同色提示文字显示：一点就是输新值（真机反馈：
+                        // 光标落在「70」中间，打出来成了「72.570」）。什么都没输就收起 = 不改。
+                        TextField("", text: $amendWeightText,
+                                  prompt: Text(s.formatKg(amendWeight)).foregroundStyle(Color.redeT1))
+                            .keyboardType(.decimalPad)
+                            .focused($amendWeightFocused)
                             .font(.redeTitle)
                             .foregroundStyle(Color.redeT1)
-                            .contentTransition(.numericText(value: amendWeight))
-                            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: amendWeight)
+                            .multilineTextAlignment(.center)
+                            .fixedSize()
+                            .frame(minWidth: 64)
+                            .padding(.vertical, 2)
+                            .overlay(alignment: .bottom) {
+                                Rectangle()
+                                    .fill(amendWeightFocused ? Color.redeSteel : Color.redeEtch)
+                                    .frame(height: amendWeightFocused ? 2 : 1)
+                            }
+                            .onChange(of: amendWeightFocused) { _, focused in
+                                if !focused { commitAmendWeightText() }
+                            }
+                            .accessibilityLabel(currentIsAssisted ? s.adjustAssist : (currentIsBodyweightPlus ? s.adjustWeighted : s.adjustWeight))
                         Text(s.unitLabel)
                             .font(.redeCaption)
                             .foregroundStyle(Color.redeT4)
@@ -2282,6 +2307,9 @@ struct TrainTabView: View {
                 .padding(.top, 2)
 
             EmbButton(icon: "checkmark", title: s.setAmendSave) {
+                // 先收下输入框里最新的数（decimal 键盘没有回车，失焦时序不可靠——同 logCurrentSet）。
+                commitAmendWeightText()
+                amendWeightFocused = false
                 sessionStore.amendCompletedSet(
                     at: target.offset, weightKg: amendWeight, reps: amendReps, rir: amendRir.map(Double.init)
                 )
@@ -2315,6 +2343,16 @@ struct TrainTabView: View {
         .presentationBackground(Color.redeBase)
         .sensoryFeedback(.selection, trigger: selectionPulse)
         .sensoryFeedback(.error, trigger: clampPulse)
+        .toolbar {
+            // decimal 键盘无回车键：给一个明确的提交路径（同快改「精确」）
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button(s.adjustDone) {
+                    commitAmendWeightText()
+                    amendWeightFocused = false
+                }
+            }
+        }
         // 面板开着时休息到点（或手表跳过休息）推进到了下一个动作：这一组已不再可改。
         // 不关的话，标题显示新动作名、数值是旧动作的，点保存会被引擎拒绝而面板照常关闭——
         // 看起来存了，其实丢了（审查 MAJOR）。
@@ -2338,6 +2376,7 @@ struct TrainTabView: View {
     }
 
     private func stepAmendWeight(_ delta: Double) {
+        commitAmendWeightText()
         let next = amendWeight + delta
         if next < 0 {
             clampPulse += 1
@@ -2346,6 +2385,16 @@ struct TrainTabView: View {
             amendWeight = next
             selectionPulse += 1
         }
+    }
+
+    /// 更正面板的输入 → 重量：按显示单位理解（同 commitWeightText），可解析且 ≥0 才收；
+    /// 空着或解析不了 = 不改。只在真输入过时换算，不存在 lb 往返漂移。提交后输入框回到空。
+    private func commitAmendWeightText() {
+        let typed = amendWeightText.trimmingCharacters(in: .whitespaces)
+        amendWeightText = ""
+        guard let parsed = Double(typed.replacingOccurrences(of: ",", with: ".")), parsed >= 0 else { return }
+        amendWeight = s.unit == .lb ? parsed / 2.204_622_621_8 : parsed
+        selectionPulse += 1
     }
 
     // MARK: - 行为

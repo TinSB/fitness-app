@@ -381,11 +381,11 @@ Train 是最克制的页面。用户在器械旁,手上可能有汗,注意力在
 - `疼痛或不适`
 - `完成训练`
 
-**本次训练编辑（FR-TR14 S1+S2，2026-07-30）**：入口与 sheet 标题统一为「本次训练 / This workout」，分区「当前动作 / Current exercise」「接下来 / Up next」，S1 行操作仍为「现在练 / Train now」。S2 新动作只有「移除 / Remove」「加一个动作 / Add an exercise」与 sheet-local「撤销 / Undo」；当前动作组数事实写「还剩 N 组 / N sets left」，−/+ 的 VoiceOver 分别为「减少一组 / Remove one set」「增加一组 / Add one set」。任务型选择器返回行为为「返回本次训练 / Back to this workout」；无候选时写「没有可加入的动作 / No exercises to add」与「当前器械下的动作都已在本次训练中 / Every available exercise is already in this workout」。入口 VoiceOver hint 固定为「调整本次训练的动作与组数 / Edit exercises and sets for this workout」，「现在练」可补「当前动作会顺延到稍后 / The current exercise moves later」。
+**本次训练编辑（FR-TR14 S1+S2，2026-07-30）**：入口与 sheet 标题统一为「本次训练 / This workout」（2026-10-18：训练页上这一行右侧显示的是**下一个**动作，所以有下一个动作时左侧写「接下来 / Up next」，点开仍是「本次训练」；最后一个动作时仍写「本次训练」），分区「当前动作 / Current exercise」「接下来 / Up next」，S1 行操作仍为「现在练 / Train now」。S2 新动作只有「移除 / Remove」「加一个动作 / Add an exercise」与 sheet-local「撤销 / Undo」；当前动作组数事实写「还剩 N 组 / N sets left」，−/+ 的 VoiceOver 分别为「减少一组 / Remove one set」「增加一组 / Add one set」。任务型选择器返回行为为「返回本次训练 / Back to this workout」；无候选时写「没有可加入的动作 / No exercises to add」与「当前器械下的动作都已在本次训练中 / Every available exercise is already in this workout」。入口 VoiceOver hint 固定为「调整本次训练的动作与组数 / Edit exercises and sets for this workout」，「现在练」可补「当前动作会顺延到稍后 / The current exercise moves later」。
 
 成功 announcement 只陈述已发生事实：「已切换到{动作名} / Now training {exercise name}」「已加入{动作名} / Added {exercise name}」「已移除{动作名} / {Exercise name} removed」「已恢复{动作名} / Restored {exercise name}」「当前动作还剩 N 组 / N sets left for current exercise」。写入失败只在当下显示并播报「暂时无法调整　请再试一次 / Couldn’t update this workout · Try again」，不得假成功、弹确认或清掉尚未提交的快改；以上训练微文案均不加句号。
 
-**按钮字面 = 实际作用（2026-10-18）**：右上角收整场的叫「结束训练 / End workout」，不再叫「完成」（与「完成本组」同名会误点）；动作做完后的休息按钮叫「下个动作 / Next lift」，那段休息到点的提醒写「可以开始下一个动作了 / Ready for your next exercise」；「保持 X」改为「按计划 X / Use plan X」，只在引擎改了这组重量时出现，选中后 why 行写「按计划重量做，这个动作不再自动调整」。**RIR 只叫 RIR**：不混用「余力」（why 行写「RIR 掉得快」）；首次接触处（快改与更正面板的 RIR 标签旁）常驻一句「还能再做几次 / Reps left in the tank」，不弹窗。已记组更正：「刚才这组 · 70 lb × 6 · RIR 3 · 修改」「修改第 N 组」「撤销这组」「修改最后一组」；0 组小结写「这场一组都没记，不会留下记录」。
+**按钮字面 = 实际作用（2026-10-18）**：右上角收整场的叫「结束训练 / End workout」，不再叫「完成」（与「完成本组」同名会误点）；动作做完后的休息按钮叫「下个动作 / Next lift」，那段休息到点的提醒写「可以开始下一个动作了 / Ready for your next exercise」；「保持 X」改为「按计划 X / Use plan X」，只在引擎改了这组重量时出现，选中后 why 行写「按计划重量做，这个动作不再自动调整」。**RIR 只叫 RIR**：不混用「余力」（why 行写「RIR 掉得快」）；首次接触处（快改与更正面板的 RIR 标签旁）常驻一句「还能再做几次 / Reps left in the tank」，不弹窗。已记组更正：「上一组 · 70 lb × 6 · RIR 3 · 修改」（原「刚才这组」，owner 2026-10-18 改）「修改第 N 组」「撤销这组」「修改最后一组」；0 组小结写「这场一组都没记，不会留下记录」。
 
 Train 与训练小结 sheet 不写「存进计划 / Save to plan」；该动作只有训练完成并落盘后，才可按 §5.1 的构成差异合同出现在 Today 练完态。
 

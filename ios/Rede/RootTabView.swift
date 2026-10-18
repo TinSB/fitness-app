@@ -41,6 +41,7 @@ struct RootTabView: View {
     @State private var showOnboarding: Bool?
     /// 截图钩子 -autoOpenSharePreview：用样本数据弹分享卡预览（仅测试脚手架）。
     @State private var sharePreviewSample: SharePreviewItem?
+    @State private var keyboardVisible = false
 
     // 截图/UI 验证钩子: simctl launch ... -initialTab train|progress|plan [-locale zh|en]
     init() {
@@ -138,7 +139,12 @@ struct RootTabView: View {
             }
             // 2026-08-07 tab bar 改悬浮后，这里原本垫的整条 redeTabBar 背板成了残留黑块——
             // 悬浮块自带锻面与圆角，底下不需要任何背板，内容就该从它两侧和下方透出来。
-            RedeTabBar(selection: $selection)
+            // 键盘弹出时收起（owner 2026-10-18 截图：快改「精确」输入时导航岛跟着浮到输入法上方、
+            // 盖住次数 / RIR）。只给它 .ignoresSafeArea(.keyboard) 不够——底对齐的 ZStack 仍按缩小后的
+            // 安全区摆它；键盘在时它本来也点不到，收起最干净。
+            if !keyboardVisible {
+                RedeTabBar(selection: $selection)
+            }
             }
 
             // M5-1b 首启引导（FR-ON1）：合法空文档才出现；unreadable 绝不进引导。
@@ -221,6 +227,12 @@ struct RootTabView: View {
         }
         .sheet(item: $sharePreviewSample) { item in
             ShareCardPreviewView(snapshots: item.snapshots)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            keyboardVisible = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            keyboardVisible = false
         }
         // FR-TR9 恢复面板（Task 5 2026-07-04 品牌化；2026-10-18 从今日页上移到这里）：
         // 启动时发现未保存的一场会问；任一 tab 点「开始训练」撞上它（之前点过「稍后再说」）

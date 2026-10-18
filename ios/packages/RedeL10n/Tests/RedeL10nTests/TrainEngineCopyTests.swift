@@ -47,7 +47,7 @@ final class TrainEngineCopyTests: XCTestCase {
         XCTAssertEqual(zh.notificationRestEndBody, "可以开始下一组了")
         XCTAssertEqual(zh.notificationRestEndBodyNextExercise, "可以开始下一个动作了")
         XCTAssertEqual(zh.holdLabelAssisted(kg: "30"), "按计划 辅助 30")
-        XCTAssertEqual(zh.restLastSetLine(load: "70", reps: 6, rir: 3), "刚才这组 · 70 kg × 6 · RIR 3")
+        XCTAssertEqual(zh.restLastSetLine(load: "70", reps: 6, rir: 3), "上一组 · 70 kg × 6 · RIR 3")
         XCTAssertEqual(zh.restNextPreview(setNumber: 2, kg: "60", reps: 6), "下一组 · 第 2 组 · 60 kg × 6")
         XCTAssertEqual(en.restNextExercise("Lat pulldown"), "Up next · Lat pulldown")
     }
