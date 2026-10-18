@@ -102,8 +102,27 @@ final class SessionStore {
     /// 训练流。**每次变化都要重推给表**（切片 4）——开训、记组、恢复 draft、结束
     /// 都会改变表上该显示什么。写成 didSet 而不是在四个调用点各补一句：
     /// 漏一处的症状是表上停在某一组不动，而那是练到一半才会发现的。
-    var flow: TrainFlowState? { didSet { pushWatchPrescription() } }
+    var flow: TrainFlowState? {
+        didSet {
+            // 训练结束的时刻 = 第一次落到小结那一刻（与手表收尾那场体能训练同一刻）。
+            // 完成写入的 finishedAt、小结时长、小结阶段的草稿都用它——在小结停多久、
+            // 被杀后多久才重开，都不该算进训练时长。
+            if flow?.phase == .summary {
+                if sessionEndedAt == nil { sessionEndedAt = Date() }
+            } else {
+                sessionEndedAt = nil
+            }
+            pushWatchPrescription()
+        }
+    }
     var sessionStartedAt: Date?
+    private(set) var sessionEndedAt: Date?
+    /// 训练进行中（含休息、结束确认层）屏幕保持常亮；到小结即恢复（P0 2026-10-18）。
+    /// 组间拿起手机不必再解锁——休息倒计时本来就要一直看得到。
+    var keepsScreenAwake: Bool {
+        guard let flow else { return false }
+        return flow.phase != .summary
+    }
     /// FR-NT1/2 本地通知调度 seam（切片2 链接证明 → 切片3 接休息生命周期）。
     let notificationScheduler: NotificationScheduling = UNUserNotificationCenterScheduler()
     /// 通知偏好/语言缓存（rest-begin 不每次读盘）：loadToday + saveNotificationPreferences 后刷新。
@@ -285,7 +304,9 @@ final class SessionStore {
         // 训练是否进行中（v3.3）：flow 在且没到小结。**表上的 HK 会话跟它走**，不跟 active 走——
         // 弹「结束训练？」确认层（.confirmEnd）时 active 是 nil，但训练没结束（审查 M1）。
         let trainingInProgress = flow != nil && flow?.phase != .summary
-        let outcome: String? = trainingInProgress ? nil : (flow?.phase == .summary ? "completed" : lastSessionOutcome)
+        // 一组没记的一场到了小结也只能放弃（不能保存）——提前告诉表按放弃收，那场体能训练不进健康。
+        let summaryOutcome = flow?.hasCompletedSets == true ? "completed" : "abandoned"
+        let outcome: String? = trainingInProgress ? nil : (flow?.phase == .summary ? summaryOutcome : lastSessionOutcome)
         // 今天已经练完的组数（v3.2）：canonical 记录里今天日期的场次总组数。
         // 没在训练且 > 0 → 表上清单头显示「今天练完了 · N 组」。
         let todayISO = Self.localDayISO(now)
@@ -2252,6 +2273,7 @@ final class SessionStore {
             draftStore.clear()
             return
         }
+        sessionEndedAt = draft.endedAt   // 先于 flow：flow 的 didSet 只在缺值时才补「现在」
         flow = restored
         sessionStartedAt = draft.startedAt
         // 跨进程恢复不留旧 deadline（FR-TR9 最小恢复）：若恢复到休息态，按计划秒数
@@ -2354,6 +2376,20 @@ final class SessionStore {
         )
     }
 
+    /// 中途换动作的事件：新动作自己的起始负重在这里解析一次（历史 → 目录保守起步，与临时加动作
+    /// 同一规则），随事件落草稿（P0 2026-10-18）。此前 external→external 沿用原动作负重——
+    /// 杠铃卧推 80 换哑铃卧推仍是 80。
+    func replaceExerciseEvent(exerciseId: String) -> TrainFlowEvent {
+        guard let flow,
+              let kg = SessionExerciseEditPlanner.startingLoadKg(
+                exerciseId: exerciseId,
+                sessions: todayModel?.cleanView.sessions ?? [],
+                loadUnit: flow.sessionLoadUnit
+              )
+        else { return .replaceExercise(exerciseId) }
+        return .replaceExerciseWithLoad(exerciseId, kg)
+    }
+
     /// 事件创建时一次性解析完整会话计划 payload；draft replay 只重放 payload，
     /// 不再查询可能变化的 canonical 历史。
     func makeSessionEditExercisePlan(exerciseId: String) -> ExerciseSetPlan? {
@@ -2379,6 +2415,7 @@ final class SessionStore {
         case .skipSet(let reason): flow?.skipSet(reason: reason)
         case .skipExercise(let reason): flow?.skipExercise(reason: reason)
         case .replaceExercise(let id): flow?.replaceCurrentExercise(with: id)
+        case .replaceExerciseWithLoad(let id, let kg): flow?.replaceCurrentExercise(with: id, resolvedLoadKg: kg)
         case .moveExerciseToCurrent(let id): flow?.moveExerciseToCurrent(id)
         case .addExercise(let plan): flow?.addExercise(plan)
         case .removeExercise(let removal): flow?.removeExercise(removal)
@@ -2525,8 +2562,10 @@ final class SessionStore {
             targetLine: "")
     }
 
+    /// 小结阶段也落草稿（P0 2026-10-18）：此前到小结就不再存，这时 App 被系统杀掉，
+    /// 末组（以及小结里对最后一组的更正）就丢了。恢复后落回小结，点保存即可。
     private func currentDraft() -> TrainSessionDraft? {
-        guard let flow, flow.phase != .summary else { return nil }
+        guard let flow else { return nil }
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = .current
@@ -2538,7 +2577,8 @@ final class SessionStore {
             events: flow.events,
             catalogVersion: ExerciseCatalog.minimal.catalogVersion,
             sessionAllowedEquipment: flow.sessionAllowedEquipment,
-            sessionLoadUnit: flow.sessionLoadUnit
+            sessionLoadUnit: flow.sessionLoadUnit,
+            endedAt: sessionEndedAt
         )
     }
 
@@ -2567,6 +2607,13 @@ final class SessionStore {
     /// 从今日处方开启训练（无处方/休息日则不开）。
     func startSession(now: Date = Date()) {
         guard flow == nil, let prescription = todayModel?.prescription else { return }
+        // 盘上还有一场没保存的训练（恢复提示里点过「稍后再说」）：先问，不覆盖（P0 2026-10-18）。
+        // 此前这里直接开新的，新草稿的第一笔写入就把上一场整份盖掉。
+        if let unsaved = pendingDraft ?? draftStore.load(),
+           unsaved.isRestorable(todayISO: Self.localDayISO(now)) {
+            pendingDraft = unsaved
+            return
+        }
         pendingDraft = nil // 显式清提示（不依赖 alert binding 的隐式 dismiss）
         lastSessionOutcome = nil
         // FR-EQ1：换动作候选同守器械白名单
@@ -2627,10 +2674,12 @@ final class SessionStore {
     /// 完成写入（M3-3）：构建 canonical session → 真 DataHealth gate → 唯一写闸。
     /// 成功 → 清会话并重载今日（裁决翻转）；失败 → 如实报错、会话保留可重试。
     func completeAndPersistSession(now: Date = Date()) async -> Bool {
-        guard let flow, flow.phase == .summary, !isSaving else { return false }
+        // 一组没记不写：空记录会占掉当天的训练日、而且删不掉（小结只给「放弃」）。
+        guard let flow, flow.phase == .summary, flow.hasCompletedSets, !isSaving else { return false }
         isSaving = true
         defer { isSaving = false }
         let startedAt = sessionStartedAt ?? now
+        let endedAt = sessionEndedAt ?? now
         // 注意口径：date 为用户本地日（与引擎天序号一致）；startedAt/finishedAt 为
         // UTC ISO 时间戳——跨时区时两者日期字面可不一致，展示层取日期一律用 date 字段。
         let isoFormatter = ISO8601DateFormatter()
@@ -2644,8 +2693,8 @@ final class SessionStore {
             sessionId: "session-\(UUID().uuidString)",
             dateISO: dayFormatter.string(from: startedAt),
             startedAtISO: isoFormatter.string(from: startedAt),
-            finishedAtISO: isoFormatter.string(from: now),
-            durationMinutes: max(0, Int(now.timeIntervalSince(startedAt)) / 60)
+            finishedAtISO: isoFormatter.string(from: endedAt),
+            durationMinutes: max(0, Int(endedAt.timeIntervalSince(startedAt)) / 60)
         )
 
         let fileURL = TodayModel.canonicalFileURL()
@@ -2681,7 +2730,7 @@ final class SessionStore {
 
     var sessionSummary: SessionSummary? {
         guard let flow, flow.phase == .summary else { return nil }
-        let duration = sessionStartedAt.map { Int(Date().timeIntervalSince($0)) } ?? 0
+        let duration = sessionStartedAt.map { Int((sessionEndedAt ?? Date()).timeIntervalSince($0)) } ?? 0
         // §6.2：换入动作的 PR 参考 = 它自己的历史（处方只携带原动作的）——
         // 无历史则不发奖（与首练同口径）。契约假设（审查 N2）：cleanView.sessions
         // 只含已落盘历史、不含进行中 session——若改动该边界须同步本处口径

@@ -280,34 +280,8 @@ struct TodayTabView: View {
                 }
             }
         }
-        .sheet(isPresented: Binding(
-            get: { sessionStore.pendingDraft != nil },
-            // 滑走 = 稍后再说：清提示但保留 draft 文件，下次启动再问（原 alert 同语义）
-            set: { if !$0 { sessionStore.pendingDraft = nil } }
-        )) {
-            // FR-TR9 恢复面板品牌化（Task 5 2026-07-04）：全 App 最后一处原生 action
-            // 弹窗收口。三选一与原 alert 逐一等价（恢复接续 flow / 丢弃清 draft /
-            // 暂不留 draft 下次启动再问）；销毁行 redeRisk 且不与主操作相邻（中间
-            // 隔「稍后再说」防误触）；restore/discard 内部清 pendingDraft，binding
-            // 自动收面板，行内无需显式 dismiss。
-            RedeChoiceSheet(
-                title: s.resumeSessionTitle,
-                message: s.resumeSessionMessage,
-                options: [
-                    RedeChoiceOption(title: s.resumeSessionContinue, emphasis: true, action: {
-                        sessionStore.restorePendingDraft()
-                        onStartTraining()
-                    }),
-                    RedeChoiceOption(title: s.resumeSessionLater, action: {
-                        sessionStore.pendingDraft = nil
-                    }),
-                    RedeChoiceOption(title: s.resumeSessionDiscard, role: .destructive, action: {
-                        sessionStore.discardPendingDraft()
-                    }),
-                ],
-                onCancel: {}  // 无独立取消行：「稍后再说」已是显式行，滑走同义
-            )
-        }
+        // FR-TR9 恢复面板已上移到 RootTabView（P0 2026-10-18）：在训练页点「开始训练」撞上
+        // 未保存的上一场时也要问到，挂在今日页会随切 tab 一起被销毁。
         .sheet(isPresented: $showSettings, onDismiss: {
             guard let action = pendingCoachAction else { return }
             pendingCoachAction = nil

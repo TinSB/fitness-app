@@ -50,13 +50,7 @@ public enum SessionExerciseEditPlanner {
         else { return nil }
 
         let stepKg = loadStep(for: entry, unit: loadUnit)
-        // 自重/弹力带无重量轴：与 prescribeBodyweight/replace 同口径恒 0，且不查历史——
-        // canonical 里修复前遗留的脏自重重量不得经 add 路径借入再回写（80kg 教训）。
-        let targetWeightKg: Double =
-            entry.loadType == "bodyweight" || entry.loadType == "band"
-            ? 0
-            : latestWorkingWeight(exerciseId: exerciseId, sessions: sessions)
-                ?? conservativeStartWeight(entry: entry, stepKg: stepKg)
+        let targetWeightKg = startingLoadKg(entry: entry, sessions: sessions, stepKg: stepKg)
         let sets = (1...adHocSetCount).map {
             PlannedSet(
                 index: $0,
@@ -74,6 +68,27 @@ public enum SessionExerciseEditPlanner {
             loadType: entry.loadType,
             sets: sets
         )
+    }
+
+    /// 会话中途「换进来」的动作的起始负重：与临时加动作同一规则（历史最近一场的最大工作重 →
+    /// 目录保守起步）。换动作事件建立时解析一次、随事件落草稿（2026-10-18）。目录里没有 → nil。
+    public static func startingLoadKg(
+        exerciseId: String,
+        sessions: [CleanTrainingSession],
+        catalog: ExerciseCatalog = .minimal,
+        loadUnit: LoadUnit = .kg
+    ) -> Double? {
+        guard let entry = catalog.entry(id: exerciseId) else { return nil }
+        return startingLoadKg(entry: entry, sessions: sessions, stepKg: loadStep(for: entry, unit: loadUnit))
+    }
+
+    /// 自重/弹力带无重量轴：与 prescribeBodyweight/replace 同口径恒 0，且不查历史——
+    /// canonical 里修复前遗留的脏自重重量不得经 add 路径借入再回写（80kg 教训）。
+    private static func startingLoadKg(entry: ExerciseCatalogEntry, sessions: [CleanTrainingSession], stepKg: Double) -> Double {
+        entry.loadType == "bodyweight" || entry.loadType == "band"
+            ? 0
+            : latestWorkingWeight(exerciseId: entry.id, sessions: sessions)
+                ?? conservativeStartWeight(entry: entry, stepKg: stepKg)
     }
 
     private struct BorrowedTargets {

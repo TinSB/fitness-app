@@ -2,7 +2,8 @@
 //
 // draft = 处方 + 事件日志，恢复 = TrainFlowState.restore 重放。
 // draft ≠ canonical 真相（Master：draft restore 是内存 draft 的落盘缓存）：
-// 独立文件、不经写闸、只限当日恢复（跨天作废）、完成写入成功后即删除。
+// 独立文件、不经写闸、完成写入成功后即删除。当日的都可恢复；跨天只在记过组时恢复
+//（2026-10-18：晚上练过零点再打开不再被静默清掉），没记过组的跨天草稿作废。
 
 import Foundation
 
@@ -38,6 +39,9 @@ public struct TrainSessionDraft: Equatable, Sendable, Codable {
     /// FR-TR14 S2：开训时器械 / 单位冻结，随 draft 恢复；旧 draft 缺字段时才
     /// 使用调用方传入的当前档案配置作兼容 fallback。非 canonical，不提升版本。
     private let sessionConfiguration: SessionConfiguration?
+    /// 训练结束（进入小结）的时刻；仍在训练中为 nil。小结阶段也落草稿（2026-10-18），
+    /// 恢复后完成写入的 finishedAt 用它，而不是重新打开 App 的时刻。旧 draft 无此字段 → nil。
+    public let endedAt: Date?
 
     public init(
         dateISO: String,
@@ -46,9 +50,11 @@ public struct TrainSessionDraft: Equatable, Sendable, Codable {
         events: [TrainFlowEvent],
         catalogVersion: String? = nil,
         sessionAllowedEquipment: Set<String>? = nil,
-        sessionLoadUnit: LoadUnit? = nil
+        sessionLoadUnit: LoadUnit? = nil,
+        endedAt: Date? = nil
     ) {
         self.version = 1
+        self.endedAt = endedAt
         self.dateISO = dateISO
         self.startedAt = startedAt
         self.prescription = prescription
@@ -62,9 +68,12 @@ public struct TrainSessionDraft: Equatable, Sendable, Codable {
         }
     }
 
-    /// 仅当日可恢复（恢复仅本次会话，不做跨天恢复——切片边界）。
+    /// 当日的草稿都可恢复；跨天只在记过至少一组时恢复——晚上开练、过了零点 App 被杀，
+    /// 已记的组不能因为日期翻页就被静默清掉（2026-10-18 P0「不丢」）。
+    /// 没记过组的跨天草稿没有可丢的东西，照旧作废，免得每天被一张空草稿打扰。
     public func isRestorable(todayISO: String) -> Bool {
-        dateISO == String(todayISO.prefix(10))
+        if dateISO == String(todayISO.prefix(10)) { return true }
+        return events.contains { if case .logSet = $0 { return true } else { return false } }
     }
 
     /// 追加一个事件，返回新 draft（watchOS 切片 4 的杀后台补洞，2026-08-15）。
@@ -84,7 +93,8 @@ public struct TrainSessionDraft: Equatable, Sendable, Codable {
             events: events + [event],
             catalogVersion: catalogVersion,
             sessionAllowedEquipment: sessionConfiguration?.equipmentSet,
-            sessionLoadUnit: sessionConfiguration?.loadUnit
+            sessionLoadUnit: sessionConfiguration?.loadUnit,
+            endedAt: endedAt
         )
     }
 

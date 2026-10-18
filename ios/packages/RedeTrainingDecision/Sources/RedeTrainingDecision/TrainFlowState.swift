@@ -44,7 +44,12 @@ public enum TrainFlowEvent: Equatable, Sendable, Codable {
     case restFinished
     case skipSet(SetSkipReason)
     case skipExercise(SetSkipReason)
+    /// 旧形态：新动作负重由 reducer 按目录推断（external→external 沿用原负重）。
+    /// 只为恢复 2026-10-18 之前的草稿保留；新换动作一律走 replaceExerciseWithLoad。
     case replaceExercise(String)
+    /// 换动作 + 新动作自己的起始负重（app 层建事件时按「新动作历史 → 目录保守起步」解析一次，
+    /// 与临时加动作同一规则；重放只读这份值，不再查历史）。
+    case replaceExerciseWithLoad(String, Double)
     case moveExerciseToCurrent(String)
     case addExercise(ExerciseSetPlan)
     case removeExercise(SessionExerciseRemoval)
@@ -396,9 +401,14 @@ public struct TrainFlowState: Equatable, Sendable {
         }
     }
 
-    public mutating func replaceCurrentExercise(with newExerciseId: String) {
+    /// resolvedLoadKg：新动作自己的起始负重（见 replaceExerciseWithLoad）。nil = 旧草稿形态。
+    public mutating func replaceCurrentExercise(with newExerciseId: String, resolvedLoadKg: Double? = nil) {
         guard phase == .activeSet, let exercise = currentExercise,
               replacementCandidates.contains(newExerciseId) else { return }
+        if let resolvedLoadKg {
+            // 来自 draft 的值也要守住：NaN / 负数会直接进入下一组建议的算术。
+            guard resolvedLoadKg.isFinite, resolvedLoadKg >= 0 else { return }
+        }
         let priorFactCount = completedInCurrentExercise.count + skippedInCurrentExercise
         let inheritedPending = deferredSegmentReplacements[exercise.exerciseId]
         if priorFactCount > 0 {
@@ -418,7 +428,7 @@ public struct TrainFlowState: Equatable, Sendable {
             else { return }
         }
 
-        events.append(.replaceExercise(newExerciseId))
+        events.append(resolvedLoadKg.map { .replaceExerciseWithLoad(newExerciseId, $0) } ?? .replaceExercise(newExerciseId))
         beginNewExerciseLifecycle(for: newExerciseId)
         let replacement = Replacement(
             originalExerciseId: exercise.exerciseId,
@@ -482,8 +492,14 @@ public struct TrainFlowState: Equatable, Sendable {
         // 换动作重算（wave-9/11，owner 拍板）：换到辅助器械(辅助量)或负重自重(外挂负重)时，
         // 原动作负重无意义（辅助方向反转、自重无重量轴），用目录默认值重置（下限守护防归零）。
         // external→external 沿用原负重不变（零回归面）。
+        // 2026-10-18 起新事件带 resolvedLoadKg：有重量轴的新动作一律用它自己的起始负重——
+        // 杠铃卧推 80 换哑铃卧推不再默认 80（与临时加动作同一规则）。纯自重/弹力带仍归 0。
         let transformedSets: [PlannedSet]
-        if (newLoadType == "assisted" || newLoadType == "bodyweight-plus"), let newEntry {
+        if let resolvedLoadKg, newLoadType != "bodyweight", newLoadType != "band" {
+            transformedSets = sourceSets.map {
+                PlannedSet(index: $0.index, targetWeightKg: resolvedLoadKg, targetReps: $0.targetReps, targetRir: $0.targetRir)
+            }
+        } else if (newLoadType == "assisted" || newLoadType == "bodyweight-plus"), let newEntry {
             let defaultLoad = max(newStep, (newEntry.startWeightKg / newStep).rounded() * newStep)
             transformedSets = sourceSets.map {
                 PlannedSet(index: $0.index, targetWeightKg: defaultLoad, targetReps: $0.targetReps, targetRir: $0.targetRir)
@@ -717,6 +733,12 @@ public struct TrainFlowState: Equatable, Sendable {
     // 改动只影响观察值，不影响任何事件的守卫（守卫只看相位与计数），所以重放必然全收；
     // 万一被拒，宁可不改也不留半改状态。
 
+    /// 本场是否记过至少一组正式组。0 组的一场不能保存（只能放弃）：
+    /// 它会写进一场空记录、占掉当天的训练日，而且事后删不掉。
+    public var hasCompletedSets: Bool {
+        observationsByExercise.values.contains { !$0.isEmpty }
+    }
+
     /// 休息里可以撤销刚记的那组。小结里不行：小结 = 手表那场体能训练已收尾，
     /// 退回训练中会在手表上另起一场；小结里只能更正数值。
     public var canUndoLastSet: Bool {
@@ -782,6 +804,7 @@ public struct TrainFlowState: Equatable, Sendable {
             case .skipSet(let reason): state.skipSet(reason: reason)
             case .skipExercise(let reason): state.skipExercise(reason: reason)
             case .replaceExercise(let id): state.replaceCurrentExercise(with: id)
+            case .replaceExerciseWithLoad(let id, let kg): state.replaceCurrentExercise(with: id, resolvedLoadKg: kg)
             case .moveExerciseToCurrent(let id): state.moveExerciseToCurrent(id)
             case .addExercise(let exercise): state.addExercise(exercise)
             case .removeExercise(let removal): state.removeExercise(removal)

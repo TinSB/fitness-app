@@ -114,6 +114,27 @@ final class SessionExerciseEditPlannerTests: XCTestCase {
         XCTAssertEqual(assisted.sets.map(\.targetWeightKg), [35, 35, 35])
     }
 
+    // 2026-10-18：中途换动作的起始负重与临时加动作同一规则（换动作事件建立时解析一次）。
+    func testStartingLoadForSwapUsesHistoryThenCatalogAndZeroForBodyweight() throws {
+        let catalog = makeCatalog([
+            entry("external-new", muscle: "chest", start: 11),
+            entry("bodyweight-new", muscle: "chest", equipment: "bodyweight", start: 0, loadType: "bodyweight"),
+        ])
+        let sessions = [
+            session("older", date: "2026-07-01", exerciseId: "external-new", weights: [15, 17.5]),
+            session("latest", date: "2026-07-02", exerciseId: "external-new", weights: [22.5, 25]),
+            session("dirty-bw", date: "2026-07-02", exerciseId: "bodyweight-new", weights: [80]),
+        ]
+        XCTAssertEqual(SessionExerciseEditPlanner.startingLoadKg(
+            exerciseId: "external-new", sessions: sessions, catalog: catalog), 25, "最近一场的最大工作重")
+        XCTAssertEqual(SessionExerciseEditPlanner.startingLoadKg(
+            exerciseId: "external-new", sessions: [], catalog: catalog), 10, "无历史 → 目录起步对齐 2.5 档（11 → 10）")
+        XCTAssertEqual(SessionExerciseEditPlanner.startingLoadKg(
+            exerciseId: "bodyweight-new", sessions: sessions, catalog: catalog), 0, "自重不借脏历史")
+        XCTAssertNil(SessionExerciseEditPlanner.startingLoadKg(
+            exerciseId: "not-in-catalog", sessions: sessions, catalog: catalog))
+    }
+
     func testBodyweightAndBandDirtyHistoryNeverBorrowsWeight() throws {
         // 防线与 prescribeBodyweight/replace 同口径：自重/弹力带无重量轴，
         // 即使 canonical 里有修复前遗留的脏重量（「自重 80kg」审计 MAJOR 形态），
