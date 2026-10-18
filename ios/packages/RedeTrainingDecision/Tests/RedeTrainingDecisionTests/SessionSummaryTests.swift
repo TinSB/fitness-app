@@ -1,9 +1,10 @@
 // M3-2 小结构建器：完成流的摘要数据（总量/组数/顶组/e1RM/PR 判定）。
-// 纯函数；时长由调用方注入秒数（无 clock）。PR 口径 = 顶组重量 > 该动作处方
-// 携带的上次工作重量（previousWeightKg）；无历史不判 PR（校准期不发奖）。
+// 纯函数；时长由调用方注入秒数（无 clock）。PR 口径（2026-10-18 与进展页 / 今日页对齐）=
+// 本场任一动作的顶组重量严格大于该动作全部已存历史的最重一组；没练过的动作不判 PR。
 
 import Foundation
 import XCTest
+import RedeDataHealth
 @testable import RedeTrainingDecision
 
 final class SessionSummaryTests: XCTestCase {
@@ -11,27 +12,18 @@ final class SessionSummaryTests: XCTestCase {
         CompletedSetObservation(weightKg: w, reps: r, rir: 2, painReported: false)
     }
 
-    private func makePrescriptionAndObservations() throws -> (TodayPrescription, [String: [CompletedSetObservation]]) {
-        let input = try TestSupport.makeInput(
-            appDataJSON: TestSupport.appDataJSON(historyDates: ["2026-06-05", "2026-06-07"], program: #"{"splitType": "upper-lower"}"#),
-            todayISO: "2026-06-09"
-        )
-        let verdict = TodayVerdictEngine.evaluate(input)
-        let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict))
-        return (prescription, [:])
+    private func session(_ date: String, _ exerciseId: String, _ weights: [Double]) -> CleanTrainingSession {
+        CleanTrainingSession(id: "s-\(date)-\(exerciseId)", date: date, exercises: [
+            CleanExercise(exerciseId: exerciseId, sets: weights.map { CleanLoggedSet(weight: $0, reps: 8, rir: 2) }),
+        ])
     }
 
     func testSummaryAggregatesVolumeSetsAndTopSet() throws {
-        let (prescription, _) = try makePrescriptionAndObservations()
         let observations = [
             "db-bench-press": [obs(30, 10), obs(32.5, 8)],
             "lat-pulldown": [obs(55, 9)],
         ]
-        let summary = SessionSummaryBuilder.build(
-            prescription: prescription,
-            observations: observations,
-            durationSeconds: 2_820
-        )
+        let summary = SessionSummaryBuilder.build(observations: observations, durationSeconds: 2_820)
         XCTAssertEqual(summary.completedSetCount, 3)
         // §6.2 owner 拍板 B 案：吨位×loadFactor——双哑铃卧推 ×2，绳索下拉 ×1
         let expectedVolume: Double = (300 + 260) * 2 + 495 // (30×10 + 32.5×8)×2 + 55×9×1
@@ -43,66 +35,77 @@ final class SessionSummaryTests: XCTestCase {
         XCTAssertEqual(summary.topSetE1RmKg.map { ($0 * 10).rounded() / 10 }, 71.5)
     }
 
-    func testPrRequiresPreviousReference() throws {
-        let (prescription, _) = try makePrescriptionAndObservations()
-        // 首练（previousWeightKg = nil）→ 不判 PR
-        let calibration = SessionSummaryBuilder.build(
-            prescription: prescription,
-            observations: ["db-bench-press": [obs(40, 5)]],
-            durationSeconds: 600
+    // 没练过的动作（无历史基线）不判 PR——校准期不发奖。
+    func testNoPrWithoutHistory() {
+        let summary = SessionSummaryBuilder.build(
+            observations: ["db-bench-press": [obs(40, 5)]], durationSeconds: 600, previousBestWeightKg: [:]
         )
-        XCTAssertFalse(calibration.isPersonalRecord)
+        XCTAssertFalse(summary.isPersonalRecord)
     }
 
-    func testPrWhenTopSetExceedsPreviousWeight() throws {
-        let json = #"{"schemaVersion": 8, "programTemplate": {"splitType": "upper-lower"}, "history": [{"id": "s0", "date": "2026-06-05", "completed": true, "exercises": []}, {"id": "s1", "date": "2026-06-07", "completed": true, "exercises": [{"exerciseId": "db-bench-press", "sets": [{"weight": 30, "reps": 8, "rir": 2}]}]}]}"#
-        let input = try TestSupport.makeInput(appDataJSON: json, todayISO: "2026-06-09")
-        let verdict = TodayVerdictEngine.evaluate(input)
-        let prescription = try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict))
+    // 进展页口径：要超过全部历史的最重一组，不是只超过上次。
+    // 三周前 75、上次 65、今天 70：此前小结报 PR、存完进展页没有——现在两边都不报。
+    func testPrMeansBeatingTheAllTimeBestNotJustLastTime() {
+        let best = SessionSummaryBuilder.previousBestWeights(sessions: [
+            session("2026-05-20", "bench-press", [70, 75]),
+            session("2026-06-07", "bench-press", [65, 65]),
+        ])
+        XCTAssertEqual(best["bench-press"], 75)
+
+        let notPR = SessionSummaryBuilder.build(
+            observations: ["bench-press": [obs(70, 6)]], durationSeconds: 600, previousBestWeightKg: best
+        )
+        XCTAssertFalse(notPR.isPersonalRecord)
 
         let pr = SessionSummaryBuilder.build(
-            prescription: prescription,
-            observations: ["db-bench-press": [obs(32.5, 6)]],
-            durationSeconds: 600
+            observations: ["bench-press": [obs(77.5, 3)]], durationSeconds: 600, previousBestWeightKg: best
         )
         XCTAssertTrue(pr.isPersonalRecord)
 
-        let noPr = SessionSummaryBuilder.build(
-            prescription: prescription,
-            observations: ["db-bench-press": [obs(30, 6)]],
-            durationSeconds: 600
+        let tie = SessionSummaryBuilder.build(
+            observations: ["bench-press": [obs(75, 8)]], durationSeconds: 600, previousBestWeightKg: best
         )
-        XCTAssertFalse(noPr.isPersonalRecord)
+        XCTAssertFalse(tie.isPersonalRecord, "持平不算（严格大于）")
     }
 
-    func testEmptyObservationsYieldEmptySummary() throws {
-        let (prescription, _) = try makePrescriptionAndObservations()
-        let summary = SessionSummaryBuilder.build(prescription: prescription, observations: [:], durationSeconds: 0)
+    // 任一动作破纪录即 PR，不限于全场最重那组（与进展页 prExerciseIds 非空同义）；
+    // 顶组展示仍是全场最重一组（与今日页练完块一致）。
+    func testPrOnAnyExerciseCountsEvenWhenItIsNotTheTopSet() {
+        let summary = SessionSummaryBuilder.build(
+            observations: [
+                "bench-press": [obs(60, 6)],
+                "lateral-raise": [obs(12.5, 10)],
+            ],
+            durationSeconds: 600,
+            previousBestWeightKg: ["bench-press": 75, "lateral-raise": 10]
+        )
+        XCTAssertTrue(summary.isPersonalRecord)
+        XCTAssertEqual(summary.topSet?.exerciseId, "bench-press")
+    }
+
+    // 换入动作只和它自己的历史比；辅助器械不参与 PR，也不进基线。
+    func testEachExerciseComparesWithItsOwnHistoryAndAssistedNeverCounts() {
+        let best = SessionSummaryBuilder.previousBestWeights(sessions: [
+            session("2026-06-01", "db-floor-press", [20]),
+            session("2026-06-01", "assisted-pull-up", [30]),
+        ])
+        XCTAssertNil(best["assisted-pull-up"])
+        let swapped = SessionSummaryBuilder.build(
+            observations: ["db-floor-press": [obs(22.5, 8)]], durationSeconds: 600, previousBestWeightKg: best
+        )
+        XCTAssertTrue(swapped.isPersonalRecord)
+        let assisted = SessionSummaryBuilder.build(
+            observations: ["assisted-pull-up": [obs(40, 8)]], durationSeconds: 600,
+            previousBestWeightKg: ["assisted-pull-up": 30]
+        )
+        XCTAssertFalse(assisted.isPersonalRecord)
+    }
+
+    func testEmptyObservationsYieldEmptySummary() {
+        let summary = SessionSummaryBuilder.build(observations: [:], durationSeconds: 0)
         XCTAssertEqual(summary.completedSetCount, 0)
         XCTAssertEqual(summary.totalVolumeKg, 0)
         XCTAssertNil(summary.topSet)
         XCTAssertFalse(summary.isPersonalRecord)
-    }
-
-    // §6.2 修复：换入动作的 PR 只和它自己的历史比（调用方注入 overrides）
-    func testPrAfterReplacementUsesOwnHistoryViaOverrides() throws {
-        let (prescription, _) = try makePrescriptionAndObservations()
-        // 换入 db-floor-press（不在处方），注入其自身历史 20 → 顶组 22.5 = PR
-        let withHistory = SessionSummaryBuilder.build(
-            prescription: prescription,
-            observations: ["db-floor-press": [obs(22.5, 8)]],
-            durationSeconds: 600,
-            previousWeightOverrides: ["db-floor-press": 20]
-        )
-        XCTAssertTrue(withHistory.isPersonalRecord)
-        // 无注入（该动作无历史）→ 保守不发奖（与首练同口径），不再静默恒 false 暗规则
-        let noHistory = SessionSummaryBuilder.build(
-            prescription: prescription,
-            observations: ["db-floor-press": [obs(22.5, 8)]],
-            durationSeconds: 600
-        )
-        XCTAssertFalse(noHistory.isPersonalRecord)
-        // 绝不拿被换走动作的历史比：处方里 db-bench-press previous 存在也不参与
-        XCTAssertFalse(prescription.exercises.contains { $0.exerciseId == "db-floor-press" })
     }
 }

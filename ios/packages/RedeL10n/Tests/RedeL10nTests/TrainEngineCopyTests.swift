@@ -31,8 +31,8 @@ final class TrainEngineCopyTests: XCTestCase {
         XCTAssertEqual(en.nextSetWhyBodyweightPlus(reasonCode: "onPlan", fromKg: nil), "")
         XCTAssertEqual(zh.firstSetWhy, "")
         XCTAssertEqual(en.firstSetWhy, "")
-        XCTAssertEqual(zh.holdLabel(kg: "60", holding: false), "保持 60")
-        XCTAssertEqual(en.holdLabel(kg: "60", holding: true), "Holding 60")
+        XCTAssertEqual(zh.holdLabel(kg: "60"), "按计划 60")
+        XCTAssertEqual(en.holdLabel(kg: "60"), "Plan 60")
     }
 
     func testRestAnchors() {
@@ -157,8 +157,8 @@ final class TrainEngineCopyTests: XCTestCase {
     // 掉速 why（2026-08-19 owner 真机）：四种负重语义各自的 why 行 + 预演注解都必须说话，
     // 不能掉进「没有真理由就不说话」的空串默认分支——降重是有真理由的，用户必须看到为什么。
     func testFatigueDropCopyAcrossLoadTypes() {
-        XCTAssertEqual(zh.nextSetWhy(reasonCode: "fatigueDrop", fromKg: "40"), "余力掉得快，从 40 回调")
-        XCTAssertEqual(en.nextSetWhy(reasonCode: "fatigueDrop", fromKg: "40"), "Eased from 40, reserve dropping fast")
+        XCTAssertEqual(zh.nextSetWhy(reasonCode: "fatigueDrop", fromKg: "40"), "RIR 掉得快，从 40 回调")
+        XCTAssertEqual(en.nextSetWhy(reasonCode: "fatigueDrop", fromKg: "40"), "Eased from 40, RIR dropping fast")
         XCTAssertFalse(zh.nextSetWhyBodyweight(reasonCode: "fatigueDrop").isEmpty)
         XCTAssertFalse(en.nextSetWhyBodyweight(reasonCode: "fatigueDrop").isEmpty)
         XCTAssertFalse(zh.nextSetWhyAssisted(reasonCode: "fatigueDrop").isEmpty)

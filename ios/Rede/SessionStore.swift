@@ -179,6 +179,8 @@ final class SessionStore {
     var pendingDraft: TrainSessionDraft?
     /// 本次运行里在恢复提示上选过「稍后再说」：loadToday 不再主动弹（见 checkForRestorableDraft）。
     private var restorePromptDeferred = false
+    /// 本场里对每个动作的休息时长调整（秒，可正可负）。开训 / 结束时清空。
+    private var restAdjustmentByExercise: [String: Int] = [:]
     /// 刚结束那场是怎么结束的（watchOS v3.3）："completed" / "abandoned"。放弃路径在清 flow 之前置位，
     /// 随 flow didSet 那次推送带给表——表据此决定 HK 会话 finish 还是 discard（放弃的训练不进健康）。
     /// 开训时清空。
@@ -2451,9 +2453,15 @@ final class SessionStore {
     /// 是否暂停（绑定暂停/继续按钮文案与态）。
     var restIsPaused: Bool { restCountdown.isPaused }
 
-    /// +30 加时。同步按新剩余重排休息提醒——否则通知仍按原时点弹、早于实际结束（审查 MAJOR-1）。
+    /// 休息加减时（训练页 ±15、手表 +30）。同步按新剩余重排休息提醒——否则通知仍按原时点弹、
+    /// 早于实际结束（审查 MAJOR-1）。调整记在本场这个动作上：它下一段休息按调整后的时长开始
+    ///（只在本场内存里，不落盘、不跨场——跨场记忆要动 schema，另议）。
     func addRestTime(_ seconds: Int) {
+        guard restCountdown.isActive else { return }   // 不在休息：不加时，也不记调整
         restCountdown.add(seconds: seconds)
+        if let id = flow?.currentExercise?.exerciseId {
+            restAdjustmentByExercise[id, default: 0] += seconds
+        }
         if !restCountdown.isPaused {
             scheduleRestNotification(restSecondsPlanned: restCountdown.remaining())
             // K6：视觉层结束点同步推后（与通知同一新锚点）；暂停中无活动、恢复时重挂
@@ -2486,8 +2494,9 @@ final class SessionStore {
         }
         switch event {
         case .logSet where flow.phase == .resting:
-            restCountdown.begin(seconds: flow.restSecondsPlanned)
-            scheduleRestNotification(restSecondsPlanned: flow.restSecondsPlanned)
+            let seconds = restSeconds(for: flow)
+            restCountdown.begin(seconds: seconds)
+            scheduleRestNotification(restSecondsPlanned: seconds)
             beginRestActivity(endpoint: "rest-begin")   // K6：休息开始挂视觉层（begin 挂点）
         case .restFinished:
             restCountdown.clear()
@@ -2501,6 +2510,12 @@ final class SessionStore {
                 restLiveActivity.end(endpoint: "session-summary")   // K6：落到收尾页即收
             }
         }
+    }
+
+    /// 这段休息的时长：计划秒数 + 本场对这个动作做过的调整，最少 15 秒。
+    func restSeconds(for flow: TrainFlowState) -> Int {
+        let adjustment = flow.currentExercise.flatMap { restAdjustmentByExercise[$0.exerciseId] } ?? 0
+        return max(15, flow.restSecondsPlanned + adjustment)
     }
 
     /// FR-NT1：休息开始时按偏好安排锁屏提醒（偏好关→策略返回 nil→不安排）。文案经 RedeL10n 解析后传适配器。
@@ -2624,6 +2639,7 @@ final class SessionStore {
         // FR-EQ1：换动作候选同守器械白名单
         flow = TrainFlowState(prescription: prescription, allowedEquipment: allowedEquipment, loadUnit: loadUnit)
         sessionStartedAt = now
+        restAdjustmentByExercise = [:]
         restCountdown.clear() // 新会话从 activeSet 起步，旧倒计时不得滞留
         restLiveActivity.end(endpoint: "session-start")   // K6：旧视觉层同不得滞留
         enqueueDraftSave()
@@ -2661,6 +2677,7 @@ final class SessionStore {
     func endSession() {
         flow = nil
         sessionStartedAt = nil
+        restAdjustmentByExercise = [:]
         saveErrorText = nil
         restCountdown.clear()
         cancelRestNotification() // FR-NT1：放弃/收尾时清掉待发的休息提醒，避免训练已结束还弹（审查 MAJOR-1）
@@ -2759,22 +2776,15 @@ final class SessionStore {
     var sessionSummary: SessionSummary? {
         guard let flow, flow.phase == .summary else { return nil }
         let duration = sessionStartedAt.map { Int((sessionEndedAt ?? Date()).timeIntervalSince($0)) } ?? 0
-        // §6.2：换入动作的 PR 参考 = 它自己的历史（处方只携带原动作的）——
-        // 无历史则不发奖（与首练同口径）。契约假设（审查 N2）：cleanView.sessions
-        // 只含已落盘历史、不含进行中 session——若改动该边界须同步本处口径
-        var overrides: [String: Double] = [:]
-        if let sessions = todayModel?.cleanView.sessions {
-            for id in Set(flow.replacements.map(\.actualExerciseId)) {
-                if let last = TodayPrescriptionEngine.lastTopWeightKg(exerciseId: id, sessions: sessions) {
-                    overrides[id] = last
-                }
-            }
-        }
+        // PR 与进展页 / 今日页同一口径（2026-10-18）：每个动作和它自己全部已存历史的最重一组比。
+        // 契约假设（审查 N2）：cleanView.sessions 只含已落盘历史、不含进行中 session——
+        // 若改动该边界须同步本处口径。
         return SessionSummaryBuilder.build(
-            prescription: flow.prescription,
             observations: flow.observationsByExercise,
             durationSeconds: max(0, duration),
-            previousWeightOverrides: overrides
+            previousBestWeightKg: SessionSummaryBuilder.previousBestWeights(
+                sessions: todayModel?.cleanView.sessions ?? []
+            )
         )
     }
 }

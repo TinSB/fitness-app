@@ -45,7 +45,7 @@ extension RedeStrings {
             return locale == .zh ? "已登记不适，本组先降一档" : "Discomfort noted, easing this set"
         case "fatigueDrop":
             let from = fromKg ?? "—"
-            return locale == .zh ? "余力掉得快，从 \(from) 回调" : "Eased from \(from), reserve dropping fast"
+            return locale == .zh ? "RIR 掉得快，从 \(from) 回调" : "Eased from \(from), RIR dropping fast"
         default:
             // 没有真正的理由（照计划 / 照上组延续）就不说话。「按上组表现延续」是一句什么都
             // 没告诉用户的填充（owner 2026-08-16 截图指出）；hero 已经把目标写在那了。空串 = 视图不画这一行。
@@ -56,17 +56,18 @@ extension RedeStrings {
     /// 首组（还没有「上一组」）的 why 行：空——「按计划目标开始」同样是填充，hero 已经在说这件事。
     public var firstSetWhy: String { "" }
 
-    /// Hold 按钮：未开 "保持 60" / 已开 "保持中 60"。
-    public func holdLabel(kg: String, holding: Bool) -> String {
-        if locale == .zh {
-            return holding ? "保持中 \(kg)" : "保持 \(kg)"
-        }
-        return holding ? "Holding \(kg)" : "Hold \(kg)"
+    /// Hold 按钮（2026-10-18 改名）：只在引擎改了这组重量时出现，读作「仍按计划」的选择——
+    /// 原来的「保持 60」字面看不出是「暂停自动微调、按计划重量做」。已选中靠按钮态表达（文字不变）。
+    public func holdLabel(kg: String) -> String {
+        locale == .zh ? "按计划 \(kg)" : "Plan \(kg)"
     }
 
     public var holdWhyLine: String {
-        locale == .zh ? "按计划重量保持，微调已暂停" : "Held at plan, auto-adjust paused"
+        locale == .zh ? "按计划重量做，这个动作不再自动调整" : "At plan weight, no auto-adjust for this exercise"
     }
+
+    /// RIR 的一句解释（快改面板与更正面板里紧跟「RIR」标签，常驻小字、不弹窗）。
+    public var rirHint: String { locale == .zh ? "还能再做几次" : "Reps left in the tank" }
 
     /// 键盘工具条提交键（decimal 键盘无回车）。
     public var adjustDone: String { locale == .zh ? "完成" : "Done" }
@@ -75,9 +76,14 @@ extension RedeStrings {
 
     public var restLabel: String { locale == .zh ? "休息" : "Rest" }
     public var restAdd30: String { "+30s" }
+    /// 休息 ±15 秒（2026-10-18）：调整记在本场这个动作上，下次它的休息按调整后的时长开始。
+    public var restAdd15: String { "+15s" }
+    public var restSubtract15: String { "−15s" }
     public var restPause: String { locale == .zh ? "暂停" : "Pause" }
     public var restResume: String { locale == .zh ? "继续" : "Resume" }
     public var restNextSet: String { locale == .zh ? "下一组" : "Next set" }
+    /// 动作做完后的休息按钮：去的是下一个动作（热身或首组），不是「下一组」。
+    public var restNextExerciseAction: String { locale == .zh ? "下个动作" : "Next exercise" }
 
     /// "下一组 · 第 2 组 · 60 kg × 6"。
     public func restNextPreview(setNumber: Int, kg: String, reps: Int) -> String {
@@ -160,15 +166,14 @@ extension RedeStrings {
         case "lastSetNearFailure": return locale == .zh ? "上组接近力竭，本组稳住次数" : "Last set near failure, hold your reps"
         case "belowRepFloor": return locale == .zh ? "上组次数偏低，本组稳住" : "Reps fell short, steady this set"
         case "painReported": return locale == .zh ? "已登记不适，本组放缓" : "Discomfort noted, ease this set"
-        case "fatigueDrop": return locale == .zh ? "余力掉得快，本组稳住次数" : "Reserve dropping fast, hold your reps"
+        case "fatigueDrop": return locale == .zh ? "RIR 掉得快，本组稳住次数" : "RIR dropping fast, hold your reps"
         default: return ""   // 同 nextSetWhy：没有真理由就不说话
         }
     }
 
     /// Hold 按钮（自重）：保持目标次数。
-    public func holdLabelBodyweight(reps: Int, holding: Bool) -> String {
-        if locale == .zh { return holding ? "保持中 ×\(reps)" : "保持 ×\(reps)" }
-        return holding ? "Holding ×\(reps)" : "Hold ×\(reps)"
+    public func holdLabelBodyweight(reps: Int) -> String {
+        locale == .zh ? "按计划 ×\(reps)" : "Plan ×\(reps)"
     }
 
     /// 休息预告（自重）：第 N 组 · ×次。
@@ -189,15 +194,14 @@ extension RedeStrings {
         case "lastSetNearFailure": return locale == .zh ? "上组接近力竭，本组加辅助一档" : "Near failure, adding assist this set"
         case "belowRepFloor": return locale == .zh ? "上组次数掉出区间，本组加辅助一档" : "Reps fell short, adding assist this set"
         case "painReported": return locale == .zh ? "已登记不适，本组加辅助一档" : "Discomfort noted, adding assist this set"
-        case "fatigueDrop": return locale == .zh ? "余力掉得快，本组加辅助一档" : "Reserve dropping fast, adding assist this set"
+        case "fatigueDrop": return locale == .zh ? "RIR 掉得快，本组加辅助一档" : "RIR dropping fast, adding assist this set"
         default: return ""   // 同 nextSetWhy：没有真理由就不说话
         }
     }
 
     /// Hold 按钮（辅助）：保持当前辅助量。
-    public func holdLabelAssisted(kg: String, holding: Bool) -> String {
-        if locale == .zh { return holding ? "保持中 辅助 \(kg)" : "保持 辅助 \(kg)" }
-        return holding ? "Holding assist \(kg)" : "Hold assist \(kg)"
+    public func holdLabelAssisted(kg: String) -> String {
+        locale == .zh ? "按计划 辅助 \(kg)" : "Plan assist \(kg)"
     }
 
     /// 休息预告（辅助）：第 N 组 · 辅助 重 × 次。
@@ -243,16 +247,15 @@ extension RedeStrings {
             return locale == .zh ? "已登记不适，本组减负重一档" : "Discomfort noted, easing this set"
         case "fatigueDrop":
             let from = fromKg ?? "—"
-            return locale == .zh ? "余力掉得快，从 负重 +\(from) 回调" : "Eased from weighted +\(from), reserve dropping fast"
+            return locale == .zh ? "RIR 掉得快，从 负重 +\(from) 回调" : "Eased from weighted +\(from), RIR dropping fast"
         default:
             return ""   // 同 nextSetWhy：没有真理由就不说话
         }
     }
 
     /// Hold 按钮（负重自重）：保持当前外挂负重。
-    public func holdLabelBodyweightPlus(kg: String, holding: Bool) -> String {
-        if locale == .zh { return holding ? "保持中 负重 +\(kg)" : "保持 负重 +\(kg)" }
-        return holding ? "Holding weighted +\(kg)" : "Hold weighted +\(kg)"
+    public func holdLabelBodyweightPlus(kg: String) -> String {
+        locale == .zh ? "按计划 负重 +\(kg)" : "Plan weighted +\(kg)"
     }
 
     /// 休息预告（负重自重）：第 N 组 · 负重 +重 × 次。
@@ -282,7 +285,7 @@ extension RedeStrings {
         case "painReported":
             return locale == .zh ? "已登记不适，先回一档" : "discomfort noted, easing"
         case "fatigueDrop":
-            return locale == .zh ? "余力掉得快，先回一档" : "reserve dropping fast, easing"
+            return locale == .zh ? "RIR 掉得快，先回一档" : "RIR dropping fast, easing"
         default:
             return nil
         }

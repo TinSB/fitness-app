@@ -81,9 +81,8 @@ final class BandEngineTests: XCTestCase {
         let obs: [String: [CompletedSetObservation]] = [
             "t-band-lateral": [CompletedSetObservation(weightKg: 0, reps: 20, rir: 2, painReported: false)],
         ]
-        let empty = TodayPrescription(dayCode: "push-a", exercises: [], dayReasons: [])
         let summary = SessionSummaryBuilder.build(
-            prescription: empty, observations: obs, durationSeconds: 600, catalog: amended
+            observations: obs, durationSeconds: 600, catalog: amended
         )
         XCTAssertEqual(summary.totalVolumeKg, 0, "弹力带重量 0 → 不计入吨位")
     }

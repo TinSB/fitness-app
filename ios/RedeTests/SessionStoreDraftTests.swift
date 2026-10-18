@@ -531,6 +531,60 @@ final class SessionStoreDraftTests: XCTestCase {
         XCTAssertEqual(legacy.endedAt, savedLater, "旧草稿没有结束时刻：退回保存时刻")
     }
 
+    // MARK: - P2 说清楚（2026-10-18）
+
+    // 休息 ±15：调整记在这个动作上，它下一段休息按调整后的时长开始；最少 15 秒；不在休息时不记。
+    func testRestAdjustmentCarriesToThatExercisesNextRestWithinTheSession() throws {
+        let sessionStore = makeSessionStore(draftStore: FakeTrainSessionDraftStore())
+        sessionStore.addRestTime(-15)   // 组中：不加时，也不记调整
+        sessionStore.apply(.logSet(CompletedSetObservation(weightKg: 60, reps: 10, rir: 2)))
+        XCTAssertGreaterThanOrEqual(sessionStore.restRemainingSeconds, 89, "计划 90 秒")
+
+        sessionStore.addRestTime(-15)
+        sessionStore.addRestTime(-15)
+        XCTAssertLessThanOrEqual(sessionStore.restRemainingSeconds, 60)
+        sessionStore.apply(.restFinished)
+        sessionStore.apply(.logSet(CompletedSetObservation(weightKg: 60, reps: 10, rir: 2)))
+
+        let next = sessionStore.restRemainingSeconds
+        XCTAssertTrue((59...60).contains(next), "同一动作下一段休息按 90−30 开始，实际 \(next)")
+        let flow = try XCTUnwrap(sessionStore.flow)
+        XCTAssertEqual(sessionStore.restSeconds(for: flow), 60)
+
+        for _ in 0..<10 { sessionStore.addRestTime(-15) }
+        XCTAssertEqual(sessionStore.restSeconds(for: flow), 15, "最少 15 秒")
+
+        sessionStore.endSession()
+        sessionStore.flow = TrainFlowState(prescription: makePrescription())
+        XCTAssertEqual(sessionStore.restSeconds(for: try XCTUnwrap(sessionStore.flow)), 90, "结束训练即清空，不跨场")
+    }
+
+    // 「按计划 X」只在引擎真的改了这组重量时出现；动作做完后的休息按钮叫「下一个动作」。
+    func testHoldButtonAppearsOnlyWhenTheEngineChangedTheLoad() {
+        var flow = TrainFlowState(prescription: makePrescription())
+        XCTAssertFalse(TrainTabView.engineChangedLoad(flow), "第一组 = 计划值")
+        flow.logSet(CompletedSetObservation(weightKg: 60, reps: 10, rir: 2))
+        flow.restFinished()
+        XCTAssertFalse(TrainTabView.engineChangedLoad(flow), "照计划延续：什么也不改")
+
+        var eased = TrainFlowState(prescription: makePrescription())
+        eased.logSet(CompletedSetObservation(weightKg: 60, reps: 10, rir: 0))
+        eased.restFinished()
+        XCTAssertTrue(TrainTabView.engineChangedLoad(eased), "接近力竭 → 回调一档，才给「按计划」")
+    }
+
+    func testRestButtonSaysNextExerciseAfterTheExercisesLastSet() {
+        var flow = TrainFlowState(prescription: makePrescription())
+        flow.logSet(CompletedSetObservation(weightKg: 60, reps: 10, rir: 2))
+        XCTAssertFalse(TrainTabView.restEndsExercise(flow))
+        flow.restFinished()
+        flow.logSet(CompletedSetObservation(weightKg: 60, reps: 10, rir: 2))
+        flow.restFinished()
+        flow.logSet(CompletedSetObservation(weightKg: 60, reps: 10, rir: 2))
+        XCTAssertEqual(flow.phase, .resting)
+        XCTAssertTrue(TrainTabView.restEndsExercise(flow))
+    }
+
     func testScreenStaysAwakeOnlyWhileTrainingIsInProgress() {
         let sessionStore = makeSessionStore(draftStore: FakeTrainSessionDraftStore())
         XCTAssertTrue(sessionStore.keepsScreenAwake, "组中")
