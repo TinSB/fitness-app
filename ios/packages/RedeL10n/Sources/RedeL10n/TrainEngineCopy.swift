@@ -91,6 +91,29 @@ extension RedeStrings {
         locale == .zh ? "接下来 · \(name)" : "Up next · \(name)"
     }
 
+    // MARK: - 已记组更正（P0：一键完成按目标记，休息时就地校正）
+
+    /// 休息卡上刚记的那组："刚才这组 · 60 kg × 6 · RIR 2"。load = nil 是纯次数动作（无重量轴）；
+    /// 辅助 / 负重自重由调用方带前缀传入（"辅助 20"）。
+    public func restLastSetLine(load: String?, reps: Int, rir: Double?) -> String {
+        let rirText = "RIR \(rir.map(formatRir) ?? "—")"
+        let body = load.map { "\($0) \(unitLabel) × \(reps)" } ?? "× \(reps)"
+        return locale == .zh ? "刚才这组 · \(body) · \(rirText)" : "Last set · \(body) · \(rirText)"
+    }
+
+    public var setAmendAction: String { locale == .zh ? "修改" : "Edit" }
+    public func setAmendTitle(setNumber: Int) -> String {
+        locale == .zh ? "修改第 \(setNumber) 组" : "Edit set \(setNumber)"
+    }
+    public var setAmendSave: String { locale == .zh ? "保存" : "Save" }
+    public var setAmendUndo: String { locale == .zh ? "撤销这组" : "Undo this set" }
+    public var setAmendUndoNote: String {
+        locale == .zh ? "回到这一组，重新做" : "Go back and redo this set"
+    }
+    public var summaryAmendLastSet: String { locale == .zh ? "修改最后一组" : "Edit last set" }
+    /// 组表里已完成的行（VoiceOver 提示）。
+    public var setRowAmendHint: String { locale == .zh ? "轻点修改这一组" : "Tap to edit this set" }
+
     // MARK: - 快改（FR-TR2；M5-3 刻度轨：语义档位 + 预演）
 
     public var adjustTitle: String { locale == .zh ? "调整本组" : "Adjust this set" }

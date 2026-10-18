@@ -142,6 +142,13 @@ struct TrainTabView: View {
     /// 在首项移除后误删同一位置新移入的动作。
     @State private var isSessionEditRemovalInFlight = false
     @State private var painToastVisible = false
+    /// 修改已记组（P0）：训练页（休息卡 / 组表）与小结各用一份——小结本身是 sheet，
+    /// 从它上面再弹必须挂在它自己身上，两处共用一个状态会让父视图也试图弹出。
+    @State private var amendTarget: SetAmendTarget?
+    @State private var summaryAmendTarget: SetAmendTarget?
+    @State private var amendWeight: Double = 0
+    @State private var amendReps = 0
+    @State private var amendRir: Int? = 2
     @State private var sharePreview: SharePreviewItem?   // FR-SH1：训练总结分享卡预览
     /// K1 待机仪表（2026-07-16）：最近一场事实（快照链与今日页 loadCompletedDigest 同源）+
     /// 休息日「下一场」投影。只读派生、后台加载；缺数据 → 对应行不渲染（不编数据）。
@@ -284,6 +291,9 @@ struct TrainTabView: View {
         ) { sessionOrderSheet }
         .sheet(isPresented: confirmBinding) { confirmSheet }
         .sheet(isPresented: summaryBinding) { summarySheet }
+        .sheet(item: $amendTarget) { target in
+            setAmendSheet(target) { amendTarget = nil }
+        }
     }
 
     // MARK: - Header + 进度
@@ -588,6 +598,25 @@ struct TrainTabView: View {
             .frame(width: 180, height: 4)
             .accessibilityHidden(true) // 进度条是倒计时数字的视觉冗余，避免 VoiceOver 重复噪声
 
+            // 一键完成按处方目标记下这组；实际不一样就在休息里就地改（owner 2026-10-18 拍板）。
+            // 记组那一刻不多一步、不弹窗；这一行把「记下了什么」摆出来，点一下就能改或撤销。
+            if let last = flow.completedInCurrentExercise.last {
+                Button(action: { openAmend(offset: flow.completedInCurrentExercise.count - 1) }) {
+                    HStack(spacing: 8) {
+                        Text(lastSetLine(last))
+                            .foregroundStyle(Color.redeT3)
+                        Text(s.setAmendAction)
+                            .fontWeight(.medium)
+                            .foregroundStyle(Color.redeT1)
+                    }
+                    .font(.redeCaption)
+                    .monospacedDigit()
+                    .frame(minHeight: 36)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.redePressable)
+            }
+
             Text(restPreviewText(flow))
                 .font(.redeCallout)
                 .monospacedDigit()
@@ -651,13 +680,13 @@ struct TrainTabView: View {
             Overline(text: s.adjustReps)
                 .padding(.top, currentIsRepBased ? 0 : 14)
                 .modifier(CascadeIn(index: 2, enabled: !reduceMotion))
-            repsStrip(flow)
+            repsStrip(selection: $adjustReps, target: flow.currentRecommendation?.targetReps) { hasAdjustment = true }
                 .padding(.top, 2)
                 .modifier(CascadeIn(index: 2, enabled: !reduceMotion))
             Overline(text: s.adjustRir)
                 .padding(.top, 12)
                 .modifier(CascadeIn(index: 3, enabled: !reduceMotion))
-            rirStrip
+            rirStrip(selection: $adjustRir) { hasAdjustment = true }
                 .padding(.top, 2)
                 .modifier(CascadeIn(index: 3, enabled: !reduceMotion))
             previewLine(flow)
@@ -882,17 +911,17 @@ struct TrainTabView: View {
     }
 
     /// 次数直选带：以当前值自重心 ±2 一屏五格；计划目标格底部 neu 刻标。
-    private func repsStrip(_ flow: TrainFlowState) -> some View {
-        let lo = max(1, adjustReps - 2)
-        let target = flow.currentRecommendation?.targetReps
+    /// 快改面板与「修改已记组」共用：selection 是各自的暂存，onPick 是各自的「已动过」标记。
+    private func repsStrip(selection: Binding<Int>, target: Int?, onPick: @escaping () -> Void = {}) -> some View {
+        let lo = max(1, selection.wrappedValue - 2)
         return HStack(spacing: 0) {
             ForEach(lo..<(lo + 5), id: \.self) { n in
                 if n > lo { stripDivider }
-                Button(action: { adjustReps = n; hasAdjustment = true; selectionPulse += 1 }) {
+                Button(action: { selection.wrappedValue = n; onPick(); selectionPulse += 1 }) {
                     Text("\(n)")
                         .font(.redeBody)
                         .monospacedDigit()
-                        .foregroundStyle(n == adjustReps ? Color.redeT1 : Color.redeT4)
+                        .foregroundStyle(n == selection.wrappedValue ? Color.redeT1 : Color.redeT4)
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .overlay(alignment: .bottom) {
                             if n == target {
@@ -903,22 +932,22 @@ struct TrainTabView: View {
                 }
                 .buttonStyle(.redePressable)
                 .accessibilityLabel("\(n)")
-                .accessibilityAddTraits(n == adjustReps ? .isSelected : [])
+                .accessibilityAddTraits(n == selection.wrappedValue ? .isSelected : [])
             }
         }
     }
 
     /// RIR 直选带：「—」= 不记（引擎不猜）；0/1 = 力竭回退区 caution 微标。
-    private var rirStrip: some View {
+    private func rirStrip(selection: Binding<Int?>, onPick: @escaping () -> Void = {}) -> some View {
         let cells: [Int?] = [nil, 0, 1, 2, 3, 4, 5]
         return HStack(spacing: 0) {
             ForEach(Array(cells.enumerated()), id: \.offset) { index, value in
                 if index > 0 { stripDivider }
-                Button(action: { adjustRir = value; hasAdjustment = true; selectionPulse += 1 }) {
+                Button(action: { selection.wrappedValue = value; onPick(); selectionPulse += 1 }) {
                     Text(value.map(String.init) ?? s.adjustRirSkip)
                         .font(.redeBody)
                         .monospacedDigit()
-                        .foregroundStyle(value == adjustRir ? Color.redeT1 : Color.redeT4)
+                        .foregroundStyle(value == selection.wrappedValue ? Color.redeT1 : Color.redeT4)
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .overlay(alignment: .bottom) {
                             if let value, value <= 1 {
@@ -929,7 +958,7 @@ struct TrainTabView: View {
                 }
                 .buttonStyle(.redePressable)
                 .accessibilityLabel(value.map { "RIR \($0)" } ?? "RIR —")
-                .accessibilityAddTraits(value == adjustRir ? .isSelected : [])
+                .accessibilityAddTraits(value == selection.wrappedValue ? .isSelected : [])
             }
         }
     }
@@ -1013,6 +1042,9 @@ struct TrainTabView: View {
     private func setTable(_ flow: TrainFlowState) -> some View {
         let exercise = flow.currentExercise
         let statuses = Self.rowStatuses(flow)
+        // 已完成行 → completedInCurrentExercise 下标：跳过的组是头部前缀（见 rowStatuses）。
+        let skippedPrefixCount = min(flow.skippedInCurrentExercise, exercise?.sets.count ?? 0)
+        let canAmendRows = flow.phase == .activeSet || flow.phase == .resting
         return VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: SetTableColumns.spacing) {
                 Overline(text: s.trainColSet).frame(width: SetTableColumns.number, alignment: .leading)
@@ -1030,14 +1062,20 @@ struct TrainTabView: View {
                 let status = statuses.indices.contains(index) ? statuses[index] : .pending
                 switch status {
                 case .done(let obs):
-                    setRow(
-                        number: plannedSet.index,
-                        weight: s.formatKg(obs.weightKg),
-                        reps: "\(obs.reps)",
-                        rir: obs.rir.map { s.formatRir($0) } ?? "—",
-                        marker: .done,
-                        hideWeight: currentIsRepBased
-                    )
+                    Button(action: { openAmend(offset: index - skippedPrefixCount) }) {
+                        setRow(
+                            number: plannedSet.index,
+                            weight: s.formatKg(obs.weightKg),
+                            reps: "\(obs.reps)",
+                            rir: obs.rir.map { s.formatRir($0) } ?? "—",
+                            marker: .done,
+                            hideWeight: currentIsRepBased
+                        )
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.redePressableRow)
+                    .disabled(!canAmendRows)
+                    .accessibilityHint(s.setRowAmendHint)
                 case .skipped:
                     setRow(
                         number: plannedSet.index,
@@ -2066,23 +2104,23 @@ struct TrainTabView: View {
             .disabled(sessionStore.isSaving)
             .opacity(sessionStore.isSaving ? 0.5 : 1)
 
-            // FR-SH1：分享成绩（生成带 Rede 品牌的成就卡 → 系统分享）。次级文字动作，不与"保存完成"争主操作。
-            if let summary, let plan = flow?.prescription {
-                Button {
-                    sharePreview = SharePreviewItem(snapshots: SessionShareSnapshotBuilder.build(
-                        summary: summary, plan: plan))
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: "square.and.arrow.up").font(.redeCaption)
-                        Text(s.shareCardShareAction)
+            // 次级文字动作，同一行、不与「保存完成」争主操作：
+            // FR-SH1 分享成绩（带 Rede 品牌的成就卡 → 系统分享）；
+            // 修改最后一组（末组打勾直接进小结，没有休息可供校正——这里是它唯一的改正机会）。
+            HStack(spacing: 24) {
+                if let summary, let plan = flow?.prescription {
+                    summaryTextAction(icon: "square.and.arrow.up", title: s.shareCardShareAction) {
+                        sharePreview = SharePreviewItem(snapshots: SessionShareSnapshotBuilder.build(
+                            summary: summary, plan: plan))
                     }
-                    .font(.redeCallout).foregroundStyle(Color.redeT3)
-                    .frame(minHeight: RedeShape.controlHeight, alignment: .leading)
-                    .contentShape(Rectangle())
                 }
-                .buttonStyle(.redePressable)
-                .disabled(sessionStore.isSaving)
+                if let count = flow?.completedInCurrentExercise.count, count > 0 {
+                    summaryTextAction(icon: "pencil", title: s.summaryAmendLastSet) {
+                        openAmend(offset: count - 1, inSummary: true)
+                    }
+                }
             }
+            .disabled(sessionStore.isSaving)
             Spacer()
         }
         .padding(RedeSpace.page)
@@ -2092,6 +2130,9 @@ struct TrainTabView: View {
         .sheet(item: $sharePreview) { item in
             ShareCardPreviewView(snapshots: item.snapshots)
         }
+        .sheet(item: $summaryAmendTarget) { target in
+            setAmendSheet(target) { summaryAmendTarget = nil }
+        }
         .sensoryFeedback(.impact(weight: .heavy), trigger: prPulse) // 破 PR = 全程最重一击
         .sensoryFeedback(.success, trigger: summaryDonePulse)        // 普通完成 = .success（末组让给小结）
         .onAppear {
@@ -2100,10 +2141,160 @@ struct TrainTabView: View {
         }
     }
 
+    private func summaryTextAction(icon: String, title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon).font(.redeCaption)
+                Text(title)
+            }
+            .font(.redeCallout).foregroundStyle(Color.redeT3)
+            .frame(minHeight: RedeShape.controlHeight, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.redePressable)
+    }
+
     private func summaryStat(value: String, label: String, valueColor: Color = .redeT1) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(value).font(.redeTitle).monospacedDigit().foregroundStyle(valueColor)
             Overline(text: label)
+        }
+    }
+
+    // MARK: - 修改已记组（P0：一键完成按处方目标记，休息时就地校正）
+    // 入口三处：休息卡「刚才这组」、组表里已完成的行、小结「修改最后一组」。
+    // 只改当前动作的组；撤销只在休息里给（小结里撤销会让手表那场体能训练另起一场，见引擎注释）。
+
+    struct SetAmendTarget: Identifiable {
+        /// completedInCurrentExercise 下标。
+        let offset: Int
+        /// 组表上的组号（跳过的组占头部前缀）。
+        let setNumber: Int
+        var id: Int { offset }
+    }
+
+    private func openAmend(offset: Int, inSummary: Bool = false) {
+        guard let flow, flow.completedInCurrentExercise.indices.contains(offset) else { return }
+        let obs = flow.completedInCurrentExercise[offset]
+        amendWeight = obs.weightKg
+        amendReps = obs.reps
+        amendRir = obs.rir.map { Int($0.rounded()) }
+        let skippedPrefixCount = min(flow.skippedInCurrentExercise, flow.currentExercise?.sets.count ?? 0)
+        let target = SetAmendTarget(offset: offset, setNumber: skippedPrefixCount + offset + 1)
+        if inSummary { summaryAmendTarget = target } else { amendTarget = target }
+        actionPulse += 1
+    }
+
+    private func lastSetLine(_ obs: CompletedSetObservation) -> String {
+        s.restLastSetLine(load: currentIsRepBased ? nil : loadCellText(obs.weightKg), reps: obs.reps, rir: obs.rir)
+    }
+
+    private func setAmendSheet(_ target: SetAmendTarget, dismiss: @escaping () -> Void) -> some View {
+        let completedCount = flow?.completedInCurrentExercise.count ?? 0
+        let canUndo = (flow?.canUndoLastSet ?? false) && target.offset == completedCount - 1
+        let hasWeightAxis = !currentIsRepBased
+        return VStack(alignment: .leading, spacing: 0) {
+            Overline(text: flow?.currentExercise.map { localeStore.exerciseName($0.exerciseId) } ?? "")
+            Text(s.setAmendTitle(setNumber: target.setNumber))
+                .font(.redeHeadline)
+                .foregroundStyle(Color.redeT1)
+                .padding(.top, 4)
+
+            if hasWeightAxis {
+                Overline(text: currentIsAssisted ? s.adjustAssist : (currentIsBodyweightPlus ? s.adjustWeighted : s.adjustWeight))
+                    .padding(.top, 18)
+                HStack(spacing: 0) {
+                    amendStepButton("minus", label: s.adjustOptionLabel("lighter")) { stepAmendWeight(-currentStepKg) }
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text(s.formatKg(amendWeight))
+                            .font(.redeTitle)
+                            .foregroundStyle(Color.redeT1)
+                            .contentTransition(.numericText(value: amendWeight))
+                            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: amendWeight)
+                        Text(s.unitLabel)
+                            .font(.redeCaption)
+                            .foregroundStyle(Color.redeT4)
+                    }
+                    .monospacedDigit()
+                    .frame(maxWidth: .infinity)
+                    amendStepButton("plus", label: s.adjustOptionLabel("heavier")) { stepAmendWeight(currentStepKg) }
+                }
+                .padding(.top, 6)
+            }
+
+            Overline(text: s.adjustReps)
+                .padding(.top, hasWeightAxis ? 16 : 18)
+            repsStrip(selection: $amendReps, target: nil)
+                .padding(.top, 2)
+            Overline(text: s.adjustRir)
+                .padding(.top, 12)
+            rirStrip(selection: $amendRir)
+                .padding(.top, 2)
+
+            EmbButton(icon: "checkmark", title: s.setAmendSave) {
+                sessionStore.amendCompletedSet(
+                    at: target.offset, weightKg: amendWeight, reps: amendReps, rir: amendRir.map(Double.init)
+                )
+                dismiss()
+            }
+            .padding(.top, 20)
+
+            if canUndo {
+                Button {
+                    if sessionStore.undoLastSet() { clearAdjustment() }
+                    dismiss()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.uturn.backward").font(.redeCaption)
+                        Text(s.setAmendUndo)
+                    }
+                    .font(.redeCallout)
+                    .foregroundStyle(Color.redeT3)
+                    .frame(maxWidth: .infinity, minHeight: RedeShape.controlHeight)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.redePressable)
+                .accessibilityHint(s.setAmendUndoNote)
+                .padding(.top, 6)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(RedeSpace.page)
+        // 实测内容高（iPhone 17 Pro，标准字号）+ 底距；大字号可上拉到 .large。
+        .presentationDetents([.height((hasWeightAxis ? 360 : 280) + (canUndo ? 50 : 0)), .large])
+        .presentationBackground(Color.redeBase)
+        .sensoryFeedback(.selection, trigger: selectionPulse)
+        .sensoryFeedback(.error, trigger: clampPulse)
+        // 面板开着时休息到点（或手表跳过休息）推进到了下一个动作：这一组已不再可改。
+        // 不关的话，标题显示新动作名、数值是旧动作的，点保存会被引擎拒绝而面板照常关闭——
+        // 看起来存了，其实丢了（审查 MAJOR）。
+        .onChange(of: flow?.exerciseIndex) { _, _ in dismiss() }
+    }
+
+    private func amendStepButton(_ systemName: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(Color.redeT2)
+                .frame(width: 56, height: RedeShape.controlHeight)
+                .overlay(
+                    RoundedRectangle(cornerRadius: RedeShape.steelRadius)
+                        .stroke(Color.redeSteel, lineWidth: 1)
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.redePressable)
+        .accessibilityLabel(label)
+    }
+
+    private func stepAmendWeight(_ delta: Double) {
+        let next = amendWeight + delta
+        if next < 0 {
+            clampPulse += 1
+            amendWeight = 0
+        } else {
+            amendWeight = next
+            selectionPulse += 1
         }
     }
 
