@@ -165,6 +165,69 @@ final class SetCorrectionTests: XCTestCase {
         XCTAssertEqual(state, before)
     }
 
+    // 审查补测：带事实换动作后，下标从新 occurrence 的第 1 组算；旧动作已封存的组原样不动。
+    func testAmendAfterReplacementWithFactsTargetsNewOccurrenceOnly() throws {
+        var state = try makeState()
+        state.logSet(obs(60, 6))
+        state.restFinished()
+        let candidate = try XCTUnwrap(state.replacementCandidates.first)
+        state.replaceCurrentExercise(with: candidate)
+        state.logSet(obs(30, 10))
+
+        XCTAssertTrue(state.amendCompletedSet(at: 0, weightKg: 27.5, reps: 9, rir: 1))
+
+        XCTAssertEqual(state.completedInCurrentExercise.map(\.weightKg), [27.5])
+        XCTAssertEqual(state.observationsByExercise["bench-press"]?.map(\.weightKg), [60], "旧动作的组不受影响")
+        XCTAssertEqual(state.observationsByExercise[candidate]?.map(\.weightKg), [27.5])
+        XCTAssertFalse(state.amendCompletedSet(at: 1, weightKg: 60, reps: 5, rir: 2), "旧 occurrence 不在可改范围")
+        try assertReplayEquivalent(state)
+    }
+
+    // 审查补测：头部有跳过的组时，下标只数完成组（组表把跳过的组画在前面，UI 减去跳过前缀）。
+    func testAmendWithSkippedPrefixIndexesCompletedSetsOnly() throws {
+        var state = try makeState()
+        state.skipSet(reason: .equipmentBusy)
+        state.logSet(obs(60, 6))
+
+        XCTAssertTrue(state.amendCompletedSet(at: 0, weightKg: 60, reps: 4, rir: 0))
+
+        XCTAssertEqual(state.completedInCurrentExercise.map(\.reps), [4])
+        XCTAssertEqual(state.skippedSets.count, 1)
+        try assertReplayEquivalent(state)
+    }
+
+    // 审查补测：用「+1 组」追加过的组，其目标随更正后的表现重算——等同当初就这样记；组数不变。
+    func testAmendAfterAddingASetKeepsSetCountAndRecomputesAppendedTarget() throws {
+        var state = try makeState()
+        state.logSet(obs(60, 6, rir: 2))
+        state.restFinished()
+        state.adjustRemainingSets(1)
+        XCTAssertEqual(state.currentExercise?.sets.count, 4)
+        XCTAssertEqual(state.currentExercise?.sets.last?.targetWeightKg, 60)
+
+        XCTAssertTrue(state.amendCompletedSet(at: 0, weightKg: 60, reps: 6, rir: 0))
+
+        XCTAssertEqual(state.currentExercise?.sets.count, 4)
+        XCTAssertEqual(state.currentExercise?.sets.last?.targetWeightKg, 57.5, "追加组的目标按更正后的力竭信号重算")
+        try assertReplayEquivalent(state)
+    }
+
+    // 审查补测：草稿恢复后的状态同样能更正、能撤销（日志下标由重放重建）。
+    func testAmendAndUndoWorkAfterDraftRestore() throws {
+        var live = try makeState()
+        live.logSet(obs(60, 6))
+        live.restFinished()
+        live.logSet(obs(60, 6))
+        var restored = try XCTUnwrap(TrainFlowState.restore(prescription: live.prescription, events: live.events))
+
+        XCTAssertTrue(restored.amendCompletedSet(at: 0, weightKg: 62.5, reps: 6, rir: 2))
+        XCTAssertTrue(restored.undoLastSet())
+
+        XCTAssertEqual(restored.completedInCurrentExercise.map(\.weightKg), [62.5])
+        XCTAssertEqual(restored.phase, .activeSet)
+        try assertReplayEquivalent(restored)
+    }
+
     // MARK: - 撤销
 
     // 休息时撤销刚记的组 ≡ 这一组从没记过：回到同一组、休息结束、三份事实与日志全回到之前；

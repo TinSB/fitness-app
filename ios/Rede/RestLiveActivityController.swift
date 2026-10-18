@@ -36,7 +36,9 @@ final class RestLiveActivityController {
     /// 休息开始/恢复（restCountdown.begin 挂点）：已有同属性活动 → 只 update 结束时刻；
     /// 属性变了（新动作/新目标）→ 收旧起新（ActivityAttributes 不可变）。系统关掉
     /// Live Activities 时静默跳过——视觉层缺席不阻塞训练。
-    func begin(attributes: RestActivityAttributes, endsAt: Date, endpoint: String) {
+    /// preservingStart：沿用正在显示的那条活动的进度起点（更正已记组只换「下一组目标」那一行，
+    /// 不是重新开始休息——进度环不能跳回全满）。没有在显示的活动时退回挂点当下。
+    func begin(attributes: RestActivityAttributes, endsAt: Date, endpoint: String, preservingStart: Bool = false) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
             logger.log("rest-live-activity skip(disabled) endpoint=\(endpoint, privacy: .public)")
             return
@@ -46,11 +48,14 @@ final class RestLiveActivityController {
         // 在 enqueue 外捕获——链上排队的延迟不改变锚定语义。
         let startedAt = Date()
         enqueue { [logger] in
+            let existing = Activity<RestActivityAttributes>.activities
+            let restStartedAt = preservingStart
+                ? (existing.first?.content.state.restStartedAt ?? startedAt)
+                : startedAt
             let content = ActivityContent(
-                state: RestActivityAttributes.ContentState(restStartedAt: startedAt, restEndsAt: endsAt),
+                state: RestActivityAttributes.ContentState(restStartedAt: restStartedAt, restEndsAt: endsAt),
                 staleDate: endsAt.addingTimeInterval(60)
             )
-            let existing = Activity<RestActivityAttributes>.activities
             if let match = existing.first(where: { $0.attributes == attributes }) {
                 await match.update(content)
                 // 同类型其余活动（异常残留）一并收掉——同屏只该有一个休息倒计时

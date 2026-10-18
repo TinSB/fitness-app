@@ -2165,7 +2165,7 @@ struct TrainTabView: View {
     // 入口三处：休息卡「刚才这组」、组表里已完成的行、小结「修改最后一组」。
     // 只改当前动作的组；撤销只在休息里给（小结里撤销会让手表那场体能训练另起一场，见引擎注释）。
 
-    struct SetAmendTarget: Identifiable, Equatable {
+    struct SetAmendTarget: Identifiable {
         /// completedInCurrentExercise 下标。
         let offset: Int
         /// 组表上的组号（跳过的组占头部前缀）。
@@ -2265,6 +2265,10 @@ struct TrainTabView: View {
         .presentationBackground(Color.redeBase)
         .sensoryFeedback(.selection, trigger: selectionPulse)
         .sensoryFeedback(.error, trigger: clampPulse)
+        // 面板开着时休息到点（或手表跳过休息）推进到了下一个动作：这一组已不再可改。
+        // 不关的话，标题显示新动作名、数值是旧动作的，点保存会被引擎拒绝而面板照常关闭——
+        // 看起来存了，其实丢了（审查 MAJOR）。
+        .onChange(of: flow?.exerciseIndex) { _, _ in dismiss() }
     }
 
     private func amendStepButton(_ systemName: String, label: String, action: @escaping () -> Void) -> some View {

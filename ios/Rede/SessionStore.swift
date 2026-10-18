@@ -2301,6 +2301,12 @@ final class SessionStore {
     @discardableResult
     func amendCompletedSet(at offset: Int, weightKg: Double, reps: Int, rir: Double?) -> Bool {
         guard flow?.amendCompletedSet(at: offset, weightKg: weightKg, reps: reps, rir: rir) == true else { return false }
+        // 锁屏 / 灵动岛的「下一组目标」是休息开始时算好的静态属性：下一组被重算后要跟着换，
+        // 进度起点保留（不是重新开始休息）。暂停中没有活动，继续时会按新目标重挂。
+        if flow?.phase == .resting, !restCountdown.isPaused,
+           let end = restCountdown.endDate, let attributes = restActivityAttributes() {
+            restLiveActivity.begin(attributes: attributes, endsAt: end, endpoint: "amend", preservingStart: true)
+        }
         enqueueDraftSave()
         return true
     }
