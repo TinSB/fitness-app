@@ -61,6 +61,24 @@ public enum DataQualityReportBuilder {
     /// plausibleCeilingByExercise（§6.2，2026-06-11）：动作级合理上限（由调用方
     /// 自目录投影：起步值×系数，下限 60、全局 400 仍兜底）——修复「基准 <30kg
     /// 的小动作只剩 400kg 天花板，10× 手滑永不被标」。缺省空表 = 旧行为。
+    /// 一组可疑的理由（nil = 不可疑）。进展页（本 builder）和训练小结的 PR 判断共用这一条——
+    /// 此前小结不剔可疑组：60 kg 手滑记成 100 kg，小结报 PR、存完进展页却不认（审查 2026-10-19）。
+    /// - previousBestKg：该动作此前各场未被标记的最重一组（缺 = 首练，不判「超历史」）。
+    /// - ceilingKg：该动作的合理上限（调用方按目录投影，缺 = 全局 400）。
+    public static func suspectReason(
+        weightKg: Double, reps: Int, previousBestKg: Double?, ceilingKg: Double? = nil
+    ) -> DataQualityReport.SuspectSet.Reason? {
+        if weightKg > min(weightCeilingKg, ceilingKg ?? weightCeilingKg) {
+            return .weightBeyondPlausibleCeiling
+        }
+        if let previousBestKg, previousBestKg >= relativeBaselineFloorKg,
+           weightKg > previousBestKg * relativeMultiplier {
+            return .weightFarAboveOwnHistory(previousBestKg: previousBestKg)
+        }
+        if reps > repsCeiling { return .repsImplausiblyHigh }
+        return nil
+    }
+
     public static func build(
         view: CleanAppDataView,
         plausibleCeilingByExercise: [String: Double] = [:]
@@ -95,17 +113,8 @@ public enum DataQualityReportBuilder {
                     plausibleCeilingByExercise[exercise.exerciseId] ?? weightCeilingKg
                 )
                 for (index, set) in exercise.sets.enumerated() {
-                    let reason: DataQualityReport.SuspectSet.Reason?
-                    if set.weight > exerciseCeiling {
-                        reason = .weightBeyondPlausibleCeiling
-                    } else if let baseline, baseline >= relativeBaselineFloorKg,
-                              set.weight > baseline * relativeMultiplier {
-                        reason = .weightFarAboveOwnHistory(previousBestKg: baseline)
-                    } else if set.reps > repsCeiling {
-                        reason = .repsImplausiblyHigh
-                    } else {
-                        reason = nil
-                    }
+                    let reason = suspectReason(weightKg: set.weight, reps: set.reps,
+                                               previousBestKg: baseline, ceilingKg: exerciseCeiling)
 
                     if let reason {
                         suspects.append(DataQualityReport.SuspectSet(

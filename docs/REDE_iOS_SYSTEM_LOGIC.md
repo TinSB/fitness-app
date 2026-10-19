@@ -1209,7 +1209,7 @@ FR-TR14 的「本次训练」是上述边界的窄例外：只编辑 `TrainFlowS
 - 「保持 70」→「按计划 70 / Use plan 70」（各负荷类型同改，`holdLabel*`），且只在引擎在**这一组**上把重量从计划值改了（建议 reason ≠ onPlan 且建议重量 ≠ 计划值：力竭 / 掉出区间 / 不适 / RIR 掉得快——why 行此时正在说原因）或已选中时出现（`TrainTabView.engineChangedLoad`；纯次数动作没有重量轴，不出现）。用户自己上一组加了重、引擎照常延续时建议也 ≠ 计划，但那不是引擎改的，不出现。选中时 why 行改为「按计划重量做，这个动作不再自动调整」，按钮带读屏「已选中」态（`SteelButton` 的 isOn → `.isSelected`）。语义不变：Hold = 暂停引擎微调、按计划值，跨组延续、不跨动作。
 - RIR 统一叫「RIR」：why 行与快改预演里的「余力掉得快」改为「RIR 掉得快」；快改面板与更正面板的 RIR 标签旁常驻一句「还能再做几次」（不弹窗）。「接近力竭」照旧（它描述 RIR 0–1，不是另一个指标）。
 - 休息 ±15 秒（原 +30）：`SessionStore.addRestTime` 把调整记在本场当前动作上（`restAdjustmentByExercise`，只在内存、开训 / 结束清空、不落 draft），这个动作下一段休息按 `restSeconds(for:) = max(15, 计划秒数 + 调整)` 开始；休息提醒、Live Activity、手表倒计时都跟着这段时长。剩 15 秒及以下时「−15s」置灰；存储层另设下限——减时最多减到剩 1 秒（界面置灰按秒刷新会慢半拍，真减到 0 会直接结束休息并留下按旧剩余排的提醒），记入的调整也按实际减掉的量。手表的 +30 命令同样记入。跨场记忆需要动 canonical schema，未做。
-- 小结的 PR 与进展页 / 今日页同一口径（`SessionSummaryBuilder`，与 `ProgressSnapshotBuilder` 一致）：本场任一动作的顶组重量严格大于该动作全部已存历史的最重一组（`previousBestWeights(sessions:excluding:)`：辅助器械不参与，数据质量报告标出的可疑组不进基线——与进展页 `ProgressModel.mapToRecords` 同一把键；从没练过的不判）。基线在 `TodayModel` 加载时算一次（`prBaselineBestWeights`），小结重绘不现算质量报告。此前只和「上次」比——三周前 75、上次 65、今天 70 会在小结报 PR、存完进展页却没有。PR 铭牌与 PR 分享卡写**破纪录的那个动作**的最重一组（`prTopSet`），今日页练完块的 PR 卡同样改为取 `prExerciseIds` 对应动作在本场的最重一组；非 PR 时的顶组展示仍是全场最重一组。已知差异：本场里手滑输入的离谱重量在小结里仍会判 PR，存盘后进展页会把它当可疑组剔除。
+- 小结的 PR 与进展页 / 今日页同一口径（`SessionSummaryBuilder`，与 `ProgressSnapshotBuilder` 一致）：本场任一动作的顶组重量严格大于该动作全部已存历史的最重一组（`previousBestWeights(sessions:excluding:)`：辅助器械不参与，数据质量报告标出的可疑组不进基线——与进展页 `ProgressModel.mapToRecords` 同一把键；从没练过的不判）。基线在 `TodayModel` 加载时算一次（`prBaselineBestWeights`），小结重绘不现算质量报告。2026-10-19 数据体检补齐：本场自己的可疑组（超动作合理上限、超该动作此前最好 1.5 倍且基线 ≥ 30 kg、次数 > 50——`DataQualityReportBuilder.suspectReason`，进展页与小结共用这一条）不作 PR 候选；比较留 1e-6 kg 容差（磅用户手输 65 lb 与格子上的 65 lb 在双精度里差一个最低位，`SessionSummaryBuilder` 与 `ProgressSnapshotBuilder` 同改）。此前只和「上次」比——三周前 75、上次 65、今天 70 会在小结报 PR、存完进展页却没有。PR 铭牌与 PR 分享卡写**破纪录的那个动作**的最重一组（`prTopSet`），今日页练完块的 PR 卡同样改为取 `prExerciseIds` 对应动作在本场的最重一组；非 PR 时的顶组展示仍是全场最重一组。已知差异：本场里手滑输入的离谱重量在小结里仍会判 PR，存盘后进展页会把它当可疑组剔除。
 
 **训练不丢（FR-TR8 / FR-TR9，2026-10-18 P0）。**
 - **小结阶段也落草稿**：`currentDraft()` 不再在 `summary` 返回 nil，草稿带 `endedAt`（第一次落到小结的时刻，`SessionStore.sessionEndedAt`，由 flow 的 didSet 记）。被杀后恢复落回小结——2026-10-19 起这种草稿直接存好、不再停在小结等点（见下「练完了就自动存」）；完成写入的 `finishedAt` 与时长、小结显示的时长都用 `endedAt`——在小结停多久、被杀后多久才重开，都不算进训练时长。旧草稿无 `endedAt` 时退回「现在」。
@@ -1218,13 +1218,13 @@ FR-TR14 的「本次训练」是上述边界的窄例外：只编辑 `TrainFlowS
 - **跨零点**：`TrainSessionDraft.isRestorable(todayISO:now:)` = 同一天；或记过至少一组、且开练不到 36 小时。晚上开练、过零点被杀，已记的组不再被静默清掉；开练超过 36 小时的照旧作废（已练完的除外，直接存好）；跨天且一组没记的在窗口内先留着不问，等可能还在路上的表上组——超过 36 小时的已不是「进行中」，不设上限会每次启动都问，恢复后时长还会按「到现在」算成几天。恢复后写入的 `date` 仍取开练那天。
 - **练完了就自动存，不再丢**（owner 2026-10-19 拍板「手机没在看时自动存」）：
   - **手机没人在看**：`SessionStore.appInForeground` 由 `RootTabView` 跟 scenePhase（`.active` 才算在看）同步。手表上记完 / 跳掉最后一组、把训练带进可保存的小结时记一笔 `summaryReachedFromWatch`；此刻手机不在前台，或之后离开前台（训练中屏幕常亮，手机放在凳子上时还算在前台，到小结后屏幕自动锁上才算），`autoSaveIfUnattended` 直接走 `completeAndPersistSession`（同一条完成写入路径，不是新的写入类别）。一场只自动存一次。手机在前台时照旧弹小结，由人点保存；在手机上点完最后一组的那一场，锁屏走开也不自动存。
-  - **练完的草稿不再问、也不再过期**：`checkForRestorableDraft` 发现草稿重放落在可保存的小结（App 在小结里被系统收走，或表上最后一组晚到），不弹「继续训练？」，恢复进小结后直接存好；不受 36 小时窗口限制。
+  - **练完的草稿不再问、也不再过期**：`checkForRestorableDraft` 发现草稿重放落在可保存的小结（App 在小结里被系统收走，或表上最后一组晚到），不弹「继续训练？」，恢复进小结后直接存好；不受 36 小时窗口限制。结束时刻取草稿的 `endedAt`，没有就取最后一组的记组时刻；两样都没有（build 40 表上补组那条路留下的旧草稿）不自动存、照旧问——按「重开那一刻」存会凭空多出几个小时，而存了就删不掉。
   - **自动保存的写入**：等写入槽（最多约 3 秒，不像点按那样忙就放弃）；后台申请一段执行时间（`beginBackgroundTask`）；真被收走也不丢，小结草稿还在，下次打开再存。存好后今日页标题下一行「上一场训练已自动保存」，本次运行内显示，开新训练时消失。
   - **代价**（owner 选定时已知）：这两种情况下保存前没有机会改最后一组；App 里没有删除已存场次的入口。
   - **表上补组那条路**（`appendWatchSetToDraft`，手机 App 被收走后排队的组在下次打开时送到）：
     - 窗口用 `TrainSessionDraft.isWithinRestoreWindow`（同一天或开练不到 36 小时，不看记没记过组），整场都在表上练的草稿第二天不会把表上的组全拒掉。
     - 重放停在动作开头时先视同热身已过（表上只有热完 / 跳过热身才会发正式组），否则第一组被热身守卫拦掉、之后整段组号对不上。
-    - 记组时刻取表上的 `loggedAtISO`。这一组若把训练带进小结，草稿的 `endedAt` 也取它（`TrainSessionDraft.ending(at:)`）。
+    - 记组时刻取表上的 `loggedAtISO`。这一组若把训练带进小结，草稿的 `endedAt` 也取它（`TrainSessionDraft.ending(at:)`）。手机进程还活着、走在线路径时同样取表上那一下（`SessionStore.watchLoggedAt`：解析不了交给手机盖章，比现在晚按现在，早于开练按开练），最后一组的时刻同时作 `sessionEndedAt`——排队消息晚到几十分钟时不再把时长拉长（2026-10-19 数据体检）。
   - **窗口内、跨天且一组没记的草稿**：启动时不问也不删，留给可能还在路上的表上组；超过 36 小时照旧清掉，开新训练时照常被覆盖。
 - **屏幕常亮**：`SessionStore.keepsScreenAwake`（有 flow 且未到小结，含休息与结束确认层）驱动 `UIApplication.isIdleTimerDisabled`（`RootTabView`），到小结 / 结束 / 放弃即恢复系统自动锁屏。
 

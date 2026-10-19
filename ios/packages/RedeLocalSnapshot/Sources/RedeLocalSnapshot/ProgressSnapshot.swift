@@ -139,9 +139,10 @@ public enum ProgressSnapshotBuilder {
                     )
                 }
 
-                // PR：严格大于全部更早场的同动作顶组；首练（无运行最大值）不发奖。
+                // PR：严格大于全部更早场的同动作顶组；首练（无运行最大值）不发奖。留 1e-6 kg 容差：
+                // 磅用户手输的 65 lb 与格子上的 65 lb 在双精度里差一个最低位，不能算更重（2026-10-19）。
                 if let previousBest = bestWeightByExercise[exerciseId],
-                   exerciseTop.weightKg > previousBest {
+                   exerciseTop.weightKg > previousBest + 1e-6 {
                     prIds.append(exerciseId)
                 }
                 bestWeightByExercise[exerciseId] = max(

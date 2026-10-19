@@ -6,7 +6,8 @@
 // 每个动作只和它自己的历史比（换入动作同样）；从没练过的动作不判 PR（校准期不发奖）；
 // 辅助器械不参与（辅助量越多越轻）。PR 铭牌 / PR 分享卡写的是**破纪录那个动作**的最重一组
 //（prTopSet）——任一动作都能破纪录后，全场最重一组常常是另一个动作（审查 2026-10-18）；
-// 非 PR 时的顶组展示仍取全场最重一组。
+// 非 PR 时的顶组展示仍取全场最重一组。可疑组（手滑多打一位之类）不参与 PR，判定与进展页同一条规则；
+// 同一重量留 1e-6 kg 容差（磅用户手输与格子值差一个最低位，2026-10-19）。
 // 吨位（owner 拍板 B 案 2026-06-11）：Σ 重量×次数×loadFactor（目录系数，
 // 双哑铃=2 修正单只口径低估）；e1RM = Epley w×(1+r/30)，仅作展示口径。
 
@@ -58,11 +59,16 @@ public enum SessionSummaryBuilder {
         return best
     }
 
+    /// 「同一重量」的容差：磅用户手输的 65 lb（65 ÷ 2.2046…）与引擎格子上的 65 lb（13 × 5 ÷ 2.2046…）
+    /// 在双精度里会差 1 个最低位，不留容差就把同一重量当成「更重」报 PR（审查 2026-10-19）。
+    static let sameWeightToleranceKg = 1e-6
+
     public static func build(
         observations: [String: [CompletedSetObservation]],
         durationSeconds: Int,
         catalog: ExerciseCatalog = .minimal,
-        previousBestWeightKg: [String: Double] = [:]
+        previousBestWeightKg: [String: Double] = [:],
+        plausibleCeilingByExercise: [String: Double] = [:]
     ) -> SessionSummary {
         var volume = 0.0
         var count = 0
@@ -83,9 +89,16 @@ public enum SessionSummaryBuilder {
                     top = SessionSummary.TopSet(exerciseId: exerciseId, weightKg: set.weightKg, reps: set.reps)
                 }
             }
+            // PR 候选不含可疑组（与进展页同一条规则：DataQualityReportBuilder.suspectReason）。
+            let plausible = sets.filter {
+                DataQualityReportBuilder.suspectReason(
+                    weightKg: $0.weightKg, reps: $0.reps,
+                    previousBestKg: previousBestWeightKg[exerciseId],
+                    ceilingKg: plausibleCeilingByExercise[exerciseId]) == nil
+            }
             if countsTowardLoad, let best = previousBestWeightKg[exerciseId],
-               let exerciseTop = sets.max(by: { ($0.weightKg, $0.reps) < ($1.weightKg, $1.reps) }),
-               exerciseTop.weightKg > best,
+               let exerciseTop = plausible.max(by: { ($0.weightKg, $0.reps) < ($1.weightKg, $1.reps) }),
+               exerciseTop.weightKg > best + sameWeightToleranceKg,
                prTop.map({ (exerciseTop.weightKg, exerciseTop.reps) > ($0.weightKg, $0.reps) }) ?? true {
                 prTop = SessionSummary.TopSet(exerciseId: exerciseId, weightKg: exerciseTop.weightKg, reps: exerciseTop.reps)
             }

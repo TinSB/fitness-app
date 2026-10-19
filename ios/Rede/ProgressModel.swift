@@ -16,11 +16,16 @@ import RedeTrainingDecision
 /// 都走这里——绝不各算各的、避免卡说 N 条而进展页显示 M 条。
 enum DataQualityComposer {
     static func report(cleanView: CleanAppDataView, catalog: ExerciseCatalog = .minimal) -> DataQualityReport {
+        DataQualityReportBuilder.build(view: cleanView, plausibleCeilingByExercise: plausibleCeilings(catalog: catalog))
+    }
+
+    /// 动作级合理上限（训练小结的 PR 判断也用这一份，与进展页同口径，2026-10-19）。
+    static func plausibleCeilings(catalog: ExerciseCatalog = .minimal) -> [String: Double] {
         var ceilings: [String: Double] = [:]
         for entry in catalog.entries {
             ceilings[entry.id] = max(60, entry.startWeightKg * 6) // 待校准启发值，留痕 2026-06-11
         }
-        return DataQualityReportBuilder.build(view: cleanView, plausibleCeilingByExercise: ceilings)
+        return ceilings
     }
 }
 

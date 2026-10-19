@@ -541,12 +541,29 @@ final class SessionStore {
         // 不判的话，用户还在空杆热身，一组 65kg 就已经落库了。
         guard !flow.isWarmingUp, flow.progress.setNumber == set.setNumber else { return }
         defer { noteWatchDrivenSummary(from: flow.phase) }
-        apply(.logSet(CompletedSetObservation(
+        // 记组时刻用表上那一下，不用手机收到的时刻：排队消息可能晚到几十分钟（手机在储物柜里），
+        // 用收到的时刻会把组刻线挤到后面、把这场的时长拉长（审查 2026-10-19，与草稿那条路同口径）。
+        let loggedAt = Self.watchLoggedAt(set.loggedAtISO, startedAt: sessionStartedAt, now: Date())
+        var observation = CompletedSetObservation(
             weightKg: set.weightKg,
             reps: set.reps,
             rir: set.rir,
             // 疼痛只在手机上报——表上没有这个入口，照读当前状态，不臆造。
-            painReported: flow.painReportedForCurrentSet)))
+            painReported: flow.painReportedForCurrentSet)
+        if let loggedAt { observation = observation.stamped(at: ISO8601DateFormatter().string(from: loggedAt)) }
+        apply(.logSet(observation))
+        // 这一组把训练带进了小结：结束时刻同样是表上那一下（flow 的 didSet 先按收到的时刻记了一笔）。
+        if self.flow?.phase == .summary, let loggedAt {
+            sessionEndedAt = loggedAt
+            enqueueDraftSave()
+        }
+    }
+
+    /// 表上记组那一刻。解析不了 = nil（由 apply 盖手机时刻）；比现在还晚（表钟偏快）按现在；
+    /// 早于开练按开练。
+    nonisolated static func watchLoggedAt(_ iso: String, startedAt: Date?, now: Date) -> Date? {
+        guard let at = ISO8601DateFormatter().date(from: iso) else { return nil }
+        return min(now, max(startedAt ?? at, at))
     }
 
     /// flow 尚未恢复时，把表侧记的组直接写进 draft。
@@ -2362,8 +2379,14 @@ final class SessionStore {
         // 不问、不过期，直接存好（owner 2026-10-19）。此前过了 36 小时会被静默删掉。
         if let replayed = draft.restoreFlow(allowedEquipment: allowedEquipment, loadUnit: loadUnit),
            replayed.phase == .summary, replayed.canBeSaved {
-            finalizeFinishedDraft(draft)
-            return
+            // 结束时刻：草稿记着的；没有（build 40 表上补组那条路没记）就取最后一组的记组时刻；
+            // 两样都没有就不自动存、照旧问——按「重开那一刻」存会凭空多出几个小时，而存了就删不掉（审查 2026-10-19）。
+            let lastSetAt = replayed.observationsByExercise.values.joined()
+                .compactMap { $0.completedAt.flatMap(ISO8601DateFormatter().date(from:)) }.max()
+            if let end = draft.endedAt ?? lastSetAt {
+                finalizeFinishedDraft(draft.ending(at: end))
+                return
+            }
         }
         let now = Date()
         let todayISO = Self.localDayISO(now)
@@ -2999,7 +3022,8 @@ final class SessionStore {
         return SessionSummaryBuilder.build(
             observations: flow.observationsByExercise,
             durationSeconds: max(0, duration),
-            previousBestWeightKg: todayModel?.prBaselineBestWeights ?? [:]
+            previousBestWeightKg: todayModel?.prBaselineBestWeights ?? [:],
+            plausibleCeilingByExercise: DataQualityComposer.plausibleCeilings(catalog: .minimal)
         )
     }
 }
