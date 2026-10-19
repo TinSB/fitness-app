@@ -34,7 +34,8 @@ public enum SyncMergeEngine {
         localConfigUpdatedAtIso: String,
         localDeviceId: String,
         isSessionAcceptable: (@Sendable ([String: JSONValue]) -> Bool)? = nil,
-        alreadyUploadedIds: Set<String> = []
+        alreadyUploadedIds: Set<String> = [],
+        preferLocalConfig: Bool = false
     ) -> SyncMergeOutcome {
         var blocked = 0
         var rejectedUnclean = 0
@@ -126,7 +127,10 @@ public enum SyncMergeEngine {
                 shouldUploadConfig = false
             } else {
                 let remoteWins: Bool
-                if remote.updatedAtIso != localConfigUpdatedAtIso {
+                if preferLocalConfig {
+                    // 本机在上次对齐之后改过配置（调用方按对齐快照判断）：本机这份是最新的。
+                    remoteWins = false
+                } else if remote.updatedAtIso != localConfigUpdatedAtIso {
                     remoteWins = isLater(remote.updatedAtIso, than: localConfigUpdatedAtIso)
                 } else {
                     // 时间戳相同（同秒写入或时钟粒度不足）时按 deviceId 字典序决胜。

@@ -43,6 +43,7 @@ struct AppSyncLocalStore: SyncLocalStore {
     private var uploadedKey: String { "sync.uploadedSessionIds" }
     private var configUploadedKey: String { "sync.configUploadedAt" }
     private var configTouchedKey: String { "sync.configTouchedAt" }
+    private var syncedConfigKey: String { "sync.syncedConfig" }
 
     func loadStorage() async throws -> (storage: [String: JSONValue], schemaVersion: Int) {
         let store = JSONFileAppDataStore(fileURL: fileURL)
@@ -82,6 +83,25 @@ struct AppSyncLocalStore: SyncLocalStore {
         defaults.set(iso, forKey: configUploadedKey)
         defaults.set(iso, forKey: configTouchedKey)
     }
+
+    /// 上次与云端对齐的配置区快照：以 JSON 存（与 canonical 同一套 JSONValue 编解码，比较口径一致）。
+    /// 同步簿记，与游标、已上传 id 同类——丢了只会退回「以云端为准」，不丢数据。
+    func loadSyncedConfig() async -> [String: JSONValue]? {
+        guard let data = defaults.data(forKey: syncedConfigKey),
+              case .object(let payload)? = try? JSONDecoder().decode(JSONValue.self, from: data)
+        else { return nil }
+        return payload
+    }
+
+    func saveSyncedConfig(_ payload: [String: JSONValue]) async {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        guard let data = try? encoder.encode(JSONValue.object(payload)) else { return }
+        defaults.set(data, forKey: syncedConfigKey)
+    }
+
+    /// 只在删除云端账号时与 owner 一起清：那份快照是「与这个账号对齐」，留着会把本机配置当成改过、去盖下一个账号的。
+    func clearSyncedConfig() { defaults.removeObject(forKey: syncedConfigKey) }
 
     func loadUploadedSessionIds() async -> Set<String> {
         Set(defaults.stringArray(forKey: uploadedKey) ?? [])
@@ -297,6 +317,8 @@ final class SyncService {
         remoteSessionCount = nil
         await localStore.saveCursor(nil)
         localStore.clearUploadedSessionIds()
+        // 对齐快照不清：owner 也没清，换账号会被 ownerMismatch 挡住，快照只会用于同一账号重新登录——
+        // 登出期间在本机改的设置，重新登录后照常算「改过」并上传（与登录过期后重登一致）。
     }
 
     /// 删除云端账号。本机记录保留 —— 与登出同样的不变量。
@@ -311,6 +333,7 @@ final class SyncService {
             await localStore.saveCursor(nil)
             localStore.clearOwner()
             localStore.clearUploadedSessionIds()
+            localStore.clearSyncedConfig()
             return true
         } catch {
             errorText = Self.describe(error)
