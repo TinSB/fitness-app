@@ -125,6 +125,36 @@ final class SessionSummaryTests: XCTestCase {
         ).isPersonalRecord)
     }
 
+    // 数据体检 2026-10-19：磅用户手输的 65 lb 和引擎格子上的 65 lb 在双精度里差 1 个最低位。
+    func testSamePoundWeightTypedByHandIsNotAPersonalRecord() {
+        let gridKg = 13 * (5 / 2.2046226218)        // 引擎格子：13 × 5 lb
+        let typedKg = 65 / 2.2046226218             // 改组面板手输 65
+        XCTAssertGreaterThan(typedKg, gridKg, "前置：两者在双精度里确实不相等")
+        let summary = SessionSummaryBuilder.build(
+            observations: ["bench-press": [obs(typedKg, 6)]], durationSeconds: 600,
+            previousBestWeightKg: ["bench-press": gridKg])
+        XCTAssertFalse(summary.isPersonalRecord, "同一重量不是 PR")
+    }
+
+    // 数据体检 2026-10-19：本场手滑的一组（60 kg 记成 100 kg）不发 PR，与进展页剔除可疑组同一条规则；
+    // 同场里真实的一组照样能破纪录。
+    func testSuspectSetInThisSessionDoesNotCountAsAPersonalRecord() {
+        let slip = SessionSummaryBuilder.build(
+            observations: ["bench-press": [obs(57.5, 6), obs(100, 6)]], durationSeconds: 600,
+            previousBestWeightKg: ["bench-press": 60])
+        XCTAssertFalse(slip.isPersonalRecord, "100 > 1.5 × 60：可疑，不报 PR")
+
+        let real = SessionSummaryBuilder.build(
+            observations: ["bench-press": [obs(62.5, 5), obs(100, 6)]], durationSeconds: 600,
+            previousBestWeightKg: ["bench-press": 60])
+        XCTAssertEqual(real.prTopSet?.weightKg, 62.5, "真实的 62.5 照样是 PR，铭牌写它")
+
+        let ceiling = SessionSummaryBuilder.build(
+            observations: ["lateral-raise": [obs(80, 12)]], durationSeconds: 600,
+            previousBestWeightKg: ["lateral-raise": 10], plausibleCeilingByExercise: ["lateral-raise": 60])
+        XCTAssertFalse(ceiling.isPersonalRecord, "超过动作合理上限：可疑")
+    }
+
     func testEmptyObservationsYieldEmptySummary() {
         let summary = SessionSummaryBuilder.build(observations: [:], durationSeconds: 0)
         XCTAssertEqual(summary.completedSetCount, 0)

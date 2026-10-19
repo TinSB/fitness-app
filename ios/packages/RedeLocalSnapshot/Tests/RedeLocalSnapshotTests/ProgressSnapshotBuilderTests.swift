@@ -112,6 +112,17 @@ final class ProgressSnapshotBuilderTests: XCTestCase {
         XCTAssertEqual(snapshot.history.first(where: { $0.sessionId == "s2" })?.prExerciseIds, [])
     }
 
+    func testSamePoundWeightTypedByHandIsNotPR() {
+        // 数据体检 2026-10-19：格子上的 65 lb 与手输的 65 lb 在双精度里差一个最低位，不能算更重。
+        let gridKg = 13 * (5 / 2.2046226218)
+        let typedKg = 65 / 2.2046226218
+        let snapshot = ProgressSnapshotBuilder.build(sessions: [
+            session("s1", "2026-06-01", [("bench-press", [set(gridKg, 6)])]),
+            session("s2", "2026-06-03", [("bench-press", [set(typedKg, 6)])]),
+        ])
+        XCTAssertEqual(snapshot.history.first(where: { $0.sessionId == "s2" })?.prExerciseIds, [])
+    }
+
     func testDuplicateExerciseEntriesInOneSessionMergeBeforePRJudgment() {
         // 同场同 exerciseId 两条（热身/工作组分录）：先合并再判 PR——
         // 首练日场内自比不发奖；e1RM 每场每动作只产出一个点；prIds 无重复。

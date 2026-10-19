@@ -310,6 +310,61 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         XCTAssertEqual(store.flow?.phase, .summary)
     }
 
+    // 数据体检 2026-10-19：手机进程还活着、但排队的组晚到时，记组时刻与结束时刻用表上那一下，
+    // 不用手机收到的时刻（否则组刻线挤到后面、时长被拉长）。
+    func testLiveWatchSetsKeepTheWatchTimeAndTheLastOneEndsTheSession() {
+        let store = makeStore(); finishWarmup(store)
+        store.sessionStartedAt = ISO8601DateFormatter().date(from: "2026-10-19T09:30:00Z")
+        store.applyWatchLoggedSet(watchSet(1, at: "2026-10-19T10:00:00Z"))
+        store.apply(.restFinished)
+        store.applyWatchLoggedSet(watchSet(2, at: "2026-10-19T10:03:00Z"))
+        store.apply(.restFinished)
+        store.applyWatchLoggedSet(watchSet(3, at: "2026-10-19T10:06:00Z"))
+
+        XCTAssertEqual(store.flow?.phase, .summary)
+        XCTAssertEqual(store.flow?.observationsByExercise["bench-press"]?.map(\.completedAt),
+                       ["2026-10-19T10:00:00Z", "2026-10-19T10:03:00Z", "2026-10-19T10:06:00Z"])
+        XCTAssertEqual(store.sessionEndedAt, ISO8601DateFormatter().date(from: "2026-10-19T10:06:00Z"))
+        let now = Date()
+        XCTAssertEqual(SessionStore.watchLoggedAt("2099-01-01T00:00:00Z", startedAt: nil, now: now), now, "表钟偏快：按现在")
+        XCTAssertNil(SessionStore.watchLoggedAt("t", startedAt: nil, now: now), "解析不了：交给手机盖章")
+    }
+
+    func testFinishedLegacyDraftWithoutAnyTimeIsAskedNotAutoSaved() async throws {
+        // build 40 表上补组那条路没记结束时刻、组也没有记组时刻：不知道这场什么时候结束，
+        // 按「重开那一刻」存会凭空多出几个小时、存了又删不掉——照旧问（数据体检 2026-10-19）。
+        let events: [TrainFlowEvent] = [
+            .logSet(CompletedSetObservation(weightKg: 60, reps: 8, rir: 2)), .restFinished,
+            .logSet(CompletedSetObservation(weightKg: 60, reps: 8, rir: 2)), .restFinished,
+            .logSet(CompletedSetObservation(weightKg: 60, reps: 8, rir: 2)),
+        ]
+        let draftStore = FakeDraftStore()
+        draftStore.stored = freshDraft(events: events)
+        let store = SessionStore(draftStore: draftStore)
+        var calls = 0
+        store.persistFinishedSession = { calls += 1; return true }
+
+        store.checkForRestorableDraft()
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(calls, 0)
+        XCTAssertNotNil(store.pendingDraft, "照旧弹「继续训练？」")
+
+        // 组带记组时刻：取最后一组当结束时刻，照常自动存。
+        let stamped: [TrainFlowEvent] = [
+            .logSet(CompletedSetObservation(weightKg: 60, reps: 8, rir: 2).stamped(at: "2026-10-19T10:00:00Z")), .restFinished,
+            .logSet(CompletedSetObservation(weightKg: 60, reps: 8, rir: 2).stamped(at: "2026-10-19T10:03:00Z")), .restFinished,
+            .logSet(CompletedSetObservation(weightKg: 60, reps: 8, rir: 2).stamped(at: "2026-10-19T10:06:00Z")),
+        ]
+        let draftStore2 = FakeDraftStore()
+        draftStore2.stored = freshDraft(events: stamped)
+        let store2 = SessionStore(draftStore: draftStore2)
+        let saved = expectation(description: "自动保存")
+        store2.persistFinishedSession = { saved.fulfill(); return true }
+        store2.checkForRestorableDraft()
+        await fulfillment(of: [saved], timeout: 2)
+        XCTAssertEqual(store2.sessionEndedAt, ISO8601DateFormatter().date(from: "2026-10-19T10:06:00Z"))
+    }
+
     func testFinishedDraftFoundAtLaunchIsSavedEvenAfter36Hours() async {
         // 小结里没点保存就离开、App 随后被系统收走：此前过了 36 小时会被静默删掉。
         let events: [TrainFlowEvent] = [
