@@ -95,6 +95,89 @@ final class WarmupFlowTests: XCTestCase {
         XCTAssertEqual(state.warmupPointer, 0, "新动作热身指针归零")
     }
 
+    // MARK: 同一部位只热一次（训练流审查 P1）
+
+    /// 推 A（默认动作 + 练过一阵的真实重量，kg）：卧推 → 上斜哑铃卧推 → 器械推胸 → 绳索夹胸 → 侧平举 → 绳索下压。
+    /// 新用户夹具里每个动作都还在起始重量，本来就不出热身，测不出部位规则。
+    private func pushDay() -> TrainFlowState {
+        let plan: [(String, Double)] = [
+            ("bench-press", 60), ("incline-db-press", 40), ("machine-chest-press", 70),
+            ("cable-fly", 30), ("lateral-raise", 12.5), ("triceps-pushdown", 40),
+        ]
+        return TrainFlowState(prescription: TodayPrescription(dayCode: "push-a", exercises: plan.map { id, kg in
+            ExercisePrescriptionPlan(
+                exerciseId: id, sets: 1, restSeconds: 90, repLowerBound: 6, repUpperBound: 10,
+                targetReps: 8, targetWeightKg: kg, targetRir: 2, previousWeightKg: kg,
+                previousTopReps: 8, nextProjectedWeightKg: kg, progressionStepKg: 2.5,
+                change: .hold, reason: .holdProgressing
+            )
+        }, dayReasons: []))
+    }
+
+    /// 打满前 n 个动作（每个动作 1 组，不碰热身）。
+    private func pushDayAfter(_ n: Int) -> TrainFlowState {
+        var state = pushDay()
+        while state.exerciseIndex < n {
+            state.skipAllWarmup()
+            state.logSet(obs(state.currentTargetWeightKg ?? 20, 8))
+            if state.phase == .resting { state.restFinished() }
+        }
+        return state
+    }
+
+    func testPushDayOnlyFirstChestLiftGetsFullLadder() {
+        let start = pushDay()
+        XCTAssertEqual(start.warmupStepsForCurrentExercise.map(\.targetWeightKg), [20, 30, 42.5, 55],
+                       "当天第一个练胸的动作：完整阶梯")
+
+        let incline = pushDayAfter(1)
+        XCTAssertEqual(incline.currentExercise?.exerciseId, "incline-db-press")
+        XCTAssertEqual(incline.warmupStepsForCurrentExercise.map(\.targetWeightKg), [27.5],
+                       "胸已热过的复合动作：只给最接近 70% 的 1 步过渡")
+        XCTAssertTrue(incline.isWarmingUp)
+
+        for (index, id) in [(2, "machine-chest-press"), (3, "cable-fly"), (4, "lateral-raise"), (5, "triceps-pushdown")] {
+            let state = pushDayAfter(index)
+            XCTAssertEqual(state.currentExercise?.exerciseId, id)
+            XCTAssertTrue(state.warmupStepsForCurrentExercise.isEmpty, "\(id)：部位已练到的器械/孤立动作不热身")
+            XCTAssertFalse(state.isWarmingUp, "\(id)：直接进首组")
+        }
+    }
+
+    func testSkippedExerciseDoesNotCountAsWarm() {
+        var state = pushDay()
+        state.skipExercise(reason: .equipmentBusy)   // 卧推一组没做
+        XCTAssertEqual(state.currentExercise?.exerciseId, "incline-db-press")
+        XCTAssertEqual(state.warmupStepsForCurrentExercise.map(\.targetWeightKg), [22.5, 27.5, 35],
+                       "没练过胸 → 上斜卧推仍是完整阶梯")
+    }
+
+    func testSecondaryOnlyCompoundStillGetsFullLadder() {
+        let catalog = ExerciseCatalog.minimal
+        XCTAssertEqual(WarmupScope.decide(exerciseId: "shoulder-press", kind: "compound",
+                                          workedExerciseIds: ["bench-press"], catalog: catalog), .full,
+                       "肩只当过卧推的辅练：肩推仍完整热身")
+        XCTAssertEqual(WarmupScope.decide(exerciseId: "incline-hammer-press", kind: "compound",
+                                          workedExerciseIds: ["bench-press"], catalog: catalog), .alreadyWarm)
+        XCTAssertEqual(WarmupScope.decide(exerciseId: "lateral-raise", kind: "isolation",
+                                          workedExerciseIds: ["bench-press"], catalog: catalog), .alreadyWarm,
+                       "孤立动作：主练肌群当过辅练也算练到")
+        XCTAssertEqual(WarmupScope.decide(exerciseId: "romanian-deadlift", kind: "compound",
+                                          workedExerciseIds: ["squat"], catalog: catalog), .full, "换部位重新完整热身")
+        XCTAssertEqual(WarmupScope.decide(exerciseId: "wrist-curl", kind: "isolation",
+                                          workedExerciseIds: ["bench-press"], catalog: catalog), .full, "前臂无契约肌群 → 原行为")
+        XCTAssertEqual(WarmupScope.decide(exerciseId: "not-in-catalog", kind: "compound",
+                                          workedExerciseIds: ["bench-press"], catalog: catalog), .full)
+    }
+
+    func testWarmScopeSurvivesDraftReplay() throws {
+        let live = pushDayAfter(1)
+        let restored = try XCTUnwrap(TrainFlowState.restore(prescription: live.prescription, events: live.events))
+        XCTAssertEqual(restored.warmupStepsForCurrentExercise, live.warmupStepsForCurrentExercise,
+                       "已练部位只取已记组的事实，恢复后同一结论")
+        XCTAssertEqual(restored.isWarmingUp, live.isWarmingUp)
+    }
+
     // 热身不进 events → 含热身交互的会话仍可正常 draft 恢复（replay 不受影响）。
     func testWarmupDoesNotBreakDraftReplay() throws {
         let prescription = try makeState().prescription

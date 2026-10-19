@@ -31,6 +31,10 @@ struct SettingsSheet: View {
     /// 周期化开关持久态（FR-PL2 enablement；默认关 = opt-in）。
     @State private var mesocycleOn = false
     @State private var weeklyRestartOn = false
+    @State private var generalWarmupOn = true
+    /// 开关触感计数（§14.2 单调 pulse）：只在用户亲手拨动时 +1。此前直接拿开关值当触发器，
+    /// 打开设置时从盘上读回的值和缺省不同就空震一下，写失败回滚又震一下（审查 2026-10-18）。
+    @State private var togglePulse = 0
     /// FR-NT1 休息结束提醒开关（默认关 = opt-in；开启先请求系统授权）。
     @State private var notifRestEndOn = false
     /// FR-NT2 每周提醒持久态（切片3 仅加载保全、无 UI；切片4 接开关）。
@@ -114,6 +118,8 @@ struct SettingsSheet: View {
                         EngraveDivider(above: Self.dividerAfterCard)
                         periodizationSection          // 2 训练周期：影响每天练什么
                         EngraveDivider(above: Self.dividerAfterCard)   // 周期组以说明小字收尾，不是 44pt 行
+                        warmupSection                 // 2b 热身：开练前要不要那张全身热身卡
+                        EngraveDivider(above: Self.dividerAfterCard)   // 同样以说明小字收尾
                         notificationsSection          // 3 通知：影响什么时候被叫
                         // 授权被拒时通知组以红色说明小字收尾，不是 44pt 行
                         EngraveDivider(above: notifPermissionDenied ? Self.dividerAfterCard : Self.dividerAfterRow)
@@ -129,6 +135,7 @@ struct SettingsSheet: View {
                     }
                     .padding(.horizontal, RedeSpace.page)
                     .padding(.bottom, 24)
+                    .sensoryFeedback(.selection, trigger: togglePulse)   // 周期 / 热身 / 通知五个开关共用
                 }
                 .onAppear {
                     // 截图钩子（沿 -progressScrollTo 先例）：-settingsScrollTo <锚点> 滚到
@@ -195,6 +202,7 @@ struct SettingsSheet: View {
             profile = await Task.detached { SessionStore.loadProfileSnapshot() }.value
             mesocycleOn = await Task.detached { SessionStore.loadMesocycleEnabled() }.value
             weeklyRestartOn = await Task.detached { SessionStore.loadWeeklyCycleRestart() }.value
+            generalWarmupOn = await Task.detached { SessionStore.loadGeneralWarmupEnabled() }.value
             let notif = await Task.detached { SessionStore.loadNotificationPreferences() }.value
             notifRestEndOn = notif.restEnd
             notifWeeklyOn = notif.weekly
@@ -595,6 +603,7 @@ struct SettingsSheet: View {
                     get: { mesocycleOn },
                     set: { newValue in
                         guard newValue != mesocycleOn else { return }
+                        togglePulse += 1
                         mesocycleOn = newValue
                         // 落库后即时重载今日（处方吃相位）；计划页周期条随 tab 切换自刷新。
                         // 写失败回滚开关位（审查 M-1）：UI 与磁盘一致，saveErrorText 已在页头如实提示。
@@ -625,6 +634,7 @@ struct SettingsSheet: View {
                     get: { weeklyRestartOn },
                     set: { newValue in
                         guard newValue != weeklyRestartOn else { return }
+                        togglePulse += 1
                         weeklyRestartOn = newValue
                         Task {
                             if await sessionStore.saveWeeklyCycleRestart(newValue) {
@@ -642,8 +652,37 @@ struct SettingsSheet: View {
                 .foregroundStyle(Color.redeT3)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .sensoryFeedback(.selection, trigger: mesocycleOn)
-        .sensoryFeedback(.selection, trigger: weeklyRestartOn)
+    }
+
+    // 开练前全身热身卡（训练流审查 P1）：训练卡上点过「以后不显示」后，从这里再打开。
+    private var warmupSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Overline(text: s.settingsWarmupOverline)
+                .padding(.top, 18)
+            HStack {
+                Text(s.settingsGeneralWarmupLabel)
+                    .font(.redeBody)
+                    .foregroundStyle(Color.redeT2)
+                Spacer()
+                SteelToggle(isOn: Binding(
+                    get: { generalWarmupOn },
+                    set: { newValue in
+                        guard newValue != generalWarmupOn else { return }
+                        togglePulse += 1
+                        generalWarmupOn = newValue
+                        Task {
+                            if !(await sessionStore.saveGeneralWarmupEnabled(newValue)) {
+                                generalWarmupOn = !newValue   // 写失败回滚开关位（同周期组）
+                            }
+                        }
+                    }
+                ))
+            }
+            Text(s.settingsGeneralWarmupNote)
+                .font(.redeCaption)
+                .foregroundStyle(Color.redeT3)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     // 通知（FR-NT1 休息结束 + FR-NT2 每周）：开启先请求系统授权（价值先行 opt-in），被拒回滚 + 指向系统设置。
@@ -674,8 +713,6 @@ struct SettingsSheet: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .sensoryFeedback(.selection, trigger: notifRestEndOn)
-        .sensoryFeedback(.selection, trigger: notifWeeklyOn)
     }
 
     /// 单个通知开关行 + 说明。UI 态写盘**成功后**才置（与磁盘一致）；isNotifBusy 串行化 + .disabled
@@ -692,6 +729,7 @@ struct SettingsSheet: View {
                 get: isOn,
                 set: { newValue in
                     guard newValue != isOn(), !isNotifBusy else { return }
+                    togglePulse += 1
                     isNotifBusy = true
                     if newValue {
                         Task {

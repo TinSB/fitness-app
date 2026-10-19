@@ -313,6 +313,19 @@ public struct CanonicalSessionWriter {
         }
     }
 
+    /// 已批准写入类别：profile scalar edit——开练前全身热身卡开关（训练流审查 P1，2026-10-18）。
+    /// open-bag 合并 userProfile：只写 generalWarmupEnabled，其余键原样保留；缺省读侧 = true。
+    @discardableResult
+    public func applyGeneralWarmupPreference(enabled: Bool) throws -> AppData {
+        return try performGatedMutation { current in
+            var storage = current.storage
+            var profile = storage["userProfile"]?.asObject ?? [:]
+            profile["generalWarmupEnabled"] = .bool(enabled)
+            storage["userProfile"] = .object(profile)
+            return try AppData(decoding: .object(storage))
+        }
+    }
+
     /// 已批准写入类别：通知偏好编辑（FR-NT1/2）。open-bag 加性 scalar edit——只动 notifications 容器、
     /// 其余顶层键原样保留；缺=关、无 seed、无 schema bump。授权态由系统持有、不落库（默认 off = opt-in）。
     @discardableResult

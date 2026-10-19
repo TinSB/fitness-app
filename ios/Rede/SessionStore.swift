@@ -181,6 +181,14 @@ final class SessionStore {
     private var restorePromptDeferred = false
     /// 本场里对每个动作的休息时长调整（秒，可正可负）。开训 / 结束时清空。
     private var restAdjustmentByExercise: [String: Int] = [:]
+    /// 开练前全身热身卡（训练流审查 P1）：开训时按设置置位，做完 / 跳过 / 以后不显示即清。
+    /// 只在内存——不进草稿，恢复中断的训练不再出现。
+    private(set) var generalWarmupPending = false
+    /// 全身热身卡设置的缓存（startSession 同步读，不在开训那一刻读盘）：loadToday 与保存后刷新。缺省显示。
+    var generalWarmupEnabled = true   // internal：App 层测试直接置位，不碰盘
+    /// 两级热身之间的节奏提示起点：每完成一级热身（手机或手表）记一次。只在热身卡上、
+    /// 指针 > 0 时显示，所以换动作后旧值不会露出来；与休息倒计时完全无关（不发通知、不进 Live Activity、不推表）。
+    private(set) var warmupStepDoneAt: Date?
     /// 刚结束那场是怎么结束的（watchOS v3.3）："completed" / "abandoned"。放弃路径在清 flow 之前置位，
     /// 随 flow didSet 那次推送带给表——表据此决定 HK 会话 finish 还是 discard（放弃的训练不进健康）。
     /// 开训时清空。
@@ -232,6 +240,7 @@ final class SessionStore {
         refreshWidgetSnapshot()
         pushWatchPrescription()   // watchOS 切片 3：处方推到表上
         refreshNotificationCache() // FR-NT1：缓存偏好/语言供 rest-begin 调度
+        generalWarmupEnabled = SessionStore.loadGeneralWarmupEnabled()
     }
 
     // MARK: - W-1 Readiness Widget 接线（slice 1）：今日裁决落定 → 写 App Group 派生只读快照 → 触发刷新
@@ -1359,6 +1368,13 @@ final class SessionStore {
         return appData.weeklyCycleRestart
     }
 
+    /// 开练前全身热身卡开关（设置页初值 + 开训缓存）；unreadable/缺失 → true（缺省显示）。
+    nonisolated static func loadGeneralWarmupEnabled() -> Bool {
+        let store = JSONFileAppDataStore(fileURL: TodayModel.canonicalFileURL())
+        guard let appData = try? store.load() else { return true }
+        return appData.generalWarmupEnabled
+    }
+
     // MARK: - FR-PL6 计划编辑器上下文 / 影响（计划编辑器只读派生）
 
     /// 编辑器起点：某训练日当前的动作清单（自定义优先，否则默认模板）+ 是否已自定义 + 器械场景
@@ -1648,6 +1664,42 @@ final class SessionStore {
         }.value
         switch result {
         case .success:
+            return true
+        case .failure(let error):
+            settingsSaveErrorText = String(describing: error)
+            return false
+        }
+    }
+
+    /// 开练前全身热身卡开关（profile scalar edit）。成功后刷新开训缓存，下一场即按新设置。
+    /// `waitForSlot`：训练卡上的「以后不显示」点完卡就收起了，没有可见的开关可回滚，
+    /// 撞上别的写入（例如后台同步合并）时排队等，而不是像设置页那样忙就放弃（审查 2026-10-18）。
+    func saveGeneralWarmupEnabled(_ enabled: Bool, waitForSlot: Bool = false) async -> Bool {
+        if waitForSlot {
+            guard await acquireWriteSlot(maxAttempts: 150) else { return false }
+        } else {
+            guard tryAcquireWriteSlot() else { return false }
+        }
+        defer { isSaving = false }
+        let fileURL = TodayModel.canonicalFileURL()
+        let result: Result<Void, Error> = await Task.detached(priority: .userInitiated) {
+            do {
+                try FileManager.default.createDirectory(
+                    at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true
+                )
+                let writer = CanonicalSessionWriter(
+                    store: JSONFileAppDataStore(fileURL: fileURL),
+                    gate: DataHealthGate()
+                )
+                try writer.applyGeneralWarmupPreference(enabled: enabled)
+                return .success(())
+            } catch {
+                return .failure(error)
+            }
+        }.value
+        switch result {
+        case .success:
+            generalWarmupEnabled = enabled
             return true
         case .failure(let error):
             settingsSaveErrorText = String(describing: error)
@@ -2318,6 +2370,11 @@ final class SessionStore {
             event = .logSet(obs.stamped(at: ISO8601DateFormatter().string(from: Date())))
         }
         _ = reduce(event)
+        // 记了组或跳了组 = 训练已经真正开始：全身热身卡就此作废（不因之后换动作 / 撤销又冒出来）。
+        switch event {
+        case .logSet, .skipSet, .skipExercise: generalWarmupPending = false
+        default: break
+        }
         syncRestCountdown(after: event, restCompletedNaturally: restCompletedNaturally)
         enqueueDraftSave()
         // 重推由 flow 的 didSet 负责——reduce 改了 flow，推送自然跟上。
@@ -2439,10 +2496,37 @@ final class SessionStore {
     // MARK: - FR-TR10 热身（流内临时引导，不进 events/不落库）
 
     /// 热身打勾：推进到下一热身步。纯内存态——不进事件日志、不落 draft（热身瞬态、按工作组指针重生）。
-    func advanceWarmupStep() { flow?.advanceWarmupStep() }
+    /// 手表打勾也走这里，所以节奏计时两边一致。
+    func advanceWarmupStep(now: Date = Date()) {
+        guard flow?.isWarmingUp == true else { return }
+        flow?.advanceWarmupStep()
+        warmupStepDoneAt = now
+        generalWarmupPending = false
+    }
 
     /// 跳过全部热身：直接进首个工作组。同样不进事件日志、不落 draft。
-    func skipAllWarmup() { flow?.skipAllWarmup() }
+    func skipAllWarmup() {
+        flow?.skipAllWarmup()
+        generalWarmupPending = false
+    }
+
+    /// 全身热身卡此刻是否显示：设置开着，这一场还没处理过它，也还没有任何实际进展。
+    /// 走一级热身、跳过热身、记组、跳组（手机或手表）都会让它就此作废——手表上先动了，
+    /// 卡自己收起；之后换动作、撤销把指针拨回起点，它也不会再冒出来（审查 2026-10-18）。
+    var showsGeneralWarmup: Bool {
+        guard generalWarmupPending, let flow else { return false }
+        return flow.phase == .activeSet && flow.exerciseIndex == 0
+    }
+
+    /// 「做完了」或「跳过」：本场不再显示。
+    func dismissGeneralWarmup() { generalWarmupPending = false }
+
+    /// 「以后不显示」：本场收起，并写进设置（设置页能再打开）。写失败（或等写入槽超时）时缓存不变，
+    /// 下一场还会出现，用户再点一次即可——不假装记住了。
+    func neverShowGeneralWarmup() async {
+        generalWarmupPending = false
+        _ = await saveGeneralWarmupEnabled(false, waitForSlot: true)
+    }
 
     // MARK: - 休息倒计时（会话层接管，详见 SessionStore.restCountdown / RestCountdown）
 
@@ -2645,6 +2729,8 @@ final class SessionStore {
         flow = TrainFlowState(prescription: prescription, allowedEquipment: allowedEquipment, loadUnit: loadUnit)
         sessionStartedAt = now
         restAdjustmentByExercise = [:]
+        generalWarmupPending = generalWarmupEnabled
+        warmupStepDoneAt = nil
         restCountdown.clear() // 新会话从 activeSet 起步，旧倒计时不得滞留
         restLiveActivity.end(endpoint: "session-start")   // K6：旧视觉层同不得滞留
         enqueueDraftSave()
@@ -2683,6 +2769,8 @@ final class SessionStore {
         flow = nil
         sessionStartedAt = nil
         restAdjustmentByExercise = [:]
+        generalWarmupPending = false
+        warmupStepDoneAt = nil
         saveErrorText = nil
         restCountdown.clear()
         cancelRestNotification() // FR-NT1：放弃/收尾时清掉待发的休息提醒，避免训练已结束还弹（审查 MAJOR-1）

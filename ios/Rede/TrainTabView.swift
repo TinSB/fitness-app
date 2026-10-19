@@ -127,6 +127,9 @@ struct TrainTabView: View {
     @Environment(\.requestReview) private var requestReview
     @AppStorage("reviewPrompt.lastRequestedVersion") private var reviewLastRequestedVersion = ""
     @State private var showMoreSheet = false
+    /// 「更多」是从热身卡打开的（只剩换动作 / 跳过这个动作 / 本次训练三行）。打开那一刻定住：
+    /// 菜单开着时手表把热身走完，也不能在手指底下插进四行「跳过本组」（审查 2026-10-18）。
+    @State private var moreSheetFromWarmup = false
     /// 「更多」面板内的第二步：整动作跳过先选原因，再发既有 typed event。
     /// 手势收起由 more sheet 的 onDismiss 复位，故取消不会写入任何 skip 事实。
     @State private var choosingExerciseSkipReason = false
@@ -215,8 +218,8 @@ struct TrainTabView: View {
                             .padding(.horizontal, RedeSpace.page)
                             .padding(.top, 10)
                     }
-                    // 热身期不显示工作组组表；「接下来」始终可见，供训练开始前调整本次顺序。
-                    if !flow.isWarmingUp {
+                    // 热身期（含开练前全身热身卡）不显示工作组组表；「接下来」始终可见，供训练开始前调整本次顺序。
+                    if !flow.isWarmingUp && !sessionStore.showsGeneralWarmup {
                         setTable(flow)
                             .padding(.horizontal, RedeSpace.page)
                             .padding(.top, RedeSpace.section)
@@ -356,8 +359,15 @@ struct TrainTabView: View {
         ForgedCard(emberBarInset: 18, showReg: true) {
             ZStack(alignment: .topLeading) {
                 // FR-TR10：动作开头先热身（.activeSet 上的 overlay），热身走完/跳过自动morph到工作组。
+                // 第一个动作之前还有一张可跳过的全身热身卡（训练流审查 P1，App 层内存态）。
                 Group {
-                    if flow.isWarmingUp { warmupState(flow) } else { setState(flow) }
+                    if sessionStore.showsGeneralWarmup {
+                        generalWarmupState()
+                    } else if flow.isWarmingUp {
+                        warmupState(flow)
+                    } else {
+                        setState(flow)
+                    }
                 }
                     .opacity(flow.phase == .resting ? 0 : 1)
                     .scaleEffect(flow.phase == .resting ? 0.98 : 1)
@@ -370,9 +380,11 @@ struct TrainTabView: View {
             }
             .animation(.easeInOut(duration: 0.22), value: flow.phase)
             .animation(.easeInOut(duration: 0.22), value: flow.isWarmingUp)
+            .animation(.easeInOut(duration: 0.22), value: sessionStore.showsGeneralWarmup)
             // 245 是 why 行还常驻时定的；why 行只在有真理由时出现后（2026-08-16），
-            // 记组态少了一行，按新常态收到 205——三态里最高的热身态约 200，休息态约 175，
-            // 有 why 行时卡片自然长高（minHeight 不是 max）。留 245 就是卡底 40pt 死空间（§15.3）。
+            // 记组态少了一行，按新常态收到 205——休息态约 175，有 why 行时卡片自然长高
+            //（minHeight 不是 max）。留 245 就是卡底 40pt 死空间（§15.3）。热身态 2026-10-18 加了
+            // 正式组目标与钢按钮行后约 235，比记组态高；热身走完卡片收矮，组表同时在下方出现。
             .frame(minHeight: 205, alignment: .topLeading)
             .padding(.leading, 13)
             .padding(.vertical, 18)
@@ -402,8 +414,9 @@ struct TrainTabView: View {
                         .accessibilityHidden(true) // 装饰性 affordance；行 Button 已承载动作
                 }
                 .frame(minHeight: 44, alignment: .bottomLeading)
-                .padding(.top, -24)   // 44pt 命中区向上借卡顶死区，视觉位置不动
+                // 命中形状要套在 44pt 那一层上、再借负内距：反过来套，形状就只剩缩过的 20pt（审查 2026-10-18）。
                 .contentShape(Rectangle())
+                .padding(.top, -24)   // 44pt 命中区向上借卡顶死区，视觉位置不动
             }
             .buttonStyle(.redePressableRow)
             .accessibilityHint(s.exerciseDetailHint)
@@ -509,7 +522,7 @@ struct TrainTabView: View {
                     )
                 }
                 SteelButton(title: s.painAction, action: registerPain)
-                SteelButton(title: s.moreActions, action: { showMoreSheet = true; actionPulse += 1 })
+                SteelButton(title: s.moreActions, action: { moreSheetFromWarmup = false; showMoreSheet = true; actionPulse += 1 })
             }
             .padding(.top, 14)
 
@@ -538,32 +551,115 @@ struct TrainTabView: View {
     private func warmupState(_ flow: TrainFlowState) -> some View {
         let steps = flow.warmupStepsForCurrentExercise
         let step = steps.indices.contains(flow.warmupPointer) ? steps[flow.warmupPointer] : nil
+        let exercise = flow.currentExercise
         return VStack(alignment: .leading, spacing: 0) {
-            Overline(text: s.warmupProgress(index: flow.warmupPointer + 1, total: steps.count), color: .redeEmber2)
-            Text(flow.currentExercise.map { localeStore.exerciseName($0.exerciseId) } ?? "")
-                .font(.redeSubhead)
-                .foregroundStyle(Color.redeT2)
-                .padding(.top, 6)
+            HStack(alignment: .firstTextBaseline) {
+                Overline(text: s.warmupProgress(index: flow.warmupPointer + 1, total: steps.count), color: .redeEmber2)
+                Spacer()
+                // 两级之间的节奏：做完一级后在同一行右侧走一个正计时。时间流逝 = 中性钢色，不抢 ember。
+                if flow.warmupPointer > 0, let doneAt = sessionStore.warmupStepDoneAt {
+                    HStack(spacing: 6) {
+                        Text(s.warmupPace)
+                        Text(doneAt, style: .timer).monospacedDigit()
+                    }
+                    .font(.redeCaption)
+                    .foregroundStyle(Color.redeSteel)
+                    .accessibilityElement(children: .combine)   // 「歇 45–60 秒 0:12」念成一句
+                }
+            }
+            // 动作名可点开要点（与正式组卡同一个详情页）；命中区 44pt 向上下借行距，视觉位置不动。
+            Button(action: {
+                if let id = exercise?.exerciseId { trainDetail = ExerciseDetailItem(id: id) }
+            }) {
+                HStack(spacing: 6) {
+                    Text(exercise.map { localeStore.exerciseName($0.exerciseId) } ?? "")
+                        .font(.redeSubhead)
+                        .foregroundStyle(Color.redeT2)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(Color.redeT4)
+                        .accessibilityHidden(true)
+                }
+                .frame(minHeight: 44, alignment: .leading)
+                .contentShape(Rectangle())   // 先定 44pt 命中形状，再借上下行距（同正式组卡）
+                .padding(.vertical, -9)
+            }
+            .buttonStyle(.redePressableRow)
+            .accessibilityHint(s.exerciseDetailHint)
+            .disabled(exercise == nil)
+            .padding(.top, 6)
             Text(step.map(warmupMainLine) ?? "")
                 .font(.redeHeadline)
                 .monospacedDigit()
                 .foregroundStyle(Color.redeT1)
                 .padding(.top, 10)
+            // 今天的正式组目标：热身是为它做准备，看得到才知道在往哪儿走。
+            if let exercise {
+                Text(s.warmupWorkingTarget(s.targetLine(
+                    loadType: exercise.loadType,
+                    weightKg: flow.currentTargetWeightKg ?? 0,
+                    reps: flow.currentRecommendation?.targetReps ?? exercise.sets.first?.targetReps ?? 0
+                )))
+                .font(.redeCaption)
+                .monospacedDigit()
+                .foregroundStyle(Color.redeT3)
+                .padding(.top, 4)
+            }
             Spacer(minLength: 18)
+            HStack(spacing: 8) {
+                SteelButton(title: s.warmupSkip, action: {
+                    sessionStore.skipAllWarmup()
+                    actionPulse += 1
+                })
+                // 与正式组卡同一个「更多」（换动作 / 跳过这个动作 / 本次训练）；热身期不给「跳过本组」。
+                SteelButton(title: s.moreActions, action: { moreSheetFromWarmup = true; showMoreSheet = true; actionPulse += 1 })
+            }
             EmbButton(icon: "checkmark", title: s.warmupDone, action: {
                 sessionStore.advanceWarmupStep()
                 actionPulse += 1 // 热身打勾=动作确认（.selection），非工作组完成（logPulse/.success 专属工作组）
             })
-            Button(action: {
-                sessionStore.skipAllWarmup()
-                actionPulse += 1
-            }) {
-                Text(s.warmupSkip)
+            .padding(.top, 12)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - 开练前全身热身（训练流审查 P1：可跳过、一场只出现一次）
+
+    private func generalWarmupState() -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .firstTextBaseline) {
+                Overline(text: s.generalWarmupTitle, color: .redeEmber2)
+                Spacer()
+                Text(s.generalWarmupDuration)
                     .font(.redeCaption)
-                    .foregroundStyle(Color.redeT4)
-                    .frame(maxWidth: .infinity, minHeight: RedeShape.controlHeight)
+                    .monospacedDigit()
+                    .foregroundStyle(Color.redeT3)
             }
-            .buttonStyle(.redePressableRow)
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(s.generalWarmupSteps, id: \.self) { line in
+                    Text(line)
+                        .font(.redeBody)
+                        .foregroundStyle(Color.redeT2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.top, 12)
+            Spacer(minLength: 18)
+            HStack(spacing: 8) {
+                SteelButton(title: s.generalWarmupSkip, action: {
+                    sessionStore.dismissGeneralWarmup()
+                    actionPulse += 1
+                })
+                SteelButton(title: s.generalWarmupNever, action: {
+                    actionPulse += 1
+                    Task { await sessionStore.neverShowGeneralWarmup() }
+                })
+            }
+            EmbButton(icon: "checkmark", title: s.generalWarmupDone, action: {
+                sessionStore.dismissGeneralWarmup()
+                actionPulse += 1
+            })
+            .padding(.top, 12)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -1524,15 +1620,21 @@ struct TrainTabView: View {
                 }
                 .padding(.top, 4)
             } else {
-                Overline(text: s.skipSetAction)
-                    .padding(.top, 18)
-                VStack(spacing: 0) {
-                    ForEach(Array(["equipmentBusy", "painDiscomfort", "fatigue", "timeShort"].enumerated()), id: \.element) { idx, code in
-                        sheetActionRow(s.skipReasonLabel(code), divider: idx < 3) { skipSet(code) }
+                // 热身期不给「跳过本组」：reducer 的 skipSet 不看热身，点了会把首个正式组
+                // 当成跳过、热身也一并结束（手表那条路早就拦着，SessionStore.applyWatchCommand）。
+                if moreSheetFromWarmup {
+                    Spacer().frame(height: 18)
+                } else {
+                    Overline(text: s.skipSetAction)
+                        .padding(.top, 18)
+                    VStack(spacing: 0) {
+                        ForEach(Array(["equipmentBusy", "painDiscomfort", "fatigue", "timeShort"].enumerated()), id: \.element) { idx, code in
+                            sheetActionRow(s.skipReasonLabel(code), divider: idx < 3) { skipSet(code) }
+                        }
                     }
+                    .padding(.top, 4)
+                    EngraveDivider().padding(.vertical, 12)
                 }
-                .padding(.top, 4)
-                EngraveDivider().padding(.vertical, 12)
                 sheetActionRow(s.skipExerciseAction) { choosingExerciseSkipReason = true }
                 sheetActionRow(s.swapExerciseAction) {
                     showMoreSheet = false
@@ -1546,10 +1648,11 @@ struct TrainTabView: View {
             Spacer()
         }
         .padding(.horizontal, RedeSpace.page)
-        .presentationDetents([.height(380)])
+        .presentationDetents([.height(moreSheetFromWarmup && !choosingExerciseSkipReason ? 210 : 380)])
         .presentationDragIndicator(.visible)
         .presentationBackground(Color.redeBase)
     }
+
 
     private var swapSheet: some View {
         VStack(alignment: .leading, spacing: 0) {
