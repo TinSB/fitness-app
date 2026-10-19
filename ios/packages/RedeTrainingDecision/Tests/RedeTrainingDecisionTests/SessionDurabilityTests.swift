@@ -150,6 +150,31 @@ final class SessionDurabilityTests: XCTestCase {
                        "超过 36 小时就不是「进行中」了：不再每次启动都问")
     }
 
+    // 表上补组那条路的窗口（2026-10-19）：不看记没记过组，只看同一天或开练不到 36 小时。
+    func testRestoreWindowIgnoresLoggedSets() throws {
+        let prescription = try makeState().prescription
+        let startedAt = Date(timeIntervalSince1970: 1_781_000_000)
+        let empty = TrainSessionDraft(dateISO: "2026-06-09", startedAt: startedAt,
+                                      prescription: prescription, events: [])
+        XCTAssertTrue(empty.isWithinRestoreWindow(todayISO: "2026-06-10", now: startedAt + 14 * 3_600),
+                      "跨天、一组没记、但还在 36 小时内：表上排队的组还能补进来")
+        XCTAssertFalse(empty.isWithinRestoreWindow(todayISO: "2026-06-11", now: startedAt + 36 * 3_600))
+        XCTAssertTrue(empty.isWithinRestoreWindow(todayISO: "2026-06-09", now: startedAt + 40 * 3_600),
+                      "同一天恒在窗口内（与 isRestorable 同口径）")
+    }
+
+    func testEndingAtFillsOnlyAMissingEndTime() throws {
+        let prescription = try makeState().prescription
+        let first = Date(timeIntervalSince1970: 1_790_000_000)
+        let draft = TrainSessionDraft(dateISO: "2026-06-09", startedAt: first - 3_600,
+                                      prescription: prescription, events: [.logSet(obs(60, 6))])
+        let ended = draft.ending(at: first)
+        XCTAssertEqual(ended.endedAt, first)
+        XCTAssertEqual(ended.events, draft.events)
+        XCTAssertEqual(ended.ending(at: first + 600).endedAt, first, "已有的结束时刻不覆盖")
+        XCTAssertEqual(ended.appending(.restFinished).endedAt, first, "追加事件带着结束时刻")
+    }
+
     func testDraftCarriesEndedAtAndOldDraftsDecodeWithoutIt() throws {
         let endedAt = Date(timeIntervalSince1970: 1_790_000_000)
         let draft = TrainSessionDraft(

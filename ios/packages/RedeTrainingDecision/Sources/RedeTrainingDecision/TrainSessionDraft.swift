@@ -3,7 +3,9 @@
 // draft = 处方 + 事件日志，恢复 = TrainFlowState.restore 重放。
 // draft ≠ canonical 真相（Master：draft restore 是内存 draft 的落盘缓存）：
 // 独立文件、不经写闸、完成写入成功后即删除。当日的都可恢复；跨天只在记过组、且开练不到
-// 36 小时时恢复（2026-10-18：晚上练过零点再打开不再被静默清掉），其余跨天草稿作废。
+// 36 小时时恢复（2026-10-18：晚上练过零点再打开不再被静默清掉）。2026-10-19 起：已练完
+//（重放落在可保存的小结）的不问也不过期，由手机直接存好；窗口内跨天、一组没记的先留着
+// 等表上排队的组（isWithinRestoreWindow）；出了窗口才作废。
 
 import Foundation
 
@@ -79,6 +81,28 @@ public struct TrainSessionDraft: Equatable, Sendable, Codable {
         if dateISO == String(todayISO.prefix(10)) { return true }
         guard now.timeIntervalSince(startedAt) < Self.crossDayRestoreWindow else { return false }
         return events.contains { if case .logSet = $0 { return true } else { return false } }
+    }
+
+    /// 还在恢复窗口里（同一天，或开练不到 36 小时），**不看记没记过组**。
+    /// 表上补组那条路用它：手机侧一组没记、整场都在表上练的草稿，第二天收到排队的组时
+    /// 还没有 .logSet——按 isRestorable 会把这些组全拒掉（审查 2026-10-19）。
+    public func isWithinRestoreWindow(todayISO: String, now: Date) -> Bool {
+        dateISO == String(todayISO.prefix(10)) || now.timeIntervalSince(startedAt) < Self.crossDayRestoreWindow
+    }
+
+    /// 补上「进入小结那一刻」。已有的不覆盖。表上最后一组晚到、把训练带进小结时用表上那一下的时刻。
+    public func ending(at date: Date) -> TrainSessionDraft {
+        guard endedAt == nil else { return self }
+        return TrainSessionDraft(
+            dateISO: dateISO,
+            startedAt: startedAt,
+            prescription: prescription,
+            events: events,
+            catalogVersion: catalogVersion,
+            sessionAllowedEquipment: sessionConfiguration?.equipmentSet,
+            sessionLoadUnit: sessionConfiguration?.loadUnit,
+            endedAt: date
+        )
     }
 
     /// 追加一个事件，返回新 draft（watchOS 切片 4 的杀后台补洞，2026-08-15）。

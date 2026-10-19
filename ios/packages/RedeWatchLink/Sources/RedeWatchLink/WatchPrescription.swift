@@ -36,7 +36,9 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
     public let localeCode: String?
     /// 今天已经练完的组数（v3.2）。> 0 且没有进行中的训练 = 今天练完了：
     /// 表上清单头显示「今天练完了 · N 组」、第一行不再画 Emberline。
-    /// nil / 0 = 今天还没练。手机按 canonical 记录里今天日期的场次数出来。
+    /// nil / 0 = 今天还没练。手机按 canonical 记录里今天日期的场次数出来，**另加**今天开练、刚到小结
+    /// 还没点保存的这一场，以及刚存好、今日还没重载的那一场（2026-10-19：最后一组一记完表上就该
+    /// 说练完了，而不是退回开练前的清单；存的那一下也不闪回）。
     public let completedSetsToday: Int?
     /// 训练是否进行中（v3.3）：flow 存在且还没到小结。**表上的 HKWorkoutSession 跟这一位走，
     /// 不跟「表上有没有记组屏」走**——手机弹「结束训练？」确认层时 active 是 nil（表退回清单），

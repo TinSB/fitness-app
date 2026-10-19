@@ -213,7 +213,7 @@ struct TodayWatchView: View {
         }
         .task {
             workout.refreshAuthorization()
-            // 截图钩子：-watchPreview list|set|warmup|rest|bodyweight|done|gate [-watchPreviewLocale en]
+            // 截图钩子：-watchPreview list|set|warmup|rest|bodyweight|done|saved|gate [-watchPreviewLocale en]
             // 不配对也能在各尺寸模拟器上看各种状态。**不激活通道**，免得配对机的真处方把预览冲掉。
             if let preview = WatchPreview.fromArguments() {
                 store.apply(preview)
@@ -278,7 +278,9 @@ struct TodayWatchView: View {
                         doneHeader(sets: sets)
                     }
                     if rx.exercises.isEmpty {
-                        notice(verbatim: s.watchRestDay)
+                        // 存好之后今天的处方就没了（引擎判「今天已练」），清单是空的——那不是休息日，
+                        // 上面已经说了「今天练完了」，不再并排一句「今天休息」（审查 2026-10-19）。
+                        if doneSetsToday == nil { notice(verbatim: s.watchRestDay) }
                     } else {
                         ForEach(Array(rx.exercises.enumerated()), id: \.element.exerciseId) { index, item in
                             // Emberline 只在「今天还没开始」画：练完了没有下一步；训练进行中（手机在弹
@@ -1030,9 +1032,12 @@ enum WatchPreview {
                            restPreviewText: zh ? "下一组 · 第 3 组 · 60 kg × 8" : "Next · Set 3 · 60 kg × 8")
         default: active = nil
         }
-        let rx = WatchPrescription(dateISO: today, dayTitle: zh ? "上肢" : "Upper", exercises: items,
+        // done = 最后一组刚记完、手机在小结（清单还在）；saved = 手机存好后（今天的处方没了，清单为空）。
+        let saved = args[i + 1] == "saved"
+        let rx = WatchPrescription(dateISO: today, dayTitle: saved ? "" : (zh ? "上肢" : "Upper"),
+                                   exercises: saved ? [] : items,
                                    active: active, localeCode: localeCode,
-                                   completedSetsToday: args[i + 1] == "done" ? 22 : nil)
+                                   completedSetsToday: (args[i + 1] == "done" || saved) ? 22 : nil)
         guard let payload = rx.encoded else { return nil }
         return WatchLinkEnvelope(kind: WatchLinkKind.prescription, sentAtISO: today, payload: payload)
     }

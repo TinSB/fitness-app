@@ -367,6 +367,10 @@ struct RootTabView: View {
         // 解析好的一个布尔快照灌给 SessionStore，引擎与 canonical 永不认识 entitlement。
         // 键同时含购买闸：闸没开时边界恒 inactive（生产今日形态 = 一切照旧免费）。
         .task(id: paidCoachKey) { await sessionStore.applyPaidCoach(resolvedPaidCoach) }
+        // 表上练完最后一组时手机有没有人在看：没人看就直接存（owner 2026-10-19）。
+        .onChange(of: scenePhase, initial: true) { _, phase in
+            sessionStore.appInForeground = phase == .active
+        }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
             Task {
