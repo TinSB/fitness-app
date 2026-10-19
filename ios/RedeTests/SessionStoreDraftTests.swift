@@ -607,6 +607,73 @@ final class SessionStoreDraftTests: XCTestCase {
         XCTAssertFalse(sessionStore.keepsScreenAwake, "没有训练")
     }
 
+    // 训练流审查 P1：开练前全身热身卡。开训出现、处理过本场不再出现；手表上先点了热身或记了组，
+    // 卡自己收起；设置关了就不出现；恢复中断的训练也不再出现（只在内存、不进草稿）。
+    func testGeneralWarmupCardShowsOncePerSessionAndYieldsToRealProgress() throws {
+        let sessionStore = SessionStore(draftStore: FakeTrainSessionDraftStore())
+        sessionStore.todayOutcome = .ready(try makeTodayModel(equipmentScenario: nil, unitSystem: "kg"))
+
+        sessionStore.startSession()
+        XCTAssertTrue(sessionStore.showsGeneralWarmup, "开训：先给全身热身卡")
+        sessionStore.dismissGeneralWarmup()
+        XCTAssertFalse(sessionStore.showsGeneralWarmup, "做完了 / 跳过：本场不再出现")
+
+        sessionStore.endSession()
+        XCTAssertFalse(sessionStore.showsGeneralWarmup)
+        sessionStore.startSession()
+        sessionStore.flow = TrainFlowState(prescription: makePrescription())   // 卧推 60 kg：有热身
+        XCTAssertTrue(sessionStore.showsGeneralWarmup, "下一场照常出现")
+        sessionStore.advanceWarmupStep()
+        XCTAssertFalse(sessionStore.showsGeneralWarmup, "（手表上）先走了一级热身：卡自己收起")
+        // 审查 2026-10-18：之后把别的动作提到现在练，热身指针归零——卡也不能复活。
+        sessionStore.flow?.moveExerciseToCurrent("incline-db-press")
+        XCTAssertEqual(sessionStore.flow?.warmupPointer, 0)
+        XCTAssertFalse(sessionStore.showsGeneralWarmup, "作废了就是作废了")
+
+        sessionStore.endSession()
+        sessionStore.startSession()
+        sessionStore.flow = TrainFlowState(prescription: makePrescription())
+        sessionStore.apply(.logSet(CompletedSetObservation(weightKg: 60, reps: 10, rir: 2)))
+        XCTAssertFalse(sessionStore.showsGeneralWarmup, "记了组：卡自己收起")
+
+        sessionStore.endSession()
+        sessionStore.generalWarmupEnabled = false
+        sessionStore.startSession()
+        XCTAssertNotNil(sessionStore.flow)
+        XCTAssertFalse(sessionStore.showsGeneralWarmup, "设置里关了：不出现")
+    }
+
+    func testRestoredSessionDoesNotShowGeneralWarmupCard() {
+        let sessionStore = SessionStore(draftStore: FakeTrainSessionDraftStore())
+        sessionStore.pendingDraft = todayDraft(events: [])
+        sessionStore.restorePendingDraft()
+        XCTAssertNotNil(sessionStore.flow)
+        XCTAssertFalse(sessionStore.showsGeneralWarmup, "恢复中断的训练：全身热身卡不再出现")
+    }
+
+    // 两级热身之间的节奏计时：每完成一级记一次起点；跳过热身不记；不在热身里点不动；结束清空。
+    // 与休息倒计时无关——不开休息、不排通知。
+    func testWarmupPaceAnchorFollowsWarmupStepsOnly() {
+        let sessionStore = makeSessionStore(draftStore: FakeTrainSessionDraftStore())
+        XCTAssertTrue(sessionStore.flow?.isWarmingUp == true)
+        XCTAssertNil(sessionStore.warmupStepDoneAt)
+
+        let first = Date(timeIntervalSince1970: 1_000)
+        sessionStore.advanceWarmupStep(now: first)
+        XCTAssertEqual(sessionStore.warmupStepDoneAt, first)
+        XCTAssertEqual(sessionStore.flow?.warmupPointer, 1)
+        XCTAssertEqual(sessionStore.flow?.phase, .activeSet, "热身不进休息")
+        XCTAssertEqual(sessionStore.restRemainingSeconds, 0, "不碰休息倒计时")
+
+        sessionStore.skipAllWarmup()
+        XCTAssertEqual(sessionStore.warmupStepDoneAt, first, "跳过热身不改起点")
+        sessionStore.advanceWarmupStep(now: Date(timeIntervalSince1970: 2_000))
+        XCTAssertEqual(sessionStore.warmupStepDoneAt, first, "热身已结束：点不动")
+
+        sessionStore.endSession()
+        XCTAssertNil(sessionStore.warmupStepDoneAt)
+    }
+
     // 换动作用新动作自己的起始负重（与临时加动作同规则），解析一次随事件落草稿。
     func testSwapEventCarriesTheNewExercisesOwnStartingLoad() throws {
         let sessionStore = makeSessionStore(draftStore: FakeTrainSessionDraftStore())

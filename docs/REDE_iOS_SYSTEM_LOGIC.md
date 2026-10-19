@@ -435,14 +435,22 @@ public struct NextSetRecommendation: Equatable, Sendable {
 
 热身组逻辑（FR-TR10）:
 
-- 热身组由 working set、动作风险、历史表现、用户经验、器械类型和当天状态生成。
+- 热身组由 working set、动作风险、历史表现、用户经验、器械类型、当天状态和**本场已经练过的部位**生成。
 - 新用户、重 compound lift、高强度 top set、长时间未练动作时,热身更保守;熟练用户、轻孤立动作、低风险动作时,热身更短。
 - 用户跳过热身不等于系统永久取消热身。系统记录 tolerance 和 friction,逐步减少不必要热身,但在高风险场景仍保留最小安全 warm-up。
 - 热身组也学习个人偏好:有人喜欢多级 ramp,有人只需要一两组。学习结果必须带 confidence,不得用一次跳过直接重写长期策略。
+- **同一部位一场只完整热一次**（训练流审查 P1，2026-10-18）。肌群口径 = `MuscleContributionTable`（10 个契约肌群；主练 1.0、辅练 0.5，同组取大不累加），「已练过」只看本场**实际记过组**的动作（跳过 / 换掉 / 删掉没练的动作不算）：
+  - 复合动作：主练肌群在前面某个动作里**当过主练**才算热过 → 最多 1 步过渡（完整阶梯里最接近工作重 70% 的那一级；assisted 取 1.2×；空杆 / 纯自重那一步不作过渡，离工作重不足两格的那一级也不作过渡——工作重贴着起始重量时它多半是被夹到起始重量的保底级；没有合格的一级就不热身）。只当过辅练的（卧推后的肩推）换了主动肌，仍给完整阶梯。
+  - 孤立 / 器械辅助（accessory）动作：主练肌群前面练到过（辅练也算）→ 不热身。
+  - 新部位、目录里查不到的动作、主肌群无契约归宿（forearm）→ 完整阶梯（原行为）。
+- **台阶最小间隔**：相邻两级至少差 max(两格, 工作重 10%)，最高一级离工作重至少两格（纯自重那一步不在外挂负重轴上，不受此约束；assisted 方向反转、同样按辅助量取间隔）；复合动作「至少 1 级」的保底不变（保底那一级可以离工作重不足两格）。轻负荷因此自然收敛到 1 步——杠铃 70 lb 不再给 45 → 50 → 65，只剩空杆一步。
+- **开练前全身热身卡**（App 层、只在手机上）：每场第一个动作前一张可跳过的卡（3–5 分钟：先升温 2–3 分钟，再做几个动态动作），「做完了 / 跳过」本场不再出现；走了一级热身、跳过热身、记了组或跳了组（手机或手表）都让它就此作废——手表上先动了，卡自己收起，之后换动作、撤销把热身指针拨回起点也不会再冒出来；恢复中断的训练不再出现。「以后不显示」那次写入撞上别的写入时排队等（最多约 3 秒），不像设置页开关那样忙就放弃。「以后不显示」写进用户设置 `userProfile.generalWarmupEnabled`（缺省 = 显示，设置页「热身」组可再打开）。这是**用户的显式设置，不是上面说的跳过偏好学习**——学习仍后置。文案只说做什么、做多久，不写任何防伤功效（文案基线 §7.1）。
 
-**契约（已实现口径）：热身是「流内临时引导、绝不落 canonical」**——`WarmupLadderEngine`（纯函数，归 `RedeTrainingDecision`）按工作组顶重 + 动作事实（loadType/equipment/kind/startWeight + 单位）产出确定性保守阶梯（`WarmupStep`：emptyBar/percent/movementPrep）；阶梯重量经 LoadGrid 吸附真实档位、单调不减、严格小于工作重;assisted 方向反转（更多辅助=更轻=更安全）。热身在 `TrainFlowState` 里是 `.activeSet` 上的**内存 overlay**（`warmupPointer` + `isWarmingUp`，**不新增 Phase**）——热身打勾/跳过**绝不进 `events`、绝不进 `observationsByExercise`/落库**,因此既不毒化 `NextSetEngine`、也不污染 PR/volume/e1RM/等级统计,且无需 schema 改动;中断恢复时热身按工作组指针重生（瞬态、不参与 draft replay）。落盘闸（`CompletedSessionBuilder` 只读工作组 `observationsByExercise`）天然排除热身。**契约由此分两层**：热身=临时引导态(不落库)，工作组=唯一 canonical 训练事实。
+**契约（已实现口径）：热身是「流内临时引导、绝不落 canonical」**——`WarmupLadderEngine`（纯函数，归 `RedeTrainingDecision`）按工作组顶重 + 动作事实（loadType/equipment/kind/startWeight + 单位）+ 部位范围（`WarmupScope.full / .alreadyWarm`）产出确定性保守阶梯（`WarmupStep`：emptyBar/percent/movementPrep）；阶梯重量经 LoadGrid 吸附真实档位、单调不减、严格小于工作重、相邻级保持最小间隔;assisted 方向反转（更多辅助=更轻=更安全）。部位范围由 `WarmupScope.decide` 从 `observationsByExercise`（已记组的动作）+ 目录肌群派生，引擎本身不碰肌群。热身在 `TrainFlowState` 里是 `.activeSet` 上的**内存 overlay**（`warmupPointer` + `isWarmingUp`，**不新增 Phase**）——热身打勾/跳过**绝不进 `events`、绝不进 `observationsByExercise`/落库**,因此既不毒化 `NextSetEngine`、也不污染 PR/volume/e1RM/等级统计,且无需 schema 改动;中断恢复时热身按工作组指针重生（瞬态、不参与 draft replay），「已练部位」只取已记组事实，replay / 撤销 / 更正重建后结论不变。落盘闸（`CompletedSessionBuilder` 只读工作组 `observationsByExercise`）天然排除热身。**契约由此分两层**：热身=临时引导态(不落库)，工作组=唯一 canonical 训练事实。开练前全身热身卡与两级热身之间的节奏计时（「歇 45–60 秒」+ 正计时，钢色）都是 `SessionStore` 的内存态，不进草稿、不碰休息倒计时 / 休息通知 / Live Activity / 手表载荷。热身卡另显示今天的正式组目标（`targetLine` 如实转述，不二次吸附）、动作名可点开要点详情、「更多」（换动作 / 跳过这个动作 / 本次训练；热身期不给「跳过本组」）。
 
 > **实现状态（2026-06-17）**：FR-TR10 已落地——引擎(#566) + 流 overlay(#567，既有 252 训练流测试零回归) + 专注训练热身卡 UI(#568，完成/跳过热身)。阶梯算法为**保守 MVP 起步值待 owner 真机校准**（空杆 20kg→45lb、compound 50/70/90% × 5/3/1、isolation 60/80% × 5/3、自重/弹力带 1 步动作模式预热）。**跳过偏好学习（friction/tolerance + confidence，上 4 条的"学习"部分）明示后置为独立 slice**——当前为静态保守阶梯 + 可跳过(跳过不落库)。真机外观/交互待 owner TestFlight 验收。
+>
+> **2026-10-18 训练流审查 P1**：同部位只完整热一次、台阶最小间隔、开练前全身热身卡（含设置开关）、热身卡补正式组目标 / 要点入口 / 更多 / 节奏计时已落地。补充起步值：杠铃空杆 ×8；bodyweight-plus 先纯自重 ×8 再约 60% 外挂；assisted 复合 1.4× / 1.2×、孤立 1.3×；未知 loadType 不热身；accessory 与孤立同档（引擎只认 `kind == "compound"`）。跳过偏好学习仍后置。
 
 验收要求:
 
@@ -450,6 +458,9 @@ public struct NextSetRecommendation: Equatable, Sendable {
 - 用户第一组超推荐完成时,下一组 recommendation 根据 RIR/完成质量动态变化。
 - 第三组大幅掉速用户会学到更保守后段策略;多组稳定用户不会被强行降重。
 - 热身跳过多次只降低 friction,不取消安全必要热身。
+- 推 A（卧推 → 上斜哑铃卧推 → 器械推胸 → 绳索夹胸 → 侧平举 → 下压）：只有卧推完整热身，上斜卧推 1 步过渡，其余直接进首组；卧推一组没做（跳过）时上斜卧推仍完整热身。
+- 杠铃 70 lb 只给空杆一步；任何阶梯相邻两级差 ≥ max(两格, 工作重 10%)、最高一级离工作重 ≥ 两格（assisted 按辅助量镜像；复合动作保底那一级除外）；已热部位的过渡步离工作重 ≥ 两格。
+- 全身热身卡一场最多一次；手表上先动了自己收起，之后换动作 / 撤销也不复活；关掉设置不出现；恢复草稿不出现。
 - unknown selectorized machine 不产生高置信跨器械进步结论。
 
 ### 6.4 纠偏、主训练、功能性分配自动化
@@ -1154,6 +1165,7 @@ LLM 可用于解释、总结和生成自然语言提醒;不得由 LLM 单独判�
 Train 只有专注训练态。必须服务于：
 
 - 当前动作。
+- 热身：开练前一张可跳过的全身热身卡（一场最多一次）+ 每个部位第一个动作的热身阶梯（§6.3）。
 - 目标组次、重量、reps、RIR。
 - Complete Set。
 - 快速编辑 weight/reps/RIR。
@@ -1229,7 +1241,7 @@ FR-TR14 的「本次训练」是上述边界的窄例外：只编辑 `TrainFlowS
 
 **三条通道（Master v3.6 规则 2–5；代码注释同称「通道纪律」，见 `WatchLinkEnvelope.swift`）。** WatchConnectivity 只在 `RedeWatchLink`（`WatchLink.swift` 是双端唯一的 `WCSession` 封装）。
 1. **手机 → 手表：只用 `updateApplicationContext`。** 手机唯一的发送点是 `SessionStore.pushWatchPrescription`。它在 `loadToday()`、每次 `flow` 变化、每次 `restCountdown` 变化时推一份手机渲染好的 `WatchPrescription`：今日清单、`active` 当前组、休息绝对结束时刻、`trainingInProgress`、`sessionOutcome`、`completedSetsToday`。只有今日结果可读时才推；代际计数丢弃乱序渲染。**applicationContext 只有一个槽位，后写覆盖前写**：所有手机 → 手表的字段必须并在这一份载荷里，不得新增第二个 applicationContext 发送方（它会冲掉处方；slice 3 因此删掉了 ping/pong）。手表激活时主动读系统保存的 `receivedApplicationContext`，因为启动时不重放 `didReceiveApplicationContext`。手机从不用 userInfo 或 sendMessage 向手表发东西。
-2. **手表 → 手机，已记的组：只用 `transferUserInfo`**（排队、保证送达、可跨断连；绝不用 `sendMessage` 回传组）。重量取手机给的目标值或手机下发档位梯里选中的那一档；手表自己不算重量。热身步同走此通道，带 `isWarmup=true`。手机只收「正在等的那一组」：`flow.phase == .activeSet`，且 `exerciseId + setNumber` 与当前一致（幂等键）。热身期拒收正式组；热身步只在内存里推进，不记录。手机训练流在时，正式组走既有 `apply(.logSet)`，与手机上点「完成本组」是同一条 reducer / 休息 / 草稿保存路径。手机训练流不在时（App 被杀、草稿尚未恢复），走手表专用的草稿写路径 `appendWatchSetToDraft`：重放 durable 草稿；若重放停在休息中，先补一个合成的 `.restFinished`；再用同样的键核对，追加 `.logSet` 并 `saveDurably`。手表回传的组进入 canonical AppData，仍只经手机的完成训练路径（`completeAndPersistSession` → `CanonicalSessionWriter.appendCompletedSession`）：没有新增 canonical 写入方，也没有新 canonical mutation 类；这一点是 v3.6 规则 7。
+2. **手表 → 手机，已记的组：只用 `transferUserInfo`**（排队、保证送达、可跨断连；绝不用 `sendMessage` 回传组）。重量取手机给的目标值或手机下发档位梯里选中的那一档；手表自己不算重量。热身步同走此通道，带 `isWarmup=true`。热身有几级、某个动作要不要热身（同部位只完整热一次，可能 0 级直接进首组）全由手机的 `warmupStepsForCurrentExercise` 决定，表上照着推送显示；开练前全身热身卡只在手机上，卡开着时表上已经是第一个动作的热身步——在表上点了，手机那张卡自己收起。手机只收「正在等的那一组」：`flow.phase == .activeSet`，且 `exerciseId + setNumber` 与当前一致（幂等键）。热身期拒收正式组；热身步只在内存里推进，不记录。手机训练流在时，正式组走既有 `apply(.logSet)`，与手机上点「完成本组」是同一条 reducer / 休息 / 草稿保存路径。手机训练流不在时（App 被杀、草稿尚未恢复），走手表专用的草稿写路径 `appendWatchSetToDraft`：重放 durable 草稿；若重放停在休息中，先补一个合成的 `.restFinished`；再用同样的键核对，追加 `.logSet` 并 `saveDurably`。手表回传的组进入 canonical AppData，仍只经手机的完成训练路径（`completeAndPersistSession` → `CanonicalSessionWriter.appendCompletedSession`）：没有新增 canonical 写入方，也没有新 canonical mutation 类；这一点是 v3.6 规则 7。
 3. **手表 → 手机，命令：只用 `sendMessage`。** 命令有 +30 休息、跳过休息（含倒计时到点的自动跳过）、暂停 / 继续、跳过热身、跳过本组（带四码原因和 `setNumber`）。手机不可达时命令直接丢弃：手表上对应按钮置灰；休息屏在没有排队传输时显示「手机不可达」/「iPhone out of reach」。休息倒计时到点时，手表会做两件事：自己振动（`.notification` 触感，独立于 iPhone 的 FR-NT1 休息通知），并总是发一条 `restSkip(auto: true)`。手机收到后，只要自身倒计时还剩 ≤1s 且未暂停，就按自然结束收尾（`.restFinished`，不取消 FR-NT1 通知，结束休息 Live Activity）。这是 §7.1 `runRestTimer` 之外的第二个到点触发点：手机 App 仍在后台存活且训练流在时，即使不在前台也会推进训练流；App 被划掉或训练流尚未恢复时，这条命令被丢弃，表停在 0:00。手机只对当前状态执行：`exerciseId` 必须一致，阶段必须匹配；自动跳过在手机自身倒计时还剩 >1s 或已暂停时忽略。命令全部路由到手机自己的方法。手机上的「登记不适」按钮手表没有（owner 2026-08-16 拍板「登记不适不做」，#737）；手表跳过本组时可选「不适/疼痛」原因，手机照 FR-TR7 记 `painDiscomfort`；换动作、跳过整个动作目前也只在手机上做（现状，仓库内无 owner 裁定记录）。
 
 **持久化（Master v3.6 规则 8）。** 手表本地不存任何自有数据：无 App Group、无文件、无 UserDefaults、无 complication。处方只在内存里，加上系统保存的 applicationContext 和系统排队中的 userInfo 传输。它唯一持久化的产出是下文写入 Apple 健康的数据：体能训练本身；心率 / 能量样本是否一并存入未验证。手表能间接引起的手机侧写入只有两类。一是非 canonical 的 `active-session-draft.json`：训练流在时经 `apply` → `enqueueDraftSave`，训练流不在时经 `appendWatchSetToDraft` → `saveDurably`；它与 canonical 同目录，不经 AppData 写闸。二是最终经 `CanonicalSessionWriter` 的完成训练 append。
@@ -1571,7 +1583,7 @@ S0 只要求本地可验证分享链路,不得为了归因引入账号、云端�
 | Focus 训练摩擦 | ✅ 已实现（M3-1/2/3 + M5-3） | 一屏完成训练、下一组建议、休息、跳过/替换/完成原因、刻度轨快改均已 ship。 |
 | Exercise catalog | ✅ 已实现（内容 P0 + wave-1~18，目录 165 条） | 目录 JSON 化 + rank 匹配 + 覆盖矩阵 golden 已 ship;`TemplateGenerator`（肌群贡献权重生成）仍未做（FF）。 |
 | Equipment 感知 / calibration | 🟡 部分（FR-EQ1 已实现 2026-06-11 + LoadGrid 档位） | 器械场景白名单过滤 + 真实档位已 ship;完整 `GymEquipmentPack`/`MachineProfile`/unknown-machine 校准仍未做。 |
-| In-session prescription / warm-up | 🟡 部分（M3-1 + FR-TR10 已实现） | 逐组处方 + next-set recommendation 已 ship;warm-up generator 已 ship（FR-TR10 #566-568：流内临时引导、不落库、保守阶梯起步值待校准，§6.3）;skip-learning（friction/tolerance 偏好学习）仍后置。 |
+| In-session prescription / warm-up | 🟡 部分（M3-1 + FR-TR10 已实现） | 逐组处方 + next-set recommendation 已 ship;warm-up generator 已 ship（FR-TR10 #566-568：流内临时引导、不落库、保守阶梯起步值待校准，§6.3）;2026-10-18 P1：同部位只完整热一次、台阶最小间隔、开练前全身热身卡（设置可关）、热身卡补正式组目标 / 要点 / 更多 / 节奏计时;skip-learning（friction/tolerance 偏好学习）仍后置。 |
 | Pain / injury progression hold | ✅ 已实现（FR-TR7 / FR-SE7，2026-07-29） | 跳过事实与 7 部位标记经 clean input 进入处方；最近 4 场至少 2 次 pain 或部位映射命中时只暂停更难的自动负荷进阶，正常完成一次/清除部位后恢复。完整 support-allocation / 自动纠偏仍未实现。 |
 | Support allocation | ⬜ 未实现 | 先补 planned/completed/skipped/reason/safety lock 和 `SupportAllocationDecision`。 |
 | Muscle level estimator | ✅ 已实现（MLE 批次 A #659-666 + 批次 B #667-672 + mle-v2 校准 #675 + 2026-07-30 consumption） | 两包引擎（types/estimator/assembler/composer/memory/milestone catalog）+ Development 块（FR-PR6）+ Today 升级事实 + 发展画像/等级变化/均衡改善卡 + widget 等级 rows 已上线；FR-PL5 已是独立自动式、不是提案候选。剩余候选仅含 pain-safety 喂 MLE、器械校准维、置信/identity 稳定维与 exposure v3 衰减等明确后续。 |

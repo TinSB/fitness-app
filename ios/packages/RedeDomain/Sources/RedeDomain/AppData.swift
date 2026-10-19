@@ -129,6 +129,12 @@ public struct AppData: Equatable, Sendable {
         storage["programTemplate"]?.asObject?["weeklyCycleRestart"]?.asBool ?? false
     }
 
+    /// 开练前的全身热身卡（训练流审查 P1，2026-10-18）：true/缺省 = 每场第一个动作前显示一张可跳过的卡；
+    /// false = 用户选了「以后不显示」（设置里可以再打开）。open-bag 加性，无 schema bump；引擎不读。
+    public var generalWarmupEnabled: Bool {
+        storage["userProfile"]?.asObject?["generalWarmupEnabled"]?.asBool ?? true
+    }
+
     /// FR-T5 已采纳补量的 ISO 周集合（schema 11）。缺容器/内层 → 空（防御读，审查 M-1）。
     public var volumeBoostWeeks: [String] {
         guard let arr = storage["coachAdjustments"]?.asObject?["volumeBoosts"]?.asArray else { return [] }

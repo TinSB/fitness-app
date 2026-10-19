@@ -289,17 +289,24 @@ public struct TrainFlowState: Equatable, Sendable {
 
     // MARK: - 热身（FR-TR10 · 流内临时引导，不落库）
 
-    /// 当前动作的保守热身阶梯（按计划工作重 + 目录动作事实生成）。纯派生、确定性。
+    /// 当前动作的保守热身阶梯（按计划工作重 + 目录动作事实 + 本场已练部位生成）。纯派生、确定性：
+    /// 「已练部位」只取已记组的事实，replay / 撤销 / 更正重建后结论不变。
     public var warmupStepsForCurrentExercise: [WarmupStep] {
         guard let exercise = currentExercise, let work = exercise.sets.first?.targetWeightKg else { return [] }
         let entry = catalog.entry(id: exercise.exerciseId)
+        let kind = entry?.kind ?? ""
         return WarmupLadderEngine.generate(
             workWeightKg: work,
             loadType: exercise.loadType,
             equipment: entry?.equipment ?? "",
-            kind: entry?.kind ?? "",
+            kind: kind,
             startWeightKg: entry?.startWeightKg ?? 0,
-            unit: loadUnit
+            unit: loadUnit,
+            scope: WarmupScope.decide(
+                exerciseId: exercise.exerciseId, kind: kind,
+                workedExerciseIds: observationsByExercise.lazy.filter { !$0.value.isEmpty }.map(\.key),
+                catalog: catalog
+            )
         )
     }
 
