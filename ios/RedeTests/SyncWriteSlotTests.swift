@@ -14,6 +14,8 @@ import Foundation
 import XCTest
 @testable import Rede
 import RedeDomain
+import RedePersistence
+import RedeSync
 
 @MainActor
 final class SyncWriteSlotTests: XCTestCase {
@@ -114,5 +116,68 @@ final class SyncWriteSlotTests: XCTestCase {
         XCTAssertFalse(ok, "会丢历史的合并必须被 DataHealth gate 拒绝")
         XCTAssertEqual(historyIds(at: url), ["session-1", "session-2"], "磁盘上原数据一行不动")
         XCTAssertNotNil(store.syncSaveErrorText)
+    }
+
+    // MARK: ⑤ 配置区：登录后在手机上改的设置不能被云端旧的那份改回去（2026-10-19）
+
+    /// 真实的 AppSyncLocalStore + 真实 canonical 文件 + 真实写闸走两轮：此前本机「改动时刻」
+    /// 永远是 1970，服务器盖章的云端那份永远更「新」——登录后改的设置下一次同步就被改回去。
+    /// owner 的手机 sync.configTouchedAt 实测就是 1970。
+    func testSettingChangedAfterSignInSurvivesTheNextSyncAndIsUploaded() async throws {
+        let (store, url) = makeStore()
+        var initial = storage(["session-1"])
+        initial["userProfile"] = .object(["unitSystem": .string("kg")])
+        _ = await store.applySyncMerge(mergedStorage: initial)
+
+        let suite = "rede-sync-config-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let local = AppSyncLocalStore(fileURL: url, defaultsBox: SendableDefaults(defaults),
+                                      writeMerged: { [store] merged in await store.applySyncMerge(mergedStorage: merged) })
+        let transport = ServerStampingTransport()
+        let coordinator = SyncCoordinator(transport: transport, localStore: local, deviceId: "device-A",
+                                          now: { ISO8601DateFormatter().string(from: Date()) })
+
+        _ = try await coordinator.syncOnce()                           // 登录：云端没有配置 → 上传 kg
+        let afterFirst = await transport.uploadedConfigs.count
+        XCTAssertEqual(afterFirst, 1)
+
+        // 在手机上改设置（走真实写闸）。
+        _ = try CanonicalSessionWriter(store: JSONFileAppDataStore(fileURL: url), gate: AcceptAll())
+            .applyPreferences(unitSystem: "lb", locale: nil)
+        let report = try await coordinator.syncOnce()
+
+        let onDisk = try XCTUnwrap(try JSONFileAppDataStore(fileURL: url).load())
+        XCTAssertEqual(onDisk.userProfile.unitSystem, "lb", "改的设置不能被云端旧的那份改回去")
+        XCTAssertTrue(report.didUploadConfig, "改过的那份要传上去")
+        let uploadedUnit = await transport.uploadedConfigs.last?.payload["userProfile"]?.asObject?["unitSystem"]?.asString
+        XCTAssertEqual(uploadedUnit, "lb")
+
+        // 什么都没改再同步：不再上传、不改本机。
+        let quiet = try await coordinator.syncOnce()
+        XCTAssertFalse(quiet.didUploadConfig)
+        XCTAssertFalse(quiet.didChangeLocal)
+    }
+
+}
+
+
+private struct AcceptAll: AppDataWriteGate {
+    func validate(candidate: AppData, replacing current: AppData?) throws {}
+}
+
+/// 云端替身：上传的配置由「服务器」盖一个比任何本机时刻都晚的时间（真实服务器用 now()）。
+private actor ServerStampingTransport: SyncTransport {
+    private(set) var uploadedConfigs: [RemoteConfigRecord] = []
+    private var config: RemoteConfigRecord?
+    func fetchSessions(since cursor: String?) async throws -> SyncFetchPage {
+        SyncFetchPage(sessions: [], nextCursor: cursor, hasMore: false)
+    }
+    func fetchConfig() async throws -> RemoteConfigRecord? { config }
+    func uploadSessions(_ records: [RemoteSessionRecord]) async throws {}
+    func uploadConfig(_ record: RemoteConfigRecord) async throws {
+        uploadedConfigs.append(record)
+        config = RemoteConfigRecord(payload: record.payload, schemaVersion: record.schemaVersion,
+                                    updatedAtIso: "2099-01-01T00:00:00Z", deviceId: record.deviceId)
     }
 }

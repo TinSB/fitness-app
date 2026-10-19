@@ -32,6 +32,13 @@ public protocol SyncLocalStore: Sendable {
     /// 本地配置最后修改时刻，ISO8601 UTC。
     func configUpdatedAtIso() async -> String
     func markConfigUploaded(at iso: String) async
+    /// 上一次与云端对齐时的配置区（上传成功的那份，或接收下来的云端那份）。nil = 本机还没对齐过。
+    ///
+    /// 用它判断「本机配置在上次对齐之后改过没有」（2026-10-19）。此前只比时间戳，而本机的
+    /// 「改动时刻」从来没有被推进过（一直是纪元），于是登录后第一次上传之后，云端那份永远
+    /// 更「新」：手机上改的设置、计划、练完推进的轮换，下一次同步全被改回去，也再传不上去。
+    func loadSyncedConfig() async -> [String: JSONValue]?
+    func saveSyncedConfig(_ payload: [String: JSONValue]) async
 }
 
 /// 一轮同步的如实结果。每个字段都对应用户可能需要知道的事，不做美化。
@@ -121,6 +128,13 @@ public actor SyncCoordinator {
         // ── 合并 ──────────────────────────────────────────────────────────
         let localConfigUpdatedAt = await localStore.configUpdatedAtIso()
         let alreadyUploaded = await localStore.loadUploadedSessionIds()
+        // 本机配置在上次对齐之后改过：这一份就是要上传的，不能输给云端那份旧的。
+        // 从没对齐过的设备不算改过——新装的手机拿默认配置去盖账号里的真配置是最坏的方向，
+        // 那种情况照旧以云端为准。两台设备都改过时，后同步的那台赢（与原「晚写赢」同一取舍）。
+        let syncedConfig = await localStore.loadSyncedConfig()
+        let localConfigDirty = syncedConfig.map {
+            Self.comparableConfig(of: $0) != Self.comparableConfig(of: localStorage)
+        } ?? false
         let outcome = SyncMergeEngine.merge(
             localStorage: localStorage,
             localSchemaVersion: schemaVersion,
@@ -129,7 +143,8 @@ public actor SyncCoordinator {
             localConfigUpdatedAtIso: localConfigUpdatedAt,
             localDeviceId: deviceId,
             isSessionAcceptable: isSessionAcceptable,
-            alreadyUploadedIds: alreadyUploaded
+            alreadyUploadedIds: alreadyUploaded,
+            preferLocalConfig: localConfigDirty
         )
 
         // ── 写回 ──────────────────────────────────────────────────────────
@@ -140,6 +155,12 @@ public actor SyncCoordinator {
         }
         // 游标只在写回成功后推进。否则一次写盘失败会让这批记录被永久跳过。
         await localStore.saveCursor(latestCursor)
+        // 云端那份赢了（或两边本来一样）：写回成功的这一刻本机就已与云端对齐，立刻记下，不等后面的上传。
+        // 否则上传中途失败，下一轮会把这份刚接收的云端配置当成本机改过，拿去盖云端更新的版本。
+        // schema 更新的云端配置没合并，不算对齐。
+        if !outcome.shouldUploadConfig, let remoteConfig, remoteConfig.schemaVersion <= schemaVersion {
+            await localStore.saveSyncedConfig(Self.configPayload(of: outcome.mergedStorage))
+        }
         // 本次拉到的记录云端已有，登记为已上传——否则下一轮增量拉不到它们时
         // 会被重新算成待上传。
         if !remoteSessions.isEmpty {
@@ -183,12 +204,7 @@ public actor SyncCoordinator {
 
         var didUploadConfig = false
         if outcome.shouldUploadConfig {
-            var configPayload = outcome.mergedStorage
-            configPayload["history"] = nil
-            // 配置区是「history 之外整块上传」——任何写进 canonical 顶层的健康数据
-            // 都会自动跟着上云，而写那个功能的人不会想起来检查同步载荷。禁运清单
-            // 把这条约定变成会失败的断言（见 SyncRedaction）。
-            for key in SyncRedaction.deprecatedHealthKeys { configPayload[key] = nil }
+            let configPayload = Self.configPayload(of: outcome.mergedStorage)
             try await transport.uploadConfig(
                 RemoteConfigRecord(
                     payload: configPayload,
@@ -198,6 +214,7 @@ public actor SyncCoordinator {
                 )
             )
             await localStore.markConfigUploaded(at: localConfigUpdatedAt)
+            await localStore.saveSyncedConfig(configPayload)
             didUploadConfig = true
         }
 
@@ -209,5 +226,21 @@ public actor SyncCoordinator {
             blockedByNewerSchema: outcome.blockedByNewerSchema,
             rejectedUncleanCount: outcome.rejectedUncleanCount
         )
+    }
+
+    /// 配置区 = history 之外的整块。任何写进 canonical 顶层的健康数据都会自动跟着上云，
+    /// 而写那个功能的人不会想起来检查同步载荷：禁运清单把这条约定变成会失败的断言（见 SyncRedaction）。
+    /// 上传、判断本机改过没有、记录对齐快照，三处都用这一份，口径不会分叉。
+    static func configPayload(of storage: [String: JSONValue]) -> [String: JSONValue] {
+        var payload = storage
+        payload["history"] = nil
+        for key in SyncRedaction.deprecatedHealthKeys { payload[key] = nil }
+        return payload
+    }
+
+    /// 判断「本机改过没有」时两边都先迁到当前 schema 再比。快照停在保存时的 schema 形状，本机读出来
+    /// 已在内存里迁移过；不对齐的话，一次 schema 升级就会让没动过设置的设备被当成改过，去盖别的设备的改动。
+    static func comparableConfig(of storage: [String: JSONValue]) -> [String: JSONValue] {
+        configPayload(of: SchemaMigrator.migrate(root: storage))
     }
 }
