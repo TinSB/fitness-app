@@ -100,7 +100,7 @@ struct AppSyncLocalStore: SyncLocalStore {
         defaults.set(data, forKey: syncedConfigKey)
     }
 
-    /// 换账号 / 登出时清：那份快照是「与上一个账号对齐」，不清会把本机配置当成改过、去盖新账号的。
+    /// 只在删除云端账号时与 owner 一起清：那份快照是「与这个账号对齐」，留着会把本机配置当成改过、去盖下一个账号的。
     func clearSyncedConfig() { defaults.removeObject(forKey: syncedConfigKey) }
 
     func loadUploadedSessionIds() async -> Set<String> {
@@ -317,7 +317,8 @@ final class SyncService {
         remoteSessionCount = nil
         await localStore.saveCursor(nil)
         localStore.clearUploadedSessionIds()
-        localStore.clearSyncedConfig()
+        // 对齐快照不清：owner 也没清，换账号会被 ownerMismatch 挡住，快照只会用于同一账号重新登录——
+        // 登出期间在本机改的设置，重新登录后照常算「改过」并上传（与登录过期后重登一致）。
     }
 
     /// 删除云端账号。本机记录保留 —— 与登出同样的不变量。
