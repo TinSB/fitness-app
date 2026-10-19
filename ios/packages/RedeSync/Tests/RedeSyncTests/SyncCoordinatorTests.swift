@@ -42,6 +42,7 @@ private actor FakeTransport: SyncTransport {
     }
 
     func setFetchError(_ error: SyncTransportError?) { fetchError = error }
+    func setConfig(_ record: RemoteConfigRecord?) { config = record }
     func setUploadError(_ error: SyncTransportError?) { uploadError = error }
     func setFailUploadAfterCalls(_ n: Int) { failUploadAfterCalls = n }
 
@@ -83,6 +84,7 @@ private actor FakeLocalStore: SyncLocalStore {
     private(set) var applyCallCount = 0
     private(set) var configUploadedAt: String?
     private(set) var uploadedIds: Set<String> = []
+    private(set) var syncedConfig: [String: JSONValue]?
     var applyShouldFail = false
 
     init(history: [[String: JSONValue]], config: [String: JSONValue] = [:], configUpdatedAt: String = "2026-01-01T00:00:00Z") {
@@ -96,6 +98,10 @@ private actor FakeLocalStore: SyncLocalStore {
     }
 
     func setApplyShouldFail(_ value: Bool) { applyShouldFail = value }
+    /// 模拟用户在手机上改了一个设置（canonical 顶层键）。
+    func setTopLevel(_ key: String, _ value: JSONValue) { storage[key] = value }
+    func loadSyncedConfig() async -> [String: JSONValue]? { syncedConfig }
+    func saveSyncedConfig(_ payload: [String: JSONValue]) async { syncedConfig = payload }
 
     func loadUploadedSessionIds() async -> Set<String> { uploadedIds }
     func markSessionsUploaded(_ ids: [String]) async { uploadedIds.formUnion(ids) }
@@ -266,6 +272,67 @@ final class SyncCoordinatorTests: XCTestCase {
         XCTAssertEqual(ids, ["session-1", "session-2", "session-3"])
         let cursor = await store.cursor
         XCTAssertEqual(cursor, "c3")
+    }
+
+    // MARK: - 配置区：本机改过就上传，没改过才听云端的（2026-10-19）
+
+    /// 登录后第一次同步上传了配置，服务器给它盖了自己的时间；之后在手机上改设置。
+    /// 此前本机「改动时刻」从不推进（一直是纪元），云端那份永远更「新」：下一次同步把改动改回去，
+    /// 也再传不上去（owner 的手机 sync.configTouchedAt 实测就是 1970）。
+    func testLocalConfigChangeAfterFirstUploadIsUploadedNotReverted() async throws {
+        let store = FakeLocalStore(history: [], config: ["unitSystem": .string("kg")],
+                                   configUpdatedAt: "1970-01-01T00:00:00Z")
+        let transport = FakeTransport(pages: [])
+        let coordinator = makeCoordinator(transport: transport, store: store)
+        _ = try await coordinator.syncOnce()
+        let uploadedAfterFirst = await transport.uploadedConfigs
+        let first = try XCTUnwrap(uploadedAfterFirst.last)
+        await transport.setConfig(RemoteConfigRecord(payload: first.payload, schemaVersion: schema,
+                                                     updatedAtIso: "2026-10-17T19:23:09.073Z", deviceId: "device-A"))
+
+        await store.setTopLevel("unitSystem", .string("lb"))
+        let report = try await coordinator.syncOnce()
+
+        let unit = await store.storage["unitSystem"]?.asString
+        XCTAssertEqual(unit, "lb", "手机上改的不能被云端旧的那份改回去")
+        XCTAssertTrue(report.didUploadConfig)
+        let uploadedUnit = await transport.uploadedConfigs.last?.payload["unitSystem"]?.asString
+        XCTAssertEqual(uploadedUnit, "lb")
+    }
+
+    func testNewDeviceAdoptsTheAccountConfigInsteadOfOverwritingIt() async throws {
+        // 新装的手机第一次同步：本机是默认配置、从没对齐过——以云端为准，不拿默认值去盖账号里的。
+        let store = FakeLocalStore(history: [], config: ["unitSystem": .string("kg")],
+                                   configUpdatedAt: "1970-01-01T00:00:00Z")
+        let transport = FakeTransport(pages: [], config: RemoteConfigRecord(
+            payload: ["schemaVersion": .int(Int64(schema)), "unitSystem": .string("lb")],
+            schemaVersion: schema, updatedAtIso: "2026-10-17T19:23:09Z", deviceId: "device-B"))
+        let report = try await makeCoordinator(transport: transport, store: store).syncOnce()
+
+        let unit = await store.storage["unitSystem"]?.asString
+        XCTAssertEqual(unit, "lb")
+        XCTAssertFalse(report.didUploadConfig)
+        let synced = await store.syncedConfig?["unitSystem"]?.asString
+        XCTAssertEqual(synced, "lb", "接收云端那份也算对齐")
+    }
+
+    func testOtherDevicesChangeIsAppliedWhenThisPhoneChangedNothing() async throws {
+        let store = FakeLocalStore(history: [], config: ["unitSystem": .string("kg")],
+                                   configUpdatedAt: "1970-01-01T00:00:00Z")
+        let transport = FakeTransport(pages: [])
+        let coordinator = makeCoordinator(transport: transport, store: store)
+        _ = try await coordinator.syncOnce()                     // 本机上传 kg，对齐
+
+        let uploadedAfterFirst = await transport.uploadedConfigs
+        var changed = try XCTUnwrap(uploadedAfterFirst.last).payload
+        changed["unitSystem"] = .string("lb")                    // 另一台设备改成 lb
+        await transport.setConfig(RemoteConfigRecord(payload: changed, schemaVersion: schema,
+                                                     updatedAtIso: "2026-10-18T08:00:00Z", deviceId: "device-B"))
+        let report = try await coordinator.syncOnce()
+
+        let unit = await store.storage["unitSystem"]?.asString
+        XCTAssertEqual(unit, "lb", "这台没改过：接收另一台的改动")
+        XCTAssertFalse(report.didUploadConfig)
     }
 
     func testUploadedConfigExcludesHistory() async throws {
