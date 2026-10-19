@@ -211,6 +211,170 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         XCTAssertNil(draftStore.stored)
     }
 
+    // MARK: - 整场在表上练完、没回手机点保存（owner 2026-10-19：手机没在看时自动存）
+
+    private func watchSet(_ n: Int, at iso: String) -> WatchLoggedSet {
+        WatchLoggedSet(exerciseId: "bench-press", setNumber: n, weightKg: 60, reps: 8, rir: 2, loggedAtISO: iso)
+    }
+
+    private func freshDraft(startedAt: Date = Date(), events: [TrainFlowEvent] = []) -> TrainSessionDraft {
+        TrainSessionDraft(dateISO: SessionStore.localDayISO(startedAt), startedAt: startedAt,
+                          prescription: prescription(), events: events)
+    }
+
+    func testFirstSetOfAnExerciseSurvivesTheDraftPathDespiteItsWarmupLadder() {
+        // 审查 2026-10-19：手机这边热身指针重放后从头开始，表上已经热完身发来的第 1 组曾被热身守卫拦掉，
+        // 之后组号再也对不上，整段丢光。
+        let draftStore = FakeDraftStore()
+        draftStore.stored = freshDraft()
+        let store = SessionStore(draftStore: draftStore)
+        XCTAssertFalse(TrainFlowState(prescription: prescription()).warmupStepsForCurrentExercise.isEmpty,
+                       "前置条件：卧推 60 kg 有热身阶梯")
+
+        store.applyWatchLoggedSet(watchSet(1, at: "2026-10-19T10:00:00Z"))
+        store.applyWatchLoggedSet(watchSet(2, at: "2026-10-19T10:03:00Z"))
+
+        let logged = draftStore.stored?.restoreFlow()?.observationsByExercise["bench-press"] ?? []
+        XCTAssertEqual(logged.count, 2)
+        XCTAssertEqual(logged.map(\.completedAt), ["2026-10-19T10:00:00Z", "2026-10-19T10:03:00Z"],
+                       "记组时刻取表上那一下，不是几小时后收到的时刻")
+    }
+
+    func testLastSetOnTheDraftPathRecordsEndTimeAndSavesWithoutPrompting() async {
+        let draftStore = FakeDraftStore()
+        draftStore.stored = freshDraft()
+        let store = SessionStore(draftStore: draftStore)
+        let saved = expectation(description: "自动保存")
+        store.persistFinishedSession = { saved.fulfill(); return true }
+
+        store.applyWatchLoggedSet(watchSet(1, at: "2026-10-19T10:00:00Z"))
+        store.applyWatchLoggedSet(watchSet(2, at: "2026-10-19T10:03:00Z"))
+        store.applyWatchLoggedSet(watchSet(3, at: "2026-10-19T10:06:00Z"))
+
+        await fulfillment(of: [saved], timeout: 2)
+        XCTAssertNil(store.pendingDraft, "练完的一场不再问「继续训练？」")
+        XCTAssertEqual(store.flow?.phase, .summary)
+        let end = ISO8601DateFormatter().date(from: "2026-10-19T10:06:00Z")
+        XCTAssertEqual(draftStore.stored?.endedAt, end, "结束时刻取表上最后一组，不是重开手机那一刻")
+        XCTAssertEqual(store.sessionEndedAt, end)
+    }
+
+    func testLastWatchSetSavesAutomaticallyOnlyWhenNobodyIsLookingAtThePhone() async throws {
+        // 手机锁着：表上记完最后一组 → 直接存。
+        let pocket = makeStore(); finishWarmup(pocket)
+        pocket.appInForeground = false
+        let savedNow = expectation(description: "锁着的手机直接存")
+        pocket.persistFinishedSession = { savedNow.fulfill(); return true }
+        logThreeSetsFromTheWatch(pocket)
+        await fulfillment(of: [savedNow], timeout: 2)
+
+        // 手机放在凳子上、屏幕常亮（还算在前台）：先不存，小结等着；到小结后屏幕自动锁上 → 那一刻才存
+        //（审查 2026-10-19：只在表上那一下判一次，会漏掉最常见的这种）。
+        let bench = makeStore(); finishWarmup(bench)
+        bench.appInForeground = true
+        var calls = 0
+        let savedOnLock = expectation(description: "锁屏后存")
+        bench.persistFinishedSession = { calls += 1; savedOnLock.fulfill(); return true }
+        logThreeSetsFromTheWatch(bench)
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(calls, 0, "手机开着：照旧弹小结由人点保存")
+        bench.appInForeground = false
+        await fulfillment(of: [savedOnLock], timeout: 2)
+        bench.appInForeground = true
+        bench.appInForeground = false
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(calls, 1, "一场只自动存一次")
+    }
+
+    func testSummaryFinishedOnThePhoneIsNotAutoSavedWhenThePhoneLocks() async throws {
+        // 在手机上点完最后一组的人正看着小结：锁屏走开也由他自己决定。
+        let store = makeStore(); finishWarmup(store)
+        var calls = 0
+        store.persistFinishedSession = { calls += 1; return true }
+        for n in 1...3 {
+            store.apply(.logSet(CompletedSetObservation(weightKg: 60, reps: 8, rir: 2)))
+            if n < 3 { store.apply(.restFinished) }
+        }
+        XCTAssertEqual(store.flow?.phase, .summary)
+        store.appInForeground = false
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(calls, 0)
+    }
+
+    private func logThreeSetsFromTheWatch(_ store: SessionStore) {
+        store.applyWatchLoggedSet(loggedSet(setNumber: 1))
+        store.apply(.restFinished)
+        store.applyWatchLoggedSet(loggedSet(setNumber: 2))
+        store.apply(.restFinished)
+        store.applyWatchLoggedSet(loggedSet(setNumber: 3))
+        XCTAssertEqual(store.flow?.phase, .summary)
+    }
+
+    func testFinishedDraftFoundAtLaunchIsSavedEvenAfter36Hours() async {
+        // 小结里没点保存就离开、App 随后被系统收走：此前过了 36 小时会被静默删掉。
+        let events: [TrainFlowEvent] = [
+            .logSet(CompletedSetObservation(weightKg: 60, reps: 8, rir: 2)), .restFinished,
+            .logSet(CompletedSetObservation(weightKg: 60, reps: 8, rir: 2)), .restFinished,
+            .logSet(CompletedSetObservation(weightKg: 60, reps: 8, rir: 2)),
+        ]
+        let started = Date().addingTimeInterval(-40 * 3600)
+        let draftStore = FakeDraftStore()
+        draftStore.stored = freshDraft(startedAt: started, events: events).ending(at: started.addingTimeInterval(3600))
+        let store = SessionStore(draftStore: draftStore)
+        let saved = expectation(description: "自动保存")
+        store.persistFinishedSession = { saved.fulfill(); return true }
+
+        store.checkForRestorableDraft()
+
+        await fulfillment(of: [saved], timeout: 2)
+        XCTAssertNil(store.pendingDraft)
+        XCTAssertEqual(store.flow?.phase, .summary)
+        XCTAssertEqual(store.sessionEndedAt, started.addingTimeInterval(3600))
+    }
+
+    func testYoungCrossDayDraftWithoutSetsWaitsForLateWatchSets() {
+        // 整场在表上练、手机侧一组没记：第二天打开手机时草稿里还没有组。此前先被当空草稿删掉，
+        // 随后送到的表上组无处可去。
+        let started = Date().addingTimeInterval(-14 * 3600)
+        let draftStore = FakeDraftStore()
+        draftStore.stored = TrainSessionDraft(dateISO: "2000-01-01", startedAt: started,
+                                              prescription: prescription(), events: [])
+        let store = SessionStore(draftStore: draftStore)
+
+        store.checkForRestorableDraft()
+        XCTAssertNotNil(draftStore.stored, "窗口内的空草稿不删")
+        XCTAssertNil(store.pendingDraft, "也不问：里面没有可继续的")
+
+        store.applyWatchLoggedSet(watchSet(1, at: "2026-10-19T10:00:00Z"))
+        XCTAssertEqual(draftStore.stored?.restoreFlow()?.observationsByExercise["bench-press"]?.count, 1)
+        XCTAssertEqual(store.pendingDraft, draftStore.stored, "补上组之后立刻问「继续训练？」，不等下一次刷新")
+        store.pendingDraft = nil
+
+        draftStore.stored = TrainSessionDraft(dateISO: "2000-01-01", startedAt: Date().addingTimeInterval(-40 * 3600),
+                                              prescription: prescription(), events: [])
+        store.checkForRestorableDraft()
+        XCTAssertNil(draftStore.stored, "过了 36 小时、一组没有：照旧清掉")
+    }
+
+    func testWatchDoneCountIncludesTheUnsavedSessionInTheSummary() {
+        var flow = TrainFlowState(prescription: prescription())
+        flow.skipAllWarmup()
+        flow.logSet(CompletedSetObservation(weightKg: 60, reps: 8, rir: 2))
+        XCTAssertEqual(SessionStore.watchCompletedSetsToday(savedToday: 5, flow: flow, summaryStartedToday: true, awaitingReload: 0), 5,
+                       "训练中：只算已存的")
+        flow.restFinished()
+        flow.logSet(CompletedSetObservation(weightKg: 60, reps: 8, rir: 2))
+        flow.restFinished()
+        flow.logSet(CompletedSetObservation(weightKg: 60, reps: 8, rir: 2))
+        XCTAssertEqual(flow.phase, .summary)
+        XCTAssertEqual(SessionStore.watchCompletedSetsToday(savedToday: 5, flow: flow, summaryStartedToday: true, awaitingReload: 0), 8,
+                       "到了小结、还没点保存：表上也该说练完了")
+        XCTAssertEqual(SessionStore.watchCompletedSetsToday(savedToday: 0, flow: flow, summaryStartedToday: false, awaitingReload: 0), 0,
+                       "昨天开练、一直没存的那场不算今天")
+        XCTAssertEqual(SessionStore.watchCompletedSetsToday(savedToday: 0, flow: nil, summaryStartedToday: false, awaitingReload: 3), 3,
+                       "刚存好、今日还没重载：不闪回清单")
+    }
+
     // MARK: - v2：表上改过的重量 / RIR 原样落库
 
     func testAdjustedWeightAndUnrecordedRirAreStoredAsSent() {

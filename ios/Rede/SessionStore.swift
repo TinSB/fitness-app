@@ -1,5 +1,6 @@
 import Foundation
 import os
+import UIKit
 import RedeDataHealth
 import RedeDomain
 import RedeHealthKit
@@ -181,6 +182,23 @@ final class SessionStore {
     private var restorePromptDeferred = false
     /// 本场里对每个动作的休息时长调整（秒，可正可负）。开训 / 结束时清空。
     private var restAdjustmentByExercise: [String: Int] = [:]
+    /// 手机此刻有没有人在看（RootTabView 跟 scenePhase 同步）。缺省 true：没接上线就不自动保存。
+    /// 离开前台时再判一次：训练中屏幕常亮，手机放在凳子上时表上记完最后一组还算「在前台」，
+    /// 到小结后屏幕自动锁上——那一刻才是真的没人在看（审查 2026-10-19）。
+    var appInForeground = true {
+        didSet { if !appInForeground { autoSaveIfUnattended() } }
+    }
+    /// 这一场是不是由表上那一下（记 / 跳最后一组）带进小结的。只有这种才在没人看时自动存：
+    /// 在手机上点完最后一组的人正看着小结，锁屏走开也该由他自己决定（owner 2026-10-19）。
+    private var summaryReachedFromWatch = false
+    /// 本次运行里自动存过的那一场的开练日（今日页显示一行「上一场训练已自动保存」）；开新训练时清掉。
+    private(set) var autoSavedSessionDayISO: String?
+    /// 刚存好、今日还没重载的那一场的组数：表上「今天练完了 · N 组」先由它补上，
+    /// 不让表在 endSession 那次推送里先闪回一帧开练前的清单。
+    private var savedSetsAwaitingReload = 0
+    /// 自动保存的落盘动作。nil = completeAndPersistSession；App 层测试换成替身——
+    /// 测试宿主就是装在模拟器上的 Rede，真写会写进那台模拟器上的真实记录。
+    var persistFinishedSession: (() async -> Bool)?
     /// 开练前全身热身卡（训练流审查 P1）：开训时按设置置位，做完 / 跳过 / 以后不显示即清。
     /// 只在内存——不进草稿，恢复中断的训练不再出现。
     private(set) var generalWarmupPending = false
@@ -236,6 +254,7 @@ final class SessionStore {
 
     func loadToday() async {
         todayOutcome = await TodayModel.loadOutcomeAsync(paidCoach: paidCoach)
+        savedSetsAwaitingReload = 0   // 刚存的那一场已在新读出的记录里
         checkForRestorableDraft()
         refreshWidgetSnapshot()
         pushWatchPrescription()   // watchOS 切片 3：处方推到表上
@@ -321,9 +340,13 @@ final class SessionStore {
         // 没在训练且 > 0 → 表上清单头显示「今天练完了 · N 组」。
         let todayISO = Self.localDayISO(now)
         // 日期口径与 TodayModel 同：session.date 前 10 位就是本地日。
-        let completedSetsToday = model.cleanView.sessions
+        let savedToday = model.cleanView.sessions
             .filter { String($0.date.prefix(10)) == todayISO }
             .reduce(0) { $0 + $1.exercises.reduce(0) { $0 + $1.sets.count } }
+        let completedSetsToday = Self.watchCompletedSetsToday(
+            savedToday: savedToday, flow: flow,
+            summaryStartedToday: sessionStartedAt.map { Self.localDayISO($0) == todayISO } ?? false,
+            awaitingReload: savedSetsAwaitingReload)
 
         Task.detached(priority: .utility) {
             let strings = SessionStore.resolveWidgetStrings()
@@ -517,6 +540,7 @@ final class SessionStore {
         // **热身期间绝不接受正式组**。表侧状态滞后一拍就会撞上这里——
         // 不判的话，用户还在空杆热身，一组 65kg 就已经落库了。
         guard !flow.isWarmingUp, flow.progress.setNumber == set.setNumber else { return }
+        defer { noteWatchDrivenSummary(from: flow.phase) }
         apply(.logSet(CompletedSetObservation(
             weightKg: set.weightKg,
             reps: set.reps,
@@ -533,8 +557,10 @@ final class SessionStore {
     private func appendWatchSetToDraft(_ set: WatchLoggedSet) {
         guard !set.isWarmup else { return }
         let now = Date()
+        // 窗口用不看组数的那一版：整场都在表上练、手机侧一组没记的草稿，第二天收到排队的组时
+        // 还没有 .logSet，按 isRestorable 会把这些组全拒掉（审查 2026-10-19）。
         guard let draft = draftStore.load(),
-              draft.isRestorable(todayISO: Self.localDayISO(now), now: now),
+              draft.isWithinRestoreWindow(todayISO: Self.localDayISO(now), now: now),
               var replayed = draft.restoreFlow(allowedEquipment: allowedEquipment, loadUnit: loadUnit)
         else { return }
 
@@ -548,23 +574,44 @@ final class SessionStore {
             extraEvents.append(.restFinished)
             replayed.restFinished()   // 值类型就地推进，不必整份重放第二次
         }
+        // 表上只有热身做完或跳过了才会发正式组；手机这边的热身指针是纯内存的，重放后从头开始。
+        // 不先跳过，动作开头的第一组就被下面的组号 / 热身守卫拦掉，之后整段的组号再也对不上，
+        // 这个动作连同后面的组全丢（审查 2026-10-19）。
+        if replayed.phase == .activeSet, replayed.isWarmingUp { replayed.skipAllWarmup() }
         // 校验放在补 restFinished **之后**：restFinished 可能推进到下一个动作，
         // 那时该等的组号与动作都变了。
         guard replayed.phase == .activeSet,
               replayed.currentExercise?.exerciseId == set.exerciseId,
-              !replayed.isWarmingUp,
               replayed.progress.setNumber == set.setNumber
         else { return }
 
+        // 记组时刻用表上那一下：这条路上组可能几小时后才送到，用收到的时刻会把组刻线全挤到末尾。
         let observation = CompletedSetObservation(
             weightKg: set.weightKg, reps: set.reps, rir: set.rir,
-            painReported: replayed.painReportedForCurrentSet)
+            painReported: replayed.painReportedForCurrentSet).stamped(at: set.loggedAtISO)
         var updated = draft
         for event in extraEvents { updated = updated.appending(event) }
         updated = updated.appending(.logSet(observation))
+        replayed.logSet(observation)
+        // 这一组把训练带进了小结：结束时刻同样取表上那一下，否则恢复时会按「重开手机那一刻」
+        // 补，时长凭空多出几个小时（审查 2026-10-19）。
+        if replayed.phase == .summary {
+            updated = updated.ending(at: ISO8601DateFormatter().date(from: set.loggedAtISO) ?? now)
+        }
         // 同步落盘，不用 enqueue：这条路上没有界面、也没有下一次机会——
         // app 可能马上又被系统收走，异步写就赌上了这一组。
         guard draftStore.saveDurably(updated) else { return }
+        // 练完了（owner 2026-10-19：手机没在看时自动存）：不再问「继续训练？」，直接存好。
+        if replayed.phase == .summary, replayed.canBeSaved {
+            finalizeFinishedDraft(updated)
+            return
+        }
+        // 启动时没问的那份（跨天、当时一组没记）现在有组了：立刻问，而不是等下一次 loadToday 随机冒出来。
+        if pendingDraft == nil, !restorePromptDeferred,
+           updated.isRestorable(todayISO: Self.localDayISO(now), now: now) {
+            pendingDraft = updated
+            return
+        }
         // **内存里那份待恢复 draft 也要跟上**（审查 M2）：手机重开时 loadToday 已把磁盘 draft
         // 读进 pendingDraft、弹着「继续训练？」，排队的组正好在这个窗口送到——
         // 只写磁盘不更新 pendingDraft，用户点「继续」重放的是旧的那份，这一组照样丢，
@@ -661,6 +708,7 @@ final class SessionStore {
     /// 于是通知重排、Live Activity、draft 留存、表上的回推全部自动一致。
     func applyWatchCommand(_ command: WatchCommand) {
         guard let flow, flow.currentExercise?.exerciseId == command.exerciseId else { return }
+        defer { noteWatchDrivenSummary(from: flow.phase) }   // 表上跳掉最后一组同样会进小结
         switch command.action {
         case .restAdd30:
             guard flow.phase == .resting else { return }
@@ -2301,19 +2349,70 @@ final class SessionStore {
         }
     }
 
-    /// 可恢复的 draft（规则见 TrainSessionDraft.isRestorable）→ 恢复提示；不可恢复 → 静默清除。
+    /// 启动时看盘上的 draft，三种结果：练完了（重放落在可保存的小结）→ 直接存好、不问；
+    /// 可恢复（规则见 TrainSessionDraft.isRestorable）→ 恢复提示；出了恢复窗口 → 清掉；
+    /// 窗口内但不可恢复（跨天且一组没记）→ 不问也不删，留给还在路上的表上组。
     /// 本次运行里选过「稍后再说」就不再自己弹：loadToday 在存计划、改设置、同步后都会再跑，
     /// 恢复面板挂在 RootTabView，不拦的话会在任一页面反复冒出来（审查 2026-10-18）。
     /// 只有再点「开始训练」撞上它时才重新问（startSession）；重开 App 后照常问一次。
     func checkForRestorableDraft() {
         guard flow == nil, pendingDraft == nil, !restorePromptDeferred,
               let draft = draftStore.load() else { return }
+        // 已经练完、只差点保存的一场（App 在小结里被系统收走，或表上的最后一组晚到）：
+        // 不问、不过期，直接存好（owner 2026-10-19）。此前过了 36 小时会被静默删掉。
+        if let replayed = draft.restoreFlow(allowedEquipment: allowedEquipment, loadUnit: loadUnit),
+           replayed.phase == .summary, replayed.canBeSaved {
+            finalizeFinishedDraft(draft)
+            return
+        }
         let now = Date()
-        if draft.isRestorable(todayISO: Self.localDayISO(now), now: now) {
+        let todayISO = Self.localDayISO(now)
+        if draft.isRestorable(todayISO: todayISO, now: now) {
             pendingDraft = draft
-        } else {
+        } else if !draft.isWithinRestoreWindow(todayISO: todayISO, now: now) {
             draftStore.clear()
         }
+        // 窗口内、跨天且一组没记的草稿：不问也不删，留给可能还在排队路上的表上组
+        //（先删掉的话，随后送到的组无处可去）。开新训练时照常被覆盖（审查 2026-10-19）。
+    }
+
+    /// 草稿里那一场已经练完：恢复进小结，再自动存好。
+    private func finalizeFinishedDraft(_ draft: TrainSessionDraft) {
+        pendingDraft = draft
+        restorePendingDraft()
+        guard flow?.phase == .summary else { return }
+        Task { await autoSaveFinishedSession() }
+    }
+
+    /// 表上那一下把训练带进了小结：记下来，手机此刻没人看就直接存。
+    private func noteWatchDrivenSummary(from before: TrainFlowState.Phase) {
+        guard before != .summary, flow?.phase == .summary else { return }
+        summaryReachedFromWatch = true
+        autoSaveIfUnattended()
+    }
+
+    /// 表上练完、手机没人在看：直接存好（owner 2026-10-19 拍板）。手机正开着时照旧弹小结，
+    /// 由人点保存；之后锁屏 / 切走（appInForeground 变 false）会再走到这里。
+    private func autoSaveIfUnattended() {
+        guard summaryReachedFromWatch, !appInForeground,
+              let flow, flow.phase == .summary, flow.canBeSaved else { return }
+        summaryReachedFromWatch = false   // 一场只自动存一次：失败就留给人点保存或下次打开
+        Task { await autoSaveFinishedSession() }
+    }
+
+    private func autoSaveFinishedSession() async {
+        let day = sessionStartedAt.map { Self.localDayISO($0) }
+        // 手机可能是被表上的组在后台叫醒的：要一段后台执行时间，别在落盘一半时被收走。
+        // 真被收走也不丢——小结草稿还在，下次打开时 checkForRestorableDraft 再存。
+        let task = UIApplication.shared.beginBackgroundTask(withName: "rede.autosave")
+        defer { if task != .invalid { UIApplication.shared.endBackgroundTask(task) } }
+        let saved: Bool
+        if let persist = persistFinishedSession {
+            saved = await persist()
+        } else {
+            saved = await completeAndPersistSession(waitForSlot: true)
+        }
+        if saved { autoSavedSessionDayISO = day }
     }
 
     /// 恢复提示里的「稍后再说」（含下滑关闭）：留着 draft，本次运行不再主动问。
@@ -2731,6 +2830,8 @@ final class SessionStore {
         restAdjustmentByExercise = [:]
         generalWarmupPending = generalWarmupEnabled
         warmupStepDoneAt = nil
+        autoSavedSessionDayISO = nil
+        summaryReachedFromWatch = false
         restCountdown.clear() // 新会话从 activeSet 起步，旧倒计时不得滞留
         restLiveActivity.end(endpoint: "session-start")   // K6：旧视觉层同不得滞留
         enqueueDraftSave()
@@ -2771,6 +2872,7 @@ final class SessionStore {
         restAdjustmentByExercise = [:]
         generalWarmupPending = false
         warmupStepDoneAt = nil
+        summaryReachedFromWatch = false
         saveErrorText = nil
         restCountdown.clear()
         cancelRestNotification() // FR-NT1：放弃/收尾时清掉待发的休息提醒，避免训练已结束还弹（审查 MAJOR-1）
@@ -2790,11 +2892,18 @@ final class SessionStore {
     /// 成功 → 清会话并重载今日（裁决翻转）；失败 → 如实报错、会话保留可重试。
     /// now 只是兜底：结束时刻来自 sessionEndedAt（进入小结那一刻，flow 的 didSet 用真实时钟记），
     /// 只有它缺失时才用 now——想测确定性时长请测 completedSessionTiming。
-    func completeAndPersistSession(now: Date = Date()) async -> Bool {
+    func completeAndPersistSession(now: Date = Date(), waitForSlot: Bool = false) async -> Bool {
         // 不能保存的一场不写：空记录会占掉当天的训练日、而且删不掉（小结只给「放弃」）。
-        guard let flow, flow.phase == .summary, flow.canBeSaved, !isSaving else { return false }
-        isSaving = true
+        guard let pending = flow, pending.phase == .summary, pending.canBeSaved else { return false }
+        // 自动保存背后没有人会再点一次：撞上别的写入（例如同步合并）时排队等，而不是忙就放弃。
+        if waitForSlot {
+            guard await acquireWriteSlot(maxAttempts: 150) else { return false }
+        } else {
+            guard tryAcquireWriteSlot() else { return false }
+        }
         defer { isSaving = false }
+        // 等槽位期间人可能已经点了保存或放弃：拿到槽位后再看一眼。
+        guard let flow, flow.phase == .summary, flow.canBeSaved else { return false }
         let timing = Self.completedSessionTiming(startedAt: sessionStartedAt, endedAt: sessionEndedAt, now: now)
         let startedAt = timing.startedAt
         let endedAt = timing.endedAt
@@ -2835,6 +2944,8 @@ final class SessionStore {
         switch result {
         case .success:
             lastSessionOutcome = "completed"   // 表侧 HK 会话在到小结时已按 completed 收；这里只是保持一致
+            let savedSets = flow.observationsByExercise.values.reduce(0) { $0 + $1.count }
+            savedSetsAwaitingReload = Self.localDayISO(startedAt) == Self.localDayISO(now) ? savedSets : 0
             endSession()
             await loadToday() // 裁决/进展立即反映新记录
             completedSessionCount += 1 // FR-ACC1：练完自动上传的触发信号（只在写盘成功后递增）
@@ -2853,6 +2964,19 @@ final class SessionStore {
         let start = startedAt ?? now
         let end = endedAt ?? now
         return (start, end, max(0, Int(end.timeIntervalSince(start)) / 60))
+    }
+
+    /// 表上「今天练完了 · N 组」的 N：今天已存的 + 刚存好、今日还没重载的 + 今天开练、刚到小结还没存的这一场。
+    /// 小结这一刻手表那场体能训练已经收尾，表上不该退回开练前的清单、第一行还画着「从这里开始」
+    ///（owner 真机反馈 2026-10-18）。昨天开练、一直没存的那场不算今天（审查 2026-10-19）。
+    nonisolated static func watchCompletedSetsToday(
+        savedToday: Int, flow: TrainFlowState?, summaryStartedToday: Bool, awaitingReload: Int
+    ) -> Int {
+        var total = savedToday + awaitingReload
+        if summaryStartedToday, let flow, flow.phase == .summary, flow.canBeSaved {
+            total += flow.observationsByExercise.values.reduce(0) { $0 + $1.count }
+        }
+        return total
     }
 
     /// 推给手表的训练状态：flow 在且没到小结 = 进行中（含「结束训练？」确认层）。

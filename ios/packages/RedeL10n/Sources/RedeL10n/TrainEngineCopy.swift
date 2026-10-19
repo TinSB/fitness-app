@@ -447,6 +447,11 @@ extension RedeStrings {
     }
     public var resumeSessionContinue: String { locale == .zh ? "继续训练" : "Resume" }
 
+    /// 上一场练完了却没点保存，手机已自动存好（owner 2026-10-19）。今日页标题下一行，只陈述。
+    public var autoSavedSessionNotice: String {
+        locale == .zh ? "上一场训练已自动保存" : "Your last workout was saved automatically"
+    }
+
     /// 进行中的训练与今天的安排不是同一天时的如实提示（2026-08-10 用户实拍：
     /// 今日页显示「推 A」而训练页在练「拉 A」——跨日恢复 draft 或临时换天后必然分叉，
     /// 此前两页各说各话、无任何交代）。

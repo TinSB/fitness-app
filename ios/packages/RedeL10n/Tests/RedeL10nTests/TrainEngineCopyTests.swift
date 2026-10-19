@@ -60,6 +60,11 @@ final class TrainEngineCopyTests: XCTestCase {
         XCTAssertEqual(en.resumeSessionLater, "Not now")
     }
 
+    func testAutoSavedSessionNoticeOnlyStatesTheFact() {
+        XCTAssertEqual(zh.autoSavedSessionNotice, "上一场训练已自动保存")
+        XCTAssertEqual(en.autoSavedSessionNotice, "Your last workout was saved automatically")
+    }
+
     func testSkipReasonLabelsCoverAllCodes() {
         for code in ["equipmentBusy", "painDiscomfort", "fatigue", "timeShort", "other"] {
             XCTAssertFalse(zh.skipReasonLabel(code).isEmpty)

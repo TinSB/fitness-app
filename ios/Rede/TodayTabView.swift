@@ -214,6 +214,15 @@ struct TodayTabView: View {
                     onTrailingTap: { showSettings = true }
                 )
 
+                // 上一场没点保存、已由手机自动存好（owner 2026-10-19）：只陈述一句，开新训练时消失。
+                if sessionStore.autoSavedSessionDayISO != nil {
+                    Text(s.autoSavedSessionNotice)
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeT3)
+                        .padding(.horizontal, RedeSpace.page)
+                        .padding(.top, 4)
+                }
+
                 todayContent
 
                 // FR-SE10 更新信号（2026-07-20 收敛）：低频运维信息移页底 receipt 区之后，
