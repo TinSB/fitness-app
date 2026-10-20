@@ -4,6 +4,39 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 ## 2026-10-20
 
+- **Warm-up by training goal and body part (owner feedback 2026-10-20)**: the owner's pull A day opened with lat pulldown. The only warm-up offered was the general card (jumping jacks, bodyweight squats); there were no light pulldown sets. Two root causes:
+  - **No specific warm-up on machines.** The non-barbell floor in `WarmupLadderEngine.externalLadder` was the catalog first-time start weight (lat pulldown ≈120 lb). The owner's work weight that day was 75 lb, below that floor, so the engine judged the lift "already at the lowest rung" and returned no steps. The floor is now the lightest enterable rung (`LoadGrid.snapKg(0, …)`); barbell / smith still start at the empty bar. `generate` no longer takes `startWeightKg`.
+  - **General card ignored the day.** It always listed the same full-body moves.
+
+  What changed:
+  - **Ladder follows the slot's rep range.** `generate` takes `workRepMin`, which the flow fills from `ExerciseSetPlan.repLowerBound`. A rep floor ≤5 (strength, e.g. squat / deadlift 5–8) keeps 50/70/90 % × 5/3/1 (isolation and accessory 60/80 % × 5/3). A rep floor ≥6 (hypertrophy) gets 50 % × 10 then 75 % × 5 for compound and accessory multi-joint machines (leg press, machine chest press …), and one 50 % × 10 set for isolation. Hypertrophy work no longer ends on a 90 % single. The split keys on the range floor, not the day's target reps, because double progression moves the target between the range bounds at the same weight; keying on the target made the same lift alternate ramps. Min-gap, already-warm bridge and empty-bar rules are unchanged; already-warm accessory still gets no warm-up.
+  - **General card follows today's body parts.** New `TrainFlowState.generalWarmupBodyParts` (upper / lower; neither found → both) reads the primary muscle group of each exercise in today's plan. The title is `generalWarmupTitle(upperBody:lowerBody:)`: upper-body / lower-body / general. `WarmupCopy.generalWarmupSteps(upperBody:lowerBody:)` replaces the fixed list:
+    - Raise line: treadmill, rower, bike or a brisk walk. The walk works at home; no jumping jacks.
+    - Upper days: arm circles, chest openers, scapular retractions.
+    - Lower days: air squats, stationary lunges, hip circles.
+    - Mixed days: both.
+    - When the first exercise has warm-up steps, a T3 caption `generalWarmupThenSpecific` says warm-up sets on the first exercise come next. It is count-neutral, because the next step can be a single empty-bar or bodyweight set.
+    - The settings label is now "Warm-up before training".
+  - **Review (four lenses, one skeptic per finding; 18 of 24 survived, all MINOR; all fixed):**
+    - The ramp was keyed on the day's target reps, which flips with double progression. Fixed: it now uses the rep floor.
+    - The "a few light sets" note over-promised. Fixed: neutral wording.
+    - The card was still titled "General" on single-region days. Fixed: the title varies.
+    - The raise line dropped the equipment-free option. Fixed: brisk walk restored.
+    - The owner test and spec used the selectorized grid (80 lb) while the real lat pulldown is cable (75 lb). Fixed.
+    - The 70 lb barbell line was now strength-only. Fixed: qualified, and a hypertrophy test was added.
+    - Stale engine header comments and a dead `start` test parameter were removed.
+    - The enum → Bool → enum round-trip was replaced by one Bool pair.
+    - Copy baseline, design language and the system-logic status row had drifted. Fixed.
+    - Not raised by reviewers: with the 1-rung isolation ladder, a heavy leg press first in a session would have dropped from two warm-up sets to one. Fixed: accessory now uses the two-rung hypertrophy ladder.
+  - **Real-data check (simulator, owner data copy, pull A).** The card shows upper-body moves only. Lat pulldown gives 40 lb × 10 and 55 lb × 5 before the 75 lb × 8 work sets; before the fix it gave no specific warm-up. A catalog-wide sweep (165 exercises × lb/kg × 5 load levels × 3 rep floors × 2 scopes) found no duplicate, non-increasing, zero or at-or-above-work rung, and no heavy compound without a warm-up.
+  - **Tests.**
+    - `RedeTrainingDecision` 618/618 and `RedeL10n` 165/165 pass.
+    - App-hosted `RedeTests` 187/188; the only failure is the pre-existing local StoreKit catalog test.
+    - `WarmupLadderEngineTests` +4: owner lat pulldown on the cable grid, 70 lb bench at hypertrophy reps, hypertrophy compound vs strength, hypertrophy isolation, accessory two rungs.
+    - `WarmupFlowTests` +3: body parts by plan, owner pull A lat pulldown 40/55 lb, squat 5–8 ramp identical on add and hold days.
+    - `WarmupCopyTests` +1: body-part variants and titles, no jumping jacks, banned-word list over every variant.
+  - **Specs.** System logic §6.3 (rules, contract, 2026-10-20 status note, acceptance), the §1177 summary and the §1617 status row; PRD FR-TR10; copy baseline (warm-up paragraph); design language (warm-up card).
+
 - **Release 1.12.0 build 42**: `MARKETING_VERSION` 1.11.0 → 1.12.0 and `CURRENT_PROJECT_VERSION` 41 → 42 in all 6 build configurations (App, Widget, Watch × Debug/Release). The owner said to package without asking and allowed a version bump.
   - **Content.** Same as main at 40e38f1: engine audit batch 1 (#769), the watch's instant rest / declutter / double tap (#768), the data-audit fixes (#766, #767), plus everything in 41.
   - **Bundled What's New.** All three version gates move to 1.12.0 (`appUpdateHeroLine`, `appUpdateHighlights`, `RedeAppUpdateRuntime.bundledWhatsNewVersions`) and `RedeStringsTests` asserts the new list. 1.11.0 never shipped to the store, so 1.12.0's narrative covers the whole watch app plus the later batches. `RedeL10n` 164/164; `AppUpdateRuntimeTests` 13/13, including the version gate.

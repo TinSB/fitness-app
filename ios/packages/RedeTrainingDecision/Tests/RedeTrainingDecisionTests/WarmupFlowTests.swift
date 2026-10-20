@@ -114,6 +114,50 @@ final class WarmupFlowTests: XCTestCase {
         }, dayReasons: []))
     }
 
+    /// 任意一组动作的一天（每个动作 40 kg、8–12 次）。
+    private func day(_ ids: [String], kg: Double = 40, repLowerBound: Int = 8, repUpperBound: Int = 12,
+                     targetReps: Int = 10, unit: LoadUnit = .kg) -> TrainFlowState {
+        TrainFlowState(prescription: TodayPrescription(dayCode: "custom", exercises: ids.map { id in
+            ExercisePrescriptionPlan(
+                exerciseId: id, sets: 1, restSeconds: 90, repLowerBound: repLowerBound, repUpperBound: repUpperBound,
+                targetReps: targetReps, targetWeightKg: kg, targetRir: 2, previousWeightKg: kg,
+                previousTopReps: targetReps, nextProjectedWeightKg: kg + 2.5, progressionStepKg: 2.5,
+                change: .hold, reason: .holdProgressing
+            )
+        }, dayReasons: []), loadUnit: unit)
+    }
+
+    // 2026-10-20 owner 真机反馈：拉日的全身热身给开合跳、徒手深蹲。卡片内容按今天动作的主练肌群走。
+    func testGeneralWarmupBodyPartsFollowTodaysExercises() {
+        func parts(_ state: TrainFlowState) -> [Bool] { [state.generalWarmupBodyParts.upper, state.generalWarmupBodyParts.lower] }
+        XCTAssertEqual(parts(day(["lat-pulldown", "seated-row", "db-curl"])), [true, false], "拉日")
+        XCTAssertEqual(parts(pushDay()), [true, false], "推日")
+        XCTAssertEqual(parts(day(["squat", "leg-press", "calf-raise", "cable-crunch"])), [false, true],
+                       "腿日（卷腹不算上肢）")
+        XCTAssertEqual(parts(day(["squat", "bench-press", "lat-pulldown"])), [true, true], "全身日")
+        XCTAssertEqual(parts(day(["cable-crunch", "not-in-catalog"])), [true, true], "只有核心 / 查不到：按全身给")
+    }
+
+    func testFirstPullExerciseGetsLightPulldownSetsBeforeWork() {
+        // 同一反馈：拉日第一个动作高位下拉（目录里是绳索器械，5 lb 一格），owner 当天 75 lb × 8–12：
+        // 先 40 lb ×10、55 lb ×5，再进正式组——不是只有全身热身卡。
+        let lbPerKg = 2.2046226218
+        let pull = day(["lat-pulldown", "seated-row"], kg: 75 / lbPerKg, unit: .lb)
+        let steps = pull.warmupStepsForCurrentExercise
+        XCTAssertEqual(steps.map { ($0.targetWeightKg * lbPerKg).rounded() }, [40, 55])
+        XCTAssertEqual(steps.map(\.targetReps), [10, 5])
+        XCTAssertTrue(steps.allSatisfy { $0.kind == .percent })
+    }
+
+    func testRampFollowsTheRepRangeNotTheDaysTarget() {
+        // 审查 2026-10-20：双进阶里同一重量的目标次数在下限 / 上限之间来回（加重那次 5、保持那次 8）。
+        // 深蹲 5–8 这种区间按下限算力量组：哪天都是 50/70/90% 的三级，不会隔一次换一种热身。
+        let addDay = day(["squat"], kg: 100, repLowerBound: 5, repUpperBound: 8, targetReps: 5)
+        let holdDay = day(["squat"], kg: 100, repLowerBound: 5, repUpperBound: 8, targetReps: 8)
+        XCTAssertEqual(addDay.warmupStepsForCurrentExercise, holdDay.warmupStepsForCurrentExercise)
+        XCTAssertEqual(holdDay.warmupStepsForCurrentExercise.map(\.targetWeightKg), [20, 50, 70, 90])
+    }
+
     /// 打满前 n 个动作（每个动作 1 组，不碰热身）。
     private func pushDayAfter(_ n: Int) -> TrainFlowState {
         var state = pushDay()
@@ -127,12 +171,14 @@ final class WarmupFlowTests: XCTestCase {
 
     func testPushDayOnlyFirstChestLiftGetsFullLadder() {
         let start = pushDay()
-        XCTAssertEqual(start.warmupStepsForCurrentExercise.map(\.targetWeightKg), [20, 30, 42.5, 55],
+        // 2026-10-20：增肌组（次数区间下限 ≥6）改用增肌式爬坡——空杆 + 50% ×10 + 75% ×5，不再做 90% 单次。
+        XCTAssertEqual(start.warmupStepsForCurrentExercise.map(\.targetWeightKg), [20, 30, 45],
                        "当天第一个练胸的动作：完整阶梯")
+        XCTAssertEqual(start.warmupStepsForCurrentExercise.map(\.targetReps), [8, 10, 5])
 
         let incline = pushDayAfter(1)
         XCTAssertEqual(incline.currentExercise?.exerciseId, "incline-db-press")
-        XCTAssertEqual(incline.warmupStepsForCurrentExercise.map(\.targetWeightKg), [27.5],
+        XCTAssertEqual(incline.warmupStepsForCurrentExercise.map(\.targetWeightKg), [30],
                        "胸已热过的复合动作：只给最接近 70% 的 1 步过渡")
         XCTAssertTrue(incline.isWarmingUp)
 
@@ -148,8 +194,8 @@ final class WarmupFlowTests: XCTestCase {
         var state = pushDay()
         state.skipExercise(reason: .equipmentBusy)   // 卧推一组没做
         XCTAssertEqual(state.currentExercise?.exerciseId, "incline-db-press")
-        XCTAssertEqual(state.warmupStepsForCurrentExercise.map(\.targetWeightKg), [22.5, 27.5, 35],
-                       "没练过胸 → 上斜卧推仍是完整阶梯")
+        XCTAssertEqual(state.warmupStepsForCurrentExercise.map(\.targetWeightKg), [20, 30],
+                       "没练过胸 → 上斜卧推仍是完整阶梯（哑铃从最轻一格起算，不再被目录起始重量托着）")
     }
 
     func testSecondaryOnlyCompoundStillGetsFullLadder() {
