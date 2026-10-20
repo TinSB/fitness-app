@@ -39,10 +39,11 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         return store
     }
 
+    /// 默认「刚在表上点的」：休息从表上那一下起算（v4），写死一个过去的时刻会让每段休息一到就已结束。
     private func loggedSet(exerciseId: String = "bench-press", setNumber: Int = 1,
-                           reps: Int = 8) -> WatchLoggedSet {
+                           reps: Int = 8, loggedAt: Date = Date()) -> WatchLoggedSet {
         WatchLoggedSet(exerciseId: exerciseId, setNumber: setNumber, weightKg: 60,
-                       reps: reps, rir: 2, loggedAtISO: "2026-08-15T10:00:00Z")
+                       reps: reps, rir: 2, loggedAtISO: ISO8601DateFormatter().string(from: loggedAt))
     }
 
     private func completedCount(_ store: SessionStore) -> Int {
@@ -431,6 +432,114 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
     }
 
     // MARK: - v2：表上改过的重量 / RIR 原样落库
+
+    // MARK: - 点完成即休息（v4，Master v3.9 §5 第 4 / 6 条，owner 2026-10-19）
+
+    func testRestStartsWhenTheSetWasTappedOnTheWatchNotWhenItReachedThePhone() {
+        // 手机在口袋里睡着，组晚 40 秒才送到：手机的休息从表上点下那一刻起算，与表上已经在走的倒计时对齐。
+        let store = makeStore(); finishWarmup(store)
+        store.sessionStartedAt = Date().addingTimeInterval(-600)
+        store.applyWatchLoggedSet(loggedSet(loggedAt: Date().addingTimeInterval(-40)))
+        XCTAssertEqual(store.flow?.phase, .resting)
+        XCTAssertEqual(Double(store.restRemainingSeconds), 80, accuracy: 2, "120 秒休息已经过去 40 秒")
+    }
+
+    func testSetThatArrivesAfterItsWholeRestEndsTheRestOnTheWatchesNextNudge() {
+        // 整段休息都过去了才送到：手机的倒计时一开始就是 0，表那边到点发来的「休息走完了」随即生效、进下一组。
+        let store = makeStore(); finishWarmup(store)
+        store.sessionStartedAt = Date().addingTimeInterval(-600)
+        store.applyWatchLoggedSet(loggedSet(loggedAt: Date().addingTimeInterval(-200)))
+        XCTAssertEqual(store.restRemainingSeconds, 0)
+        store.applyWatchCommand(command(.restSkip, auto: true))
+        XCTAssertEqual(store.flow?.phase, .activeSet)
+        XCTAssertEqual(store.flow?.progress.setNumber, 2)
+    }
+
+    func testTheSameSetArrivingOnTheSecondChannelAfterAnUndoIsNotRecordedAgain() {
+        // 同一组走两条通道各到一次。第一份到了、用户在手机上撤销，第二份才到——不能把撤销掉的组记回来。
+        let store = makeStore(); finishWarmup(store)
+        let set = loggedSet()
+        store.applyWatchLoggedSet(set)
+        XCTAssertTrue(store.undoLastSet())
+        XCTAssertEqual(store.flow?.phase, .activeSet)
+        store.applyWatchLoggedSet(set)
+        XCTAssertEqual(completedCount(store), 0)
+        // 用户之后真在表上重新做了这一组（新的一下 = 新的身份）：照收。
+        store.applyWatchLoggedSet(loggedSet(loggedAt: Date().addingTimeInterval(1)))
+        XCTAssertEqual(completedCount(store), 1)
+    }
+
+    func testWatchIsToldHowLongTheRestAfterThisSetWillBeAndWhatComesNext() {
+        let store = makeStore()
+        XCTAssertNil(store.restAfterCurrentSet(), "热身步之后不起表上预休息")
+        finishWarmup(store)
+        let first = store.restAfterCurrentSet()
+        XCTAssertEqual(first?.seconds, 120)
+        XCTAssertEqual(first?.nextSetNumber, 2)
+        XCTAssertNil(first?.nextExerciseId)
+        // 休息中不再给（表上已经在休息）。
+        store.applyWatchLoggedSet(loggedSet(setNumber: 1))
+        XCTAssertNil(store.restAfterCurrentSet())
+        // 本场对这个动作 +30：下一段休息按调整后的时长。
+        store.addRestTime(30)
+        store.apply(.restFinished)
+        XCTAssertEqual(store.restAfterCurrentSet()?.seconds, 150)
+        store.applyWatchLoggedSet(loggedSet(setNumber: 2))
+        store.apply(.restFinished)
+        // 全场最后一组：之后进小结，没有休息——表上不能多出一段。
+        XCTAssertNil(store.restAfterCurrentSet())
+    }
+
+    func testLastSetOfANonFinalExercisePreviewsTheNextExercise() {
+        let two = TodayPrescription(
+            dayCode: "push-a",
+            exercises: prescription().exercises + [
+                ExercisePrescriptionPlan(
+                    exerciseId: "overhead-press", sets: 2, restSeconds: 90,
+                    repLowerBound: 6, repUpperBound: 10, targetReps: 8,
+                    targetWeightKg: 40, targetRir: 2, previousWeightKg: nil,
+                    previousTopReps: nil, nextProjectedWeightKg: 42.5,
+                    progressionStepKg: 2.5, change: .start, reason: .firstExposure,
+                    loadType: "external", equipment: "barbell", progressionPauseReason: nil)
+            ],
+            dayReasons: [])
+        let store = SessionStore(draftStore: FakeDraftStore())
+        store.flow = TrainFlowState(prescription: two)
+        finishWarmup(store)
+        for n in 1...2 {
+            store.applyWatchLoggedSet(loggedSet(setNumber: n))
+            store.apply(.restFinished)
+        }
+        let last = store.restAfterCurrentSet()
+        XCTAssertEqual(last?.seconds, 120, "动作间休息仍按刚做完的这个动作")
+        XCTAssertNil(last?.nextSetNumber)
+        XCTAssertEqual(last?.nextExerciseId, "overhead-press")
+    }
+
+    func testRestPreviewLayersMatchTheOneLineVersion() {
+        let strings = RedeStrings(locale: .zh)
+        let same = SessionStore.watchRestPreviewLayers(currentExerciseDone: false, nextExerciseId: nil,
+                                                       loadType: "external", setNumber: 3, weightKg: 60,
+                                                       targetReps: 8, strings: strings)
+        XCTAssertEqual(same?.caption, "下一组 · 第 3 组")
+        XCTAssertEqual(same?.parts?.value, "60")
+        XCTAssertEqual(same?.parts?.reps, "× 8")
+        XCTAssertEqual(same?.spoken, SessionStore.watchRestPreview(
+            currentExerciseDone: false, nextExerciseId: nil, loadType: "external", setNumber: 3,
+            weightKg: 60, targetReps: 8, strings: strings), "分层版念出来与整句逐字一致")
+        let next = SessionStore.watchRestPreviewLayers(currentExerciseDone: true, nextExerciseId: "lat-pulldown",
+                                                       loadType: "external", setNumber: 4, weightKg: 60,
+                                                       targetReps: 0, strings: strings)
+        XCTAssertEqual(next?.caption, "接下来")
+        XCTAssertNil(next?.parts)
+        XCTAssertEqual(next?.spoken, SessionStore.watchRestPreview(
+            currentExerciseDone: true, nextExerciseId: "lat-pulldown", loadType: "external", setNumber: 4,
+            weightKg: 60, targetReps: 0, strings: strings))
+        XCTAssertEqual(SessionStore.watchAfterSetPreview(nextSetNumber: 2, nextExerciseId: nil, strings: strings)?.caption,
+                       "下一组 · 第 2 组")
+        XCTAssertNil(SessionStore.watchAfterSetPreview(nextSetNumber: 2, nextExerciseId: nil, strings: strings)?.parts,
+                     "预休息不带目标：下一组练多少要等手机算")
+    }
 
     func testAdjustedWeightAndUnrecordedRirAreStoredAsSent() {
         // 表上现在三个量都能改。改过的重量必须原样落进去；「—」= 不记 RIR 必须落成 nil，

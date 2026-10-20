@@ -142,6 +142,18 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
         /// 只在 isResting 时有值；旧手机不带这一位时表退回「下一组 + targetText」——
         /// 那个退路在动作最后一组休息时会显示「× 0」（targetReps 此时没有建议），所以这一位要有。
         public let restPreviewText: String?
+        /// 同一句预告的分层版（v4，2026-10-19）：小标「下一组 · 第 3 组」/「接下来」+ 主值（下一组目标分段，
+        /// 或下一个动作名）。表上分两层排，不再把整句压成一行 10pt 小字。只在 isResting 时有值；
+        /// 旧手机不带时表退回 restPreviewText 整句。
+        public let restPreview: RestPreview?
+        /// 点完成这一组后手机会开始的休息时长（秒）——已含本场对这个动作的调整与 15 秒下限，
+        /// 与手机 `restSeconds(for:)` 同一个数（v4，Master v3.9 §5 第 6 条：owner 2026-10-19 拍板
+        /// 「点完成即休息」）。表记完这一组**立刻**按它开始倒计时，不等手机醒来；手机接手后以手机那份为准。
+        /// nil = 这一组之后没有休息（热身步 / 全场最后一组）、正在休息、或旧手机——表照旧等手机。
+        public let restAfterSetSeconds: Int?
+        /// 预休息时环下那一行（v4）：只说接下来是哪一组 / 哪个动作，**不带目标**——
+        /// 下一组练多少要等手机按这一组的实际完成算，表不猜。手机接手后换成 restPreview。
+        public let restAfterSetPreview: RestPreview?
 
         public init(exerciseId: String, exerciseName: String, setNumber: Int, setTotal: Int,
                     exerciseNumber: Int, exerciseTotal: Int, targetText: String,
@@ -149,7 +161,8 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
                     isResting: Bool, isWarmup: Bool = false,
                     restEndsAt: Date? = nil, restTotalSeconds: Int = 0,
                     restPausedRemaining: Int? = nil, adjust: Adjust? = nil,
-                    restPreviewText: String? = nil) {
+                    restPreviewText: String? = nil, restPreview: RestPreview? = nil,
+                    restAfterSetSeconds: Int? = nil, restAfterSetPreview: RestPreview? = nil) {
             self.exerciseId = exerciseId
             self.exerciseName = exerciseName
             self.setNumber = setNumber
@@ -167,6 +180,32 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
             self.restPausedRemaining = restPausedRemaining
             self.adjust = adjust
             self.restPreviewText = restPreviewText
+            self.restPreview = restPreview
+            self.restAfterSetSeconds = restAfterSetSeconds
+            self.restAfterSetPreview = restAfterSetPreview
+        }
+    }
+
+    /// 休息屏环下的预告，分两层（v4）：小标走仪表标签，主值走目标簇（数值大、单位小）或动作名。
+    /// 全部由手机渲染——表不拼文案、不算目标。
+    public struct RestPreview: Codable, Equatable, Sendable {
+        /// 「下一组 · 第 3 组」/「接下来」。
+        public let caption: String
+        /// 换动作时的下一个动作名；同一动作的下一组为 nil。
+        public let title: String?
+        /// 下一组目标的分段；预休息（手机还没按实际完成算出下一组）或换动作时为 nil。
+        public let parts: TargetParts?
+
+        public init(caption: String, title: String? = nil, parts: TargetParts? = nil) {
+            self.caption = caption
+            self.title = title
+            self.parts = parts
+        }
+
+        /// 整句（无障碍朗读用）：小标 + 主值。
+        public var spoken: String {
+            let main = title ?? parts.map { [$0.prefix, $0.value, $0.unit, $0.reps].compactMap { $0 }.joined(separator: " ") }
+            return [caption, main].compactMap { $0 }.joined(separator: " · ")
         }
     }
 

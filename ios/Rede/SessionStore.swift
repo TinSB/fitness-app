@@ -413,7 +413,19 @@ final class SessionStore {
                             loadType: l.loadType, setNumber: l.setNumber,
                             weightKg: l.targetWeightKg,
                             targetReps: l.targetReps, strings: strings)
-                        : nil)
+                        : nil,
+                    // 同一句预告的分层版（v4）：表上小标一层、目标一层，不再挤成一行小字。
+                    restPreview: l.isResting
+                        ? SessionStore.watchRestPreviewLayers(
+                            currentExerciseDone: l.currentExerciseDone, nextExerciseId: l.nextExerciseId,
+                            loadType: l.loadType, setNumber: l.setNumber,
+                            weightKg: l.targetWeightKg, targetReps: l.targetReps, strings: strings)
+                        : nil,
+                    restAfterSetSeconds: l.restAfterSetSeconds,
+                    restAfterSetPreview: l.restAfterSetSeconds == nil ? nil
+                        : SessionStore.watchAfterSetPreview(nextSetNumber: l.afterSetNextSetNumber,
+                                                            nextExerciseId: l.afterSetNextExerciseId,
+                                                            strings: strings))
             }
             let rx = WatchPrescription(
                 dateISO: formatter.string(from: now),
@@ -455,6 +467,11 @@ final class SessionStore {
         /// 与 TrainTabView.restPreviewText 同一判据（完成 + 跳过 ≥ 组数）。
         let currentExerciseDone: Bool
         let nextExerciseId: String?
+        /// 点完成即休息（v4）：照目标记完这一组后手机会开始的休息秒数；nil = 之后不休息（热身步 /
+        /// 全场最后一组）或此刻不在等组。下面两位是那段休息的预告素材（下一组组号 / 换到的动作）。
+        var restAfterSetSeconds: Int? = nil
+        var afterSetNextSetNumber: Int? = nil
+        var afterSetNextExerciseId: String? = nil
     }
 
     private func liveSetProjection() -> LiveSet? {
@@ -491,6 +508,7 @@ final class SessionStore {
         }
 
         let rec = flow.currentRecommendation
+        let afterSet = restAfterCurrentSet()
         return LiveSet(
             exerciseId: current.exerciseId,
             loadType: current.loadType,
@@ -507,7 +525,29 @@ final class SessionStore {
             restTotalSeconds: restCountdown.totalSeconds,
             restPausedRemaining: restCountdown.pausedRemaining,
             warmupKind: nil,
-            currentExerciseDone: currentDone, nextExerciseId: nextExerciseId)
+            currentExerciseDone: currentDone, nextExerciseId: nextExerciseId,
+            restAfterSetSeconds: afterSet?.seconds,
+            afterSetNextSetNumber: afterSet?.nextSetNumber,
+            afterSetNextExerciseId: afterSet?.nextExerciseId)
+    }
+
+    /// 点完成即休息（v4，Master v3.9 §5 第 6 条）：此刻这一组照目标记完后，手机会开始多长的休息、
+    /// 预告哪一组（同动作的下一组组号）或哪个动作（换动作时）。nil = 之后不休息（全场最后一组进小结）、
+    /// 在热身、或此刻不在等组。
+    ///
+    /// 照目标把这一组记进一份**副本**，用引擎自己的 logSet 判——不另写一套「是不是全场最后一组」：
+    /// 两处判据一分叉，表上就会在手机进小结的那一组后面多出一段休息。
+    func restAfterCurrentSet() -> (seconds: Int, nextSetNumber: Int?, nextExerciseId: String?)? {
+        guard let flow, flow.phase == .activeSet, !flow.isWarmingUp else { return nil }
+        let rec = flow.currentRecommendation
+        var probe = flow
+        probe.logSet(CompletedSetObservation(weightKg: flow.currentTargetWeightKg ?? 0,
+                                             reps: rec?.targetReps ?? 0, rir: rec?.targetRir))
+        guard probe.phase == .resting else { return nil }
+        if !probe.currentExerciseIsDone { return (restSeconds(for: probe), probe.progress.setNumber, nil) }
+        let next = probe.plan.exercises.indices.contains(probe.exerciseIndex + 1)
+            ? probe.plan.exercises[probe.exerciseIndex + 1].exerciseId : nil
+        return (restSeconds(for: probe), nil, next)
     }
 
     /// 表上记的一组。**走手机自己那条 apply(.logSet)**——不另开落盘路径，
@@ -527,6 +567,11 @@ final class SessionStore {
         // 修法：写进 draft 而不是内存里的 flow。draft 是这场训练的持久真源，
         // 用户点「继续训练」重放时自然带上。判断依据用 draft 重放出来的状态，
         // 幂等规则与在线路径完全一致。
+        // 同一组会从两条通道各到一次（v4：排队通道保证送达 + 即时消息把手机叫醒）。状态守卫挡得住
+        // 绝大多数重复，唯独挡不住「第一份到了、用户在手机上撤销、第二份才到」——那会把撤销掉的组记回来。
+        // 所以收下过的组按表上那一下的身份记住，同一份再来直接丢。
+        let watchSetKey = "\(set.exerciseId)#\(set.setNumber)#\(set.isWarmup)#\(set.loggedAtISO)"
+        guard !acceptedWatchSetKeys.contains(watchSetKey) else { return }
         guard flow != nil else { appendWatchSetToDraft(set); return }
         guard let flow, flow.phase == .activeSet else { return }
         guard flow.currentExercise?.exerciseId == set.exerciseId else { return }
@@ -534,6 +579,7 @@ final class SessionStore {
         if set.isWarmup {
             // 热身**不落库**：只推进热身步。幂等键同样是 exerciseId + 步序号。
             guard flow.isWarmingUp, flow.currentWarmupStep?.index == set.setNumber else { return }
+            noteAcceptedWatchSet(watchSetKey)
             advanceWarmupStep()
             return
         }
@@ -551,11 +597,33 @@ final class SessionStore {
             // 疼痛只在手机上报——表上没有这个入口，照读当前状态，不臆造。
             painReported: flow.painReportedForCurrentSet)
         if let loggedAt { observation = observation.stamped(at: ISO8601DateFormatter().string(from: loggedAt)) }
-        apply(.logSet(observation))
+        noteAcceptedWatchSet(watchSetKey)
+        apply(.logSet(observation), restAnchor: loggedAt)
         // 这一组把训练带进了小结：结束时刻同样是表上那一下（flow 的 didSet 先按收到的时刻记了一笔）。
         if self.flow?.phase == .summary, let loggedAt {
             sessionEndedAt = loggedAt
             enqueueDraftSave()
+        }
+    }
+
+    /// 收下过的表上组（v4 两通道去重，见 applyWatchLoggedSet）。只留最近几十条：重复只会在几秒内到。
+    private var acceptedWatchSetKeys: [String] = []
+
+    private func noteAcceptedWatchSet(_ key: String) {
+        acceptedWatchSetKeys.append(key)
+        if acceptedWatchSetKeys.count > 32 { acceptedWatchSetKeys.removeFirst(acceptedWatchSetKeys.count - 32) }
+    }
+
+    /// 手机可能是被表上的即时消息从后台叫醒的（v4）：要几秒后台执行时间，让这一组落进训练、休息开始、
+    /// 新处方推回表。推送走后台渲染 + 回主线程，WatchConnectivity 回调一返回进程就可能被挂起——
+    /// 那样表上的倒计时到点后，手机还停在「等这一组」，表上进不了下一组。
+    func holdBackgroundTimeForWatchIntake() {
+        guard UIApplication.shared.applicationState != .active else { return }
+        let task = UIApplication.shared.beginBackgroundTask(withName: "rede.watch-intake")
+        guard task != .invalid else { return }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(5))
+            UIApplication.shared.endBackgroundTask(task)
         }
     }
 
@@ -680,6 +748,33 @@ final class SessionStore {
         case "assisted": return strings.restNextPreviewAssisted(setNumber: setNumber, kg: kg, reps: targetReps)
         case "bodyweight-plus": return strings.restNextPreviewBodyweightPlus(setNumber: setNumber, kg: kg, reps: targetReps)
         default: return strings.restNextPreview(setNumber: setNumber, kg: kg, reps: targetReps)
+        }
+    }
+
+    /// 休息屏预告的分层版（v4）：与 watchRestPreview 同一判据、同一组数据，只是拆成小标 + 主值。
+    /// 换动作 → 「接下来」+ 动作名；同动作 → 「下一组 · 第 N 组」+ 目标分段（与清单行同一套分段）。
+    nonisolated static func watchRestPreviewLayers(currentExerciseDone: Bool, nextExerciseId: String?,
+                                                   loadType: String, setNumber: Int, weightKg: Double,
+                                                   targetReps: Int, strings: RedeStrings) -> WatchPrescription.RestPreview? {
+        if currentExerciseDone {
+            return nextExerciseId.map {
+                .init(caption: strings.watchUpNextCaption,
+                      title: ExerciseCatalog.minimal.displayName($0, localeCode: strings.locale.rawValue))
+            }
+        }
+        let parts = strings.targetParts(loadType: loadType, weightKg: weightKg, reps: targetReps)
+        return .init(caption: strings.watchNextSetCaption(setNumber: setNumber),
+                     parts: .init(prefix: parts.prefix, value: parts.value, unit: parts.unit, reps: parts.reps))
+    }
+
+    /// 预休息（表上点完成、手机还没接手）时环下那一行：只说是哪一组 / 哪个动作，不带目标——
+    /// 下一组练多少要等手机按这一组的实际完成算。
+    nonisolated static func watchAfterSetPreview(nextSetNumber: Int?, nextExerciseId: String?,
+                                                 strings: RedeStrings) -> WatchPrescription.RestPreview? {
+        if let nextSetNumber { return .init(caption: strings.watchNextSetCaption(setNumber: nextSetNumber)) }
+        return nextExerciseId.map {
+            .init(caption: strings.watchUpNextCaption,
+                  title: ExerciseCatalog.minimal.displayName($0, localeCode: strings.locale.rawValue))
         }
     }
 
@@ -2483,7 +2578,9 @@ final class SessionStore {
     /// 事件包装：转移 + 即时 draft 留存（每个动作后都可恢复）。
     /// restCompletedNaturally=true：休息倒计时自然归零（前台 runRestTimer 推进）——**不取消**已排程的
     /// 休息提醒，让它此刻送达（前台经 delegate 呈现 / 后台系统送达）。手动「下一组」提前结束或收尾才取消。
-    func apply(_ event: TrainFlowEvent, restCompletedNaturally: Bool = false) {
+    /// restAnchor：这段休息从哪一刻起算（v4）。只有表上记的组会传——它可能晚到（手机在口袋里睡着），
+    /// 按收到的时刻起算，手机与表上的倒计时就差出整段送达延迟。nil = 现在。
+    func apply(_ event: TrainFlowEvent, restCompletedNaturally: Bool = false, restAnchor: Date? = nil) {
         guard flow != nil else { return }
         // 记组时刻在这里盖章而不是在七个构造点各盖一次：引擎包无时钟（硬纪律），
         // 而这里是 app 层唯一一条 .logSet 必经之路。已经带了时刻的（未来若有）不覆盖。
@@ -2497,7 +2594,7 @@ final class SessionStore {
         case .logSet, .skipSet, .skipExercise: generalWarmupPending = false
         default: break
         }
-        syncRestCountdown(after: event, restCompletedNaturally: restCompletedNaturally)
+        syncRestCountdown(after: event, restCompletedNaturally: restCompletedNaturally, restAnchor: restAnchor)
         enqueueDraftSave()
         // 重推由 flow 的 didSet 负责——reduce 改了 flow，推送自然跟上。
         // 于是「表记一组 → 手机推下一组 → 表显示下一组」自动闭环。
@@ -2695,7 +2792,8 @@ final class SessionStore {
     /// 事件落定后同步倒计时锚点。进入 resting（仅 logSet 一条路）= 开新休息；
     /// restFinished 或落到 summary = 结束清空；confirmEnd↔resting 折返（结束确认弹层
     /// 取消后继续训练）期间不动锚点，故剩余随墙钟延续、不会重置。
-    private func syncRestCountdown(after event: TrainFlowEvent, restCompletedNaturally: Bool = false) {
+    private func syncRestCountdown(after event: TrainFlowEvent, restCompletedNaturally: Bool = false,
+                                   restAnchor: Date? = nil) {
         guard let flow else {
             restCountdown.clear()
             cancelRestNotification()
@@ -2705,8 +2803,12 @@ final class SessionStore {
         switch event {
         case .logSet where flow.phase == .resting:
             let seconds = restSeconds(for: flow)
-            restCountdown.begin(seconds: seconds)
-            scheduleRestNotification(restSecondsPlanned: seconds)
+            // 表上的组：从表上点下那一刻起算，与表自己先起的那段倒计时对齐（不晚于现在）。
+            let now = Date()
+            restCountdown.begin(seconds: seconds, now: min(restAnchor ?? now, now))
+            // 提醒按还剩多少排；送到时已经休息完了就不排——表那边到点已经震过了。
+            let remaining = restCountdown.remaining(now: now)
+            if remaining > 0 { scheduleRestNotification(restSecondsPlanned: remaining) }
             beginRestActivity(endpoint: "rest-begin")   // K6：休息开始挂视觉层（begin 挂点）
         case .restFinished:
             restCountdown.clear()

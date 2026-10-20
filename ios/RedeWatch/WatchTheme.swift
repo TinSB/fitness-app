@@ -65,6 +65,8 @@ enum WatchMetrics {
     static var roundButton: CGFloat { (38 * scale).rounded() }
     /// 进度行 / 休息标题 / 「下一组」预览这类辅助小字
     static var meta: CGFloat { min(13, (11 * scale).rounded()) }
+    /// 休息屏环下预告区的固定高度：小标一行 + 目标（标题 +3）一行。预休息时只有小标，也照样留这么高。
+    static var restPreviewHeight: CGFloat { (caption + title + 3) * 1.3 + 2 }
     /// 仪表小标签（值下面的说明）
     static var caption: CGFloat { min(11, (9 * scale).rounded()) }
     /// 仪表标签字距（设计语言 §11.3：instrument overline ~2.2；表上字小，取 1.4）
@@ -114,6 +116,8 @@ struct EmbWatchButton: View {
     let icon: String?
     let title: String
     var enabled = true
+    /// 捏合（双击）手势绑到这颗钮上（watchOS 11+，PRD FR-AW5）。一屏只给一颗——这一屏的主动作。
+    var primaryGesture = false
     let action: () -> Void
 
     /// 点击计数——驱动图标的一次性弹跳（symbolEffect 需要一个变化的值做触发）。
@@ -143,9 +147,25 @@ struct EmbWatchButton: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.watchPressable)
+        .primaryHandGesture(primaryGesture)
         .disabled(!enabled)
         .opacity(enabled ? 1 : 0.45)
         .animation(WatchMotion.tint, value: enabled)
+    }
+}
+
+// MARK: - 捏合（双击）手势（PRD FR-AW5，2026-10-19 owner 反馈「在我们 app 里不可用」）
+
+extension View {
+    /// 把系统的双击手势（拇指与食指捏两下，Series 9 / Ultra 2 起）绑成这颗钮的主动作。
+    /// watchOS 11 才有这个接口；部署目标是 10，旧系统上什么也不做（不改部署目标）。
+    /// 钮被禁用时系统自己不触发——不用另判。
+    @ViewBuilder func primaryHandGesture(_ enabled: Bool) -> some View {
+        if enabled, #available(watchOS 11.0, *) {
+            self.handGestureShortcut(.primaryAction)
+        } else {
+            self
+        }
     }
 }
 
@@ -154,6 +174,8 @@ struct EmbWatchButton: View {
 struct MachinedRoundButton<Label: View>: View {
     var primary = false
     var enabled = true
+    /// 同 EmbWatchButton.primaryGesture。
+    var primaryGesture = false
     let action: () -> Void
     @ViewBuilder let label: () -> Label
 
@@ -168,6 +190,7 @@ struct MachinedRoundButton<Label: View>: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.watchPressable)
+        .primaryHandGesture(primaryGesture)
         .disabled(!enabled)
         .opacity(enabled ? 1 : 0.45)
         .animation(WatchMotion.tint, value: enabled)
@@ -275,45 +298,11 @@ struct InstrumentCaption: View {
     }
 }
 
-/// 生命体征行：`♥ 132 · 24:10`（心率 · 这一场已练多久）。
+/// 已练时长的写法（休息环心那一行 `♥ 132 24:10` 的后半，v4）。
 ///
-/// 为什么是「行」而不是瓦片或环：这两个数**不是用来操作的**，是抬眼扫一下就走。
-/// 给它们造控件会跟真正要操作的东西抢注意力，也违反 ember 纪律——橙色只指下一步，
-/// 心率是事实不是下一步，所以整行走刻度标同一档灰。
-///
-/// 时长由 `TimelineView` 按墙钟自己算（传时刻不传秒数，与休息倒计时同一纪律）：
+/// 时长由调用方的 `TimelineView` 按墙钟算（传时刻不传秒数，与休息倒计时同一纪律）：
 /// 不需要谁每秒发布一次，app 被挂起再抬腕回来也是准的。
-struct VitalsLine: View {
-    let bpm: Int?
-    let startedAt: Date?
-
-    private var hasAny: Bool { bpm != nil || startedAt != nil }
-
-    var body: some View {
-        if hasAny {
-            TimelineView(.periodic(from: .now, by: 1)) { context in
-                HStack(spacing: 4) {
-                    if let bpm {
-                        Image(systemName: "heart.fill")
-                            .font(.system(size: WatchMetrics.caption))
-                        Text(verbatim: "\(bpm)")
-                            .monospacedDigit()
-                    }
-                    if bpm != nil, startedAt != nil {
-                        Text(verbatim: "·")
-                    }
-                    if let startedAt {
-                        Text(verbatim: Self.elapsed(since: startedAt, now: context.date))
-                            .monospacedDigit()
-                    }
-                }
-                .font(.system(size: WatchMetrics.meta))
-                .foregroundStyle(WatchPalette.t3)
-                .lineLimit(1).minimumScaleFactor(0.8)
-            }
-        }
-    }
-
+enum WorkoutClock {
     /// 一小时以内 `24:10`，超过就 `1:04:10`。不显示「分」「秒」这类词——
     /// 表上每个字都要买路钱，冒号已经说清楚了，而且它不用翻译。
     static func elapsed(since start: Date, now: Date) -> String {
