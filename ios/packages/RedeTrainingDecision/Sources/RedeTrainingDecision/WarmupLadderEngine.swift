@@ -1,6 +1,6 @@
 // WarmupLadderEngine — FR-TR10 热身阶梯生成（系统逻辑 §6.3）。
 //
-// 纯函数大脑：吃工作组顶重 + 动作事实（loadType/equipment/kind/startWeight）+ 单位，
+// 纯函数大脑：吃工作组顶重 + 次数区间下限 + 动作事实（loadType/equipment/kind）+ 单位，
 // 产出确定性、保守的热身阶梯（typed WarmupStep，零文案、kg 口径）。同输入必同阶梯。
 //
 // **关键契约（FR-TR10 设计）**：热身是**流内临时引导**——never 落 canonical、never 进
@@ -12,15 +12,26 @@
 //
 // 数值为 **MVP 保守起步值，待 owner 真机校准**（同 FR-PR7 里程碑阈值惯例）：
 //  - 空杆 = 20kg（lb 模式吸附为 45lb）。
-//  - compound 三级 50/70/90% × 次 5/3/1；isolation/accessory 两级 60/80% × 次 5/3。
+//  - 力量组：compound 三级 50/70/90% × 次 5/3/1；isolation/accessory 两级 60/80% × 次 5/3。
+//    增肌组见下方 2026-10-20 段。
 //  - 杠铃/史密斯额外前置「空杆 ×8」动作模式预热。
 //  - 自重/弹力带无重量轴：compound 出 1 步纯次数动作模式预热，孤立类 0 步。
 // 跳过偏好学习（friction/tolerance + confidence）明示后置为独立 slice（系统逻辑 §6.3 热身段）。
 //
+// 按训练目标分两种爬坡 + 器械从最轻一格起（2026-10-20 owner 真机反馈「拉日第一个动作是高位下拉，
+// 热身却只有开合跳，不应该是低重量高位下拉激活吗」）：
+//  - **增肌组（这个动作的次数区间下限 ≥6，如 6–10、8–12）**：复合与 accessory（器械推胸、腿举这类
+//    多关节器械）2 级 50% ×10、75% ×5；孤立 1 级 50% ×10——健身房里练 8–12 次的常规做法，轻重量把动作
+//    做顺、再一组接近工作重。以前一律用力量式 50/70/90% × 5/3/1，练 10 次的人最后还要做一组 90% 单次。
+//  - **力量组（下限 ≤5，如深蹲 / 硬拉 5–8）**：照旧 50/70/90% × 5/3/1（孤立 / accessory 60/80% × 5/3）。
+//  - 按**区间下限**分、不按当天的目标次数：双进阶里同一重量的目标次数会在下限和上限之间来回（加重那次
+//    给下限、保持那次给上限），按当天目标分会让同一个动作隔一次换一种热身（审查 2026-10-20）。
+//  - **非杠铃器械的起点是器械最轻那一格**，不再是动作目录的首次起始重量：高位下拉目录起始约 120 lb，
+//    owner 当天工作重 75 lb，被判「已在最低档、无需热身」，于是一组轻重量下拉都没有。
 // 少点几下（训练流审查 P1，2026-10-18）：
 //  - **台阶最小间隔**：相邻两级至少差 max(两格, 工作重 10%)，最高一级离工作重至少两格
 //    （assisted 镜像：离工作辅助量至少两格）。杠铃 70 lb 此前给 45 → 50 → 65（50 只比空杆重 5 lb，
-//    白做一组），现在只剩空杆一步。轻负荷因此自然收敛到 1 步；复合动作「至少 1 步」的安全保留不变。
+//    白做一组），力量组现在只剩空杆一步；增肌组是空杆 → 55 ×5（离空杆、离工作重都够两格）。轻负荷因此自然收敛到 1 步；复合动作「至少 1 步」的安全保留不变。
 //  - **已热过的部位**（scope = .alreadyWarm，判定在 TrainFlowState）：复合动作最多 1 步过渡
 //   （取完整阶梯里最接近 70% 且离工作重至少两格的一级），孤立/辅助动作不热身。
 
@@ -84,9 +95,13 @@ public enum WarmupLadderEngine {
     private static let emptyBarRefKg = 20.0          // 标准奥杆；lb 模式吸附为 45lb
     private static let movementPrepReps = 10         // 自重/弹力带动作模式预热次数
     private static let emptyBarReps = 8              // 杠铃空杆预热次数
-    // 百分比阶梯（顶重占比，次数）：compound 三级、isolation/accessory 两级。
+    // 百分比阶梯（顶重占比，次数）。力量组（次数区间下限 ≤ strengthRepCeiling）用力量式爬坡；
+    // 增肌组用两级 / 一级的高次数轻重量（见文件头 2026-10-20）。
+    private static let strengthRepCeiling = 5
     private static let compoundLadder: [(pct: Double, reps: Int)] = [(0.5, 5), (0.7, 3), (0.9, 1)]
     private static let isolationLadder: [(pct: Double, reps: Int)] = [(0.6, 5), (0.8, 3)]
+    private static let compoundHypertrophyLadder: [(pct: Double, reps: Int)] = [(0.5, 10), (0.75, 5)]
+    private static let isolationHypertrophyLadder: [(pct: Double, reps: Int)] = [(0.5, 10)]
     // 台阶最小间隔：相邻两级 ≥ max(minGapSteps 格, 工作重 × minGapFraction)；最高一级离工作重 ≥ minGapSteps 格。
     private static let minGapSteps = 2.0
     private static let minGapFraction = 0.1
@@ -95,21 +110,22 @@ public enum WarmupLadderEngine {
 
     /// 产出保守热身阶梯。空数组 = 无需热身（轻负荷 / 低风险孤立 / 已热部位的孤立动作 /
     /// 未知 loadType，安全降级）。
+    /// workRepMin：这个动作今天的次数区间下限，决定爬坡方式（≤5 力量式，否则增肌式）。
     public static func generate(
         workWeightKg: Double,
+        workRepMin: Int,
         loadType: String,
         equipment: String,
         kind: String,
-        startWeightKg: Double,
         unit: LoadUnit,
         scope: WarmupScope = .full
     ) -> [WarmupStep] {
-        let full = fullLadder(workWeightKg: workWeightKg, loadType: loadType, equipment: equipment,
-                              kind: kind, startWeightKg: startWeightKg, unit: unit)
+        let full = fullLadder(workWeightKg: workWeightKg, workRepMin: workRepMin, loadType: loadType,
+                              equipment: equipment, kind: kind, unit: unit)
         guard scope == .alreadyWarm else { return full }
         guard kind == "compound" else { return [] }
         // 过渡步只取带负重的一级：已经热过的部位，空杆 / 纯自重那一步没有意义；离工作重不足两格的
-        //（工作重贴着起始重量时，那一级多半是被夹到起始重量的保底级）也没有意义——宁可不热。
+        //（工作重很轻时，那一级多半是被夹到器械最轻一格的保底级）也没有意义——宁可不热。
         let step = loadType == "bodyweight-plus"
             ? LoadGrid.addedLoadStepKg(unit: unit) : LoadGrid.stepKg(equipment: equipment, unit: unit)
         let rungs = full.filter {
@@ -123,16 +139,18 @@ public enum WarmupLadderEngine {
 
     private static func fullLadder(
         workWeightKg: Double,
+        workRepMin: Int,
         loadType: String,
         equipment: String,
         kind: String,
-        startWeightKg: Double,
         unit: LoadUnit
     ) -> [WarmupStep] {
         let isCompound = (kind == "compound")
         switch loadType {
         case "external":
-            return externalLadder(workWeightKg: workWeightKg, equipment: equipment, isCompound: isCompound, startWeightKg: startWeightKg, unit: unit)
+            return externalLadder(workWeightKg: workWeightKg, equipment: equipment, isCompound: isCompound,
+                                  multiJoint: isCompound || kind == "accessory",
+                                  strength: workRepMin <= strengthRepCeiling, unit: unit)
         case "bodyweight-plus":
             return bodyweightPlusLadder(addedWorkKg: workWeightKg, isCompound: isCompound, unit: unit)
         case "assisted":
@@ -146,11 +164,13 @@ public enum WarmupLadderEngine {
 
     // MARK: external（杠铃/哑铃/绳索/挂片机/选重机/史密斯）
 
-    private static func externalLadder(workWeightKg: Double, equipment: String, isCompound: Bool, startWeightKg: Double, unit: LoadUnit) -> [WarmupStep] {
+    private static func externalLadder(workWeightKg: Double, equipment: String, isCompound: Bool, multiJoint: Bool,
+                                       strength: Bool, unit: LoadUnit) -> [WarmupStep] {
         let isBarbell = (equipment == "barbell" || equipment == "smith")
+        // 地板：杠铃 = 空杆；其它器械 = 最轻那一格（选重机一格、哑铃梯子最低一档）。
         let floor = isBarbell
             ? LoadGrid.snapKg(emptyBarRefKg, equipment: "barbell", unit: unit)
-            : max(LoadGrid.snapKg(startWeightKg, equipment: equipment, unit: unit), LoadGrid.stepKg(equipment: equipment, unit: unit))
+            : LoadGrid.snapKg(0, equipment: equipment, unit: unit)
         // 工作重不高于地板 → 已在最低档，无需热身。
         guard workWeightKg > floor else { return [] }
 
@@ -160,7 +180,10 @@ public enum WarmupLadderEngine {
             weighted.append((floor, emptyBarReps, .emptyBar))
         }
         // 百分比阶梯：吸附档位、夹在 [floor, work)、严格小于工作重（热身≠工作组）。
-        for rung in (isCompound ? compoundLadder : isolationLadder) {
+        let ladder = strength
+            ? (isCompound ? compoundLadder : isolationLadder)
+            : (multiJoint ? compoundHypertrophyLadder : isolationHypertrophyLadder)
+        for rung in ladder {
             let snapped = LoadGrid.snapKg(workWeightKg * rung.pct, equipment: equipment, unit: unit)
             let clamped = min(max(snapped, floor), workWeightKg)
             if clamped < workWeightKg {

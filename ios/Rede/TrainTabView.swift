@@ -626,9 +626,11 @@ struct TrainTabView: View {
     // MARK: - 开练前全身热身（训练流审查 P1：可跳过、一场只出现一次）
 
     private func generalWarmupState() -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+        // 按今天练的部位换卡名和内容（2026-10-20：拉日不再给开合跳、徒手深蹲）。
+        let parts = sessionStore.flow?.generalWarmupBodyParts ?? (upper: true, lower: true)
+        return VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
-                Overline(text: s.generalWarmupTitle, color: .redeEmber2)
+                Overline(text: s.generalWarmupTitle(upperBody: parts.upper, lowerBody: parts.lower), color: .redeEmber2)
                 Spacer()
                 Text(s.generalWarmupDuration)
                     .font(.redeCaption)
@@ -636,11 +638,19 @@ struct TrainTabView: View {
                     .foregroundStyle(Color.redeT3)
             }
             VStack(alignment: .leading, spacing: 8) {
-                ForEach(s.generalWarmupSteps, id: \.self) { line in
+                ForEach(s.generalWarmupSteps(upperBody: parts.upper, lowerBody: parts.lower), id: \.self) { line in
                     Text(line)
                         .font(.redeBody)
                         .foregroundStyle(Color.redeT2)
                         .fixedSize(horizontal: false, vertical: true)
+                }
+                // 第一个动作接下来确实有热身组时，把顺序说清楚（全身热身 ≠ 专项热身）。
+                if sessionStore.flow?.warmupStepsForCurrentExercise.isEmpty == false {
+                    Text(s.generalWarmupThenSpecific)
+                        .font(.redeCaption)
+                        .foregroundStyle(Color.redeT3)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 2)
                 }
             }
             .padding(.top, 12)

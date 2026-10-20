@@ -40,13 +40,38 @@ extension RedeStrings {
     // MARK: 开练前全身热身卡（训练流审查 P1）
     // 红线（文案基线 §7.1）：只说做什么、做多久，不写防伤 / 保护关节 / 安全之类的功效。
 
-    public var generalWarmupTitle: String { t2w("全身热身", "General warm-up") }
+    /// 卡名跟着下面的动作走：只练上肢 / 只练下肢的日子不再叫「全身热身」（审查 2026-10-20）。
+    public func generalWarmupTitle(upperBody: Bool, lowerBody: Bool) -> String {
+        switch (upperBody, lowerBody) {
+        case (true, false): return t2w("上肢热身", "Upper-body warm-up")
+        case (false, true): return t2w("下肢热身", "Lower-body warm-up")
+        default: return t2w("全身热身", "General warm-up")
+        }
+    }
     public var generalWarmupDuration: String { t2w("3–5 分钟", "3–5 min") }
-    /// 两行做法：先升温，再活动关节。
-    public var generalWarmupSteps: [String] {
-        locale == .zh
-            ? ["快走、划船机或单车 2–3 分钟", "开合跳、徒手深蹲、手臂绕环 各 10 次"]
-            : ["Brisk walk, rower or bike for 2–3 min", "Jumping jacks, air squats and arm circles, 10 each"]
+    /// 两行做法：先升温，再做今天要练的部位的动态活动（2026-10-20 按部位分：owner 真机反馈拉日给
+    /// 开合跳、徒手深蹲不对路；开合跳在健身房里也不常见）。升温留「快走」：在家练没有器械也能做。
+    /// 上下肢都练或判不出（全身日）用 upperBody = lowerBody = true。
+    public func generalWarmupSteps(upperBody: Bool, lowerBody: Bool) -> [String] {
+        let zh = locale == .zh
+        let raise = zh ? "跑步机、划船机、单车或快走 2–3 分钟" : "Treadmill, rower, bike or a brisk walk, 2–3 min"
+        let mobility: String
+        switch (upperBody, lowerBody) {
+        case (true, false):
+            mobility = zh ? "手臂绕环、扩胸、肩胛后缩 各 10 次" : "Arm circles, chest openers and shoulder-blade squeezes, 10 each"
+        case (false, true):
+            mobility = zh ? "徒手深蹲、原地弓步、髋部绕环 各 10 次" : "Air squats, stationary lunges and hip circles, 10 each"
+        default:
+            mobility = zh ? "手臂绕环、徒手深蹲、原地弓步 各 10 次" : "Arm circles, air squats and stationary lunges, 10 each"
+        }
+        return [raise, mobility]
+    }
+
+    /// 第一个动作接下来有热身组时，卡上多一行把顺序说清楚。不说几组、不说轻重量：
+    /// 可能只有一组空杆或一组纯自重（审查 2026-10-20）。
+    public var generalWarmupThenSpecific: String {
+        t2w("然后第一个动作先做热身组，再开始正式组",
+            "Then warm up on the first exercise before your working sets")
     }
     public var generalWarmupDone: String { t2w("做完了", "Done") }
     public var generalWarmupSkip: String { t2w("跳过", "Skip") }
@@ -55,7 +80,7 @@ extension RedeStrings {
 
     /// 设置页分组小标 + 开关。
     public var settingsWarmupOverline: String { t2w("热身", "Warm-up") }
-    public var settingsGeneralWarmupLabel: String { t2w("开练前全身热身", "General warm-up before training") }
+    public var settingsGeneralWarmupLabel: String { t2w("开练前热身", "Warm-up before training") }
     public var settingsGeneralWarmupNote: String {
         t2w("每场第一个动作前给一张 3–5 分钟的热身卡，可以跳过",
             "A 3–5 min warm-up card before the first exercise, skippable")

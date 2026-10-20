@@ -289,6 +289,18 @@ public struct TrainFlowState: Equatable, Sendable {
 
     // MARK: - 热身（FR-TR10 · 流内临时引导，不落库）
 
+    /// 开练前全身热身卡练哪儿（2026-10-20 owner 真机反馈：拉日给开合跳、徒手深蹲不对路）。
+    /// 按今天每个动作的主练肌群判；核心不算（哪天都可能带一个卷腹）。上下肢都没判出来（全是核心 /
+    /// 目录里查不到）按全身给。看动作不看训练日名：自定义过的日子也对得上。
+    public var generalWarmupBodyParts: (upper: Bool, lower: Bool) {
+        let groups = plan.exercises.compactMap {
+            MuscleGroupMapping.primaryGroup(forExerciseId: $0.exerciseId, catalog: catalog)
+        }
+        let upper = groups.contains { [.chest, .back, .shoulders, .biceps, .triceps].contains($0) }
+        let lower = groups.contains { [.quads, .hamstrings, .glutes, .calves].contains($0) }
+        return upper || lower ? (upper, lower) : (true, true)
+    }
+
     /// 当前动作的保守热身阶梯（按计划工作重 + 目录动作事实 + 本场已练部位生成）。纯派生、确定性：
     /// 「已练部位」只取已记组的事实，replay / 撤销 / 更正重建后结论不变。
     public var warmupStepsForCurrentExercise: [WarmupStep] {
@@ -297,10 +309,10 @@ public struct TrainFlowState: Equatable, Sendable {
         let kind = entry?.kind ?? ""
         return WarmupLadderEngine.generate(
             workWeightKg: work,
+            workRepMin: exercise.repLowerBound,
             loadType: exercise.loadType,
             equipment: entry?.equipment ?? "",
             kind: kind,
-            startWeightKg: entry?.startWeightKg ?? 0,
             unit: loadUnit,
             scope: WarmupScope.decide(
                 exerciseId: exercise.exerciseId, kind: kind,
