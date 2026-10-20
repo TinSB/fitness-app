@@ -70,9 +70,9 @@ final class RedeStringsTests: XCTestCase {
             ("appUpdateViewUpdate", s.appUpdateViewUpdate),
             ("appUpdateLater", s.appUpdateLater),
             ("appUpdateContinue", s.appUpdateContinue),
-            ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.11.0", build: "38")),
-            ("appUpdateHeroLine", s.appUpdateHeroLine(version: "1.11.0")),
-            ("appUpdateHighlights", s.appUpdateHighlights(version: "1.11.0").joined(separator: " ")),
+            ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.12.0", build: "42")),
+            ("appUpdateHeroLine", s.appUpdateHeroLine(version: "1.12.0")),
+            ("appUpdateHighlights", s.appUpdateHighlights(version: "1.12.0").joined(separator: " ")),
             // FR-SE9 / FR-SUB2：订阅管理与诚实状态
             ("settingsSubscriptionSection", s.settingsSubscriptionSection),
             ("settingsSubscriptionFreeCore", s.settingsSubscriptionFreeCore),
@@ -319,43 +319,47 @@ final class RedeStringsTests: XCTestCase {
         // 2026-07-20 owner「文案太不专业」重写：hero=版本主打句，亮点=具体名词句（基线 §5.5）。
         // 2026-08-08 archive 1.10.0：内置叙事切到 1.10.0（云端同步；只留当前发布版本，YAGNI）。
         // 2026-08-20 archive 1.10.2：内置叙事切到 1.11.0（Apple Watch App；只留当前发布版本，YAGNI）。
-        XCTAssertEqual(zh.appUpdateHeroLine(version: "1.11.0"), "手表上就能练完一场")
-        XCTAssertEqual(en.appUpdateHeroLine(version: "1.11.0"), "Train a full session from your wrist")
+        // 2026-10-20 archive 1.12.0（build 42）：内置叙事切到 1.12.0（1.11.0 从未上架：手表整套 + 之后几批）。
+        XCTAssertEqual(zh.appUpdateHeroLine(version: "1.12.0"), "手表上就能练完一场")
+        XCTAssertEqual(en.appUpdateHeroLine(version: "1.12.0"), "Train a full session from your wrist")
         XCTAssertEqual(
-            zh.appUpdateHighlights(version: "1.11.0"),
+            zh.appUpdateHighlights(version: "1.12.0"),
             [
-                "新增 Apple Watch App：手表上看这组多重、几次，打勾记组，休息自动倒计时；手机放包里也能练完整场",
-                "手表和手机是同一场训练：任一边记的组另一边立刻可见；断联超过一小时会停下来，不把不确定的数据写进健康",
-                "手表上可以改重量、次数、RIR，也能暂停或跳过本组",
+                "新增 Apple Watch App：手表上看这组多重、几次，打勾记组；点完成立刻开始休息倒计时，手机放包里也能练完整场",
+                "手表上双指捏两下（双击手势）就能完成这一组、跳过休息；也能改重量、次数、RIR，暂停或跳过本组",
+                "手表和手机是同一场训练：任一边记的组另一边都能看到；在表上练完、手机没打开也会自动存好",
                 "手机上点「开始训练」，手表自动开始记录，不用再自己打开体能训练",
-                "记错的组可以改：休息时点「刚才这组」就能改重量、次数、RIR，也能撤销刚记的那组；最后一组在小结里改",
-                "训练不容易丢了：在小结页被系统关掉、练过了零点、或者忘了上一场就开新的，都会先问你；一组都没记的一场不会存成空记录",
-                "训练中屏幕不再自动锁屏",
+                "轻练日、减载周之后，重量回到原来的水平接着加；停练回来按每个动作先减量再加回，隔两三周练一次也不会每次再减一成",
+                "器械上 45 lb 这类不在整格上的重量：保持就是它本身，加重只上一格",
+                "热身按部位来：同一部位一场只完整热一次，开练前有一张全身热身卡",
+                "记错的组可以改：休息时点「上一组」就能改重量、次数、RIR，也能撤销；最后一组在小结里改",
+                "训练不会丢：被系统关掉、练过零点、忘了保存都会先问你；超过 36 小时没练完的会存成一场「提前结束」的训练，不再删除",
+                "每周练 5 天的计划，不会在第 4 天被要求休息；训练中屏幕不再自动锁屏",
                 "引导流程里可以直接用 Apple 登录恢复：换手机后不用把年龄、器械、目标重新答一遍",
-                "设置页从 11 组归并成 7 组，用得多的排在前面",
                 "计划调整建议选「暂不」之后不再反复出现：同一条每周最多再提一次，连拒两次就不再提，直到训练数据本身变了",
-                "训练中连着两组 RIR 明显下降时，下一组自动降一档重量；目标次数也跟着你实际做到的走，不再挂一个整场没到过的数",
-                "修复：用「精确」手输的重量，大字上会显示成另一个数（选重机上最明显）",
+                "修复：登录云同步后，在手机上改的设置会被云端旧的那份改回去",
             ]
         )
         XCTAssertEqual(
-            en.appUpdateHighlights(version: "1.11.0"),
+            en.appUpdateHighlights(version: "1.12.0"),
             [
-                "Apple Watch app: see the set's weight and reps, log it, and start the rest timer from your wrist. Your phone can stay in the bag",
-                "Watch and phone run one session: a set logged on either side appears on the other; after an hour disconnected the session stops rather than writing uncertain data to Health",
-                "Adjust weight, reps, and RIR on the watch, or pause and skip a set",
+                "Apple Watch app: see the set's weight and reps and log it from your wrist. Rest starts the moment you tap done, so your phone can stay in the bag",
+                "Pinch twice on the watch (Double Tap) to finish the set or skip rest; adjust weight, reps, and RIR, or pause and skip a set",
+                "Watch and phone run one session: a set logged on either side shows on the other, and a session finished on the watch saves itself even if your phone stays closed",
                 "Tap Start Training on your phone and the watch starts recording on its own",
+                "After a light day or a deload week, weights pick up where you left off; after time off each lift eases back on its own, and training every two or three weeks no longer cuts the weight each time",
+                "Machine weights between steps, like 45 lb, hold as is and go up one step at a time",
+                "Warm-ups by muscle group: each group gets one full warm-up per session, plus a whole-body warm-up card before you start",
                 "Fix a logged set: during rest, tap the last set to change weight, reps, or RIR, or undo it; fix the final set from the summary",
-                "Sessions are harder to lose: closing on the summary, training past midnight, or starting again before saving now asks first; a session with no sets is never saved as an empty record",
-                "The screen stays on while you train",
+                "Sessions don't get lost: closing on the summary, training past midnight, or forgetting to save now asks first; a session left unfinished for 36 hours is saved as ended early instead of deleted",
+                "A five-day plan is no longer told to rest on day four; the screen stays on while you train",
                 "Sign in with Apple during onboarding to restore your profile. No re-answering age, equipment, and goals after switching phones",
-                "Settings regrouped from 11 sections into 7, most-used first",
                 "Dismissing a plan suggestion now sticks: the same one returns at most once a week, and stops entirely after two dismissals until your training data changes",
-                "When your RIR drops sharply across two sets, the next set eases one notch; the rep target follows what you actually hit instead of a number you never reached",
-                "Fixed: a weight typed into Exact showed as a different number in the big readout (most visible on selectorized machines)",
+                "Fixed: with sync signed in, settings changed on your phone were reverted by the older cloud copy",
             ]
         )
         // 旧版本叙事已按 YAGNI 移除
+        XCTAssertTrue(zh.appUpdateHighlights(version: "1.11.0").isEmpty)
         XCTAssertTrue(zh.appUpdateHighlights(version: "1.10.2").isEmpty)
         XCTAssertTrue(zh.appUpdateHighlights(version: "1.10.1").isEmpty)
         XCTAssertTrue(zh.appUpdateHighlights(version: "1.9.2").isEmpty)

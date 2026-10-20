@@ -4,6 +4,17 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 ## 2026-10-20
 
+- **Release 1.12.0 build 42**: `MARKETING_VERSION` 1.11.0 → 1.12.0 and `CURRENT_PROJECT_VERSION` 41 → 42 in all 6 build configurations (App, Widget, Watch × Debug/Release). The owner said to package without asking and allowed a version bump.
+  - **Content.** Same as main at 40e38f1: engine audit batch 1 (#769), the watch's instant rest / declutter / double tap (#768), the data-audit fixes (#766, #767), plus everything in 41.
+  - **Bundled What's New.** All three version gates move to 1.12.0 (`appUpdateHeroLine`, `appUpdateHighlights`, `RedeAppUpdateRuntime.bundledWhatsNewVersions`) and `RedeStringsTests` asserts the new list. 1.11.0 never shipped to the store, so 1.12.0's narrative covers the whole watch app plus the later batches. `RedeL10n` 164/164; `AppUpdateRuntimeTests` 13/13, including the version gate.
+  - **Archive and upload.** `Archives/2026-10-20/Rede 1.12.0 (42).xcarchive`, archived from `release/1.12.0-build-42` with the Admin API key (`ARCHIVE SUCCEEDED`).
+  - **Pre-upload checklist.** All passed:
+    - `ApplicationProperties` is 1.12.0 / 42 / `com.tinsab.rede`, and app, widget and watch are all 1.12.0 (42).
+    - `ITSAppUsesNonExemptEncryption=false` in all three; three privacy manifests pass `plutil -lint`; no `RedeSubscription*` keys.
+    - The watch binary is `arm64 arm64_32`.
+    - The new What's New copy, `ModulatedDayLookup`, `handGestureShortcut` and `ProvisionalRest` are present in the binaries.
+  - **Result.** Uploaded at 16:23 (`Upload succeeded`, first attempt). `altool --build-status` reports `VALID` and `APP_STORE_ELIGIBLE`, with non-exempt encryption false. The next upload needs build ≥ 43.
+
 - **Engine audit batch 1: baselines after reduced days, per-exercise comeback, off-grid loads, unfinished drafts, plan-aware consecutive rest (owner decisions of 2026-10-20)**: from the 2026-10-20 engine audit (five lanes plus a real-data replay of the owner's history, each finding adversarially verified). The owner's profile has mesocycle enabled and trains in lb with gaps of weeks, so all five issues hit them directly.
   - **Baseline after reduced days.** `TodayPrescriptionEngine` no longer always progresses from the last performance. `modulatedTrainingDays` replays each past day's verdict (and mesocycle phase) on the history before it. When the last performance was on an engine-reduced day (non-comeback light, deload, mesocycle deload week) and was not a struggle, `baseline` walks back to the performance before the reduction (up to 6 exposures). It stops at a struggle (near failure, below rep floor, pain flag), a lighter performance, or a ≥14-day gap. Before: a light day's 92.5 became the next baseline instead of 100 (+1 rung at a time to climb back), a deload week's second exposure was ×0.85 of the first deload weight, and each mesocycle block restarted lower (owner replay: leg-press 165 → 140 → 125, squat peaks 95 → 90 → 85 → 80). `previousWeightKg` now shows the performance the decision was based on.
   - **One reduction per day.** Phase deload, light, deload and comeback multipliers are no longer multiplied together: the strongest one applies once. A comeback day's light no longer adds a generic ×0.9.
