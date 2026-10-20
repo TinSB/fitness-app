@@ -811,7 +811,11 @@ final class SessionStore {
             above.append(next)
             cursor = next
         }
-        return below + [center] + above
+        let ladder = below + [center] + above
+        // 处方可以是真能配出的离格重量（选重机 10 lb 一格上的 45 lb，2026-10-20 引擎审查）：把它本身放进梯子，
+        // 表上默认显示的就是处方那个数——否则表冠停在最近的 50，手腕上显示 50、记下的却是 45。
+        guard abs(center - target) > 1e-6, LoadGrid.isEnterableLoad(target, unit: unit) else { return ladder }
+        return (ladder + [target]).sorted()
     }
 
     /// 表上的遥控命令（v2）。与 applyWatchLoggedSet 同一条纪律：**只在命令对着的正是当前状态时执行**。
@@ -2474,12 +2478,13 @@ final class SessionStore {
               let draft = draftStore.load() else { return }
         // 已经练完、只差点保存的一场（App 在小结里被系统收走，或表上的最后一组晚到）：
         // 不问、不过期，直接存好（owner 2026-10-19）。此前过了 36 小时会被静默删掉。
-        if let replayed = draft.restoreFlow(allowedEquipment: allowedEquipment, loadUnit: loadUnit),
-           replayed.phase == .summary, replayed.canBeSaved {
+        let replayed = draft.restoreFlow(allowedEquipment: allowedEquipment, loadUnit: loadUnit)
+        // 最后一组的记组时刻（用作结束时刻）。
+        let lastSetAt = replayed?.observationsByExercise.values.joined()
+            .compactMap { $0.completedAt.flatMap(ISO8601DateFormatter().date(from:)) }.max()
+        if let replayed, replayed.phase == .summary, replayed.canBeSaved {
             // 结束时刻：草稿记着的；没有（build 40 表上补组那条路没记）就取最后一组的记组时刻；
             // 两样都没有就不自动存、照旧问——按「重开那一刻」存会凭空多出几个小时，而存了就删不掉（审查 2026-10-19）。
-            let lastSetAt = replayed.observationsByExercise.values.joined()
-                .compactMap { $0.completedAt.flatMap(ISO8601DateFormatter().date(from:)) }.max()
             if let end = draft.endedAt ?? lastSetAt {
                 finalizeFinishedDraft(draft.ending(at: end))
                 return
@@ -2490,7 +2495,17 @@ final class SessionStore {
         if draft.isRestorable(todayISO: todayISO, now: now) {
             pendingDraft = draft
         } else if !draft.isWithinRestoreWindow(todayISO: todayISO, now: now) {
-            draftStore.clear()
+            // 开练超过 36 小时、还没练完：记过组的**不删**，按「提前结束」存成一场（owner 2026-10-20
+            //「数据怎么能删呢」；以前这里直接删文件，记下的组永远到不了历史）。结束时刻取最后一组，
+            // 旧数据没有就取开练时刻。注意 App 里暂无删除已存场次的入口——测试性质的半场也会留下。
+            if let ended = draft.endedEarly(at: lastSetAt ?? draft.startedAt,
+                                            allowedEquipment: allowedEquipment, loadUnit: loadUnit) {
+                finalizeFinishedDraft(ended)
+                return
+            }
+            // 重放不出来、但里面记过组（动作目录变了等）：也不删，文件留着。
+            if draft.events.contains(where: { if case .logSet = $0 { return true } else { return false } }) { return }
+            draftStore.clear()   // 只有计划、一组没记：没有数据可丢
         }
         // 窗口内、跨天且一组没记的草稿：不问也不删，留给可能还在排队路上的表上组
         //（先删掉的话，随后送到的组无处可去）。开新训练时照常被覆盖（审查 2026-10-19）。

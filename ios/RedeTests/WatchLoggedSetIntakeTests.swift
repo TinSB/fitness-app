@@ -404,6 +404,45 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         XCTAssertEqual(store.sessionEndedAt, started.addingTimeInterval(3600))
     }
 
+    func testUnfinishedDraftPastTheWindowIsSavedAsAnEarlyEndNotDeleted() async {
+        // owner 2026-10-20「数据怎么能删呢」：练到一半（两组）就没再打开，过了 36 小时。
+        // 以前下次启动直接删文件；现在按「提前结束」存成一场，结束时刻取最后一组。
+        let started = Date().addingTimeInterval(-40 * 3600)
+        let lastSet = started.addingTimeInterval(120)
+        let iso = ISO8601DateFormatter()
+        let events: [TrainFlowEvent] = [
+            .logSet(CompletedSetObservation(weightKg: 31.75, reps: 6, rir: 3,
+                                            completedAt: iso.string(from: started.addingTimeInterval(10)))),
+            .restFinished,
+            .logSet(CompletedSetObservation(weightKg: 31.75, reps: 6, rir: 3, completedAt: iso.string(from: lastSet))),
+            .restFinished,
+        ]
+        let draftStore = FakeDraftStore()
+        draftStore.stored = freshDraft(startedAt: started, events: events)
+        let store = SessionStore(draftStore: draftStore)
+        let saved = expectation(description: "存成一场")
+        store.persistFinishedSession = { saved.fulfill(); return true }
+
+        store.checkForRestorableDraft()
+
+        await fulfillment(of: [saved], timeout: 2)
+        XCTAssertEqual(store.flow?.phase, .summary)
+        XCTAssertEqual(store.flow?.endReason, .other)
+        XCTAssertEqual(completedCount(store), 2, "两组都在")
+        XCTAssertEqual(store.sessionEndedAt, iso.date(from: iso.string(from: lastSet)))
+        XCTAssertNotNil(draftStore.stored, "存好之前草稿文件不动")
+    }
+
+    func testEmptyDraftPastTheWindowIsStillCleared() {
+        // 一组没记的过期草稿只有计划、没有数据：照旧清掉，不弹也不存。
+        let draftStore = FakeDraftStore()
+        draftStore.stored = freshDraft(startedAt: Date().addingTimeInterval(-40 * 3600), events: [])
+        let store = SessionStore(draftStore: draftStore)
+        store.checkForRestorableDraft()
+        XCTAssertNil(draftStore.stored)
+        XCTAssertNil(store.flow)
+    }
+
     func testYoungCrossDayDraftWithoutSetsWaitsForLateWatchSets() {
         // 整场在表上练、手机侧一组没记：第二天打开手机时草稿里还没有组。此前先被当空草稿删掉，
         // 随后送到的表上组无处可去。
@@ -718,6 +757,20 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         XCTAssertEqual(ladder.first, 2.5)
         XCTAssertTrue(ladder.allSatisfy { $0 > 0 })
         XCTAssertTrue(ladder.contains(5))
+    }
+
+    func testAnOffGridTargetSitsOnTheWatchLadderItself() {
+        // 引擎保持真能配出的离格重量（选重机 10 lb 一格上的 45 lb，2026-10-20）：梯子里要有 45 本身，
+        // 表上默认显示的就是 45；不然表冠停在最近的 50，手腕显示 50、记下的却是 45（审查 2026-10-20）。
+        let lbPerKg = 2.204_622_621_8
+        let ladder = SessionStore.watchWeightLadder(aroundKg: 45 / lbPerKg, equipment: "selectorized", unit: .lb)
+        let lbs = ladder.map { ($0 * lbPerKg * 1000).rounded() / 1000 }
+        XCTAssertTrue(lbs.contains(45), "处方本身在梯子上")
+        XCTAssertTrue(lbs.contains(40) && lbs.contains(50), "两边的真实格子照旧")
+        XCTAssertEqual(lbs, lbs.sorted(), "仍是升序")
+        // 换算残值（30 kg = 66.1 lb）不是真能配出的重量：不塞进梯子，照旧吸附。
+        let converted = SessionStore.watchWeightLadder(aroundKg: 30, equipment: "dumbbell", unit: .lb)
+        XCTAssertFalse(converted.contains { abs($0 - 30) < 1e-6 })
     }
 
     func testLbDumbbellLadderFollowsTheSegmentedRungs() {

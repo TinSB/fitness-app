@@ -105,6 +105,26 @@ public struct TrainSessionDraft: Equatable, Sendable, Codable {
         )
     }
 
+    /// 过了恢复窗口、但记过组的草稿：按「提前结束」收尾，返回可以直接存成一场的草稿（2026-10-20，
+    /// owner「数据怎么能删呢」——此前超过 36 小时就被静默删掉，记下的组永远到不了历史）。
+    /// 结束时刻由调用方给（最后一组的时刻）。一组都没记、或重放不出来（目录漂移）→ nil，由调用方决定。
+    public func endedEarly(at date: Date, allowedEquipment: Set<String>? = nil,
+                           loadUnit: LoadUnit = .kg) -> TrainSessionDraft? {
+        guard var flow = restoreFlow(allowedEquipment: allowedEquipment, loadUnit: loadUnit),
+              flow.canBeSaved else { return nil }
+        var draft = self
+        if flow.phase == .activeSet || flow.phase == .resting {
+            flow.requestFinish()
+            draft = draft.appending(.requestFinish)
+        }
+        if flow.phase == .confirmEnd {
+            flow.confirmEnd(reason: .other)
+            draft = draft.appending(.confirmEnd(.other))
+        }
+        guard flow.phase == .summary else { return nil }
+        return draft.ending(at: date)
+    }
+
     /// 追加一个事件，返回新 draft（watchOS 切片 4 的杀后台补洞，2026-08-15）。
     ///
     /// 用途只有一个：**手机 app 在训练中被划掉、重开后 flow 还没恢复时，

@@ -32,6 +32,19 @@ public struct CleanTrainingDecisionInput: Equatable, Sendable {
         self.todayISO = todayISO
     }
 
+    /// 站在过去某一天看（只含那天之前的训练，档案与计划照旧）：判断「那天引擎开的是不是一份减量处方」用
+    ///（2026-10-20 引擎审查：轻练日 / 减载日减下来的重量不能成为下次的基准）。日期不可解析 → nil。
+    func asOf(dayISO: String) -> CleanTrainingDecisionInput? {
+        let iso = String(dayISO.prefix(10))
+        guard let day = TrainingDay.dayNumber(fromISO: iso) else { return nil }
+        return CleanTrainingDecisionInput(
+            sessions: sessions.filter { (TrainingDay.dayNumber(fromISO: $0.date) ?? .max) < day },
+            profile: profile,
+            program: program,
+            todayISO: iso
+        )
+    }
+
     public static func make(from cleanView: CleanAppDataView, todayISO: String) throws -> CleanTrainingDecisionInput {
         let normalized = String(todayISO.prefix(10))
         guard TrainingDay.dayNumber(fromISO: normalized) != nil else {

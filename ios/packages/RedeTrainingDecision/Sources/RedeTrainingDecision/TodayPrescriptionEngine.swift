@@ -158,6 +158,9 @@ public enum TodayPrescriptionEngine {
     private static let comebackRestartMultiplier = 0.85
     private static let comebackDeepMultiplier = 0.75
     private static let deloadMultiplier = 0.8
+    /// 「停练回来」的线：与今日裁决 longGapReentry 同值（TodayVerdictEngine.longGapLightDays，跨文件重复常数）。
+    /// 2026-10-20 起也按**每个动作自己**多久没做来判（引擎审查第一批）。
+    static let comebackLightGapDays = 14
 
     /// FR-PL7③ 自由日序的唯一合法输入白名单。必须保持显式枚举：未知 code 不能借
     /// `slots()` 的 upper 兜底混进 canonical 日序。
@@ -607,6 +610,13 @@ public enum TodayPrescriptionEngine {
         let patternCounts = daySlots.reduce(into: [String: Int]()) { $0[$1.pattern, default: 0] += 1 }
         let lastActual = lastActualByPattern(sessions: input.sessions, catalog: catalog, dayCode: dayCode)
 
+        // 过去哪些训练日引擎开的是一份**减量处方**（轻练 / 减载 / 周期减载周）：那几天减下来的重量
+        // 不能成为下次的基准（2026-10-20 引擎审查第一批）。整份历史只算一次，各动作共用。
+        let modulatedDays = ModulatedDayLookup(input: input, mesocycleEnabled: mesocycleEnabled,
+                                               blockLengthWeeks: blockLengthWeeks)
+        // 全部训练日（去重、升序）：判「某个动作上次之后中间有没有整体停练过」用。
+        let trainedDays = Set(input.sessions.compactMap { TrainingDay.dayNumber(fromISO: $0.date) }).sorted()
+
         /// 自动均衡每场加量预算（合计最多 +2 组——温和偏置，不是重写计划）。
         var boostBudget = priorityMuscles.isEmpty ? 0 : 2
         var boostedMuscleRaws: [String] = []
@@ -654,7 +664,9 @@ public enum TodayPrescriptionEngine {
                 verdict: verdict,
                 catalog: catalog,
                 phase: phase,
-                progressionPaused: progressionPauseReason != nil
+                progressionPaused: progressionPauseReason != nil,
+                modulatedDays: modulatedDays,
+                trainedDays: trainedDays
             )
             if let progressionPauseReason, item.exerciseId == entry.id {
                 item = item.pausingAutomaticProgression(for: progressionPauseReason)
@@ -721,15 +733,26 @@ public enum TodayPrescriptionEngine {
         verdict: TodayVerdict,
         catalog: ExerciseCatalog,
         phase: PhaseModulation?,
-        progressionPaused: Bool
+        progressionPaused: Bool,
+        modulatedDays: ModulatedDayLookup,
+        trainedDays: [Int]
     ) -> ExercisePrescriptionPlan {
         let recent = recentPerformances(
             exerciseId: entry.id,
             sessions: input.sessions,
-            // ordinary external 只需最近两次判断「刚升档」；其它负荷轴只读最近一次。
-            limit: entry.loadType == "external" ? 2 : 1
+            // 往回看几次：找基准（越过减量日）、估这个动作平常隔多久练一次。
+            limit: baselineLookback
         )
         let last = recent.last
+        let staleness = Self.staleness(recent: recent, todayISO: input.todayISO, verdict: verdict, slot: slot,
+                                       trainedDays: trainedDays)
+        // 基准（2026-10-20 引擎审查第一批）：重量轴的三类（外部负重 / 辅助 / 负重自重）不再一律拿「上一次」当起点，
+        // 见 baseline。辅助器械的「更难」是辅助更少。
+        let harder: (LastPerformance, LastPerformance) -> Bool = entry.loadType == "assisted"
+            ? { $0.topWeightKg < $1.topWeightKg - loadComparisonToleranceKg }
+            : { $0.topWeightKg > $1.topWeightKg + loadComparisonToleranceKg }
+        let baseline = Self.baseline(recent, slot: slot, modulatedDays: modulatedDays, trainedDays: trainedDays,
+                                     walkBack: !progressionPaused, harder: harder)
 
         // 自重分支（2026-06-13，owner 拍板）：无外部负重，按次数进阶；到顶提示换难度。
         // 重量轴的渐进/取整/调制全部不适用——单独一条路径。
@@ -754,19 +777,21 @@ public enum TodayPrescriptionEngine {
             return prescribeAssisted(
                 entry: entry,
                 slot: slot,
-                last: last,
+                last: baseline?.ref,
                 input: input,
                 verdict: verdict,
                 phase: phase,
                 catalog: catalog,
-                progressionPaused: progressionPaused
+                progressionPaused: progressionPaused,
+                staleness: staleness
             )
         }
 
         // 负重自重分支（wave-11，owner 拍板）：重量轴=外挂负重(≥0)，方向同 external
         //（加负重=更难），但档位取挂片档、减到最小一片还吃力则自动回退换自重孪生。
         if entry.loadType == "bodyweight-plus" {
-            return prescribeBodyweightPlus(entry: entry, slot: slot, last: last, input: input, verdict: verdict, phase: phase, catalog: catalog)
+            return prescribeBodyweightPlus(entry: entry, slot: slot, last: baseline?.ref, input: input, verdict: verdict,
+                                           phase: phase, catalog: catalog, staleness: staleness)
         }
 
         // 档位系统（2026-06-13）：渐进一档 = 器械×用户单位的真实档位步长（LoadGrid，
@@ -778,46 +803,49 @@ public enum TodayPrescriptionEngine {
         let equip = entry.equipment
         let step = LoadGrid.stepKg(equipment: equip, unit: unit)
 
+        let ref = baseline?.ref
+
         let baseWeight: Double
         let targetReps: Int
         let change: ChangeDirection
         let reason: PrescriptionReason
-        if let last {
-            if let minRir = last.minRir, minRir <= nearFailureMeanRir {
-                baseWeight = LoadGrid.nextRungKg(last.topWeightKg, equipment: equip, unit: unit, up: false)
+        if let ref {
+            if let minRir = ref.minRir, minRir <= nearFailureMeanRir {
+                baseWeight = LoadGrid.progressionRungKg(ref.topWeightKg, equipment: equip, unit: unit, up: false)
                 targetReps = slot.repMin
                 change = .ease
                 reason = .nearFailureLastTime
-            } else if last.maxReps < slot.repMin {
-                if latestPerformanceWasJustRaised(recent), verdict.longGapDays == nil {
+            } else if ref.maxReps < slot.repMin {
+                if let previous = baseline?.previous, ref.topWeightKg > previous.topWeightKg + loadComparisonToleranceKg,
+                   !staleness.stale {
                     // 新台阶只宽限一次：最近两次顶重严格上升，且本次掉出次数下限。
                     // 只阻止下降，绝不制造上升；长间隔回归不宽限，下一次同重量再
                     // 失败时比较也不再成立。
-                    baseWeight = last.topWeightKg
+                    baseWeight = LoadGrid.holdKg(ref.topWeightKg, equipment: equip, unit: unit)
                     targetReps = slot.repMax
                     change = .hold
                     reason = .holdProgressing
                 } else {
-                    baseWeight = LoadGrid.nextRungKg(last.topWeightKg, equipment: equip, unit: unit, up: false)
+                    baseWeight = LoadGrid.progressionRungKg(ref.topWeightKg, equipment: equip, unit: unit, up: false)
                     targetReps = slot.repMin
                     change = .ease
                     reason = .belowRepFloor
                 }
             } else if reachedProgressionGate(
-                last,
+                ref,
                 repMin: slot.repMin,
                 repMax: slot.repMax
             ),
-                      verdict.longGapDays == nil {
+                      !staleness.stale {
                 // 无上限：精英重量的 +一档 是合法递增，有意不设 cap。
-                // 回归压制（2026-07-08）：停练 ≥14 天时本分支不进——上上次的满分不是
-                // 今天加重的依据，持平回场（叠加 light 分档回退），渐进从这场重启。
-                baseWeight = LoadGrid.nextRungKg(last.topWeightKg, equipment: equip, unit: unit, up: true)
+                // 回归压制（2026-07-08；2026-10-20 起按这个动作自己多久没做判）：停练 ≥14 天时本分支不进——
+                // 上上次的满分不是今天加重的依据，持平回场（叠加分档回退），渐进从这场重启。
+                baseWeight = LoadGrid.progressionRungKg(ref.topWeightKg, equipment: equip, unit: unit, up: true)
                 targetReps = slot.repMin
                 change = .increase
                 reason = .repCeilingReached
             } else {
-                baseWeight = last.topWeightKg
+                baseWeight = LoadGrid.holdKg(ref.topWeightKg, equipment: equip, unit: unit)
                 targetReps = slot.repMax
                 change = .hold
                 reason = .holdProgressing
@@ -827,35 +855,39 @@ public enum TodayPrescriptionEngine {
             // 一旦有真实记录（上面分支），实际执行即基线，先验不再参与。
             // 与裁决调制（light ×0.9 / deload ×0.8）叠乘是有意设计（拍板 2026-06-10）：
             // 先验定起点基线、调制定当日急性状态，两者正交；下限一档（per-entry 步长）兜底。
-            baseWeight = ColdStartPrior.scaledStartKg(
+            baseWeight = LoadGrid.snapKg(ColdStartPrior.scaledStartKg(
                 entry.startWeightKg, trainingLevel: input.profile.trainingLevel, stepKg: step
-            )
+            ), equipment: equip, unit: unit)
             targetReps = slot.repMin
             change = .start
             reason = .firstExposure
         }
 
-        var weight = LoadGrid.snapKg(baseWeight, equipment: equip, unit: unit)
+        var weight = baseWeight
         var sets = slot.sets
         var rir = slot.targetRir
-        // 计划周期相位（S2）：仅 train 态生效——light/deload/rest 让位给安全网（反应式优先；
-        // light×phase 的更细合并归 S3）。weightMultiplier=1.0 不调（modulated 在 1.0 会误减一格），
-        // 只减载周(0.85)真减重；setDelta/rirTarget 照表。
+        // 当日减量：周期减载周（仅 train 态）、轻练、减载、停练回归，**取最狠的一个、只打一次**——
+        // 从不叠乘（2026-10-20：以前减载周第二次遇到同一动作会在已减过的重量上再减）。
+        // 回归折扣按这个动作自己多久没做分档（staleness，见那里）；回归日的 light 不再另打 ×0.9。
+        // 乘数 1.0 不调（modulated 在 1.0 会误减一格）。
+        var multipliers: [Double] = []
         if let phase, verdict.call == .train {
-            if phase.weightMultiplier < 1.0 {
-                weight = modulated(base: weight, multiplier: phase.weightMultiplier, equipment: equip, unit: unit)
-            }
+            if phase.weightMultiplier < 1.0 { multipliers.append(phase.weightMultiplier) }
             sets = max(2, sets + phase.setDelta)
             rir = phase.rirTarget
         }
         switch verdict.call {
         case .light:
-            weight = modulated(base: weight, multiplier: comebackAwareLightMultiplier(verdict: verdict), equipment: equip, unit: unit)
+            if verdict.longGapDays == nil { multipliers.append(lightMultiplier) }
         case .deload:
-            weight = modulated(base: weight, multiplier: deloadMultiplier, equipment: equip, unit: unit)
+            multipliers.append(deloadMultiplier)
             sets = max(2, sets - 1)
         case .train, .rest:
             break
+        }
+        if let comeback = staleness.multiplier { multipliers.append(comeback) }
+        if let multiplier = multipliers.min() {
+            weight = modulated(base: weight, multiplier: multiplier, equipment: equip, unit: unit)
         }
 
         return ExercisePrescriptionPlan(
@@ -867,9 +899,10 @@ public enum TodayPrescriptionEngine {
             targetReps: targetReps,
             targetWeightKg: weight,
             targetRir: rir,
-            previousWeightKg: last?.topWeightKg,
-            previousTopReps: last?.repsAtTop,
-            nextProjectedWeightKg: LoadGrid.nextRungKg(weight, equipment: equip, unit: unit, up: true),
+            // 「上次」显示判断所依据的那一次（越过减量日时是减量之前那次），与进退一致。
+            previousWeightKg: ref?.topWeightKg,
+            previousTopReps: ref?.repsAtTop,
+            nextProjectedWeightKg: LoadGrid.progressionRungKg(weight, equipment: equip, unit: unit, up: true),
             progressionStepKg: step,
             change: change,
             reason: reason,
@@ -981,7 +1014,8 @@ public enum TodayPrescriptionEngine {
         verdict: TodayVerdict,
         phase: PhaseModulation?,
         catalog: ExerciseCatalog,
-        progressionPaused: Bool
+        progressionPaused: Bool,
+        staleness: Staleness
     ) -> ExercisePrescriptionPlan {
         let step = LoadGrid.stepKg(
             equipment: entry.equipment,
@@ -1004,8 +1038,9 @@ public enum TodayPrescriptionEngine {
                 change = .ease
                 reason = .belowRepFloor
             } else if last.minReps >= slot.repMax, last.minRir.map({ $0 >= progressMinMeanRir }) ?? true,
-                      verdict.longGapDays == nil {
-                // 回归压制（2026-07-08 审查 S1）：减辅助=变难，与收据句「重量先回落」矛盾
+                      !staleness.stale {
+                // 回归压制（2026-07-08 审查 S1；2026-10-20 起按这个动作自己多久没做判）：
+                // 减辅助=变难，与收据句「重量先回落」矛盾
                 let nextAssist = last.topWeightKg - step     // 变强 → 减辅助一档
                 if progressionPaused {
                     // 信号保守态在毕业分支前截住：保留辅助动作和上次辅助量，
@@ -1061,7 +1096,10 @@ public enum TodayPrescriptionEngine {
         case .deload:
             assist = roundToIncrement(assist + step * 2, step: step)
             sets = max(2, sets - 1)
-        case .train, .rest:
+        case .train:
+            // 这个动作自己停了两周以上、但今天整体照常练（2026-10-20）：同轻练，多帮一档。
+            if staleness.multiplier != nil { assist = roundToIncrement(assist + step, step: step) }
+        case .rest:
             break
         }
 
@@ -1096,7 +1134,8 @@ public enum TodayPrescriptionEngine {
         input: CleanTrainingDecisionInput,
         verdict: TodayVerdict,
         phase: PhaseModulation?,
-        catalog: ExerciseCatalog
+        catalog: ExerciseCatalog,
+        staleness: Staleness
     ) -> ExercisePrescriptionPlan {
         let unit = LoadUnit(unitSystem: input.profile.unitSystem)
         let step = LoadGrid.addedLoadStepKg(unit: unit)   // 外加负重档 = 挂片 barbell 格（等距）
@@ -1137,8 +1176,8 @@ public enum TodayPrescriptionEngine {
                     reason = easeReason
                 }
             } else if last.minReps >= slot.repMax, last.minRir.map({ $0 >= progressMinMeanRir }) ?? true,
-                      verdict.longGapDays == nil {
-                // 回归压制（2026-07-08 审查 S1）：同 external——停练回来不加负重
+                      !staleness.stale {
+                // 回归压制（2026-07-08 审查 S1；2026-10-20 起按这个动作自己多久没做判）：同 external——停练回来不加负重
                 baseLoad = last.topWeightKg + step   // 变强 → 加负重一档（无上限）
                 targetReps = slot.repMin
                 change = .increase
@@ -1163,18 +1202,21 @@ public enum TodayPrescriptionEngine {
         var sets = slot.sets
         var rir = slot.targetRir
         applyPhaseSetsRir(phase, verdict: verdict, sets: &sets, rir: &rir)
-        // 重量轴同 external：减载周(0.85)真减外加负重（1.0 不调，modulated 在 1.0 会误减）
-        if let phase, verdict.call == .train, phase.weightMultiplier < 1.0 {
-            weight = modulated(base: weight, multiplier: phase.weightMultiplier, equipment: "barbell", unit: unit)
-        }
+        // 当日减量同 external：减载周 / 轻练 / 减载 / 停练回归取最狠的一个、只打一次（1.0 不调，modulated 在 1.0 会误减）。
+        var multipliers: [Double] = []
+        if let phase, verdict.call == .train, phase.weightMultiplier < 1.0 { multipliers.append(phase.weightMultiplier) }
         switch verdict.call {
         case .light:
-            weight = modulated(base: weight, multiplier: comebackAwareLightMultiplier(verdict: verdict), equipment: "barbell", unit: unit)
+            if verdict.longGapDays == nil { multipliers.append(lightMultiplier) }
         case .deload:
-            weight = modulated(base: weight, multiplier: deloadMultiplier, equipment: "barbell", unit: unit)
+            multipliers.append(deloadMultiplier)
             sets = max(2, sets - 1)
         case .train, .rest:
             break
+        }
+        if let comeback = staleness.multiplier { multipliers.append(comeback) }
+        if let multiplier = multipliers.min() {
+            weight = modulated(base: weight, multiplier: multiplier, equipment: "barbell", unit: unit)
         }
 
         return ExercisePrescriptionPlan(
@@ -1208,6 +1250,10 @@ public enum TodayPrescriptionEngine {
     }
 
     private struct LastPerformance {
+        /// 那一场的训练日序号（TrainingDay.dayNumber）。
+        let day: Int
+        /// 那一场有没有哪一组登记了不适（painFlag）。
+        let hadPain: Bool
         let topWeightKg: Double
         /// 顶组（最重一组）的次数。
         let repsAtTop: Int
@@ -1396,13 +1442,145 @@ public enum TodayPrescriptionEngine {
         return planned > 0 && lastWeekCount < planned
     }
 
-    /// 回归协议：light 乘数按停练时长分档（14-20 ×0.9 / 21-41 ×0.85 / ≥42 ×0.75——
-    /// 4 周停练力量降约 5-10%、8 周约 15%，取保守侧；非回归 light 保持 ×0.9）。
-    private static func comebackAwareLightMultiplier(verdict: TodayVerdict) -> Double {
-        guard let gap = verdict.longGapDays else { return lightMultiplier }
+    /// 回归协议：按停练时长分档（14-20 ×0.9 / 21-41 ×0.85 / ≥42 ×0.75——
+    /// 4 周停练力量降约 5-10%、8 周约 15%，取保守侧）。
+    private static func comebackMultiplier(gapDays gap: Int) -> Double {
         if gap >= comebackDeepGapDays { return comebackDeepMultiplier }
         if gap >= comebackRestartGapDays { return comebackRestartMultiplier }
         return lightMultiplier
+    }
+
+    /// 外部负重往回看几次找基准：够越过一次轻练日、或减载周里同一动作的两次。
+    private static let baselineLookback = 6
+
+    /// 这一次练得吃力：近力竭、掉出次数下限、或登记了不适。这是实打实的能力信号——基准不越过它。
+    private static func isStruggle(_ performance: LastPerformance, slot: Slot) -> Bool {
+        (performance.minRir.map { $0 <= nearFailureMeanRir } ?? false)
+            || performance.maxReps < slot.repMin
+            || performance.hadPain
+    }
+
+    /// 定基准（2026-10-20 引擎审查第一批）。返回判断所依据的那一次 + 它的前一次（判「刚升档」用）。
+    ///
+    /// 上一次是引擎开的**减量日**（轻练 / 减载 / 周期减载周，见 ModulatedDayLookup）、而且练得不吃力：
+    /// 那天的重量是被引擎减下来的，不代表能力——往回找减量之前那次。以前直接拿它当起点，轻练日之后要
+    /// 好几次才爬回去，周期化开着时每个减载周还会把下一块的起点越压越低（owner 真实数据重放）。
+    /// 不越过：
+    /// - 吃力的那一次（近力竭 / 掉出下限 / 登记不适——含因不适跳组），照它回退；
+    /// - 不比它更难的那一次（减量日反而练得一样或更重，那就是真实成绩）；**同样重量、而那一次也是减量日**时
+    ///   继续往回（减载周里同一动作的第二次与第一次一样重）；
+    /// - 两次之间整体停练过两周以上（回归后从回归那场重新起步，#679）——只看「两次隔了多久」会把
+    ///   按轮换本来就隔两周才轮到一次的动作挡在外面；
+    /// - 疼痛保守态生效时（FR-TR7 / FR-SE7）一律不往回找：那时该保持的是最近一次。
+    private static func baseline(_ recent: [LastPerformance], slot: Slot, modulatedDays: ModulatedDayLookup,
+                                 trainedDays: [Int], walkBack: Bool,
+                                 harder: (LastPerformance, LastPerformance) -> Bool)
+        -> (ref: LastPerformance, previous: LastPerformance?)? {
+        guard var index = recent.indices.last else { return nil }
+        if walkBack, !isStruggle(recent[index], slot: slot) {
+            while index > 0, modulatedDays.isModulated(recent[index].day) {
+                let current = recent[index]
+                let earlier = recent[index - 1]
+                let sameLoad = !harder(earlier, current) && !harder(current, earlier)
+                guard layoffDays(from: earlier.day, to: current.day, trainedDays: trainedDays) < comebackLightGapDays,
+                      !isStruggle(earlier, slot: slot),
+                      harder(earlier, current) || (sameLoad && modulatedDays.isModulated(earlier.day))
+                else { break }
+                index -= 1
+            }
+        }
+        return (recent[index], index > 0 ? recent[index - 1] : nil)
+    }
+
+    /// 这个动作该不该按「停练回来」处理（2026-10-20 引擎审查第一批，按每个动作判）。
+    struct Staleness {
+        /// 不加重。
+        let stale: Bool
+        /// 该打的回归折扣；nil = 不打——不算回归，或者停了两三周（14-20 天）而**上次本身就是停练回来练成的那一场**
+        ///（隔两周练一次的人，每次都在上次已减过的重量上再减一成，会越练越轻：owner 真实节奏重放）。
+        let multiplier: Double?
+    }
+
+    /// 从 a 到 b（训练日序号）之间最长的一段完全没练的日子：两端加上其间所有训练日，取相邻最大差。
+    private static func layoffDays(from a: Int, to b: Int, trainedDays: [Int]) -> Int {
+        let points = [a] + trainedDays.filter { $0 > a && $0 < b } + [b]
+        return zip(points, points.dropFirst()).map { $1 - $0 }.max() ?? 0
+    }
+
+    /// 算回归的两种情况（任一即是）：
+    /// ① 这个动作上次做完之后，中间整体停练过两周以上——以前只有回来的第一天减，第二天的拉日 / 腿日照旧按
+    ///    两个月前的重量甚至加档（owner 真实数据重放）；② 这次隔的时间超过两周，而且比它平常（上一段间隔）长出
+    ///    一倍以上——动作被搁置了很久。**按轮换本来就隔两周才轮到一次的动作两条都不满足**（推拉腿 6 天轮换、
+    ///    每周练 3 次时每个动作每两周一次），照常进阶；只看「这个动作自己隔了多久」会让它们永远不加重。
+    /// 折扣分档按真正没练的那段（①取最长停练，②取这次间隔）；今天整体就是回归日时与之取大。
+    private static func staleness(recent: [LastPerformance], todayISO: String, verdict: TodayVerdict,
+                                  slot: Slot, trainedDays: [Int]) -> Staleness {
+        guard let last = recent.last, let today = TrainingDay.dayNumber(fromISO: todayISO) else {
+            // 没做过的动作：今天整体是停练回归时照旧按全局间隔减（与改动前一致）。
+            return Staleness(stale: verdict.longGapDays != nil,
+                             multiplier: verdict.longGapDays.map { comebackMultiplier(gapDays: $0) })
+        }
+        let previous = recent.count >= 2 ? recent[recent.count - 2] : nil
+        let layoff = layoffDays(from: last.day, to: today, trainedDays: trainedDays)
+        let ownGap = today - last.day
+        // 平常隔多久：最近几段间隔里最长的那段——自定义日序不均匀（同一动作排在相邻两天、再隔一周多）时，
+        // 只看上一段会把每一轮的长间隔都误判成搁置（审查 2026-10-20）。
+        let usualInterval = zip(recent, recent.dropFirst()).map { $1.day - $0.day }.max()
+        let shelved = usualInterval.map { ownGap >= comebackLightGapDays && ownGap >= 2 * $0 } ?? false
+        var gap = max(verdict.longGapDays ?? 0, layoff >= comebackLightGapDays ? layoff : 0)
+        if shelved { gap = max(gap, ownGap) }
+        guard gap >= comebackLightGapDays else { return Staleness(stale: false, multiplier: nil) }
+        // 不叠减只用在两三周的短间隔（14-20 天，×0.9 那一档）：上次本身就是停练回来练成的那一场，
+        // 隔这么点时间能力没真掉，再减一成只会越练越轻。停三周以上力量真会掉，照旧按档减
+        //（也与今日页「停练 N 天，重量先回落」的说法一致）。
+        let lastWasComebackDoneWell = previous.map {
+            layoffDays(from: $0.day, to: last.day, trainedDays: trainedDays) >= comebackLightGapDays
+        } == true && !isStruggle(last, slot: slot)
+        let skipRepeatCut = lastWasComebackDoneWell && gap < comebackRestartGapDays
+        return Staleness(stale: true, multiplier: skipRepeatCut ? nil : comebackMultiplier(gapDays: gap))
+    }
+
+    /// 历史上某个训练日，引擎当天开的是不是一份减量处方：重放那一天的裁决（只看那天之前的历史）——
+    /// 轻练（停练回归除外：回归后的减重是有意保留的起点，#679）、减载；周期化开着时再加上减载周。
+    /// 档案与计划用现在的（历史上改过设置时是近似，偏差只影响「越不越过」那一次）。
+    /// **按需算、记住结果**：只问到基准回看用到的那几天（每个动作最多几次），不整份历史逐日重放——
+    /// 那样每次开今日页都是 O(场次²)，500 场要上百毫秒（审查 2026-10-20）。
+    final class ModulatedDayLookup {
+        private let input: CleanTrainingDecisionInput
+        private let mesocycleEnabled: Bool
+        private let blockLengthWeeks: Int
+        private let isoByDay: [Int: String]
+        private var memo: [Int: Bool] = [:]
+
+        init(input: CleanTrainingDecisionInput, mesocycleEnabled: Bool, blockLengthWeeks: Int) {
+            self.input = input
+            self.mesocycleEnabled = mesocycleEnabled
+            self.blockLengthWeeks = blockLengthWeeks
+            var isoByDay: [Int: String] = [:]
+            for session in input.sessions {
+                let iso = String(session.date.prefix(10))
+                if let day = TrainingDay.dayNumber(fromISO: iso) { isoByDay[day] = iso }
+            }
+            self.isoByDay = isoByDay
+        }
+
+        func isModulated(_ day: Int) -> Bool {
+            if let known = memo[day] { return known }
+            let answer = compute(day)
+            memo[day] = answer
+            return answer
+        }
+
+        private func compute(_ day: Int) -> Bool {
+            guard let iso = isoByDay[day], let past = input.asOf(dayISO: iso) else { return false }
+            let verdict = TodayVerdictEngine.evaluate(past)
+            if verdict.call == .deload || (verdict.call == .light && verdict.longGapDays == nil) { return true }
+            guard mesocycleEnabled, verdict.call == .train,
+                  let start = Mesocycle.blockStartISO(sessionDatesISO: past.sessions.map(\.date), todayISO: iso)
+            else { return false }
+            return Mesocycle.phase(blockStartISO: start, todayISO: iso, blockLengthWeeks: blockLengthWeeks)
+                .modulation.weightMultiplier < 1.0
+        }
     }
 
     /// 回归协议：自最近重启点（与前一场日期差 ≥ 重启线的场）以来的场次数。
@@ -1434,11 +1612,11 @@ public enum TodayPrescriptionEngine {
     ) -> [LastPerformance] {
         guard limit > 0 else { return [] }
         let candidates = sessions.enumerated().compactMap {
-            canonicalOffset, session -> (day: Int, canonicalOffset: Int, sets: [CleanLoggedSet])? in
+            canonicalOffset, session -> (day: Int, canonicalOffset: Int, sets: [CleanLoggedSet], painSkip: Bool)? in
             guard let day = TrainingDay.dayNumber(fromISO: session.date) else { return nil }
             let sets = session.exercises.filter { $0.exerciseId == exerciseId }.flatMap(\.sets)
             guard !sets.isEmpty else { return nil }
-            return (day, canonicalOffset, sets)
+            return (day, canonicalOffset, sets, session.painDiscomfortExerciseIds.contains(exerciseId))
         }
         let ordered = candidates.sorted {
             if $0.day == $1.day {
@@ -1457,6 +1635,9 @@ public enum TodayPrescriptionEngine {
                 } ? weight : nil
             }
             return LastPerformance(
+                day: candidate.day,
+                // 登记不适：组上的疼痛标记，或这一场因不适跳过了这个动作的组（FR-TR7 的同一证据通道）。
+                hadPain: candidate.sets.contains(where: \.painFlag) || candidate.painSkip,
                 topWeightKg: topSet?.weight ?? 0,
                 repsAtTop: topSet?.reps ?? 0,
                 minReps: reps.min() ?? 0,
@@ -1483,13 +1664,6 @@ public enum TodayPrescriptionEngine {
             && performance.minReps >= repMin
             && performance.meanReps >= midpoint
             && (performance.minRir.map { $0 >= progressMinMeanRir } ?? true)
-    }
-
-    private static func latestPerformanceWasJustRaised(_ recent: [LastPerformance]) -> Bool {
-        guard recent.count >= 2 else { return false }
-        let previous = recent[recent.count - 2]
-        let latest = recent[recent.count - 1]
-        return latest.topWeightKg > previous.topWeightKg + loadComparisonToleranceKg
     }
 
     private static func sameLoad(_ lhs: Double, _ rhs: Double) -> Bool {
