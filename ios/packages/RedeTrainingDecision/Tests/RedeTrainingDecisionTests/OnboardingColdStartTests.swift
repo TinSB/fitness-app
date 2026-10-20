@@ -9,11 +9,11 @@ import RedeDomain
 @testable import RedeTrainingDecision
 
 final class OnboardingColdStartTests: XCTestCase {
-    private func firstPrescription(profileJSON: String, today: String = "2026-06-10") throws -> TodayPrescription {
+    private func firstPrescription(profileJSON: String) throws -> TodayPrescription {
         let input = try TestSupport.makeInput(
             appDataJSON: #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}"#
                 + profileJSON + "}",
-            todayISO: today
+            todayISO: "2026-06-10"
         )
         let verdict = TodayVerdictEngine.evaluate(input)
         return try XCTUnwrap(TodayPrescriptionEngine.plan(input: input, verdict: verdict))
@@ -68,9 +68,7 @@ final class OnboardingColdStartTests: XCTestCase {
             {"id": "s6", "date": "2026-05-30", "completed": true, "templateId": "legs-b", "exercises": []}
           ]
         """#
-        // 今天取卧推之后第 7 天：2026-10-20 起停练回归按每个动作自己多久没做判，卧推隔 14 天以上
-        // 就该按回归走（不加重）——这条测试验的是「真实记录盖过冷启动先验」，不是回归。
-        let plan = try firstPrescription(profileJSON: history, today: "2026-06-01")
+        let plan = try firstPrescription(profileJSON: history)
         XCTAssertEqual(plan.dayCode, "push-a") // 轮转漂移时此断言先报，定位清晰（审查 N2）
         let bench = try XCTUnwrap(plan.exercises.first { $0.exerciseId == "bench-press" })
         // 3×8 满上限有余力 → 双重渐进 +2.5 = 52.5；关键断言：不是 52.5×0.5

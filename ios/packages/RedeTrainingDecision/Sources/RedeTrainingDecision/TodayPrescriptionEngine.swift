@@ -614,6 +614,8 @@ public enum TodayPrescriptionEngine {
         // 不能成为下次的基准（2026-10-20 引擎审查第一批）。整份历史只算一次，各动作共用。
         let modulatedDays = modulatedTrainingDays(input: input, mesocycleEnabled: mesocycleEnabled,
                                                   blockLengthWeeks: blockLengthWeeks)
+        // 全部训练日（去重、升序）：判「某个动作上次之后中间有没有整体停练过」用。
+        let trainedDays = Set(input.sessions.compactMap { TrainingDay.dayNumber(fromISO: $0.date) }).sorted()
 
         /// 自动均衡每场加量预算（合计最多 +2 组——温和偏置，不是重写计划）。
         var boostBudget = priorityMuscles.isEmpty ? 0 : 2
@@ -663,7 +665,8 @@ public enum TodayPrescriptionEngine {
                 catalog: catalog,
                 phase: phase,
                 progressionPaused: progressionPauseReason != nil,
-                modulatedDays: modulatedDays
+                modulatedDays: modulatedDays,
+                trainedDays: trainedDays
             )
             if let progressionPauseReason, item.exerciseId == entry.id {
                 item = item.pausingAutomaticProgression(for: progressionPauseReason)
@@ -731,7 +734,8 @@ public enum TodayPrescriptionEngine {
         catalog: ExerciseCatalog,
         phase: PhaseModulation?,
         progressionPaused: Bool,
-        modulatedDays: Set<Int>
+        modulatedDays: Set<Int>,
+        trainedDays: [Int]
     ) -> ExercisePrescriptionPlan {
         let recent = recentPerformances(
             exerciseId: entry.id,
@@ -740,7 +744,8 @@ public enum TodayPrescriptionEngine {
             limit: entry.loadType == "external" ? baselineLookback : 2
         )
         let last = recent.last
-        let staleness = Self.staleness(recent: recent, todayISO: input.todayISO, verdict: verdict, slot: slot)
+        let staleness = Self.staleness(recent: recent, todayISO: input.todayISO, verdict: verdict, slot: slot,
+                                       trainedDays: trainedDays)
 
         // 自重分支（2026-06-13，owner 拍板）：无外部负重，按次数进阶；到顶提示换难度。
         // 重量轴的渐进/取整/调制全部不适用——单独一条路径。
@@ -1481,30 +1486,48 @@ public enum TodayPrescriptionEngine {
         return (recent[index], index > 0 ? recent[index - 1] : nil)
     }
 
-    /// 这个动作自己多久没做了（2026-10-20 引擎审查第一批）。
+    /// 这个动作该不该按「停练回来」处理（2026-10-20 引擎审查第一批，按每个动作判）。
     struct Staleness {
-        /// ≥14 天没做（或今天整体是停练回归）：不加重。
+        /// 不加重。
         let stale: Bool
-        /// 该打的回归折扣；nil = 不打——没停够，或者停了两三周（14-20 天）而**上次本身就是停练回来练成的那一场**
+        /// 该打的回归折扣；nil = 不打——不算回归，或者停了两三周（14-20 天）而**上次本身就是停练回来练成的那一场**
         ///（隔两周练一次的人，每次都在上次已减过的重量上再减一成，会越练越轻：owner 真实节奏重放）。
         let multiplier: Double?
     }
 
+    /// 从 a 到 b（训练日序号）之间最长的一段完全没练的日子：两端加上其间所有训练日，取相邻最大差。
+    private static func layoffDays(from a: Int, to b: Int, trainedDays: [Int]) -> Int {
+        let points = [a] + trainedDays.filter { $0 > a && $0 < b } + [b]
+        return zip(points, points.dropFirst()).map { $1 - $0 }.max() ?? 0
+    }
+
+    /// 算回归的两种情况（任一即是）：
+    /// ① 这个动作上次做完之后，中间整体停练过两周以上——以前只有回来的第一天减，第二天的拉日 / 腿日照旧按
+    ///    两个月前的重量甚至加档（owner 真实数据重放）；② 这次隔的时间超过两周，而且比它平常（上一段间隔）长出
+    ///    一倍以上——动作被搁置了很久。**按轮换本来就隔两周才轮到一次的动作两条都不满足**（推拉腿 6 天轮换、
+    ///    每周练 3 次时每个动作每两周一次），照常进阶；只看「这个动作自己隔了多久」会让它们永远不加重。
+    /// 折扣分档按真正没练的那段（①取最长停练，②取这次间隔）；今天整体就是回归日时与之取大。
     private static func staleness(recent: [LastPerformance], todayISO: String, verdict: TodayVerdict,
-                                  slot: Slot) -> Staleness {
+                                  slot: Slot, trainedDays: [Int]) -> Staleness {
         guard let last = recent.last, let today = TrainingDay.dayNumber(fromISO: todayISO) else {
             // 没做过的动作：今天整体是停练回归时照旧按全局间隔减（与改动前一致）。
             return Staleness(stale: verdict.longGapDays != nil,
                              multiplier: verdict.longGapDays.map { comebackMultiplier(gapDays: $0) })
         }
-        let gap = max(today - last.day, verdict.longGapDays ?? 0)
+        let previous = recent.count >= 2 ? recent[recent.count - 2] : nil
+        let layoff = layoffDays(from: last.day, to: today, trainedDays: trainedDays)
+        let ownGap = today - last.day
+        let usualInterval = previous.map { last.day - $0.day }
+        let shelved = usualInterval.map { ownGap >= comebackLightGapDays && ownGap >= 2 * $0 } ?? false
+        var gap = max(verdict.longGapDays ?? 0, layoff >= comebackLightGapDays ? layoff : 0)
+        if shelved { gap = max(gap, ownGap) }
         guard gap >= comebackLightGapDays else { return Staleness(stale: false, multiplier: nil) }
         // 不叠减只用在两三周的短间隔（14-20 天，×0.9 那一档）：上次本身就是停练回来练成的那一场，
         // 隔这么点时间能力没真掉，再减一成只会越练越轻。停三周以上力量真会掉，照旧按档减
         //（也与今日页「停练 N 天，重量先回落」的说法一致）。
-        let previous = recent.count >= 2 ? recent[recent.count - 2] : nil
-        let lastWasComebackDoneWell = previous.map { last.day - $0.day >= comebackLightGapDays } == true
-            && !isStruggle(last, slot: slot)
+        let lastWasComebackDoneWell = previous.map {
+            layoffDays(from: $0.day, to: last.day, trainedDays: trainedDays) >= comebackLightGapDays
+        } == true && !isStruggle(last, slot: slot)
         let skipRepeatCut = lastWasComebackDoneWell && gap < comebackRestartGapDays
         return Staleness(stale: true, multiplier: skipRepeatCut ? nil : comebackMultiplier(gapDays: gap))
     }

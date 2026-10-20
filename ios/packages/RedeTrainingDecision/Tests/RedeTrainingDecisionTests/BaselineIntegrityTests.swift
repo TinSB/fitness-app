@@ -93,15 +93,42 @@ final class BaselineIntegrityTests: XCTestCase {
     // MARK: ③④ 停练回归
 
     func testComebackIsJudgedPerExerciseNotOnlyOnTheFirstDayBack() throws {
-        // 卧推 08-03 之后就没做过，其它训练一直在练（整体不算停练）。08-20 轮到上肢：
-        // 卧推自己已停 17 天 → 按回归走：不加重、×0.9（以前照旧在 17 天前的重量上加一档）。
-        let others = ["2026-08-10", "2026-08-14", "2026-08-18"].map {
+        // 卧推 06-15 之后整体停练了两个多月；08-20 回来先练了腿（那天是整体回归日），08-21 轮到上肢：
+        // 整体已不算停练，但卧推上次之后中间停过 66 天 → 照样按回归走：不加重、按深档 ×0.75
+        //（以前只有回来的第一天减，第二天按两个月前的重量还加一档）。
+        let history = [bench("2026-06-15", 30),
+                       Session(date: "2026-08-20", exerciseId: "leg-press", sets: [(100, 12, 2)])]
+        let upper = try prescription("db-bench-press", try input(history, today: "2026-08-21", daysPerWeek: 4),
+                                     day: "upper")
+        XCTAssertNotEqual(upper.change, .increase)
+        XCTAssertEqual(upper.targetWeightKg, 22.5, accuracy: 0.001)   // 30 × 0.75
+    }
+
+    func testALiftThatComesRoundEveryTwoWeeksStillProgresses() throws {
+        // 推拉腿 6 天轮换、每周练 3 次：同一个动作本来就每两周才轮到一次，中间一直在练别的。
+        // 不算回归——照常进阶（只看「这个动作自己隔了 14 天」会让它永远不加重）。
+        var history = [bench("2026-09-01", 30), bench("2026-09-15", 30)]
+        history += ["2026-09-03", "2026-09-05", "2026-09-08", "2026-09-10", "2026-09-12",
+                    "2026-09-17", "2026-09-19", "2026-09-22", "2026-09-24", "2026-09-26"].map {
             Session(date: $0, exerciseId: "leg-press", sets: [(100, 12, 2)])
         }
-        let upper = try prescription("db-bench-press", try input([bench("2026-08-03", 30)] + others,
-                                                                 today: "2026-08-20", daysPerWeek: 4), day: "upper")
-        XCTAssertNotEqual(upper.change, .increase)
-        XCTAssertEqual(upper.targetWeightKg, 27.5, accuracy: 0.001)
+        let next = try prescription("db-bench-press", try input(history, today: "2026-09-29", daysPerWeek: 3),
+                                    day: "upper")
+        XCTAssertEqual(next.change, .increase)
+        XCTAssertEqual(next.targetWeightKg, 32.5, accuracy: 0.001)
+    }
+
+    func testALiftShelvedForWeeksWhileTrainingOtherThingsEasesBack() throws {
+        // 卧推平常每周练，搁置了 5 周（期间一直在练别的）：这次间隔比平常长一倍以上 → 按回归（21-41 天 ×0.85）。
+        var history = [bench("2026-08-18", 30), bench("2026-08-25", 30)]
+        history += ["2026-08-26", "2026-08-29", "2026-09-01", "2026-09-04", "2026-09-07", "2026-09-10",
+                    "2026-09-13", "2026-09-16", "2026-09-19", "2026-09-22", "2026-09-25", "2026-09-28"].map {
+            Session(date: $0, exerciseId: "leg-press", sets: [(100, 12, 2)])
+        }
+        let back = try prescription("db-bench-press", try input(history, today: "2026-09-29", daysPerWeek: 3),
+                                    day: "upper")
+        XCTAssertNotEqual(back.change, .increase)
+        XCTAssertEqual(back.targetWeightKg, 25, accuracy: 0.001)   // 30 × 0.85 = 25.5 → 25
     }
 
     func testTrainingEveryTwoWeeksDoesNotKeepCuttingTheWeight() throws {
