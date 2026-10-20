@@ -811,7 +811,11 @@ final class SessionStore {
             above.append(next)
             cursor = next
         }
-        return below + [center] + above
+        let ladder = below + [center] + above
+        // 处方可以是真能配出的离格重量（选重机 10 lb 一格上的 45 lb，2026-10-20 引擎审查）：把它本身放进梯子，
+        // 表上默认显示的就是处方那个数——否则表冠停在最近的 50，手腕上显示 50、记下的却是 45。
+        guard abs(center - target) > 1e-6, LoadGrid.isEnterableLoad(target, unit: unit) else { return ladder }
+        return (ladder + [target]).sorted()
     }
 
     /// 表上的遥控命令（v2）。与 applyWatchLoggedSet 同一条纪律：**只在命令对着的正是当前状态时执行**。

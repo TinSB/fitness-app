@@ -11,7 +11,16 @@ All notable native iOS product, architecture, repository-governance, and documen
   - **Off-grid loads.** New `LoadGrid.isEnterableLoad` (multiples of 2.5 lb / 1.25 kg), `holdKg`, `progressionRungKg`. A real off-grid weight (owner: machine-chest-press 45 lb on a 10-lb selectorized grid) is held as is and progresses or eases by the neighbouring rung (50 / 40). Before it was snapped to 50 and then stepped to 60 (+33%), and "hold" silently added 5 lb. Unit-conversion leftovers (30 kg = 66.1 lb) still snap. On-grid weights are unchanged.
   - **Unfinished drafts are never deleted.** `SessionStore.checkForRestorableDraft` used to `clear()` any draft older than 36 h, including logged sets (the owner's 10-18 two-set bench draft crossed that line on 10-20). It now saves a draft with logged sets as an early-ended session (`TrainSessionDraft.endedEarly(at:)`: `requestFinish` + `confirmEnd(.other)`, end time = last set, else start time). A draft that cannot be replayed but has sets is kept on disk. Only drafts with nothing logged are cleared. The app still has no way to delete a saved session.
   - **Consecutive-day rest follows the plan.** `TodayVerdictEngine` rests after `max(3, planned days per week)` consecutive days (3 when no plan is known). Before, a 5-day plan was forced to rest on its 4th consecutive day.
-  - **Tests.** `BaselineIntegrityTests` +10. Behaviour tests:
+  - **Review follow-ups (three reviewers, one skeptic per finding; 7 confirmed).**
+    - MAJOR: the walk-back crossed pain-skip sessions and bypassed the FR-TR7 hold. Fixed: `hadPain` now includes `painDiscomfortExerciseIds`, and there is no walk-back while the pain or injury pause is active.
+    - MAJOR: the walk-back was blocked by the 14-day spacing of a lift on a fortnightly rotation. Fixed: it now checks for a whole-app layoff between the two performances, not the pair gap.
+    - MAJOR: the watch weight ladder did not contain an off-grid hold target, so the wrist showed 50 while 45 was logged. Fixed: `watchWeightLadder` inserts the enterable target itself.
+    - A same-weight light-day session was discarded even when the user did more reps. Fixed: a same weight is walked past only when the earlier session was also reduced, as in a deload week's two equal exposures.
+    - Uneven custom sequences were misread as shelved lifts. Fixed: the usual interval is the longest recent interval.
+    - `modulatedTrainingDays` was O(n²). Replaced by the lazy, memoized `ModulatedDayLookup`, which only replays the days the lookback touches; the eager version took 154 ms at 500 sessions.
+    - Assisted and bodyweight-plus got the same baseline (direction-aware), and bodyweight-plus takes the strongest reduction only.
+    - Rejected: the 6-exposure lookback running out, deliberately much lighter modulated days, a single missed session, the 14–20 day frozen weight (intended), and the in-window undecodable draft (pre-existing).
+  - **Tests.** `BaselineIntegrityTests` +14. Behaviour tests:
     - light day, and a light day that was a struggle
     - deload week
     - per-exercise comeback the day after a layoff
@@ -19,13 +28,17 @@ All notable native iOS product, architecture, repository-governance, and documen
     - shelved lift
     - two-week cadence, and a three-week cadence that still eases
     - off-grid machine hold / increase / ease
+    - same-weight light day
+    - pain on the light day
+    - fortnightly rotation through a light day
+    - uneven custom sequence
 
     One more checks that unit-conversion leftovers still snap. The behaviour tests that encode the audited bugs fail on the pre-fix engine with the audited numbers. Other suites:
     - `TrainSessionDraftTests` +2
     - `TodayVerdictEngineTests` +1
-    - `WatchLoggedSetIntakeTests` +2 (app-hosted): an expired draft with sets is saved; an empty one is cleared.
-    - `RedeTrainingDecision` 606/606.
-    - App-hosted `RedeTests`: 187, with the one known `StoreKitEntitlementsTests` catalog failure.
+    - `WatchLoggedSetIntakeTests` +3 (app-hosted): an expired draft with sets is saved; an empty one is cleared; the off-grid target is on the watch ladder.
+    - `RedeTrainingDecision` 610/610.
+    - App-hosted `RedeTests`: 188, with the one known `StoreKitEntitlementsTests` catalog failure.
   - **Real-data replay** (owner's history, mesocycle on, 16 weeks at exact targets):
     - Today's push day is bench 65 lb (was 60), machine-chest-press 45 (was 40) and triceps-pushdown 25 (was 20).
     - Deload weeks hold: leg-press 140/140 (was 140 → 125).

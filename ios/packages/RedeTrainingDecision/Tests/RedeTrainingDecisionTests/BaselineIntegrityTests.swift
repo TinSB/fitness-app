@@ -16,6 +16,8 @@ final class BaselineIntegrityTests: XCTestCase {
         let date: String
         let exerciseId: String
         let sets: [(weightKg: Double, reps: Int, rir: Int)]
+        /// 这一场有一组因「不适 / 疼痛」跳过（FR-TR7 的证据通道）。
+        var painSkip = false
     }
 
     private func input(_ sessions: [Session], today: String, split: String = "upper-lower",
@@ -24,7 +26,10 @@ final class BaselineIntegrityTests: XCTestCase {
             let sets = session.sets.enumerated().map { setIndex, set in
                 #"{"setIndex":\#(setIndex + 1),"exerciseId":"\#(session.exerciseId)","reps":\#(set.reps),"rir":\#(set.rir),"weight":\#(set.weightKg),"done":true,"completionStatus":"completed"}"#
             }.joined(separator: ",")
-            return #"{"id":"s\#(index)","date":"\#(session.date)","completed":true,"endReason":"completedAll","exercises":[{"id":"s\#(index)-e","exerciseId":"\#(session.exerciseId)","sets":[\#(sets)]}]}"#
+            let skipped = session.painSkip
+                ? #","skippedSets":[{"exerciseId":"\#(session.exerciseId)","setIndex":\#(session.sets.count + 1),"reason":"painDiscomfort"}]"#
+                : ""
+            return #"{"id":"s\#(index)","date":"\#(session.date)","completed":true,"endReason":"completedAll","exercises":[{"id":"s\#(index)-e","exerciseId":"\#(session.exerciseId)","sets":[\#(sets)]}]\#(skipped)}"#
         }.joined(separator: ",")
         let json = """
         {"schemaVersion":9,
@@ -44,8 +49,10 @@ final class BaselineIntegrityTests: XCTestCase {
         return try XCTUnwrap(plan.exercises.first { $0.exerciseId == exerciseId }, "\(exerciseId) 不在 \(day) 日")
     }
 
-    private func bench(_ date: String, _ kg: Double, reps: Int = 12, rir: Int = 2, sets: Int = 1) -> Session {
-        Session(date: date, exerciseId: "db-bench-press", sets: Array(repeating: (kg, reps, rir), count: sets))
+    private func bench(_ date: String, _ kg: Double, reps: Int = 12, rir: Int = 2, sets: Int = 1,
+                       painSkip: Bool = false) -> Session {
+        Session(date: date, exerciseId: "db-bench-press", sets: Array(repeating: (kg, reps, rir), count: sets),
+                painSkip: painSkip)
     }
 
     // MARK: ① 轻练日
@@ -66,6 +73,38 @@ final class BaselineIntegrityTests: XCTestCase {
         let monday = try prescription("db-bench-press", try input(history, today: "2026-10-12"), day: "upper")
         XCTAssertEqual(monday.change, .ease)
         XCTAssertEqual(monday.targetWeightKg, 25, accuracy: 0.001)
+    }
+
+    func testALightDayAtTheSameWeightStillCountsAsEvidence() throws {
+        // 轻练日用户没减、照旧 30 kg 而且做满 12 次：那就是真实成绩——照它加重（审查 2026-10-20：
+        // 同样重量的那次不能被当成「减下来的」越过，否则 12 次的进步被丢掉）。
+        let history = [bench("2026-10-05", 30, reps: 8), bench("2026-10-07", 30, reps: 8), bench("2026-10-09", 30)]
+        let monday = try prescription("db-bench-press", try input(history, today: "2026-10-12"), day: "upper")
+        XCTAssertEqual(monday.change, .increase)
+        XCTAssertEqual(monday.targetWeightKg, 32.5, accuracy: 0.001)
+    }
+
+    func testPainOnTheLightDayIsNeverWalkedPast() throws {
+        // 周三练到一半因不适跳组、周五轻练日又因不适跳组（最近 4 场 2 场疼痛 → FR-TR7 保守态）：
+        // 下周一保持最近一次的 27.5，不能越过疼痛那两场回到 30（审查 2026-10-20 MAJOR）。
+        let history = [bench("2026-10-05", 30, reps: 8, sets: 3),
+                       bench("2026-10-07", 30, reps: 8, sets: 2, painSkip: true),
+                       bench("2026-10-09", 27.5, painSkip: true)]
+        let monday = try prescription("db-bench-press", try input(history, today: "2026-10-12"), day: "upper")
+        XCTAssertEqual(monday.targetWeightKg, 27.5, accuracy: 0.001)
+        XCTAssertEqual(monday.progressionPauseReason, .painDiscomfort)
+    }
+
+    func testALightDayOnAFortnightlyRotationStillGoesBackToTheRealWeight() throws {
+        // 每两周才轮到一次的动作（中间一直在练别的）：轻练日之后照样回到减量前那次——不能因为
+        // 两次隔了 14 天就不往回找（审查 2026-10-20 MAJOR）。09-30（周三）是本周第 3 练（计划每周 2 天）→ 轻练。
+        var history = [bench("2026-09-16", 30), bench("2026-09-30", 27.5, rir: 3)]
+        history += ["2026-09-17", "2026-09-19", "2026-09-22", "2026-09-24", "2026-09-26",
+                    "2026-09-28", "2026-09-29", "2026-10-02", "2026-10-06", "2026-10-08", "2026-10-10"].map {
+            Session(date: $0, exerciseId: "leg-press", sets: [(100, 12, 2)])
+        }
+        let next = try prescription("db-bench-press", try input(history, today: "2026-10-13"), day: "upper")
+        XCTAssertEqual(next.targetWeightKg, 32.5, accuracy: 0.001, "从 30 打满接着加，不从轻练日的 27.5 爬")
     }
 
     // MARK: ② 周期减载周
@@ -116,6 +155,19 @@ final class BaselineIntegrityTests: XCTestCase {
                                     day: "upper")
         XCTAssertEqual(next.change, .increase)
         XCTAssertEqual(next.targetWeightKg, 32.5, accuracy: 0.001)
+    }
+
+    func testAnUnevenCustomSequenceIsNotMistakenForAShelvedLift() throws {
+        // 自定义日序里同一动作排在相邻两天、之后隔两周多才再轮到（间隔 2 / 16 / 2 / 16 …），中间一直在练：
+        // 不是搁置，照常进阶（审查 2026-10-20：只看上一段 2 天的间隔会把每轮的 16 天都判成搁置）。
+        var history = [bench("2026-09-01", 30), bench("2026-09-03", 30), bench("2026-09-19", 30), bench("2026-09-21", 30)]
+        history += ["2026-09-06", "2026-09-09", "2026-09-12", "2026-09-15", "2026-09-24", "2026-09-27",
+                    "2026-09-30", "2026-10-03", "2026-10-05"].map {
+            Session(date: $0, exerciseId: "leg-press", sets: [(100, 12, 2)])
+        }
+        let next = try prescription("db-bench-press", try input(history, today: "2026-10-07", daysPerWeek: 3),
+                                    day: "upper")
+        XCTAssertEqual(next.change, .increase)
     }
 
     func testALiftShelvedForWeeksWhileTrainingOtherThingsEasesBack() throws {
