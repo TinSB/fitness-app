@@ -72,16 +72,16 @@ final class LoadGridTests: XCTestCase {
 
     // MARK: - 离格值的相邻格（2026-08-19 owner 真机）
 
-    // 用户用「精确」手输了梯子上没有的重量（选重机 10lb 一格、他配了 55lb 微调片）。
-    // 旧实现先把 55 吸到 60 再 ±一整档 → 重一档给 70，把 60 这一格整个跳过去了；
-    // 快改面板上就读成「轻一档 50 / 跟随 55 / 重一档 70」，往左 5 往右 15，没法理解。
+    // 用户用「精确」手输了梯子上没有的重量（选重机 5lb 一格、他配了 2.5lb 微调片 → 52.5）。
+    // 旧实现先把离格值吸到最近格再 ±一整档 → 重一档跳过紧邻那一格；快改面板读起来往左往右不对称，
+    // 没法理解（2026-08-19 owner 真机：当时选重机 10lb 一格、例子是 55）。
     // 正确语义：相邻格 = 严格大于/小于当前重量的那一格。
     func testNeighbourRungFromOffLadderValueTakesImmediateNeighbour() {
         let lbPerKg = 2.204_622_621_8
-        let offLadder = 55.0 / lbPerKg          // 选重机梯子是 10lb 一格，55 不在格上
+        let offLadder = 52.5 / lbPerKg          // 选重机梯子是 5lb 一格，52.5 不在格上
         let up = LoadGrid.neighbourRungKg(offLadder, equipment: "selectorized", unit: .lb, up: true)
         let down = LoadGrid.neighbourRungKg(offLadder, equipment: "selectorized", unit: .lb, up: false)
-        XCTAssertEqual(up * lbPerKg, 60, accuracy: 0.001, "重一档必须是紧邻上格 60，不是跳过它的 70")
+        XCTAssertEqual(up * lbPerKg, 55, accuracy: 0.001, "重一档必须是紧邻上格 55，不是跳过它的 60")
         XCTAssertEqual(down * lbPerKg, 50, accuracy: 0.001)
     }
 
@@ -91,8 +91,9 @@ final class LoadGridTests: XCTestCase {
         let onLadder = 60.0 / lbPerKg
         let up = LoadGrid.neighbourRungKg(onLadder, equipment: "selectorized", unit: .lb, up: true)
         let down = LoadGrid.neighbourRungKg(onLadder, equipment: "selectorized", unit: .lb, up: false)
-        XCTAssertEqual(up * lbPerKg, 70, accuracy: 0.001)
-        XCTAssertEqual(down * lbPerKg, 50, accuracy: 0.001)
+        // 选重机 lb 一格 5（2026-10-20 引擎审查第二批，原为 10）。
+        XCTAssertEqual(up * lbPerKg, 65, accuracy: 0.001)
+        XCTAssertEqual(down * lbPerKg, 55, accuracy: 0.001)
     }
 
     // 分段梯子（磅哑铃）同规则：27lb 落在 25 与 30 之间，两侧各取紧邻格。

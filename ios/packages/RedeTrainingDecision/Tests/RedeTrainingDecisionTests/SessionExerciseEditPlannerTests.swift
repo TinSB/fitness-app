@@ -29,7 +29,8 @@ final class SessionExerciseEditPlannerTests: XCTestCase {
             sessions: [],
             catalog: catalog,
             allowedEquipment: nil,
-            loadUnit: .kg
+            loadUnit: .kg,
+            trainingLevel: nil, todayISO: "2026-07-03"
         ))
 
         XCTAssertEqual(result.exerciseId, "chest-new")
@@ -64,7 +65,8 @@ final class SessionExerciseEditPlannerTests: XCTestCase {
             sessions: [],
             catalog: catalog,
             allowedEquipment: nil,
-            loadUnit: .kg
+            loadUnit: .kg,
+            trainingLevel: nil, todayISO: "2026-07-03"
         ))
 
         XCTAssertEqual(result.sets.map(\.targetReps), [8, 8, 8],
@@ -96,22 +98,57 @@ final class SessionExerciseEditPlannerTests: XCTestCase {
 
         let historical = try XCTUnwrap(SessionExerciseEditPlanner.makeAdHocPlan(
             exerciseId: "external-new", sessionPlan: sessionPlan, currentExerciseIndex: 0,
-            sessions: sessions, catalog: catalog, allowedEquipment: nil, loadUnit: .kg
+            sessions: sessions, catalog: catalog, allowedEquipment: nil, loadUnit: .kg,
+            trainingLevel: nil, todayISO: "2026-07-03"
         ))
         XCTAssertEqual(historical.sets.map(\.targetWeightKg), [25, 25, 25])
 
         let bodyweight = try XCTUnwrap(SessionExerciseEditPlanner.makeAdHocPlan(
             exerciseId: "bodyweight-new", sessionPlan: sessionPlan, currentExerciseIndex: 0,
-            sessions: [], catalog: catalog, allowedEquipment: nil, loadUnit: .kg
+            sessions: [], catalog: catalog, allowedEquipment: nil, loadUnit: .kg,
+            trainingLevel: nil, todayISO: "2026-07-03"
         ))
         XCTAssertEqual(bodyweight.sets.map(\.targetWeightKg), [0, 0, 0])
 
         let assisted = try XCTUnwrap(SessionExerciseEditPlanner.makeAdHocPlan(
             exerciseId: "assisted-new", sessionPlan: sessionPlan, currentExerciseIndex: 0,
-            sessions: [], catalog: catalog, allowedEquipment: nil, loadUnit: .kg
+            sessions: [], catalog: catalog, allowedEquipment: nil, loadUnit: .kg,
+            trainingLevel: nil, todayISO: "2026-07-03"
         ))
         XCTAssertEqual(assisted.stepKg, 5)
-        XCTAssertEqual(assisted.sets.map(\.targetWeightKg), [35, 35, 35])
+        // 与今日处方的首练定档同一规则：没自报水平 → 辅助 ×0.5（35 → 17.5 → 吸附 20）。
+        XCTAssertEqual(assisted.sets.map(\.targetWeightKg), [20, 20, 20])
+    }
+
+    // 2026-10-20 引擎审查第二批：加练 / 换动作的起始重量直接用今日处方的同一套规则（TodayPrescriptionEngine
+    // .sessionEditStartLoadKg）：首练先验、按 staleness 判回归（整体停练 / 搁置；按轮换隔两周的不算）。
+    func testStartingLoadAppliesBeginnerPriorAndComebackDiscountLikeTodaysPrescription() throws {
+        let catalog = makeCatalog([
+            entry("row", muscle: "back", equipment: "barbell", start: 50),
+            entry("assisted-pull", muscle: "back", equipment: "selectorized", start: 30, loadType: "assisted"),
+        ])
+        func start(_ id: String, _ sessions: [CleanTrainingSession], level: String?, today: String) -> Double? {
+            SessionExerciseEditPlanner.startingLoadKg(exerciseId: id, sessions: sessions, catalog: catalog,
+                                                      trainingLevel: level, todayISO: today, repLowerBound: 8)
+        }
+        // 没做过：新手 ×0.5（以前直接给目录 50，主计划同一动作只给 25）。
+        XCTAssertEqual(start("row", [], level: "beginner", today: "2026-07-03"), 25)
+        XCTAssertEqual(start("assisted-pull", [], level: "beginner", today: "2026-07-03"), 45, "辅助反向：新手多帮 ×1.5")
+        // 做过：最近一场最重的那组；中间整体停练两周以上按停练回归打折，至少降一格。
+        let last = [session("last", date: "2026-07-01", exerciseId: "row", weights: [55, 60])]
+        XCTAssertEqual(start("row", last, level: "beginner", today: "2026-07-10"), 60, "9 天：不打折")
+        XCTAssertEqual(start("row", last, level: "beginner", today: "2026-07-17"), 55, "16 天：×0.9 → 54 → 吸附 55")
+        XCTAssertEqual(start("row", last, level: "beginner", today: "2026-07-25"), 50, "24 天：×0.85 → 51 → 50")
+        XCTAssertEqual(start("row", last, level: "beginner", today: "2026-08-31"), 45, "两个月：×0.75 → 45")
+        // 辅助器械与今日处方一样：回归时多帮一档（数字是辅助量，越大越轻），不乘折扣。
+        let assisted = [session("a", date: "2026-07-01", exerciseId: "assisted-pull", weights: [25])]
+        XCTAssertEqual(start("assisted-pull", assisted, level: "beginner", today: "2026-08-31"), 30)
+        // 按轮换本来就隔两周才轮到一次（中间一直在练别的）：不算回归，照搬（与今日处方的 staleness 一致；
+        // 只看「这个动作自己隔了多久」会给轮换动作打折，审查 2026-10-20）。
+        let rotation = last + ["2026-07-03", "2026-07-06", "2026-07-08", "2026-07-11", "2026-07-13", "2026-07-15"].map {
+            session("other-\($0)", date: $0, exerciseId: "leg-press", weights: [100])
+        }
+        XCTAssertEqual(start("row", rotation, level: "beginner", today: "2026-07-17"), 60, "16 天没做、但一直在练：不打折")
     }
 
     // 2026-10-18：中途换动作的起始负重与临时加动作同一规则（换动作事件建立时解析一次）。
@@ -126,13 +163,13 @@ final class SessionExerciseEditPlannerTests: XCTestCase {
             session("dirty-bw", date: "2026-07-02", exerciseId: "bodyweight-new", weights: [80]),
         ]
         XCTAssertEqual(SessionExerciseEditPlanner.startingLoadKg(
-            exerciseId: "external-new", sessions: sessions, catalog: catalog), 25, "最近一场的最大工作重")
+            exerciseId: "external-new", sessions: sessions, catalog: catalog, trainingLevel: nil, todayISO: "2026-07-03", repLowerBound: 8), 25, "最近一场的最大工作重")
         XCTAssertEqual(SessionExerciseEditPlanner.startingLoadKg(
-            exerciseId: "external-new", sessions: [], catalog: catalog), 10, "无历史 → 目录起步对齐 2.5 档（11 → 10）")
+            exerciseId: "external-new", sessions: [], catalog: catalog, trainingLevel: nil, todayISO: "2026-07-03", repLowerBound: 8), 10, "无历史 → 目录起步对齐 2.5 档（11 → 10）")
         XCTAssertEqual(SessionExerciseEditPlanner.startingLoadKg(
-            exerciseId: "bodyweight-new", sessions: sessions, catalog: catalog), 0, "自重不借脏历史")
+            exerciseId: "bodyweight-new", sessions: sessions, catalog: catalog, trainingLevel: nil, todayISO: "2026-07-03", repLowerBound: 8), 0, "自重不借脏历史")
         XCTAssertNil(SessionExerciseEditPlanner.startingLoadKg(
-            exerciseId: "not-in-catalog", sessions: sessions, catalog: catalog))
+            exerciseId: "not-in-catalog", sessions: sessions, catalog: catalog, trainingLevel: nil, todayISO: "2026-07-03", repLowerBound: 8))
     }
 
     func testBodyweightAndBandDirtyHistoryNeverBorrowsWeight() throws {
@@ -154,13 +191,15 @@ final class SessionExerciseEditPlannerTests: XCTestCase {
 
         let bodyweight = try XCTUnwrap(SessionExerciseEditPlanner.makeAdHocPlan(
             exerciseId: "bodyweight-new", sessionPlan: sessionPlan, currentExerciseIndex: 0,
-            sessions: dirty, catalog: catalog, allowedEquipment: nil, loadUnit: .kg
+            sessions: dirty, catalog: catalog, allowedEquipment: nil, loadUnit: .kg,
+            trainingLevel: nil, todayISO: "2026-07-03"
         ))
         XCTAssertEqual(bodyweight.sets.map(\.targetWeightKg), [0, 0, 0])
 
         let band = try XCTUnwrap(SessionExerciseEditPlanner.makeAdHocPlan(
             exerciseId: "band-new", sessionPlan: sessionPlan, currentExerciseIndex: 0,
-            sessions: dirty, catalog: catalog, allowedEquipment: nil, loadUnit: .kg
+            sessions: dirty, catalog: catalog, allowedEquipment: nil, loadUnit: .kg,
+            trainingLevel: nil, todayISO: "2026-07-03"
         ))
         XCTAssertEqual(band.sets.map(\.targetWeightKg), [0, 0, 0])
     }
@@ -187,7 +226,8 @@ final class SessionExerciseEditPlannerTests: XCTestCase {
         )
         XCTAssertNil(SessionExerciseEditPlanner.makeAdHocPlan(
             exerciseId: "scheduled", sessionPlan: sessionPlan, currentExerciseIndex: 0,
-            sessions: [], catalog: catalog, allowedEquipment: ["dumbbell"], loadUnit: .kg
+            sessions: [], catalog: catalog, allowedEquipment: ["dumbbell"], loadUnit: .kg,
+            trainingLevel: nil, todayISO: "2026-07-03"
         ))
     }
 

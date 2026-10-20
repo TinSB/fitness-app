@@ -1,9 +1,9 @@
 // SessionExerciseEditPlanner — FR-TR14 S2 临时加动作的会话内目标生成。
 //
 // 只消费 clean sessions + 今天已经生成的 SessionSetPlan + catalog facts；
-// 不调用、不修改 TodayPrescriptionEngine。reps/RIR/rest 与 rep range 全走 owner
-// 裁定的“借值链”，重量只走历史 → 目录保守起步。生成一次完整 payload 后随
-// TrainFlowEvent 落 draft，恢复只重放，不再查询可能变化的历史。
+// 不修改今日处方。reps/RIR/rest 与 rep range 全走 owner 裁定的“借值链”；起始重量直接用
+// 今日处方的同一套规则（`TodayPrescriptionEngine.sessionEditStartLoadKg`，单一真源）。
+// 生成一次完整 payload 后随 TrainFlowEvent 落 draft，恢复只重放，不再查询可能变化的历史。
 
 import RedeDataHealth
 
@@ -33,7 +33,9 @@ public enum SessionExerciseEditPlanner {
         sessions: [CleanTrainingSession],
         catalog: ExerciseCatalog = .minimal,
         allowedEquipment: Set<String>? = nil,
-        loadUnit: LoadUnit = .kg
+        loadUnit: LoadUnit = .kg,
+        trainingLevel: String?,
+        todayISO: String
     ) -> ExerciseSetPlan? {
         guard sessionPlan.exercises.indices.contains(currentExerciseIndex),
               let entry = availableExercises(
@@ -50,7 +52,9 @@ public enum SessionExerciseEditPlanner {
         else { return nil }
 
         let stepKg = loadStep(for: entry, unit: loadUnit)
-        let targetWeightKg = startingLoadKg(entry: entry, sessions: sessions, stepKg: stepKg)
+        let targetWeightKg = TodayPrescriptionEngine.sessionEditStartLoadKg(
+            entry: entry, sessions: sessions, todayISO: todayISO, trainingLevel: trainingLevel, unit: loadUnit,
+            repMin: borrowed.repLowerBound)
         let sets = (1...adHocSetCount).map {
             PlannedSet(
                 index: $0,
@@ -70,25 +74,21 @@ public enum SessionExerciseEditPlanner {
         )
     }
 
-    /// 会话中途「换进来」的动作的起始负重：与临时加动作同一规则（历史最近一场的最大工作重 →
-    /// 目录保守起步）。换动作事件建立时解析一次、随事件落草稿（2026-10-18）。目录里没有 → nil。
+    /// 会话中途「换进来」的动作的起始负重：与临时加动作同一规则。换动作事件建立时解析一次、
+    /// 随事件落草稿（2026-10-18）。repLowerBound：换进来后沿用的次数下限。目录里没有 → nil。
     public static func startingLoadKg(
         exerciseId: String,
         sessions: [CleanTrainingSession],
         catalog: ExerciseCatalog = .minimal,
-        loadUnit: LoadUnit = .kg
+        loadUnit: LoadUnit = .kg,
+        trainingLevel: String?,
+        todayISO: String,
+        repLowerBound: Int
     ) -> Double? {
         guard let entry = catalog.entry(id: exerciseId) else { return nil }
-        return startingLoadKg(entry: entry, sessions: sessions, stepKg: loadStep(for: entry, unit: loadUnit))
-    }
-
-    /// 自重/弹力带无重量轴：与 prescribeBodyweight/replace 同口径恒 0，且不查历史——
-    /// canonical 里修复前遗留的脏自重重量不得经 add 路径借入再回写（80kg 教训）。
-    private static func startingLoadKg(entry: ExerciseCatalogEntry, sessions: [CleanTrainingSession], stepKg: Double) -> Double {
-        entry.loadType == "bodyweight" || entry.loadType == "band"
-            ? 0
-            : latestWorkingWeight(exerciseId: entry.id, sessions: sessions)
-                ?? conservativeStartWeight(entry: entry, stepKg: stepKg)
+        return TodayPrescriptionEngine.sessionEditStartLoadKg(
+            entry: entry, sessions: sessions, todayISO: todayISO, trainingLevel: trainingLevel, unit: loadUnit,
+            repMin: repLowerBound)
     }
 
     private struct BorrowedTargets {
@@ -165,44 +165,10 @@ public enum SessionExerciseEditPlanner {
         return counts.compactMap { $0.value == maximum ? $0.key : nil }
     }
 
-    /// 与 TodayPrescriptionEngine.lastPerformance 同口径：最近 civil day；同日按
-    /// canonical append 顺序取最后；该场工作组取最高重量。
-    private static func latestWorkingWeight(
-        exerciseId: String,
-        sessions: [CleanTrainingSession]
-    ) -> Double? {
-        let candidates = sessions.enumerated().compactMap {
-            canonicalOffset, session -> (day: Int, canonicalOffset: Int, weights: [Double])? in
-            guard let day = TrainingDay.dayNumber(fromISO: session.date) else { return nil }
-            let weights = session.exercises
-                .filter { $0.exerciseId == exerciseId }
-                .flatMap(\.sets)
-                .map(\.weight)
-            guard !weights.isEmpty else { return nil }
-            return (day, canonicalOffset, weights)
-        }
-        return candidates.max(by: {
-            $0.day == $1.day
-                ? $0.canonicalOffset < $1.canonicalOffset
-                : $0.day < $1.day
-        })?.weights.max()
-    }
-
     private static func loadStep(for entry: ExerciseCatalogEntry, unit: LoadUnit) -> Double {
         if entry.loadType == "bodyweight-plus" {
             return LoadGrid.addedLoadStepKg(unit: unit)
         }
         return LoadGrid.stepKg(equipment: entry.equipment, unit: unit)
-    }
-
-    /// 无历史时复用 replace 的保守重置语义：自重/弹力带归 0；其余按真实
-    /// LoadGrid 对齐 startWeightKg，并以下一可用档位作下限。
-    private static func conservativeStartWeight(
-        entry: ExerciseCatalogEntry,
-        stepKg: Double
-    ) -> Double {
-        if entry.loadType == "bodyweight" || entry.loadType == "band" { return 0 }
-        guard stepKg > 0 else { return max(0, entry.startWeightKg) }
-        return max(stepKg, (entry.startWeightKg / stepKg).rounded() * stepKg)
     }
 }

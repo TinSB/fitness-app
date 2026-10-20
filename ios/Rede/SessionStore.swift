@@ -812,8 +812,8 @@ final class SessionStore {
             cursor = next
         }
         let ladder = below + [center] + above
-        // 处方可以是真能配出的离格重量（选重机 10 lb 一格上的 45 lb，2026-10-20 引擎审查）：把它本身放进梯子，
-        // 表上默认显示的就是处方那个数——否则表冠停在最近的 50，手腕上显示 50、记下的却是 45。
+        // 处方可以是真能配出的离格重量（5 lb 一格的器械加 2.5 lb 小片的 47.5 lb，2026-10-20 引擎审查）：把它本身
+        // 放进梯子，表上默认显示的就是处方那个数——否则表冠停在最近的 50，手腕上显示 50、记下的却是 47.5。
         guard abs(center - target) > 1e-6, LoadGrid.isEnterableLoad(target, unit: unit) else { return ladder }
         return (ladder + [target]).sorted()
     }
@@ -2676,15 +2676,18 @@ final class SessionStore {
         )
     }
 
-    /// 中途换动作的事件：新动作自己的起始负重在这里解析一次（历史 → 目录保守起步，与临时加动作
+    /// 中途换动作的事件：新动作自己的起始负重在这里解析一次（今日处方的同一套规则，与临时加动作
     /// 同一规则），随事件落草稿（P0 2026-10-18）。此前 external→external 沿用原动作负重——
-    /// 杠铃卧推 80 换哑铃卧推仍是 80。
-    func replaceExerciseEvent(exerciseId: String) -> TrainFlowEvent {
-        guard let flow,
+    /// 杠铃卧推 80 换哑铃卧推仍是 80。「今天」按动作发生的墙钟算（不是今日模型加载的时刻，那可能是几天前）。
+    func replaceExerciseEvent(exerciseId: String, now: Date = Date()) -> TrainFlowEvent {
+        guard let flow, let current = flow.currentExercise,
               let kg = SessionExerciseEditPlanner.startingLoadKg(
                 exerciseId: exerciseId,
                 sessions: todayModel?.cleanView.sessions ?? [],
-                loadUnit: flow.sessionLoadUnit
+                loadUnit: flow.sessionLoadUnit,
+                trainingLevel: todayModel?.cleanView.profile.trainingLevel,
+                todayISO: Self.localDayISO(now),
+                repLowerBound: current.repLowerBound   // 换进来的动作沿用这一个的次数区间
               )
         else { return .replaceExercise(exerciseId) }
         return .replaceExerciseWithLoad(exerciseId, kg)
@@ -2692,7 +2695,7 @@ final class SessionStore {
 
     /// 事件创建时一次性解析完整会话计划 payload；draft replay 只重放 payload，
     /// 不再查询可能变化的 canonical 历史。
-    func makeSessionEditExercisePlan(exerciseId: String) -> ExerciseSetPlan? {
+    func makeSessionEditExercisePlan(exerciseId: String, now: Date = Date()) -> ExerciseSetPlan? {
         guard let flow, let sessions = todayModel?.cleanView.sessions else { return nil }
         return SessionExerciseEditPlanner.makeAdHocPlan(
             exerciseId: exerciseId,
@@ -2700,7 +2703,9 @@ final class SessionStore {
             currentExerciseIndex: flow.exerciseIndex,
             sessions: sessions,
             allowedEquipment: flow.sessionAllowedEquipment,
-            loadUnit: flow.sessionLoadUnit
+            loadUnit: flow.sessionLoadUnit,
+            trainingLevel: todayModel?.cleanView.profile.trainingLevel,
+            todayISO: Self.localDayISO(now)
         )
     }
 

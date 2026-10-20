@@ -54,6 +54,19 @@ final class BandEngineTests: XCTestCase {
         XCTAssertEqual(up.loadType, "band")
     }
 
+    /// 有一组到力竭 → 不加次数（自重 / 弹力带没有单独的加次数闸门，照旧取最差一组；审查 2026-10-20）。
+    /// 平均 RIR 1.33 不到「近力竭」，但第三组是 0——不能 +2 次。
+    func testAnySetAtFailureBlocksTheRepIncrease() throws {
+        let rounds = ["2026-06-04", "2026-06-05", "2026-06-06", "2026-06-07", "2026-06-08"].enumerated().map { i, d in
+            #"{"id":"s\#(i)","date":"\#(d)","completed":true,"exercises":[{"exerciseId":"t-band-lateral","sets":[{"weight":0,"reps":10,"rir":2}]}]}"#
+        }
+        let last = #"{"id":"s5","date":"2026-06-09","completed":true,"exercises":[{"exerciseId":"t-band-lateral","sets":[{"weight":0,"reps":10,"rir":3},{"weight":0,"reps":9,"rir":1},{"weight":0,"reps":8,"rir":0}]}]}"#
+        let next = try plan(history: (rounds + [last]).joined(separator: ","))
+        XCTAssertEqual(next.targetReps, 10)
+        XCTAssertEqual(next.change, .hold)
+        XCTAssertEqual(next.reason, .nearFailureLastTime)
+    }
+
     /// 到顶 25 次 → 提示换重带（reason .bandCeilingReached，**区别于**自重的 .bodyweightCeilingReached）。
     func testCeilingPromptsHeavierBand() throws {
         let ceiling = try plan(history: roundToPushA(25))

@@ -108,8 +108,9 @@ final class WarmupLadderEngineTests: XCTestCase {
         // 审查 2026-10-18：辅助器械此前不走间隔规则，工作辅助 20 kg 给 30 / 25（各差一格）。
         XCTAssertEqual(gen(work: 20, loadType: "assisted", equipment: "selectorized", kind: "compound")
             .map(\.targetWeightKg), [30], "离工作辅助量不足两格的 25 不给")
+        // 选重机 lb 一格 5（第二批）：1.4× 84 → 85、1.2× 72 → 70，彼此、离工作辅助量都够两格。
         XCTAssertEqual(lb(gen(work: 60 / lbPerKg, loadType: "assisted", equipment: "selectorized", kind: "compound",
-                              unit: .lb)), [80])
+                              unit: .lb)), [85, 70])
         XCTAssertEqual(gen(work: 50, loadType: "assisted", equipment: "selectorized", kind: "compound")
             .map(\.targetWeightKg), [70, 60], "间隔够大时两级都留，辅助量递减")
         XCTAssertEqual(gen(work: 15, loadType: "assisted", equipment: "selectorized", kind: "compound")

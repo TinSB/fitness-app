@@ -83,6 +83,8 @@ public enum NextSetEngine {
     private static let nearFailureRir = 0.5
     /// 掉速判据：相邻两组 RIR 下降达到这么多档即视为累积疲劳（2026-08-19 owner 真机定）。
     private static let rirDropSpan = 2.0
+    /// 非疼痛原因的组间降重，一档最多砍掉当前重量的这么多；再多就保持（见 recommend 里 cutTooLarge）。
+    private static let maxNonPainCutFraction = 0.25
 
     /// 全部计划组完成 → nil（动作结束）。
     public static func recommend(
@@ -133,6 +135,13 @@ public enum NextSetEngine {
             return previousRir - rir >= rirDropSpan
         }()
 
+        // 轻重量不砍掉一大块（2026-10-20 引擎审查第二批）：除了疼痛，组间降一档若超过当前重量的四分之一
+        //（10 lb 器械侧平举降到 5 lb、7.5 kg 哑铃降到 5 kg），就保持原重量、次数跟着上一组走。选重机改 5 lb 一格
+        // 之前，10 lb 那一格本身就是下限，降不动；改完之后最后一组到力竭就会被建议砍一半——而后几组累到 0 是
+        // 正常疲劳（跨场次已改为看平均 RIR），照做还会让这一场变成混合重量、下次加不了重。
+        // 正好四分之一（20 lb → 15 lb）照常降；1e-9 吸收 lb ↔ kg 换算的浮点误差。辅助器械的降重是加辅助，恒为负。
+        let cutTooLarge = base - eased > base * maxNonPainCutFraction + 1e-9
+        let fatigueEased = cutTooLarge ? base : eased
         let weight: Double
         let reason: NextSetReason
         var safetyFlags: [NextSetSafetyFlag] = []
@@ -141,14 +150,14 @@ public enum NextSetEngine {
             reason = .painReported
             safetyFlags = [.painReported]
         } else if let rir = last.rir, rir <= nearFailureRir {
-            weight = eased
-            reason = .lastSetNearFailure
+            weight = fatigueEased
+            reason = cutTooLarge ? .onPlan : .lastSetNearFailure
         } else if last.reps < plan.repLowerBound {
-            weight = eased
-            reason = .belowRepFloor
+            weight = fatigueEased
+            reason = cutTooLarge ? .onPlan : .belowRepFloor
         } else if fatigueDropped {
-            weight = eased
-            reason = .fatigueDrop
+            weight = fatigueEased
+            reason = cutTooLarge ? .onPlan : .fatigueDrop
         } else {
             weight = base
             reason = .onPlan

@@ -56,6 +56,7 @@ public enum TodayVerdictEngine {
     private static let consecutiveRestDays = 3
     private static let sustainedWindowDays = 21
     private static let sustainedMaxInternalGap = 2
+    private static let deloadWeekDays = 7
     private static let nearFailureMeanRir = 0.5
     private static let fallbackPlannedDaysPerWeek = 6
 
@@ -133,16 +134,33 @@ public enum TodayVerdictEngine {
         return TodayVerdict(call: .train, reason: .normalProgression, signals: signals)
     }
 
-    /// 减载条件：21 天窗口内训练日 ≥ 3×计划频次，且窗口内最长休息间隔 ≤ 2 天。
+    /// 减载条件：21 天窗口内训练日 ≥ 3×计划频次，且窗口内最长休息间隔 ≤ 2 天。在某个训练日（或今天）成立，
+    /// 就从那天起减载 7 天；减载周里练的那几天不算进下一轮，之后从头再数。减载周里已经连歇了 2 天以上，
+    /// 就提前解除（歇够了，与「窗口里有超过 2 天的间隔就不算高频」同一个口径）。
+    ///
+    /// 以前没有「一周就结束」：减载那几天自己也算训练日，窗口一直是满的——比计划练得勤、中间最多歇一天的人
+    ///（如每周 3 天的计划隔天练）之后每一场都是减载（×0.8、少一组），直到连休两天才解除（2026-10-20 引擎审查
+    /// 第二批）。严格按计划天数练的人，训练日那天之前的 20 天里凑不满，这条基本只在休息日亮。
+    ///
+    /// trainedDays 升序、全在今天之前（今天已练时上面已经返回「今天练过了」）。单趟扫描：窗口左端只往前走。
     private static func isSustainedLoad(trainedDays: [Int], today: Int, planned: Int) -> Bool {
-        let window = trainedDays.filter { $0 > today - sustainedWindowDays }
-        guard window.count >= 3 * planned, window.count >= 2 else { return false }
-        var longestGap = 0
-        for (previous, next) in zip(window, window.dropFirst()) {
-            longestGap = max(longestGap, next - previous)
+        var deloadEnd = Int.min   // 上一个减载周结束后的第一天；之前的训练日不再计入
+        var low = 0               // 窗口左端（trainedDays 下标）
+        for (index, day) in (trainedDays + [today]).enumerated() where day >= deloadEnd {
+            // 窗口：这一天之前 20 天内、上一个减载周之后的训练日（下标 low..<index，那天当天还没练）。
+            while low < index, trainedDays[low] < max(deloadEnd, day - sustainedWindowDays + 1) { low += 1 }
+            if sustained(window: trainedDays[low..<index], asOf: day, planned: planned) {
+                deloadEnd = day + deloadWeekDays
+            }
         }
-        longestGap = max(longestGap, today - (window.last ?? today))
-        return longestGap <= sustainedMaxInternalGap
+        let restedSinceLast = today - (trainedDays.last ?? today)
+        return today < deloadEnd && restedSinceLast <= sustainedMaxInternalGap
+    }
+
+    private static func sustained(window: ArraySlice<Int>, asOf day: Int, planned: Int) -> Bool {
+        guard window.count >= 3 * planned, window.count >= 2, let last = window.last else { return false }
+        let longestGap = zip(window, window.dropFirst()).map { $1 - $0 }.max() ?? 0
+        return max(longestGap, day - last) <= sustainedMaxInternalGap
     }
 
     /// 最近一个训练日全部 set 的 RIR 均值；该日没有任何带 RIR 的 set 时为 nil（不猜）。

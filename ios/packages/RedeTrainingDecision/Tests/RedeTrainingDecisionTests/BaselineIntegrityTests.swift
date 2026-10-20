@@ -210,20 +210,21 @@ final class BaselineIntegrityTests: XCTestCase {
     }
 
     func testAnOffGridMachineWeightIsHeldAsIsAndProgressesOneRealPlate() throws {
-        // owner 真实数据：器械推胸 45 lb（选重机按 10 lb 一格算，真机有 5 lb 微调片）。
-        // 打满 → 上紧邻一格 50 lb（以前先吸到 50 再加一整档 = 60，一下 +33%）。
-        let up = try chestPress(45, reps: [12, 12], rir: 2)
+        // 器械推胸 47.5 lb（选重机 5 lb 一格，加 2.5 lb 微调片；owner 当时的真实例子是 10 lb 一格上的 45 lb，
+        // 2026-10-20 第二批选重机改 5 lb 一格后 45 已在格上，改用 47.5 才测得到离格路径）。
+        // 打满 → 上紧邻一格 50 lb（不先吸到 50 再加一整档跳到 55）。
+        let up = try chestPress(47.5, reps: [12, 12], rir: 2)
         XCTAssertEqual(up.change, .increase)
         XCTAssertEqual(up.targetWeightKg * lbPerKg, 50, accuracy: 0.01)
-        // 区间内 → 保持就是 45 lb（以前悄悄吸到 50，「保持」却变重了）。
-        let hold = try chestPress(45, reps: [10, 10], rir: 2)
+        // 区间内 → 保持就是 47.5 lb（不悄悄吸到 50，「保持」却变重了）。
+        let hold = try chestPress(47.5, reps: [10, 10], rir: 2)
         XCTAssertEqual(hold.change, .hold)
-        XCTAssertEqual(hold.targetWeightKg * lbPerKg, 45, accuracy: 0.01)
+        XCTAssertEqual(hold.targetWeightKg * lbPerKg, 47.5, accuracy: 0.01)
         XCTAssertEqual(hold.nextProjectedWeightKg * lbPerKg, 50, accuracy: 0.01, "下一档也是紧邻那一格")
-        // 力竭 → 退到紧邻下一格 40 lb。
-        let ease = try chestPress(45, reps: [8, 6], rir: 0)
+        // 力竭 → 退到紧邻下一格 45 lb。
+        let ease = try chestPress(47.5, reps: [8, 6], rir: 0)
         XCTAssertEqual(ease.change, .ease)
-        XCTAssertEqual(ease.targetWeightKg * lbPerKg, 40, accuracy: 0.01)
+        XCTAssertEqual(ease.targetWeightKg * lbPerKg, 45, accuracy: 0.01)
     }
 
     func testUnitConversionLeftoversStillSnapToARealWeight() {
