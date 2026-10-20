@@ -23,6 +23,26 @@ final class WatchCopyTests: XCTestCase {
         XCTAssertEqual(en.watchProgress(exercise: 3, exerciseTotal: 6, set: 2, setTotal: 4), "3/6 · Set 2/4")
     }
 
+    func testRestPreviewCaptionsAndExerciseIndexAreShortAndBilingual() {
+        // v4 去拥挤：进度拆成「动作 3/6」+ 组刻标；休息预告拆成小标 + 主值。
+        XCTAssertEqual(zh.watchExerciseIndex(3, of: 6), "动作 3/6")
+        XCTAssertEqual(en.watchExerciseIndex(3, of: 6), "Lift 3/6")
+        XCTAssertEqual(zh.watchNextSetCaption(setNumber: 3), "下一组 · 第 3 组")
+        XCTAssertEqual(en.watchNextSetCaption(setNumber: 3), "Next · Set 3")
+        XCTAssertEqual(zh.watchUpNextCaption, "接下来")
+        XCTAssertEqual(en.watchUpNextCaption, "Up next")
+        // 小标是整句预告的前半，逐字同源（念出来与手机休息屏那一句一致）。
+        XCTAssertTrue(zh.restNextPreview(setNumber: 3, kg: "60", reps: 8).hasPrefix(zh.watchNextSetCaption(setNumber: 3)))
+        XCTAssertTrue(en.restNextPreview(setNumber: 3, kg: "60", reps: 8).hasPrefix(en.watchNextSetCaption(setNumber: 3)))
+        XCTAssertTrue(zh.restNextExercise("高位下拉").hasPrefix(zh.watchUpNextCaption))
+        XCTAssertTrue(en.restNextExercise("Lat pulldown").hasPrefix(en.watchUpNextCaption))
+        // 读屏念人话，不念「黑桃心符号」。
+        XCTAssertEqual(zh.watchHeartRateSpoken(132), "心率 132")
+        XCTAssertEqual(en.watchHeartRateSpoken(132), "Heart rate 132 bpm")
+        XCTAssertEqual(zh.watchElapsedSpoken("24:10"), "已练 24:10")
+        XCTAssertEqual(en.watchElapsedSpoken("24:10"), "Elapsed 24:10")
+    }
+
     func testPendingSetsPluralizes() {
         XCTAssertEqual(zh.watchPendingSets(1), "1 组待同步")
         XCTAssertEqual(en.watchPendingSets(1), "1 set queued")

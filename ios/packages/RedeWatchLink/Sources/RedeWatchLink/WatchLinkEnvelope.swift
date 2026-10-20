@@ -8,8 +8,10 @@ import Foundation
 // 通道纪律（方案锁定，不要凭手感换）：
 //   · applicationContext —— 手机 → 表的处方。只保留最新一份，旧的过期无所谓。
 //   · transferUserInfo   —— 表 → 手机的完成组。**排队 + 保证送达**。
-//     记组绝不能用 sendMessage：它在手机锁屏 / app 被杀时静默失败，丢一组就是丢数据。
-//   · sendMessage        —— 只用于可丢的实时态（如休息倒计时对表）。
+//     记组绝不能**只**走 sendMessage：它在手机锁屏 / app 被杀时静默失败，丢一组就是丢数据。
+//   · sendMessage        —— 只用于可丢的实时态：表 → 手机的命令；以及（v4，Master v3.9 §5 第 4 条）
+//     同一组的**加速副本**——手机够得着时多发一份，把口袋里挂起的手机叫醒，让它马上接手休息。
+//     排队那份照发，送达保证不变；两份同一组由手机去重（组号守卫 + 表上那一下的身份）。
 //
 // ⚠️ 实测（2026-08-15，表 app embed 之后、配对模拟器上）：
 //   sendMessage 与 applicationContext **两个方向都实跑通了**（表→手机 ping 触发手机
@@ -96,7 +98,7 @@ public enum WatchLinkKind {
     /// 而那只有一个槽位，一发就把处方冲掉。
     public static let prescription = "rx"
     /// 表 → 手机的一条已完成组（切片 4）。payload = JSON 编码的 WatchLoggedSet。
-    /// 走 userInfo，不走 message——见上面的通道纪律。
+    /// 始终走 userInfo（送达保证）；手机够得着时另发一份 message 副本叫醒手机（v4）——见上面的通道纪律。
     public static let loggedSet = "set"
     /// 表 → 手机的遥控命令（v2：休息 +30 / 跳过休息 / 跳过热身）。payload = JSON 编码的 WatchCommand。
     /// 走 message：只在此刻有意义，过期执行比不执行更糟（见 WatchCommand 文件头）。

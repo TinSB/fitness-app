@@ -18,6 +18,19 @@ extension RedeStrings {
             : "\(exercise)/\(exerciseTotal) · Set \(set)/\(setTotal)"
     }
 
+    /// 记组屏右上那枚仪表标签（v4）：「动作 3/6」/「Lift 3/6」。本动作第几组交给组刻标，不再写成字。
+    public func watchExerciseIndex(_ n: Int, of total: Int) -> String {
+        locale == .zh ? "动作 \(n)/\(total)" : "Lift \(n)/\(total)"
+    }
+
+    /// 休息环心心率、左上角已练时长的读屏朗读（屏上只有 ♥ 符号与数字）。
+    public func watchHeartRateSpoken(_ bpm: Int) -> String {
+        locale == .zh ? "心率 \(bpm)" : "Heart rate \(bpm) bpm"
+    }
+    public func watchElapsedSpoken(_ clock: String) -> String {
+        locale == .zh ? "已练 \(clock)" : "Elapsed \(clock)"
+    }
+
     /// 完成按钮点下之后、手机还没推回下一步之前的按钮文字。
     public var watchLogged: String { t2w("已记录", "Logged") }
 
@@ -33,6 +46,14 @@ extension RedeStrings {
     public func watchNextUp(_ target: String) -> String {
         locale == .zh ? "下一组 \(target)" : "Next \(target)"
     }
+
+    /// 休息屏预告的小标（v4，分层排）：「下一组 · 第 3 组」——目标另起一层，用数值大、单位小的目标簇。
+    public func watchNextSetCaption(setNumber: Int) -> String {
+        locale == .zh ? "下一组 · 第 \(setNumber) 组" : "Next · Set \(setNumber)"
+    }
+
+    /// 换动作时的预告小标：「接下来」，主值是下一个动作名。
+    public var watchUpNextCaption: String { t2w("接下来", "Up next") }
 
     /// 休息屏 +30 / 下一组按钮在手机够不着时的说明。
     public var watchPhoneUnreachable: String { t2w("手机不可达", "iPhone out of reach") }

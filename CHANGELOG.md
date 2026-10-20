@@ -4,6 +4,39 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 ## 2026-10-19
 
+- **Watch: rest starts the moment a set is tapped, decluttered screens, double-tap gesture (Master v3.9, PRD FR-AW1/AW2/AW3/AW5)**: owner field report — with the phone locked in a pocket, "complete set" on the watch did not start the rest until the phone was opened; watch text was crowded; the watchOS double-tap (pinch) gesture did nothing in Rede.
+  - **Root cause.** The logged set rides `transferUserInfo`, which does not wake a suspended iPhone app, and the rest was only ever pushed by the phone, timed from receipt.
+  - **Master v3.9 (owner approval 「两条都改」).** Rule 4: sets still always go over `transferUserInfo`; while reachable the watch also sends the identical envelope over `sendMessage` to wake the phone. Rule 6: the watch may show an in-memory provisional rest for the phone-sent duration.
+  - **Protocol (`RedeWatchLink`, all optional / additive).** `Active.restAfterSetSeconds`, `Active.restAfterSetPreview` (target-free), `Active.restPreview` (layered caption + target parts / exercise name, same source as `restPreviewText`), `WatchPrescription.RestPreview`. New `ProvisionalRest` (`begin(after:loggedAt:)`, `survives(_:)`, `overlay(on:)`).
+  - **Phone.** `SessionStore.restAfterCurrentSet()` runs the engine's own `logSet` on a copy of the flow (no rest after warm-up steps or the session-final set; includes per-exercise adjustments). A watch-logged set's rest is anchored at the watch's `loggedAtISO` (`apply(_:restAnchor:)`, clamped to now); the rest notification is scheduled for the remaining time and skipped when the rest is already over. Accepted watch sets are remembered by `exerciseId#setNumber#isWarmup#loggedAtISO` (last 32) so a second-channel copy arriving after an undo is dropped. Watch envelopes take a 5 s background-task assertion (`holdBackgroundTimeForWatchIntake`) so the push completes before suspension.
+  - **Watch UI.**
+    - Set screen: the dense "3/6 · 第 2/4 组" line becomes a right-aligned "动作 3/6" instrument caption plus set marks, so the "…" corner button no longer overlaps text. Heart rate and elapsed time leave the set screen; the status band shows only queued sets.
+    - Rest screen: heart rate moves inside the ring; elapsed time sits in the top-left corner opposite the clock (one toolbar slot shared with the set screen's "…", hung on the common layer). The next-up line is layered (caption + target cluster or exercise name) in a fixed two-line block, so the phone's takeover does not shift the ring.
+  - **Double tap (FR-AW5).** `primaryHandGesture` (`handGestureShortcut(.primaryAction)`, watchOS 11+; deployment target stays 10) on each screen's main button: log set, warm-up done, next set, Health gate allow.
+  - **Review follow-ups (three reviewers, one skeptic per finding; 6 confirmed, all MINOR).**
+    - The end-of-rest nudge now re-arms on every phone push (`.task` keyed on `restEndsAt` + `sentAt`). Before, a late phone takeover produced a bit-identical end time, so the watch never re-sent `restSkip(auto:)` and sat at 0:00.
+    - A provisional rest that has run out yields back to the set screen when a push still shows the same set awaiting (`survives(_:now:)`), for the case where the phone dropped or undid it.
+    - The rest Live Activity is skipped when a late watch set's rest is already over, and otherwise starts its progress at the watch tap.
+    - Draft-path acceptances are remembered for the duplicate guard.
+    - VoiceOver reads "心率 132 / Heart rate 132 bpm" and "已练 / Elapsed" instead of the ♥ glyph.
+    - Rejected: a stuck state with no reachable path, the queued-sets line taking the preview slot (intended priority), the 5 s background task without an expiration handler, and doc and comment wording.
+  - **Tests.** `ProvisionalRestTests` +7 (`RedeWatchLink` 35/35). `WatchLoggedSetIntakeTests` +7, covering:
+    - rest timed from the tap;
+    - a set arriving after its whole rest;
+    - a duplicate after undo, on the live path and on the draft path;
+    - after-set seconds and preview;
+    - a non-final exercise's last set;
+    - the layered preview equal to the one-line version.
+
+    The default test set time is now "just now". Other suites:
+    - `WatchCopyTests` +1 (`RedeL10n` 164/164);
+    - `RedeTrainingDecision` 593/593;
+    - app-hosted `RedeTests` 185, with the one known `StoreKitEntitlementsTests` catalog failure.
+
+    `RedeWatch` builds, with 40/42/46 mm simulator screenshots in zh and en.
+  - **Specs.** Master v3.9 (header, §5 rules 4/6/12, §9); PRD §5.11 (FR-AW1/AW2/AW3, new FR-AW5); system logic §7.2 (instant rest, watch UI, validation counts); design language §7.2 (one-question-per-screen density rule); `AGENTS.md` watch boundary line.
+  - **Device-only checks.** Whether `sendMessage` wakes a locked phone, and the double tap itself, need real hardware. A killed phone app still cannot be woken: WatchConnectivity activation lives in `RootTabView.task`. In that case the watch's provisional rest still runs, and the next set waits for the phone to be opened.
+
 - **Data-model audit follow-ups: watch timestamps, pound PR false positives, summary PR vs suspect sets, legacy end times**: the four MINOR findings confirmed by the 2026-10-19 audit (the MAJOR sync issue ships in #766).
   - **Watch time on the live path.** `applyWatchLoggedSet` now stamps `completedAt` with the watch's `loggedAtISO` (clamped by `SessionStore.watchLoggedAt`: unparseable → phone stamp, later than now → now, before start → start). When that set finishes the session it also sets `sessionEndedAt` and re-saves the draft. The draft path already did this; a set delivered 40 minutes late no longer stretches the duration or shifts the set ticks.
   - **Pound PR false positives.** A typed 65 lb (65 ÷ 2.2046…) and the engine's grid 65 lb (13 × 5 ÷ 2.2046…) differ by one ULP in about a third of grid points, so the same weight read as "heavier". `SessionSummaryBuilder` and `ProgressSnapshotBuilder` now require `> best + 1e-6 kg`.

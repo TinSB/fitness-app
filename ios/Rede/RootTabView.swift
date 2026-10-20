@@ -187,6 +187,10 @@ struct RootTabView: View {
             // 那条消息会在 app 一启动就送到，训练页那时还没出现。
             WatchLink.shared.onReceive = { envelope, _ in
                 guard let data = envelope.payload else { return }
+                // 表上的组 / 命令可能是把手机从后台叫醒的那一条（v4）：先要几秒后台时间再处理。
+                if envelope.kind == WatchLinkKind.loggedSet || envelope.kind == WatchLinkKind.command {
+                    sessionStore.holdBackgroundTimeForWatchIntake()
+                }
                 switch envelope.kind {
                 case WatchLinkKind.loggedSet:
                     if let set = WatchLoggedSet(decoding: data) { sessionStore.applyWatchLoggedSet(set) }

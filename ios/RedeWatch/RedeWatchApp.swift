@@ -74,6 +74,24 @@ final class WatchPrescriptionStore {
         else { return }   // 未知 kind / 载荷看不懂：安静丢弃，保留上一份（向前兼容）
         prescription = rx
         sentAt = ISO8601DateFormatter().date(from: envelope.sentAtISO) ?? Date()
+        // 手机接手了（开始休息 / 到了下一组 / 换动作 / 小结）→ 预休息交还给手机那份；
+        // 手机还在等同一组（还没收到）→ 留着，倒计时不跳。
+        if let rest = provisionalRest, !rest.survives(rx.active, now: Date()) { provisionalRest = nil }
+    }
+
+    /// 表上「点完成即休息」（Master v3.9 §5 第 6 条，owner 2026-10-19）：记完一组立刻按手机给的时长
+    /// 开始倒计时，不等手机醒来。只在内存里；手机推来接手的那一份就换掉它。
+    private(set) var provisionalRest: ProvisionalRest?
+
+    /// 记组屏 / 休息屏真正要显示的那一份：手机还在等刚记的那一组时，叠出预休息。
+    func displayed(_ active: WatchPrescription.Active) -> WatchPrescription.Active {
+        guard let rest = provisionalRest, rest.isAwaited(by: active) else { return active }
+        return rest.overlay(on: active)
+    }
+
+    /// 截图钩子：直接摆出「刚记完、手机还没接手」的那一刻（不发任何东西）。
+    func previewProvisionalRest(after active: WatchPrescription.Active) {
+        provisionalRest = ProvisionalRest.begin(after: active, loggedAt: Date().addingTimeInterval(-38))
     }
 
     /// 表自己那几个词的语言。**跟随手机 app**（载荷里的 localeCode）——动作名、目标串都是
@@ -88,6 +106,8 @@ final class WatchPrescriptionStore {
     /// 记一组回传手机（切片 4；v2 三个量都可改）。**走 userInfo**：排队 + 保证送达，
     /// 不要求手机此刻可达——练到一半手机锁屏是常态，用 sendMessage 会静默丢数据。
     func logSet(active: WatchPrescription.Active, weightKg: Double, reps: Int, rir: Double?) {
+        // 取整到秒：回传的时刻串只到秒，手机按它起算休息——两边从同一秒起算，接手时倒计时不跳。
+        let loggedAt = Date(timeIntervalSince1970: Date().timeIntervalSince1970.rounded(.down))
         let set = WatchLoggedSet(
             exerciseId: active.exerciseId,
             setNumber: active.setNumber,
@@ -96,16 +116,20 @@ final class WatchPrescriptionStore {
             weightKg: weightKg,
             reps: reps,
             rir: rir,
-            loggedAtISO: ISO8601DateFormatter().string(from: Date()),
+            loggedAtISO: ISO8601DateFormatter().string(from: loggedAt),
             // 必带：手机据此分流。漏了就会把热身当成一组正式组落库——
             // 用户还在空杆，记录里已经多出一组工作重量。
             isWarmup: active.isWarmup)
         guard let payload = set.encoded else { return }
-        WatchLink.shared.send(
-            WatchLinkEnvelope(kind: WatchLinkKind.loggedSet,
-                              sentAtISO: ISO8601DateFormatter().string(from: Date()),
-                              payload: payload),
-            via: .userInfo)
+        let envelope = WatchLinkEnvelope(kind: WatchLinkKind.loggedSet,
+                                         sentAtISO: ISO8601DateFormatter().string(from: Date()),
+                                         payload: payload)
+        // 两条通道（Master v3.9 §5 第 4 条）：排队通道保证送达——手机锁屏、被划掉都不丢；
+        // 手机够得着时再发一条即时消息，把睡在口袋里的手机叫醒，让它马上接手休息与下一组。
+        // 两份同一组，手机只收一次（组号守卫 + 表上那一下的身份去重）。
+        WatchLink.shared.send(envelope, via: .userInfo)
+        WatchLink.shared.send(envelope, via: .message)
+        provisionalRest = ProvisionalRest.begin(after: active, loggedAt: loggedAt)
     }
 
     /// 遥控命令（v2）：休息 +30 / 跳过休息 / 跳过热身。**走 message**：只在此刻有意义，
@@ -197,7 +221,7 @@ struct TodayWatchView: View {
                 // · 「完成」按钮必须永远整颗可见。小号表上一滚动它就只剩半截，
                 //   而这是这块屏上唯一重要的操作（owner 真机反馈）
                 // 所以这一屏必须在最小表盘上一屏放下——放不下就是设计要减，不是加滚动。
-                ActiveSetView(active: active, store: store, workout: workout)
+                ActiveSetView(active: store.displayed(active), store: store, workout: workout)
                     .padding(.horizontal, 6)
                     .transition(WatchMotion.morphTransition(reduceMotion: reduceMotion))
             } else {
@@ -217,6 +241,9 @@ struct TodayWatchView: View {
             // 不配对也能在各尺寸模拟器上看各种状态。**不激活通道**，免得配对机的真处方把预览冲掉。
             if let preview = WatchPreview.fromArguments() {
                 store.apply(preview)
+                if WatchPreview.previewsProvisionalRest, let active = store.prescription?.active {
+                    store.previewProvisionalRest(after: active)
+                }
                 return
             }
             // onReceive 必须在 activate 之前挂：激活完成后系统会立刻投递
@@ -407,7 +434,7 @@ struct HealthGateView: View {
                     .padding(.top, 6)
                 EmbWatchButton(icon: denied ? "arrow.clockwise" : "checkmark",
                                title: denied ? strings.watchHealthGateRecheck : strings.watchHealthGateAllow,
-                               action: onAllow)
+                               primaryGesture: true, action: onAllow)
                     .padding(.top, 12)
             }
             .padding(.horizontal, 6)
@@ -459,6 +486,7 @@ struct ActiveSetView: View {
     /// 排队中的组数 + 可达性。手机够不着时「已记录」是半个真话——组确实记下了，但还没过去。
     @ObservedObject private var link = WatchLink.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isLuminanceReduced) private var luminanceReduced
 
     private var s: RedeStrings { store.strings }
     private var rungs: [WatchPrescription.WeightRung] { active.adjust?.weightRungs ?? [] }
@@ -488,16 +516,16 @@ struct ActiveSetView: View {
         return active.isWarmup ? s.warmupDone : s.trainLogSet
     }
 
-    /// 按钮上方那一条状态带。同一个位置两种内容，**排队优先**：
-    /// 「已记录」在手机够不着时是半个真话——组确实记下了但还没过去，说清楚用户才不会重按。
-    /// 没有排队时这一条显示心率与已练时长（数据早就在采，之前一个数都没露）。
+    /// 按钮上方的状态带：**只在有组排队时出现**——「已记录」在手机够不着时是半个真话，
+    /// 组确实记下了但还没过去，说清楚用户才不会重按。
+    /// 心率与已练时长不在这里（v4 去拥挤）：做组时没人看心率，它们搬进了休息环——
+    /// 休息才是抬腕读数的那一刻。
     @ViewBuilder private var statusLine: some View {
         if link.pendingTransfers > 0 {
             Text(verbatim: s.watchPendingSets(link.pendingTransfers))
-                .font(.system(size: 10))
+                .font(.system(size: WatchMetrics.meta))
                 .foregroundStyle(WatchPalette.t3)
-        } else {
-            VitalsLine(bpm: workout.heartRateBpm, startedAt: workout.startedAt)
+                .padding(.bottom, 3)
         }
     }
 
@@ -522,23 +550,58 @@ struct ActiveSetView: View {
             }
         }
         .animation(WatchMotion.morph, value: screenKey)
+        // 左上角（时间对面那一角）一个位置、随屏换内容（v4）：
+        // · 记组屏 = 「更多」角落钮（跳过本组，带手机同一套理由码；手机不可达时不给按）；
+        // · 休息屏 = 已练时长，与右上角的系统时间对称——左边「练了多久」、右边「现在几点」，不占环下一行。
+        // **必须挂在三屏共用的这一层**：分挂在各屏上时，从记组屏切到休息屏，钮撑高的顶栏不缩回去，
+        // 休息屏整屏被往中间挤、预告小标被压小（模拟器实测，真实流程里每一组都会经过这一下）。
+        .toolbar {
+            if active.isResting {
+                if let start = workout.startedAt, !luminanceReduced {
+                    ToolbarItem(placement: .topBarLeading) {
+                        TimelineView(.periodic(from: .now, by: 1)) { context in
+                            let elapsed = WorkoutClock.elapsed(since: start, now: context.date)
+                            Text(verbatim: elapsed)
+                                .font(.system(size: WatchMetrics.meta, weight: .medium))
+                                .monospacedDigit()
+                                .foregroundStyle(WatchPalette.t3)
+                                .accessibilityLabel(Text(verbatim: s.watchElapsedSpoken(elapsed)))
+                        }
+                    }
+                }
+            } else if !active.isWarmup {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showMore = true
+                    } label: {
+                        Image(systemName: "ellipsis")
+                    }
+                    .disabled((!link.isReachable && !WatchPreview.isActive) || justLogged)
+                    .accessibilityLabel(Text(verbatim: s.moreActions))
+                }
+            }
+        }
     }
 
     // MARK: - 正式组：三个读数 + 刻度轨
 
-    /// 进度行：左「3/6 · 第 2/4 组」，右本动作的组刻标。
+    /// 进度（v4 去拥挤）：原来一行密字「3/6 · 第 2/4 组」拆成两件仪表——本动作第几组交给组刻标
+    ///（做完钢色、当前 ember、未做刻线），第几个动作缩成一枚仪表标签「动作 3/6」。
+    /// **整行靠右**：左上角是「更多」角落钮的位置，这一行左边留空，钮不再压字。
     private var progressLine: some View {
-        HStack(alignment: .center) {
-            Text(verbatim: s.watchProgress(exercise: active.exerciseNumber, exerciseTotal: active.exerciseTotal,
-                                           set: active.setNumber, setTotal: active.setTotal))
-                .font(.system(size: WatchMetrics.meta))
-                .monospacedDigit()
-                .foregroundStyle(WatchPalette.t3)
-            Spacer(minLength: 4)
-            if active.setTotal <= 8 {   // 组数多到刻标放不下就只留文字
+        HStack(alignment: .center, spacing: 6) {
+            Spacer(minLength: 0)
+            InstrumentCaption(text: s.watchExerciseIndex(active.exerciseNumber, of: active.exerciseTotal))
+            if active.setTotal <= 8 {
                 SetMarks(total: active.setTotal, current: active.setNumber)
+            } else {   // 组数多到刻标放不下：退回数字
+                InstrumentCaption(text: "\(active.setNumber)/\(active.setTotal)", uppercase: false)
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: s.watchProgress(exercise: active.exerciseNumber,
+                                                           exerciseTotal: active.exerciseTotal,
+                                                           set: active.setNumber, setTotal: active.setTotal)))
     }
 
     private var setBody: some View {
@@ -548,7 +611,7 @@ struct ActiveSetView: View {
                 .font(.system(size: WatchMetrics.title, weight: .semibold))
                 .foregroundStyle(WatchPalette.t2)
                 .lineLimit(1).minimumScaleFactor(0.7)
-                .padding(.top, 1)
+                .padding(.top, 4)
 
             // 读数簇。重量占一半、次数与 RIR 各四分之一：重量是这一屏的主读数
             //（与手机 hero 同口径），三位数带小数的「137.5 lb」也放得下。
@@ -579,14 +642,15 @@ struct ActiveSetView: View {
                 }
                 .frame(height: 11)
             }
-            .padding(.top, 8 * WatchMetrics.scale)
+            .padding(.top, 10 * WatchMetrics.scale)
             .allowsHitTesting(!justLogged)
             .opacity(justLogged ? 0.6 : 1)
 
             Spacer(minLength: 3)
             statusLine
 
-            EmbWatchButton(icon: "checkmark", title: buttonTitle, enabled: !justLogged) {
+            // 捏合（双击）= 完成本组（watchOS 11+，PRD FR-AW5）。
+            EmbWatchButton(icon: "checkmark", title: buttonTitle, enabled: !justLogged, primaryGesture: true) {
                 store.logSet(active: active, weightKg: chosenWeightKg, reps: reps, rir: rir.map(Double.init))
                 justLogged = true
                 WKInterfaceDevice.current().play(.success)
@@ -614,19 +678,7 @@ struct ActiveSetView: View {
         // 一模一样，上面那条 onChange 不触发，按钮会永久锁在「已记录」（审查 m2）。
         // 重复记同一组无害——手机侧幂等守卫会丢。
         .onChange(of: store.sentAt) { _, _ in justLogged = false }
-        // 「更多」：watchOS 10 的角落钮（时间对面那一角），不占记组屏一像素竖向空间。
-        // 里面只有一件事：跳过本组（带手机同一套理由码）。手机不可达时不给按。
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button {
-                    showMore = true
-                } label: {
-                    Image(systemName: "ellipsis")
-                }
-                .disabled((!link.isReachable && !WatchPreview.isActive) || justLogged)
-                .accessibilityLabel(Text(verbatim: s.moreActions))
-            }
-        }
+        // 「更多」角落钮挂在 body 上（见那里的 toolbar），这一屏只管它弹出的那一页。
         .sheet(isPresented: $showMore) {
             SkipSetSheet(strings: s) { reason in
                 showMore = false
@@ -730,7 +782,8 @@ struct ActiveSetView: View {
             .buttonStyle(.watchPressableText)
             .disabled(!link.isReachable)
 
-            EmbWatchButton(icon: "checkmark", title: buttonTitle, enabled: !justLogged) {
+            // 捏合（双击）= 完成热身组（PRD FR-AW5）。跳过热身不绑——让路的次选不配主手势。
+            EmbWatchButton(icon: "checkmark", title: buttonTitle, enabled: !justLogged, primaryGesture: true) {
                 // 热身步：三个量原样回传（手机只看 exerciseId + 步序号 + isWarmup，不落库）。
                 store.logSet(active: active, weightKg: active.targetWeightKg, reps: active.targetReps, rir: active.targetRir)
                 justLogged = true
@@ -847,13 +900,6 @@ struct RestCountdownView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 环上方这条带是这一屏唯一没被占的横向空间（记组屏上同样的内容在按钮正上方——
-            // 两屏都放「该屏最不挤的那条带」，位置不同但规则同一条）。
-            // 常亮低亮时收起：那一刻屏上只该剩「还剩多久」，与两颗圆钮同一处置。
-            if !luminanceReduced {
-                VitalsLine(bpm: workout.heartRateBpm, startedAt: workout.startedAt)
-                    .padding(.bottom, 2)
-            }
             // TimelineView 而不是自己跑 Timer：系统按需重绘，表被抬起时才刷，省电。
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 let remaining = countdown.remaining(now: context.date)
@@ -867,6 +913,9 @@ struct RestCountdownView: View {
                         .stroke(accent, style: StrokeStyle(lineWidth: WatchMetrics.ringStroke, lineCap: .round))
                         .rotationEffect(.degrees(-90))
                         .animation(.linear(duration: 1), value: remaining)
+                    // 环心三层（v4 去拥挤）：标签 / 倒计时 / 心率。心率原来是环顶上一整行，
+                    // 挤着环、还和已练时长串成一句；休息正是看心率回落的时候，放进环心最顺手。
+                    // 已练时长在这一屏不出现——休息时要读的是「还剩多久」，不是「练了多久」。
                     VStack(spacing: 1) {
                         InstrumentCaption(text: isPaused ? s.watchRestPaused : s.restLabel)
                         Text(verbatim: Self.clock(remaining))
@@ -875,6 +924,17 @@ struct RestCountdownView: View {
                             .foregroundStyle(accent)
                             .lineLimit(1).minimumScaleFactor(0.6)
                             .contentTransition(.numericText(countsDown: true))
+                        if let bpm = workout.heartRateBpm, !luminanceReduced {
+                            HStack(spacing: 2) {
+                                Image(systemName: "heart.fill").font(.system(size: WatchMetrics.caption - 1))
+                                Text(verbatim: "\(bpm)")
+                            }
+                            .font(.system(size: WatchMetrics.caption + 1, weight: .medium))
+                            .monospacedDigit()
+                            .foregroundStyle(WatchPalette.t3)
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityLabel(Text(verbatim: s.watchHeartRateSpoken(bpm)))
+                        }
                     }
                     .padding(.horizontal, WatchMetrics.ringStroke + 4)
                 }
@@ -883,26 +943,13 @@ struct RestCountdownView: View {
                 .animation(WatchMotion.tint, value: stale)
             }
 
-            // 环下一行：优先说清楚状态（排队 / 不可达），否则说下一组是什么——
-            // 休息时最想知道的第二件事，省得倒计时结束还要再翻一屏。
-            Group {
-                if link.pendingTransfers > 0 {
-                    Text(verbatim: s.watchPendingSets(link.pendingTransfers))
-                } else if !link.isReachable, !WatchPreview.isActive {
-                    // 截图钩子下没有配对手机，「不可达」永远为真——它会顶掉下面那行真正要展示的
-                    // 内容（同 `SkipSetSheet` 的 disabled 守卫）。生产路径不受影响。
-                    Text(verbatim: s.watchPhoneUnreachable)
-                } else {
-                    // 手机渲染的「下一组 · 第 3 组 · 60 kg × 6」/「接下来 · 高位下拉」；
-                    // 旧手机不带这一位时退回「下一组 + 目标串」。
-                    Text(verbatim: active.restPreviewText ?? s.watchNextUp(active.targetText))
-                }
-            }
-            .font(.system(size: WatchMetrics.meta))
-            .monospacedDigit()
-            .foregroundStyle(WatchPalette.t3)
-            .lineLimit(1).minimumScaleFactor(0.7)
-            .padding(.top, 5)
+            // 环下：优先说清楚状态（排队 / 不可达），否则说接下来是什么——休息时最想知道的第二件事。
+            // **固定留两行高**：预休息时只有小标，手机接手后才补上目标那一行——不留位的话，
+            // 补上那一下环与圆钮整屏跳一格（模拟器实测：只有一行时整屏被重新居中）。
+            nextUp
+                .frame(maxWidth: .infinity)
+                .frame(height: WatchMetrics.restPreviewHeight, alignment: .top)
+                .padding(.top, 4)
 
             Spacer(minLength: 4)
 
@@ -929,7 +976,9 @@ struct RestCountdownView: View {
                         .contentTransition(.symbolEffect(.replace))
                 }
                 .accessibilityLabel(Text(verbatim: isPaused ? s.restResume : s.restPause))
-                MachinedRoundButton(primary: true, enabled: link.isReachable && !luminanceReduced, action: {
+                // 捏合（双击）= 下一组（PRD FR-AW5）：休息屏唯一的主动作。
+                MachinedRoundButton(primary: true, enabled: link.isReachable && !luminanceReduced,
+                                    primaryGesture: true, action: {
                     store.send(.restSkip, active: active)
                     WKInterfaceDevice.current().play(.click)
                 }) {
@@ -945,7 +994,10 @@ struct RestCountdownView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         // 精确在结束时刻震一下 + 告诉手机，不轮询。
         // task(id:) 绑 endDate：手机上「+30 秒」会换一个结束时刻 → 任务重启，重新定时。
-        .task(id: active.restEndsAt) {
+        // 也绑手机每一次推送（sentAt）：手机晚接手时，它的休息从表上那一下起算、结束时刻与预休息逐位相同，
+        // 只绑 endDate 任务不会重启——表在 0:00 那一下发的「休息走完了」手机当时还没在休息、被丢了，
+        // 之后就再没人告诉它，表停在 0:00（审查 2026-10-19）。每份推送重判一次：已过点就补发（不补震）。
+        .task(id: "\(active.restEndsAt?.timeIntervalSince1970 ?? 0)#\(store.sentAt?.timeIntervalSince1970 ?? 0)") {
             guard let end = active.restEndsAt else { return }
             let delay = end.timeIntervalSinceNow
             if delay > 0 {
@@ -957,6 +1009,44 @@ struct RestCountdownView: View {
             // 手机侧只在它自己的钟也走完时才接受 auto，所以这条发多了无害。
             store.send(.restSkip, active: active, auto: true)
         }
+    }
+
+    /// 环下的预告（v4 分两层）：小标走仪表标签「下一组 · 第 3 组」/「接下来」，主值另起一层——
+    /// 下一组目标用清单行同一个目标簇（数值大、单位小），换动作就是动作名。原来整句压成一行
+    /// 10pt 小字，是这一屏最挤的地方。预休息时手机还没算下一组，只有小标（表不猜目标）。
+    @ViewBuilder private var nextUp: some View {
+        if link.pendingTransfers > 0 {
+            statusText(s.watchPendingSets(link.pendingTransfers))
+        } else if !link.isReachable, !WatchPreview.isActive {
+            // 截图钩子下没有配对手机，「不可达」永远为真——它会顶掉下面真正要展示的内容
+            //（同 `SkipSetSheet` 的 disabled 守卫）。生产路径不受影响。
+            statusText(s.watchPhoneUnreachable)
+        } else if let preview = active.restPreview {
+            VStack(spacing: 1) {
+                InstrumentCaption(text: preview.caption, uppercase: false)
+                if let parts = preview.parts {
+                    WatchTargetCluster(parts: parts, size: WatchMetrics.title + 3, spoken: preview.spoken)
+                } else if let title = preview.title {
+                    Text(verbatim: title)
+                        .font(.system(size: WatchMetrics.title, weight: .semibold))
+                        .foregroundStyle(WatchPalette.t2)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(verbatim: preview.spoken))
+        } else {
+            // 旧手机不带分层预告：退回整句（再旧的连整句都没有：「下一组 + 目标串」）。
+            statusText(active.restPreviewText ?? s.watchNextUp(active.targetText))
+        }
+    }
+
+    private func statusText(_ text: String) -> some View {
+        Text(verbatim: text)
+            .font(.system(size: WatchMetrics.meta))
+            .monospacedDigit()
+            .foregroundStyle(WatchPalette.t3)
+            .lineLimit(1).minimumScaleFactor(0.7)
     }
 
     /// mm:ss。超过 1 小时不特殊处理——组间休息不会有那么长，真出现了显示 99:59 也无妨。
@@ -974,6 +1064,13 @@ enum WatchPreview {
         let args = CommandLine.arguments
         guard let i = args.firstIndex(of: "-watchPreview"), args.indices.contains(i + 1) else { return false }
         return args[i + 1] == "gate"
+    }()
+
+    /// -watchPreview logged：刚在表上记完一组、手机还在口袋里没接手（预休息）。
+    static let previewsProvisionalRest: Bool = {
+        let args = CommandLine.arguments
+        guard let i = args.firstIndex(of: "-watchPreview"), args.indices.contains(i + 1) else { return false }
+        return args[i + 1] == "logged"
     }()
 
     static func fromArguments(_ args: [String] = CommandLine.arguments) -> WatchLinkEnvelope? {
@@ -1009,10 +1106,13 @@ enum WatchPreview {
             exerciseId: "bench-press", exerciseName: zh ? "杠铃卧推" : "Barbell bench press",
             setNumber: 2, setTotal: 4, exerciseNumber: 3, exerciseTotal: 6,
             targetText: "60 kg × 8", targetWeightKg: 60, targetReps: 8, targetRir: 2,
-            isResting: false, adjust: .init(weightRungs: ladder, weightCaption: "kg"))
+            isResting: false, adjust: .init(weightRungs: ladder, weightCaption: "kg"),
+            restAfterSetSeconds: 120,
+            restAfterSetPreview: .init(caption: strings.watchNextSetCaption(setNumber: 3)))
+        let nextParts = strings.targetParts(loadType: "external", weightKg: 60, reps: 8)
         let active: WatchPrescription.Active?
         switch args[i + 1] {
-        case "set": active = base
+        case "set", "logged": active = base
         case "bodyweight":
             active = .init(exerciseId: "pull-up", exerciseName: zh ? "引体向上" : "Pull-up",
                            setNumber: 1, setTotal: 3, exerciseNumber: 4, exerciseTotal: 6,
@@ -1029,7 +1129,24 @@ enum WatchPreview {
                            targetText: "60 kg × 8", targetWeightKg: 60, targetReps: 8, targetRir: 2,
                            isResting: true, restEndsAt: Date().addingTimeInterval(75), restTotalSeconds: 120,
                            adjust: .init(weightRungs: ladder, weightCaption: "kg"),
-                           restPreviewText: zh ? "下一组 · 第 3 组 · 60 kg × 8" : "Next · Set 3 · 60 kg × 8")
+                           restPreviewText: zh ? "下一组 · 第 3 组 · 60 kg × 8" : "Next · Set 3 · 60 kg × 8",
+                           restPreview: .init(caption: strings.watchNextSetCaption(setNumber: 3),
+                                              parts: .init(prefix: nextParts.prefix, value: nextParts.value,
+                                                           unit: nextParts.unit, reps: nextParts.reps)))
+        case "restCaption":   // 正常休息、预告只有小标（与预休息同一形状；排版回归用）
+            active = .init(exerciseId: "bench-press", exerciseName: zh ? "杠铃卧推" : "Barbell bench press",
+                           setNumber: 3, setTotal: 4, exerciseNumber: 3, exerciseTotal: 6,
+                           targetText: "60 kg × 8", targetWeightKg: 60, targetReps: 8, targetRir: 2,
+                           isResting: true, restEndsAt: Date().addingTimeInterval(75), restTotalSeconds: 120,
+                           restPreview: .init(caption: strings.watchNextSetCaption(setNumber: 3)))
+        case "restNext":
+            // 动作做完后的休息：预告下一个动作。
+            active = .init(exerciseId: "bench-press", exerciseName: zh ? "杠铃卧推" : "Barbell bench press",
+                           setNumber: 4, setTotal: 4, exerciseNumber: 3, exerciseTotal: 6,
+                           targetText: "60 kg × 0", targetWeightKg: 60, targetReps: 0, targetRir: 2,
+                           isResting: true, restEndsAt: Date().addingTimeInterval(52), restTotalSeconds: 120,
+                           restPreviewText: strings.restNextExercise(zh ? "杠铃划船" : "Barbell row"),
+                           restPreview: .init(caption: strings.watchUpNextCaption, title: zh ? "杠铃划船" : "Barbell row"))
         default: active = nil
         }
         // done = 最后一组刚记完、手机在小结（清单还在）；saved = 手机存好后（今天的处方没了，清单为空）。
