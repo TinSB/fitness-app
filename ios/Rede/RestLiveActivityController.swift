@@ -38,15 +38,17 @@ final class RestLiveActivityController {
     /// Live Activities 时静默跳过——视觉层缺席不阻塞训练。
     /// preservingStart：沿用正在显示的那条活动的进度起点（更正已记组只换「下一组目标」那一行，
     /// 不是重新开始休息——进度环不能跳回全满）。没有在显示的活动时退回挂点当下。
-    func begin(attributes: RestActivityAttributes, endsAt: Date, endpoint: String, preservingStart: Bool = false) {
+    func begin(attributes: RestActivityAttributes, endsAt: Date, endpoint: String, preservingStart: Bool = false,
+               startedAt explicitStart: Date? = nil) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
             logger.log("rest-live-activity skip(disabled) endpoint=\(endpoint, privacy: .public)")
             return
         }
         logger.log("rest-live-activity start endpoint=\(endpoint, privacy: .public)")
         // 进度起点 = 挂点当下（begin 调用时刻，与休息锚点同拍；恢复路径即恢复时刻）。
+        // 表上晚到的组由调用方传真实起点（表上点下那一刻，不晚于现在），进度环与 App 内一致。
         // 在 enqueue 外捕获——链上排队的延迟不改变锚定语义。
-        let startedAt = Date()
+        let startedAt = min(explicitStart ?? Date(), Date())
         enqueue { [logger] in
             let existing = Activity<RestActivityAttributes>.activities
             let restStartedAt = preservingStart

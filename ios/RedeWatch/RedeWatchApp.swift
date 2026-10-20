@@ -76,7 +76,7 @@ final class WatchPrescriptionStore {
         sentAt = ISO8601DateFormatter().date(from: envelope.sentAtISO) ?? Date()
         // 手机接手了（开始休息 / 到了下一组 / 换动作 / 小结）→ 预休息交还给手机那份；
         // 手机还在等同一组（还没收到）→ 留着，倒计时不跳。
-        if let rest = provisionalRest, !rest.survives(rx.active) { provisionalRest = nil }
+        if let rest = provisionalRest, !rest.survives(rx.active, now: Date()) { provisionalRest = nil }
     }
 
     /// 表上「点完成即休息」（Master v3.9 §5 第 6 条，owner 2026-10-19）：记完一组立刻按手机给的时长
@@ -85,7 +85,7 @@ final class WatchPrescriptionStore {
 
     /// 记组屏 / 休息屏真正要显示的那一份：手机还在等刚记的那一组时，叠出预休息。
     func displayed(_ active: WatchPrescription.Active) -> WatchPrescription.Active {
-        guard let rest = provisionalRest, rest.survives(active) else { return active }
+        guard let rest = provisionalRest, rest.isAwaited(by: active) else { return active }
         return rest.overlay(on: active)
     }
 
@@ -560,10 +560,12 @@ struct ActiveSetView: View {
                 if let start = workout.startedAt, !luminanceReduced {
                     ToolbarItem(placement: .topBarLeading) {
                         TimelineView(.periodic(from: .now, by: 1)) { context in
-                            Text(verbatim: WorkoutClock.elapsed(since: start, now: context.date))
+                            let elapsed = WorkoutClock.elapsed(since: start, now: context.date)
+                            Text(verbatim: elapsed)
                                 .font(.system(size: WatchMetrics.meta, weight: .medium))
                                 .monospacedDigit()
                                 .foregroundStyle(WatchPalette.t3)
+                                .accessibilityLabel(Text(verbatim: s.watchElapsedSpoken(elapsed)))
                         }
                     }
                 }
@@ -931,7 +933,7 @@ struct RestCountdownView: View {
                             .monospacedDigit()
                             .foregroundStyle(WatchPalette.t3)
                             .accessibilityElement(children: .ignore)
-                            .accessibilityLabel(Text(verbatim: "♥ \(bpm)"))
+                            .accessibilityLabel(Text(verbatim: s.watchHeartRateSpoken(bpm)))
                         }
                     }
                     .padding(.horizontal, WatchMetrics.ringStroke + 4)
@@ -992,7 +994,10 @@ struct RestCountdownView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         // 精确在结束时刻震一下 + 告诉手机，不轮询。
         // task(id:) 绑 endDate：手机上「+30 秒」会换一个结束时刻 → 任务重启，重新定时。
-        .task(id: active.restEndsAt) {
+        // 也绑手机每一次推送（sentAt）：手机晚接手时，它的休息从表上那一下起算、结束时刻与预休息逐位相同，
+        // 只绑 endDate 任务不会重启——表在 0:00 那一下发的「休息走完了」手机当时还没在休息、被丢了，
+        // 之后就再没人告诉它，表停在 0:00（审查 2026-10-19）。每份推送重判一次：已过点就补发（不补震）。
+        .task(id: "\(active.restEndsAt?.timeIntervalSince1970 ?? 0)#\(store.sentAt?.timeIntervalSince1970 ?? 0)") {
             guard let end = active.restEndsAt else { return }
             let delay = end.timeIntervalSinceNow
             if delay > 0 {

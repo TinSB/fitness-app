@@ -36,15 +36,22 @@ public struct ProvisionalRest: Equatable, Sendable {
                                totalSeconds: seconds, preview: active.restAfterSetPreview)
     }
 
+    /// 这份处方是不是手机「还在等刚记的那一组」（同动作、同组号、正式组、没在休息）。
+    /// 休息屏据此决定要不要叠出预休息。
+    public func isAwaited(by active: WatchPrescription.Active?) -> Bool {
+        guard let active else { return false }
+        return active.exerciseId == exerciseId && active.setNumber == setNumber
+            && !active.isWarmup && !active.isResting
+    }
+
     /// 手机推来一份新处方后，这段预休息还留不留。
     ///
-    /// 只有手机**还在等同一组**（同动作、同组号、正式组、没在休息）时留——那说明手机还没收到这一组
-    ///（还在口袋里睡着），这份推送是别的原因发的。其余情况都说明手机已经接手：开始了休息、
-    /// 换了组、换了动作、进了小结（active 为 nil），一律交还给手机那份。
-    public func survives(_ incoming: WatchPrescription.Active?) -> Bool {
-        guard let incoming else { return false }
-        return incoming.exerciseId == exerciseId && incoming.setNumber == setNumber
-            && !incoming.isWarmup && !incoming.isResting
+    /// 手机**还在等同一组**、且这段休息还没走完时留——手机多半还没收到这一组（还在口袋里睡着），
+    /// 这份推送是别的原因发的。其余情况都交还给手机那份：开始了休息、换了组、换了动作、进了小结
+    ///（active 为 nil）。**休息已经走完、手机却仍在等同一组**也交还：那说明手机没收下或撤销了这一组，
+    /// 留着预休息会把表卡在 0:00、记组屏再也回不来（审查 2026-10-19）。
+    public func survives(_ incoming: WatchPrescription.Active?, now: Date) -> Bool {
+        isAwaited(by: incoming) && now < endsAt
     }
 
     /// 休息屏要的那份 Active：在手机「还在等这一组」的处方上叠出休息态。

@@ -36,6 +36,11 @@ final class WatchCopyTests: XCTestCase {
         XCTAssertTrue(en.restNextPreview(setNumber: 3, kg: "60", reps: 8).hasPrefix(en.watchNextSetCaption(setNumber: 3)))
         XCTAssertTrue(zh.restNextExercise("高位下拉").hasPrefix(zh.watchUpNextCaption))
         XCTAssertTrue(en.restNextExercise("Lat pulldown").hasPrefix(en.watchUpNextCaption))
+        // 读屏念人话，不念「黑桃心符号」。
+        XCTAssertEqual(zh.watchHeartRateSpoken(132), "心率 132")
+        XCTAssertEqual(en.watchHeartRateSpoken(132), "Heart rate 132 bpm")
+        XCTAssertEqual(zh.watchElapsedSpoken("24:10"), "已练 24:10")
+        XCTAssertEqual(en.watchElapsedSpoken("24:10"), "Elapsed 24:10")
     }
 
     func testPendingSetsPluralizes() {

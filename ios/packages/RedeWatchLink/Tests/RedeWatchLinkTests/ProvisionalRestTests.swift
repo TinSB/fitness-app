@@ -36,14 +36,23 @@ final class ProvisionalRestTests: XCTestCase {
 
     func testItSurvivesOnlyWhileThePhoneIsStillWaitingForThatSameSet() throws {
         let rest = try XCTUnwrap(ProvisionalRest.begin(after: active(), loggedAt: loggedAt))
+        let during = loggedAt.addingTimeInterval(30)
         // 手机还没收到这一组（在口袋里睡着），因为别的原因推了一份：留着。
-        XCTAssertTrue(rest.survives(active()))
+        XCTAssertTrue(rest.survives(active(), now: during))
         // 手机接手了：开始休息 / 已到下一组 / 换了动作 / 进了小结或训练结束——交还给手机那份。
-        XCTAssertFalse(rest.survives(active(isResting: true)))
-        XCTAssertFalse(rest.survives(active(setNumber: 3)))
-        XCTAssertFalse(rest.survives(active(exerciseId: "row")))
-        XCTAssertFalse(rest.survives(active(isWarmup: true)))
-        XCTAssertFalse(rest.survives(nil))
+        XCTAssertFalse(rest.survives(active(isResting: true), now: during))
+        XCTAssertFalse(rest.survives(active(setNumber: 3), now: during))
+        XCTAssertFalse(rest.survives(active(exerciseId: "row"), now: during))
+        XCTAssertFalse(rest.survives(active(isWarmup: true), now: during))
+        XCTAssertFalse(rest.survives(nil, now: during))
+    }
+
+    func testAfterTheRestHasRunOutAPhoneStillWaitingForTheSetGetsTheSetScreenBack() throws {
+        // 手机没收下或撤销了这一组、又照常推「还在等第 2 组」：休息走完之后不能把表卡在 0:00——
+        // 交还记组屏，用户能在表上重记（审查 2026-10-19）。没有新推送时休息屏照旧叠着。
+        let rest = try XCTUnwrap(ProvisionalRest.begin(after: active(), loggedAt: loggedAt))
+        XCTAssertFalse(rest.survives(active(), now: loggedAt.addingTimeInterval(121)))
+        XCTAssertTrue(rest.isAwaited(by: active()), "没有新推送时休息屏照旧（灰色 0:00 等手机）")
     }
 
     func testRestScreenShowsTheProvisionalCountdownButKeepsTheSetIdentityForCommands() throws {

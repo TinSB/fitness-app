@@ -23,6 +23,14 @@ extension RedeStrings {
         locale == .zh ? "动作 \(n)/\(total)" : "Lift \(n)/\(total)"
     }
 
+    /// 休息环心心率、左上角已练时长的读屏朗读（屏上只有 ♥ 符号与数字）。
+    public func watchHeartRateSpoken(_ bpm: Int) -> String {
+        locale == .zh ? "心率 \(bpm)" : "Heart rate \(bpm) bpm"
+    }
+    public func watchElapsedSpoken(_ clock: String) -> String {
+        locale == .zh ? "已练 \(clock)" : "Elapsed \(clock)"
+    }
+
     /// 完成按钮点下之后、手机还没推回下一步之前的按钮文字。
     public var watchLogged: String { t2w("已记录", "Logged") }
 

@@ -191,6 +191,22 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         XCTAssertEqual(logged.last?.reps, 7)
     }
 
+    func testDraftPathCopyIsRememberedSoALateSecondCopyAfterUndoIsDropped() {
+        // 两条通道：第一份在手机刚重开、还没恢复训练时到，走草稿那条路；用户点「继续」、在手机上撤销这一组，
+        // 排队的第二份这时才到——不能把撤销掉的组记回来（审查 2026-10-19：草稿那条路原来没记住）。
+        let (store, draftStore) = makeStoreWithDraft()
+        store.applyWatchLoggedSet(loggedSet(setNumber: 1))
+        store.flow = nil
+        store.pendingDraft = draftStore.stored
+        let second = loggedSet(setNumber: 2, reps: 7)
+        store.applyWatchLoggedSet(second)            // 即时消息那份：进草稿
+        store.restorePendingDraft()
+        XCTAssertEqual(completedCount(store), 2)
+        XCTAssertTrue(store.undoLastSet())
+        store.applyWatchLoggedSet(second)            // 排队那份迟到
+        XCTAssertEqual(completedCount(store), 1, "撤销掉的那一组不能被迟到的副本记回来")
+    }
+
     func testStaleSetIsStillDroppedWhenFlowIsNotRestored() {
         // 补进 draft 这条路同样要判幂等——不能因为走了另一条路就放行。
         let (store, draftStore) = makeStoreWithDraft()
@@ -445,7 +461,8 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
     }
 
     func testSetThatArrivesAfterItsWholeRestEndsTheRestOnTheWatchesNextNudge() {
-        // 整段休息都过去了才送到：手机的倒计时一开始就是 0，表那边到点发来的「休息走完了」随即生效、进下一组。
+        // 整段休息都过去了才送到：手机的倒计时一开始就是 0。表收到这份「已过点的休息」推送后补发
+        //「休息走完了」（RestCountdownView 的任务绑了每份推送），手机照它自己的钟收尾、进下一组。
         let store = makeStore(); finishWarmup(store)
         store.sessionStartedAt = Date().addingTimeInterval(-600)
         store.applyWatchLoggedSet(loggedSet(loggedAt: Date().addingTimeInterval(-200)))

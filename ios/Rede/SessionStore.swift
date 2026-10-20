@@ -572,7 +572,7 @@ final class SessionStore {
         // 所以收下过的组按表上那一下的身份记住，同一份再来直接丢。
         let watchSetKey = "\(set.exerciseId)#\(set.setNumber)#\(set.isWarmup)#\(set.loggedAtISO)"
         guard !acceptedWatchSetKeys.contains(watchSetKey) else { return }
-        guard flow != nil else { appendWatchSetToDraft(set); return }
+        guard flow != nil else { appendWatchSetToDraft(set, key: watchSetKey); return }
         guard let flow, flow.phase == .activeSet else { return }
         guard flow.currentExercise?.exerciseId == set.exerciseId else { return }
 
@@ -639,7 +639,7 @@ final class SessionStore {
     /// 只接受「重放后正好在等的那一组」——幂等规则与在线路径同一套，
     /// 不因为走了另一条路就放宽。热身在这条路上不处理：热身指针是纯内存的
     ///（引擎明确不落 draft、不进事件日志），重放后本来就会从头热身。
-    private func appendWatchSetToDraft(_ set: WatchLoggedSet) {
+    private func appendWatchSetToDraft(_ set: WatchLoggedSet, key: String) {
         guard !set.isWarmup else { return }
         let now = Date()
         // 窗口用不看组数的那一版：整场都在表上练、手机侧一组没记的草稿，第二天收到排队的组时
@@ -686,6 +686,8 @@ final class SessionStore {
         // 同步落盘，不用 enqueue：这条路上没有界面、也没有下一次机会——
         // app 可能马上又被系统收走，异步写就赌上了这一组。
         guard draftStore.saveDurably(updated) else { return }
+        // 草稿这条路收下的也要记住：用户随后恢复训练、撤销这一组，迟到的另一份不能把它记回来（审查 2026-10-19）。
+        noteAcceptedWatchSet(key)
         // 练完了（owner 2026-10-19：手机没在看时自动存）：不再问「继续训练？」，直接存好。
         if replayed.phase == .summary, replayed.canBeSaved {
             finalizeFinishedDraft(updated)
@@ -2807,9 +2809,14 @@ final class SessionStore {
             let now = Date()
             restCountdown.begin(seconds: seconds, now: min(restAnchor ?? now, now))
             // 提醒按还剩多少排；送到时已经休息完了就不排——表那边到点已经震过了。
+            // 送到时整段休息已经过去：不排提醒、也不挂锁屏实时活动——表那边到点已经震过，
+            // 挂上就是一闪而过的 0:00（审查 2026-10-19）。只过了一部分：实时活动的进度从真实起点算。
             let remaining = restCountdown.remaining(now: now)
-            if remaining > 0 { scheduleRestNotification(restSecondsPlanned: remaining) }
-            beginRestActivity(endpoint: "rest-begin")   // K6：休息开始挂视觉层（begin 挂点）
+            if remaining > 0 {
+                scheduleRestNotification(restSecondsPlanned: remaining)
+                beginRestActivity(endpoint: "rest-begin",
+                                  startedAt: restCountdown.endDate?.addingTimeInterval(-TimeInterval(seconds)))   // K6：begin 挂点
+            }
         case .restFinished:
             restCountdown.clear()
             // 自然到点：不取消——通知正该此刻送达。仅手动提前结束才取消待发提醒（避免训练已推进还弹）。
@@ -2853,9 +2860,10 @@ final class SessionStore {
     // MARK: - K6 休息计时 Live Activity（视觉层；到点提醒仍归上面的 G1 通知）
 
     /// 从当前倒计时锚点 + 流构建并挂起/更新 Live Activity。锚点缺失（异常）不起——诚实。
-    private func beginRestActivity(endpoint: String) {
+    /// startedAt：进度起点。nil = 现在（手机自己记的组）；表上晚到的组传它在表上被点下的那一刻。
+    private func beginRestActivity(endpoint: String, startedAt: Date? = nil) {
         guard let end = restCountdown.endDate, let attributes = restActivityAttributes() else { return }
-        restLiveActivity.begin(attributes: attributes, endsAt: end, endpoint: endpoint)
+        restLiveActivity.begin(attributes: attributes, endsAt: end, endpoint: endpoint, startedAt: startedAt)
     }
 
     /// Live Activity 静态属性（动作名 + 下一组目标串）。取数与训练页休息态 restPreviewText

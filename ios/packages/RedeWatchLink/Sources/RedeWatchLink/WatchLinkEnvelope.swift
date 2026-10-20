@@ -98,7 +98,7 @@ public enum WatchLinkKind {
     /// 而那只有一个槽位，一发就把处方冲掉。
     public static let prescription = "rx"
     /// 表 → 手机的一条已完成组（切片 4）。payload = JSON 编码的 WatchLoggedSet。
-    /// 走 userInfo，不走 message——见上面的通道纪律。
+    /// 始终走 userInfo（送达保证）；手机够得着时另发一份 message 副本叫醒手机（v4）——见上面的通道纪律。
     public static let loggedSet = "set"
     /// 表 → 手机的遥控命令（v2：休息 +30 / 跳过休息 / 跳过热身）。payload = JSON 编码的 WatchCommand。
     /// 走 message：只在此刻有意义，过期执行比不执行更糟（见 WatchCommand 文件头）。
