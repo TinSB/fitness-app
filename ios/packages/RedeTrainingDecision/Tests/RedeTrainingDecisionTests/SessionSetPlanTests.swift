@@ -106,16 +106,16 @@ final class SessionSetPlanTests: XCTestCase {
 
     // 休息建议是验收的一部分：五个训练日的 rest 序列逐一精确锁定（slot 合同）
     func testRestSecondsLockedForAllFiveTrainingDays() throws {
-        XCTAssertEqual(try makePlan().exercises.map(\.restSeconds), [150, 120, 120, 90, 60, 60, 60, 60]) // upper +shrug
+        XCTAssertEqual(try makePlan().exercises.map(\.restSeconds), [150, 120, 120, 90, 90, 90, 90, 90]) // upper +shrug（孤立 60 → 90 秒，2026-10-20 第二批）
         XCTAssertEqual(
             try makePlan(appDataJSON: TestSupport.appDataJSON(historyDates: ["2026-06-07"])).exercises.map(\.restSeconds),
-            [150, 120, 120, 75, 75, 60, 60] // lower +knee-extension +core
+            [150, 120, 120, 75, 75, 90, 90] // lower +knee-extension +core
         )
         let ppl = #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}}"#
-        XCTAssertEqual(try makePlan(appDataJSON: ppl).exercises.map(\.restSeconds), [180, 120, 120, 75, 60, 75]) // push-a
+        XCTAssertEqual(try makePlan(appDataJSON: ppl).exercises.map(\.restSeconds), [180, 120, 120, 75, 90, 75]) // push-a
         let pplOne = #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}, "history": \#(TestSupport.historyJSON(dates: ["2026-06-07"]))}"#
-        XCTAssertEqual(try makePlan(appDataJSON: pplOne).exercises.map(\.restSeconds), [120, 120, 150, 60, 75, 75, 60]) // pull-a +shrug
+        XCTAssertEqual(try makePlan(appDataJSON: pplOne).exercises.map(\.restSeconds), [120, 120, 150, 90, 75, 75, 90]) // pull-a +shrug
         let pplTwo = #"{"schemaVersion": 8, "programTemplate": {"splitType": "push-pull-legs"}, "history": \#(TestSupport.historyJSON(dates: ["2026-06-05", "2026-06-07"]))}"#
-        XCTAssertEqual(try makePlan(appDataJSON: pplTwo).exercises.map(\.restSeconds), [210, 180, 120, 75, 75, 60, 60]) // legs-a +knee-extension +core
+        XCTAssertEqual(try makePlan(appDataJSON: pplTwo).exercises.map(\.restSeconds), [210, 180, 120, 75, 75, 90, 90]) // legs-a +knee-extension +core
     }
 }

@@ -99,7 +99,8 @@ public struct ExercisePrescriptionPlan: Equatable, Sendable, Codable {
     public let restSeconds: Int
     public let repLowerBound: Int
     public let repUpperBound: Int
-    /// 本次的次数目标：加重/回退/首练 → repLowerBound；持平 → repUpperBound（双重渐进）。
+    /// 本次的次数目标：加重/回退/首练 → repLowerBound；持平 → 上次最好那组 +2，夹在 [repLowerBound, repUpperBound]
+    ///（双重渐进；2026-10-20 引擎审查第二批，以前持平直接要 repUpperBound）。
     public let targetReps: Int
     /// kg 口径；显示单位换算归渲染层。
     public let targetWeightKg: Double

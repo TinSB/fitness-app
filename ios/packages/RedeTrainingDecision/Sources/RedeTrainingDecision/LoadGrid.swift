@@ -11,7 +11,7 @@
 // 调研来源（DEV_LOG 2026-06-13）：哑铃 Rogue/REP 固定架 5lb·商用 kg 2.5kg、
 // Bowflex/PowerBlock 可调；杠铃片 IWF TCRR 2020（25/20/15/10/5 + 2.5/2/1.5/1/0.5kg，
 // 最小对称跳 2×0.5=1kg）+ 美制 45/35/25/10/5/2.5lb（2×2.5=5lb）；挂片机走奥片
-// 对称加载；选重栈 Life Fitness/Cybex 裸栈 10lb/5kg 整片；绳索 2:1 滑轮使手上
+// 对称加载；选重栈 Life Fitness/Cybex 裸栈 10lb/5kg 整片（lb 2026-10-20 改 5，见 stepInUnit）；绳索 2:1 滑轮使手上
 // 实际阻力≈栈读数一半。
 //
 // 单位原生：磅用户重量真住 5lb 格子（45/50/55…），引擎每步加 5lb（=2.268kg），
@@ -35,7 +35,9 @@ public enum LoadGrid {
 
     /// 各器械类真实档位步长（用户单位内的数值；宁大勿小）。
     /// 自由重量 / 挂片机 / 绳索：lb 5 / kg 2.5；
-    /// 选重机（裸配重栈整片，加片销不一定有）：lb 10 / kg 5。
+    /// 选重机：lb 5 / kg 5。lb 原为 10（「裸配重栈整片，加片销不一定有」），2026-10-20 引擎审查第二批
+    /// owner 拍板改 5：他的器械记录全是 5 lb 一格（5/15/45/55/75/105），10 lb 一档在轻器械上是 +20%～+100%
+    ///（侧平举 10→20），远超 ACSM 2009 的每次加重 2–10%。kg 仍是 5（没动）。
     /// 绳索 2:1 滑轮使手上实际阻力≈栈读数一半，故有效步长回到细档 5lb/2.5kg。
     private static let stepInUnit: [String: (kg: Double, lb: Double)] = [
         "barbell":      (kg: 2.5, lb: 5),
@@ -43,7 +45,7 @@ public enum LoadGrid {
         "plate-loaded": (kg: 2.5, lb: 5),
         "cable":        (kg: 2.5, lb: 5),
         "smith":        (kg: 2.5, lb: 5),   // wave-8：导轨上挂奥片，与杠铃同档
-        "selectorized": (kg: 5,   lb: 10),
+        "selectorized": (kg: 5,   lb: 5),
         "bodyweight":   (kg: 0,   lb: 0),   // 无重量轴：引擎早分支保证不用此值（wave-6）
         "band":         (kg: 0,   lb: 0),   // wave-12：弹力带无 kg 轴（A 案按次数进阶），同自重早分支不用此值
     ]
@@ -137,7 +139,7 @@ public enum LoadGrid {
     }
 
     /// 处方用的「上一档 / 下一档」（2026-10-20 引擎审查第一批）：上次用的是真能配出的离格重量
-    ///（45 lb 落在 10 lb 一格的选重机上）→ 取它**紧邻**的那一格（50 / 40），不先吸到 50 再走一整档跳到 60；
+    ///（5 lb 一格的器械加 2.5 lb 小片的 47.5 lb）→ 取它**紧邻**的那一格（50 / 45），不先吸到 50 再走一整档跳到 55；
     /// 换算残值照旧先吸附再走一档。落在格上的重量两者完全一致——既有处方零变化。
     public static func progressionRungKg(_ weightKg: Double, equipment: String, unit: LoadUnit, up: Bool) -> Double {
         isEnterableLoad(weightKg, unit: unit)
@@ -155,10 +157,10 @@ public enum LoadGrid {
     ///
     /// 与 `nextRungKg` 的分工：那个是**进阶一档**（先落格再走一整档），是引擎的进阶/回退
     /// 语义，被「等距 ≡ snap(w)±step」零回归契约逐值钉死；这个是**旁边那一格**。
-    /// 两者对落在格上的重量完全一致，只有离格值才分叉——用户用「精确」手输 55 lb
-    /// （选重机 10 lb 一格，真实机器常有微调片），重一档必须是 60，不是先吸到 60 再
-    /// 加一整档跳到 70；否则面板读成「轻一档 50 / 跟随 55 / 重一档 70」，往左 5 往右 15
-    /// 没法理解（2026-08-19 owner 真机）。
+    /// 两者对落在格上的重量完全一致，只有离格值才分叉——用户用「精确」手输 52.5 lb
+    /// （5 lb 一格的器械加 2.5 lb 微调片），重一档必须是 55，不是先吸到 55 再
+    /// 加一整档跳到 60；否则面板读成「轻一档 50 / 跟随 52.5 / 重一档 60」，往左 2.5 往右 7.5
+    /// 没法理解（2026-08-19 owner 真机，当时选重机还是 10 lb 一格、例子是 55 lb）。
     public static func neighbourRungKg(_ weightKg: Double, equipment: String, unit: LoadUnit, up: Bool) -> Double {
         if isSegmented(equipment: equipment, unit: unit) {
             let lb = weightKg * lbPerKg

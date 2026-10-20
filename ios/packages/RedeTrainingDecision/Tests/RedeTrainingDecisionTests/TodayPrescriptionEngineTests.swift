@@ -152,7 +152,7 @@ final class TodayPrescriptionEngineTests: XCTestCase {
         XCTAssertEqual(bench.reason, .nearFailureLastTime)
     }
 
-    // 区间内推进 → 持平冲上限
+    // 区间内推进 → 持平，目标次数 = 上次最好那组 +2（2026-10-20 第二批；以前直接冲上限）
     func testProgressionHoldsMidRange() throws {
         let json = #"{"schemaVersion": 8, "programTemplate": {"splitType": "upper-lower"}, "history": [{"id": "s0", "date": "2026-06-05", "completed": true, "exercises": []}, {"id": "s1", "date": "2026-06-04", "completed": true, "exercises": [{"exerciseId": "db-bench-press", "sets": [{"weight": 30, "reps": 8, "rir": 2}, {"weight": 30, "reps": 7, "rir": 2}]}]}]}"#
         let prescription = try XCTUnwrap(try plan(appDataJSON: json, today: "2026-06-09"))

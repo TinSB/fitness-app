@@ -688,12 +688,26 @@ final class SessionStoreDraftTests: XCTestCase {
         ))
         XCTAssertTrue(sessionStore.flow?.replacementCandidates.contains("db-bench-press") ?? false)
 
-        let event = sessionStore.replaceExerciseEvent(exerciseId: "db-bench-press")
+        let event = sessionStore.replaceExerciseEvent(exerciseId: "db-bench-press", now: startedAt)
         XCTAssertEqual(event, .replaceExerciseWithLoad("db-bench-press", 26))
         sessionStore.apply(event)
 
         XCTAssertEqual(sessionStore.flow?.currentExercise?.sets.map(\.targetWeightKg), [26, 26, 26],
                        "不再沿用杠铃卧推的 60")
+    }
+
+    // 引擎审查第二批（2026-10-20）：换进来的动作隔了两个月没做 → 按停练回归打折，不照搬那时的最大重量。
+    // 「今天」按动作发生的时刻算（今日模型可能是几天前加载的）；测试把时刻传进去。
+    func testSwapStartingLoadIsEasedWhenTheLiftWasLastDoneMonthsAgo() throws {
+        let sessionStore = makeSessionStore(draftStore: FakeTrainSessionDraftStore())
+        sessionStore.todayOutcome = .ready(try makeTodayModel(
+            equipmentScenario: nil, unitSystem: "kg",
+            sessions: [CleanTrainingSession(id: "h1", date: "2026-05-10", exercises: [
+                CleanExercise(exerciseId: "db-bench-press", sets: [CleanLoggedSet(weight: 26, reps: 8, rir: 1)]),
+            ])]
+        ))
+        XCTAssertEqual(sessionStore.replaceExerciseEvent(exerciseId: "db-bench-press", now: startedAt),
+                       .replaceExerciseWithLoad("db-bench-press", 20), "隔 65 天：26 × 0.75 = 19.5 → 20")
     }
 
     func testAcceptedDurableMoveSavesExactlyOnceBeforeReportingSuccess() throws {

@@ -47,8 +47,8 @@ public enum TrainFlowEvent: Equatable, Sendable, Codable {
     /// 旧形态：新动作负重由 reducer 按目录推断（external→external 沿用原负重）。
     /// 只为恢复 2026-10-18 之前的草稿保留；新换动作一律走 replaceExerciseWithLoad。
     case replaceExercise(String)
-    /// 换动作 + 新动作自己的起始负重（app 层建事件时按「新动作历史 → 目录保守起步」解析一次，
-    /// 与临时加动作同一规则；重放只读这份值，不再查历史）。
+    /// 换动作 + 新动作自己的起始负重（app 层建事件时按今日处方的同一套规则解析一次——做过的取最近一场最重那组、
+    /// 停练回来按档减，没做过的按自报水平先验；与临时加动作同一规则；重放只读这份值，不再查历史）。
     case replaceExerciseWithLoad(String, Double)
     case moveExerciseToCurrent(String)
     case addExercise(ExerciseSetPlan)

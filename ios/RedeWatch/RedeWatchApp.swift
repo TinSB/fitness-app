@@ -1096,7 +1096,7 @@ enum WatchPreview {
                  loadType: "external", kg: 50, reps: 10),
             item("pull-up", zh ? "引体向上" : "Pull-up", sets: 3, rest: 90, rir: 2,
                  loadType: "bodyweight", kg: 0, reps: 8),
-            item("lateral-raise", zh ? "哑铃侧平举" : "Lateral raise", sets: 3, rest: 60, rir: 1,
+            item("lateral-raise", zh ? "哑铃侧平举" : "Lateral raise", sets: 3, rest: 90, rir: 1,
                  loadType: "external", kg: 10, reps: 12),
         ]
         let ladder: [WatchPrescription.WeightRung] = stride(from: 30.0, through: 90.0, by: 2.5).map {

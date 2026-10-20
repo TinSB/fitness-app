@@ -760,13 +760,14 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
     }
 
     func testAnOffGridTargetSitsOnTheWatchLadderItself() {
-        // 引擎保持真能配出的离格重量（选重机 10 lb 一格上的 45 lb，2026-10-20）：梯子里要有 45 本身，
-        // 表上默认显示的就是 45；不然表冠停在最近的 50，手腕显示 50、记下的却是 45（审查 2026-10-20）。
+        // 引擎保持真能配出的离格重量（5 lb 一格的选重机加 2.5 lb 小片的 47.5 lb；2026-10-20 第二批选重机改 5 lb
+        // 一格之前例子是 10 lb 一格上的 45）：梯子里要有 47.5 本身，表上默认显示的就是它；不然表冠停在最近的
+        // 一格，手腕显示 50、记下的却是 47.5（审查 2026-10-20）。
         let lbPerKg = 2.204_622_621_8
-        let ladder = SessionStore.watchWeightLadder(aroundKg: 45 / lbPerKg, equipment: "selectorized", unit: .lb)
+        let ladder = SessionStore.watchWeightLadder(aroundKg: 47.5 / lbPerKg, equipment: "selectorized", unit: .lb)
         let lbs = ladder.map { ($0 * lbPerKg * 1000).rounded() / 1000 }
-        XCTAssertTrue(lbs.contains(45), "处方本身在梯子上")
-        XCTAssertTrue(lbs.contains(40) && lbs.contains(50), "两边的真实格子照旧")
+        XCTAssertTrue(lbs.contains(47.5), "处方本身在梯子上")
+        XCTAssertTrue(lbs.contains(45) && lbs.contains(50), "两边的真实格子照旧")
         XCTAssertEqual(lbs, lbs.sorted(), "仍是升序")
         // 换算残值（30 kg = 66.1 lb）不是真能配出的重量：不塞进梯子，照旧吸附。
         let converted = SessionStore.watchWeightLadder(aroundKg: 30, equipment: "dumbbell", unit: .lb)

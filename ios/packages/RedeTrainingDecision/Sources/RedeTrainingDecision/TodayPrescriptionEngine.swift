@@ -5,19 +5,25 @@
 // 顺序第一个未用且匹配」从 catalog 现算（FR-ON3：不锁死硬编码模板，可重算）；
 // 槽位的组数/次数区间是生成参数，沿 legacy 模板口径（事实性复用，已留痕）。
 //
-// 最小渐进 = 双重渐进三分支。RIR 一律取 min 口径（最差一组）：任何一组
-// 打到力竭就不该加重——安全优先于抗噪，这是显式产品拍板。ordinary external：
+// 最小渐进 = 双重渐进三分支。**加重**取 min 口径（最差一组）：任何一组
+// 打到力竭就不该加重——安全优先于抗噪，这是显式产品拍板。**降重**取平均口径
+//（2026-10-20 引擎审查第二批，owner 拍板）：整场平均 RIR ≤ 0.5（多数组练到力竭）才 −一档；
+// 只有后几组累到 0 是正常疲劳，持平不降（研究：练到力竭不必要也无害，自评 RIR 误差约 1 次）。
+// ordinary external：
 //   至少一组封顶、没有组掉出下限、未取整平均 ≥ 区间中点、min RIR ≥ 1.0
 //   且本场全部工作组负荷一致（无 RIR 视为有余力）→ +一档，次数重置 repMin；
+//   每组都还剩 ≥4 次（min RIR ≥ 4）→ 一次 +两档（第二批：冷启动偏轻时一档一档爬太慢）；
 //   混合负荷一律不得 increase；未命中既有安全/ease 分支时 hold，不能用轻组次数
 //   替最重组赢得加重；
 //   新档第一次最高组仍未到 repMin、且非长间隔回归 → 保持新档再试一次；
 //   第二次仍失败或长间隔回归时 −一档；
-//   min RIR ≤ 0.5 永远立即 −一档，不受宽限影响；否则持平冲次数上限。
+//   平均 RIR ≤ 0.5 永远立即 −一档，不受宽限影响；否则持平，目标次数 = 上次最好的次数 +2
+//  （封顶区间上限；第二批：以前直接要上限，10 次的人下次被要求 15 次）。
 // assisted/bodyweight/bodyweight-plus 仍各走自己的既有分支，不套本判据。
 // 加重无上限（精英重量合法递增，有意为之）。
 // 「一档」= 该动作器械×用户单位的真实档位步长（LoadGrid，2026-06-13「宁大勿小」）：
-// kg+自由重量=2.5（与旧口径等价，goldens 零变化）；lb=5lb 真实格子；选重机更粗。
+// kg+自由重量=2.5（与旧口径等价，goldens 零变化）；lb=5lb 真实格子；选重机 kg 更粗（5 kg），
+// lb 自 2026-10-20 第二批起同为 5 lb。
 // 裁决调制在渐进之后：light ×0.9；deload ×0.8 且组数 −1(下限 2)；rest → 无处方。
 // 重量一律按步长取整、下限一档；调制后若取整弹回原重量且原重量 > 一档，
 // 强制下调一格——轻练/减载必须真减，小重量动作不得被取整吃掉。
@@ -143,6 +149,14 @@ enum ProgressionPausePolicy {
 public enum TodayPrescriptionEngine {
     private static let nearFailureMeanRir = 0.5
     private static let progressMinMeanRir = 1.0
+    /// 每组都还剩这么多次（min RIR，每组都要记了 RIR）且做满上限 → 一次加两档。
+    private static let bigReserveMinRir = 4.0
+    /// 一次加两档的跳幅上限（相对上次最重那组）：超过就只加一档。轻器械一档就是 +33%～+50%，两档会到
+    /// +100%——正是选重机改 5 lb 一格要消掉的那种跳（审查 2026-10-20）。按 Epley 粗算，区间顶端还剩 4 次
+    /// 换到区间底端还剩 2 次，大约是 +15%。
+    private static let bigReserveMaxJump = 0.15
+    /// 保持时目标次数比上次最好的多几次。
+    private static let holdRepStep = 2
     private static let loadComparisonToleranceKg = 0.000_000_001
     // 自重次数进阶（owner 拍板 2026-06-13）：起步 12、上限 25 提示换难度、下限 8。
     private static let bodyweightStartReps = 12
@@ -431,7 +445,7 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "incline-press", sets: 3, repMin: 8, repMax: 10, rest: 120),
                 Slot(pattern: "horizontal-press", kind: "accessory", sets: 2, repMin: 8, repMax: 12, rest: 120),
                 Slot(pattern: "fly", sets: 2, repMin: 12, repMax: 15, rest: 75),
-                Slot(pattern: "lateral-raise", sets: 4, repMin: 12, repMax: 20, rest: 60),
+                Slot(pattern: "lateral-raise", sets: 4, repMin: 12, repMax: 20, rest: 90),
                 Slot(pattern: "triceps-extension", sets: 3, repMin: 10, repMax: 15, rest: 75),
             ]
         case .pullA:
@@ -439,10 +453,10 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "vertical-pull", kind: "compound", sets: 3, repMin: 8, repMax: 10, rest: 120), // kind:compound → 力量目标也塑形主拉
                 Slot(pattern: "horizontal-pull", equipment: ["cable"], sets: 3, repMin: 8, repMax: 12, rest: 120),
                 Slot(pattern: "horizontal-pull", kind: "compound", equipment: ["barbell"], sets: 3, repMin: 6, repMax: 10, rest: 150), // kind:compound → 杠铃划船力量塑形
-                Slot(pattern: "rear-delt", sets: 3, repMin: 12, repMax: 20, rest: 60),
+                Slot(pattern: "rear-delt", sets: 3, repMin: 12, repMax: 20, rest: 90),
                 Slot(pattern: "curl", sets: 3, repMin: 8, repMax: 12, rest: 75),
                 Slot(pattern: "curl", sets: 2, repMin: 10, repMax: 15, rest: 75),
-                Slot(pattern: "shrug", sets: 3, repMin: 10, repMax: 15, rest: 60),
+                Slot(pattern: "shrug", sets: 3, repMin: 10, repMax: 15, rest: 90),
             ]
         case .legsA:
             return [
@@ -451,8 +465,8 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "squat-pattern", kind: "accessory", sets: 3, repMin: 10, repMax: 15, rest: 120),
                 Slot(pattern: "knee-extension", sets: 3, repMin: 12, repMax: 15, rest: 75),
                 Slot(pattern: "knee-flexion", sets: 3, repMin: 10, repMax: 15, rest: 75),
-                Slot(pattern: "calf-raise", sets: 4, repMin: 10, repMax: 20, rest: 60),
-                Slot(pattern: "core", sets: 3, repMin: 12, repMax: 20, rest: 60),
+                Slot(pattern: "calf-raise", sets: 4, repMin: 10, repMax: 20, rest: 90),
+                Slot(pattern: "core", sets: 3, repMin: 12, repMax: 20, rest: 90),
             ]
         // B 日（6 天 PPL×2 的容量/变式日）：靠 equipment/kind 约束选到与 A 日不同的动作，
         // 全器械下完全区分；器械受限时优雅软化（可能与 A 重叠，可接受）。详见方案 §3。
@@ -462,7 +476,7 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "horizontal-press", kind: "compound", equipment: ["dumbbell"], sets: 3, repMin: 8, repMax: 12, rest: 120), // 哑铃平板（A 用杠铃平板）
                 Slot(pattern: "vertical-press", sets: 3, repMin: 8, repMax: 12, rest: 120), // 坐姿肩推（补垂直推，A 日缺）
                 Slot(pattern: "fly", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 12, repMax: 15, rest: 75), // 器械夹胸（A 用绳索飞鸟）
-                Slot(pattern: "lateral-raise", equipment: ["cable"], sets: 4, repMin: 12, repMax: 20, rest: 60), // 绳索侧平（A 用哑铃侧平）
+                Slot(pattern: "lateral-raise", equipment: ["cable"], sets: 4, repMin: 12, repMax: 20, rest: 90), // 绳索侧平（A 用哑铃侧平）
                 Slot(pattern: "triceps-extension", equipment: ["barbell"], sets: 3, repMin: 8, repMax: 12, rest: 75), // 窄距/杠铃臂屈伸（A 用绳索下压）
             ]
         case .pullB:
@@ -470,9 +484,9 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "horizontal-pull", kind: "compound", equipment: ["dumbbell"], sets: 4, repMin: 8, repMax: 12, rest: 150, preferredId: "chest-supported-db-row"), // 俯身支撑哑铃划船（主项点名；A 用杠铃/绳索划船）
                 Slot(pattern: "vertical-pull", kind: "compound", sets: 3, repMin: 8, repMax: 12, rest: 120, preferredId: "wide-grip-pulldown"), // 宽握下拉（点名；A 用高位下拉）
                 Slot(pattern: "vertical-pull", kind: "isolation", sets: 3, repMin: 12, repMax: 15, rest: 75), // 直臂下拉（lat 孤立，A 日缺）
-                Slot(pattern: "rear-delt", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 12, repMax: 20, rest: 60), // 反向蝴蝶机（A 用面拉）
+                Slot(pattern: "rear-delt", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 12, repMax: 20, rest: 90), // 反向蝴蝶机（A 用面拉）
                 Slot(pattern: "curl", equipment: ["cable"], sets: 3, repMin: 10, repMax: 15, rest: 75), // 绳索弯举（A 用哑铃弯举）
-                Slot(pattern: "shrug", equipment: ["dumbbell"], sets: 3, repMin: 10, repMax: 15, rest: 60), // 哑铃耸肩（A 用杠铃耸肩）
+                Slot(pattern: "shrug", equipment: ["dumbbell"], sets: 3, repMin: 10, repMax: 15, rest: 90), // 哑铃耸肩（A 用杠铃耸肩）
             ]
         case .legsB:
             return [
@@ -481,8 +495,8 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "squat-pattern", kind: "compound", equipment: ["dumbbell"], sets: 3, repMin: 10, repMax: 15, rest: 90, preferredId: "bulgarian-split-squat"), // 保加利亚分腿蹲（单侧点名）
                 Slot(pattern: "knee-flexion", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 10, repMax: 15, rest: 75),
                 Slot(pattern: "knee-extension", sets: 3, repMin: 12, repMax: 20, rest: 75),
-                Slot(pattern: "calf-raise", equipment: ["dumbbell"], sets: 4, repMin: 10, repMax: 20, rest: 60), // 哑铃提踵（A 用器械提踵）
-                Slot(pattern: "core", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 12, repMax: 20, rest: 60), // 器械卷腹（A 用绳索卷腹）
+                Slot(pattern: "calf-raise", equipment: ["dumbbell"], sets: 4, repMin: 10, repMax: 20, rest: 90), // 哑铃提踵（A 用器械提踵）
+                Slot(pattern: "core", equipment: EquipmentRegistry.machineClasses, sets: 3, repMin: 12, repMax: 20, rest: 90), // 器械卷腹（A 用绳索卷腹）
             ]
         // 全身 A/B/C（2-3 天全身）：每日覆盖 股四/后链/胸/背/肩/臂 全身一遍，三变式靠
         // pattern 顺序 + equipment 约束换不同动作。频率靠「每次都练全身」达成（2-3 天 = 每肌群 2-3×）。
@@ -493,7 +507,7 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "vertical-pull", sets: 3, repMin: 8, repMax: 12, rest: 120),
                 Slot(pattern: "hinge", equipment: ["barbell"], sets: 3, repMin: 8, repMax: 12, rest: 120),
                 Slot(pattern: "vertical-press", sets: 3, repMin: 8, repMax: 12, rest: 90),
-                Slot(pattern: "curl", sets: 2, repMin: 10, repMax: 15, rest: 60),
+                Slot(pattern: "curl", sets: 2, repMin: 10, repMax: 15, rest: 90),
             ]
         case .fullB: // 哈克蹲 + 上斜 + 杠铃划船（器械/角度变式）
             return [
@@ -501,8 +515,8 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "incline-press", sets: 3, repMin: 8, repMax: 12, rest: 120),
                 Slot(pattern: "horizontal-pull", equipment: ["barbell"], sets: 3, repMin: 6, repMax: 10, rest: 150),
                 Slot(pattern: "knee-flexion", sets: 3, repMin: 10, repMax: 15, rest: 75),
-                Slot(pattern: "lateral-raise", sets: 3, repMin: 12, repMax: 20, rest: 60),
-                Slot(pattern: "triceps-extension", sets: 2, repMin: 10, repMax: 15, rest: 60),
+                Slot(pattern: "lateral-raise", sets: 3, repMin: 12, repMax: 20, rest: 90),
+                Slot(pattern: "triceps-extension", sets: 2, repMin: 10, repMax: 15, rest: 90),
             ]
         case .fullC: // 腿举 + 哑铃平板 + 坐姿划船（容量/泵感）
             return [
@@ -510,9 +524,9 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "hinge", equipment: ["dumbbell"], sets: 3, repMin: 8, repMax: 12, rest: 120),
                 Slot(pattern: "horizontal-press", kind: "compound", equipment: ["dumbbell"], sets: 3, repMin: 8, repMax: 12, rest: 120),
                 Slot(pattern: "horizontal-pull", equipment: ["cable"], sets: 3, repMin: 10, repMax: 15, rest: 90),
-                Slot(pattern: "rear-delt", sets: 3, repMin: 12, repMax: 20, rest: 60),
-                Slot(pattern: "calf-raise", sets: 3, repMin: 10, repMax: 20, rest: 60), // 小腿（全身唯一直接小腿日，审查 M-1）
-                Slot(pattern: "core", sets: 3, repMin: 12, repMax: 20, rest: 60),
+                Slot(pattern: "rear-delt", sets: 3, repMin: 12, repMax: 20, rest: 90),
+                Slot(pattern: "calf-raise", sets: 3, repMin: 10, repMax: 20, rest: 90), // 小腿（全身唯一直接小腿日，审查 M-1）
+                Slot(pattern: "core", sets: 3, repMin: 12, repMax: 20, rest: 90),
             ]
         case .lower:
             return [
@@ -521,8 +535,8 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "squat-pattern", kind: "accessory", sets: 3, repMin: 10, repMax: 15, rest: 120),
                 Slot(pattern: "knee-extension", sets: 3, repMin: 12, repMax: 15, rest: 75),
                 Slot(pattern: "knee-flexion", sets: 3, repMin: 10, repMax: 15, rest: 75),
-                Slot(pattern: "calf-raise", sets: 4, repMin: 12, repMax: 20, rest: 60),
-                Slot(pattern: "core", sets: 3, repMin: 12, repMax: 20, rest: 60),
+                Slot(pattern: "calf-raise", sets: 4, repMin: 12, repMax: 20, rest: 90),
+                Slot(pattern: "core", sets: 3, repMin: 12, repMax: 20, rest: 90),
             ]
         case .upper:
             return [
@@ -530,10 +544,10 @@ public enum TodayPrescriptionEngine {
                 Slot(pattern: "vertical-pull", sets: 3, repMin: 8, repMax: 10, rest: 120),
                 Slot(pattern: "vertical-press", sets: 3, repMin: 6, repMax: 10, rest: 120),
                 Slot(pattern: "horizontal-pull", equipment: ["dumbbell"], sets: 3, repMin: 8, repMax: 12, rest: 90),
-                Slot(pattern: "lateral-raise", sets: 3, repMin: 12, repMax: 20, rest: 60),
-                Slot(pattern: "triceps-extension", sets: 2, repMin: 10, repMax: 15, rest: 60),
-                Slot(pattern: "curl", equipment: ["dumbbell"], sets: 2, repMin: 10, repMax: 15, rest: 60),
-                Slot(pattern: "shrug", sets: 3, repMin: 10, repMax: 15, rest: 60),
+                Slot(pattern: "lateral-raise", sets: 3, repMin: 12, repMax: 20, rest: 90),
+                Slot(pattern: "triceps-extension", sets: 2, repMin: 10, repMax: 15, rest: 90),
+                Slot(pattern: "curl", equipment: ["dumbbell"], sets: 2, repMin: 10, repMax: 15, rest: 90),
+                Slot(pattern: "shrug", sets: 3, repMin: 10, repMax: 15, rest: 90),
             ]
         }
     }
@@ -744,8 +758,8 @@ public enum TodayPrescriptionEngine {
             limit: baselineLookback
         )
         let last = recent.last
-        let staleness = Self.staleness(recent: recent, todayISO: input.todayISO, verdict: verdict, slot: slot,
-                                       trainedDays: trainedDays)
+        let staleness = Self.staleness(recent: recent, todayISO: input.todayISO, longGapDays: verdict.longGapDays,
+                                       repMin: slot.repMin, trainedDays: trainedDays)
         // 基准（2026-10-20 引擎审查第一批）：重量轴的三类（外部负重 / 辅助 / 负重自重）不再一律拿「上一次」当起点，
         // 见 baseline。辅助器械的「更难」是辅助更少。
         let harder: (LastPerformance, LastPerformance) -> Bool = entry.loadType == "assisted"
@@ -810,7 +824,7 @@ public enum TodayPrescriptionEngine {
         let change: ChangeDirection
         let reason: PrescriptionReason
         if let ref {
-            if let minRir = ref.minRir, minRir <= nearFailureMeanRir {
+            if isNearFailure(ref) {
                 baseWeight = LoadGrid.progressionRungKg(ref.topWeightKg, equipment: equip, unit: unit, up: false)
                 targetReps = slot.repMin
                 change = .ease
@@ -822,7 +836,7 @@ public enum TodayPrescriptionEngine {
                     // 只阻止下降，绝不制造上升；长间隔回归不宽限，下一次同重量再
                     // 失败时比较也不再成立。
                     baseWeight = LoadGrid.holdKg(ref.topWeightKg, equipment: equip, unit: unit)
-                    targetReps = slot.repMax
+                    targetReps = holdTargetReps(ref, slot: slot)
                     change = .hold
                     reason = .holdProgressing
                 } else {
@@ -840,13 +854,21 @@ public enum TodayPrescriptionEngine {
                 // 无上限：精英重量的 +一档 是合法递增，有意不设 cap。
                 // 回归压制（2026-07-08；2026-10-20 起按这个动作自己多久没做判）：停练 ≥14 天时本分支不进——
                 // 上上次的满分不是今天加重的依据，持平回场（叠加分档回退），渐进从这场重启。
-                baseWeight = LoadGrid.progressionRungKg(ref.topWeightKg, equipment: equip, unit: unit, up: true)
+                let oneUp = LoadGrid.progressionRungKg(ref.topWeightKg, equipment: equip, unit: unit, up: true)
+                let twoUp = LoadGrid.progressionRungKg(oneUp, equipment: equip, unit: unit, up: true)
+                // 每组都还剩 ≥4 次：一次加两档（第二批）。冷启动偏轻、停练回来恢复得快时，一档一档爬要好几周。
+                // 只认真记录的余力：每组都记了 RIR、那一次不是引擎开的减量日（一键完成会把目标 RIR 原样记下，
+                // 周期减载周的目标就是 4）；跳幅不超过 15%（轻器械两档是 +100%）。
+                let bigReserve = ref.everySetHasRir && (ref.minRir ?? 0) >= bigReserveMinRir
+                    && !modulatedDays.isModulated(ref.day)
+                    && twoUp <= ref.topWeightKg * (1 + bigReserveMaxJump) + loadComparisonToleranceKg
+                baseWeight = bigReserve ? twoUp : oneUp
                 targetReps = slot.repMin
                 change = .increase
                 reason = .repCeilingReached
             } else {
                 baseWeight = LoadGrid.holdKg(ref.topWeightKg, equipment: equip, unit: unit)
-                targetReps = slot.repMax
+                targetReps = holdTargetReps(ref, slot: slot)
                 change = .hold
                 reason = .holdProgressing
             }
@@ -956,6 +978,8 @@ public enum TodayPrescriptionEngine {
                 change = .hold
                 reason = ceilingReason
             } else if let minRir = last.minRir, minRir <= nearFailureMeanRir {
+                // 自重 / 弹力带没有单独的加次数闸门：这里就是「加不加」的判断，所以照旧取最差一组——
+                // 任何一组到力竭就不加次数（文件头的加重口径；审查 2026-10-20）。
                 targetReps = max(bodyweightRepFloor, lastReps)
                 change = .hold
                 reason = .nearFailureLastTime   // 力竭保持（审查 MINOR-4：区分于进阶）
@@ -1027,7 +1051,7 @@ public enum TodayPrescriptionEngine {
         let change: ChangeDirection
         let reason: PrescriptionReason
         if let last {
-            if let minRir = last.minRir, minRir <= nearFailureMeanRir {
+            if isNearFailure(last) {
                 baseAssist = last.topWeightKg + step       // 力竭 → 加辅助（更轻=安全）
                 targetReps = slot.repMin
                 change = .ease
@@ -1072,7 +1096,7 @@ public enum TodayPrescriptionEngine {
                 }
             } else {
                 baseAssist = last.topWeightKg                // 区间内 → 保持
-                targetReps = slot.repMax
+                targetReps = holdTargetReps(last, slot: slot)
                 change = .hold
                 reason = .holdProgressing
             }
@@ -1147,7 +1171,7 @@ public enum TodayPrescriptionEngine {
         if let last {
             // 挣扎口径：近力竭优先于掉出次数下限（同 external 分支次序）。
             let easeReason: PrescriptionReason? =
-                (last.minRir.map { $0 <= nearFailureMeanRir } ?? false) ? .nearFailureLastTime
+                isNearFailure(last) ? .nearFailureLastTime
                 : (last.maxReps < slot.repMin ? .belowRepFloor : nil)
             if let easeReason {
                 let nextLoad = last.topWeightKg - step
@@ -1184,7 +1208,7 @@ public enum TodayPrescriptionEngine {
                 reason = .repCeilingReached
             } else {
                 baseLoad = last.topWeightKg          // 区间内 → 保持
-                targetReps = slot.repMax
+                targetReps = holdTargetReps(last, slot: slot)
                 change = .hold
                 reason = .holdProgressing
             }
@@ -1263,8 +1287,25 @@ public enum TodayPrescriptionEngine {
         let meanReps: Double
         /// 仅当该动作本场全部工作组负荷相同时有值；S1a 只允许一致负荷赢得加重。
         let uniformWeightKg: Double?
-        /// min 口径：最差一组的 RIR（安全优先，见文件头拍板说明）。
+        /// min 口径：最差一组的 RIR——加重闸门用（安全优先，见文件头拍板说明）。
         let minRir: Double?
+        /// 平均口径：全部带 RIR 的组的平均——判「近力竭、该降重」用（第二批）。
+        let meanRir: Double?
+        /// 每一组都记了 RIR（一次加两档只认真记录的余力）。
+        let everySetHasRir: Bool
+    }
+
+    /// 近力竭：整场平均 RIR ≤ 0.5（多数组都练到力竭）。只有后几组累到 0 不算（第二批）。
+    private static func isNearFailure(_ performance: LastPerformance) -> Bool {
+        performance.meanRir.map { $0 <= nearFailureMeanRir } ?? false
+    }
+
+    /// 保持时的目标次数：上次最好的那组（负荷一致取最多的一组，混合负荷取最重那组的次数）+2，
+    /// 夹在区间里。以前直接要区间上限：腿举 10 次（还剩 3 次）下次就要 15 次，做不到。
+    private static func holdTargetReps(_ performance: LastPerformance, slot: Slot) -> Int {
+        let best = performance.uniformWeightKg != nil ? performance.maxReps : performance.repsAtTop
+        // 先夹到上限再 +2：干净数据只保证 reps ≥ 1，极端值（Int.max）直接相加会溢出崩溃。
+        return min(slot.repMax, max(slot.repMin, min(best, slot.repMax) + holdRepStep))
     }
 
     /// sticky 代表 + 它是不是用户显式换来的（替换链终点）。两者的作用域不同：
@@ -1454,9 +1495,9 @@ public enum TodayPrescriptionEngine {
     private static let baselineLookback = 6
 
     /// 这一次练得吃力：近力竭、掉出次数下限、或登记了不适。这是实打实的能力信号——基准不越过它。
-    private static func isStruggle(_ performance: LastPerformance, slot: Slot) -> Bool {
-        (performance.minRir.map { $0 <= nearFailureMeanRir } ?? false)
-            || performance.maxReps < slot.repMin
+    private static func isStruggle(_ performance: LastPerformance, repMin: Int) -> Bool {
+        isNearFailure(performance)
+            || performance.maxReps < repMin
             || performance.hadPain
     }
 
@@ -1466,7 +1507,11 @@ public enum TodayPrescriptionEngine {
     /// 那天的重量是被引擎减下来的，不代表能力——往回找减量之前那次。以前直接拿它当起点，轻练日之后要
     /// 好几次才爬回去，周期化开着时每个减载周还会把下一块的起点越压越低（owner 真实数据重放）。
     /// 不越过：
-    /// - 吃力的那一次（近力竭 / 掉出下限 / 登记不适——含因不适跳组），照它回退；
+    /// - 吃力的那一次（近力竭 / 掉出下限 / 登记不适——含因不适跳组），照它回退。减量日**之前**那次吃力
+    ///   （近力竭 / 掉出下限）时，基准就取那一次、照它退一档，不停在减量日：过载周练到力竭、下一周减载，
+    ///   下个周期该从「力竭那次退一档」起，以前停在减载周的重量上，起点低约 15%（审查第二批）。
+    ///   那一次登记了不适、或它和减量日一样重（本身也是减量日）则照旧停在减量日（疼痛时留在更轻的重量上；
+    ///   同重量时后面那次才是更新的证据）；
     /// - 不比它更难的那一次（减量日反而练得一样或更重，那就是真实成绩）；**同样重量、而那一次也是减量日**时
     ///   继续往回（减载周里同一动作的第二次与第一次一样重）；
     /// - 两次之间整体停练过两周以上（回归后从回归那场重新起步，#679）——只看「两次隔了多久」会把
@@ -1477,15 +1522,20 @@ public enum TodayPrescriptionEngine {
                                  harder: (LastPerformance, LastPerformance) -> Bool)
         -> (ref: LastPerformance, previous: LastPerformance?)? {
         guard var index = recent.indices.last else { return nil }
-        if walkBack, !isStruggle(recent[index], slot: slot) {
+        if walkBack, !isStruggle(recent[index], repMin: slot.repMin) {
             while index > 0, modulatedDays.isModulated(recent[index].day) {
                 let current = recent[index]
                 let earlier = recent[index - 1]
                 let sameLoad = !harder(earlier, current) && !harder(current, earlier)
                 guard layoffDays(from: earlier.day, to: current.day, trainedDays: trainedDays) < comebackLightGapDays,
-                      !isStruggle(earlier, slot: slot),
                       harder(earlier, current) || (sameLoad && modulatedDays.isModulated(earlier.day))
                 else { break }
+                if isStruggle(earlier, repMin: slot.repMin) {
+                    // 只在减量之前那次（比减量日重）吃力时照它退；同样重量、本身也是减量日的那次吃力，
+                    // 后面那次练得轻松才是更新的证据——停在后面那次（审查 2026-10-20）。
+                    if !earlier.hadPain && harder(earlier, current) { index -= 1 }
+                    break
+                }
                 index -= 1
             }
         }
@@ -1513,12 +1563,13 @@ public enum TodayPrescriptionEngine {
     ///    一倍以上——动作被搁置了很久。**按轮换本来就隔两周才轮到一次的动作两条都不满足**（推拉腿 6 天轮换、
     ///    每周练 3 次时每个动作每两周一次），照常进阶；只看「这个动作自己隔了多久」会让它们永远不加重。
     /// 折扣分档按真正没练的那段（①取最长停练，②取这次间隔）；今天整体就是回归日时与之取大。
-    private static func staleness(recent: [LastPerformance], todayISO: String, verdict: TodayVerdict,
-                                  slot: Slot, trainedDays: [Int]) -> Staleness {
+    /// longGapDays：今天整体停练了多久（今日裁决的停练回归；nil = 不算回归）。
+    private static func staleness(recent: [LastPerformance], todayISO: String, longGapDays: Int?,
+                                  repMin: Int, trainedDays: [Int]) -> Staleness {
         guard let last = recent.last, let today = TrainingDay.dayNumber(fromISO: todayISO) else {
             // 没做过的动作：今天整体是停练回归时照旧按全局间隔减（与改动前一致）。
-            return Staleness(stale: verdict.longGapDays != nil,
-                             multiplier: verdict.longGapDays.map { comebackMultiplier(gapDays: $0) })
+            return Staleness(stale: longGapDays != nil,
+                             multiplier: longGapDays.map { comebackMultiplier(gapDays: $0) })
         }
         let previous = recent.count >= 2 ? recent[recent.count - 2] : nil
         let layoff = layoffDays(from: last.day, to: today, trainedDays: trainedDays)
@@ -1527,7 +1578,7 @@ public enum TodayPrescriptionEngine {
         // 只看上一段会把每一轮的长间隔都误判成搁置（审查 2026-10-20）。
         let usualInterval = zip(recent, recent.dropFirst()).map { $1.day - $0.day }.max()
         let shelved = usualInterval.map { ownGap >= comebackLightGapDays && ownGap >= 2 * $0 } ?? false
-        var gap = max(verdict.longGapDays ?? 0, layoff >= comebackLightGapDays ? layoff : 0)
+        var gap = max(longGapDays ?? 0, layoff >= comebackLightGapDays ? layoff : 0)
         if shelved { gap = max(gap, ownGap) }
         guard gap >= comebackLightGapDays else { return Staleness(stale: false, multiplier: nil) }
         // 不叠减只用在两三周的短间隔（14-20 天，×0.9 那一档）：上次本身就是停练回来练成的那一场，
@@ -1535,9 +1586,50 @@ public enum TodayPrescriptionEngine {
         //（也与今日页「停练 N 天，重量先回落」的说法一致）。
         let lastWasComebackDoneWell = previous.map {
             layoffDays(from: $0.day, to: last.day, trainedDays: trainedDays) >= comebackLightGapDays
-        } == true && !isStruggle(last, slot: slot)
+        } == true && !isStruggle(last, repMin: repMin)
         let skipRepeatCut = lastWasComebackDoneWell && gap < comebackRestartGapDays
         return Staleness(stale: true, multiplier: skipRepeatCut ? nil : comebackMultiplier(gapDays: gap))
+    }
+
+    /// 训练中临时加进来 / 换进来的动作从多重开始（2026-10-20 引擎审查第二批）：与今日处方**同一套规则**——
+    /// 没做过 → 首练定档（目录起始重量 × 自报水平先验）；做过 → 最近一场最重的那组，再按 `staleness` 判回归
+    ///（中间整体停练 ≥14 天，或这个动作被搁置；按轮换本来就隔两周才轮到一次的不算），算回归就按档减：
+    /// 外部负重 / 负重自重减重量（至少一格），辅助器械多帮一档。不看今天的轻练 / 减载裁决（训练已经开始）。
+    /// 以前照搬历史最大重量、没做过的直接用目录起始重量：隔两个月再加练直接给两个月前的最大重量；
+    /// 新手加练杠铃划船给 110 磅，主计划同一个动作只给 55。
+    /// repMin：这个动作在本场的次数下限（判「上次是不是吃力」用）。
+    static func sessionEditStartLoadKg(entry: ExerciseCatalogEntry, sessions: [CleanTrainingSession],
+                                       todayISO: String, trainingLevel: String?, unit: LoadUnit,
+                                       repMin: Int) -> Double {
+        if entry.loadType == "bodyweight" || entry.loadType == "band" { return 0 }
+        let step = entry.loadType == "bodyweight-plus"
+            ? LoadGrid.addedLoadStepKg(unit: unit) : LoadGrid.stepKg(equipment: entry.equipment, unit: unit)
+        let recent = recentPerformances(exerciseId: entry.id, sessions: sessions, limit: baselineLookback)
+        // 与今日裁决同口径：已存的训练日（不含未来日期），今天整体停练了多久。
+        let today = TrainingDay.dayNumber(fromISO: todayISO)
+        let trainedDays = Set(sessions.compactMap { TrainingDay.dayNumber(fromISO: $0.date) })
+            .filter { $0 <= (today ?? $0) }.sorted()
+        let wholeGap = today.flatMap { day in trainedDays.last.map { day - $0 } }
+        let longGapDays = wholeGap.flatMap { $0 >= comebackLightGapDays ? $0 : nil }
+        let comeback = staleness(recent: recent, todayISO: todayISO, longGapDays: longGapDays,
+                                 repMin: repMin, trainedDays: trainedDays).multiplier
+        switch entry.loadType {
+        case "assisted":
+            let assist = recent.last?.topWeightKg
+                ?? ColdStartPrior.scaledAssistKg(entry.startWeightKg, trainingLevel: trainingLevel, stepKg: step)
+            return comeback == nil ? assist : roundToIncrement(assist + step, step: step)   // 回归 = 多帮一档
+        case "bodyweight-plus":
+            let load = recent.last?.topWeightKg
+                ?? ColdStartPrior.scaledStartKg(entry.startWeightKg, trainingLevel: trainingLevel, stepKg: step)
+            return comeback.map { modulated(base: load, multiplier: $0, equipment: "barbell", unit: unit) } ?? load
+        default:
+            let load = recent.last?.topWeightKg
+                ?? LoadGrid.snapKg(ColdStartPrior.scaledStartKg(entry.startWeightKg, trainingLevel: trainingLevel,
+                                                                 stepKg: step),
+                                   equipment: entry.equipment, unit: unit)
+            return comeback.map { modulated(base: load, multiplier: $0, equipment: entry.equipment, unit: unit) }
+                ?? load
+        }
     }
 
     /// 历史上某个训练日，引擎当天开的是不是一份减量处方：重放那一天的裁决（只看那天之前的历史）——
@@ -1648,7 +1740,9 @@ public enum TodayPrescriptionEngine {
                         partial + Double(reps)
                     } / Double(reps.count),
                 uniformWeightKg: uniformWeight,
-                minRir: rirs.min()
+                minRir: rirs.min(),
+                meanRir: rirs.isEmpty ? nil : rirs.reduce(0, +) / Double(rirs.count),
+                everySetHasRir: rirs.count == candidate.sets.count
             )
         }
     }

@@ -4,6 +4,80 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 ## 2026-10-20
 
+- **Engine audit batch 2: ease on mean RIR, hold target +2, two-rung jump on big reserve, 5-lb machine steps, 90 s rest for former 60 s slots, sustained deload ends after a week, ad-hoc / swap start load via the engine, next block after an overreach struggle (owner decisions 2026-10-20)**: the second batch from the 2026-10-20 prescription audit.
+  - **How the audit ran.** Four evidence lanes plus a replay of the owner's week. Every citation was a PubMed ID checked via NCBI esummary, and each flagged finding was re-checked by a skeptic. The run was stopped early at 29 of 37 agents; the main session verified the remaining high-impact items in code.
+  - **What held up.** Weekly sets per muscle (chest 13, quads 19, hamstrings 12 direct), rep ranges, compound rests, 3–8 % load steps, 2x/week frequency and compound-first order all checked out against the evidence.
+  - **What changed.** These rules had no evidence behind them, or were real bugs:
+  1. **Ease on mean RIR, not the worst set.**
+     - `isNearFailure` is now `meanRir ≤ 0.5`, which is what the constant name `nearFailureMeanRir` always said; the code had used `rirs.min()`.
+     - It covers the external, assisted and bodyweight-plus eases and `isStruggle`.
+     - The increase gate keeps min RIR ≥ 1, as does the bodyweight / band rep increase, which has no separate gate. So the 2026-06-09 decision "any set at failure blocks the increase" still holds everywhere.
+     - Before: owner 10-06 machine lateral raise 10 lb 20/20/19/15 at RIR 2/2/0/0, at the top of the range, was eased to a 12-rep target. Now it holds at 10 lb with a 20-rep target.
+     - Evidence: Refalo 2023 and Robinson 2024 say failure is neither needed nor harmful; Halperin 2022 puts the self-rating error at about 1 rep.
+     - 19 % of the owner's sets are at RIR 0.
+  2. **`LoadGrid` selectorized lb step 10 → 5** (kg stays 5).
+     - The owner's machine history is all on 5-lb rungs; 10-lb steps were +20 % to +100 % on light machines.
+     - Side effect: a light or deload day on a 10-lb machine lift drops one rung to 5 lb, because "a reduction must really reduce" still applies.
+  3. **The 22 slots that rested 60 s now rest 90 s**: lateral raise, rear delt, shrug, calf, core, and the full-body and upper-day arms. Singer 2024: rests over 60 s help slightly, over 90 s show no difference.
+  4. **Hold target reps = best set + 2**, clamped to the slot range.
+     - "Best set" is max reps when the load was uniform, otherwise the reps of the top set.
+     - Applies to the external hold and grace-hold, the assisted hold and the bodyweight-plus hold.
+     - The value is clamped before adding, so extreme clean reps (`Int.max`) cannot overflow.
+     - Before: the target jumped straight to repMax (leg press 10 → 15 reps).
+  5. **Two-rung increase when every set had ≥ 4 RIR** (external only). All of these must hold:
+     - The gate passes.
+     - Every set has a logged RIR. One-tap logging writes the target RIR, and a deload phase targets 4.
+     - The reference day was not engine-modulated.
+     - Two rungs stay within +15 % (`bigReserveMaxJump`). On light loads two rungs are +50 % to +100 %, so those get one rung.
+  6. **`TodayVerdictEngine.isSustainedLoad`: a deload lasts 7 days, then the count restarts.**
+     - Single-pass scan with a forward-only window index.
+     - Trained days inside a deload week don't count toward the next window.
+     - Resting more than 2 days during the week ends it early, the same gap rule as the window.
+     - Before: deload days refilled the 21-day window, so a user training more often than planned with ≤ 1 rest day between sessions (e.g. a 3-day plan trained every other day) was deloaded every session.
+     - Strict plan-followers only trip it on rest days. The audit's claim about 5-day users was wrong; the old comment repeating it is fixed.
+  7. **Ad-hoc / swap start load = the engine's own rule.**
+     - New `TodayPrescriptionEngine.sessionEditStartLoadKg` reuses `staleness` and the cold-start prior. `SessionExerciseEditPlanner` calls it; its hand-copied rules are deleted.
+     - Never done: catalog start × `ColdStartPrior`.
+     - Done: latest top set. If stale (whole-app layoff or shelved; rotation lifts exempt), external and bodyweight-plus loads take the comeback tier with at least one rung down, and assisted gets one more assist rung.
+     - `replaceExerciseEvent` and `makeSessionEditExercisePlan` take `now` (wall clock by default, not the possibly days-old `todayModel.now`).
+     - A swap passes the replaced exercise's `repLowerBound`.
+  8. **`baseline()` adopts an earlier struggle past a modulated day only when that session was heavier** (the pre-reduction one) and had no pain. An overreach-week failure followed by a deload week now starts the next block one rung below the failure instead of at the deload weight. Two cases stay at the modulated day:
+     - A same-load reduced-day struggle followed by a comfortable session.
+     - Pain.
+  9. **(Review) `NextSetEngine`: a non-pain in-session ease that would cut more than a quarter of the load holds the load instead** (`maxNonPainCutFraction`).
+     - The 5-lb grid had turned "set 3 at RIR 0 on a 10-lb machine" into a 5-lb suggestion (−50 %). Accepting it made the session mixed-load, so it could never progress.
+     - Exactly a quarter (20 → 15 lb) still eases, and pain always eases.
+  - **Owner replay (perfect execution, week of 10-20, before vs after):**
+    - Lateral raise 10 lb × 12 ease → 10 lb × 20 hold.
+    - Incline hammer 65 ease → 75 × 10 hold.
+    - Lat pulldown after 62 days 75 → 80, seated row 55 → 60.
+    - Holds target last + 2.
+    - Machine cold starts on 5-lb rungs.
+  - **Review.** Four reviewers plus one skeptic, 5 agents in all.
+    - The one MAJOR finding was refuted as intended behaviour: a first-set failure followed by an in-session drop holds at the top weight. A test now pins it.
+    - 28 MINOR findings, after de-duplication, were fixed:
+      - The two-rung conditions.
+      - The bodyweight min-RIR rule.
+      - `Int.max` overflow.
+      - Same-load reduced-day adoption.
+      - The deload early release, exact boundary test and linear scan.
+      - Removal of the dead `day == today` branch.
+      - Engine-rule start load and the wall-clock anchor.
+      - The in-session quarter clamp.
+      - Off-grid fixtures moved to 47.5 / 52.5 lb, because 45 and 55 are now on the grid (BaselineIntegrity, LoadGrid neighbour, watch ladder, catalog grid test).
+      - Stale comments and docs (FR-TR6 / system-logic swap rule, FR-T2 cell, `TodayPrescription.targetReps` contract, LoadGrid examples, watch preview fixture rest 90).
+  - **Tests.**
+    - `RedeTrainingDecision` 635/635.
+    - New `EngineAuditBatch2Tests` (16). 7 of the original 8 fail on the pre-fix engine.
+    - `NextSetEngineTests` +1, `BandEngineTests` +1, `SessionExerciseEditPlannerTests` +1 with rotation, beginner and assisted cases.
+    - Intended expectation updates: golden rests 60 → 90 (rest only, checked field by field), the rest lock, the selectorized step and neighbour rung, S1b hold 8 → 7, and the assisted warm-up ladder [85, 70].
+    - App-hosted `RedeTests` 188/189 (+1 swap comeback test; the swap tests inject `now`); the only failure is the pre-existing local StoreKit catalog test. The `RedeWatch` scheme builds (preview fixture rest 90).
+  - **Not in this batch** (from batch 1): muscle-level weekly oscillation, label/arrow mismatch, barbell below the empty bar, cross-slot rep floor. The 1.12.1 What's New line still says "45 lb", which is now on the grid; it is reworded at the next release bump.
+  - **Specs.**
+    - System logic: §6.0 rule 4, the §6.0.1 progression paragraph, baseline, off-grid example, LoadGrid sentence, rest note, §6.0.2 next-set clamp, S2 ad-hoc and swap start load.
+    - PRD: FR-T2, FR-TR6, FR-TR14.
+    - The exercise content system grid table and history note.
+
 - **Release 1.12.1 build 43**: `MARKETING_VERSION` 1.12.0 → 1.12.1 and `CURRENT_PROJECT_VERSION` 42 → 43 in all 6 build configurations (App, Widget, Watch × Debug/Release). The owner reported the pull-day warm-up problem today, so this build follows straight after 42 and needs no ask (standing "package without asking").
   - **Content.** Main at 89b7a69: everything in 42 plus the warm-up fix (#771).
   - **Bundled What's New.** All three version gates move to 1.12.1. Neither 1.11.0 nor 1.12.0 reached the store, so the narrative stays the full 1.12.0 list with the warm-up line rewritten: machine lifts also start with light warm-up sets; the card before training matches today's muscle groups. `RedeStringsTests` asserts the new list and that 1.12.0 now returns nothing. Test results: `RedeL10n` 165/165; `AppUpdateRuntimeTests` 13/13, including the version gate.

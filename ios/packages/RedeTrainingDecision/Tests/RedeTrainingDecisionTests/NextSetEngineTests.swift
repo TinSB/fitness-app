@@ -50,6 +50,28 @@ final class NextSetEngineTests: XCTestCase {
         XCTAssertEqual(rec.reason, .belowRepFloor)
     }
 
+    // 轻重量不砍一大块（2026-10-20 引擎审查第二批）：选重机改 5 lb 一格后，10 lb 侧平举最后一组到力竭会被
+    // 建议降到 5 lb（−50%）。非疼痛原因降一档超过当前重量的四分之一就保持；疼痛照旧降。
+    func testLightLoadIsNotCutByMoreThanAQuarterUnlessPain() throws {
+        let lbPerKg = 2.204_622_621_8
+        let step = 5 / lbPerKg
+        func plan(_ lb: Double) -> ExerciseSetPlan {
+            ExerciseSetPlan(exerciseId: "machine-lateral-raise", restSeconds: 90, repLowerBound: 12, repUpperBound: 20,
+                            stepKg: step, loadType: "external",
+                            sets: (1...4).map { PlannedSet(index: $0, targetWeightKg: lb / lbPerKg, targetReps: 20, targetRir: 2) })
+        }
+        let ten = try XCTUnwrap(NextSetEngine.recommend(plan: plan(10), completed: [completed(10 / lbPerKg, 19, rir: 0)]))
+        XCTAssertEqual(ten.targetWeightKg * lbPerKg, 10, accuracy: 0.01, "10 → 5 是 −50%：保持")
+        XCTAssertEqual(ten.reason, .onPlan)
+        let twenty = try XCTUnwrap(NextSetEngine.recommend(plan: plan(20), completed: [completed(20 / lbPerKg, 19, rir: 0)]))
+        XCTAssertEqual(twenty.targetWeightKg * lbPerKg, 15, accuracy: 0.01, "20 → 15 是 −25%：照常降")
+        XCTAssertEqual(twenty.reason, .lastSetNearFailure)
+        let pain = try XCTUnwrap(NextSetEngine.recommend(plan: plan(10),
+                                                         completed: [completed(10 / lbPerKg, 19, rir: 2, pain: true)]))
+        XCTAssertEqual(pain.targetWeightKg * lbPerKg, 5, accuracy: 0.01, "疼痛照旧降")
+        XCTAssertEqual(pain.reason, .painReported)
+    }
+
     // 疼痛信号：安全 flag + 减重（安全优先级最高）
     func testPainReportedFlagsAndEases() throws {
         let rec = try XCTUnwrap(NextSetEngine.recommend(plan: exercisePlan, completed: [completed(60, 6, rir: 0, pain: true)]))

@@ -145,17 +145,17 @@ final class CatalogContractTests: XCTestCase {
         }
     }
 
-    /// 磅用户 · 选重机更粗（宁大勿小，裸配重栈整片）：push-a 含 machine-chest-press
-    /// （selectorized accessory 槽），其磅值必须落 10 的整数倍（不只是 5）。
-    func testLbSelectorizedSnapsToRealizable10lbGrid() throws {
+    /// 磅用户 · 选重机 5 lb 一格（2026-10-20 第二批，原为 10）：push-a 含 machine-chest-press
+    ///（selectorized accessory 槽），其磅值必须落 5 的整数倍。
+    func testLbSelectorizedSnapsToRealizable5lbGrid() throws {
         let appDataJSON = #"{"schemaVersion": 8, "userProfile": {"unitSystem": "lb"}, "programTemplate": {"splitType": "push-pull-legs", "daysPerWeek": 6}}"#
         let input = try TestSupport.makeInput(appDataJSON: appDataJSON, todayISO: "2026-06-13")
         let plan = TodayPrescriptionEngine.plan(input: input, verdict: TodayVerdictEngine.evaluate(input))
         let machine = try XCTUnwrap(plan?.exercises.first { $0.exerciseId == "machine-chest-press" })
         let lb = (machine.targetWeightKg * 2.204_622_621_8 * 2).rounded() / 2
-        XCTAssertEqual(lb.truncatingRemainder(dividingBy: 10), 0, accuracy: 0.01,
-                       "选重机磅用户处方 \(lb)lb 不在 10lb 真实格子上")
-        // 起步 55kg×先验1.0=55kg → 121.3lb → 吸附 120lb（10 倍数）
+        XCTAssertEqual(lb.truncatingRemainder(dividingBy: 5), 0, accuracy: 0.01,
+                       "选重机磅用户处方 \(lb)lb 不在 5lb 真实格子上")
+        // 起步 55kg×先验1.0=55kg → 121.3lb → 吸附 120lb（5 的倍数里最近的）
         XCTAssertEqual(lb, 120, accuracy: 0.01)
     }
 
@@ -173,11 +173,12 @@ final class CatalogContractTests: XCTestCase {
         XCTAssertEqual(plan?.exercises.first { $0.exerciseId == "lateral-raise" }?.progressionStepKg, 2.5)
     }
 
-    /// 选重机比自由重量粗一档（宁大勿小：裸配重栈整片）。
-    func testSelectorizedStepIsCoarserThanFreeWeight() {
+    /// 选重机：kg 比自由重量粗一档（5 vs 2.5）；lb 自 2026-10-20 引擎审查第二批起与自由重量同为 5 lb
+    ///（owner 的器械都是 5 lb 一格，10 lb 一档在轻器械上是 +20%～+100%）。
+    func testSelectorizedStepIsCoarserThanFreeWeightInKgAndFiveLbInLb() {
         XCTAssertEqual(LoadGrid.stepKg(equipment: "selectorized", unit: .kg), 5)
         XCTAssertEqual(LoadGrid.stepKg(equipment: "dumbbell", unit: .kg), 2.5)
-        XCTAssertEqual(LoadGrid.stepKg(equipment: "selectorized", unit: .lb), 10 / 2.204_622_621_8, accuracy: 0.001)
+        XCTAssertEqual(LoadGrid.stepKg(equipment: "selectorized", unit: .lb), 5 / 2.204_622_621_8, accuracy: 0.001)
         XCTAssertEqual(LoadGrid.stepKg(equipment: "barbell", unit: .lb), 5 / 2.204_622_621_8, accuracy: 0.001)
     }
 

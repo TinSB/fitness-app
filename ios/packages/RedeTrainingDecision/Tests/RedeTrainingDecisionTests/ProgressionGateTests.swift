@@ -442,7 +442,7 @@ final class ProgressionGateTests: XCTestCase {
         ])
 
         XCTAssertEqual(result.targetWeightKg, 102.5)
-        XCTAssertEqual(result.targetReps, 8)
+        XCTAssertEqual(result.targetReps, 7, "保持时目标 = 上次最好 5 次 +2（2026-10-20 第二批；以前直接要上限 8）")
         XCTAssertEqual(result.change, .hold)
         XCTAssertEqual(result.reason, .holdProgressing)
     }
