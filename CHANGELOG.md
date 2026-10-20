@@ -4,6 +4,17 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 ## 2026-10-20
 
+- **Release 1.12.1 build 43**: `MARKETING_VERSION` 1.12.0 → 1.12.1 and `CURRENT_PROJECT_VERSION` 42 → 43 in all 6 build configurations (App, Widget, Watch × Debug/Release). The owner reported the pull-day warm-up problem today, so this build follows straight after 42 and needs no ask (standing "package without asking").
+  - **Content.** Main at 89b7a69: everything in 42 plus the warm-up fix (#771).
+  - **Bundled What's New.** All three version gates move to 1.12.1. Neither 1.11.0 nor 1.12.0 reached the store, so the narrative stays the full 1.12.0 list with the warm-up line rewritten: machine lifts also start with light warm-up sets; the card before training matches today's muscle groups. `RedeStringsTests` asserts the new list and that 1.12.0 now returns nothing. Test results: `RedeL10n` 165/165; `AppUpdateRuntimeTests` 13/13, including the version gate.
+  - **Archive and upload.** `Archives/2026-10-20/Rede 1.12.1 (43).xcarchive`, archived from `release/1.12.1-build-43` with the Admin API key (`ARCHIVE SUCCEEDED`). Uploaded with the same key at 17:14 (`Upload succeeded`, first attempt).
+  - **Pre-upload checklist.** All passed:
+    - `ApplicationProperties` 1.12.1 / 43 / `com.tinsab.rede`; app, widget and watch are all 1.12.1 (43).
+    - `ITSAppUsesNonExemptEncryption=false` in all three; three privacy manifests pass `plutil -lint`; no `RedeSubscription*` keys.
+    - The watch binary is `arm64 arm64_32`.
+    - The new warm-up copy (上肢热身, 然后第一个动作先做热身组, Upper-body warm-up) and the new What's New line are in the binary.
+  - **Build status.** `altool --build-status` (delivery b983a7a2…) reports `VALID`, `APP_STORE_ELIGIBLE`, non-exempt encryption false. Next upload needs build ≥ 44.
+
 - **Warm-up by training goal and body part (owner feedback 2026-10-20)**: the owner's pull A day opened with lat pulldown. The only warm-up offered was the general card (jumping jacks, bodyweight squats); there were no light pulldown sets. Two root causes:
   - **No specific warm-up on machines.** The non-barbell floor in `WarmupLadderEngine.externalLadder` was the catalog first-time start weight (lat pulldown ≈120 lb). The owner's work weight that day was 75 lb, below that floor, so the engine judged the lift "already at the lowest rung" and returned no steps. The floor is now the lightest enterable rung (`LoadGrid.snapKg(0, …)`); barbell / smith still start at the empty bar. `generate` no longer takes `startWeightKg`.
   - **General card ignored the day.** It always listed the same full-body moves.

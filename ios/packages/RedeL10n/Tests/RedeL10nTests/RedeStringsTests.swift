@@ -70,9 +70,9 @@ final class RedeStringsTests: XCTestCase {
             ("appUpdateViewUpdate", s.appUpdateViewUpdate),
             ("appUpdateLater", s.appUpdateLater),
             ("appUpdateContinue", s.appUpdateContinue),
-            ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.12.0", build: "42")),
-            ("appUpdateHeroLine", s.appUpdateHeroLine(version: "1.12.0")),
-            ("appUpdateHighlights", s.appUpdateHighlights(version: "1.12.0").joined(separator: " ")),
+            ("appUpdateVersionValue", s.appUpdateVersionValue(marketingVersion: "1.12.1", build: "43")),
+            ("appUpdateHeroLine", s.appUpdateHeroLine(version: "1.12.1")),
+            ("appUpdateHighlights", s.appUpdateHighlights(version: "1.12.1").joined(separator: " ")),
             // FR-SE9 / FR-SUB2：订阅管理与诚实状态
             ("settingsSubscriptionSection", s.settingsSubscriptionSection),
             ("settingsSubscriptionFreeCore", s.settingsSubscriptionFreeCore),
@@ -320,10 +320,11 @@ final class RedeStringsTests: XCTestCase {
         // 2026-08-08 archive 1.10.0：内置叙事切到 1.10.0（云端同步；只留当前发布版本，YAGNI）。
         // 2026-08-20 archive 1.10.2：内置叙事切到 1.11.0（Apple Watch App；只留当前发布版本，YAGNI）。
         // 2026-10-20 archive 1.12.0（build 42）：内置叙事切到 1.12.0（1.11.0 从未上架：手表整套 + 之后几批）。
-        XCTAssertEqual(zh.appUpdateHeroLine(version: "1.12.0"), "手表上就能练完一场")
-        XCTAssertEqual(en.appUpdateHeroLine(version: "1.12.0"), "Train a full session from your wrist")
+        // 2026-10-20 archive 1.12.1（build 43）：切到 1.12.1，热身那一条换成按部位 / 器械主项热身（#771）。
+        XCTAssertEqual(zh.appUpdateHeroLine(version: "1.12.1"), "手表上就能练完一场")
+        XCTAssertEqual(en.appUpdateHeroLine(version: "1.12.1"), "Train a full session from your wrist")
         XCTAssertEqual(
-            zh.appUpdateHighlights(version: "1.12.0"),
+            zh.appUpdateHighlights(version: "1.12.1"),
             [
                 "新增 Apple Watch App：手表上看这组多重、几次，打勾记组；点完成立刻开始休息倒计时，手机放包里也能练完整场",
                 "手表上双指捏两下（双击手势）就能完成这一组、跳过休息；也能改重量、次数、RIR，暂停或跳过本组",
@@ -331,7 +332,7 @@ final class RedeStringsTests: XCTestCase {
                 "手机上点「开始训练」，手表自动开始记录，不用再自己打开体能训练",
                 "轻练日、减载周之后，重量回到原来的水平接着加；停练回来按每个动作先减量再加回，隔两三周练一次也不会每次再减一成",
                 "器械上 45 lb 这类不在整格上的重量：保持就是它本身，加重只上一格",
-                "热身按部位来：同一部位一场只完整热一次，开练前有一张全身热身卡",
+                "热身按部位来：高位下拉、器械推胸这类器械主项也先做轻重量热身组；开练前的热身卡跟着今天练的部位；同一部位一场只完整热一次",
                 "记错的组可以改：休息时点「上一组」就能改重量、次数、RIR，也能撤销；最后一组在小结里改",
                 "训练不会丢：被系统关掉、练过零点、忘了保存都会先问你；超过 36 小时没练完的会存成一场「提前结束」的训练，不再删除",
                 "每周练 5 天的计划，不会在第 4 天被要求休息；训练中屏幕不再自动锁屏",
@@ -341,7 +342,7 @@ final class RedeStringsTests: XCTestCase {
             ]
         )
         XCTAssertEqual(
-            en.appUpdateHighlights(version: "1.12.0"),
+            en.appUpdateHighlights(version: "1.12.1"),
             [
                 "Apple Watch app: see the set's weight and reps and log it from your wrist. Rest starts the moment you tap done, so your phone can stay in the bag",
                 "Pinch twice on the watch (Double Tap) to finish the set or skip rest; adjust weight, reps, and RIR, or pause and skip a set",
@@ -349,7 +350,7 @@ final class RedeStringsTests: XCTestCase {
                 "Tap Start Training on your phone and the watch starts recording on its own",
                 "After a light day or a deload week, weights pick up where you left off; after time off each lift eases back on its own, and training every two or three weeks no longer cuts the weight each time",
                 "Machine weights between steps, like 45 lb, hold as is and go up one step at a time",
-                "Warm-ups by muscle group: each group gets one full warm-up per session, plus a whole-body warm-up card before you start",
+                "Warm-ups that fit the day: machine lifts like the lat pulldown also start with light warm-up sets, the warm-up card before you start matches today's muscle groups, and each group gets one full warm-up per session",
                 "Fix a logged set: during rest, tap the last set to change weight, reps, or RIR, or undo it; fix the final set from the summary",
                 "Sessions don't get lost: closing on the summary, training past midnight, or forgetting to save now asks first; a session left unfinished for 36 hours is saved as ended early instead of deleted",
                 "A five-day plan is no longer told to rest on day four; the screen stays on while you train",
@@ -359,6 +360,7 @@ final class RedeStringsTests: XCTestCase {
             ]
         )
         // 旧版本叙事已按 YAGNI 移除
+        XCTAssertTrue(zh.appUpdateHighlights(version: "1.12.0").isEmpty)
         XCTAssertTrue(zh.appUpdateHighlights(version: "1.11.0").isEmpty)
         XCTAssertTrue(zh.appUpdateHighlights(version: "1.10.2").isEmpty)
         XCTAssertTrue(zh.appUpdateHighlights(version: "1.10.1").isEmpty)
