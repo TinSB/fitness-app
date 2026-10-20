@@ -117,7 +117,11 @@ public enum TodayVerdictEngine {
         if isSustainedLoad(trainedDays: trainedDays, today: today, planned: planned) {
             return TodayVerdict(call: .deload, reason: .sustainedLoadDeload(days: sustainedWindowDays), signals: signals)
         }
-        if consecutive >= consecutiveRestDays {
+        // 连练几天必休：按计划的每周天数，最少 3 天（2026-10-20 引擎审查，owner 拍板）。每周 5 天的计划
+        // 连练第 4 天以前会被挡成休息、一周练不满；不知道计划时照旧按 3 天（不用 6 天兜底值——那会放得太宽）。
+        let consecutiveLimit = max(consecutiveRestDays,
+                                   input.program.daysPerWeek ?? input.profile.weeklyTrainingDays ?? consecutiveRestDays)
+        if consecutive >= consecutiveLimit {
             return TodayVerdict(call: .rest, reason: .consecutiveDaysNeedRest(days: consecutive), signals: signals)
         }
         if trainedThisWeek >= planned {

@@ -397,6 +397,34 @@ final class TrainSessionDraftTests: XCTestCase {
         ))
     }
 
+    // 过了恢复窗口、记过组的草稿：按「提前结束」收尾成可以存的一场，不删（owner 2026-10-20「数据怎么能删呢」）。
+    // owner 真实草稿的形状：练了两组、中途点过「结束训练？」又选了继续、还在训练中。
+    func testExpiredDraftWithLoggedSetsEndsEarlyInsteadOfBeingThrownAway() throws {
+        var flow = try makeFlow()
+        flow.logSet(obs(31.75, 6, rir: 3))
+        flow.requestFinish()
+        flow.keepTraining()
+        flow.restFinished()
+        flow.logSet(obs(31.75, 6, rir: 3))
+        flow.restFinished()
+        let end = Date(timeIntervalSince1970: 1_000)
+        let draft = TrainSessionDraft(dateISO: "2026-10-18", startedAt: Date(timeIntervalSince1970: 0),
+                                      prescription: flow.prescription, events: flow.events)
+        let ended = try XCTUnwrap(draft.endedEarly(at: end))
+        let restored = try XCTUnwrap(ended.restoreFlow())
+        XCTAssertEqual(restored.phase, .summary)
+        XCTAssertEqual(restored.endReason, .other)
+        XCTAssertTrue(restored.canBeSaved)
+        XCTAssertEqual(restored.observationsByExercise.values.joined().count, 2, "两组都在")
+        XCTAssertEqual(ended.endedAt, end, "结束时刻用调用方给的最后一组时刻")
+    }
+
+    func testDraftWithNothingLoggedHasNothingToSave() throws {
+        let draft = TrainSessionDraft(dateISO: "2026-10-18", startedAt: Date(timeIntervalSince1970: 0),
+                                      prescription: try makeFlow().prescription, events: [])
+        XCTAssertNil(draft.endedEarly(at: Date(timeIntervalSince1970: 10)), "只有计划、没有数据：不必存")
+    }
+
     // 跨天作废
     func testDraftIsOnlyRestorableSameDay() throws {
         let draft = TrainSessionDraft(

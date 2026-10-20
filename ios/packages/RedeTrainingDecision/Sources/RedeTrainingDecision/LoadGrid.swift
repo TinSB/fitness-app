@@ -127,6 +127,30 @@ public enum LoadGrid {
         return up ? snapped + step : max(step, snapped - step)
     }
 
+    /// 这个重量是不是用户在当前单位下**真能配出来**的：2.5 lb / 1.25 kg 的整倍数（2026-10-20 引擎审查）。
+    /// 真机上选重机常有 5 lb 微调片、杠铃有 1.25 kg 小片，用户手输的 45 lb / 61.25 kg 都是真重量；
+    /// 单位切换留下的换算值（30 kg = 66.1 lb）不是——那种照旧吸附到梯子。
+    public static func isEnterableLoad(_ weightKg: Double, unit: LoadUnit) -> Bool {
+        let (value, increment) = unit == .lb ? (weightKg * lbPerKg, 2.5) : (weightKg, 1.25)
+        let units = value / increment
+        return value > 0 && abs(units - units.rounded()) < 1e-3
+    }
+
+    /// 处方用的「上一档 / 下一档」（2026-10-20 引擎审查第一批）：上次用的是真能配出的离格重量
+    ///（45 lb 落在 10 lb 一格的选重机上）→ 取它**紧邻**的那一格（50 / 40），不先吸到 50 再走一整档跳到 60；
+    /// 换算残值照旧先吸附再走一档。落在格上的重量两者完全一致——既有处方零变化。
+    public static func progressionRungKg(_ weightKg: Double, equipment: String, unit: LoadUnit, up: Bool) -> Double {
+        isEnterableLoad(weightKg, unit: unit)
+            ? neighbourRungKg(weightKg, equipment: equipment, unit: unit, up: up)
+            : nextRungKg(weightKg, equipment: equipment, unit: unit, up: up)
+    }
+
+    /// 处方用的「保持」：真能配出的重量原样保留（上次 45 lb 就还是 45 lb，不悄悄吸到 50）；
+    /// 换算残值吸附到最近一格。
+    public static func holdKg(_ weightKg: Double, equipment: String, unit: LoadUnit) -> Double {
+        isEnterableLoad(weightKg, unit: unit) ? weightKg : snapKg(weightKg, equipment: equipment, unit: unit)
+    }
+
     /// 当前重量**紧邻**的上/下一格（严格大于 / 小于它的那一格）。快改面板的轻重一档专用。
     ///
     /// 与 `nextRungKg` 的分工：那个是**进阶一档**（先落格再走一整档），是引擎的进阶/回退

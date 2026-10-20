@@ -404,6 +404,45 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         XCTAssertEqual(store.sessionEndedAt, started.addingTimeInterval(3600))
     }
 
+    func testUnfinishedDraftPastTheWindowIsSavedAsAnEarlyEndNotDeleted() async {
+        // owner 2026-10-20「数据怎么能删呢」：练到一半（两组）就没再打开，过了 36 小时。
+        // 以前下次启动直接删文件；现在按「提前结束」存成一场，结束时刻取最后一组。
+        let started = Date().addingTimeInterval(-40 * 3600)
+        let lastSet = started.addingTimeInterval(120)
+        let iso = ISO8601DateFormatter()
+        let events: [TrainFlowEvent] = [
+            .logSet(CompletedSetObservation(weightKg: 31.75, reps: 6, rir: 3,
+                                            completedAt: iso.string(from: started.addingTimeInterval(10)))),
+            .restFinished,
+            .logSet(CompletedSetObservation(weightKg: 31.75, reps: 6, rir: 3, completedAt: iso.string(from: lastSet))),
+            .restFinished,
+        ]
+        let draftStore = FakeDraftStore()
+        draftStore.stored = freshDraft(startedAt: started, events: events)
+        let store = SessionStore(draftStore: draftStore)
+        let saved = expectation(description: "存成一场")
+        store.persistFinishedSession = { saved.fulfill(); return true }
+
+        store.checkForRestorableDraft()
+
+        await fulfillment(of: [saved], timeout: 2)
+        XCTAssertEqual(store.flow?.phase, .summary)
+        XCTAssertEqual(store.flow?.endReason, .other)
+        XCTAssertEqual(completedCount(store), 2, "两组都在")
+        XCTAssertEqual(store.sessionEndedAt, iso.date(from: iso.string(from: lastSet)))
+        XCTAssertNotNil(draftStore.stored, "存好之前草稿文件不动")
+    }
+
+    func testEmptyDraftPastTheWindowIsStillCleared() {
+        // 一组没记的过期草稿只有计划、没有数据：照旧清掉，不弹也不存。
+        let draftStore = FakeDraftStore()
+        draftStore.stored = freshDraft(startedAt: Date().addingTimeInterval(-40 * 3600), events: [])
+        let store = SessionStore(draftStore: draftStore)
+        store.checkForRestorableDraft()
+        XCTAssertNil(draftStore.stored)
+        XCTAssertNil(store.flow)
+    }
+
     func testYoungCrossDayDraftWithoutSetsWaitsForLateWatchSets() {
         // 整场在表上练、手机侧一组没记：第二天打开手机时草稿里还没有组。此前先被当空草稿删掉，
         // 随后送到的表上组无处可去。

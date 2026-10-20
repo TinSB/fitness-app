@@ -72,6 +72,22 @@ final class TodayVerdictEngineTests: XCTestCase {
         XCTAssertEqual(result.reason, .consecutiveDaysNeedRest(days: 3))
     }
 
+    // 连练必休按计划天数（2026-10-20 owner 拍板）：每周 5 天的计划，连练 4 天后第 5 天照常练、
+    // 连练 5 天后才休息；每周 3 天的计划仍是 3 天。
+    func testConsecutiveRestFollowsThePlannedDaysPerWeek() throws {
+        let fiveDay = #"{"daysPerWeek": 5}"#
+        let fourDone = try verdict(historyDates: ["2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04"],
+                                   today: "2026-06-05", program: fiveDay)
+        XCTAssertNotEqual(fourDone.call, .rest, "5 天计划的第 5 天不能被挡成休息")
+        let fiveDone = try verdict(historyDates: ["2026-06-01", "2026-06-02", "2026-06-03", "2026-06-04", "2026-06-05"],
+                                   today: "2026-06-06", program: fiveDay)
+        XCTAssertEqual(fiveDone.call, .rest)
+        XCTAssertEqual(fiveDone.reason, .consecutiveDaysNeedRest(days: 5))
+        let threeDay = try verdict(historyDates: ["2026-06-06", "2026-06-07", "2026-06-08"],
+                                   today: "2026-06-09", program: #"{"daysPerWeek": 3}"#)
+        XCTAssertEqual(threeDay.call, .rest)
+    }
+
     // 瀑布 5：21 天高频无间断 → 减载
     func testDeloadAfterSustainedLoadWithoutBreak() throws {
         // 2026-05-20 起每天练到 06-08（20 天），今天 06-09 未练：
