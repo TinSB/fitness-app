@@ -1,6 +1,8 @@
 import Foundation
 import HealthKit
+import os
 import WatchKit
+import RedeWatchLink
 
 // HKWorkoutSession 守护（切片 6，2026-08-15）。
 //
@@ -14,6 +16,10 @@ import WatchKit
 //
 // 真源纪律照旧：**开始与结束由手机的训练状态驱动**，表上没有「开始训练」按钮。
 // 表只是看见手机说「在练」就把 session 拉起来，看见「不在练」就收掉。
+//
+// 怎么收（Master v3.10，owner 2026-10-20）：**练过就写进健康，没练才丢**——手机说练完了写；说放弃丢；
+// 没等到手机说（60 分钟没消息 / 拉起后没确认 / 系统把会话停了）记过组就写、结束在最后一组，一组没有才丢。
+// 规则在 RedeWatchLink.WatchWorkoutEnding（纯函数、有单测），这里只照它执行。
 @MainActor
 final class WorkoutSessionKeeper: NSObject, ObservableObject {
 
@@ -55,8 +61,18 @@ final class WorkoutSessionKeeper: NSObject, ObservableObject {
     /// end() 一落地 isRunning=false、此后无人再拉起——整场剩下的训练手腕一放下就被挂起。
     /// 现在 sync 只记「想要的状态」，一个串行任务把实际状态追平到期望态为止。
     private var desiredActive = false
-    private var desiredDiscard = false
+    /// 收的时候手机怎么说这一场的结局（决定写不写、结束在哪）。
+    private var desiredOutcome: WatchWorkoutEnding.Outcome = .completed
     private var reconciling = false
+    /// 这一场最后一组的时刻（手机报来的与表上记的取晚的那个，由 sync 带进来）。没等到手机时据此决定写不写、写到哪。
+    private var lastSetAt: Date?
+    /// 系统把会话停了（多半是开了别的体能训练）：这一场剩下的时间不再自己拉起，免得跟那个 app 抢（v3.10）。
+    /// 手机说这一场结束了、或手机为新的一场来拉起时清掉。
+    private var yieldedThisTraining = false
+    /// 系统通知过「训练中崩溃了，那一场还留着」（v3.10）：下一次起会话先把它接回来，不另起一场。
+    private var recoverPending = false
+    /// 收尾的结局与失败原因写进系统日志：写健康失败时表上不弹任何东西，真机上只有这里查得到原因。
+    private let log = Logger(subsystem: "com.tinsab.rede", category: "WatchWorkout")
 
     override init() {
         super.init()
@@ -95,12 +111,14 @@ final class WorkoutSessionKeeper: NSObject, ObservableObject {
 
     /// 跟随手机的训练状态。**幂等**：重复调同一状态不做任何事——
     /// 处方每次推送都会调到这里（手机每记一组就推一次），不能每次都重启 session。
-    /// - discardOnEnd: 结束时丢弃而不是写进健康——放弃的训练、以及手机停止推送后表侧
-    ///   自己止损收掉的那段（审查 M3：那不是一场训练，不该出现在健康里）。
+    /// - outcome: 收的时候按什么结局收（手机说练完了 / 放弃了 / 没等到手机说，见 WatchWorkoutEnding）。
+    /// - lastSetAt: 这一场最后一组的时刻（v3.10）。
     /// - phoneSentAt: 这份处方在手机上发出的时刻（v3.8）。只在「被手机拉起、还没确认」期间用来
     ///   分辨新旧，见下方注释；其余时候不看。
-    func sync(trainingActive: Bool, discardOnEnd: Bool = false, phoneSentAt: Date? = nil) {
+    func sync(trainingActive: Bool, outcome: WatchWorkoutEnding.Outcome, lastSetAt: Date?, phoneSentAt: Date? = nil) {
         guard HKHealthStore.isHealthDataAvailable() else { return }
+        // 先记最后一组：拉起后还没确认时下面会提前返回，止损到点要用它。
+        self.lastSetAt = lastSetAt
         if let launchedAt = phoneLaunchAt {
             // 被手机拉起之后、手机确认之前（v3.8）：
             // · 「在练」一律收下——它只会让会话继续跑，收错了也没有代价。
@@ -110,7 +128,7 @@ final class WorkoutSessionKeeper: NSObject, ObservableObject {
             //   比拉起更新的「不在练」，才是这一场真的结束了（含：表 app 直到练完才被看到的情况——
             //   那时 applicationContext 只剩最后那份「练完了」，必须认它，否则整场被止损丢弃）。
             // 两台配对设备的时钟差在秒级以内。会判错的情形是「拉起后几秒内就放弃」，或者拉起请求
-            // 晚到、放弃先被处理：那一场没人确认，走 60 分钟止损并丢弃，不写健康。
+            // 晚到、放弃先被处理：那一场没人确认，走 60 分钟止损；表上一组都没记，照规则 10 丢弃、不写健康。
             // 例外：如果这 60 分钟里用户又开了一场真训练，新处方会去确认这个还在跑的会话，
             // 健康里那一条的开始时间就被提前到误触的那一刻。要触发它，得在几秒内完成放弃，
             // 而放弃要先开菜单再确认，几秒内很难做完，所以不为它重写调和循环
@@ -120,11 +138,15 @@ final class WorkoutSessionKeeper: NSObject, ObservableObject {
             cancelLaunchStopLoss()
         }
         desiredActive = trainingActive
-        if !trainingActive { desiredDiscard = discardOnEnd }
+        if !trainingActive {
+            desiredOutcome = outcome
+            yieldedThisTraining = false   // 这一场结束了：下一场照常拉起
+        }
         reconcile()
     }
 
-    /// 手机用 `HKHealthStore.startWatchApp` 把表 app 拉起来时走这里（v3.8）。
+    /// 手机用 `HKHealthStore.startWatchApp` 把表 app 拉起来时走这里（v3.8）；训练中崩溃后被系统重新拉起
+    /// 也走这里（v3.10，见 recoverAfterCrash）。
     ///
     /// 与 sync 的区别：此刻**这一场的处方可能一份都还没到**，表上也可能还没有任何视图——
     /// 期望态只能由「手机刚刚亲口说要开练」这件事本身建立。这一场的处方随后会到，
@@ -136,16 +158,28 @@ final class WorkoutSessionKeeper: NSObject, ObservableObject {
         guard HKHealthStore.isHealthDataAvailable() else { return }
         // 已经在按手机的话开练（表 app 本来就开着、处方比拉起先到）：这次拉起是多余的，
         // 不再加任何状态——尤其不能重设 phoneLaunchAt，否则这一场的「练完了」会被误判成旧的。
-        guard !desiredActive else { return }
+        // 例外：上一场被系统停掉、让出来了（v3.10）。那一场的「练完了」表上可能没收到（applicationContext
+        // 只留最新一份，被这一场的「在练」盖掉），期望态还停在「在练」；手机拉起只会发生在新的一场开始时，
+        // 这时照常接手，不然新的一场整场没有会话（审查 2026-10-20）。
+        guard !desiredActive || yieldedThisTraining else { return }
         guard workoutWriteAuthorized == true else {
             lastError = "手机请求开练，但表上还没给「健身记录」写入权限"
             return
         }
         phoneLaunchAt = Date()
         desiredActive = true
-        desiredDiscard = false
+        desiredOutcome = .completed
+        yieldedThisTraining = false   // 手机为新的一场来拉起
         armLaunchStopLoss()
         reconcile()
+    }
+
+    /// 训练中崩溃后被系统重新拉起（v3.10）：当作一次「手机拉起」——下一次起会话先把系统留着的那一场接回来
+    /// （start），再等手机下一份处方确认；60 分钟没确认按规则 10 收（记过组写到最后一组，没练才丢）。
+    /// 崩溃重启时「系统叫我们接回」和「手机说在练」谁先到说不准，两条都走同一条串行起会话的路，只会接回同一场。
+    func recoverAfterCrash() {
+        recoverPending = true
+        phoneRequestedWorkout()
     }
 
     /// 被手机拉起的时刻（表的时钟）；手机用一份「在练」或一份比它新的「不在练」确认后清空。
@@ -161,7 +195,9 @@ final class WorkoutSessionKeeper: NSObject, ObservableObject {
         reconciling = true
         Task {
             while desiredActive != isRunning {
-                if desiredActive { await start() } else { await end(discard: desiredDiscard) }
+                // 系统停过这一场的会话（v3.10）：已经让出来了，这一场不再自己拉起。
+                if desiredActive, yieldedThisTraining { break }
+                if desiredActive { await start() } else { await end(outcome: desiredOutcome) }
                 // start 失败（权限 / 系统拒绝）isRunning 仍 false 而期望 true：不能死循环，跳出。
                 if desiredActive, !isRunning { break }
             }
@@ -171,7 +207,7 @@ final class WorkoutSessionKeeper: NSObject, ObservableObject {
 
     // MARK: - 被手机拉起之后的止损
 
-    /// 「被手机拉起却一直等不到手机」的止损（v3.8）。
+    /// 「被手机拉起却一直等不到手机」的止损（v3.8；v3.10 起按规则 10 收：记过组写到最后一组，没练才丢）。
     ///
     /// 真实事故形态：手机点开始训练 → 系统拉起表 app 并起会话 → 手机 app 随即被用户划掉
     /// 或崩了，处方一次都没送到。没有这条，表上这一场会无上限地跑，最后把一段几小时的
@@ -187,8 +223,8 @@ final class WorkoutSessionKeeper: NSObject, ObservableObject {
             guard self.phoneLaunchAt != nil else { return }   // 期间手机已确认，归 sync 管
             self.phoneLaunchAt = nil
             self.desiredActive = false
-            self.desiredDiscard = true   // 不确定到底有没有真练 → 一个字都不写健康
-            self.lastError = "手机一直没发来处方，这一场已收掉且未写入健康"
+            self.desiredOutcome = .unknown   // 没等到手机说结局：记过组写到最后一组，没练才丢
+            self.lastError = "手机一直没确认这一场，表上已自己收尾"
             self.reconcile()
         }
     }
@@ -216,6 +252,22 @@ final class WorkoutSessionKeeper: NSObject, ObservableObject {
             lastError = "健康授权失败：\(error.localizedDescription)"
         }
 
+        // 训练中崩溃后的这次启动，系统还替我们留着那一场（v3.10）：接回来接着记，不另起一场。
+        // 只在系统通知过时才去接：这个查询在健康库状态不对时会一直不返回（模拟器实测 2026-10-20），
+        // 平时每次开练都问一句，就可能把开练整个卡住。
+        if recoverPending {
+            recoverPending = false
+            do {
+                if let recovered = try await store.recoverActiveWorkoutSession() {
+                    adopt(recovered)
+                    return
+                }
+            } catch {
+                lastError = "接回训练会话失败：\(error.localizedDescription)"
+                log.error("recover failed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
+
         let config = HKWorkoutConfiguration()
         config.activityType = .traditionalStrengthTraining
         config.locationType = .indoor
@@ -232,39 +284,97 @@ final class WorkoutSessionKeeper: NSObject, ObservableObject {
             let now = Date()
             session.startActivity(with: now)
             try await builder.beginCollection(at: now)
+            // 起到一半被系统停掉了（多半是别的体能训练正在跑，systemStopped 已经收尾）：不把放手了的会话标成在跑。
+            guard self.session === session else { return }
             isRunning = true
             startedAt = now
             lastError = nil
         } catch {
             lastError = "训练会话启动失败：\(error.localizedDescription)"
+            // startActivity 之后才失败的：系统那边的会话已经开了，收掉，不留一个没人管的（审查 2026-10-20）。
+            self.session?.end()
             session = nil
             builder = nil
         }
     }
 
-    private func end(discard: Bool) async {
+    /// 接上系统替我们留着的那一场（崩溃后）：换上新的数据源与代理，按它自己的开始时刻接着记（v3.10）。
+    private func adopt(_ recovered: HKWorkoutSession) {
+        let builder = recovered.associatedWorkoutBuilder()
+        // 数据源随崩溃的进程一起没了才补一个；还在的不换，免得重复采样。
+        if builder.dataSource == nil {
+            builder.dataSource = HKLiveWorkoutDataSource(healthStore: store,
+                                                         workoutConfiguration: recovered.workoutConfiguration)
+        }
+        recovered.delegate = self
+        builder.delegate = self
+        session = recovered
+        self.builder = builder
+        let began = builder.startDate ?? recovered.startDate ?? Date()
+        startedAt = began
+        isRunning = true
+        lastError = nil
+        // 正等手机确认（崩溃重启走的是「手机拉起」那条路）：拉起时刻改用这一场自己的开始——
+        // 这一场开始之后手机发的「不在练」都算数，不能因为表 app 中途重启过就当成旧的。
+        if phoneLaunchAt != nil { phoneLaunchAt = began }
+        // 已经收到的处方按这个时刻重判一次：崩溃到重启之间手机可能已经练完，那份「练完了」
+        // 在接回之前到的时候没有会话可收，不重判就要白等 60 分钟（审查 2026-10-20）。
+        WatchPrescriptionStore.shared.followWorkout()
+    }
+
+    private func end(outcome: WatchWorkoutEnding.Outcome) async {
         guard let session, let builder else { isRunning = false; return }
-        let now = Date()
         session.end()
+        await close(session, builder,
+                    ending: WatchWorkoutEnding.decide(outcome, lastSetAt: lastSetAt, sessionStart: startedAt))
+    }
+
+    /// 收掉这一场：写进健康（结束在给定时刻或此刻）或丢弃，然后清空这一场的状态。
+    private func close(_ session: HKWorkoutSession, _ builder: HKLiveWorkoutBuilder,
+                       ending: WatchWorkoutEnding) async {
+        // 收尾要等健康库。这期间系统报来的「这一场已结束」（我们自己 end() 引起的，或一次停止同时报了
+        // 「出错」和「已结束」两声）看到 builder 已经放手，就不再收第二次。
+        // 会话本身要留到写完：它一释放，健康那边收不到这一场最后的数据，写入一直挂在「保存中」
+        // （模拟器实测，2026-10-20）。
+        self.builder = nil
+        log.info("closing session: \(String(describing: ending), privacy: .public)")
         do {
-            try await builder.endCollection(at: now)
-            if discard {
-                // 放弃的训练 / 手机断联后的止损：不写健康。写了才是数据污染（一条 8 小时的假训练）。
-                builder.discardWorkout()
-            } else {
-                // finishWorkout 才是真正写回健康的那一步。失败只记一行——
+            switch ending {
+            case .save(let endAt):
+                // 结束在最后一组（没等到手机时）或此刻。finishWorkout 才是真正写回健康的那一步；失败只记一行——
                 // 训练数据的真源在手机的 canonical 存储里，健康只是**额外**的一份。
+                try await builder.endCollection(at: endAt ?? Date())
                 _ = try await builder.finishWorkout()
+            case .discard:
+                // 放弃的训练 / 一组都没练：不写健康。写了才是数据污染。
+                try await builder.endCollection(at: Date())
+                builder.discardWorkout()
             }
         } catch {
             lastError = "训练会话收尾失败：\(error.localizedDescription)"
+            log.error("close failed: \(error.localizedDescription, privacy: .public)")
         }
+        // 收尾期间手机已经开了新的一场（系统停的那条路不在调和循环里）：新的那场不动。
+        guard self.session === session else { return }
         self.session = nil
-        self.builder = nil
         isRunning = false
         // 这一场结束，读数就不再属于任何一场。留着会在下一场开始前显示上一场的心率。
         heartRateBpm = nil
         startedAt = nil
+    }
+
+    /// 系统把会话停了、不是我们要停的（v3.10）：多半是开了别的体能训练（另一个 app 起了会话），或会话出错。
+    /// 这一场记过组就把已经采到的写进健康、结束在停的那一刻；没练就丢。之后这一场不再自己拉起——
+    /// 以前 builder 一直没收、采到的全丢，手机下一次推送又重起一场，跟那个 app 抢来抢去。
+    /// stopped：报来停止的那个会话；只认当前这一场的——我们自己收尾引起的「已结束」、刚收完一场马上开了
+    /// 新的一场时旧那场迟到的「已结束」，都不能把当前这一场收掉（收尾一开始 builder 就放手了，见 close）。
+    private func systemStopped(_ stopped: HKWorkoutSession, at date: Date) async {
+        guard let session, session === stopped, let builder else { return }
+        yieldedThisTraining = true
+        // 报的是「出错」或「已停止」时会话未必已经结束：补一刀，不留一个没人管的会话在后台跑。已结束的再 end 无事。
+        session.end()
+        await close(session, builder, ending: WatchWorkoutEnding.decide(.unknown, lastSetAt: lastSetAt,
+                                                                         sessionStart: startedAt, stoppedAt: date))
     }
 }
 
@@ -293,19 +403,21 @@ extension WorkoutSessionKeeper: HKWorkoutSessionDelegate {
                                     didChangeTo toState: HKWorkoutSessionState,
                                     from fromState: HKWorkoutSessionState,
                                     date: Date) {
-        // 系统可能在我们不知情时把 session 结束掉（如用户在别处开了另一场训练）。
-        // 不同步这个状态，isRunning 就会说谎，下一次 sync 也不会重新拉起。
+        // 系统可能在我们不知情时把 session 结束掉（如用户在别处开了另一场训练）：
+        // 已经采到的照规则 10 写进健康（记过组的话），这一场不再抢回来（v3.10）。
+        // 我们自己收尾时也会走到这里：那时 builder 已放手，systemStopped 不做事。
         Task { @MainActor in
             if toState == .ended || toState == .stopped {
-                self.isRunning = false
+                await self.systemStopped(workoutSession, at: date)
             }
         }
     }
 
     nonisolated func workoutSession(_ workoutSession: HKWorkoutSession, didFailWithError error: Error) {
+        let message = error.localizedDescription
         Task { @MainActor in
-            self.lastError = "训练会话中断：\(error.localizedDescription)"
-            self.isRunning = false
+            self.lastError = "训练会话中断：\(message)"
+            await self.systemStopped(workoutSession, at: Date())
         }
     }
 }
@@ -326,5 +438,17 @@ final class WatchAppDelegate: NSObject, WKApplicationDelegate, ObservableObject 
     /// 这一个事实，运动类型由 WorkoutSessionKeeper.start() 固定写死（室内传统力量训练）。
     func handle(_ workoutConfiguration: HKWorkoutConfiguration) {
         Task { @MainActor in WorkoutSessionKeeper.shared.phoneRequestedWorkout() }
+    }
+
+    /// App 一启动就连上手机、开始跟随它的训练状态（v3.10）——不等界面出现。被手机从后台拉起时界面多半
+    /// 还没渲染；以前连接挂在视图上，表一直收不到手机的消息，60 分钟后把整场丢了。截图钩子下不连。
+    func applicationDidFinishLaunching() {
+        guard !WatchPreview.isActive else { return }
+        Task { @MainActor in WatchPrescriptionStore.shared.startFollowingPhone() }
+    }
+
+    /// 训练中崩溃后被系统重新拉起（v3.10）：把系统留着的那一场接回来，见 WorkoutSessionKeeper.recoverAfterCrash。
+    func handleActiveWorkoutRecovery() {
+        Task { @MainActor in WorkoutSessionKeeper.shared.recoverAfterCrash() }
     }
 }

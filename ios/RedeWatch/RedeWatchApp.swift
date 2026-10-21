@@ -38,9 +38,15 @@ struct RedeWatchApp: App {
 
 /// 收到的处方 + 它是什么时候的。分开存是因为**过期判断要在表上做**：
 /// applicationContext 会一直留着，手机三天没开机，表上那份也还在。
+///
+/// **App 级唯一一份**（v3.10）：连手机、跟随手机开训 / 收尾都在这里，不在视图上——被手机从后台拉起时
+/// 视图多半还没出现，以前连接挂在视图的 .task 上，表一直收不到手机的消息，60 分钟后把整场丢了。
 @MainActor
 @Observable
 final class WatchPrescriptionStore {
+    static let shared = WatchPrescriptionStore()
+    private init() {}
+
     private(set) var prescription: WatchPrescription?
     /// 手机发出这份处方的时刻。进行中的训练是否「过期」看它，不看日历日：
     /// 跨午夜的一场训练不能在 00:00 被判成昨天的残影，而手机某天中途放弃、之后没再开过的
@@ -49,9 +55,29 @@ final class WatchPrescriptionStore {
     private(set) var sentAt: Date?
 
     /// 手机停止推送多久算「没人在练了」。训练进行中手机每记一组、每段休息都会推；
-    /// 60 分钟远大于任何合理组间休息。到点：表退回清单，且**表侧自己把 HK 会话收掉并丢弃**——
-    /// 不然手机被划掉后表上的会话会无上限地跑、最后把一段几小时的假训练写进健康（审查 M3）。
-    static let staleLimit: TimeInterval = 60 * 60
+    /// 60 分钟远大于任何合理组间休息。到点：表退回清单，且**表侧自己把 HK 会话收掉**——这一场记过组就写进
+    /// 健康、结束在最后一组，没练才丢（v3.10；以前一律丢，练了一小时的心率和时长全没了）。不收的话手机被划掉后
+    /// 表上的会话会无上限地跑、最后把一段几小时的假训练写进健康（审查 M3）。
+    static let staleLimit: TimeInterval = {
+        #if DEBUG
+        // 验收钩子：-watchStaleLimitSeconds N 把 60 分钟缩成 N 秒，模拟器上不用干等就能走「手机没消息」那条路。
+        // 只在调试构建里有，正式版恒为 60 分钟。
+        let args = ProcessInfo.processInfo.arguments
+        if let i = args.firstIndex(of: "-watchStaleLimitSeconds"), i + 1 < args.count,
+           let seconds = TimeInterval(args[i + 1]), seconds > 0 {
+            return seconds
+        }
+        #endif
+        return 60 * 60
+    }()
+
+    /// 过期判定用的时钟：手机最后一次推送 + staleLimit 到点时翻一次，让视图与会话跟随一起重估——
+    /// 时间流逝不会自己触发任何东西。
+    private(set) var clock = Date()
+    private var staleTimer: Task<Void, Never>?
+
+    /// 表上最后一次记下正式组的时刻（v3.10）。手机够不着、组排着队时，只有表知道这一场练到了哪儿。
+    private(set) var lastWatchSetAt: Date?
 
     /// 进行中的训练是否已过期：距手机最后一次推送超过 staleLimit。
     /// 传入 now 而不是每次取 Date()：视图用一个到点翻转的 tick 重估，判定要可复现。
@@ -77,6 +103,46 @@ final class WatchPrescriptionStore {
         // 手机接手了（开始休息 / 到了下一组 / 换动作 / 小结）→ 预休息交还给手机那份；
         // 手机还在等同一组（还没收到）→ 留着，倒计时不跳。
         if let rest = provisionalRest, !rest.survives(rx.active, now: Date()) { provisionalRest = nil }
+        clock = Date()
+        armStaleTimer()
+        followWorkout()
+    }
+
+    // MARK: - 跟随手机（v3.10：App 一启动就跟，不等视图）
+
+    /// App 启动时调（WatchAppDelegate）：挂上收件、连上手机。
+    /// onReceive 必须在 activate 之前挂：激活完成后系统会立刻投递已存的 applicationContext，晚挂就会漏掉第一份。
+    func startFollowingPhone() {
+        WatchLink.shared.onReceive = { [weak self] envelope, _ in self?.apply(envelope) }
+        WatchLink.shared.activate()
+    }
+
+    /// 把手机说的训练状态交给会话守护：在练 → 拉起 HK 会话（不然放下手腕几秒 app 就被挂起）；
+    /// 练完 → 收掉写进健康；放弃 → 丢；手机 60 分钟没消息 → 按规则 10 收（记过组写到最后一组，没练才丢）。
+    /// 每份处方都交一次（sync 幂等）：被手机拉起后，守护要按「这份比拉起那一刻新不新」决定信不信它。
+    /// 权限门没过时不拉（起不来）；截图钩子下不碰会话。
+    func followWorkout() {
+        let keeper = WorkoutSessionKeeper.shared
+        guard !WatchPreview.isActive, keeper.workoutWriteAuthorized == true else { return }
+        let silent = activeIsStale(now: clock)
+        let outcome: WatchWorkoutEnding.Outcome = silent ? .unknown
+            : (prescription?.sessionOutcome == "abandoned" ? .abandoned : .completed)
+        keeper.sync(trainingActive: trainingInProgress(now: clock), outcome: outcome,
+                    lastSetAt: WatchWorkoutEnding.latest(prescription?.lastSetLoggedAt, lastWatchSetAt),
+                    phoneSentAt: sentAt)
+    }
+
+    /// 过期止损定时：手机最后一次推送 + staleLimit 到点，翻一次时钟、再交一次会话守护。每份新推送重排。
+    private func armStaleTimer() {
+        staleTimer?.cancel()
+        guard let sentAt else { return }
+        staleTimer = Task { [weak self] in
+            let delay = sentAt.addingTimeInterval(Self.staleLimit).timeIntervalSinceNow
+            if delay > 0 { try? await Task.sleep(for: .seconds(delay)) }
+            guard !Task.isCancelled, let self else { return }
+            self.clock = Date()
+            self.followWorkout()
+        }
     }
 
     /// 表上「点完成即休息」（Master v3.9 §5 第 6 条，owner 2026-10-19）：记完一组立刻按手机给的时长
@@ -130,6 +196,11 @@ final class WatchPrescriptionStore {
         WatchLink.shared.send(envelope, via: .userInfo)
         WatchLink.shared.send(envelope, via: .message)
         provisionalRest = ProvisionalRest.begin(after: active, loggedAt: loggedAt)
+        // 热身步不算练过（不落库）；正式组记下时刻，手机够不着时据此把这一场写到最后一组。
+        if !active.isWarmup {
+            lastWatchSetAt = loggedAt
+            followWorkout()
+        }
     }
 
     /// 遥控命令（v2）：休息 +30 / 跳过休息 / 跳过热身。**走 message**：只在此刻有意义，
@@ -160,7 +231,8 @@ final class WatchPrescriptionStore {
 
 struct TodayWatchView: View {
     @StateObject private var link = WatchLink.shared
-    @State private var store = WatchPrescriptionStore()
+    /// App 级唯一一份（v3.10）：连接与会话跟随都在它那里，视图只读。
+    @State private var store = WatchPrescriptionStore.shared
     /// 不是 @StateObject：会话守护归 app 级所有（v3.8，WorkoutSessionKeeper.shared 的注释），
     /// 视图只是看它。被手机从后台拉起时，视图出现之前会话可能已经在跑了。
     @ObservedObject private var workout = WorkoutSessionKeeper.shared
@@ -184,24 +256,12 @@ struct TodayWatchView: View {
         return workout.workoutWriteAuthorized != true
     }
 
-    /// 过期判定用的时钟。手机最后一次推送 + staleLimit 到点时由 .task 翻转一次，
-    /// 让 liveActive / trainingInProgress 重估——SwiftUI 不会因为时间流逝自己重绘。
-    @State private var staleTick = Date()
-
     /// 进行中的训练。**过期的不算**：手机某天中途放弃、之后没再开过，表上那份 context 里
     /// 还带着那天的第 N 组——不判就会一直冒充「进行中」（v3.2）。判据是手机最后一次推送
-    /// 距今 staleLimit（不是日历日：跨午夜的训练不能在 00:00 被切回清单）。
+    /// 距今 staleLimit（不是日历日：跨午夜的训练不能在 00:00 被切回清单）；时钟由存储到点翻转。
     private var liveActive: WatchPrescription.Active? {
-        guard let active = store.prescription?.active, !store.activeIsStale(now: staleTick) else { return nil }
+        guard let active = store.prescription?.active, !store.activeIsStale(now: store.clock) else { return nil }
         return active
-    }
-
-    /// 表上 HK 会话该不该在跑：跟手机的 trainingInProgress 走（含 .confirmEnd 确认层），
-    /// 不跟「有没有记组屏」走；过期一律收。
-    private var trainingActive: Bool { store.trainingInProgress(now: staleTick) }
-    /// 收会话时写不写健康：手机说放弃、或表侧自己因过期止损 → 丢弃。
-    private var discardOnEnd: Bool {
-        store.prescription?.sessionOutcome == "abandoned" || store.activeIsStale(now: staleTick)
     }
 
     var body: some View {
@@ -210,7 +270,8 @@ struct TodayWatchView: View {
         ZStack {
             if needsHealthGate {
                 HealthGateView(denied: workout.workoutWriteAuthorized == false, strings: s) {
-                    Task { await workout.requestAuthorization() }
+                    // 门一开就按手机此刻的状态补拉会话（之前没授权时 followWorkout 什么都不做）。
+                    Task { await workout.requestAuthorization(); store.followWorkout() }
                 }
                 .transition(WatchMotion.morphTransition(reduceMotion: reduceMotion))
             } else if let active = liveActive {
@@ -238,43 +299,21 @@ struct TodayWatchView: View {
         .task {
             workout.refreshAuthorization()
             // 截图钩子：-watchPreview list|set|warmup|rest|bodyweight|done|saved|gate [-watchPreviewLocale en]
-            // 不配对也能在各尺寸模拟器上看各种状态。**不激活通道**，免得配对机的真处方把预览冲掉。
+            // 不配对也能在各尺寸模拟器上看各种状态。**不激活通道**（WatchAppDelegate 在预览下不连），
+            // 免得配对机的真处方把预览冲掉；会话也不碰（followWorkout 在预览下不做事）。
             if let preview = WatchPreview.fromArguments() {
                 store.apply(preview)
                 if WatchPreview.previewsProvisionalRest, let active = store.prescription?.active {
                     store.previewProvisionalRest(after: active)
                 }
-                return
             }
-            // onReceive 必须在 activate 之前挂：激活完成后系统会立刻投递
-            // 已存的 applicationContext，晚挂就会漏掉第一份。
-            WatchLink.shared.onReceive = { [store] envelope, _ in store.apply(envelope) }
-            link.activate()
         }
-        // 用户可能刚去设置里开了权限再回来：回前台重读一次，门自己开。
+        // 用户可能刚去设置里开了权限再回来：回前台重读一次，门自己开，并按手机此刻的状态补拉会话。
+        // 连接手机、跟随开训 / 收尾都已在 App 级（WatchPrescriptionStore.startFollowingPhone，v3.10）。
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { workout.refreshAuthorization() }
-        }
-        // 切片 6：手机说在练 → 拉起 HKWorkoutSession（否则放下手腕几秒 app 就被挂起，
-        // 倒计时死在半路）；手机说练完 → 收掉并写回健康；说放弃 / 表侧过期 → 收掉并丢弃。
-        // 用 onChange 而不是在 body 里调：sync 虽然幂等，但每帧调一次是噪音。
-        // 权限门没过时不拉（起不来）；门一开（authorized 翻 true）这条 onChange 的键也变，会立刻补拉。
-        // v3.8：键里带上处方的发出时刻，每份新处方都重新交给 sync 判一次——被手机拉起后，
-        // 守护要按「这份比拉起那一刻新不新」来决定信不信它（见 WorkoutSessionKeeper.sync）。
-        // 不带的话，「旧的不在练」被判作残影之后，一份「新的不在练」到来时键没变、onChange 不响，
-        // 这一场真的练完了却收不掉，最后被 60 分钟止损整场丢弃。sync 幂等，每份处方调一次不是噪音。
-        .onChange(of: "\(trainingActive)#\(discardOnEnd)#\(workout.workoutWriteAuthorized == true)#\(store.sentAt?.timeIntervalSince1970 ?? 0)", initial: true) { _, _ in
-            guard !WatchPreview.isActive, workout.workoutWriteAuthorized == true else { return }
-            workout.sync(trainingActive: trainingActive, discardOnEnd: discardOnEnd, phoneSentAt: store.sentAt)
-        }
-        // 过期止损定时：手机最后一次推送 + staleLimit 到点，翻一次 tick 让上面重估。
-        // 每次新推送都会重启这条 task（键 = sentAt）。
-        .task(id: store.sentAt) {
-            guard let sentAt = store.sentAt else { return }
-            let delay = sentAt.addingTimeInterval(WatchPrescriptionStore.staleLimit).timeIntervalSinceNow
-            if delay > 0 { try? await Task.sleep(for: .seconds(delay)) }
-            guard !Task.isCancelled else { return }
-            staleTick = Date()
+            guard phase == .active else { return }
+            workout.refreshAuthorization()
+            store.followWorkout()
         }
     }
 
@@ -312,7 +351,8 @@ struct TodayWatchView: View {
                         ForEach(Array(rx.exercises.enumerated()), id: \.element.exerciseId) { index, item in
                             // Emberline 只在「今天还没开始」画：练完了没有下一步；训练进行中（手机在弹
                             // 「结束训练？」确认层、表暂时退回清单）也不该说「从这里开始」。
-                            exerciseRow(item, isNext: index == 0 && !isStale && doneSetsToday == nil && !trainingActive)
+                            exerciseRow(item, isNext: index == 0 && !isStale && doneSetsToday == nil
+                                                && !store.trainingInProgress(now: store.clock))
                         }
                     }
                 } else {

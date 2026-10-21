@@ -4,6 +4,55 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 ## 2026-10-20
 
+- **Watch workouts reach Apple Health whenever a set was logged (Master v3.10, owner approval 2026-10-20)**: the owner reported that the heart rate and time Rede's watch records never showed up in Apple's fitness records, so apps that read Apple Health (Peak) still needed Apple's own Workout app.
+  - **Why it happened.** The watch only wrote a workout when the phone reached the summary while the watch app was running. These paths dropped or lost a whole session with real sets in it:
+    - 60 minutes without a phone push → discard (rule 10).
+    - A phone-launched session never confirmed within 60 minutes → discard (rule 13). The link and session follow-up lived in the view's `.task` / `onChange`, which may not run on a background launch.
+    - A system-ended session (another workout app) left the builder unfinished, and the next push restarted a session that fought the other app.
+    - No crash recovery.
+  - **Master v3.10.** Rules 10 and 13 amended. `WatchPrescription.lastSetLoggedAt` is an additive optional field, so old payloads decode to nil. `recoverActiveWorkoutSession` joins the rule-10 API list.
+  - **What changed.**
+    - **`RedeWatchLink.WatchWorkoutEnding`** (pure, 6 tests) decides how a watch session ends:
+      - Phone `completed` → save, ending now.
+      - `abandoned` → discard.
+      - `unknown` (silence, unconfirmed launch, system stop) → save if a working set was logged at or after the session start, else discard.
+      - End time: the last set, the later of the phone's `lastSetLoggedAt` and the watch's own last logged working set; or the stop moment for a system stop.
+    - **Phone.** `SessionStore.pushWatchPrescription` sends `lastSetLoggedAt` (`watchLastSetLoggedAt(flow:)`, max `completedAt` of logged working sets; app test +1).
+    - **Watch `WatchPrescriptionStore`.**
+      - Now an app-level singleton. `WatchAppDelegate.applicationDidFinishLaunching` calls `startFollowingPhone()` (link activation plus `onReceive`); preview hooks skip it.
+      - `followWorkout()` hands state to the keeper on every prescription, every watch-logged working set and the stale timer. The view no longer drives the session.
+      - The stale clock moved from the view to the store.
+    - **Watch `WorkoutSessionKeeper`.**
+      - `sync(trainingActive:outcome:lastSetAt:phoneSentAt:)`.
+      - `end` ends collection at the decided date.
+      - System end (`didChangeTo .ended/.stopped`, `didFailWithError`, matched to the current session by identity) saves what was collected if a set was logged, then yields for that training.
+        - `close` releases the builder before awaiting HealthKit, so the watch's own `end()` and a stop reported twice (error, then ended) close it only once. It keeps the session object until the write finishes. On the simulator, releasing it early left the save stuck in Saving.
+        - A stopped or failed session is also sent `end()`, so none is left running.
+        - `start()` no longer marks a session running if the system stopped it during `beginCollection`. A start that fails after `startActivity` ends that session.
+        - A phone launch for the next training clears the yield, even when the end of the yielded training never reached the watch (review finding).
+      - Crash recovery.
+        - `handleActiveWorkoutRecovery` → `recoverAfterCrash()` → `phoneRequestedWorkout()`, which waits for the next prescription to confirm, as after a phone launch.
+        - Only after that notice does `start()` first reattach the session returned by `recoverActiveWorkoutSession`. It sets the delegates and adds a data source only if the builder has none. It does not create a second session.
+        - Normal starts never call `recoverActiveWorkoutSession`: on the simulator it never returned while the health store held a stuck session.
+        - After reattaching, the received prescription is judged again against the session start, so an end the phone sent between the crash and the relaunch is not lost.
+        - Recovery and the phone's next prescription can arrive in either order. Both go through the one serialized start path.
+      - The ending decision and any recovery or close failure go to `os.Logger` (`com.tinsab.rede` / `WatchWorkout`), the only place a failed Health write is visible on a device.
+      - DEBUG-only `-watchStaleLimitSeconds N` for simulator acceptance.
+  - **Verification.**
+    - `RedeWatchLink` 41/41.
+    - App-hosted `RedeTests` 189/190; only the pre-existing StoreKit catalog test fails.
+    - `RedeWatch` scheme builds.
+    - Paired simulators (iPhone Air + Watch Series 11 42 mm): start on the phone, skip warm-up and log one working set on the watch, then terminate the phone app. With the stale limit at 90 s, the watch wrote a workout to the simulator's HealthKit store: 21:53:41 → 21:54:34, ending at the watch-logged set rather than the 21:56 stop.
+    - Background launch, real `startWatchApp`, system stop by Apple's Workout app and crash recovery are device-only and were added to the device acceptance list (section 2, four new rows).
+    - Re-running the simulator flow after the review fixes caught two regressions in this change, both fixed above:
+      - Releasing the session at the start of `close` left the save stuck in healthd's Saving state.
+      - Calling `recoverActiveWorkoutSession` on every start hung while the store held that stuck session, so no session started.
+    - Final run with all fixes, on a freshly rebooted watch simulator, same flow:
+      - The watch logged `closing session: save(endAt: 22:34:43)` 90 s after the phone's last push.
+      - healthd set the end date to 22:34:43 and went `Saving → Finalized`.
+      - The store holds a workout from 22:34:28 to 22:34:43, which ends at the logged set.
+  - **Specs.** Master v3.10 (rules 10 and 13, amendment entry). System logic §7.2 (watch session endings, launch confirmation, the resolved "link in view" edge case, verification). PRD FR-AW3. AGENTS.md watch status.
+
 - **Engine audit batch 2: ease on mean RIR, hold target +2, two-rung jump on big reserve, 5-lb machine steps, 90 s rest for former 60 s slots, sustained deload ends after a week, ad-hoc / swap start load via the engine, next block after an overreach struggle (owner decisions 2026-10-20)**: the second batch from the 2026-10-20 prescription audit.
   - **How the audit ran.** Four evidence lanes plus a replay of the owner's week. Every citation was a PubMed ID checked via NCBI esummary, and each flagged finding was re-checked by a skeptic. The run was stopped early at 29 of 37 agents; the main session verified the remaining high-impact items in code.
   - **What held up.** Weekly sets per muscle (chest 13, quads 19, hamstrings 12 direct), rep ranges, compound rests, 3–8 % load steps, 2x/week frequency and compound-first order all checked out against the evidence.
