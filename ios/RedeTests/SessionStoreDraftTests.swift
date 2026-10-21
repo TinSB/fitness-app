@@ -492,6 +492,21 @@ final class SessionStoreDraftTests: XCTestCase {
         XCTAssertNil(sessionStore.flow)
     }
 
+    // Master v3.10：手机推给表「这一场最后一组记下的时刻」——手机之后没了消息时，表据此把这一场写进健康、
+    // 结束在最后一组。热身不落库、不算；没组 / 不在训练 → nil。
+    func testWatchLastSetLoggedAtIsTheLatestLoggedWorkingSet() throws {
+        XCTAssertNil(SessionStore.watchLastSetLoggedAt(flow: nil))
+        var flow = TrainFlowState(prescription: makePrescription())
+        XCTAssertNil(SessionStore.watchLastSetLoggedAt(flow: flow), "还没记组")
+        let first = Date(timeIntervalSince1970: 1_784_000_000)
+        let second = first.addingTimeInterval(180)
+        let iso = ISO8601DateFormatter()
+        flow.logSet(CompletedSetObservation(weightKg: 60, reps: 10, rir: 2, completedAt: iso.string(from: first)))
+        if flow.phase == .resting { flow.restFinished() }
+        flow.logSet(CompletedSetObservation(weightKg: 60, reps: 9, rir: 1, completedAt: iso.string(from: second)))
+        XCTAssertEqual(SessionStore.watchLastSetLoggedAt(flow: flow), second)
+    }
+
     func testWatchSessionStateFollowsWhetherTheSessionCanBeSaved() throws {
         XCTAssertTrue(SessionStore.watchSessionState(flow: nil, lastSessionOutcome: "abandoned") == (false, "abandoned"))
 

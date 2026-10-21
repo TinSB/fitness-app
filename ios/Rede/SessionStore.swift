@@ -336,6 +336,8 @@ final class SessionStore {
         // 训练是否进行中（v3.3）：flow 在且没到小结。**表上的 HK 会话跟它走**，不跟 active 走——
         // 弹「结束训练？」确认层（.confirmEnd）时 active 是 nil，但训练没结束（审查 M1）。
         let (trainingInProgress, outcome) = Self.watchSessionState(flow: flow, lastSessionOutcome: lastSessionOutcome)
+        // 这一场最后一组的记组时刻（Master v3.10）：手机之后要是没了消息，表据此把这一场写进健康、结束在最后一组。
+        let lastSetLoggedAt = Self.watchLastSetLoggedAt(flow: flow)
         // 今天已经练完的组数（v3.2）：canonical 记录里今天日期的场次总组数。
         // 没在训练且 > 0 → 表上清单头显示「今天练完了 · N 组」。
         let todayISO = Self.localDayISO(now)
@@ -437,7 +439,8 @@ final class SessionStore {
                 localeCode: strings.locale.rawValue,
                 completedSetsToday: completedSetsToday,
                 trainingInProgress: trainingInProgress,
-                sessionOutcome: outcome)
+                sessionOutcome: outcome,
+                lastSetLoggedAt: lastSetLoggedAt)
             guard let payload = rx.encoded else { return }
 
             await MainActor.run {
@@ -3130,6 +3133,13 @@ final class SessionStore {
             total += flow.observationsByExercise.values.reduce(0) { $0 + $1.count }
         }
         return total
+    }
+
+    /// 推给手表的「这一场最后一组记下的时刻」（Master v3.10）：只算本场已记的正式组（热身不落库、不算），
+    /// 没有组或不在训练 → nil。与恢复草稿时取结束时刻同一口径（各组盖的 completedAt 取最晚）。
+    nonisolated static func watchLastSetLoggedAt(flow: TrainFlowState?) -> Date? {
+        flow?.observationsByExercise.values.joined()
+            .compactMap { $0.completedAt.flatMap(ISO8601DateFormatter().date(from:)) }.max()
     }
 
     /// 推给手表的训练状态：flow 在且没到小结 = 进行中（含「结束训练？」确认层）。

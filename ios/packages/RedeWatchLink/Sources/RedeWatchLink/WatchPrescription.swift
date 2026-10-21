@@ -49,6 +49,10 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
     /// 表据此决定 HK 会话是 finishWorkout（写进健康）还是 discardWorkout（放弃的训练不该进健康）。
     /// 只在 trainingInProgress == false 时有意义；进行中为 nil。
     public let sessionOutcome: String?
+    /// 进行中这一场最后一组正式组在手机上记下的时刻（Master v3.10，2026-10-20）。nil = 这一场还没记过组 / 旧手机。
+    /// 表上用它决定「没等到手机说结局」时怎么收：手机 60 分钟没消息、被拉起后一直没确认、或系统把会话停了，
+    /// 这一场里记过组就把体能训练写进健康、结束在最后一组；一组都没有才丢弃（见 WatchWorkoutEnding）。
+    public let lastSetLoggedAt: Date?
 
     public struct Item: Codable, Equatable, Sendable {
         /// 语义身份（切片 4 记组回填用）。同一天允许同名动作，所以行的 identity 只能靠它。
@@ -238,7 +242,7 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
 
     public init(dateISO: String, dayTitle: String, exercises: [Item], active: Active? = nil,
                 localeCode: String? = nil, completedSetsToday: Int? = nil,
-                trainingInProgress: Bool? = nil, sessionOutcome: String? = nil) {
+                trainingInProgress: Bool? = nil, sessionOutcome: String? = nil, lastSetLoggedAt: Date? = nil) {
         self.dateISO = dateISO
         self.dayTitle = dayTitle
         self.exercises = exercises
@@ -247,6 +251,7 @@ public struct WatchPrescription: Codable, Equatable, Sendable {
         self.completedSetsToday = completedSetsToday
         self.trainingInProgress = trainingInProgress
         self.sessionOutcome = sessionOutcome
+        self.lastSetLoggedAt = lastSetLoggedAt
     }
 
     // MARK: - 编解码
