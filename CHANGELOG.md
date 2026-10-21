@@ -4,6 +4,21 @@ All notable native iOS product, architecture, repository-governance, and documen
 
 ## 2026-10-20
 
+- **Release 1.12.2 build 44**: `MARKETING_VERSION` 1.12.1 → 1.12.2 and `CURRENT_PROJECT_VERSION` 43 → 44 in all 6 build configurations (App, Widget, Watch × Debug/Release). Packaged straight after the watch Health fix, without asking (standing "package without asking").
+  - **Content.** Everything in 43 plus engine audit batch 2 (#773) and the watch Health save fix (#774, Master v3.10). Archived from `release/1.12.2-build-44` at cf85b48, while #774's CI was still running. #774 then squash-merged as f9caa84 with the same tree as cf85b48's parent, so the release commit was re-parented onto main as cf2d9d0 with the identical tree: the uploaded build is exactly main plus this version bump.
+  - **Bundled What's New.** All three version gates move to 1.12.2. The App Store still has 1.9.4, so the narrative stays the full list, with three changes:
+    - New watch line: heart rate and workout time reach Apple Health even when the phone is out of reach, the app closes, or another workout starts.
+    - New progression line: up to two steps when every set has 4 or more reps in reserve; next time's weight follows the session average, so one set to failure doesn't lower it; isolation lifts rest 90 seconds.
+    - The 45 lb line is rewritten for 5 lb weight-stack steps.
+  - **Tests.** `RedeStringsTests` asserts the new list and that 1.12.1 now returns nothing. `RedeL10n` 165/165; `AppUpdateRuntimeTests` 13/13, including the version gate (after rebooting the test simulator, whose first run hung before connecting).
+  - **Archive and upload.** `Archives/2026-10-20/Rede 1.12.2 (44).xcarchive` with the Admin API key (`ARCHIVE SUCCEEDED`). Uploaded with the same key at 22:52 (`Upload succeeded`, first attempt).
+  - **Pre-upload checklist.** All passed:
+    - `ApplicationProperties` 1.12.2 / 44 / `com.tinsab.rede`; app, widget and watch are all 1.12.2 (44).
+    - `ITSAppUsesNonExemptEncryption=false` in all three; three privacy manifests pass `plutil -lint`; no `RedeSubscription*` keys.
+    - The watch binary is `arm64 arm64_32`.
+    - The three new What's New lines are in the app binary. The watch binary has the `WatchWorkout` log, and the DEBUG-only `-watchStaleLimitSeconds` hook is absent from this Release build.
+  - **Build status.** `altool --build-status` (delivery 3bf4c728…) reports `VALID`, `APP_STORE_ELIGIBLE`, import `VALID`, non-exempt encryption false (processed by 22:57). Next upload needs build ≥ 45.
+
 - **Watch workouts reach Apple Health whenever a set was logged (Master v3.10, owner approval 2026-10-20)**: the owner reported that the heart rate and time Rede's watch records never showed up in Apple's fitness records, so apps that read Apple Health (Peak) still needed Apple's own Workout app.
   - **Why it happened.** The watch only wrote a workout when the phone reached the summary while the watch app was running. These paths dropped or lost a whole session with real sets in it:
     - 60 minutes without a phone push → discard (rule 10).
