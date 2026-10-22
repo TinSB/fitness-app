@@ -87,6 +87,10 @@ final class FileTrainSessionDraftStore: TrainSessionDraftStoring, @unchecked Sen
 @MainActor
 @Observable
 final class SessionStore {
+    /// **App 级唯一一份**（Master v3.11）：表上来的组和命令在 App 一启动就要有人接（startWatchLink，
+    /// 由 AppDelegate 调），被表从后台叫醒时界面多半不会建立——不能等根视图把它造出来。根视图用的也是这一份。
+    static let shared = SessionStore()
+
     var todayOutcome: TodayModel.LoadOutcome?
     /// Rede Coach 付费边界快照（FR-SUB1 修订）。**由 RootTabView 从 SubscriptionModel 灌进来**——
     /// SessionStore 不认识 StoreKit，只拿一个已经解析好的答案；引擎更是完全不知情。
@@ -210,7 +214,7 @@ final class SessionStore {
     /// 刚结束那场是怎么结束的（watchOS v3.3）："completed" / "abandoned"。放弃路径在清 flow 之前置位，
     /// 随 flow didSet 那次推送带给表——表据此决定 HK 会话 finish 还是 discard（放弃的训练不进健康）。
     /// 开训时清空。
-    private var lastSessionOutcome: String?
+    private(set) var lastSessionOutcome: String?
     /// 写入失败的如实呈现（FR-TR8：绝不假装成功）；nil = 无错误。训练落盘/偏好/引导共用。
     var saveErrorText: String?
     /// FR-T5 教练动作写入（采纳/撤销/暂不处理）失败的如实呈现，与全局 saveErrorText **隔离**——
@@ -326,6 +330,10 @@ final class SessionStore {
 
     private func pushWatchPrescription(now: Date = Date()) {
         guard case .ready(let model)? = todayOutcome else { return }
+        // 一场没练完的训练正等着接回（手机被系统收走后重开、草稿还在、还没恢复或放弃）：不推「没在练」
+        //（Master v3.11）。推了表就以为训练结束——收掉体能训练、退回清单，而用户多半正在表上接着练。
+        // 表留着上一份处方接着用；表上的下一条一到就自动接回（resumeForWatch），或在手机上恢复 / 放弃后照常推。
+        guard !watchPushHeldForUnfinishedDraft(now: now) else { return }
         watchPushGeneration &+= 1
         let generation = watchPushGeneration
         // ExercisePrescriptionPlan 是 Sendable，可以整体交给后台；dayCode 可能为 nil（休息日）。
@@ -560,22 +568,20 @@ final class SessionStore {
     /// 是**两块屏同时开着**：表上记了一组，又顺手在手机上点了打勾。
     /// 不判就是同一组落盘两次。
     func applyWatchLoggedSet(_ set: WatchLoggedSet) {
-        // **手机 app 在训练中被划掉的那条路**（owner 2026-08-15 提出）。
+        // **手机 app 在训练中被划掉 / 被系统收走的那条路**（owner 2026-08-15 提出，v3.11 改为自动接回）。
         //
-        // 划掉之后表上仍显示当前组，用户照样能记——排队通道会保证送达。
-        // 但重开手机 app 时 flow 还是 nil：draft 要等用户点「继续训练」才重放，
-        // 而排队的那条组正好在这个窗口送到，撞上下面的 guard 被静默丢弃。
-        // 表上已经显示「已记录」了，组却没了——这正是选排队通道要避免的事。
-        //
-        // 修法：写进 draft 而不是内存里的 flow。draft 是这场训练的持久真源，
-        // 用户点「继续训练」重放时自然带上。判断依据用 draft 重放出来的状态，
-        // 幂等规则与在线路径完全一致。
+        // 收走之后表上仍显示当前组，用户照样能记——排队通道会保证送达，即时消息还会把手机叫醒。
+        // 以前这时 flow 是 nil：组只写进草稿，要等人点「继续训练」才重放，下一组也没人算、推不回表——
+        // 表就卡在原地，非得掏出手机（owner 2026-10-21「经常卡住流程然后需要手机」）。
+        // 现在由 resumeForWatch 直接把草稿接回成进行中的训练，这一组走和手机上一样的那条路。
         // 同一组会从两条通道各到一次（v4：排队通道保证送达 + 即时消息把手机叫醒）。状态守卫挡得住
         // 绝大多数重复，唯独挡不住「第一份到了、用户在手机上撤销、第二份才到」——那会把撤销掉的组记回来。
         // 所以收下过的组按表上那一下的身份记住，同一份再来直接丢。
         let watchSetKey = "\(set.exerciseId)#\(set.setNumber)#\(set.isWarmup)#\(set.loggedAtISO)"
         guard !acceptedWatchSetKeys.contains(watchSetKey) else { return }
-        guard flow != nil else { appendWatchSetToDraft(set, key: watchSetKey); return }
+        guard resumeForWatch(exerciseId: set.exerciseId,
+                             at: ISO8601DateFormatter().date(from: set.loggedAtISO)) else { return }
+        catchUpToWatchStep(exerciseId: set.exerciseId, setNumber: set.setNumber, isWarmup: set.isWarmup)
         guard let flow, flow.phase == .activeSet else { return }
         guard flow.currentExercise?.exerciseId == set.exerciseId else { return }
 
@@ -622,11 +628,17 @@ final class SessionStore {
     /// 那样表上的倒计时到点后，手机还停在「等这一组」，表上进不了下一组。
     func holdBackgroundTimeForWatchIntake() {
         guard UIApplication.shared.applicationState != .active else { return }
-        let task = UIApplication.shared.beginBackgroundTask(withName: "rede.watch-intake")
-        guard task != .invalid else { return }
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(5))
+        // 到期处理：系统给的后台时间比 10 秒短时先放掉，不被判超时整个进程收走（审查 2026-10-21）。
+        var task = UIBackgroundTaskIdentifier.invalid
+        task = UIApplication.shared.beginBackgroundTask(withName: "rede.watch-intake") {
             UIApplication.shared.endBackgroundTask(task)
+        }
+        guard task != .invalid else { return }
+        let held = task
+        Task { @MainActor in
+            // 10 秒：被收走后叫醒的冷启动要先读今天的数据、接回训练，再渲染推送（v3.11）。
+            try? await Task.sleep(for: .seconds(10))
+            UIApplication.shared.endBackgroundTask(held)
         }
     }
 
@@ -637,76 +649,107 @@ final class SessionStore {
         return min(now, max(startedAt ?? at, at))
     }
 
-    /// flow 尚未恢复时，把表侧记的组直接写进 draft。
-    ///
-    /// 只接受「重放后正好在等的那一组」——幂等规则与在线路径同一套，
-    /// 不因为走了另一条路就放宽。热身在这条路上不处理：热身指针是纯内存的
-    ///（引擎明确不落 draft、不进事件日志），重放后本来就会从头热身。
-    private func appendWatchSetToDraft(_ set: WatchLoggedSet, key: String) {
-        guard !set.isWarmup else { return }
+    // MARK: - 表上来的东西（Master v3.11：App 启动即接、按到达顺序、手机被收走后自动接回）
+
+    /// App 一启动就连上表、接住表上来的组和命令（由 AppDelegate 调）——不等界面出现。手机被表从后台叫醒时
+    /// 界面多半不会建立；以前连接挂在根视图的 .task 上，那种启动根本收不到表的消息，表就停在原地。
+    /// onReceive 必须在 activate 之前挂：激活完成后系统会立刻投递排队的消息，晚挂就漏掉。
+    func startWatchLink() {
+        WatchLink.shared.onReceive = { [weak self] envelope, _ in self?.receiveFromWatch(envelope) }
+        WatchLink.shared.activate()
+    }
+
+    /// 还没处理的表上消息，按到达顺序。冷启动时今天的数据还没读（器械、单位、处方都在里面），
+    /// 读的这段时间里到的消息先排着，读完按原顺序处理——表上第 3 组不能跑到第 2 组前面。
+    private var watchInbox: [WatchLinkEnvelope] = []
+    private var watchInboxWaitingForToday = false
+
+    func receiveFromWatch(_ envelope: WatchLinkEnvelope) {
+        guard envelope.kind == WatchLinkKind.loggedSet || envelope.kind == WatchLinkKind.command else { return }
+        // 这一条可能就是把手机从后台叫醒的那一条：先要一段后台时间再处理。
+        holdBackgroundTimeForWatchIntake()
+        watchInbox.append(envelope)
+        drainWatchInbox()
+    }
+
+    /// todayLoaded：这一轮已经读过今天了——读完仍没有结果也照样往下处理，不反复读盘。
+    private func drainWatchInbox(todayLoaded: Bool = false) {
+        guard !watchInboxWaitingForToday else { return }
+        if !todayLoaded, flow == nil, todayOutcome == nil {
+            watchInboxWaitingForToday = true
+            Task {
+                await loadToday()
+                watchInboxWaitingForToday = false
+                drainWatchInbox(todayLoaded: true)
+            }
+            return
+        }
+        // 「手机有没有人在看」以系统为准：被叫醒的后台启动没有界面，没人去同步它（缺省是「在看」），
+        // 表上练完的那一场就不会自动存。
+        appInForeground = UIApplication.shared.applicationState == .active
+        let batch = watchInbox
+        watchInbox.removeAll()
+        for envelope in batch {
+            guard let data = envelope.payload else { continue }
+            if envelope.kind == WatchLinkKind.loggedSet {
+                if let set = WatchLoggedSet(decoding: data) { applyWatchLoggedSet(set) }
+            } else if let command = WatchCommand(decoding: data) {
+                applyWatchCommand(command)
+            }
+        }
+        // 这一批改了训练就马上落盘：后台随时会被再收走，排队的异步写赌不起。
+        if flow != nil { _ = saveDraftDurably() }
+    }
+
+    /// 手机被系统收走后又被表叫醒（Master v3.11）：表上那场训练还在练——不等人点「继续训练」，直接把草稿
+    /// 接回成进行中的训练，表接下来的组、跳过和「休息走完了」才有人接，下一组也马上推回表上。
+    /// 休息从草稿里最后一组那一刻起算（表上那段休息也从那一刻起算）；手动「继续训练」照旧整段重新计时（FR-TR9）。
+    /// 只接恢复窗口内、重放得出来、还没练完的那一场（练完的那场 loadToday 里已经自己存好了）。
+    /// 还得是这条消息所属的那一场：动作在这场的计划里，时刻不早于开练（容 5 分钟钟差）——别的训练迟到的
+    /// 旧消息不能把这场接回来，接回会推「在练」、让表新开一场体能训练（审查 2026-10-21）。
+    /// 重放不出来就什么都不碰——宁可这一条不收，也不把草稿清掉（owner「数据怎么能删呢」）。
+    private func resumeForWatch(exerciseId: String, at: Date?) -> Bool {
+        if flow != nil { return true }
         let now = Date()
-        // 窗口用不看组数的那一版：整场都在表上练、手机侧一组没记的草稿，第二天收到排队的组时
-        // 还没有 .logSet，按 isRestorable 会把这些组全拒掉（审查 2026-10-19）。
-        guard let draft = draftStore.load(),
+        guard let draft = pendingDraft ?? draftStore.load(),
               draft.isWithinRestoreWindow(todayISO: Self.localDayISO(now), now: now),
-              var replayed = draft.restoreFlow(allowedEquipment: allowedEquipment, loadUnit: loadUnit)
-        else { return }
+              at.map({ $0 >= draft.startedAt.addingTimeInterval(-5 * 60) }) ?? true,
+              let replayed = draft.restoreFlow(allowedEquipment: allowedEquipment, loadUnit: loadUnit),
+              replayed.phase != .summary,
+              replayed.plan.exercises.contains(where: { $0.exerciseId == exerciseId })
+        else { return false }
+        pendingDraft = draft
+        restorePendingDraft(restAnchor: Self.watchLastSetLoggedAt(flow: replayed) ?? now)
+        return flow != nil
+    }
 
-        // 重放后多半停在 .resting——记完一组就进休息，而 draft 里没有「休息已走完」这件事。
-        // **必须先补一条 restFinished 再补 logSet**：reducer 在 .resting 下直接忽略 logSet
-        //（TrainFlowState.logSet 第一行的 guard），硬追加的话重放时那条组会被静默吃掉，
-        // 比现在丢得还隐蔽。补 restFinished 也符合事实：表上那段休息按墙钟确实走完了，
-        // 线上路径此刻发的正是这条事件。
-        var extraEvents: [TrainFlowEvent] = []
-        if replayed.phase == .resting {
-            extraEvents.append(.restFinished)
-            replayed.restFinished()   // 值类型就地推进，不必整份重放第二次
-        }
-        // 表上只有热身做完或跳过了才会发正式组；手机这边的热身指针是纯内存的，重放后从头开始。
-        // 不先跳过，动作开头的第一组就被下面的组号 / 热身守卫拦掉，之后整段的组号再也对不上，
-        // 这个动作连同后面的组全丢（审查 2026-10-19）。
-        if replayed.phase == .activeSet, replayed.isWarmingUp { replayed.skipAllWarmup() }
-        // 校验放在补 restFinished **之后**：restFinished 可能推进到下一个动作，
-        // 那时该等的组号与动作都变了。
-        guard replayed.phase == .activeSet,
-              replayed.currentExercise?.exerciseId == set.exerciseId,
-              replayed.progress.setNumber == set.setNumber
-        else { return }
+    /// 此刻要不要把推给表的状态压住（Master v3.11）：没有进行中的训练，但盘上有一场没练完、还在恢复窗口里的
+    /// 草稿——它正等着被表上的下一条消息、或手机上的「继续 / 放弃」接走。看盘上的真相，不看提示旗标：
+    /// 旗标在开新训练、跨零点「一组没记」的草稿等路径上会和盘上对不上（审查 2026-10-21）。
+    /// 训练结束（存好 / 放弃）时先清草稿再清训练流（endSession），那一次「没在练」才推得出去。
+    func watchPushHeldForUnfinishedDraft(now: Date = Date()) -> Bool {
+        guard flow == nil, let draft = draftStore.load() else { return false }
+        return draft.endedAt == nil && draft.isWithinRestoreWindow(todayISO: Self.localDayISO(now), now: now)
+    }
 
-        // 记组时刻用表上那一下：这条路上组可能几小时后才送到，用收到的时刻会把组刻线全挤到末尾。
-        let observation = CompletedSetObservation(
-            weightKg: set.weightKg, reps: set.reps, rir: set.rir,
-            painReported: replayed.painReportedForCurrentSet).stamped(at: set.loggedAtISO)
-        var updated = draft
-        for event in extraEvents { updated = updated.appending(event) }
-        updated = updated.appending(.logSet(observation))
-        replayed.logSet(observation)
-        // 这一组把训练带进了小结：结束时刻同样取表上那一下，否则恢复时会按「重开手机那一刻」
-        // 补，时长凭空多出几个小时（审查 2026-10-19）。
-        if replayed.phase == .summary {
-            updated = updated.ending(at: ISO8601DateFormatter().date(from: set.loggedAtISO) ?? now)
-        }
-        // 同步落盘，不用 enqueue：这条路上没有界面、也没有下一次机会——
-        // app 可能马上又被系统收走，异步写就赌上了这一组。
-        guard draftStore.saveDurably(updated) else { return }
-        // 草稿这条路收下的也要记住：用户随后恢复训练、撤销这一组，迟到的另一份不能把它记回来（审查 2026-10-19）。
-        noteAcceptedWatchSet(key)
-        // 练完了（owner 2026-10-19：手机没在看时自动存）：不再问「继续训练？」，直接存好。
-        if replayed.phase == .summary, replayed.canBeSaved {
-            finalizeFinishedDraft(updated)
-            return
-        }
-        // 启动时没问的那份（跨天、当时一组没记）现在有组了：立刻问，而不是等下一次 loadToday 随机冒出来。
-        if pendingDraft == nil, !restorePromptDeferred,
-           updated.isRestorable(todayISO: Self.localDayISO(now), now: now) {
-            pendingDraft = updated
-            return
-        }
-        // **内存里那份待恢复 draft 也要跟上**（审查 M2）：手机重开时 loadToday 已把磁盘 draft
-        // 读进 pendingDraft、弹着「继续训练？」，排队的组正好在这个窗口送到——
-        // 只写磁盘不更新 pendingDraft，用户点「继续」重放的是旧的那份，这一组照样丢，
-        // 下一次 enqueueDraftSave 还会用不含它的事件把磁盘那份盖掉。
-        if pendingDraft != nil { pendingDraft = updated }
+    /// 手机落后表一步时补上（Master v3.11）：表已经在做下一步，手机还停在上一段休息里（口袋里的手机没收到
+    /// 「休息走完了」），或还在这个动作的热身里（表上做完或跳过了热身）。先在副本上补「休息走完」、
+    /// （正式组 / 跳组时）补「跳过热身」，正好停在表说的那一步才在真的训练上照做；对不上就什么都不动——
+    /// 补错一步比晚收一条更糟（排队通道里的那份会按顺序再来）。setNumber 为 nil：这个动作热身里的任一步。
+    private func catchUpToWatchStep(exerciseId: String, setNumber: Int?, isWarmup: Bool) {
+        guard let flow else { return }
+        var probe = flow
+        let finishRest = probe.phase == .resting
+        if finishRest { probe.restFinished() }
+        guard probe.phase == .activeSet, probe.currentExercise?.exerciseId == exerciseId else { return }
+        let skipWarmup = !isWarmup && probe.isWarmingUp
+        if skipWarmup { probe.skipAllWarmup() }
+        let reached = isWarmup
+            ? probe.isWarmingUp && (setNumber == nil || probe.currentWarmupStep?.index == setNumber)
+            : !probe.isWarmingUp && probe.progress.setNumber == setNumber
+        guard reached, finishRest || skipWarmup else { return }
+        if finishRest { apply(.restFinished) }
+        if skipWarmup { skipAllWarmup() }
     }
 
     // MARK: - watchOS v2：表上可调三个量 + 遥控命令
@@ -828,6 +871,13 @@ final class SessionStore {
     /// 命令都走手机自己那条路（addRestTime / apply(.restFinished) / skipAllWarmup），
     /// 于是通知重排、Live Activity、draft 留存、表上的回推全部自动一致。
     func applyWatchCommand(_ command: WatchCommand) {
+        guard resumeForWatch(exerciseId: command.exerciseId,
+                             at: ISO8601DateFormatter().date(from: command.sentAtISO)) else { return }
+        switch command.action {
+        case .skipWarmup: catchUpToWatchStep(exerciseId: command.exerciseId, setNumber: nil, isWarmup: true)
+        case .skipSet: catchUpToWatchStep(exerciseId: command.exerciseId, setNumber: command.setNumber, isWarmup: false)
+        default: break   // 休息 +30 / 暂停 / 走完只对正在进行的那段休息有意义，不补
+        }
         guard let flow, flow.currentExercise?.exerciseId == command.exerciseId else { return }
         defer { noteWatchDrivenSummary(from: flow.phase) }   // 表上跳掉最后一组同样会进小结
         switch command.action {
@@ -2559,13 +2609,16 @@ final class SessionStore {
         restorePromptDeferred = true
     }
 
-    func restorePendingDraft() {
+    /// restAnchor：休息从哪一刻起算。nil = 手动「继续训练」，整段重新计时（FR-TR9）；
+    /// 表把手机叫醒、自动接回时传最后一组的时刻，与表上那段休息对齐（v3.11）。
+    func restorePendingDraft(restAnchor: Date? = nil) {
         guard let draft = pendingDraft else { return }
         pendingDraft = nil
         restorePromptDeferred = false
         guard let restored = draft.restoreFlow(allowedEquipment: allowedEquipment, loadUnit: loadUnit) else {
             // 重放失败（如 catalog 漂移）：宁可不恢复，清掉过期 draft
             draftStore.clear()
+            pushWatchPrescription()   // 等着接回时表一直留着「在练」：清掉了就告诉它（v3.11）
             return
         }
         sessionEndedAt = draft.endedAt   // 先于 flow：flow 的 didSet 只在缺值时才补「现在」
@@ -2574,7 +2627,11 @@ final class SessionStore {
         // 跨进程恢复不留旧 deadline（FR-TR9 最小恢复）：若恢复到休息态，按计划秒数
         // 重新计时；否则清空。重排休息提醒与 apply(.logSet) 路径对齐（批次 Task 6
         // 2026-07-04：此前恢复后锁屏收不到休息结束提醒）；偏好关闭时策略层返回 nil 不排。
-        if restored.phase == .resting {
+        if restored.phase == .resting, let restAnchor {
+            if beginRest(seconds: restSeconds(for: restored), anchor: restAnchor, endpoint: "watch-resume") {
+                restLiveActivity.end(endpoint: "watch-resume-elapsed")
+            }
+        } else if restored.phase == .resting {
             restCountdown.begin(seconds: restored.restSecondsPlanned)
             scheduleRestNotification(restSecondsPlanned: restored.restSecondsPlanned)
             beginRestActivity(endpoint: "draft-restore")   // K6：恢复到休息态重挂视觉层
@@ -2588,6 +2645,9 @@ final class SessionStore {
         pendingDraft = nil
         restorePromptDeferred = false
         draftStore.clear()
+        // 这一场等着接回时表一直留着「在练」（v3.11 不推「没在练」）：放弃了就明说，表上那场体能训练按放弃收。
+        lastSessionOutcome = "abandoned"
+        pushWatchPrescription()
         // 放弃 = 训练废弃，旧进程在休息开始时排的 rest-end 提醒必然过期——撤掉，
         // 防「已放弃还弹休息结束」（Task 6 审查捞出的姊妹缺口）。「暂不」分支有意
         // 不撤：draft 仍在、用户可能随即恢复，语义归 owner 后续拍板。
@@ -2814,6 +2874,21 @@ final class SessionStore {
         }
     }
 
+    /// 起一段休息，从 anchor 起算（nil = 现在；不晚于现在）。提醒按还剩多少排；送到时整段已经过去就不排提醒、
+    /// 也不挂锁屏实时活动——表那边到点已经震过，挂上就是一闪而过的 0:00（审查 2026-10-19）。
+    /// 只过了一部分：实时活动的进度从真实起点算。返回这段是否已经走完。
+    @discardableResult
+    private func beginRest(seconds: Int, anchor: Date?, endpoint: String) -> Bool {
+        let now = Date()
+        restCountdown.begin(seconds: seconds, now: min(anchor ?? now, now))
+        let remaining = restCountdown.remaining(now: now)
+        guard remaining > 0 else { return true }
+        scheduleRestNotification(restSecondsPlanned: remaining)
+        beginRestActivity(endpoint: endpoint,
+                          startedAt: restCountdown.endDate?.addingTimeInterval(-TimeInterval(seconds)))
+        return false
+    }
+
     /// 事件落定后同步倒计时锚点。进入 resting（仅 logSet 一条路）= 开新休息；
     /// restFinished 或落到 summary = 结束清空；confirmEnd↔resting 折返（结束确认弹层
     /// 取消后继续训练）期间不动锚点，故剩余随墙钟延续、不会重置。
@@ -2827,19 +2902,8 @@ final class SessionStore {
         }
         switch event {
         case .logSet where flow.phase == .resting:
-            let seconds = restSeconds(for: flow)
             // 表上的组：从表上点下那一刻起算，与表自己先起的那段倒计时对齐（不晚于现在）。
-            let now = Date()
-            restCountdown.begin(seconds: seconds, now: min(restAnchor ?? now, now))
-            // 提醒按还剩多少排；送到时已经休息完了就不排——表那边到点已经震过了。
-            // 送到时整段休息已经过去：不排提醒、也不挂锁屏实时活动——表那边到点已经震过，
-            // 挂上就是一闪而过的 0:00（审查 2026-10-19）。只过了一部分：实时活动的进度从真实起点算。
-            let remaining = restCountdown.remaining(now: now)
-            if remaining > 0 {
-                scheduleRestNotification(restSecondsPlanned: remaining)
-                beginRestActivity(endpoint: "rest-begin",
-                                  startedAt: restCountdown.endDate?.addingTimeInterval(-TimeInterval(seconds)))   // K6：begin 挂点
-            }
+            beginRest(seconds: restSeconds(for: flow), anchor: restAnchor, endpoint: "rest-begin")   // K6：begin 挂点
         case .restFinished:
             restCountdown.clear()
             // 自然到点：不取消——通知正该此刻送达。仅手动提前结束才取消待发提醒（避免训练已推进还弹）。
@@ -3023,6 +3087,9 @@ final class SessionStore {
     }
 
     func endSession() {
+        // 先清草稿再清训练流（v3.11）：flow 的 didSet 会推一次「没在练」，草稿还在盘上时推送守卫会把它压住，
+        // 表就收不到这场已经存好 / 放弃了。draft 写已严格同步有序；清除后不会再有旧异步任务倒灌孤儿草稿。
+        draftStore.clear()
         flow = nil
         sessionStartedAt = nil
         restAdjustmentByExercise = [:]
@@ -3033,8 +3100,6 @@ final class SessionStore {
         restCountdown.clear()
         cancelRestNotification() // FR-NT1：放弃/收尾时清掉待发的休息提醒，避免训练已结束还弹（审查 MAJOR-1）
         restLiveActivity.end(endpoint: "session-end")   // K6：训练结束/放弃即收视觉层（含 abandonActiveSession 路径）
-        // draft 写已严格同步有序；清除后不会再有旧异步任务倒灌孤儿草稿。
-        draftStore.clear()
     }
 
     /// 放弃进行中训练（owner 反馈 2026-06-13）：清空流与 draft、不写 canonical——

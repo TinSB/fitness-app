@@ -2,6 +2,66 @@
 
 All notable native iOS product, architecture, repository-governance, and documentation changes should be recorded here.
 
+## 2026-10-21
+
+- **The phone takes back a killed training when the watch wakes it (Master v3.11, first slice; owner approval 「表独立走完整场（推荐）」)**: the owner reported 「手表不能全跑全流程，经常卡住流程然后需要手机」.
+  - **Why it stalled.**
+    - Every next step on the watch comes from a phone push.
+    - When iOS had terminated the phone app in the background, the watch's next message woke it cold. The link was activated from `RootTabView`'s `.task`, which a background launch may never run.
+    - Watch sets went only into the draft through `appendWatchSetToDraft` until someone tapped continue, so nothing computed the next set.
+    - Meanwhile the phone pushed "not in progress", and the watch ended its session and went back to the list. This was seen on the paired simulators on 2026-10-20 at 22:11.
+    - A manual restore restarted the rest from zero, so the watch's rest-end `restSkip(auto:)` was refused.
+  - **What changed (phone only).**
+    - **Launch-time link.** `SessionStore.shared` is the app's single store; `AppDelegate.didFinishLaunching` calls `startWatchLink()`, and `RootTabView` uses the shared store instead of activating the link itself.
+    - **Ordered inbox.**
+      - `receiveFromWatch` queues watch envelopes in arrival order.
+      - A cold wake (`flow == nil`, today not loaded) runs `loadToday()` once, then drains.
+      - Each batch ends with `saveDraftDurably()`.
+      - Before draining, `appInForeground` follows `UIApplication.applicationState`. Otherwise a sceneless background launch would keep the default "someone is looking" and never auto-save.
+      - The background-task hold goes from 5 to 10 seconds and now has an expiration handler.
+    - **Auto-resume.** `resumeForWatch(exerciseId:at:)` handles a set or command that arrives with no live flow. It takes the draft (pending or on disk) if all of these hold: it is within the restore window, replayable and not finished; the message's exercise is in its plan; the message's time is not before its start (5-minute clock tolerance). It then resumes the draft with `restorePendingDraft(restAnchor:)`, without the prompt. The rest is anchored at the draft's last logged set. An elapsed rest schedules no notification or Live Activity; this goes through the new `beginRest` helper, which the watch-set rest start now shares. A draft that cannot be replayed is left untouched. `appendWatchSetToDraft` is removed.
+    - **Catch-up.** `catchUpToWatchStep` handles a set, warm-up step, skip-set or skip-warm-up for the step right after the phone's current rest or warm-up. The phone first finishes that rest and/or skips the remaining warm-up, but only when a dry run on a copy lands exactly on that step. As a result, the first working set of an exercise is now accepted during the phone's warm-up (the watch only sends it after its warm-up was done or skipped); any other set number is still refused.
+    - **No idle push while a draft waits.**
+      - `pushWatchPrescription` sends nothing while `watchPushHeldForUnfinishedDraft` holds: no live flow, and an unfinished draft (no `endedAt`) within the restore window on disk. The check reads the disk, not the prompt flags, which can disagree after a new session or across midnight.
+      - `endSession` now clears the draft before clearing the flow, so the end or abandon push is not held.
+      - `discardPendingDraft` pushes `abandoned`. A manual restore whose replay fails pushes after clearing the draft.
+  - **Tests.** `WatchLoggedSetIntakeTests`, now 70:
+    - New after review:
+      - push held only while an unfinished draft waits;
+      - ending a session clears the draft before the push;
+      - discarding a waiting draft pushes `abandoned`;
+      - the inbox handles envelopes in order and saves durably;
+      - resume leaves a draft outside the window, a finished draft, and a message from another training alone;
+      - skipping the first set during the phone's warm-up skips the warm-up too.
+    - New in the first pass: resume by a set; resume by a rest-end command (elapsed rest → next set; running rest → still resting); phone resting accepts the next set; next exercise's first set finishes the rest and skips its warm-up; a stale warm-up step does not end a running rest; a skip of the next set catches up.
+    - Draft-path tests rewritten for resume semantics, with times relative to now.
+    - The warm-up guard test was replaced by "first working set skips the phone's remaining warm-up" plus "a later set number is still refused".
+    - The watch-launch test's wait went from 2 to 10 seconds: in the full suite, queued Live Activity requests from earlier tests held the main thread for about 2 seconds on the simulator (2026-10-21 log: test started at 44.19, the requests returned at 46.27).
+    - App-hosted `RedeTests`: 205, only the pre-existing StoreKit catalog test fails.
+  - **Simulator end-to-end.** Paired iPhone Air and Watch Series 11, 2026-10-21:
+    - Started on the phone, skipped warm-up and logged set 1 on the watch at 12:03:07, then terminated the phone app at 12:03:23.
+    - At the watch's rest end, the phone was woken at 12:05:12 with no launch arguments. Its log shows `watch-resume-elapsed`, then `rest-finished`, then `updateApplicationContext` (1573 bytes) at 12:05:13.
+    - The watch moved to set 2 instead of returning to the list.
+    - Set 2, logged on the watch at 12:05:41, was recorded by the backgrounded phone; the draft shows `logSet`, `restFinished`, `logSet`.
+    - The watch's Health store gained no premature workout.
+    - Opening the phone showed the training still live ("继续训练" is shown only with a live flow) and no restore prompt.
+    - Rerun with the final post-review code at 22:36–22:38: same result. The phone woke at 22:38:16, logged `watch-resume-elapsed` and then `rest-finished`, pushed 1583 bytes at 22:38:17, and the watch moved to set 2. No premature workout.
+  - **Independent review.** One Sonnet agent; a first attempt died on a network error before reviewing. It found no MAJOR. All four MINORs are fixed:
+    - the push guard now uses disk truth (also fixed: end order, push after a failed restore);
+    - the acceptance row is split into system termination versus a user swipe;
+    - stale system-logic lines are rewritten;
+    - missing tests are added.
+    - Its P3s are also applied: ownership check, one-shot cold load, expiration handler, `beginRest` dedupe, one test helper, the unused import.
+  - **Known costs.**
+    - On a cold wake the first durable save waits for `loadToday()` (about a second, under the background-task hold), later than the removed draft path.
+    - An app the user swiped away is generally not relaunched in the background by iOS; it resumes when the user next opens it and the queued sets arrive.
+    - A background cold launch usually cannot start a new rest Live Activity, so the lock-screen countdown may miss that rest; the notification is unaffected.
+  - **Specs.**
+    - Master v3.11: amendment entry, §5 rules 4, 5 and 7, and a status that parts 3 and 4 are still to come.
+    - System logic §7.2: the new "手机被收走后自动接回" paragraph, the channel items, the residual and edge case marked fixed, and the §7 draft bullets.
+    - PRD FR-AW1.
+    - Device acceptance list: three new rows in section 1 (system termination via Xcode, everyday long sessions, user swipe).
+
 ## 2026-10-20
 
 - **Release 1.12.2 build 44**: `MARKETING_VERSION` 1.12.1 → 1.12.2 and `CURRENT_PROJECT_VERSION` 43 → 44 in all 6 build configurations (App, Widget, Watch × Debug/Release). Packaged straight after the watch Health fix, without asking (standing "package without asking").
