@@ -13,7 +13,7 @@ All notable native iOS product, architecture, repository-governance, and documen
     - `ITSAppUsesNonExemptEncryption=false` in all three; three privacy manifests pass `plutil -lint`; no `RedeSubscription*` keys.
     - The watch binary is `arm64 arm64_32`.
     - Both new What's New strings and the resume code (`watch-resume-elapsed`, `rede.watch-intake`) are in the app binary. The DEBUG-only watch hook is absent.
-  - **Build status.** BUILD_STATUS_PLACEHOLDER Next upload needs build ≥ 46.
+  - **Build status.** `altool --build-status` (delivery 89eafc80…) reports `VALID`, `APP_STORE_ELIGIBLE`, import `VALID`, non-exempt encryption false (processed by 22:45). Next upload needs build ≥ 46.
 
 - **The phone takes back a killed training when the watch wakes it (Master v3.11, first slice; owner approval 「表独立走完整场（推荐）」)**: the owner reported 「手表不能全跑全流程，经常卡住流程然后需要手机」.
   - **Why it stalled.**
