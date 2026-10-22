@@ -5,7 +5,7 @@ All notable native iOS product, architecture, repository-governance, and documen
 ## 2026-10-21
 
 - **Release 1.12.3 build 45**: `MARKETING_VERSION` 1.12.2 → 1.12.3 and `CURRENT_PROJECT_VERSION` 44 → 45 in all 6 build configurations (App, Widget, Watch × Debug/Release). This is the first slice of 「表独立走完整场」, shipped on its own as the owner's approval said: the phone resumes a killed training when the watch wakes it (#776). Packaged without asking.
-  - **Content.** Everything in 44 plus #776. Archived from `release/1.12.3-build-45` at 17bc69f, whose tree is #776's branch head plus this version bump; see the re-parent note below.
+  - **Content.** Everything in 44 plus #776. Archived from `release/1.12.3-build-45` at 17bc69f, while #776's CI was still running. #776 then squash-merged as b1506c1 with the same tree as 17bc69f's parent (57ca3b1), so the three release commits were re-parented onto main with identical trees: the uploaded build is exactly main plus this version bump.
   - **Bundled What's New.** All three version gates move to 1.12.3. The "one session" watch line now also says that if iOS closes the phone app in the background, the watch wakes it and the session picks up. `RedeStringsTests` asserts the new list and that 1.12.2 now returns nothing. `RedeL10n` 165/165; `AppUpdateRuntimeTests` 13/13, including the version gate.
   - **Archive and upload.** `Archives/2026-10-21/Rede 1.12.3 (45).xcarchive`, Admin API key, `ARCHIVE SUCCEEDED`. Uploaded at 22:43 (`Upload succeeded`, first attempt).
   - **Pre-upload checklist.** All passed:
