@@ -69,19 +69,20 @@ extension RedeStrings {
     /// 文案纪律（基线 §5.5）：只讲已交付事实，Apple 式具体名词句，零空泛形容词。
     /// 只保留当前发布版本的叙事（升级只会看到当前版本，旧版本文案按 YAGNI 移除）。
     public func appUpdateHeroLine(version: String) -> String {
-        guard version == "1.12.2" else { return "" }
+        guard version == "1.12.3" else { return "" }
         return updateT("手表上就能练完一场", "Train a full session from your wrist")
     }
 
-    /// 1.12.2（2026-10-20）：1.11.0 / 1.12.0 / 1.12.1 都没上过商店，从 1.9.4 升上来的人只会看到这一版——手表这一整套照写，
-    /// 外加之后几批（点完成即休息、双击手势、引擎审查第一、二批、训练不丢、同步修复、热身按部位 #771、手表写健康 #774）。
+    /// 1.12.3（2026-10-21）：1.11.0 / 1.12.0–1.12.2 都没上过商店，从 1.9.4 升上来的人只会看到这一版——手表这一整套照写，
+    /// 外加之后几批（点完成即休息、双击手势、引擎审查第一、二批、训练不丢、同步修复、热身按部位 #771、手表写健康 #774、
+    /// 手机被收走后自动接回 #776）。
     public func appUpdateHighlights(version: String) -> [String] {
-        guard version == "1.12.2" else { return [] }
+        guard version == "1.12.3" else { return [] }
         if locale == .zh {
             return [
                 "新增 Apple Watch App：手表上看这组多重、几次，打勾记组；点完成立刻开始休息倒计时，手机放包里也能练完整场",
                 "手表上双指捏两下（双击手势）就能完成这一组、跳过休息；也能改重量、次数、RIR，暂停或跳过本组",
-                "手表和手机是同一场训练：任一边记的组另一边都能看到；在表上练完、手机没打开也会自动存好",
+                "手表和手机是同一场训练：任一边记的组另一边都能看到；手机在后台被系统关掉，表上一记组就把它叫醒、自动接上；在表上练完、手机没打开也会自动存好",
                 "手机上点「开始训练」，手表自动开始记录，不用再自己打开体能训练",
                 "手表记的心率和时长会存进 Apple 健康：手机够不着、App 被关掉，或中途开了别的体能训练，练过的部分照样存下来",
                 "轻练日、减载周之后，重量回到原来的水平接着加；停练回来按每个动作先减量再加回，隔两三周练一次也不会每次再减一成",
@@ -99,7 +100,7 @@ extension RedeStrings {
         return [
                 "Apple Watch app: see the set's weight and reps and log it from your wrist. Rest starts the moment you tap done, so your phone can stay in the bag",
                 "Pinch twice on the watch (Double Tap) to finish the set or skip rest; adjust weight, reps, and RIR, or pause and skip a set",
-                "Watch and phone run one session: a set logged on either side shows on the other, and a session finished on the watch saves itself even if your phone stays closed",
+                "Watch and phone run one session: a set logged on either side shows on the other; if iOS closes the phone app in the background, the watch wakes it and the session picks up; a session finished on the watch saves itself even if your phone stays closed",
                 "Tap Start Training on your phone and the watch starts recording on its own",
                 "Heart rate and workout time from the watch are saved to Apple Health; if your phone is out of reach, the app closes, or another workout starts, the part you trained is still saved",
                 "After a light day or a deload week, weights pick up where you left off; after time off each lift eases back on its own, and training every two or three weeks no longer cuts the weight each time",
