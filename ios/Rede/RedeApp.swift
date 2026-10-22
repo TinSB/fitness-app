@@ -23,6 +23,9 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
+        // 手表通道在 App 一启动就接（Master v3.11）：被表上的组从后台叫醒时没有界面，
+        // 不能等根视图出现——那时表上的组、跳过和「休息走完了」都没人接，表就卡在原地。
+        SessionStore.shared.startWatchLink()
         return true
     }
 

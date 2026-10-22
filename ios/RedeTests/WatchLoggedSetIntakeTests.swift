@@ -84,22 +84,33 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
     }
 
     func testSetWithNoActiveSessionIsDropped() {
-        // 排队通道意味着消息可能在训练结束之后才送到。
-        let store = makeStore(); finishWarmup(store)
+        // 排队通道意味着消息可能在训练结束之后才送到：那时草稿已清，没有可接回的训练。
+        let (store, draftStore) = makeStoreWithDraft()
         store.flow = nil
+        draftStore.clear()
         store.applyWatchLoggedSet(loggedSet())
         XCTAssertNil(store.flow)
     }
 
     // MARK: - 热身分流（2026-08-15 owner 真机拍到：手机在空杆热身，表上却显示 65 lb 正式组）
 
-    func testWorkingSetIsRejectedWhileWarmingUp() {
-        // **最要紧的一条**。热身期间收到正式组消息必须丢弃——
-        // 不判的话用户还在空杆，一组工作重量就已经落库了。
+    func testFirstWorkingSetFromTheWatchSkipsWhatIsLeftOfThePhonesWarmup() {
+        // v3.11：表只会在自己做完或跳过热身之后才发这个动作的第 1 组（手机推来的正式组，或表按计划
+        // 自己走过了热身）。手机还停在热身里，是因为热身步没送到、或草稿重放后热身指针从头开始——
+        // 这时把手机剩下的热身跳过、收下这一组；不收的话之后的组号全对不上，整个动作丢光。
         let store = makeStore()
         XCTAssertTrue(store.flow?.isWarmingUp == true, "这个动作应当有热身步，否则本测试没测到东西")
-        store.applyWatchLoggedSet(loggedSet())          // isWarmup: false
+        store.applyWatchLoggedSet(loggedSet(setNumber: 1))
+        XCTAssertEqual(completedCount(store), 1)
+        XCTAssertEqual(store.flow?.isWarmingUp, false)
+    }
+
+    func testLaterWorkingSetIsStillRejectedWhileThePhoneIsWarmingUp() {
+        // 只有第 1 组能让手机跳过热身：热身里来一条第 2 组，说明两边对不上，什么都不动。
+        let store = makeStore()
+        store.applyWatchLoggedSet(loggedSet(setNumber: 2))
         XCTAssertEqual(completedCount(store), 0)
+        XCTAssertEqual(store.flow?.isWarmingUp, true)
     }
 
     func testWarmupAdvancesPointerWithoutRecordingASet() {
@@ -149,45 +160,44 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
                        reps: 8, rir: 0, loggedAtISO: "t", isWarmup: true)
     }
 
-    // MARK: - 手机 app 在训练中被划掉（owner 2026-08-15 提出）
+    // MARK: - 手机 app 在训练中被划掉 / 被系统收走（owner 2026-08-15 提出；v3.11 起自动接回）
 
-    func testSetLoggedWhileFlowIsNotYetRestoredSurvivesIntoTheDraft() {
-        // 场景：训练中把手机 app 划掉 → 表上仍显示当前组、记一组（排队通道会保证送达）
-        // → 重开手机 app。**此刻 flow 还是 nil**——draft 要等用户点「继续训练」才重放，
-        // 而排队的那条组正好在这个窗口送达。
-        //
-        // 修之前：撞上 guard let flow 被静默丢弃。表上已经显示「已记录」，组却没了。
+    func testSetLoggedAfterThePhoneWasKilledResumesTheTraining() {
+        // 场景：训练中手机 app 被收走 → 表上照样记一组（排队通道保证送达，即时消息把手机叫醒）。
+        // v3.11 以前：组只写进草稿，要等人点「继续训练」，下一组没人算，表卡在原地（owner 2026-10-21）。
+        // 现在：直接把训练接回来，这一组走和手机上一样的那条路，不弹「继续训练？」。
         let (store, draftStore) = makeStoreWithDraft()
-        // 先在手机上正常记第 1 组——draft 只在有事件时才产生（热身是纯内存的，不落 draft）
+        // 先正常记第 1 组——draft 只在有事件时才产生（热身是纯内存的，不落 draft）
         store.applyWatchLoggedSet(loggedSet(setNumber: 1, reps: 8))
         XCTAssertNotNil(draftStore.stored, "前置条件：记完一组后应当已经存过 draft")
-        // 模拟「被划掉」：draft 在盘上，内存里的 flow 没了
+        // 模拟「被收走」：draft 在盘上，内存里的 flow 没了
         store.flow = nil
 
         store.applyWatchLoggedSet(loggedSet(setNumber: 2, reps: 7))
 
-        // 重开后用户点「继续训练」→ 重放必须带上表侧那一组
-        let restored = draftStore.stored?.restoreFlow()
-        let logged = restored?.observationsByExercise["bench-press"] ?? []
-        XCTAssertEqual(logged.count, 2, "表上记的那一组必须落进 draft，否则重放后就没了")
+        XCTAssertNotNil(store.flow, "表上的组一到，训练就接回来了")
+        XCTAssertNil(store.pendingDraft, "不再问「继续训练？」")
+        let logged = store.flow?.observationsByExercise["bench-press"] ?? []
+        XCTAssertEqual(logged.count, 2)
         XCTAssertEqual(logged.last?.reps, 7)
+        XCTAssertEqual(draftStore.stored?.restoreFlow()?.observationsByExercise["bench-press"]?.count, 2,
+                       "草稿也带上了这一组")
     }
 
-    func testSetArrivingWhileRestorePromptIsShowingSurvivesTheActualRestore() {
-        // 审查 M2 抓到的漏：手机重开 → loadToday 把磁盘 draft 读进 pendingDraft、弹「继续训练？」→
-        // 排队的组这时送到 → 之前只写磁盘不更新 pendingDraft → 用户点「继续」重放的是旧 draft，
-        // 那一组照样丢。这条测试走**真实恢复入口** restorePendingDraft()，不直接读 draftStore。
+    func testSetArrivingWhileRestorePromptIsShowingResumesTheTraining() {
+        // 手机重开 → loadToday 把磁盘 draft 读进 pendingDraft、弹「继续训练？」→ 表上的组这时送到：
+        // 人正在表上练，直接接回、收下这一组，提示随之消失（之后再点「继续」什么都不发生）。
         let (store, draftStore) = makeStoreWithDraft()
         store.applyWatchLoggedSet(loggedSet(setNumber: 1, reps: 8))
-        // 模拟「被划掉后重开」：flow 没了，磁盘 draft 已被读进 pendingDraft（loadToday 的效果）
         store.flow = nil
         store.pendingDraft = draftStore.stored
 
         store.applyWatchLoggedSet(loggedSet(setNumber: 2, reps: 7))   // 提示还挂着，组到了
-        store.restorePendingDraft()                                     // 用户点「继续训练」
+        XCTAssertNil(store.pendingDraft)
+        store.restorePendingDraft()                                     // 迟一步点的「继续训练」
 
         let logged = store.flow?.observationsByExercise["bench-press"] ?? []
-        XCTAssertEqual(logged.count, 2, "提示挂着时到的那一组必须跟着恢复进来")
+        XCTAssertEqual(logged.count, 2)
         XCTAssertEqual(logged.last?.reps, 7)
     }
 
@@ -207,8 +217,8 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         XCTAssertEqual(completedCount(store), 1, "撤销掉的那一组不能被迟到的副本记回来")
     }
 
-    func testStaleSetIsStillDroppedWhenFlowIsNotRestored() {
-        // 补进 draft 这条路同样要判幂等——不能因为走了另一条路就放行。
+    func testStaleSetIsDroppedEvenThoughTheTrainingResumes() {
+        // 接回之后同样要判幂等——不能因为走了另一条路就放行。
         let (store, draftStore) = makeStoreWithDraft()
         store.applyWatchLoggedSet(loggedSet(setNumber: 1))
         store.flow = nil
@@ -217,6 +227,7 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         store.applyWatchLoggedSet(loggedSet(setNumber: 3))   // 重放后手机等的是第 2 组
 
         XCTAssertEqual(draftStore.stored?.events.count, before, "组号对不上就不该写进 draft")
+        XCTAssertEqual(completedCount(store), 1)
     }
 
     func testSetIsDroppedWhenThereIsNoDraftAtAll() {
@@ -234,45 +245,54 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         WatchLoggedSet(exerciseId: "bench-press", setNumber: n, weightKg: 60, reps: 8, rir: 2, loggedAtISO: iso)
     }
 
+    /// 相对现在的时刻串（接回要求草稿在恢复窗口内，记组时刻也不早于开练）。
+    private func isoMinutesAgo(_ minutes: Double) -> String {
+        ISO8601DateFormatter().string(from: Date().addingTimeInterval(-minutes * 60))
+    }
+
     private func freshDraft(startedAt: Date = Date(), events: [TrainFlowEvent] = []) -> TrainSessionDraft {
         TrainSessionDraft(dateISO: SessionStore.localDayISO(startedAt), startedAt: startedAt,
                           prescription: prescription(), events: events)
     }
 
-    func testFirstSetOfAnExerciseSurvivesTheDraftPathDespiteItsWarmupLadder() {
+    func testFirstSetOfAnExerciseIsAcceptedAfterAResumeDespiteItsWarmupLadder() {
         // 审查 2026-10-19：手机这边热身指针重放后从头开始，表上已经热完身发来的第 1 组曾被热身守卫拦掉，
-        // 之后组号再也对不上，整段丢光。
+        // 之后组号再也对不上，整段丢光。接回之后第 1 组让手机跳过剩下的热身，第 2 组让手机结束那段休息。
         let draftStore = FakeDraftStore()
-        draftStore.stored = freshDraft()
+        draftStore.stored = freshDraft(startedAt: Date().addingTimeInterval(-30 * 60))
         let store = SessionStore(draftStore: draftStore)
         XCTAssertFalse(TrainFlowState(prescription: prescription()).warmupStepsForCurrentExercise.isEmpty,
                        "前置条件：卧推 60 kg 有热身阶梯")
+        let first = isoMinutesAgo(20), second = isoMinutesAgo(17)
 
-        store.applyWatchLoggedSet(watchSet(1, at: "2026-10-19T10:00:00Z"))
-        store.applyWatchLoggedSet(watchSet(2, at: "2026-10-19T10:03:00Z"))
+        store.applyWatchLoggedSet(watchSet(1, at: first))
+        store.applyWatchLoggedSet(watchSet(2, at: second))
 
         let logged = draftStore.stored?.restoreFlow()?.observationsByExercise["bench-press"] ?? []
         XCTAssertEqual(logged.count, 2)
-        XCTAssertEqual(logged.map(\.completedAt), ["2026-10-19T10:00:00Z", "2026-10-19T10:03:00Z"],
-                       "记组时刻取表上那一下，不是几小时后收到的时刻")
+        XCTAssertEqual(logged.map(\.completedAt), [first, second],
+                       "记组时刻取表上那一下，不是很久之后收到的时刻")
     }
 
-    func testLastSetOnTheDraftPathRecordsEndTimeAndSavesWithoutPrompting() async {
+    func testLastSetAfterAResumeRecordsEndTimeAndSavesWhenNobodyIsLooking() async {
+        // 整场后半段都在表上练、手机在口袋里：最后一组到了就存好，不问「继续训练？」。
         let draftStore = FakeDraftStore()
-        draftStore.stored = freshDraft()
+        draftStore.stored = freshDraft(startedAt: Date().addingTimeInterval(-30 * 60))
         let store = SessionStore(draftStore: draftStore)
+        store.appInForeground = false
         let saved = expectation(description: "自动保存")
         store.persistFinishedSession = { saved.fulfill(); return true }
+        let last = isoMinutesAgo(14)
 
-        store.applyWatchLoggedSet(watchSet(1, at: "2026-10-19T10:00:00Z"))
-        store.applyWatchLoggedSet(watchSet(2, at: "2026-10-19T10:03:00Z"))
-        store.applyWatchLoggedSet(watchSet(3, at: "2026-10-19T10:06:00Z"))
+        store.applyWatchLoggedSet(watchSet(1, at: isoMinutesAgo(20)))
+        store.applyWatchLoggedSet(watchSet(2, at: isoMinutesAgo(17)))
+        store.applyWatchLoggedSet(watchSet(3, at: last))
 
         await fulfillment(of: [saved], timeout: 2)
         XCTAssertNil(store.pendingDraft, "练完的一场不再问「继续训练？」")
         XCTAssertEqual(store.flow?.phase, .summary)
-        let end = ISO8601DateFormatter().date(from: "2026-10-19T10:06:00Z")
-        XCTAssertEqual(draftStore.stored?.endedAt, end, "结束时刻取表上最后一组，不是重开手机那一刻")
+        let end = ISO8601DateFormatter().date(from: last)
+        XCTAssertEqual(draftStore.stored?.endedAt, end, "结束时刻取表上最后一组，不是收到那一刻")
         XCTAssertEqual(store.sessionEndedAt, end)
     }
 
@@ -445,7 +465,7 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
 
     func testYoungCrossDayDraftWithoutSetsWaitsForLateWatchSets() {
         // 整场在表上练、手机侧一组没记：第二天打开手机时草稿里还没有组。此前先被当空草稿删掉，
-        // 随后送到的表上组无处可去。
+        // 随后送到的表上组无处可去。（过了 36 小时的空草稿照旧清掉，见上一条。）
         let started = Date().addingTimeInterval(-14 * 3600)
         let draftStore = FakeDraftStore()
         draftStore.stored = TrainSessionDraft(dateISO: "2000-01-01", startedAt: started,
@@ -456,15 +476,11 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         XCTAssertNotNil(draftStore.stored, "窗口内的空草稿不删")
         XCTAssertNil(store.pendingDraft, "也不问：里面没有可继续的")
 
-        store.applyWatchLoggedSet(watchSet(1, at: "2026-10-19T10:00:00Z"))
+        // 表上的组到了：v3.11 起直接接回这场训练（不再先写草稿、再问「继续训练？」）。
+        store.applyWatchLoggedSet(watchSet(1, at: isoMinutesAgo(13 * 60)))
+        XCTAssertNil(store.pendingDraft)
+        XCTAssertEqual(store.flow?.observationsByExercise["bench-press"]?.count, 1)
         XCTAssertEqual(draftStore.stored?.restoreFlow()?.observationsByExercise["bench-press"]?.count, 1)
-        XCTAssertEqual(store.pendingDraft, draftStore.stored, "补上组之后立刻问「继续训练？」，不等下一次刷新")
-        store.pendingDraft = nil
-
-        draftStore.stored = TrainSessionDraft(dateISO: "2000-01-01", startedAt: Date().addingTimeInterval(-40 * 3600),
-                                              prescription: prescription(), events: [])
-        store.checkForRestorableDraft()
-        XCTAssertNil(draftStore.stored, "过了 36 小时、一组没有：照旧清掉")
     }
 
     func testWatchDoneCountIncludesTheUnsavedSessionInTheSummary() {
@@ -611,9 +627,10 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
 
     // MARK: - v2：遥控命令（休息 +30 / 跳过休息 / 跳过热身）
 
-    private func command(_ action: WatchCommand.Action, exerciseId: String = "bench-press",
-                         auto: Bool = false) -> WatchCommand {
-        WatchCommand(action: action, exerciseId: exerciseId, auto: auto, sentAtISO: "t")
+    private func command(_ action: WatchCommand.Action, exerciseId: String = "bench-press", auto: Bool = false,
+                         reason: String? = nil, setNumber: Int? = nil) -> WatchCommand {
+        WatchCommand(action: action, exerciseId: exerciseId, auto: auto, sentAtISO: "t",
+                     reason: reason, setNumber: setNumber)
     }
 
     /// 记完一组、停在休息态的 store。
@@ -710,15 +727,19 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         XCTAssertEqual(store.flow?.skippedInCurrentExercise, 1)
     }
 
-    func testSkipSetIsIgnoredWhileWarmingUpOrResting() {
+    func testSkipSetForAStepTheWatchCouldNotBeOnIsIgnored() {
+        // v3.11：表上跳过的是手机下一步要等的那一组时，手机先补上（跳过剩下的热身 / 结束这段休息）再跳，
+        // 见 testWatchSkipOfTheNextSetCatchesUpLikeASet。组号对不上的照旧什么都不动：
+        // 热身里来一条「跳过第 2 组」、第 1 组后的休息里来一条「跳过第 3 组」。
         let warm = makeStore()
         XCTAssertTrue(warm.flow?.isWarmingUp == true)
         warm.applyWatchCommand(WatchCommand(action: .skipSet, exerciseId: "bench-press", sentAtISO: "t",
-                                            reason: "fatigue", setNumber: 1))
+                                            reason: "fatigue", setNumber: 2))
         XCTAssertEqual(warm.flow?.skippedInCurrentExercise, 0)
+        XCTAssertEqual(warm.flow?.isWarmingUp, true)
         let resting = makeRestingStore()
         resting.applyWatchCommand(WatchCommand(action: .skipSet, exerciseId: "bench-press", sentAtISO: "t",
-                                               reason: "fatigue", setNumber: 2))
+                                               reason: "fatigue", setNumber: 3))
         XCTAssertEqual(resting.flow?.skippedInCurrentExercise, 0)
         XCTAssertEqual(resting.flow?.phase, .resting)
     }
@@ -833,8 +854,13 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         let store = SessionStore(draftStore: FakeDraftStore(),
                                  watchWorkoutLauncher: launcher,
                                  watchCounterpartPresent: { watchPresent })
+        store.todayOutcome = try readyOutcome(prescription: rx)
+        return store
+    }
+
+    private func readyOutcome(prescription rx: TodayPrescription?) throws -> TodayModel.LoadOutcome {
         let raw = try JSONDecoder().decode(AppData.self, from: Data(#"{"schemaVersion":11}"#.utf8))
-        store.todayOutcome = .ready(TodayModel(
+        return .ready(TodayModel(
             verdict: TodayVerdict(call: .train, reason: .normalProgression, signals: []),
             prescription: rx,
             cleanView: CleanAppDataView(raw: raw, sessions: [],
@@ -844,7 +870,6 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
             coachActions: [], substitutions: [:], oneTimeSubstitutions: [:],
             equipmentScenario: nil, daySequence: ["push-a"], scheduledDayCode: "push-a",
             weeklyCycleRestart: false))
-        return store
     }
 
     func testStartingTrainingAsksTheWatchToStartExactlyOnce() async throws {
@@ -858,7 +883,9 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         // 训练已在进行时再点一次开始：startSession 的 guard 挡住，不能再敲一次门。
         store.startSession()
 
-        await fulfillment(of: [asked], timeout: 2)
+        // 10 秒：整组一起跑时，前面几条测试排队的锁屏实时活动请求在模拟器上会把主线程占住约 2 秒
+        //（2026-10-21 日志：本条 44.19 开始，那几条 request-failed 46.27 才返回），2 秒上限会偶发超时。
+        await fulfillment(of: [asked], timeout: 10)
         // 给可能存在的第二次请求留出落地时间再读计数：请求发生在 SessionStore 起的 Task 里，
         // 紧接着 fulfillment 就读，第二次哪怕真的发生了也可能还没到 actor，读到 1 而误判通过。
         try await Task.sleep(for: .milliseconds(300))
@@ -915,14 +942,215 @@ final class WatchLoggedSetIntakeTests: XCTestCase {
         let calls = await launcher.calls
         XCTAssertEqual(calls, 0)
     }
+
+    // MARK: - v3.11：手机被收走后，表上的「休息走完了」也能把训练接回；手机落后表一步时补上
+
+    /// 手机被收走后的样子：草稿里已记第 1 组（minutesAgo 分钟前在表上记的），内存里没有训练。
+    private func killedPhoneWithOneSet(minutesAgo: Double) -> (SessionStore, FakeDraftStore) {
+        let draftStore = FakeDraftStore()
+        draftStore.stored = freshDraft(
+            startedAt: Date().addingTimeInterval(-(minutesAgo + 5) * 60),
+            events: [.logSet(CompletedSetObservation(weightKg: 60, reps: 8, rir: 2).stamped(at: isoMinutesAgo(minutesAgo)))])
+        return (SessionStore(draftStore: draftStore), draftStore)
+    }
+
+    private func twoExercisePrescription() -> TodayPrescription {
+        TodayPrescription(
+            dayCode: "pull-a",
+            exercises: [
+                prescription().exercises[0],
+                ExercisePrescriptionPlan(
+                    exerciseId: "barbell-row", sets: 3, restSeconds: 120,
+                    repLowerBound: 8, repUpperBound: 12, targetReps: 10,
+                    targetWeightKg: 50, targetRir: 2, previousWeightKg: nil,
+                    previousTopReps: nil, nextProjectedWeightKg: 52.5,
+                    progressionStepKg: 2.5, change: .start, reason: .firstExposure,
+                    loadType: "external", equipment: "barbell", progressionPauseReason: nil),
+            ],
+            dayReasons: [])
+    }
+
+    func testWatchRestEndAfterAResumeMovesThePhoneToTheNextSet() {
+        // 手机被收走时正在第 1 组后的休息里（120 秒）；表上那段休息走完了，发来「休息走完了」把手机叫醒。
+        // 以前：手机重开后整段重新计时，这条被拒，表停在 0:00。现在：休息从第 1 组那一刻起算、已经走完——进第 2 组。
+        let (store, _) = killedPhoneWithOneSet(minutesAgo: 3)
+        store.applyWatchCommand(command(.restSkip, auto: true))
+        XCTAssertEqual(store.flow?.phase, .activeSet)
+        XCTAssertEqual(store.flow?.progress.setNumber, 2)
+    }
+
+    func testWatchRestEndIsIgnoredWhileTheResumedRestStillRuns() {
+        // 第 1 组才过去 30 秒：接回后休息照常还剩约 90 秒，表上一条旧消息不能把它提前结束。
+        let (store, _) = killedPhoneWithOneSet(minutesAgo: 0.5)
+        store.applyWatchCommand(command(.restSkip, auto: true))
+        XCTAssertEqual(store.flow?.phase, .resting)
+        XCTAssertGreaterThan(store.restCountdown.remaining(), 60)
+    }
+
+    func testPhoneStillRestingAcceptsTheWatchsNextSet() {
+        // 手机在口袋里，没收到「休息走完了」，还停在第 1 组后的休息里；表上已经记下第 2 组。
+        let store = makeStore(); finishWarmup(store)
+        store.applyWatchLoggedSet(loggedSet(setNumber: 1))
+        XCTAssertEqual(store.flow?.phase, .resting)
+        store.applyWatchLoggedSet(loggedSet(setNumber: 2, reps: 6))
+        XCTAssertEqual(completedCount(store), 2)
+        XCTAssertEqual(store.flow?.observationsByExercise["bench-press"]?.last?.reps, 6)
+    }
+
+    func testNextExercisesFirstSetFinishesThePhonesRestAndSkipsItsWarmup() {
+        // 卧推最后一组后手机停在动作间休息里；表上已经练到划船第 1 组（划船的热身在表上做过了）。
+        let store = SessionStore(draftStore: FakeDraftStore())
+        store.flow = TrainFlowState(prescription: twoExercisePrescription())
+        finishWarmup(store)
+        for n in 1...3 { store.applyWatchLoggedSet(loggedSet(setNumber: n)) }
+        XCTAssertEqual(store.flow?.phase, .resting)
+        store.applyWatchLoggedSet(loggedSet(exerciseId: "barbell-row", setNumber: 1, reps: 10))
+        XCTAssertEqual(store.flow?.currentExercise?.exerciseId, "barbell-row")
+        XCTAssertEqual(store.flow?.observationsByExercise["barbell-row"]?.count, 1)
+    }
+
+    func testStaleWarmupStepDoesNotEndARunningRest() {
+        // 正在第 1 组后的休息里，来了一条这个动作的热身步（晚到的旧消息）：补「休息走完」也对不上它，
+        // 休息必须原样继续——补错一步比晚收一条更糟。
+        let store = makeStore(); finishWarmup(store)
+        store.applyWatchLoggedSet(loggedSet(setNumber: 1))
+        store.applyWatchLoggedSet(warmupStep(index: 1))
+        XCTAssertEqual(store.flow?.phase, .resting)
+        XCTAssertEqual(completedCount(store), 1)
+    }
+
+    func testWatchSkipOfTheFirstSetSkipsThePhonesWarmupToo() {
+        // 表上做完 / 跳过了热身，又跳过了第 1 组：手机还在热身里，先跳过剩下的热身再跳这一组。
+        let store = makeStore()
+        XCTAssertTrue(store.flow?.isWarmingUp == true)
+        store.applyWatchCommand(command(.skipSet, reason: SetSkipReason.fatigue.rawValue, setNumber: 1))
+        XCTAssertEqual(store.flow?.isWarmingUp, false)
+        XCTAssertEqual(store.flow?.skippedInCurrentExercise, 1)
+    }
+
+    func testPushIsHeldOnlyWhileAnUnfinishedDraftWaits() {
+        // 盘上的真相说了算：没有进行中的训练、盘上有一场没练完的草稿 → 压住；其余都照常推。
+        let draftStore = FakeDraftStore()
+        let store = SessionStore(draftStore: draftStore)
+        XCTAssertFalse(store.watchPushHeldForUnfinishedDraft(), "没有草稿")
+        draftStore.stored = freshDraft(events: [.logSet(CompletedSetObservation(weightKg: 60, reps: 8, rir: 2))])
+        XCTAssertTrue(store.watchPushHeldForUnfinishedDraft(), "没练完的草稿等着接回")
+        store.flow = TrainFlowState(prescription: prescription())
+        XCTAssertFalse(store.watchPushHeldForUnfinishedDraft(), "训练在进行：照常推")
+        store.flow = nil
+        draftStore.stored = draftStore.stored?.ending(at: Date())
+        XCTAssertFalse(store.watchPushHeldForUnfinishedDraft(), "练完的那场（有结束时刻）不压")
+        draftStore.stored = freshDraft(startedAt: Date().addingTimeInterval(-40 * 3600))
+        XCTAssertFalse(store.watchPushHeldForUnfinishedDraft(), "出了恢复窗口的不压")
+    }
+
+    func testEndingASessionTellsTheWatchInsteadOfHoldingThePush() throws {
+        // 训练结束（放弃 / 存好）时先清草稿再清训练流：flow 置空那一下的「没在练」不能被守卫压住，
+        // 否则表永远不知道这场放弃了，体能训练一直跑到 60 分钟止损（审查 2026-10-21）。
+        let draftStore = FakeDraftStore()
+        let store = SessionStore(draftStore: draftStore)
+        store.todayOutcome = try readyOutcome(prescription: prescription())
+        store.flow = TrainFlowState(prescription: prescription())
+        finishWarmup(store)
+        store.applyWatchLoggedSet(loggedSet(setNumber: 1))
+        XCTAssertNotNil(draftStore.stored)
+        let before = draftStore.loadsWithDraft
+
+        store.abandonActiveSession()
+
+        XCTAssertEqual(draftStore.loadsWithDraft, before, "推送守卫读盘时草稿必须已经清掉")
+        XCTAssertNil(draftStore.stored)
+        XCTAssertEqual(store.lastSessionOutcome, "abandoned")
+    }
+
+    func testDiscardingAWaitingDraftTellsTheWatchItWasAbandoned() {
+        let draftStore = FakeDraftStore()
+        draftStore.stored = freshDraft(events: [.logSet(CompletedSetObservation(weightKg: 60, reps: 8, rir: 2))])
+        let store = SessionStore(draftStore: draftStore)
+        store.pendingDraft = draftStore.stored
+
+        store.discardPendingDraft()
+
+        XCTAssertNil(draftStore.stored)
+        XCTAssertEqual(store.lastSessionOutcome, "abandoned")
+        XCTAssertFalse(store.watchPushHeldForUnfinishedDraft())
+    }
+
+    func testWatchInboxHandlesEnvelopesInArrivalOrderAndSavesDurably() throws {
+        let draftStore = FakeDraftStore()
+        let store = SessionStore(draftStore: draftStore)
+        store.todayOutcome = try readyOutcome(prescription: prescription())
+        store.flow = TrainFlowState(prescription: prescription())
+        finishWarmup(store)
+        func envelope(_ set: WatchLoggedSet) -> WatchLinkEnvelope {
+            WatchLinkEnvelope(kind: WatchLinkKind.loggedSet, sentAtISO: set.loggedAtISO, payload: set.encoded)
+        }
+
+        store.receiveFromWatch(envelope(loggedSet(setNumber: 1, reps: 8)))
+        store.receiveFromWatch(envelope(loggedSet(setNumber: 2, reps: 6)))
+
+        XCTAssertEqual(store.flow?.observationsByExercise["bench-press"]?.map(\.reps), [8, 6])
+        XCTAssertGreaterThanOrEqual(draftStore.durableSaves, 2, "每批处理完立刻同步落盘")
+    }
+
+    func testResumeLeavesADraftOutsideTheWindowAlone() {
+        let draftStore = FakeDraftStore()
+        let old = TrainSessionDraft(dateISO: "2000-01-01", startedAt: Date().addingTimeInterval(-40 * 3600),
+                                    prescription: prescription(),
+                                    events: [.logSet(CompletedSetObservation(weightKg: 60, reps: 8, rir: 2))])
+        draftStore.stored = old
+        let store = SessionStore(draftStore: draftStore)
+        store.applyWatchLoggedSet(loggedSet(setNumber: 2))
+        XCTAssertNil(store.flow)
+        XCTAssertEqual(draftStore.stored, old, "不接回、也不碰")
+    }
+
+    func testResumeLeavesAFinishedDraftAlone() {
+        // 练完的那场由 loadToday 自己存好；迟到的副本不能把它接回成「在练」。
+        let draftStore = FakeDraftStore()
+        draftStore.stored = freshDraft(events: [
+            .logSet(CompletedSetObservation(weightKg: 60, reps: 8, rir: 2)), .restFinished,
+            .logSet(CompletedSetObservation(weightKg: 60, reps: 8, rir: 2)), .restFinished,
+            .logSet(CompletedSetObservation(weightKg: 60, reps: 8, rir: 2)),
+        ])
+        let store = SessionStore(draftStore: draftStore)
+        store.applyWatchLoggedSet(loggedSet(setNumber: 3))
+        XCTAssertNil(store.flow)
+    }
+
+    func testResumeIgnoresAMessageFromAnotherTraining() {
+        // 别的训练迟到的旧消息：动作不在这场的计划里、或比这场开练还早——不接回。
+        let (store, _) = killedPhoneWithOneSet(minutesAgo: 3)
+        store.applyWatchLoggedSet(loggedSet(exerciseId: "squat", setNumber: 2))
+        XCTAssertNil(store.flow)
+        store.applyWatchLoggedSet(loggedSet(setNumber: 2, loggedAt: Date().addingTimeInterval(-2 * 3600)))
+        XCTAssertNil(store.flow)
+        store.applyWatchLoggedSet(loggedSet(setNumber: 2))
+        XCTAssertNotNil(store.flow, "这场训练自己的消息照常接回")
+    }
+
+    func testWatchSkipOfTheNextSetCatchesUpLikeASet() {
+        // 表上休息完跳过了第 2 组（器械被占）：手机还在休息里，先补「休息走完」再跳——理由码原样落下。
+        let store = makeStore(); finishWarmup(store)
+        store.applyWatchLoggedSet(loggedSet(setNumber: 1))
+        store.applyWatchCommand(command(.skipSet, reason: SetSkipReason.equipmentBusy.rawValue, setNumber: 2))
+        XCTAssertEqual(store.flow?.skippedSets.map(\.reason), [.equipmentBusy])
+        XCTAssertEqual(store.flow?.progress.setNumber, 3)
+    }
 }
 
 private final class FakeDraftStore: TrainSessionDraftStoring {
     var stored: TrainSessionDraft?
-    func load() -> TrainSessionDraft? { stored }
+    /// 取出时盘上有草稿的次数（推送守卫读盘时看得到）。
+    private(set) var loadsWithDraft = 0
+    private(set) var durableSaves = 0
+    func load() -> TrainSessionDraft? {
+        if stored != nil { loadsWithDraft += 1 }
+        return stored
+    }
     func clear() { stored = nil }
     func enqueueSave(_ draft: TrainSessionDraft) { stored = draft }
-    func saveDurably(_ draft: TrainSessionDraft) -> Bool { stored = draft; return true }
+    func saveDurably(_ draft: TrainSessionDraft) -> Bool { stored = draft; durableSaves += 1; return true }
 }
 
 /// 记录手机有没有请求拉起手表（v3.8）。用 actor：调用发生在 SessionStore 起的 Task 里，
